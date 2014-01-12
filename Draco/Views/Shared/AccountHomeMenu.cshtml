@@ -1,0 +1,15 @@
+﻿@model long
+
+@{
+    // load sitemap for accountType
+	long accountType = DataAccess.Accounts.GetAccountTypeFromAccountId(Model);
+    IEnumerable<SportsManager.Models.Helpers.MenuHelper.MenuItem> menuNodes = SportsManager.Models.Helpers.MenuHelper.GetAccountHomeTypeMenu(accountType, Model);
+}
+
+@if (menuNodes.Any())
+{
+    foreach (SportsManager.Models.Helpers.MenuHelper.MenuItem node in menuNodes)
+    {
+	    <li><a href='@node.Url'>@node.Title</a></li>
+    }
+}

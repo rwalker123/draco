@@ -1,0 +1,104 @@
+﻿@model SportsManager.ViewModels.AccountViewModel
+
+@{
+    ViewBag.Title = @Model.AccountName + " Umpires";
+}
+
+@section head
+{
+<link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+<style type="text/css">
+    img.over {
+        border: 2px dashed #000;
+    }
+
+    img {
+        border: 2px solid #fff;
+    }
+
+    h3.userHeader
+    {
+        font-size:24px;
+    }
+</style>
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title</h1>
+                <p>Define umpires for the league.</p>
+            </hgroup>
+        </div> <!-- content-wrapper -->
+    </section> <!-- featured -->
+}
+
+<h3 style="max-width:500px;text-align:center">Search for users to add as umpires. If this is a new umpire, add them as a @Html.ActionLink("User", "Users", "Account", new { area = "", accountId = Model.AccountId }, null) first.</h3>
+
+<br /><span>(type last name to begin search)</span><br />
+<input type="text" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/><button style="margin-left:5px" data-bind="enable: hasSelectedPlayer, click: addUmpire">Add</button>
+
+<div id="accordion">
+    <div data-bind="foreach: umpires">
+        <h3 class="userHeader">
+            <img src='/images/busy.gif'
+                style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
+            <img class='fileupload' 
+            style="width: 80px; height: 60px; position: relative;vertical-align:middle;" 
+            data-bind="imageUploader: fileUploaderUrl, attr: { src: photoUrl }"
+            alt="upload photo" />
+            <a href="#" data-bind="text: fullName"></a>
+        </h3>
+        <div>
+            <form data-bind="attr: { id: id }">
+                <div class="contactView" data-bind="template: 'viewUserDetailsTemplate'"></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+@section scripts 
+{
+
+<script type="text/javascript" src="~/Scripts/knockout-2.3.0.js"></script>
+<script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
+<script type="text/javascript" src="~/Areas/Baseball/Scripts/umpires.js"></script>
+<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
+
+<script id="viewUserDetailsTemplate" type="text/html">
+
+    <div data-bind="with: details">
+        <table>
+        <tr data-bind="visible: email()">
+            <td class='label'>Email:</td><td data-bind="text: email"></td>
+        </tr>
+        <tr data-bind="visible: phone1()">
+            <td class='label'>Home Phone:</td> <td data-bind="text: phone1"></td>
+        </tr>
+        <tr data-bind="visible: phone2()">
+            <td class='label'>Cell Phone:</td> <td data-bind="text: phone2"></td>
+        </tr>
+        <tr data-bind="visible: phone3()">
+            <td class='label'>Work Phone:</td> <td data-bind="text: phone3"></td>
+        </tr>
+        <tr data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
+            <td class='label'>Address:</td>
+            <td>
+                <span data-bind="text: address"></span><br />
+                <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
+            </td>
+        </tr>
+        </table>
+    </div>
+    <input type="button" value="Remove" data-bind="click: $parent.deleteUmpire" />
+
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        initViewModel(@Model.AccountId);
+    });
+</script>
+}

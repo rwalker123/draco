@@ -1,0 +1,17 @@
+﻿
+@model SportsManager.Baseball.ViewModels.StandingsViewModel
+
+
+@{
+	ViewBag.Title = Model.AccountName + " Standings";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+<h2>@Model.AccountName Standings</h2>
+
+
+@Html.Partial("_SeasonStandings")
+

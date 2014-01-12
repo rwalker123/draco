@@ -1,0 +1,86 @@
+﻿@model SportsManager.Baseball.ViewModels.TeamViewModel
+
+@{
+    ViewBag.Title = Model.GetTitle();
+}
+
+<h2>@Model.GetTitle()</h2>
+
+@if (Model.FromLeagueAccount) {     
+    <p>Back to: @Model.AccountName</p>
+}  
+
+    
+<div id="colmask">
+	<div id="colmid">
+		<div id="colright">
+			<div id="col1wrap">
+				<div id="col1pad">
+					<div id="col1">
+						<!-- Column 1 start -->
+                        @if (Model.IsTeamMember) {
+
+                            <div id="theAnnouncements">
+                                <h3>Announcements 
+                                @if (Model.IsAdmin) {
+                                    <a>[add new]</a>
+                                }
+
+                                </h3>
+                            </div>    
+                        } 
+
+                        <div id="theHandouts">
+                            <h3>Handouts
+                            @if (Model.IsAdmin) {
+                                <a>[add new]</a>
+                            } 
+                            </h3>
+                        </div>
+
+						<!-- Column 1 end -->
+					</div>
+				</div>
+			</div>
+            <div id="col2">
+				<!-- Column 2 start -->
+                @if (Model.IsPhotoAdmin) {
+                    <a>[Upload Logo]</a>
+                    <a>[Upload Team Photo]</a><br />
+                }
+
+                [Logo] <br />
+                [Team Record] <br />
+                <ul>
+                    <li><a href="javascript:onLoadPhotoGallery()">Photo Gallery</a></li>
+                    <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Id }, null)</li>
+                    <li>Roster</li>
+                    <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
+                </ul>
+
+				<!-- Column 2 end -->
+			</div>
+			<div id="col3">
+			    <!-- Column 3 start -->
+                <div id="currentGames">
+                <h3>Schedule</h3>
+                <<- Prev Game    Next Game ->><br />
+                @Html.ActionLink("Complete Team Schedule", "TeamSchedule", "Index", new { id = Model.Id }, null)<br />
+                <a>Game Summaries</a>
+                </div>
+                <div id="theSponsors">
+                    <h3>Sponsors 
+                    @if (Model.IsAdmin) { 
+                        <a>[add new]</a>
+                    } 
+                    </h3>
+                </div>
+				<!-- Column 3 end -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div style="clear:both;"></div>
+
+

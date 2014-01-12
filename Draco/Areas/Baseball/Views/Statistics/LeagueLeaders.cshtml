@@ -1,0 +1,86 @@
+﻿@using SportsManager.Baseball.ViewModels;
+@model LeagueLeadersViewModel
+
+@if (Model.TitleLeader != null) {
+
+<table>
+	<tr>
+		<td>
+		<!-- Leader part -->
+			<table  cellspacing="1" cellpadding="1" border="0" width="100%">
+				<tr>
+					<td nowrap="nowrap">
+						@if (!Model.TitleLeader.IsTie) {
+							<a class="stats" href="javascript:displayPlayerFromId(@Model.TitleLeader.PlayerId)">
+							<img src="@Url.Content(Model.TitleLeader.PhotoURL)" border="0" alt="@Model.TitleLeader.Name"/>
+							</a>
+						}
+						else {
+							<img src="@Url.Content(Model.TitleLeader.PhotoURL)" border="0" alt="@Model.TitleLeader.Name"/>
+						}
+							
+					</td>
+					<td width="100%">
+						<table  cellspacing="0" cellpadding="0" border="0" width="100%">
+							<tr>
+								<td align="center" class="@Model.StatCssHeaderStyle">
+									&nbsp;@Model.Category&nbsp;
+								</td>
+							</tr>
+							<tr>
+								<td nowrap="nowrap" align="center" bgcolor="#666666" class="statComponent">
+									<!-- Name/leader value -->
+									&nbsp;
+									@if (!Model.TitleLeader.IsTie) {
+										<a class="stats" href="javascript:displayPlayerFromId(@Model.TitleLeader.PlayerId)">
+										<span class="playerName">@Model.TitleLeader.Name</span>
+										</a>
+									} 
+									else {								
+										<span class="playerName">@Model.TitleLeader.Name</span>
+									}
+
+									&nbsp;
+									<br />
+									&nbsp;<span class="stat">@Model.TitleLeader.Value</span>&nbsp;<br />&nbsp;
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td> 
+	</tr>
+	<tr>
+		<td>
+		<div class="mar3">
+			<table cellspacing="0" cellpadding="0" border="0" width="100%">
+			   @foreach(var l in Model.LeaderLines) {
+				   <tr>
+				   <td>@l.LeaderNum&nbsp;</td>
+				   <td colspan="@l.IsTie ? '2' : '1'" nowrap="nowrap">
+					@if (!l.IsTie) {
+						<a class="stats" href="javascript:displayPlayerFromId(@l.PlayerId)">
+						<b>@l.Name&nbsp;</b>
+						</a>
+					}
+					else { 
+						<div style="font-size:8pt">
+						@l.Name&nbsp;
+						</div>
+					}
+					
+				   </td>
+				   @if (!l.IsTie) {
+						<td style="font-size:8pt" nowrap="nowrap">@l.Team &nbsp;</td>
+				   }
+				   <td nowrap="nowrap">@l.Value</td>
+				   </tr>
+			   }
+			</table>
+		</div>
+		</td>
+	</tr>
+
+</table>
+}

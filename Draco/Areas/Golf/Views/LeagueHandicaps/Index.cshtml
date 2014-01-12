@@ -1,0 +1,40 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueHandicapViewModel
+
+@{
+    ViewBag.Title = "League Handicaps";
+}
+
+<h1>@ViewBag.Title</h1>
+
+<table>
+
+<tr>
+<td></td>
+@foreach (var player in Model.GetPlayers())
+{ 
+    <td colspan="3">@player.FullName</td>
+}
+</tr>
+
+@foreach (var matchDate in Model.MatchDates)
+{ 
+    <tr>
+    <td>@matchDate.ToString("d")</td>
+    
+    @foreach(var gs in Model.GetScoresByDate(matchDate))
+    {
+        if (gs != null)
+        { 
+            <td>@gs.Differential</td>
+            <td>@gs.TotalNetScore</td>
+            <td>@gs.TotalScore</td>
+        }
+        else
+        {
+            <td colspan="3"></td> 
+        }
+    }
+    </tr>
+}
+
+</table>

@@ -1,0 +1,234 @@
+﻿@model SportsManager.Golf.ViewModels.PreviewMatchViewModel
+
+@{
+    ViewBag.Title = "Preview Match";
+}
+
+@section head
+{
+}
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm())
+{
+    
+    @Html.DropDownList("Courses", null, new Dictionary<string, object> { { "id", "courses" } })
+
+     <table>
+
+<tr>
+    <th style="text-align:left">@Model.Team1Name</th>
+    <th>Course<br />Handicap</th>
+    @for (int i = 1; i <= Model.NumberHolesPlayed; ++i)
+    { 
+        <th style="text-align:center">@i</th>
+    }
+
+</tr>
+
+@{
+        ViewBag.NumberHolesPlayed = Model.NumberHolesPlayed;
+    ViewBag.TeamId = Model.Team1Id;
+    ViewBag.NumPlayersOnTeam = Model.Team1Players.Count();
+}
+    @foreach (var gs in Model.Team1Players)
+    {
+        Html.RenderPartial("_PlayerMatchPreview", gs);
+    }
+
+<tr><th style="text-align:left">@Model.Team2Name</th>
+
+    <th>Course<br />Handicap</th>
+    @for (int i = 1; i <= Model.NumberHolesPlayed; ++i)
+    { 
+        <th style="text-align:center">@i</th>
+    }
+</tr>
+
+@{
+    ViewBag.TeamId = Model.Team2Id;
+    ViewBag.NumPlayersOnTeam = Model.Team2Players.Count();
+}
+    @foreach (var gs in Model.Team2Players)
+    {
+        Html.RenderPartial("_PlayerMatchPreview", gs);
+    }
+
+
+    </table>    
+}
+
+@section scripts {
+
+<!-- Scripts for tees created in _PlayerScore -->
+<script type="text/javascript">
+
+    var cachedTrs = new Array();
+    var cachedSubbedOut = new Array();
+
+    function removeLine(trId) {
+
+        var trRow = $("#" + trId);
+
+        cachedTrs[trId] = trRow.html();
+
+        var htmlStr = $.validator.format("<td><a href=\"javascript:addLine('{0}')\">add</a></td>", trId);
+
+        trRow.html(htmlStr);
+    }
+
+    function subPlayer(trId) {
+        var trRow = $("#" + trId);
+        var tdName = trRow.find(".playerSection");
+
+        cachedSubbedOut[trId] = tdName.html();
+
+        var playerId = trId.split('_')[1];
+        var hiddenPlayerId = $.validator.format("player_{0}", playerId);
+        var playerIdTeamId = $("#" + hiddenPlayerId).val();
+        var teamId = playerIdTeamId.split("_")[0];
+
+        var subSelectId = $.validator.format('subSelect_{0}_{1}', teamId, playerId);
+
+        var htmlStr = $.validator.format("<select id='{1}' name='{1}'></select> <a href=\"javascript:removeSubLine('{0}')\">remove</a>", trId, subSelectId);
+        tdName.html(htmlStr);
+
+        var selectedSub = trRow.data("initialsub");
+        loadSubSelect(subSelectId, selectedSub);
+    }
+
+    function loadSubSelect(subSelectId, selectedSub) {
+        var url = '@Url.Action("GetAvailableSubs", "Rosters",  new { accountId = ViewBag.AccountId, id = ViewBag.SeasonId })';
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (data) {
+
+                var selectList = $("#" + subSelectId);
+
+                $(selectList).html("");
+
+                $.each(data, function (id, option) {
+                    selectList.append($('<option></option>').val(option.value).html(option.name));
+                });
+
+                if (selectedSub != "0")
+                    selectList.val(selectedSub);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
+            }
+        });
+    }
+
+    function removeSubLine(trId) {
+        var trRow = $("#" + trId);
+        var tdName = trRow.find(".playerSection");
+
+        tdName.html(cachedSubbedOut[trId]);
+    }
+
+
+    function addLine(trId) {
+        var htmlStr = cachedTrs[trId];
+        $("#" + trId).html(htmlStr);
+
+        var teeId = "tees_" + trId.split("_")[1];
+
+        var teeElem = $("#" + teeId);
+        var selectedValue = "0";
+
+        teeCourseId = teeElem.data("courseid");
+        selectedCourseId = $("#courses").val();
+
+        // if course changed while player was hidden, must add new tees.
+        if (teeCourseId != selectedCourseId) {
+            loadTeesForElement(selectedCourseId, teeElem);
+
+            teeElem.data("courseid", selectedCourseId);
+            teeElem.data("selectedvalue", "0");
+        }
+        else {
+            selectedValue = teeElem.data("selectedvalue");
+        }
+
+        if (selectedValue != "0")
+            teeElem.val(selectedValue);
+
+    }
+</script>
+
+<script src='@Url.Content("~/Scripts/focusNextItem.js")' type="text/javascript"></script>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+
+        loadTees($("#courses").val());
+
+        $("#courses").change(
+			function () {
+			    loadTees(this.value);
+			}
+		);
+
+    });
+
+    function loadTees(courseId) {
+
+        var url = '@Url.Action("GetTees", "CourseTee",  new { accountId = ViewBag.AccountId })' + '/' + courseId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (data) {
+                $.each($('.teeSelect'), function (index) {
+                    $(this).html("");
+                });
+
+                $.each(data, function (id, option) {
+
+                    $.each($('.teeSelect'), function (index) {
+                        $(this).append($('<option></option>').val(option.value).html(option.name));
+                    });
+                });
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
+            }
+        });
+    }
+
+    function loadTeesForElement(courseId, elem) {
+
+        elem.html("");
+
+        var url = '@Url.Action("GetTees", "CourseTee",  new { accountId = ViewBag.AccountId })' + '/' + courseId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (data) {
+
+                $.each(data, function (id, option) {
+
+                    elem.append($('<option></option>').val(option.value).html(option.name));
+
+                });
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
+            }
+        });
+    }
+
+</script>
+
+}

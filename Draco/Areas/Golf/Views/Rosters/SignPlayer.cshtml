@@ -1,0 +1,28 @@
+﻿@{
+    ViewBag.Title = "Sign Player";
+}
+
+<h1>@ViewBag.Title</h1>
+
+<h3>@ViewData["TeamName"]</h3>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm()) {
+
+    <p>Select Player:
+    @Html.DropDownList("Players", null, new Dictionary<string, object> { { "id", "players" } })
+    </p>
+
+    <input type="submit" value="Save" />
+    if (ViewBag.TeamId == 0)
+    {
+        @Html.ActionLink("Cancel", "SubsIndex", "Rosters", new { accountId = ViewBag.AccountId, seasonId = ViewBag.SeasonId, flightId = ViewBag.FlightId, id = ViewBag.TeamId }, null)
+    }
+    else
+    { 
+        @Html.ActionLink("Cancel", "Index", "Rosters", new { accountId = ViewBag.AccountId, seasonId = ViewBag.SeasonId, flightId = ViewBag.FlightId, id = ViewBag.TeamId }, null)
+    }
+}

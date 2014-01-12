@@ -1,0 +1,22 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueIndexViewModel
+
+@{
+	ViewBag.Title = "Golf League";
+}
+
+@section menu {
+}
+
+@section head {
+}
+
+<h1>@ViewBag.Title</h1>
+
+@using (Html.BeginForm())
+{ 
+	@Html.DropDownList("accountId", Model.GetGolfLeagues())
+	<input type="submit" value="Goto Account" name="Goto Account" />
+	 
+	<p>Note: to create an account you must log in.</p>
+	<p>@Html.ActionLink("Create Account", "CreateAccount", "League", new { area = "golf" }, null)</p>		
+}

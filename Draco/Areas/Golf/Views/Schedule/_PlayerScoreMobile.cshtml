@@ -1,0 +1,55 @@
+﻿@model SportsManager.Golf.ViewModels.GolfScoreViewModel
+@{
+    string teeId = "tees_" + Model.PlayerId;
+    string playerId = "player_" + Model.PlayerId;
+    string teamIdPlayerId = ViewBag.TeamId + "_" + Model.PlayerId;
+    string trId = "tr_" + Model.PlayerId;
+    string playerSelectId = "playerSelect_" + Model.PlayerId;
+    long subDataTag = 0;
+
+    if (Model.IsSub)
+    { 
+        subDataTag = Model.SubPlayerId;
+    }
+}
+
+<tr id="@trId" class="playerRow" data-initialabsent="@Model.InitialAbsent" data-initialsub="@subDataTag">
+
+    <td valign="top" class="playerSection">
+        <div class="ui-grid-a">
+            <div class="ui-block-a">
+                <select name="@playerSelectId" id="@playerSelectId">
+                    <option value="@Model.PlayerId">@Model.PlayerName</option> 
+
+                    @{
+                        string absentSelected = Model.InitialAbsent ? "selected=\"selected\"" : String.Empty;
+                    }
+
+		            <option @absentSelected value="0">Absent</option>
+                    @if (ViewBag.NumPlayersOnTeam > 2)
+                    {
+		                <option value="-1">Exclude</option>
+                    }
+                    <optgroup label="Subs"></optgroup>
+                    @foreach (var sub in ViewBag.Subs)
+                    {
+                        string isSelected = Model.IsSub ? (subDataTag == sub.Id) ? "selected=\"selected\"" : String.Empty : String.Empty;
+                        <option @isSelected value="@sub.Id">@sub.FullName</option> 
+                    }
+                </select>
+            </div>
+            <div class="ui-block-b">
+                <select class="teeSelect" name="@teeId" id="@teeId" data-selectedvalue="@Model.TeeId" data-courseid="@Model.CourseId"></select>
+            </div>
+        </div>    
+
+        @for (int i = 1; i <= ViewBag.NumberHolesPlayed; i++)
+        {
+            string holeId = "hole_" + i + "_" + Model.PlayerId;
+            <div class="ui-block-b"><input class="holeValues" type="number" id="@holeId" name="@holeId" style="width:40px" value="@Model.HoleScore(i)" maxlength="2" min="1" max="19"/></div>
+        }
+    </td>
+
+    <td><input type="hidden" value="@teamIdPlayerId" name="@playerId" id="@playerId"/></td>         
+</tr>
+

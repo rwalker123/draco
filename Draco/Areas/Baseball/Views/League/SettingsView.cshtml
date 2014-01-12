@@ -1,0 +1,160 @@
+﻿@model SportsManager.Baseball.ViewModels.SettingsViewModel
+
+@if (!Model.IsAdmin) {
+    return;
+}
+
+@{
+	ViewBag.Title = @Model.AccountName + " Settings";
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <h1 style="color:white;">@Model.AccountName Settings</h1>
+        </div> <!-- content-wrapper -->
+    </section> <!-- featured -->
+}
+
+<div style="padding-bottom: 10px">
+    <h4>Contact Information</h4>
+    <label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label>
+    <label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label>
+
+    <label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label>
+
+    <h4>Player Data</h4>
+    <label><input type="checkbox" data-bind="checked: playerWaiver" />Track player waiver </label>
+        <label><input type="checkbox" data-bind="checked: waiverStatus" />Show waiver status on Roster page</label>
+
+    <label><input type="checkbox" data-bind="checked: playerIdentification" />Track player identification submitted</label>
+        <label><input type="checkbox" data-bind="checked: showIdentification" />Show Identification status on Roster page</label>
+
+    <h4>Team Pages</h4>
+    <label><input type="checkbox" data-bind="checked: printableRoster" />Show printable Roster Card</label>
+
+    <h4>Message Board</h4>
+    <label><input type="checkbox" data-bind="checked: msgBoardPhoto" />Show photo of poster</label>
+</div>
+
+@section scripts {
+    <script type="text/javascript" src="~/Scripts/knockout-2.3.0.js"></script>
+    <script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
+
+    <script type="text/javascript">
+        var editAccountNameViewModel = function (accountId) {
+            var self = this;
+            self.accountId = accountId;
+
+            self.myInformation = ko.observable();
+            self.myInformation.subscribe(function (newValue) {
+                self.settingChanged('ShowContactInfo', newValue);
+            });
+            self.userEditContact = ko.observable();
+            self.userEditContact.subscribe(function (newValue) {
+                self.settingChanged('EditContactInfo', newValue);
+            });
+            self.showMemberBusiness = ko.observable();
+            self.showMemberBusiness.subscribe(function (newValue) {
+                self.settingChanged('ShowBusinessDirectory', newValue);
+            });
+            self.playerWaiver = ko.observable();
+            self.playerWaiver.subscribe(function (newValue) {
+                self.settingChanged('TrackWaiver', newValue);
+            });
+            self.waiverStatus = ko.observable();
+            self.waiverStatus.subscribe(function (newValue) {
+                self.settingChanged('ShowWaiver', newValue);
+            });
+            self.playerIdentification = ko.observable();
+            self.playerIdentification.subscribe(function (newValue) {
+                self.settingChanged('TrackIdentification', newValue);
+            });
+            self.showIdentification = ko.observable();
+            self.showIdentification.subscribe(function (newValue) {
+                self.settingChanged('ShowIdentification', newValue);
+            });
+            self.printableRoster = ko.observable();
+            self.printableRoster.subscribe(function (newValue) {
+                self.settingChanged('ShowRosterCard', newValue);
+            });
+            self.msgBoardPhoto = ko.observable();
+            self.msgBoardPhoto.subscribe(function (newValue) {
+                self.settingChanged('MsgBoardShowPhoto', newValue);
+            });
+
+            self.settingChanged = function (settingKey, value) {
+                $.ajax({
+                    type: "POST",
+                    url: '/api/AccountAPI/' + self.accountId + '/Settings',
+                    datatype: "json",
+                    data: {
+                        Id: settingKey,
+                        Value: value
+                    },
+                    success: function (data) {
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                    }
+                });
+            }
+
+            self.setSetting = function (settingKey, value) {
+                if (settingKey == "ShowContactInfo") {
+                    self.myInformation(value);
+                }
+                else if (settingKey == "EditContactInfo") {
+                    self.userEditContact(value);
+                }
+                else if (settingKey == "ShowBusinessDirectory") {
+                    self.showMemberBusiness(value);
+                }
+                else if (settingKey == "TrackWaiver") {
+                    self.playerWaiver(value);
+                }
+                else if (settingKey == "ShowWaiver") {
+                    self.waiverStatus(value);
+                }
+                else if (settingKey == "TrackIdentification") {
+                    self.playerIdentification(value);
+                }
+                else if (settingKey == "ShowIdentification") {
+                    self.showIdentification(value);
+                }
+                else if (settingKey == "ShowRosterCard") {
+                    self.printableRoster(value);
+                }
+                else if (settingKey == "MsgBoardShowPhoto") {
+                    self.msgBoardPhoto(value);
+                }
+            }
+
+            $.ajax({
+                url: '/api/AccountAPI/' + self.accountId + '/Settings',
+                dataType: "json",
+                success: function (data) {
+                    $.each(data.KeyValues, function (index, value) {
+                        self.setSetting(index, value == 'true');
+                    });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+
+    </script>
+    <script type="text/javascript">
+        function initViewModel(accountId) {
+            initKOHelpers();
+
+            var vm = new editAccountNameViewModel(accountId);
+            ko.applyBindings(vm);
+        }
+
+        $(document).ready(function () {
+            initViewModel(@Model.AccountId);
+        });
+    </script>
+}

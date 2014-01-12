@@ -1,0 +1,21 @@
+﻿@model SportsManager.Baseball.ViewModels.StandingsViewModel
+
+
+@{
+	ViewBag.Title = Model.AccountName + " Standings";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+<h2>@Model.AccountName @Model.SeasonName Standings</h2>
+
+@using (Html.BeginForm())
+{
+	@Html.DropDownList("id", Model.GetSeasons())
+    <input type="submit" id="showstandingsbtn" value="ShowStandings" name="Show Standings" />
+}
+
+@Html.Partial("_SeasonStandings")
+

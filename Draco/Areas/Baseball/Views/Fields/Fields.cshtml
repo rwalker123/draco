@@ -1,0 +1,308 @@
+﻿@model SportsManager.Baseball.ViewModels.LeagueFieldsViewModel
+
+@{
+	ViewBag.Title = Model.AccountName + " Fields";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+@section head {
+
+
+}
+
+	<h1>@Model.AccountName Fields</h1>
+
+	<div id="searchBox">
+		Enter your location: @Html.TextBox("Location")
+		<input id="search" type="button" onclick="javascript:onFindLocation();" value="Search" />
+		<input id="recenter" type="button" onclick="javascript:onRecenterMap();" value="Recenter" />
+	</div>
+
+<div id="colmask">
+	<div id="colmid">
+		<div id="colright">
+			<div id="col1wrap">
+				<div id="col1pad">
+					<div id="col1">
+						<!-- Column 1 start -->
+						<div id='theMap'></div>
+						<!-- Column 1 end -->
+					</div>
+				</div>
+			</div>
+			<div id="col2">
+				<!-- Column 2 start -->
+				<div id='fieldList'></div>
+
+				<div id='divNewField'>
+					<p><button id='btnNewField' class='ui-button ui-state-default ui-corner-all'>New Field</button></p>
+				</div>
+				<!-- Column 2 end -->
+			</div>
+			<div id="col3">
+				<!-- Column 3 start -->
+				<h3><label id='lblFieldName'></label></h3>
+				
+				<div id='divRainoutNumber'>
+					<p><label>Rainout Number:</label> <label id='lblRainoutNumber'></label></p>
+				</div>
+				
+				<p><label id='lblDirections'></label></p>
+				<p><label id='lblComments'></label></p>
+			   
+				<div id='divContactInfo'>
+					<button id='btnViewContacts' class='ui-button ui-state-default ui-corner-all'>Field Contacts</button>
+				</div>
+				
+				<div id='divEditDelField'>
+					<p>
+					<button id='btnEditField' class='ui-button ui-state-default ui-corner-all'>Edit</button>
+					<button id='btnDeleteField' class='ui-button ui-state-default ui-corner-all'>Delete</button>
+					<button id='btnMapField' class='ui-button ui-state-default ui-corner-all'>Map</button>
+					</p>
+				</div>
+			   
+				<!-- Column 3 end -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div style="clear:both;"></div>
+
+@section Scripts {
+<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/Map.js")" type="text/javascript"></script>
+
+
+<script type="text/javascript">
+
+    var fieldData = new Array();
+    var selectedField = -1;
+
+    function onFindLocation() {
+        var loc = $("#Location")[0].value;
+
+        FindAddressOnMap(loc);
+    }
+
+    function onRecenterMap() {
+        //Make sure all pushpins are visible
+        if (points.length > 1) {
+            map.SetMapView(points);
+        }
+    }
+
+    function clearFieldData() {
+        $('#lblFieldName').text('');
+        $('#divRainoutNumber').hide();
+        $('#lblDirections').text('');
+        $('#lblComments').text('');
+        hideAdminBtns();
+    }
+
+    function onFieldSelected(fieldIndex) {
+        selectedField = fieldIndex;
+
+        if (shapes[fieldIndex]) {
+            map.SetCenterAndZoom(shapes[fieldIndex].GetIconAnchor(), 14);
+            map.ShowInfoBox(shapes[fieldIndex]);
+        }
+        else {
+            //Make sure all pushpins are visible
+            if (points.length > 1) {
+                map.SetMapView(points);
+            }
+        }
+
+        if (fieldData[fieldIndex]) {
+
+            var fd = fieldData[fieldIndex];
+
+            $('#lblFieldName').text(fd.Name);
+
+            if (fd.RainoutNumber.length) {
+                $('#divRainoutNumber').show('fast');
+                $('#lblRainoutNumber').text(fd.RainoutNumber);
+            }
+            else {
+                $('#divRainoutNumber').hide();
+            }
+
+            $('#lblDirections').text(fd.Directions);
+            $('#lblComments').text(fd.Comment);
+        }
+
+        showAdminBtns();
+    }
+
+    function ResizeMap() {
+        var w = $('#col1').width();
+        var h = parseInt($(window).height() - 300);
+
+        map.Resize(w, h);
+    }
+
+    $(window).resize(function () {
+        ResizeMap();
+    });
+
+    $(document).ready(function () {
+        LoadMap();
+
+        map.AttachEvent("onclick", mouseClickHandler);
+
+        ResizeMap();
+
+        hideAdminBtns();
+
+        $('#divRainoutNumber').hide();
+
+        refreshFields();
+    });
+
+    function mouseClickHandler(e) {
+
+        if (e.elementID) {
+            var shape = map.GetShapeByID(e.elementID);
+            for (var i = 0; i < shapes.length; i++) {
+                if (shapes[i] == shape) {
+                    onFieldSelected(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    function refreshFields() {
+        var url = '@Url.Action("Index", "Fields")';
+        $.getJSON(url, loadPins);
+    }
+
+    function hideAdminBtns() {
+        $('#divNewField').hide();
+        $('#divEditDelField').hide();
+        $('#divContactInfo').hide();
+    }
+
+    function showAdminBtns() {
+        $('#divNewField').show('slow');
+        $('#divEditDelField').show('slow');
+        $('#divContactInfo').show('slow');
+    }
+
+    function loadPins(fields) {
+        $("#fieldList").empty();
+        clearMap();
+        clearFieldData();
+        var center = map.GetCenter();
+        selectedField = -1;
+        fieldData = [];
+
+        $.each(fields, function (i, field) {
+            var description = "";
+            if (field.Directions !== undefined) {
+                description = field.Directions;
+            }
+
+            if (field.Latitude != '' && field.Longitude != '') {
+                var LL = new VELatLong(field.Latitude, field.Longitude);
+
+                LoadPin(LL, field.Name, description);
+            }
+            else {
+                shapes.push(null);
+            }
+
+            // save off to display data when selected.
+            fieldData[i] = field;
+
+            //Add a field to the <ul> dinnerList on the right
+            $('#fieldList').append($('<li/>')
+							.attr("class", "fieldItem")
+							.append($('<a/>').attr("href",
+									  "javascript:onFieldSelected(" + i + ")")
+							.html(field.Name)));
+
+        });
+
+        //Make sure all pushpins are visible
+        if (points.length > 1) {
+            map.SetMapView(points);
+        }
+
+    }
+
+
+    $(function () {
+
+        $('#btnEditField').click(function () {
+
+            url = '@Url.Action("Edit", "Fields")';
+
+            $.get(url, { id: fieldData[selectedField].Id });
+        })
+			.hover(function () {
+			    $(this).addClass("ui-state-hover");
+			},
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+			.mousedown(function () {
+			    $(this).addClass("ui-state-active");
+			})
+			.mouseup(function () {
+			    $(this).removeClass("ui-state-active");
+			});
+
+        $('#btnNewField').hover(function () {
+            $(this).addClass("ui-state-hover");
+        },
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+			.mousedown(function () {
+			    $(this).addClass("ui-state-active");
+			})
+			.mouseup(function () {
+			    $(this).removeClass("ui-state-active");
+			});
+
+
+        $('#btnDeleteField').click(function () {
+
+            url = '@Url.Action("Delete", "Fields")';
+
+            $.post(url,
+				{
+				    id: fieldData[selectedField].Id
+				},
+				onDeleteComplete
+				);
+        })
+			.hover(function () {
+			    $(this).addClass("ui-state-hover");
+			},
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+			.mousedown(function () {
+			    $(this).addClass("ui-state-active");
+			})
+			.mouseup(function () {
+			    $(this).removeClass("ui-state-active");
+			});
+
+        function onDeleteComplete(result) {
+            if (result == 'true') {
+                refreshFields();
+            }
+        }
+    });
+
+</script>
+
+}

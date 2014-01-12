@@ -1,0 +1,22 @@
+﻿@model IEnumerable<SportsManager.Golf.ViewModels.FlightViewModel>
+@using MvcContrib.UI.Grid;
+           
+@{
+	ViewBag.Title = "Flights";
+}
+
+<h1>@ViewBag.Title</h1>
+
+<div id="BasicGrid">
+
+@Html.Grid(Model).AutoGenerateColumns().Columns(extraCols => 
+    {
+        extraCols.For(x => Html.ActionLink("edit", "Edit", new { accountId = x.AccountId, seasonId = x.SeasonId, id = x.FlightId }));
+        extraCols.For(x => Html.ActionLink("delete", "Delete", new { accountId = x.AccountId, seasonId = x.SeasonId, id = x.FlightId }));
+    })
+
+</div>
+
+<br />
+@Html.ActionLink("Create Flight", "Create", "Flights", new { accountId = ViewBag.AccountId, id = ViewBag.SeasonId }, null)
+

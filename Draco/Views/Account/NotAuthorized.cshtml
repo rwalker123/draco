@@ -1,0 +1,12 @@
+﻿@model ModelObjects.Account
+
+@{
+    ViewBag.Title = "Not Authorized";
+}
+
+<h1>@ViewBag.Title</h1>
+
+@if (Model != null)
+{
+    @Html.ActionLink("Home Page", "Home", Model.AccountHomeController, new { area = Model.AccountArea, accountId = Model.Id }, null ) 
+}

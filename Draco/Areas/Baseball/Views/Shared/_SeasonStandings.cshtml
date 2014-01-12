@@ -1,0 +1,91 @@
+﻿@model SportsManager.Baseball.ViewModels.StandingsViewModel
+
+<style type="text/css">
+.innertube{
+margin: 10px; /*Margins for inner DIV inside each column (to provide padding)*/
+margin-top: 0;
+}
+
+#contentwrapper{
+float: left;
+width: 100%;
+}
+
+#contentcolumn{
+margin-left: 140px; /*Set left margin to LeftColumnWidth*/
+}
+
+#leftcolumn{
+float: left;
+width: 140px; /*Width of left column*/
+margin-left: -100%;
+margin-top:50px;
+}
+</style>
+
+
+<div id="contentwrapper">
+
+<div id="contentcolumn">
+<div class="innertube">
+
+	@foreach (var league in Model.Leagues) {
+
+		<table>
+		<thead>
+		<tr><th class="ui-widget-header">@league.Name</th></tr>
+		</thead>
+
+		@foreach (var d in Model.GetDivisions(league.Id)) {
+			
+			<tr><td>
+			<table class="ui-widget-content" style="width:100%">
+			<thead>
+			<tr>
+			<th class="ui-state-highlight">@d.Name&nbsp;&nbsp;</th>
+			<th class="ui-state-highlight">&nbsp;W&nbsp;</th>
+			<th class="ui-state-highlight">&nbsp;L&nbsp;</th>
+			<th class="ui-state-highlight">&nbsp;T&nbsp;</th>
+			<th class="ui-state-highlight">&nbsp;Pct&nbsp;</th>
+			<th class="ui-state-highlight">&nbsp;GB&nbsp;</th>			
+			<th class="ui-state-highlight">Div</th>
+			</tr>
+			</thead>
+			<tbody>
+
+			@foreach (var t in Model.GetDivisionStandings(d.Id)) {
+				
+				Model.ProcessTeamStanding(t);
+
+				<tr >
+					<td class="ui-state-default">
+					@Html.ActionLink(@t.TeamName, "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = t.TeamId }, null )
+					&nbsp;&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@t.Wins&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@t.Losses&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@t.Ties&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@t.WinningPct.ToString("F3")&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@Model.GamesBack.ToString("F1")&nbsp;</td>
+					<td class="ui-state-default">&nbsp;@t.DivisionWins-@t.DivisionLosses-@t.DivisionTies&nbsp;</td>
+				</tr>
+
+			}
+
+			</tbody>
+			</table><br />
+			</td></tr>
+		}
+
+		</table>
+	}
+
+</div>
+</div>
+</div>
+
+<div id="leftcolumn">
+	<div class="innertube">
+		@Html.Partial("_GoogleVerticalAd")
+	</div>
+</div>
+

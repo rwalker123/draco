@@ -1,0 +1,26 @@
+﻿@model SportsManager.Golf.ViewModels.TeamViewModel
+
+@{
+    ViewBag.Title = ViewData["Title"];
+}
+
+@section menu {
+}
+
+@section head {
+}
+
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm()) {
+
+    @Html.EditorForModel()            
+    <input type="submit" value="Save" />
+    @Html.ActionLink("Cancel", "Index", "Teams", new { accountId = @Model.AccountId, seasonId = @Model.SeasonId, id = @Model.LeagueSeasonId }, null)
+}
+

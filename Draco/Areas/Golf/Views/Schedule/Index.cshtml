@@ -1,0 +1,58 @@
+﻿@{
+    ViewBag.Title = "Schedule";
+}
+
+<h1>@ViewBag.Title</h1>
+
+<p>Flights:
+@Html.DropDownList("Leagues", null, new Dictionary<string, object> { { "id", "leagues" } })
+</p>
+
+<div id="schedule_grid">
+
+</div>
+
+<a href="javascript:createMatch()">Create Match</a>
+
+
+@section scripts {
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        loadSchedule($("#leagues").val());
+
+        $("#leagues").change(   
+			function () {
+			    loadSchedule(this.value);
+			}
+		);
+
+    });
+
+function loadSchedule(flightSeasonId) {
+
+    $("#schedule_grid").html('');
+
+    var url = '@Url.Action("GetScheduleGrid", "Schedule")' + '/' + @ViewBag.AccountId + '/' + @ViewBag.SeasonId + '/' + flightSeasonId;
+
+    $.ajax({
+        type: "GET",
+        url: url,
+        success: function (msg) {
+            $("#schedule_grid").html(msg);
+        },
+	    error: function (xhr, ajaxOptions, thrownError) {
+	        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". url =" + url);
+	    } 
+    });    
+}
+
+function createMatch() {
+    url = '@Url.Action("Create", "Schedule", new { accountId = ViewBag.AccountId, id = ViewBag.SeasonId })' + '/' + $("#leagues").val();
+    window.location = url;
+}
+
+</script>
+
+}

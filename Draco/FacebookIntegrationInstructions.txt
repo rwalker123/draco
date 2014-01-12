@@ -1,0 +1,33 @@
+﻿0. Install the ASP.net facebook SDK from codeplex. I added the dll's needed for this to source control, so you shouldn't have to do this. 
+	Just check the BIN folder in the solution to make sure you have facebook dlls.
+ 
+1. Added the following line to c:\windows\system32\drivers\etc\hosts file:
+    
+    127.0.0.1        swfacebooklocal.com
+ 
+2. In the facebook application, changed all paths that had localhost to swfacebooklocal.com. I think the most important one is the 
+	Canvas call-back url. My canvas callback url is:
+ 
+http://swfacebooklocal.com:50945/Draco/AccountTypes/Golf/Individual/Forms/Facebook/Facebook.aspx
+ 
+    Facebook.aspx is a new page I just created so if you want to use it, you will have to update from source control.
+ 
+3. Make sure your facebook application is setup for IFrame and FBML. By default it was FBML for me.
+ 
+4. Created a batch file to start the web server on my machine on port 50945:
+    
+    "C:\Program Files\Common Files\microsoft shared\DevServer\9.0\WebDev.WebServer.EXE" /port:50945 /vpath:/Draco /path:C:\Users\walker\source\DracoRedesign\Draco
+ 
+    In my case, I am using port 50945. You would need to change the /path option to match where you store the code on your local machine.
+ 
+5. Run the batch file to get the web server started.
+ 
+At this point you should be able to go to Facebook and run your application, if you synced source code you should see something.
+ 
+ 
+You can also run directly from developer studio which will make it much easier to debug. To run from developer studio, you just need to tell 
+it to use the web server started by the batch file instead of a new web server every time. To do this, right click the web project, for me it 
+is the tree node (C:\...\Draco\) right below the root solution node. Then select Propert Pages.You should see a dialog, on the right there is 
+a selection called Start Options, click that. Next, in the server section select Use Custom Server. For the Base URL enter something like this:
+ 
+http://localhost:50945/Draco - If you don't use port 50945, replace with whatver you used.

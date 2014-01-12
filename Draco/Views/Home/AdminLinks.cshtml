@@ -1,0 +1,31 @@
+﻿      @model SportsManager.ViewModels.RolesViewModel
+
+@if (Model.IsAccountAdmin)
+{ 
+    <nav>
+        <ul id="adminmenu">
+    @if (Model.AccountType.Id == 1)
+    {
+        <li>@Html.ActionLink("Settings", "Settings", "League", new { area = "baseball", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Seasons", "Index", "Season", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("League Setup", "Index", "LeagueSeason", new { area = "baseball", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Umpires", "Index", "Umpire", new { area = "baseball", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Users", "Users", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Email Users", "EMail", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Roles", "UserRoles", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Domains", "Domains", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+    }
+    else if (Model.AccountType.Id == 3)
+    {
+        <li>@Html.ActionLink("League", "LeagueSetup", "League", new { accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Seasons", "Index", "Season", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Flights", "Index", "Flights", new { accountId = Model.AccountId, id = Model.SeasonId }, null)</li>
+        <li>@Html.ActionLink("Teams", "Index", "Teams", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = 0 }, null)</li>
+        <li>@Html.ActionLink("Rosters", "Index", "Rosters", new { accountId = Model.AccountId, seasonId = Model.SeasonId, flightId = 0, id = 0 }, null)</li>
+        <li>@Html.ActionLink("Subs", "SubsIndex", "Rosters", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = 0 }, null)</li>
+        <li>@Html.ActionLink("Courses", "Index", "Courses", new { accountId = Model.AccountId }, null)</li>
+        <li>@Html.ActionLink("Schedule", "Index", "Schedule", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = 0 }, null)</li>
+    }
+        </ul>    
+    </nav>
+}

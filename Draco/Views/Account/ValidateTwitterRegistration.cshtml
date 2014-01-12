@@ -1,0 +1,23 @@
+﻿@{
+    ViewBag.Title = "Validate Twitter Registration";
+}
+
+<h1>@ViewBag.Title</h1>
+
+@if (ViewData["isValidated"] == null)
+{
+    <p>An email has been sent to your account for verification. Please check your email and follow instructions.</p>
+
+    if (!String.IsNullOrWhiteSpace((string)ViewData["EMail"]))
+    { 
+        <p>If you did not receive an email at <b>@ViewData["Email"]</b> or if this isn't the correct email. Click @Html.ActionLink("Here", "RegisterWithTwitter", "Account", new { a = ViewData["VerificationCode"], t = ViewData["TwitterId"] }) to attempt your registration again.</p>
+    }
+}
+else if ((bool)ViewData["isValidated"])
+{ 
+    <p>Your twitter registration is complete. You can now [ @Html.ActionLink("Log On", "TwitterLogOn", "Account") ] using your Twitter account.</p>
+}
+else
+{
+    <p>Unable to validate account, please try to [ @Html.ActionLink("Log On", "TwitterLogOn", "Account") ] using Twitter again to resolve the problem.</p>
+}

@@ -1,0 +1,111 @@
+﻿@model SportsManager.ViewModels.DomainsViewModel
+
+@{
+    ViewBag.Title = @Model.AccountName + " Domains";
+}
+
+@section head
+{
+
+<link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+}
+
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>Domains</h1>
+                <p>Map domains you own to your league website.</p>
+            </hgroup>
+        </div> <!-- content-wrapper -->
+    </section> <!-- featured -->
+}
+
+<h2>Mapped Domains</h2>
+
+<input style="width:400px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" /><input style="margin-left:2px;" type="button" value="Add Domain" onclick="addUrl()"/>
+<hr />
+<div id="urlList">
+@if (Model.AccountUrls.Any())
+{
+    foreach (var mappedUrl in Model.AccountUrls)
+    {
+        <div id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
+            <br /><input type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input type="button" value="Delete" onclick="    deleteUrl('@mappedUrl    ')"/><h3 style="display: inline">@mappedUrl</h3>
+        </div>
+    }
+}
+</div>
+
+<h3 id="noDomainsText" style="display:none">No domains mapped to this account.</h3>
+
+@section scripts
+{
+@Scripts.Render("~/bundles/jsrender")
+
+<script id="mappedUrlTemplate" type="text/x-jsrender">
+<div id='{{:Id}}' class='mappedUrl'>
+    <br /><input type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input type="button" value="Delete" onclick="deleteUrl('{{:Url}}')"/><h3 style="display: inline">{{:Url}}</h3>
+</div>
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        if ($('.mappedUrl').length == 0) {
+            $('#noDomainsText').show();
+        }
+    });
+
+    function addUrl() {
+        var accountUri = $('#urlField').val();
+        $.ajax({
+            type: "POST",
+            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            data: {
+                Uri: accountUri
+            },
+            success: function (accountUrl) {
+                window.location.hash = 'update';
+                $('#noDomainsText').hide();
+                $('#urlField').val('');
+                var id = generateIdFromUrl(accountUrl);
+                $('#urlList').append($('#mappedUrlTemplate').render({ Id: id, Url: accountUrl }));
+
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert(xhr.responseText);
+            }
+        });
+    }
+
+    function editUrl(url) {
+        alert('todo');
+    }
+
+    function deleteUrl(url) {
+        $.ajax({
+            type: "DELETE",
+            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            data: {
+                Uri: url
+            },
+            success: function (accountName) {
+                window.location.hash = 'update';
+                var urlId = generateIdFromUrl(url);
+                $('#' + urlId).remove();
+                if ($('.mappedUrl').length == 0) {
+                    $('#noDomainsText').show();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert(xhr.responseText);
+            }
+        });
+    }
+
+    function generateIdFromUrl(url) {
+        return url.replace('http://', '').replace(/\./g, '');
+    }
+</script>
+}

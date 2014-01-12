@@ -1,0 +1,27 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueScheduleViewModel
+
+@{
+    ViewBag.Title = "Complete Schedule";
+}
+
+<h1>@ViewBag.Title</h1>
+
+<h3>Completed Matches</h3>
+@if (!Model.CompletedMatches.Any())
+{
+    <p>No completed matches found.</p>
+}
+else
+{
+    Html.RenderPartial("_ShowMatches", Model.CompletedMatches);
+}
+
+<h3>Incomplete Matches</h3>
+@if (!Model.UpcomingMatches.Any())
+{
+    <p>No completed matches found.</p>
+}
+else
+{
+    Html.RenderPartial("_ShowMatches", Model.UpcomingMatches);
+}

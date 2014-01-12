@@ -1,0 +1,15 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueStandingsViewModel
+
+@{
+    ViewBag.Title = "League Standings";
+    Layout = "~/Views/Shared/_Layout.Mobile.cshtml";
+}
+
+@if (Model.TeamStandings.Count == 0)
+{
+    <p>No Completed Regular Season Matches Found!</p>    
+}
+else
+{
+    Html.RenderPartial("_LeagueStandingsMobile", Model);
+}

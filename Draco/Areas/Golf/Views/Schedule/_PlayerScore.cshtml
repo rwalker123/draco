@@ -1,0 +1,37 @@
+﻿@model SportsManager.Golf.ViewModels.GolfScoreViewModel
+@{
+    string teeId = "tees_" + Model.PlayerId;
+    string playerId = "player_" + Model.PlayerId;
+    string teamIdPlayerId = ViewBag.TeamId + "_" + Model.PlayerId;
+    string trId = "tr_" + Model.PlayerId;
+    string totalId = "total_" + Model.PlayerId;
+    long subDataTag = 0;
+
+    if (Model.IsSub)
+    { 
+        subDataTag = Model.SubPlayerId;
+    }
+}
+
+<tr id="@trId" class="playerRow" data-initialabsent="@Model.InitialAbsent" data-initialsub="@subDataTag">
+
+    <td class="playerSection">@Model.PlayerName (<a href="javascript:subPlayer('@trId')">sub</a>/<a href="javascript:removeLine('@trId')">absent</a>
+    @if (ViewBag.NumPlayersOnTeam > 2)
+    {
+        <text>/</text><a href="javascript:removeLine('@trId')">exclude</a>
+    }
+    )
+
+    </td>
+    <td><select class="teeSelect" name="@teeId" id="@teeId" data-selectedvalue="@Model.TeeId" data-courseid="@Model.CourseId"></select></td>
+
+    @for (int i = 1; i <= ViewBag.NumberHolesPlayed; i++)
+    {
+        string holeId = "hole_" + i + "_" + Model.PlayerId;
+        <td><input class="holeValues" type="number" id="@holeId" name="@holeId" style="width:35px" value="@Model.HoleScore(i)" maxlength="2" min="1" max="19"/></td>
+    }
+
+    <td><input class="holesTotal" type="text" id="@totalId" name="@totalId" style="width:35px" readonly="readonly"/></td>
+    <td><input type="hidden" value="@teamIdPlayerId" name="@playerId" id="@playerId"/></td>         
+</tr>
+

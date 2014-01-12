@@ -1,0 +1,42 @@
+﻿@model SportsManager.Golf.ViewModels.GolfScoreViewModel
+
+
+    <tr style="background:#EEEEEE;text-align:center">
+        <td style="text-align:left">
+        @Model.PlayerName
+        @if (Model.InitialAbsent)
+        {
+            <text> (absent)</text> 
+        }
+        </td>
+
+        <td>@Model.CourseHandicap</td>
+        <td style="color:@Model.TeePlayed">@Model.TeePlayed</td>
+        @for (int i = 1; i <= ViewBag.NumberHolesPlayed; i++)
+        {
+            // track team totals to display on calling page.
+            ViewBag.TeamHoleScores[i - 1] += Model.HoleScore(i);
+            <td style="color:Maroon">@Model.HoleScore(i)</td>
+        }
+        
+        <td style="color:Maroon;font-weight:bold">@Model.TotalScore</td> 
+    </tr>
+        
+    <tr style="text-align:center">
+        <!-- Net Score -->        
+        <td colspan="3" style="text-align: right">Net:</td>
+
+        @{
+        int totalNetScore = 0;
+        }
+
+        @for (int i = 1; i <= ViewBag.NumberHolesPlayed; i++)
+        {
+            int netScore = Model.NetScore(i);
+            totalNetScore += netScore;
+            ViewBag.TeamHoleNetScores[i - 1] += netScore;
+            <td>@netScore</td>
+        }
+
+        <td>@totalNetScore</td>
+    </tr>

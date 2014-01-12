@@ -1,0 +1,469 @@
+﻿@model SportsManager.Baseball.ViewModels.LeagueFieldsViewModel
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<h1>Edit</h1>
+
+<div id="searchBox">
+    Enter your location: @Html.TextBox("Location")
+    <input id="search" type="button" onclick="javascript:onFindLocation();" value="Search" />
+    <input id="recenter" type="button" onclick="javascript:onRecenterMap();" value="Recenter" />
+</div>
+
+<div id="colmask">
+	<div id="colmid">
+		<div id="colright">
+			<div id="col1wrap">
+				<div id="col1pad">
+					<div id="col1">
+						<!-- Column 1 start -->
+                        <div id='theMap'></div>
+						<!-- Column 1 end -->
+					</div>
+				</div>
+			</div>
+			<div id="col2">
+				<!-- Column 2 start -->
+                <div id='fieldList'></div>
+
+				<div id='divNewField'>
+                    <p><button id='btnNewField' class='ui-button ui-state-default ui-corner-all'>New Field</button></p>
+                </div>
+				<!-- Column 2 end -->
+			</div>
+			<div id="col3">
+			    <!-- Column 3 start -->
+				<h3><label id='lblFieldName'></label></h3>
+				
+				<div id='divRainoutNumber'>
+                    <p><label>Rainout Number:</label> <label id='lblRainoutNumber'></label></p>
+                </div>
+                
+                <p><label id='lblDirections'></label></p>
+                <p><label id='lblComments'></label></p>
+               
+                <div id='divContactInfo'>
+                    <button id='btnViewContacts' class='ui-button ui-state-default ui-corner-all'>Field Contacts</button>
+                </div>
+                
+                <div id='divEditDelField'>
+                    <p>
+                    <button id='btnEditField' class='ui-button ui-state-default ui-corner-all'>Edit</button>
+                    <button id='btnDeleteField' class='ui-button ui-state-default ui-corner-all'>Delete</button>
+                    <button id='btnMapField' class='ui-button ui-state-default ui-corner-all'>Map</button>
+                    </p>
+                </div>
+               
+				<!-- Column 3 end -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<div style="clear:both;"></div>
+
+<div id="dialog" title="Field Editor">
+    <p id="validateTips"></p>
+	<form>
+	<fieldset>
+	    <input type='hidden' id='id' name='id' />
+	    <table>
+		    <tr>
+		        <td><label for="name">Name</label></td>
+		        <td><label for="shortname">Short Name</label></td>
+	        </tr>
+	        <tr>
+	            <td><input type="text" maxlength="25" style="width:200px" name="name" id="name" class="text ui-widget-content ui-corner-all" /></td>
+	            <td><input type="text" maxlength="5" style="width:75px" name="shortname" id="shortname" class="text ui-widget-content ui-corner-all" /></td>
+	        </tr>
+		</table>
+		
+		<label for="address">Address</label><br />
+		<input type="text" style="width:305px" maxlength="255" name="address" id="address" value="" class="text ui-widget-content ui-corner-all" /><br />
+		
+		<label for="city">City, State Zip</label><br />
+		<input type="text" style="width:165px" maxlength="25" name="city" id="city" value="" class="text ui-widget-content ui-corner-all" />,
+		<input type="text" style="width:25px"  maxlength="25" name="state" id="state" value="" class="text ui-widget-content ui-corner-all" />
+		<input type="text" style="width:75px"  maxlength="10" name="zipcode" id="zipcode" value="" class="text ui-widget-content ui-corner-all" />
+        <br />
+        		
+		<label for="rainoutno">Rainout Number</label><br />
+		<input type="text" style="width:165px" name="rainoutno" id="rainoutno" value="" class="text ui-widget-content ui-corner-all" /><br />
+		
+		<label for="directions">Directions</label><br />
+		<textarea rows="4" cols="50" style="width:305px" name="directions" id="directions" class="text ui-widget-content ui-corner-all"></textarea><br />
+		
+		<label for="comments">Comments</label><br />
+		<textarea rows="4" cols="51" style="width:305px" name="comments" id="comments" class="text ui-widget-content ui-corner-all"></textarea>
+	</fieldset>
+	</form>
+</div>
+
+@section Scripts {
+
+<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/Map.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.maskedinput-1.2.2.min.js")" type="text/javascript"></script>    
+
+<script type="text/javascript">
+
+    var fieldData = new Array();
+    var selectedField = -1;
+
+    function onFindLocation() {
+        var loc = $("#Location")[0].value;
+
+        FindAddressOnMap(loc);
+    }
+
+    function onRecenterMap() {
+        //Make sure all pushpins are visible
+        if (points.length > 1) {
+            map.SetMapView(points);
+        }
+    }
+
+    function clearFieldData() {
+        $('#lblFieldName').text('');
+        $('#divRainoutNumber').hide();
+        $('#lblDirections').text('');
+        $('#lblComments').text('');
+        hideAdminBtns();
+    }
+
+    function onFieldSelected(fieldIndex) {
+        selectedField = fieldIndex;
+
+        if (shapes[fieldIndex]) {
+            map.SetCenterAndZoom(shapes[fieldIndex].GetIconAnchor(), 14);
+            map.ShowInfoBox(shapes[fieldIndex]);
+        }
+        else {
+            //Make sure all pushpins are visible
+            if (points.length > 1) {
+                map.SetMapView(points);
+            }
+        }
+
+        if (fieldData[fieldIndex]) {
+
+            var fd = fieldData[fieldIndex];
+
+            $('#lblFieldName').text(fd.Name);
+
+            if (fd.RainoutNumber.length) {
+                $('#divRainoutNumber').show('fast');
+                $('#lblRainoutNumber').text(fd.RainoutNumber);
+            }
+            else {
+                $('#divRainoutNumber').hide();
+            }
+
+            $('#lblDirections').text(fd.Directions);
+            $('#lblComments').text(fd.Comment);
+        }
+
+        showAdminBtns();
+    }
+
+    function ResizeMap() {
+        var w = $('#col1').width();
+        var h = parseInt($(window).height() - 300);
+
+        map.Resize(w, h);
+    }
+
+
+    $(window).resize(function () {
+        ResizeMap();
+    });
+
+    $(document).ready(function () {
+        LoadMap();
+
+        map.AttachEvent("onclick", mouseClickHandler);
+
+        ResizeMap();
+
+        hideAdminBtns();
+
+        $('#divRainoutNumber').hide();
+
+        refreshFields();
+    });
+
+    function mouseClickHandler(e) {
+
+        if (e.elementID) {
+            var shape = map.GetShapeByID(e.elementID);
+            for (var i = 0; i < shapes.length; i++) {
+                if (shapes[i] == shape) {
+                    onFieldSelected(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    function refreshFields() {
+        var url = '@Url.Action("Index", "Fields")';
+        $.getJSON(url, loadPins);
+    }
+
+    function hideAdminBtns() {
+        $('#divNewField').hide();
+        $('#divEditDelField').hide();
+        $('#divContactInfo').hide();
+    }
+
+    function showAdminBtns() {
+        $('#divNewField').show('slow');
+        $('#divEditDelField').show('slow');
+        $('#divContactInfo').show('slow');
+    }
+
+    function loadPins(fields) {
+        $("#fieldList").empty();
+        clearMap();
+        clearFieldData();
+        var center = map.GetCenter();
+        selectedField = -1;
+        fieldData = [];
+
+        $.each(fields, function (i, field) {
+            var description = "";
+            if (field.Directions !== undefined) {
+                description = field.Directions;
+            }
+
+            if (field.Latitude != '' && field.Longitude != '') {
+                var LL = new VELatLong(field.Latitude, field.Longitude);
+
+                LoadPin(LL, field.Name, description);
+            }
+            else {
+                shapes.push(null);
+            }
+
+            // save off to display data when selected.
+            fieldData[i] = field;
+
+            //Add a dinner to the <ul> dinnerList on the right
+            $('#fieldList').append($('<li/>')
+                            .attr("class", "fieldItem")
+                            .append($('<a/>').attr("href",
+                                      "javascript:onFieldSelected(" + i + ")")
+                            .html(field.Name)));
+
+        });
+
+        //Make sure all pushpins are visible
+        if (points.length > 1) {
+            map.SetMapView(points);
+        }
+
+    }
+    
+	$(function () {
+
+	    var id = $("#id"),
+	    name = $("#name"),
+		shortname = $("#shortname"),
+		address = $("#address"),
+		city = $("#city"),
+		state = $("#state"),
+		zip = $("#zipcode"),
+		rainoutno = $("#rainoutno"),
+		comments = $("#comments"),
+		directions = $("#directions"),
+	    allFields = $([]).add(name).add(shortname).add(address).add(city).add(state).add(zip).add(rainoutno).add(comments).add(directions),
+		tips = $("#validateTips");
+
+	    rainoutno.mask("(999) 999-9999? x9999");
+	    zip.mask("99999?-9999");
+
+
+	    function updateTips(t) {
+	        tips.text(t).effect("highlight", {}, 1500);
+	    }
+
+	    function checkLength(o, n, min, max) {
+
+	        if (o.val().length > max || o.val().length < min) {
+	            o.addClass('ui-state-error');
+	            updateTips("Length of " + n + " must be between " + min + " and " + max + ".");
+	            return false;
+	        } else {
+	            return true;
+	        }
+
+	    }
+
+	    function checkRegexp(o, regexp, n) {
+
+	        if (!(regexp.test(o.val()))) {
+	            o.addClass('ui-state-error');
+	            updateTips(n);
+	            return false;
+	        } else {
+	            return true;
+	        }
+
+	    }
+
+	    $("#dialog").dialog({
+	        bgiframe: true,
+	        autoOpen: false,
+	        height: 600,
+	        width: 370,
+	        modal: true,
+	        buttons: {
+	            'Save': function () {
+	                var bValid = true;
+	                allFields.removeClass('ui-state-error');
+
+	                bValid = bValid && checkLength(name, "Field Name", 1, 25);
+	                bValid = bValid && checkLength(shortname, "Short Name", 1, 5);
+
+	                if (bValid) {
+	                    var url;
+
+	                    if (id.val() == 0)
+	                        url = '@Url.Action("Create", "Fields")';
+	                    else
+	                        url = '@Url.Action("Edit", "Fields")';
+
+	                    $.post(url,
+	                    {
+	                        Id: id.val(),
+	                        AccountId: 0, // current account will be used.
+	                        Name: name.val(),
+	                        ShortName: shortname.val(),
+	                        Address: address.val(),
+	                        City: city.val(),
+	                        State: state.val(),
+	                        ZipCode: zip.val(),
+	                        RainoutNumber: rainoutno.val(),
+	                        Directions: directions.val(),
+	                        Comment: comments.val(),
+	                        Latitude: (id.val() != 0) ? fieldData[selectedField].Latitude : '',
+	                        Longitude: (id.val() != 0) ? fieldData[selectedField].Longitude : ''
+	                    },
+	                    submitFormCallback
+	                    );
+	                }
+
+	            },
+	            Cancel: function () {
+	                $(this).dialog('close');
+	            }
+	        },
+	        close: function () {
+	            allFields.val('').removeClass('ui-state-error');
+	        }
+	    });
+
+	    $('#btnEditField').click(function () {
+	        var f = fieldData[selectedField];
+	        $('#id').val(f.Id);
+	        $('#name').val(f.Name);
+	        $('#shortname').val(f.ShortName);
+	        $('#address').val(f.Address);
+	        $('#city').val(f.City);
+	        $('#state').val(f.State);
+	        $('#zipcode').val(f.ZipCode);
+	        $('#rainoutno').val(f.RainoutNumber);
+	        $('#directions').val(f.Directions);
+	        $('#comments').val(f.Comment);
+
+	        $('#dialog').dialog('open');
+	    })
+		    .hover(function () {
+		        $(this).addClass("ui-state-hover");
+		    },
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+    		.mousedown(function () {
+    		    $(this).addClass("ui-state-active");
+    		})
+		    .mouseup(function () {
+		        $(this).removeClass("ui-state-active");
+		    });
+
+	    $('#btnNewField').click(function () {
+	        $('#id').val(0);
+
+	        $('#dialog').dialog('open');
+	    })
+		    .hover(function () {
+		        $(this).addClass("ui-state-hover");
+		    },
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+    		.mousedown(function () {
+    		    $(this).addClass("ui-state-active");
+    		})
+		    .mouseup(function () {
+		        $(this).removeClass("ui-state-active");
+		    });
+
+
+	    $('#btnDeleteField').click(function () {
+
+	        url = '@Url.Action("Delete", "Fields")';
+
+	        $.post(url,
+                {
+                    id: fieldData[selectedField].Id
+                },
+                onDeleteComplete
+                );
+	    })
+		    .hover(function () {
+		        $(this).addClass("ui-state-hover");
+		    },
+			function () {
+			    $(this).removeClass("ui-state-hover");
+			})
+    		.mousedown(function () {
+    		    $(this).addClass("ui-state-active");
+    		})
+		    .mouseup(function () {
+		        $(this).removeClass("ui-state-active");
+		    });
+
+
+	    function onDeleteComplete(result) {
+	        if (result == 'true') {
+	            refreshFields();
+	        }
+	    }
+
+	    function submitFormCallback(result) {
+	        var obj = parseJSONResponse(result);
+
+	        if (obj.status) {
+	            $('#dialog').dialog('close');
+
+	            refreshFields();
+	        }
+	        else {
+	            updateTips(obj.errorText);
+	        }
+	    }
+	});
+
+	function parseJSONResponse(data) {
+	    if (typeof (JSON) !== 'undefined' && typeof (JSON.parse) === 'function')
+	        return JSON.parse(data);
+	    else
+	        return eval('(' + data + ')');
+	}
+	    
+</script>
+
+}

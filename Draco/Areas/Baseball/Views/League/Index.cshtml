@@ -1,0 +1,20 @@
+﻿ @model SportsManager.Baseball.ViewModels.LeagueIndexViewModel
+
+@{
+    ViewBag.Title = "Baseball League";
+}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p>Select a league.</p>
+</div>
+
+@using (Html.BeginForm()) 
+{
+	@Html.DropDownList("accountId", Model.GetBaseballLeagues())
+	<input type="submit" value="Goto Account" name="Goto Account" />
+	 
+	<p>Note: to create an account you must log in.</p>
+	<p>@Html.ActionLink("Create Account", "CreateAccount", "League", new { area = "baseball" }, null)</p>
+}
+
+

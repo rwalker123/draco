@@ -1,0 +1,36 @@
+﻿@model SportsManager.Golf.ViewModels.TeamViewModel
+@using MvcContrib.UI.Grid;
+
+@{
+    ViewBag.Title = @Model.Name;
+}
+
+<h1>@ViewBag.Title</h1>
+
+@Html.Grid(Model.TeamMembers).Columns(column => 
+    {
+        column.For(x => Html.ActionLink(x.FullName, "Index", "Player", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], id = x.Id }, null )).Attributes(style => "text-align:left");
+        column.For(x => x.HandicapIndex).Attributes(style => "text-align:center");
+    })
+
+<h4>Upcoming Matches</h4>
+
+@if (!Model.UpcomingMatches.Any())
+{ 
+    <p>No Upcoming matches found.</p>
+}
+else
+{
+    Html.RenderPartial("_ShowMatches", Model.UpcomingMatches); 
+}
+
+<h4>Completed Matches</h4>
+
+@if (!Model.CompletedMatches.Any())
+{ 
+    <p>No completed matches found.</p>
+}
+else
+{
+    Html.RenderPartial("_ShowMatches", Model.CompletedMatches); 
+}

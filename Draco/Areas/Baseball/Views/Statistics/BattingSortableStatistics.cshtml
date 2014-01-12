@@ -1,0 +1,76 @@
+﻿@model dynamic
+
+@{
+	ViewBag.Title = "Batting Sortable Statistics";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+@section head {
+	<link href="@Url.Content("~/Content/jquery/ui.jqgrid.css")" rel="stylesheet" type="text/css" media="screen" />
+
+}
+
+<h2>@Model.SeasonName @Model.LeagueName Batting Statistics</h2>
+
+<table style="width:100%" id="list"></table>
+<div id="pager"></div>
+
+
+@section Scripts {
+
+<script src="@Url.Content("~/Scripts/jquery.jqGrid/grid.locale-en.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.jqGrid/jquery.jqGrid.min.js")" type="text/javascript"></script>
+
+<script type="text/javascript">
+	$(document).ready(function () {
+		$("#list").jqGrid({
+			url: '@Url.Action("BattingStatisticsGridData", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.LeagueId }, null )',
+			datatype: 'json',
+			mtype: 'GET',
+			colNames: ['Player Name', 'AB', 'H', 'R', '2B', '3B', 'HR', 'RBI', 'SO', 'BB', 'HB', 'SB', 'CS', 'SF', 'SH', 'TB', 'PA', 'OBP', 'SLG', 'OPS', 'AVG'],
+			colModel: [
+			  { name: 'Player Name', index: 'PlayerName', width: 120, formatter: 'showlink', formatoptions: { baseLinkUrl: 'javascript:', showAction: "displayPlayer('", addParam: "');" }, sortable: false },
+			  { name: 'AB', index: 'AB', width: 30 },
+			  { name: 'H', index: 'H', width: 30 },
+			  { name: 'R', index: 'R', width: 30 },
+			  { name: '2B', index: 'D', width: 30 },
+			  { name: '3B', index: 'T', width: 30 },
+			  { name: 'HR', index: 'HR', width: 30 },
+			  { name: 'RBI', index: 'RBI', width: 30 },
+			  { name: 'SO', index: 'SO', width: 30 },
+			  { name: 'BB', index: 'BB', width: 30 },
+			  { name: 'HB', index: 'HBP', width: 30 },
+			  { name: 'SB', index: 'SB', width: 30 },
+			  { name: 'CS', index: 'CS', width: 30 },
+			  { name: 'SF', index: 'SF', width: 30 },
+			  { name: 'SH', index: 'SH', width: 30 },
+			  { name: 'TB', index: 'TB', width: 35 },
+			  { name: 'PA', index: 'PA', width: 35 },
+			  { name: 'OBP', index: 'OBA', width: 35, formatter: threeDecimalFormatter },
+			  { name: 'SLG', index: 'SLG', width: 35, formatter: threeDecimalFormatter },
+			  { name: 'OPS', index: 'OPS', width: 35, formatter: threeDecimalFormatter },
+			  { name: 'AVG', index: 'AVG', width: 35, formatter: threeDecimalFormatter },
+			],
+			pager: '#pager',
+			rowNum: 25,
+			rowList: [25, 50, 75, 100],
+			sortname: 'AVG',
+			sortorder: 'desc',
+			viewrecords: true,
+			height: "100%",
+			headertitles: true,
+			beforeSelectRow: function (rowid, e) {
+				return false; // this prevents the entire grid from being selected when clicking on a row.
+			}
+		});
+	}); 
+
+</script>
+
+@Html.Partial("_DisplayPlayer")
+
+}
+

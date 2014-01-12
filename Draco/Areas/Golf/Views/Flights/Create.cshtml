@@ -1,0 +1,26 @@
+﻿@model SportsManager.Golf.ViewModels.FlightViewModel
+
+@{
+	ViewBag.Title = ViewData["Title"];
+}
+
+@section menu {
+}
+
+@section head {
+}
+
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm()) {
+
+    @Html.EditorForModel()            
+    <input type="submit" value="Save" />
+    @Html.ActionLink("Cancel", "Index", "Flights", new { accountId = @Model.AccountId, id = @Model.SeasonId }, null)
+}
+

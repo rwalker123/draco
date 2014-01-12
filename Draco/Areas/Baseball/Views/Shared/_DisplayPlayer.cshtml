@@ -1,0 +1,164 @@
+﻿@model dynamic
+
+<script type="text/javascript" >
+
+	function threeDecimalFormatter(cellvalue, options, rowObject) {
+		return cellvalue.toFixed(3);
+	}
+
+	function twoDecimalFormatter(cellvalue, options, rowObject) {
+		return cellvalue.toFixed(2);
+	}
+
+	function oneDecimalFormatter(cellvalue, options, rowObject) {
+		return cellvalue.toFixed(1);
+	}
+
+
+	$(function () {
+		$("#showPlayerDialog").dialog({
+			autoOpen: false,
+			width: 725,
+			height: 400
+		});
+	});
+
+	function displayPlayer(param) {
+		// param will be in the form '?id=rowId'. We need to get rowId
+		var ar = param.split('=');
+		if (ar.length === 2 && ar[0] === '?id') {
+			var playerId = ar[1];
+
+			displayPlayerFromId(playerId);
+		}
+	}
+
+	function displayPlayerFromId(playerId) {
+		var url = '@Url.Action("GetPlayerName", "Baseball")' + '/@Model.AccountId/@Model.SeasonId/' + playerId;
+		$.getJSON(url, function (data) {
+			var title;
+			if (data.playerImage)
+				title = "<img alt='" + data.playerName + "' src='" + data.playerImage + "'/> " + data.playerName;
+			else
+				title = data.playerName;
+
+			$("#showPlayerDialog").dialog("option", "title", title);
+		});
+
+		$("#playerBatStatsGrid").jqGrid({
+			url: '@Url.Action("PlayerBatStatisticsGridData", "Statistics")' + '/@Model.AccountId/@Model.SeasonId/' + playerId,
+			datatype: 'json',
+			mtype: 'GET',
+			colNames: ['Season', 'League', 'Team', 'AB', 'H', 'R', '2B', '3B', 'HR', 'RBI', 'SO', 'BB', 'HB', 'SB', 'SF', 'SH', 'TB', 'PA', 'OBP', 'SLG', 'OPS', 'AVG'],
+			colModel: [
+			{ name: 'Season', width: 50, sortable: false },
+			{ name: 'League', width: 50, sortable: false },
+			{ name: 'Team', width: 70, sortable: false },
+			{ name: 'AB', width: 25, sortable: false },
+			{ name: 'H', width: 25, sortable: false },
+			{ name: 'R', width: 25, sortable: false },
+			{ name: '_2B', width: 25, sortable: false },
+			{ name: '_3B', width: 25, sortable: false },
+			{ name: 'HR', width: 25, sortable: false },
+			{ name: 'RBI', width: 25, sortable: false },
+			{ name: 'SO', width: 25, sortable: false },
+			{ name: 'BB', width: 25, sortable: false },
+			{ name: 'HB', width: 25, sortable: false },
+			{ name: 'SB', width: 25, sortable: false },
+			{ name: 'SF', width: 25, sortable: false },
+			{ name: 'SH', width: 25, sortable: false },
+			{ name: 'TB', width: 30, sortable: false },
+			{ name: 'PA', width: 30, sortable: false },
+			{ name: 'OBP', width: 35, formatter: threeDecimalFormatter, sortable: false },
+			{ name: 'SLG', width: 35, formatter: threeDecimalFormatter, sortable: false },
+			{ name: 'OPS', width: 35, formatter: threeDecimalFormatter, sortable: false },
+			{ name: 'AVG', width: 35, formatter: threeDecimalFormatter, sortable: false },
+		],
+			rowNum: -1,
+			viewrecords: true,
+			caption: 'Batting Statistics',
+			height: "100%",
+			headertitles: true,
+			loadonce: false,
+			footerrow: true,
+			userDataOnFooter: true,
+			gridComplete: function () {
+				var recs = parseInt($("#playerBatStatsGrid").getGridParam("records"), 10);
+				if (recs == 0) {
+					$("#battingGridWrapper").hide();
+				}
+				else {
+					$('#battingGridWrapper').show();
+				}
+			},
+			beforeSelectRow: function (rowid, e) {
+				return false;
+			}
+		});
+
+		$("#playerPitchStatsGrid").jqGrid({
+			url: '@Url.Action("PlayerPitchStatisticsGridData", "Statistics")' + '/@Model.AccountId/@Model.SeasonId/' + playerId,
+			datatype: 'json',
+			mtype: 'GET',
+			colNames: ['Season', 'League', 'Team', 'W', 'L', 'S', 'IP', 'BF', 'H', 'R', 'ER', 'SO', 'BB', 'K/9', 'BB/9', 'OBA', 'SLG', 'WHIP', 'ERA'],
+			colModel: [
+			{ name: 'Season', width: 50, sortable: false },
+			{ name: 'League', width: 50, sortable: false },
+			{ name: 'Team', width: 70, sortable: false },
+			{ name: 'W', width: 30, sortable: false },
+			{ name: 'L', width: 30, sortable: false },
+			{ name: 'S', width: 30, sortable: false },
+			{ name: 'IP', width: 35, sortable: false },
+			{ name: 'BF', width: 35, sortable: false },
+			{ name: 'H', width: 30, sortable: false },
+			{ name: 'R', width: 30, sortable: false },
+			{ name: 'ER', width: 30, sortable: false },
+			{ name: 'SO', width: 30, sortable: false },
+			{ name: 'BB', width: 25, sortable: false },
+			{ name: 'K9', width: 35, formatter: oneDecimalFormatter, sortable: false },
+			{ name: 'BB9', width: 35, formatter: oneDecimalFormatter, sortable: false },
+			{ name: 'OBA', width: 35, formatter: threeDecimalFormatter, sortable: false },
+			{ name: 'SLG', width: 35, formatter: threeDecimalFormatter, sortable: false },
+			{ name: 'WHIP', width: 35, formatter: twoDecimalFormatter, sortable: false },
+			{ name: 'ERA', width: 40, formatter: twoDecimalFormatter, sortable: false }
+		],
+			rowNum: -1,
+			viewrecords: true,
+			caption: 'Pitching Statistics',
+			height: "100%",
+			headertitles: true,
+			loadonce: false,
+			footerrow: true,
+			userDataOnFooter: true,
+			gridComplete: function() {
+				var recs = parseInt($("#playerPitchStatsGrid").getGridParam("records"), 10);
+				if (recs == 0) {
+					$("#pitchingGridWrapper").hide();
+				}
+				else {
+					$('#pitchingGridWrapper').show();
+				}
+			},
+			beforeSelectRow: function (rowid, e) {
+				return false;
+			}
+		});
+
+		$("#playerBatStatsGrid").setGridParam({ url: '@Url.Action("PlayerBatStatisticsGridData", "Statistics")' + '/@Model.AccountId/@Model.SeasonId/' + playerId });
+		$("#playerBatStatsGrid").trigger("reloadGrid");
+
+		$("#playerPitchStatsGrid").setGridParam({ url: '@Url.Action("PlayerPitchStatisticsGridData", "Statistics")' + '/@Model.AccountId/@Model.SeasonId/' + playerId });
+		$("#playerPitchStatsGrid").trigger("reloadGrid");
+
+		$('#showPlayerDialog').dialog('open');
+	}
+</script>
+
+<div id="showPlayerDialog" title="">
+<div id="battingGridWrapper">
+	<table id="playerBatStatsGrid"></table>
+</div>
+<div id="pitchingGridWrapper">
+	<table id="playerPitchStatsGrid"></table>
+</div>
+</div>

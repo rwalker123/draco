@@ -1,0 +1,19 @@
+﻿@model SportsManager.ViewModels.LeagueCreateAccountViewModel
+
+@{
+	ViewBag.Title = "Create Golf League";
+}
+
+@section menu {
+}
+
+@section head {
+}
+
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    ViewBag.Area = "golf";
+    Html.RenderPartial("_CreateAccount");
+}

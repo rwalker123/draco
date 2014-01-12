@@ -1,0 +1,7 @@
+﻿@model SportsManager.Baseball.ViewModels.ScoreboardViewModel
+
+@if (!Model.HasGames && !Model.IsAdmin) {
+    return;
+}
+
+<h1>Scoreboard</h1>

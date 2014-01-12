@@ -1,0 +1,58 @@
+﻿@model SportsManager.Baseball.ViewModels.LeagueTeamsViewModel
+
+@using GMS.Web.Mvc.Html;
+
+@{
+	ViewBag.Title = "Index";
+}
+
+@section menu {
+		@Html.Partial("_LeagueMenu")
+}
+
+<br />
+
+<div>
+
+	@Html.Partial("_GoogleHorizontalAd")
+
+</div>
+
+	<h1>@Model.GetAccountName() Teams</h1>
+
+	@foreach (var league in Model.Leagues) {
+
+		<table>
+		<tr><th colspan="@Model.LoadDivisions(league.Id)">@league.Name</th></tr>
+		<tr>
+
+		@foreach (var division in Model.Divisions) {
+			<td valign="top">
+			<table>
+			<tr><th colspan="2" align="center">@division.Name</th></tr>
+			
+			@foreach (var team in Model.GetDivisionTeams(division.Id)) {
+
+				<tr><td rowspan="2">
+
+				@if (!String.IsNullOrEmpty(team.TeamLogoURL)) {
+					@Html.ActionImage(Url.Content(team.TeamLogoURL), "Team Logo", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+				}
+
+				</td>
+				<td valign="bottom">@team.Name</td></tr>
+				<tr><td valign="top">
+					@Html.ActionLink("Home Page", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null )
+					@Html.ActionLink("Statistics", "Statistics", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+					@Html.ActionLink("Schedule", "Schedule", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+				</td></tr>
+
+			}
+
+			</table>
+			</td>
+		}
+
+		</tr>
+		</table>
+	}

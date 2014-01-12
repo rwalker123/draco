@@ -1,0 +1,80 @@
+﻿@model SportsManager.Golf.ViewModels.GolfTeeViewModel
+
+@{
+    ViewBag.Title = ViewData["Title"];
+}
+
+@section menu {
+}
+
+@section head {
+}
+
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm()) {
+
+     <div>
+        <fieldset>
+            <legend>Tee Information</legend>
+
+            <div class="editor-label">
+               @Html.LabelFor(c => c.TeeColor)
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.TeeColor)
+                @Html.ValidationMessageFor(c => c.TeeColor)
+            </div>
+
+            <div class="editor-label">
+               @Html.LabelFor(c => c.MensRating)
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.MensRating)
+                @Html.ValidationMessageFor(c => c.MensRating)
+            </div>
+
+            <div class="editor-label">
+               @Html.LabelFor(c => c.MensSlope)
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.MensSlope)
+                @Html.ValidationMessageFor(c => c.MensSlope)
+            </div>
+
+            <div class="editor-label">
+               @Html.LabelFor(c => c.WomensRating)
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.WomensRating)
+                @Html.ValidationMessageFor(c => c.WomensRating)
+            </div>
+
+            <div class="editor-label">
+               @Html.LabelFor(c => c.WomensSlope)
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.WomensSlope)
+                @Html.ValidationMessageFor(c => c.WomensSlope)
+            </div>
+
+            <div class="editor-label">
+                @Html.LabelFor(c => c.HoleDistances)                
+            </div>
+            <div class="editor-field">
+                @Html.EditorFor(c => c.HoleDistances)
+                @Html.ValidationMessageFor(c => c.HoleDistances)
+            </div>
+
+            <p>
+                <input type="submit" value="Save" />
+                @Html.ActionLink("Cancel", "Index", "Courses", new { accountId = ViewBag.AccountId }, null)
+            </p>
+        </fieldset>
+    </div>
+}

@@ -1,0 +1,23 @@
+﻿@model SportsManager.Golf.ViewModels.PreviewMatchPlayerViewModel
+@{
+    string teeId = "tees_" + Model.PlayerId;
+    string playerId = "player_" + Model.PlayerId;
+    string teamIdPlayerId = ViewBag.TeamId + "_" + Model.PlayerId;
+    string trId = "tr_" + Model.PlayerId;
+}
+
+<tr id="@trId" class="playerRow">
+
+    <td class="playerSection">@Model.FullName</td>
+
+    <td style="text-align:center">@Model.CourseHandicap</td>
+    @for (int i = 1; i <= ViewBag.NumberHolesPlayed; i++)
+    {
+        string holeId = "hole_" + i + "_" + Model.PlayerId;
+        <td><div class="holeAdjustment" id="@holeId" style="width:35px;text-align:center">@Model.HoleHandicap(i)</div></td>
+    }
+
+    <td><input type="hidden" value="@teamIdPlayerId" name="@playerId" id="@playerId"/></td>         
+</tr>
+
+

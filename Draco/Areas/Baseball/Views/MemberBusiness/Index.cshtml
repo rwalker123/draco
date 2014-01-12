@@ -1,0 +1,98 @@
+﻿@model SportsManager.Baseball.ViewModels.MemberBusinessViewModel
+
+
+@{
+	ViewBag.Title = Model.AccountName + " Businesses";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+@section head {
+
+ <style type="text/css"> 
+ 
+ 	table.sc {
+		width:300px; 
+		height:150px;
+		margin-top:1px;
+		margin-bottom:1px;
+		margin-left:1px;
+		margin-right:1px;
+		padding:0px;
+		text-align:center;
+		display:inline-table;
+		border-collapse:collapse;
+		vertical-align:top;
+	}
+	td.sc{
+		width:100%;
+		text-align:left;
+		vertical-align:top;
+	}
+	
+    .readyTest  
+    {
+        margin: 0.1in 0.1in;
+        padding: 5px;
+        text-align: left;
+        border:3px solid Gray;
+        background: #000 url(../../../images/buscardfiberwhite.gif) repeat top left;
+    }
+
+  ul { margin-left:20px; color:blue; }
+  li { cursor:default; }
+  span { color:red; }
+</style>
+
+}
+
+	<h1>@Model.AccountName Member Business</h1>
+
+    @foreach (ModelObjects.Sponsor s in Model.MemberBusinesses)
+    { 
+        <table class="sc readyTest"><tr><td class="sc" style="height:100%">
+            @if (!String.IsNullOrWhiteSpace(DataAccess.Contacts.GetContact(s.ContactId).PhotoURL)) { 
+                <img tooltip="@s.Description" style="float:left;vertical-align:bottom;padding:0px 3px 3px 3px"  alt=""  width="50" src="@Url.Content(DataAccess.Contacts.GetContact(s.ContactId).PhotoURL)" />
+            }
+            else {
+                <img tooltip="@s.Description" style="float:left;vertical-align:bottom;padding:0px 3px 3px 3px"  alt=""  width="50" src="@Url.Content("~/Images/moreinfo.jpg")" />
+            }
+            <div style="font-weight:bold">@s.Name</div>
+            <div>@DataAccess.Contacts.GetContact(s.ContactId).FullNameFirst</div>
+            @if (!String.IsNullOrWhiteSpace(s.StreetAddress)) { 
+                <div style="text-align:center;padding-top:12px">@s.StreetAddress</div>
+            }
+            @if (!String.IsNullOrWhiteSpace(s.CityStateZip)) { 
+                <div style="text-align:center">@s.CityStateZip</div>
+            }
+            <div style="clear:both;"/>
+            @if (!String.IsNullOrWhiteSpace(s.EMail))
+            {             
+                <a style="float:left;padding-top:10px" href="mailto:@s.EMail">Email</a>
+            }
+            @if (!String.IsNullOrWhiteSpace(s.Website))
+            {             
+                <a style="float:right;padding-top:10px" href="@s.Website">Website</a>
+            }
+            <div style="clear:both;"/>
+            @if (!String.IsNullOrWhiteSpace(s.Phone))
+            { 
+                <div style="float:left;padding-top:10px"><b>(P)</b> @s.Phone</div>
+            }
+            @if (!String.IsNullOrWhiteSpace(s.Fax))
+            { 
+                <div style="float:right;padding-top:10px"><b>(F)</b> @s.Fax</div>
+            }
+            <div style="clear:both;"/>
+        </td></tr></table>
+    }
+
+@section Scripts  {
+
+<script src="@Url.Content("~/Scripts/jquery-qtip-1.0.0-rc3171452/jquery.qtip-1.0.0-rc3.min.js")"  type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/imagetooltip.js")"  type="text/javascript"></script>
+
+}
+

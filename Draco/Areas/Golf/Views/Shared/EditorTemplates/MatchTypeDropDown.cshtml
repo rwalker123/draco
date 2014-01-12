@@ -1,0 +1,7 @@
+﻿@Html.DropDownList("", 
+                new SelectList(new List<SelectListItem> { 
+                    new SelectListItem() { Text = "Regular Season", Value = "0" }, 
+                    new SelectListItem() { Text = "Playoff", Value = "1" },
+                    new SelectListItem() { Text = "Friendly", Value = "2" }
+                }, 
+                "Value", "Text", Model))

@@ -1,0 +1,24 @@
+﻿@model SportsManager.Golf.ViewModels.PlayerViewModel
+
+@{
+    ViewBag.Title = Model.FullName;
+    Layout = "~/Views/Shared/_Layout.Mobile.cshtml";
+}
+
+<div data-role="content">
+<a href='@Url.Action("Index", "Player", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], id = Model.Id })' data-role="button" data-theme="b">View Handicap Scores</a>
+</div>
+
+<h3>All Scores</h3>
+<table>
+<tr><th>Date Played</th><th>Course</th><th>Tee</th><th>Score</th></tr>
+@foreach (var scores in Model.PlayerScores)
+{
+    <tr>
+        <td style="color: Green;">@scores.DatePlayed.ToShortDateString()</td>
+        <td>@scores.CourseName</td>
+        <td style="text-align: center">@scores.TeesPlayed</td>
+        <td style="text-align: center">@scores.TotalScore</td>
+    </tr>
+}
+</table>

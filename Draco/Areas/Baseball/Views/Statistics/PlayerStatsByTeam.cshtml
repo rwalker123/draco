@@ -1,0 +1,127 @@
+﻿@model SportsManager.Baseball.ViewModels.TeamStatisticsViewModel
+
+@{
+	ViewBag.Title = "PlayerStatsByTeam";
+}
+
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+@section head {
+	<link href="@Url.Content("~/Content/jquery.jqGrid/ui.jqgrid.css")" rel="stylesheet" type="text/css" media="screen" />
+
+}
+
+<h2>PlayerStatsByTeam</h2>
+
+@using (Html.BeginForm())
+{
+	@Html.DropDownList("id", Model.GetHistoricalTeams())
+	<input type="submit" id="showteamstatsbtn" value="ShowTeamStats" name="Show Statistics" />
+}
+
+<table width="100%" id="battingStats"></table>
+<table width="100%" id="pitchingStats"></table>
+
+@section Scripts {
+
+<script src="@Url.Content("~/Scripts/jquery.jqGrid/grid.locale-en.js")" type="text/javascript"></script>
+<script src="@Url.Content("~/Scripts/jquery.jqGrid/jquery.jqGrid.min.js")" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $("#battingStats").jqGrid({
+            url: '@Url.Action("TeamBattingStatisticsGridData", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.TeamId }, null )',
+            datatype: 'json',
+            mtype: 'GET',
+            colNames: ['Player Name', 'AB', 'H', 'R', '2B', '3B', 'HR', 'RBI', 'SO', 'BB', 'HB', 'SB', 'CS', 'SF', 'SH', 'TB', 'PA', 'OBP', 'SLG', 'OPS', 'AVG'],
+            colModel: [
+		  { name: 'PlayerName', index: 'PlayerName', width: 120, formatter: 'showlink', formatoptions: { baseLinkUrl: 'javascript:', showAction: "displayPlayer('", addParam: "');" }, sortable: false },
+		  { name: 'AB', index: 'AB', width: 40 },
+		  { name: 'H', index: 'H', width: 35 },
+		  { name: 'R', index: 'R', width: 35 },
+		  { name: '_2B', index: 'D', width: 35 },
+		  { name: '_3B', index: 'T', width: 35 },
+		  { name: 'HR', index: 'HR', width: 35 },
+		  { name: 'RBI', index: 'RBI', width: 35 },
+		  { name: 'SO', index: 'SO', width: 35 },
+		  { name: 'BB', index: 'BB', width: 35 },
+		  { name: 'HB', index: 'HBP', width: 35 },
+		  { name: 'SB', index: 'SB', width: 35 },
+		  { name: 'CS', index: 'CS', width: 35 },
+		  { name: 'SF', index: 'SF', width: 35 },
+		  { name: 'SH', index: 'SH', width: 35 },
+		  { name: 'TB', index: 'TB', width: 40 },
+		  { name: 'PA', index: 'PA', width: 40 },
+		  { name: 'OBP', index: 'OBA', width: 35, formatter: threeDecimalFormatter },
+		  { name: 'SLG', index: 'SLG', width: 35, formatter: threeDecimalFormatter },
+		  { name: 'OPS', index: 'OPS', width: 35, formatter: threeDecimalFormatter },
+		  { name: 'AVG', index: 'AVG', width: 35, formatter: threeDecimalFormatter },
+		],
+            rowNum: -1,
+            sortname: 'AVG',
+            sortorder: 'desc',
+            viewrecords: true,
+            caption: 'Batting Statistics',
+            height: "100%",
+            loadonce: false,
+            headertitles: true,
+            footerrow: true,
+            userDataOnFooter: true,
+            beforeSelectRow: function (rowid, e) {
+                return false; // this prevents the entire grid from being selected when clicking on a row.
+            }
+        });
+
+        $("#pitchingStats").jqGrid({
+            url: '@Url.Action("TeamPitchingStatisticsGridData", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.TeamId }, null )',
+            datatype: 'json',
+            mtype: 'GET',
+            colNames: ['Player Name', 'W', 'L', 'S', 'IP', 'BF', 'H', 'R', 'ER', '2B', '3B', 'HR', 'SO', 'BB', 'HB', 'K/9', 'BB/9', 'OBA', 'SLG', 'WHIP', 'ERA'],
+            colModel: [
+		          { name: 'PlayerName', index: 'PlayerName', width: 120, formatter: 'showlink', formatoptions: { baseLinkUrl: 'javascript:', showAction: "displayPlayer('", addParam: "');" }, sortable: false },
+		          { name: 'W', index: 'W', width: 30 },
+		          { name: 'L', index: 'L', width: 30 },
+		          { name: 'S', index: 'S', width: 30 },
+		          { name: 'IPDecimal', index: 'IPDecimal', width: 40 },
+		          { name: 'BF', index: 'BF', width: 40 },
+		          { name: 'H', index: 'H', width: 30 },
+		          { name: 'R', index: 'R', width: 30 },
+		          { name: 'ER', index: 'ER', width: 30 },
+		          { name: '_2B', index: 'D', width: 30 },
+		          { name: '_3B', index: 'T', width: 30 },
+		          { name: 'HR', index: 'HR', width: 30 },
+		          { name: 'SO', index: 'SO', width: 30 },
+		          { name: 'BB', index: 'BB', width: 30 },
+		          { name: 'HBP', index: 'HBP', width: 30 },
+		          { name: 'K9', index: 'K9', width: 35, formatter: oneDecimalFormatter },
+		          { name: 'BB9', index: 'BB9', width: 35, formatter: oneDecimalFormatter },
+		          { name: 'OBA', index: 'OBA', width: 35, formatter: threeDecimalFormatter },
+		          { name: 'SLG', index: 'SLG', width: 35, formatter: threeDecimalFormatter },
+		          { name: 'WHIP', index: 'WHIP', width: 35, formatter: twoDecimalFormatter },
+		          { name: 'ERA', index: 'ERA', width: 40, formatter: twoDecimalFormatter },
+		        ],
+            rowNum: -1,
+            sortname: 'ERA',
+            sortorder: 'asc',
+            viewrecords: true,
+            caption: 'Pitching Statistics',
+            height: "100%",
+            headertitles: true,
+            footerrow: true,
+            userDataOnFooter: true,
+            beforeSelectRow: function (rowid, e) {
+                return false; // this prevents the entire grid from being selected when clicking on a row.
+            }
+        });
+
+    }); 
+
+</script>
+
+
+@Html.Partial("_DisplayPlayer")
+}

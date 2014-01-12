@@ -1,0 +1,447 @@
+﻿@model SportsManager.ViewModels.EMailUsersViewModel
+@using System.Web.Optimization;
+
+@{
+    ViewBag.Title = @Model.AccountName + " Email Users";
+}
+
+@section head
+{
+<link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+
+    <style>
+        .bar
+        {
+            height: 18px;
+            background: green;
+        }
+
+        a.labellink:link 
+        {
+            text-decoration: none;
+        }
+
+        a.labellink:visited
+        {
+            text-decoration: none;
+        }
+
+        a.labellink:hover
+        {
+            text-decoration: none;
+        }
+
+        a.labellink:active
+        {
+            text-decoration: none;
+        }
+
+    div.toArea {
+        float:left;
+        width:300px;
+    }
+
+    .ui-autocomplete {
+        max-height: 300px;
+        overflow-y: auto;
+        /* prevent horizontal scrollbar */
+        overflow-x: hidden;
+    }
+
+    div.messageArea {
+        background: white;
+        float:left;
+        margin-left:20px;
+    }
+
+    input.radio {
+        width:auto !important;
+        background: transparent;
+        border: none;
+    }
+
+    img.photo {
+        float:left;
+        width:80px;
+        height:60px;
+    }
+
+    span.toText {
+        color: blue;
+    }
+
+</style>
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>Email Users</h1>
+                <p>Email website users.</p>
+            </hgroup>
+        </div> <!-- content-wrapper -->
+    </section> <!-- featured -->
+}
+
+<div style="margin-top:40px">
+<div class="toArea">
+    @if (!String.IsNullOrEmpty(Model.PhotoUrl))
+    {
+        <img class="photo" src="@Model.PhotoUrl" />
+    }
+    <span style="margin-left:10px">@Model.UserName<br /></span><span style="margin-left: 10px">@Model.Email</span>
+    <div style="clear:both"></div>
+    <input type="button" value="Send" data-bind="click: sendEmail, enable: canSend" /><br />
+    <br /><br /><span class="toText">To</span><br />
+
+    <select data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
+    <div data-bind="fadeVisible: toOptionsAvailable">
+        <div data-bind="visible: toField() == 5">
+            <span>(type last name to begin search)</span><br />
+            <input type="text" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/>
+        </div>
+        <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
+        <div style="background-color: white" data-bind="visible: availableToData().length > 0">
+            <div style="vertical-align:middle; border: 2px solid gray; overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
+                <label><input style="vertical-align:middle;margin-left: 3px" type="checkbox" data-bind="checked: selected, value: id" /><img style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;vertical-align:middle;" data-bind="text: text"></span></label>
+                <hr />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="messageArea">
+    
+    <input type="text" style="width:600px;border:none;font-weight:bolder;font-size:larger" data-bind="value: subject" placeholder="add a subject" />
+    <hr />
+    <div style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: selectedData">
+        <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
+            <img style="margin-left:3px;width:20px;height:15px;vertical-align:middle" data-bind="attr: { src: logo }, visible: hasLogo" />
+            <span style="margin-left:5px;vertical-align:middle;" data-bind="text: text"></span>
+            <a style="vertical-align:middle" data-bind="click: $parent.removeTo"><img style="vertical-align:middle;border:none;margin-bottom:2px" src="/Images/x.png" /></a>
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    <hr />
+    <div id="attachments" style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: attachments" >
+        <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
+            <span data-bind="text: fileName"></span>
+            <a data-bind="visible: !isUploading(), click: $parent.removeAttachment" style="vertical-align:middle"><img style="vertical-align:middle;border:none;margin-left:2px;margin-bottom:5px" src="/Images/x.png"/></a>
+            <div data-bind="visible: isUploading, style: { width: width }" class="bar" style="height:12px"></div>
+        </div>
+    </div>
+    <div style="clear:both"></div>
+    <div style="display: block; width: 200px; height: 30px; overflow: hidden;">
+        <img style="border:none;vertical-align:middle;margin-left:5px" src="~/Images/attach.png" /><span style="vertical-align:middle"> Attach Files</span>
+        <input type="file" id="fileupload"  data-maxFileSize="1" style="cursor:pointer;font-size: 50px; width: 130px; opacity: 0; filter:alpha(opacity: 0);  position: relative; top: -40px;; left: -20px" />
+    </div>
+
+    <hr />
+
+    <textarea style="height: 500px; width:625px;" class="tinymce" data-bind="tinymce: emailText"></textarea>
+
+</div>
+
+<div style="clear:both"></div>
+</div>
+
+
+@section scripts 
+{
+
+<script type="text/javascript" src="~/Scripts/tiny_mce/jquery.tinymce.js"></script>
+<script type="text/javascript" src="~/Scripts/knockout-2.3.0.js"></script>
+<script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
+<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
+
+<script type="text/javascript">
+    var EmailUsersClass = function (accountId) {
+        var self = this;
+        self.accountId = accountId;
+
+        self.availableTo = [
+                { id: 1, text: 'Current Season', title: 'All players/managers in current season' },
+                { id: 2, text: 'Selected League(s)', title: 'All players/managers in selected league' },
+                { id: 3, text: 'Selected Team(s)', title: 'All players/managers on selected team' },
+                { id: 4, text: 'Selected Manager(s)', title: 'All selected managers' },
+                { id: 5, text: 'Selected Users(s)', title: 'All selected users' },
+        ];
+
+        self.toField = ko.observable();
+        self.toOptionsAvailable = ko.observable();
+       
+        self.availableToData = ko.observableArray([]);
+        self.emailText = ko.observable();
+        self.subject = ko.observable();
+
+        self.selectedData = ko.computed(function () {
+            var arr = $.grep(self.availableToData(), function (item) {
+                return item.selected();
+            });
+            return arr;
+        }, self);
+
+        self.canSend = ko.computed(function () {
+            if (self.toField() == 1)
+                return self.emailText() && self.subject();
+            else
+                return self.emailText() && self.subject() && self.selectedData().length > 0;
+        }, self);
+
+        self.toField.subscribe(function (newValue) {
+            self.toOptionsAvailable((newValue == 1) ? false : true);
+
+            self.availableToData.removeAll();
+            if (newValue == 2) {
+                self.getLeagues();
+            }
+            else if (newValue == 3) {
+                self.getTeams();
+            }
+            else if (newValue == 4) {
+                self.getManagers();
+            }
+        });
+
+        self.attachments = ko.observableArray();
+        // remove attachments from server when leaving page.
+        $(window).unload(function () {
+            $.each(self.attachments(), function () {
+                self.removeAttachment(this);
+            });
+        });
+
+        $('#fileupload').fileupload({
+            dataType: 'json',
+            url: '/api/FileUploaderAPI/@Model.AccountId/MailAttachment',
+            done: function (e, data) {
+                data.context.isUploading(false);
+                data.context.fileUri = data.result;
+            },
+            fail: function (e, data) {
+                alert('failed to upload file. Ensure file is less than 4 MB');
+                self.attachments.remove(data.context);
+            },
+            add: function (e, data) {
+                
+                data.context = {
+                    fileName: data.files[0].name,
+                    isUploading: ko.observable(true),
+                    fileUri: '',
+                    width: ko.observable('0%')
+                };
+
+                self.attachments.push(data.context);
+                data.submit();
+            },
+            progress: function (e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                data.context.width(progress + '%');
+            }
+        });
+
+        self.removeTo = function (removeItem) {
+            removeItem.selected(false);
+        }
+
+        self.removeAttachment = function (attachmentItem) {
+            $.ajax({
+                type: 'DELETE',
+                url: '/api/FileUploaderAPI/@Model.AccountId/RemoveTempFile?fileUri=' + encodeURIComponent(attachmentItem.fileUri),
+                dataType: "json",
+                success: function () {
+                    self.attachments.remove(attachmentItem);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+
+        }
+
+        self.getPlayers = function (request, response) {
+            var searchTerm = this.term;
+
+            $.ajax({
+                url: '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                dataType: "json",
+                data: {
+                    lastName: searchTerm,
+                    firstName: '',
+                    page: 1
+                },
+                success: function (data) {
+
+                    var results = $.map(data, function (item) {
+                        var fullName = item.LastName + ", " + item.FirstName;
+                        if (item.MiddleName)
+                            fullName += " " + item.MiddleName;
+
+                        return {
+                            label: fullName,
+                            Id: item.Id,
+                            PhotoURL: item.PhotoURL,
+                            FirstName: item.FirstName,
+                            LastName: item.LastName
+                        }
+                    });
+                    response(results);
+                },
+            });
+        }
+
+        selectPlayer = function (e, ui) {
+            if (ui && ui.item) {
+                self.availableToData.push({
+                    id: ui.item.Id,
+                    text: ui.item.value,
+                    logo: ui.item.PhotoURL,
+                    hasLogo: (!!ui.item.PhotoURL),
+                    selected: ko.observable(true)
+                });
+                // clear out input area.
+                ui.item.value = '';
+            }
+
+            return true;
+        }
+
+        self.getLeagues = function () {
+            $.ajax({
+                type: "GET",
+                url: '/api/leaguesAPI/' + self.accountId + '/Leagues',
+                success: function (leagues) {
+                    $.each(leagues, function () {
+                        self.availableToData.push({
+                            id: this.Id,
+                            text: this.Name,
+                            logo: '',
+                            hasLogo: false,
+                            selected: ko.observable(false)
+                        });
+                    });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+
+        self.getTeams = function () {
+            $.ajax({
+                type: "GET",
+                url: '/api/leaguesAPI/' + self.accountId + '/LeagueTeams',
+                success: function (teams) {
+                    $.each(teams, function () {
+                        self.availableToData.push({
+                            id: this.Id,
+                            text: this.Name,
+                            logo: this.TeamLogoURL,
+                            hasLogo: !!this.TeamLogoURL,
+                            selected: ko.observable(false)
+                        });
+                    });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+
+        self.getManagers = function () {
+            $.ajax({
+                type: "GET",
+                url: '/api/leaguesAPI/' + self.accountId + '/LeagueManagers',
+                success: function (managers) {
+                    if (managers.length == 0) {
+                        return;
+                    }
+
+                    $.each(managers, function () {
+                        var fullName = this.LastName + ", " + this.FirstName;
+                        if (this.MiddleName)
+                            fullName += " " + this.MiddleName;
+
+                        self.availableToData.push({
+                            id: this.Id,
+                            text: fullName,
+                            logo: this.TeamLogoURL,
+                            hasLogo: !!this.TeamLogoURL,
+                            selected: ko.observable(false)
+                        });
+                    });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+
+        self.sendEmail = function () {
+            var idList = [];
+            $.each(self.selectedData(), function () {
+                idList.push(this.id);
+            });
+
+            var attachList = [];
+            $.each(self.attachments(), function () {
+                attachList.push(this.fileUri);
+            });
+
+            $.ajax({
+                type: 'POST',
+                url: '/api/BaseballAPI/@Model.AccountId/EmailContacts',
+                dataType: "json",
+                data: {
+                    Subject: self.subject(),
+                    Message: self.emailText(),
+                    ToType: self.toField(),
+                    To: idList,
+                    Attachments: attachList
+                },
+                success: function (failedSends) {
+                    if (failedSends && failedSends.length) {
+                        alert("failed sends: " + failedSends.length);
+                    }
+                    alert('email sent!');
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    if (xhr.status == 404)
+                        alert('No contacts found.');
+                    else
+                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+    }
+
+</script>
+
+<script type="text/javascript">
+    $(document).bind('drop dragover', function (e) {
+        e.preventDefault();
+    });
+
+    function initViewModel(accountId) {
+        initKOHelpers();
+
+        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
+            var li = $("<li>");
+            li.data("item.autocomplete", item);
+            var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+            li.appendTo(ul);
+
+            return li;
+        };
+
+        var emailData = new EmailUsersClass(@Model.AccountId);
+        ko.applyBindings(emailData);
+    }
+
+    $(document).ready(function () {
+        initViewModel();
+    });
+</script>
+}

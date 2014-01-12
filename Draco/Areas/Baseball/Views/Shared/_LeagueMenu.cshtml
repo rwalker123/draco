@@ -1,0 +1,9 @@
+﻿@model dynamic
+
+<li><a href='@Url.Action("Index", "LeagueTeams", new { area = "baseball", accountId = Model.AccountId }, null)'>Teams</a></li>
+<li><a href='@Url.Action("Index", "Standings", new { area = "baseball", accountId = Model.AccountId }, null)'>Standings</a></li>
+<li><a href='@Url.Action("Index", "Statistics", new { area = "baseball", accountId = Model.AccountId }, null)'>Stats</a></li>
+<li><a href='@Url.Action("Index", "LeagueSchedule", new { area = "baseball", accountId = Model.AccountId }, null)'>Schedule</a></li>
+<li><a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = Model.AccountId }, null)'>Fields</a></li>
+<li><a href='@Url.Action("Index", "Discussions", new { area = "baseball", accountId = Model.AccountId }, null)'>Social</a></li>
+<li><a href='@Url.Action("Index", "MemberBusiness", new { area = "baseball", accountId = Model.AccountId }, null)'>Member Business</a></li>

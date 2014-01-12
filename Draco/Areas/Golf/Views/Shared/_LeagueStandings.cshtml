@@ -1,0 +1,10 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueStandingsViewModel
+@using MvcContrib.UI.Grid;
+
+@Html.Grid(Model.TeamStandings).Columns(extraCols => 
+    {
+        extraCols.For(x => Html.ActionLink(x.TeamName, "ShowTeam", "Teams", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], id = x.TeamId}, null));
+        extraCols.For(x => x.MatchPoints).Attributes(@style => "text-align:center");
+        extraCols.For(x => x.StrokePoints).Attributes(@style => "text-align:center");
+        extraCols.For(x => x.TotalPoints).Attributes(@style => "text-align:center");
+    })

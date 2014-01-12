@@ -1,0 +1,38 @@
+﻿@model SportsManager.Golf.ViewModels.PlayerViewModel
+@using MvcContrib.UI.Grid;
+
+@{
+    ViewBag.Title = Model.FullName;
+    Layout = "~/Views/Shared/_Layout.Mobile.cshtml";
+}
+
+<div data-role="content">
+<a href='@Url.Action("PlayerAllScores", "Player", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], id = Model.Id })' data-role="button" data-theme="b">View All Scores</a>
+</div>
+
+<h3>Handicap Scores</h3>
+<table>
+<tr><th>Date Played</th><th>Slope</th><th>Rating</th><th>ESC Score</th><th>Differential</th></tr>
+@foreach (var scores in Model.PlayerScores)
+{
+    string dateStyle = String.Empty;
+    if (scores.IsLowDiff)
+    {
+        dateStyle = "color: Green;font-weight: bold";
+    }
+    
+    <tr>
+        <td style="@dateStyle">@scores.DatePlayed.ToShortDateString()</td>
+        <td style="text-align: center">@scores.Slope</td>
+        <td style="text-align: center">@scores.Rating</td>
+        <td style="text-align: center">@scores.ESCScore</td>
+        <td style="text-align: center">@scores.Differential</td>
+    </tr>
+}
+</table>
+
+<h3>Average Diffs: @Model.AverageDiffs</h3>
+<h2>Index (Average Diffs *.96): @Model.HandicapIndex</h2>
+
+
+    

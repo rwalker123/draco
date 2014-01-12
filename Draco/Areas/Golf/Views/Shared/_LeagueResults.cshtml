@@ -1,0 +1,45 @@
+﻿@model SportsManager.Golf.ViewModels.LeagueMatchResultsViewModel
+@using MvcContrib.UI.Grid;
+
+
+@if (Model.TeamScores.Any())
+{ 
+    @Html.Grid(Model.TeamScores).Columns(extraCols =>
+    {
+        extraCols.For(x => x.TeamName);
+        extraCols.For(x => x.MatchPoints).Attributes(@style => "text-align:center");
+        extraCols.For(x => x.StrokePoints).Attributes(@style => "text-align:center");
+        extraCols.For(x => x.TotalPoints).Attributes(@style => "text-align:center");
+    }).Empty(String.Empty)
+
+    <br />
+}
+
+<h4>Individual Low Scores</h4>
+
+    
+<table>
+<tr><th>Actual</th><th>Score</th></tr>
+@foreach (var lowScore in Model.LowActualScores)
+{
+    <tr><td>@lowScore.PlayerName</td><td style="text-align:center">@lowScore.Score</td></tr>
+}
+
+<tr><th>Net</th><th>Score</th></tr>
+@foreach (var lowScore in Model.LowNetScores)
+{
+    <tr><td>@lowScore.PlayerName</td><td style="text-align:center">@lowScore.Score</td></tr>
+}
+
+</table>
+
+<br />  
+<h4>Skin Winners</h4>  
+
+@Html.Grid(Model.PlayerSkins).Columns(extraCols =>
+{
+    extraCols.For(x => x.PlayerName).Named("");
+    extraCols.For(x => x.HoleNumber).Attributes(@style => "text-align:center");
+    extraCols.For(x => x.HoleScore).Attributes(@style => "text-align:center");
+}).Empty("No skins won.")
+

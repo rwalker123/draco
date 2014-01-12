@@ -1,0 +1,35 @@
+﻿@model SportsManager.Golf.ViewModels.GolfLeagueSetupViewModel
+
+@{
+    ViewBag.Title = "League Setup";
+}
+
+<h1>@ViewBag.Title</h1>
+
+@{
+    Html.EnableClientValidation();   
+}
+
+@using (Html.BeginForm())
+{
+    @Html.EditorForModel()            
+    <input type="submit" value="Save" />
+    
+    @Html.ActionLink("Cancel", "LeagueSetup", "League", new { accountId = Model.AccountId }, null)
+}
+
+@section scripts {
+<script src='@Url.Content("~/Scripts/jquery.ui.timepicker.js")' type='text/javascript'></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $(function () {
+            $('#StartTeeTime').timepicker({
+                showPeriod: true,
+                showLeadingZero: false
+            });
+        });
+    });
+</script>
+
+}

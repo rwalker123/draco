@@ -1,0 +1,27 @@
+﻿@model SportsManager.Baseball.ViewModels.LeagueSeasonViewModel
+
+@{
+    ViewBag.Title = ViewData["Title"];
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title</h1>
+            </hgroup>
+        </div> <!-- content-wrapper -->
+    </section> <!-- featured -->
+}
+
+@{
+	Html.EnableClientValidation();   
+}
+@using (Html.BeginForm()) {
+
+	@Html.EditorForModel()
+						  
+	<input type="submit" value="Save" />
+    @Html.ActionLink("Cancel", "Index", "LeagueSeason", new { accountId = Model.AccountId }, null)
+}
+

@@ -1,0 +1,139 @@
+﻿
+@model SportsManager.Baseball.ViewModels.ScheduleViewModel
+@using System.Web.Optimization
+
+@{
+	ViewBag.Title = Model.AccountName + " Schedule";
+}
+
+@section menu {
+	@Html.Partial("_LeagueMenu")
+}
+
+@section head {
+
+<link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" />
+
+ <style type="text/css"> 
+	 
+	table.sc {
+		width:160px; 
+		margin-top:1px;
+		margin-bottom:1px;
+		margin-left:1px;
+		margin-right:1px;
+		padding:0px;
+		text-align:center;
+		display:inline-table;
+		border-collapse:collapse;
+		vertical-align:top;
+	}
+	td.sc{
+		width:100%;
+		text-align:left;
+	}
+	
+	#scoretitle {
+		text-align:center;
+	}
+		
+</style> 
+
+}
+
+<h1>@Model.AccountName Schedule</h1>
+
+<div id="datepicker"></div>
+
+	@foreach (ModelObjects.League l in Model.Leagues) {
+		<div id="@l.Id"></div>        
+	}
+
+
+@section Scripts {
+
+@Scripts.Render("~/bundles/jsrender")
+
+<script id="gameTemplate" type="text/x-jsrender">
+	<table class="sc"><tr><td class="sc">
+		<div id="scoretitle" class="ui-widget-header">{{>leagueName}}</div>
+		<div id="scoretitle" class="ui-state-highlight">{{>statusText}}</div>
+		<table class="ui-widget-content" style="width:100%">
+
+			{{if isGameComplete}}
+				<tr><td><a class="ui-state-default" href='{{>homeTeamUrl}}'>{{>homeTeamName}}</a></td><td>{{>homeScore}}</td>
+				<td rowspan="2">{{if hasGameRecap}}<a class="ui-state-default" href='javascript:showGameRecap({{>gameId}})'>Recap</a>{{/if}}</td>
+				</tr>
+				<tr><td><a class="ui-state-default" href='{{>awayTeamUrl}}'>{{>awayTeamName}}</a></td><td>{{>awayScore}}</td></tr>
+				<tr><td colspan="3"><a class="ui-state-default" href='{{>fieldUrl}}'>{{>fieldName}}</a></td></tr>
+			{{else}}
+				<tr><td><a class="ui-state-default" href='{{>homeTeamUrl}}'>{{>homeTeamName}}</a></td><td>{{>gameTime}}</td></tr>
+				<tr><td><a class="ui-state-default" href='{{>awayTeamUrl}}'>{{>awayTeamName}}</a></td><td>{{>gameDate}}</td>
+				<tr><td colspan="2"><a class="ui-state-default" href='{{>fieldUrl}}'>{{>fieldName}}</a></td></tr>
+			{{/if}}
+
+		</table>
+	</td></tr></table>
+</script>
+
+<script type="text/javascript">
+
+	var leagueIds = new Array();
+
+	$(document).ready(function () {
+
+		$("#datepicker").datepicker({
+			dateFormat: 'yy-mm-dd',
+			changeMonth: true,
+			changeYear: true,
+			onSelect: function (dateText, inst) {
+				showLeagueSchedules(dateText);
+			}
+		});
+
+		@{	
+			int i = 0;
+		}
+
+		@foreach (ModelObjects.League l in Model.Leagues) {
+		
+			@: leagueIds[@i] = @l.Id;  
+			i++;
+		}
+
+		showLeagueSchedules(getDate());
+	});
+
+	function showLeagueSchedules(dateText) {
+		$(leagueIds).each(function() {
+			showLeagueSchedule(this);
+		});
+	}
+
+	function showGameRecap(gameId) {
+		alert("show game recap");
+	}
+
+	function getDate() {
+		return $.datepicker.formatDate('yy/mm/dd', $("#datepicker").datepicker("getDate"))
+	}
+
+	function showLeagueSchedule(leagueId) {
+
+		$.getJSON('@Url.Action("GetGames", "LeagueSchedule", new { area = "baseball", accountId = Model.AccountId }, null)' + "?leagueSeasonId=" + leagueId + "&date=" + getDate(),
+			function( data ) {
+				var id = "#"+leagueId;
+				$(id).empty();
+
+				if (data.length) {
+				    id.append($("#gameTemplate").render(data));
+                }
+                    
+			}
+		);
+	}
+
+</script>
+
+
+}

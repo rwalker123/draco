@@ -1,0 +1,18 @@
+﻿@model IEnumerable<SportsManager.Golf.ViewModels.GolfMatchViewModel>
+@using MvcContrib.UI.Grid;
+
+<div id="BasicGrid">
+
+@Html.Grid(Model).Columns(extraCols => 
+    {
+        extraCols.For(x => x.MatchDate);
+        extraCols.For(x => x.MatchTime);
+        extraCols.For(x => x.Team1Name);
+        extraCols.For(x => x.Team2Name);
+        extraCols.For(x => x.CourseName);
+        extraCols.For(x => x.MatchType);
+        extraCols.For(x => Html.ActionLink("edit", "Edit", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], flightId = ViewData["FlightId"], id = x.MatchId }));
+        extraCols.For(x => Html.ActionLink("delete", "Delete", new { accountId = ViewData["AccountId"], seasonId = ViewData["SeasonId"], flightId = ViewData["FlightId"], id = x.MatchId }));
+    })
+
+</div>

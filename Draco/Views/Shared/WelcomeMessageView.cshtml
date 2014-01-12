@@ -1,0 +1,60 @@
+﻿@model SportsManager.ViewModels.WelcomeMessageViewModel
+
+@if (!Model.HasMessage && !Model.IsAdmin)
+{
+	return;
+}
+    @if (Model.IsAdmin)
+    {
+    	<div class="grad" id="welcomeEditLabel" style="float:right;"><a class="labellink" href="javascript:welcomeData.startWelcomeAdd()">[add]</a></div>
+	    <div class="grad" id="welcomeSaveLabel" style="float:right; display: none"><a class="labellink" href="javascript:welcomeData.saveWelcome()">[save]</a> <a class="labellink" href="javascript:welcomeData.cancelWelcomeEdit()">[cancel]</a></div>
+    }
+
+    <div style="clear:both"></div> 
+
+<!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
+	<div id="editMessage" style="display: none; font-weight:600; font-size: 1.3em;">
+		Category: <input id="category" name="category" type="text" style="width: 200px" value="Welcome" />
+        Message Position: <input id="position" name="position" type="text" style="width: 25px" value="1" />
+		<textarea id="welcomeMessageControl" name="welcomeMessageControl" style="height: 500px; width:700px;" class="tinymce" >
+		</textarea>
+	</div>
+
+
+	<div id="WelcomeMessages" style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; background: url("/Images/paper.gif") repeat; text-align:left; padding: 10px 20px 15px 20px;'>
+
+        <p id="noWelcomeMessage" style="display: none">Click the <a class="labellink grad" href="javascript:welcomeData.startWelcomeAdd()">[add]</a> button to add welcome messages.</p>
+
+        @{
+            bool firstTime = true;
+        }
+
+        <div id="WelcomeMessageMenuSection">
+		@foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
+		{
+			string url = "javascript:welcomeData.ShowWelcomeMenu(" + aw.Id.ToString() + ")";
+			<a class="welcomeMenuItem" id="MenuLink_@aw.Id" data-menuposition="@aw.OrderNo" href="@url">@aw.CaptionText</a>
+		}
+        </div>
+
+        <div id="WelcomeMessageDataSection">
+		@foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
+		{
+			<div id='div_WelcomeMessageChrome_@aw.Id' style="display:none" class='details'>
+            @if (Model.IsAdmin)
+            {
+			    <div class="grad" style="float:right"><a class="labellink" href="javascript:welcomeData.startWelcomeEdit(@aw.Id)">[edit]</a> <a class="labellink" href="javascript:welcomeData.deleteWelcome(@aw.Id)">[delete]</a></div>
+            }
+                <div id="div_WelcomeMessage_@aw.Id" data-hasdata="@firstTime">
+                    @if (firstTime) {
+                        @:@Html.Raw(aw.WelcomeText)
+                    }
+                </div>
+			</div>			
+      
+            firstTime = false;
+		}
+        </div>
+	
+	</div>
+
