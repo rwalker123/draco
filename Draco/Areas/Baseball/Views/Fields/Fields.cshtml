@@ -4,16 +4,15 @@
 	ViewBag.Title = Model.AccountName + " Fields";
 }
 
-@section menu {
-	@Html.Partial("_LeagueMenu")
-}
-
 @section head {
 
 
 }
 
-	<h1>@Model.AccountName Fields</h1>
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
 
 	<div id="searchBox">
 		Enter your location: @Html.TextBox("Location")

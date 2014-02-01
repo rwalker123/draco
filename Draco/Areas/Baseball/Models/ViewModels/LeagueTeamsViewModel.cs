@@ -1,21 +1,16 @@
 ﻿using ModelObjects;
+using SportsManager.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class LeagueTeamsViewModel
+    public class LeagueTeamsViewModel : AccountViewModel
     {
-        public LeagueTeamsViewModel(long accountId)
+        public LeagueTeamsViewModel(Controller c, long accountId)
+            : base(c, accountId)
         {
-            AccountId = accountId;
-        }
-
-        public long AccountId { get; set; }
-
-        public string GetAccountName()
-        {
-            return DataAccess.Accounts.GetAccountName(AccountId);
         }
 
         public IEnumerable<League> Leagues
@@ -26,17 +21,9 @@ namespace SportsManager.Baseball.ViewModels
             }
         }
 
-        public int LoadDivisions(long leagueId)
+        public IQueryable<Division> Divisions(long leagueId)
         {
-            Divisions = DataAccess.Divisions.GetDivisions(leagueId);
-
-            return Divisions.Count();
-        }
-
-        public IQueryable<Division> Divisions
-        {
-            get;
-            private set;
+            return DataAccess.Divisions.GetDivisions(leagueId);
         }
 
         public IQueryable<Team> GetDivisionTeams(long divisionId)

@@ -1,33 +1,26 @@
 ﻿using ModelObjects;
+using SportsManager.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class StandingsViewModel
+    public class StandingsViewModel : AccountViewModel
     {
-        public StandingsViewModel(long accountId)
+        public StandingsViewModel(Controller c, long accountId)
+            : base(c, accountId)
         {
-            AccountId = accountId;
             SeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
             SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
-            AccountName = DataAccess.Accounts.GetAccountName(AccountId);
 
         }
 
-        public StandingsViewModel(long accountId, long seasonId)
+        public StandingsViewModel(Controller c, long accountId, long seasonId)
+            : base(c, accountId)
         {
-            AccountId = accountId;
             SeasonId = seasonId;
             SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
-            AccountName = DataAccess.Accounts.GetAccountName(AccountId);
-        }
-
-        public long AccountId
-        {
-            get;
-            private set;
         }
 
         public long SeasonId
@@ -37,12 +30,6 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public string SeasonName
-        {
-            get;
-            private set;
-        }
-
-        public string AccountName
         {
             get;
             private set;
@@ -91,6 +78,8 @@ namespace SportsManager.Baseball.ViewModels
         public IQueryable<Division> GetDivisions(long leagueId)
         {
             m_firstDivisionTeam = true;
+
+            m_divisionStandings.Clear();
 
             IQueryable<Division> divisions = DataAccess.Divisions.GetDivisions(leagueId);
 

@@ -1,6 +1,6 @@
 ﻿@model SportsManager.ViewModels.LeagueSeasonsViewModel
 @{
-    ViewBag.Title = "Season Setup";
+    ViewBag.Title = @Model.AccountName + " Season Setup";
 }
 
 @section head {
@@ -17,12 +17,16 @@
         input.currentSeason {
             display: none;
         }
+
+        input[type="text"] {
+            height:30px;
+        }
     </style>
 }
 
 <div class="jumbotron">
     <h1>@ViewBag.Title.</h1>
-    <p class="lead">Seasons allow you to store a history of your league. Each season contains its own set of teams, players, and statistics.</p>
+    <p class="help-block">Seasons allow you to store a history of your league. Each season contains its own set of teams, players, and statistics.</p>
     <h2 id="currentSeasonDisplay"></h2>
     <p>To set a new season, select any existing season below or create a new season.</p>
 </div> <!-- jumbotron -->

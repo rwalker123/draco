@@ -6,10 +6,6 @@
 	ViewBag.Title = Model.AccountName + " Schedule";
 }
 
-@section menu {
-	@Html.Partial("_LeagueMenu")
-}
-
 @section head {
 
 <link type="text/css" rel="stylesheet" href="http://jqueryui.com/themes/base/ui.all.css" />
@@ -41,7 +37,10 @@
 
 }
 
-<h1>@Model.AccountName Schedule</h1>
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
 
 <div id="datepicker"></div>
 

@@ -18,7 +18,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Index", "League");
             }
 
-            return View(new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(accountId.Value));
+            return View(new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId.Value));
         }
 
         //

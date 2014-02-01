@@ -8,13 +8,22 @@
 	ViewBag.Title = @Model.AccountName + " Settings";
 }
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <h1 style="color:white;">@Model.AccountName Settings</h1>
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
+@section head 
+{
+<style type="text/css">
+    label {
+        margin: 5px;
+    }
+
+    input[type="checkbox"] {
+        margin-right:5px;
+    }
+    
+</style>
 }
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div> <!-- content-wrapper -->
 
 <div style="padding-bottom: 10px">
     <h4>Contact Information</h4>
@@ -38,7 +47,7 @@
 </div>
 
 @section scripts {
-    <script type="text/javascript" src="~/Scripts/knockout-2.3.0.js"></script>
+    <script type="text/javascript" src="~/Scripts/knockout-3.0.0.js"></script>
     <script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
 
     <script type="text/javascript">

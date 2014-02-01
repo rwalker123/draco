@@ -23,18 +23,12 @@
 </style>
 }
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>@ViewBag.Title</h1>
-                <p>Define umpires for the league.</p>
-            </hgroup>
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
-}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p class="help-block">Define umpires for the league.</p>
+</div> <!-- content-wrapper -->
 
-<h3 style="max-width:500px;text-align:center">Search for users to add as umpires. If this is a new umpire, add them as a @Html.ActionLink("User", "Users", "Account", new { area = "", accountId = Model.AccountId }, null) first.</h3>
+<h3 class="help-block" style="max-width:500px;text-align:center">Search for users to add as umpires. If this is a new umpire, add them as a @Html.ActionLink("User", "Users", "Account", new { area = "", accountId = Model.AccountId }, null) first.</h3>
 
 <br /><span>(type last name to begin search)</span><br />
 <input type="text" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/><button style="margin-left:5px" data-bind="enable: hasSelectedPlayer, click: addUmpire">Add</button>
@@ -62,7 +56,7 @@
 @section scripts 
 {
 
-<script type="text/javascript" src="~/Scripts/knockout-2.3.0.js"></script>
+<script type="text/javascript" src="~/Scripts/knockout-3.0.0.js"></script>
 <script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/umpires.js"></script>
 <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>

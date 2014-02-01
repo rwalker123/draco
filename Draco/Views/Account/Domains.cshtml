@@ -11,28 +11,23 @@
 }
 
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>Domains</h1>
-                <p>Map domains you own to your league website.</p>
-            </hgroup>
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
-}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p class="help-block">Map domains you own to your league website.</p>
+</div> <!-- content-wrapper -->
+
 
 <h2>Mapped Domains</h2>
 
-<input style="width:400px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" /><input style="margin-left:2px;" type="button" value="Add Domain" onclick="addUrl()"/>
+<input style="width:400px;margin-right:10px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" /><input style="margin-left:2px;" type="button" value="Add Domain" onclick="addUrl()"/>
 <hr />
 <div id="urlList">
 @if (Model.AccountUrls.Any())
 {
     foreach (var mappedUrl in Model.AccountUrls)
     {
-        <div id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
-            <br /><input type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input type="button" value="Delete" onclick="    deleteUrl('@mappedUrl    ')"/><h3 style="display: inline">@mappedUrl</h3>
+        <div style="margin-bottom:10px" id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
+            <input style="margin-right:5px" type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input style="margin-right:10px" type="button" value="Delete" onclick="deleteUrl('@mappedUrl')" /><h3 style="display: inline">@mappedUrl</h3>
         </div>
     }
 }

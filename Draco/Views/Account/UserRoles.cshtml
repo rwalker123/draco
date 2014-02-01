@@ -31,23 +31,17 @@
 }
 
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>User Roles</h1>
-                <p>Define roles for users for your account.</p>
-            </hgroup>
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
-}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p class="help-block">Define roles for users for your account.</p>
+</div> <!-- content-wrapper -->
 
 @if (Model.IsAccountOwner) 
 {
 <div id="accountOwner">
 <div id="changeAccountOwner" style="max-width:500px;text-align:center">
     <h3>You are the Account Owner  <input type="button" onclick="userRolesData.startChangeAccountOwner()" value="Change" /></h3>
-    <p>The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
+    <p class="help-block">The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
 </div>
 <div id="changeAccountOwnerWarning" style="max-width:500px;text-align:center;display: none">
 <h2 style="color: red">Warning</h2>
@@ -76,7 +70,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountAdminId">
             <input style="vertical-align:middle" id="playerSelect"/>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole(@Model.AccountAdminId)" /><br />
+            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')" /><br />
         </div>
         <hr />
 
@@ -93,7 +87,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountPhotoAdminId">
 
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole(@Model.AccountPhotoAdminId)" /><br />
+            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')" /><br />
         </div>
         <hr />
 
@@ -109,7 +103,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.LeagueAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px"  id="avaliableLeagues" ></select>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole(@Model.LeagueAdminId)" /><br />
+            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')" /><br />
         </div>
         <hr />
 
@@ -125,7 +119,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px" id="teamSelect" ></select>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole(@Model.TeamAdminId)" /><br />
+            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')" /><br />
         </div>
         <hr />
 
@@ -141,7 +135,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamPhotoAdminId">
 
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole(@Model.TeamPhotoAdminId)" /><br />
+            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')" /><br />
         </div>
         <hr />
 
@@ -158,7 +152,7 @@
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <input type='button' value='Remove' onclick='javascript:userRolesData.removeUserFromRole({{:Id}}, {{:~roleId}}, {{:RoleData}});' />
+    <input type='button' value='Remove' onclick='javascript:userRolesData.removeUserFromRole({{:Id}}, '{{:~roleId}}', {{:RoleData}});' />
     {{if PhotoURL}}
         <img class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}'/>
     {{else}}
@@ -176,7 +170,7 @@
 <script type="text/javascript" src="~/Scripts/userroles.js"></script>
 
 <script type="text/javascript">
-    var userRolesData = new UserRoleClass(@Model.AccountId, @Model.CurrentUserId);
+    var userRolesData = new UserRoleClass(@Model.AccountId, '@Model.CurrentUserId');
 
     $(document).ready(function () {
         // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax

@@ -20,7 +20,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 			if (sId == 0)
 				sId = DataAccess.Seasons.GetCurrentSeason(aId);
 
-			return View("ScheduleMain", new ScheduleViewModel(aId, sId));
+			return View("ScheduleMain", new ScheduleViewModel(this, aId, sId));
 		}
 
 		[OutputCache(Duration = 0, VaryByParam = "None")]

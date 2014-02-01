@@ -15,7 +15,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Index", "League");
             }
 
-            return View(new StandingsViewModel(accountId.Value));
+            return View(new StandingsViewModel(this, accountId.Value));
         }
 
         //

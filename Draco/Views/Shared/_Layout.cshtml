@@ -12,18 +12,7 @@
     @RenderSection("head", required: false)
 </head>
 <body>
-    <!-- facebook like control -->
-    <div id="fb-root"></div>
-    <script>
-(function (d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = '//connect.facebook.net/en_US/all.js#xfbml=1&appId=@System.Configuration.ConfigurationManager.AppSettings["FacebookAppId"]';
-    fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-    <!-- end facebook like control -->
-
+    @RenderSection("facebooklike", required: false)
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
@@ -35,8 +24,11 @@
                 @if (String.IsNullOrEmpty((String)ViewData["AccountName"]))
                 {
                     ViewData["AccountName"] = "ezRecSports.com";
+                    @Html.ActionLink((String)ViewData["AccountName"], "Index", "Home", null, new { @class = "navbar-brand" });
                 }
-                @Html.ActionLink((String)ViewData["AccountName"], "Index", "Home", null, new { @class = "navbar-brand" })
+                else {
+                    @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = "Baseball", accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
+                }
             </div>
             <div class="navbar-menu navbar-collapse collapse">
                 <ul class="nav navbar-nav">

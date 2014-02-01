@@ -32,7 +32,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 			}
 			else
 			{
-				return View("Fields", new LeagueFieldsViewModel(accountId.Value));
+				return View("Fields", new LeagueFieldsViewModel(this, accountId.Value));
 			}
 		}
 

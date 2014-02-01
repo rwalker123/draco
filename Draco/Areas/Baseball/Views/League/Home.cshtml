@@ -6,6 +6,21 @@
 }
 
 
+@section facebooklike
+{
+    <!-- facebook like control -->
+<div id="fb-root"></div>
+<script>
+(function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = '//connect.facebook.net/en_US/all.js#xfbml=1&appId=@System.Configuration.ConfigurationManager.AppSettings["FacebookAppId"]';
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+<!-- end facebook like control -->
+}
+
 @section head {
     <meta name="application-name" content="@Model.AccountName" />
     <meta name="msapplication-TileColor" content="#58595B" />
@@ -15,59 +30,6 @@
     }
 
     <link rel="stylesheet" href="/Areas/Baseball/Content/LeagueHome.css" />
-    <!--
-        <style type="text/css">
-
-    .grad
-    {
-        background-color:Blue;
-        color:White;
-        border-radius: 3px;
-        padding:4px;
-
-        background-image: linear-gradient(bottom, rgb(17,19,66) 0%, rgb(27,27,255) 50%, rgb(213,215,250) 100%);
-        background-image: -o-linear-gradient(bottom, rgb(17,19,66) 0%, rgb(27,27,255) 50%, rgb(213,215,250) 100%);
-        background-image: -moz-linear-gradient(bottom, rgb(17,19,66) 0%, rgb(27,27,255) 50%, rgb(213,215,250) 100%);
-        background-image: -webkit-linear-gradient(bottom, rgb(17,19,66) 0%, rgb(27,27,255) 50%, rgb(213,215,250) 100%);
-        background-image: -ms-linear-gradient(bottom, rgb(17,19,66) 0%, rgb(27,27,255) 50%, rgb(213,215,250) 100%);
-
-        background-image: -webkit-gradient(
-            linear,
-            left bottom,
-            left top,
-            color-stop(0, rgb(17,19,66)),
-            color-stop(0.5, rgb(27,27,255)),
-            color-stop(1, rgb(213,215,250))
-        );
-    }
-
-    .container
-    {
-      background: #FFF;
-      padding: 5px;
-      margin-bottom: 20px;
-      clear: both;
-      -webkit-border-radius: 5px;
-         -moz-border-radius: 5px;
-              border-radius: 5px;
-    }
-
-    .item
-    {
-      margin: 5px;
-      padding: 5px;
-      background: #D8D5D2;
-      font-size: 11px;
-      line-height: 1.4em;
-      float: left;
-      -webkit-border-radius: 5px;
-         -moz-border-radius: 5px;
-              border-radius: 5px;
-    }
-
-
-    </style>
-        -->
 }
 
 @section scripts {
