@@ -117,7 +117,8 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Account a = DataAccess.Accounts.GetAccount(accountId);
-            a.OwnerUserId = userId.Id;
+            System.Diagnostics.Debug.Assert(false, "fix the user id, should be contact id");
+            //a.OwnerContactId = userId.Id;
             DataAccess.Accounts.ModifyAccount(a);
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)

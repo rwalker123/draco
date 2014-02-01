@@ -2,12 +2,18 @@
     var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear);
     ko.applyBindings(editAccountVM, document.getElementById("accountName"));
 
-    var twitterVM = new TwitterViewModel(accountId, isAdmin);
-    ko.applyBindings(twitterVM, document.getElementById("twitterFeed"));
-    twitterVM.loadTwitterScript();
+    var twitterFeed = document.getElementById("twitterFeed");
+    if (twitterFeed) {
+        var twitterVM = new TwitterViewModel(accountId, isAdmin);
+        ko.applyBindings(twitterVM, twitterFeed);
+        twitterVM.loadTwitterScript();
+    }
 
-    var facebookVM = new FacebookViewModel(accountId, facebookFanPage, isAdmin);
-    ko.applyBindings(facebookVM, document.getElementById("facebookFeed"));
+    var facebookFeed = document.getElementById("facebookFeed");
+    if (facebookFeed) {
+        var facebookVM = new FacebookViewModel(accountId, facebookFanPage, isAdmin);
+        ko.applyBindings(facebookVM, facebookFeed);
+    }
 
     $('#fileupload').fileupload({
         dataType: 'json',

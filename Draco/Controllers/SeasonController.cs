@@ -9,6 +9,11 @@ namespace SportsManager.Controllers
         // GET: /Season/
         public ActionResult Index(long accountId)
         {
+            if (accountId <= 0)
+            {
+                return RedirectToAction("Home");                
+            }
+
             return View(new LeagueSeasonsViewModel(this, accountId));
         }
 

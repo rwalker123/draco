@@ -91,8 +91,8 @@ namespace SportsManager.Models.Helpers
 		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"),
 		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(scheduleurl, "Schedule", "Schedule Page"),
 		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(fieldsurl, "Fields", "Fields Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Discussions Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page")
+		            //new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Discussions Page"),
+		            //new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page")
 	            };
 
             }

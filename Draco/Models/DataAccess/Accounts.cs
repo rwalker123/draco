@@ -92,7 +92,7 @@ namespace DataAccess
                         AccountURL = a.URL,
                         FirstYear = a.FirstYear,
                         TimeZoneId = a.TimeZoneId,
-                        OwnerUserId = a.OwnerId,
+                        OwnerContactId = a.OwnerId,
                         YouTubeUserId = a.YouTubeUserId
                     }).SingleOrDefault();
         }
@@ -139,7 +139,15 @@ namespace DataAccess
             Account account = GetAccount(accountId);
             if (account != null)
             {
-                return account.OwnerUserId == Globals.GetCurrentUserId();
+                DB db = DBConnection.GetContext();
+
+                string userId = Globals.GetCurrentUserId();
+
+                var contactId = (from c in db.Contacts
+                                 where c.UserId == userId
+                                 select c.Id).SingleOrDefault();
+
+                return (account.OwnerContactId == contactId);
             }
 
             return false;
@@ -152,25 +160,20 @@ namespace DataAccess
             if (!String.IsNullOrEmpty(userId))
             {
                 // first check to see if this user is an owner of the account.
-                Account account = GetAccount(accountId);
-                if (account != null)
+                rc = IsAccountOwner(accountId);
+
+                // if not the owner, see if user was given the account admin role.
+                if (!rc)
                 {
+                    DB db = DBConnection.GetContext();
+                    var roleId = (from r in db.AspNetRoles
+                                    where r.Name == "AccountAdmin"
+                                    select r.Id).SingleOrDefault();
 
-                    rc = (account.OwnerUserId == userId);
-
-                    // if not the owner, see if user was given the account admin role.
-                    if (!rc)
-                    {
-                        DB db = DBConnection.GetContext();
-                        var roleId = (from r in db.AspNetRoles
-                                      where r.Name == "AccountAdmin"
-                                      select r.Id).SingleOrDefault();
-
-                        var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
-                        rc = (from r in roles
-                              where r.RoleId == roleId && r.RoleData == accountId
-                              select r).Any();
-                    }
+                    var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
+                    rc = (from r in roles
+                            where r.RoleId == roleId && r.RoleData == accountId
+                            select r).Any();
                 }
             }
 
@@ -231,7 +234,7 @@ namespace DataAccess
                         AccountURL = a.URL,
                         FirstYear = a.FirstYear,
                         TimeZoneId = a.TimeZoneId,
-                        OwnerUserId = a.OwnerId
+                        OwnerContactId = a.OwnerId
                     });
         }
 
@@ -256,7 +259,7 @@ namespace DataAccess
                                                      select a).SingleOrDefault();
             if (dbAccount != null)
             {
-                dbAccount.OwnerId = account.OwnerUserId;
+                dbAccount.OwnerId = account.OwnerContactId;
                 dbAccount.Name = account.AccountName;
                 dbAccount.URL = account.AccountURL;
                 dbAccount.FirstYear = account.FirstYear;
@@ -274,14 +277,14 @@ namespace DataAccess
 
         static public long AddAccount(Account account)
         {
-            if (account.OwnerUserId.Equals(Guid.Empty))
-                throw new ArgumentException("OwnerUserId");
+            if (account.OwnerContactId <= 0)
+                throw new ArgumentException("OwnerContactId");
 
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.Account dbAccount = new SportsManager.Model.Account()
             {
-                OwnerId = account.OwnerUserId,
+                OwnerId = account.OwnerContactId,
                 Name = account.AccountName,
                 URL = account.AccountURL,
                 FirstYear = account.FirstYear,
@@ -588,7 +591,7 @@ namespace DataAccess
                         AccountURL = a.URL,
                         FirstYear = a.FirstYear,
                         TimeZoneId = a.TimeZoneId,
-                        OwnerUserId = a.OwnerId
+                        OwnerContactId = a.OwnerId
                     }).SingleOrDefault();
         }
 

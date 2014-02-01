@@ -57,13 +57,16 @@ namespace SportsManager.Areas.Golf.Controllers
 
             bool updateModel = TryUpdateModel(vm);
             string userId = User.Identity.GetUserId();
+
+            System.Diagnostics.Debug.Assert(false, "Create a contact and use that for OwnerUserId below");
+
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
                 Account account = new Account();
                 account.AccountName = vm.LeagueName;
                 account.AccountURL = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
                 account.TimeZoneId = vm.TimeZone;
-                account.OwnerUserId = userId;
+                //account.OwnerUserId = userId;
                 account.AccountTypeId = (long)Account.AccountType.Golf;
 
                 newAccountId = DataAccess.Accounts.AddAccount(account);

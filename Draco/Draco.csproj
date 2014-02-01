@@ -865,6 +865,7 @@
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Shared\AccountHomeMenu.cshtml" />
     <Content Include="Views\Shared\AccountMenu.cshtml" />
+    <Content Include="Views\Home\AdminLinks.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

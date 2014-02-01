@@ -104,14 +104,14 @@ namespace ModelObjects
 		{
 		}
 
-		public Account(long id, string accountName, string accountURL, String ownerUserId,
+		public Account(long id, string accountName, string accountURL, long ownerContactId,
 						int firstYear, long accountTypeId, long affiliationId, string timeZoneId)
 		{
 			Id = id;
 			AccountName = accountName;
 			AccountURL = accountURL;
 			FirstYear = firstYear;
-			OwnerUserId = ownerUserId;
+			OwnerContactId = ownerContactId;
 
 			AccountTypeId = accountTypeId;
 			AffiliationId = affiliationId;
@@ -129,7 +129,7 @@ namespace ModelObjects
 		public string AccountURL { get; set; }
 		public int FirstYear { get; set; }
 		public string TimeZoneId { get; set; }
-		public String OwnerUserId { get; set; }
+		public long OwnerContactId { get; set; }
         public string YouTubeUserId { get; set; }
 
 		public TimeZoneInfo TimeZoneInfo

@@ -17,6 +17,21 @@ namespace SportsManager.Baseball.ViewModels
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
         }
 
+        public bool TwitterEnabled
+        {
+            get { return false; }
+        }
+
+        public bool FacebookEnabled
+        {
+            get { return false; }
+        }
+
+        public bool VideosEnabled
+        {
+            get { return false; }
+        }
+
         public bool ShowVideos
         {
             get;

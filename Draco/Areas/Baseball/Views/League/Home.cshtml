@@ -155,7 +155,7 @@
         });
     </script>
 
-    @if (Model.ShowVideos)
+    @if (Model.VideosEnabled && Model.ShowVideos)
     {
         <!-- video playing -->
         <script type="text/javascript">
@@ -356,18 +356,20 @@
 }
 
 <div class="jumbotron">
-    <div id="accountName" style="float:left">
+    <div id="accountName">
         <div data-bind="visible: viewMode">
-            <div style="display:inline-block">Welcome to the <span data-bind="text: name"></span></div>
+            <div style="display:inline-block">
+                Welcome to the <span data-bind="text: name"></span>
+            </div>
+            <span data-bind="visible: hasYear" class="yearEstablished">est. <span data-bind="text: firstYear"></span></span>
             @if (Model.IsAdmin)
             {
                 <input type="button" value="Edit" data-bind="click: editAccountName, visible: viewMode" />
             }
-            <span data-bind="visible: hasYear" class="yearEstablished"><br />established <span data-bind="text: firstYear"></span></span>
         </div>
         @if (Model.IsAdmin)
         {
-            <div data-bind="visible: !viewMode()">
+            <div style="display:none" data-bind="visible: !viewMode()">
                 Account Name: <input type="text" style="width:200px" data-bind="value: name" /><br />
                 Year Established: <select data-bind="value: firstYear, options: availableYears"></select>
                 <input type="button" value="Save" data-bind="click: saveAccountName" />
@@ -377,16 +379,12 @@
     </div>
     @if (Model.CurrentSeasonId != 0)
     {
-        <div style="float:right">
-            <div style="display:inline-block">@Model.SeasonName Season</div>
-            @if (Model.IsAdmin)
-            {
-                <input type="button" onclick="window.location.href='@Url.Action("Index", "Season", new { area = "", accountId = Model.AccountId })'" value="Edit" />
-            }
-        </div>
+        <div style="display:inline-block">@Model.SeasonName Season</div>
+        if (Model.IsAdmin)
+        {
+            <input type="button" onclick="window.location.href='@Url.Action("Index", "Season", new { area = "", accountId = Model.AccountId })'" value="Edit" />
+        }
     }
-
-    <div style="clear:both"></div>
 
     @if (ViewData["IsAdmin"] != null && (bool)ViewData["IsAdmin"])
     {
@@ -397,7 +395,8 @@
         </div>
 
     }
-    @if (ViewData["TwitterAccountName"] != null)
+    
+    @*@if (ViewData["TwitterAccountName"] != null)
     {
         <div id="twitterDisplay">
             <a href='https://twitter.com/@ViewData["TwitterAccountName"]' class="twitter-follow-button" data-size="large" data-show-count="true" data-lang="en">Follow @@@ViewData["TwitterAccountName"]</a>
@@ -412,7 +411,7 @@
     @if (ViewData["AccountUrl"] != null)
     {
         <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
-    }
+    }*@
 </div>
 
 <div class="row">
@@ -468,6 +467,8 @@
     }
 
     <div class="row">
+    @if (Model.TwitterEnabled)
+    {
         <div class="col-md-6">
             <div id="twitterFeed" data-bind="visible: displayTwitterFeed" style="margin-top:20px;margin-left:20px;width:400px;float:left">
                 <h3 class="grad" style="margin-top:0px">Twitter</h3>
@@ -483,7 +484,10 @@
 
             </div>
         </div>
-
+    }
+    
+    @if (Model.FacebookEnabled)
+    { 
         <div class="col-md-6">
             <div id="facebookFeed" data-bind="visible: isVisible" style="margin-top:20px;margin-left:20px;width:500px;float:left">
                 <h3 class="grad" style="margin-top:0px">Facebook</h3>
@@ -498,6 +502,7 @@
                 <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
             </div>
         </div>
+    }
     </div>
 
     @if (Model.ShowPhotoGallery)
@@ -510,7 +515,7 @@
         </div>
     }
 
-    @if (Model.ShowVideos)
+    @if (Model.VideosEnabled && Model.ShowVideos)
     {
         <div id="videos" data-bind="visible: videosVisible" class="item" style="width:600px;height:330px">
             <h3 class="grad" style="margin-top:0px">Videos</h3>

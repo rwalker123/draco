@@ -1476,7 +1476,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private string _OwnerId;
+		private long _OwnerId;
 		
 		private string _Name;
 		
@@ -1558,7 +1558,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnOwnerIdChanging(string value);
+    partial void OnOwnerIdChanging(long value);
     partial void OnOwnerIdChanged();
     partial void OnNameChanging(string value);
     partial void OnNameChanged();
@@ -1636,8 +1636,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_OwnerId", DbType="NVarChar(128) NOT NULL", CanBeNull=false)]
-		public string OwnerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_OwnerId", DbType="BigInt NOT NULL")]
+		public long OwnerId
 		{
 			get
 			{
@@ -5280,7 +5280,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _RoleId;
 		
@@ -5296,7 +5296,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnRoleIdChanging(string value);
     partial void OnRoleIdChanged();
@@ -5332,8 +5332,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -5443,7 +5443,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -5477,7 +5477,7 @@ namespace SportsManager.Model
 		
 		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
 		
-		private int _Id;
+		private long _Id;
 		
 		private string _Email;
 		
@@ -5557,7 +5557,7 @@ namespace SportsManager.Model
     partial void OnLoaded();
     partial void OnValidate(System.Data.Linq.ChangeAction action);
     partial void OnCreated();
-    partial void OnIdChanging(int value);
+    partial void OnIdChanging(long value);
     partial void OnIdChanged();
     partial void OnEmailChanging(string value);
     partial void OnEmailChanged();
@@ -5619,8 +5619,8 @@ namespace SportsManager.Model
 			OnCreated();
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="Int NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
-		public int Id
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
+		public long Id
 		{
 			get
 			{
@@ -7249,7 +7249,7 @@ namespace SportsManager.Model
 		
 		private long _FieldId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private EntityRef<AvailableField> _AvailableField;
 		
@@ -7263,7 +7263,7 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnFieldIdChanging(long value);
     partial void OnFieldIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -7318,8 +7318,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -7403,7 +7403,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -10596,7 +10596,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _CourseId;
 		
@@ -10610,7 +10610,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnCourseIdChanging(long value);
     partial void OnCourseIdChanged();
@@ -10643,8 +10643,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -10718,7 +10718,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -10788,7 +10788,7 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _StatId;
 		
@@ -10802,7 +10802,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnStatIdChanging(long value);
     partial void OnStatIdChanged();
@@ -10835,8 +10835,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -10910,7 +10910,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -10982,7 +10982,7 @@ namespace SportsManager.Model
 		
 		private long _ScoreId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private int _HoleNo;
 		
@@ -11000,7 +11000,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnScoreIdChanging(long value);
     partial void OnScoreIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnHoleNoChanging(int value);
     partial void OnHoleNoChanged();
@@ -11059,8 +11059,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -11150,7 +11150,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -11438,13 +11438,13 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _PresidentId;
+		private long _PresidentId;
 		
-		private int _VicePresidentId;
+		private long _VicePresidentId;
 		
-		private int _SecretaryId;
+		private long _SecretaryId;
 		
-		private int _TreasurerId;
+		private long _TreasurerId;
 		
 		private int _LeagueDay;
 		
@@ -11528,13 +11528,13 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnPresidentIdChanging(int value);
+    partial void OnPresidentIdChanging(long value);
     partial void OnPresidentIdChanged();
-    partial void OnVicePresidentIdChanging(int value);
+    partial void OnVicePresidentIdChanging(long value);
     partial void OnVicePresidentIdChanged();
-    partial void OnSecretaryIdChanging(int value);
+    partial void OnSecretaryIdChanging(long value);
     partial void OnSecretaryIdChanged();
-    partial void OnTreasurerIdChanging(int value);
+    partial void OnTreasurerIdChanging(long value);
     partial void OnTreasurerIdChanged();
     partial void OnLeagueDayChanging(int value);
     partial void OnLeagueDayChanged();
@@ -11656,8 +11656,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PresidentId", DbType="Int NOT NULL")]
-		public int PresidentId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PresidentId", DbType="BigInt NOT NULL")]
+		public long PresidentId
 		{
 			get
 			{
@@ -11680,8 +11680,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_VicePresidentId", DbType="Int NOT NULL")]
-		public int VicePresidentId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_VicePresidentId", DbType="BigInt NOT NULL")]
+		public long VicePresidentId
 		{
 			get
 			{
@@ -11704,8 +11704,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SecretaryId", DbType="Int NOT NULL")]
-		public int SecretaryId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SecretaryId", DbType="BigInt NOT NULL")]
+		public long SecretaryId
 		{
 			get
 			{
@@ -11728,8 +11728,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TreasurerId", DbType="Int NOT NULL")]
-		public int TreasurerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TreasurerId", DbType="BigInt NOT NULL")]
+		public long TreasurerId
 		{
 			get
 			{
@@ -12453,7 +12453,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._PresidentId = default(int);
+						this._PresidentId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -12487,7 +12487,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._VicePresidentId = default(int);
+						this._VicePresidentId = default(long);
 					}
 					this.SendPropertyChanged("Contact1");
 				}
@@ -12521,7 +12521,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._SecretaryId = default(int);
+						this._SecretaryId = default(long);
 					}
 					this.SendPropertyChanged("Contact2");
 				}
@@ -12555,7 +12555,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._TreasurerId = default(int);
+						this._TreasurerId = default(long);
 					}
 					this.SendPropertyChanged("Contact3");
 				}
@@ -13359,7 +13359,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _TeamSeasonId;
 		
@@ -13383,7 +13383,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnTeamSeasonIdChanging(long value);
     partial void OnTeamSeasonIdChanged();
@@ -13425,8 +13425,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -13593,7 +13593,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -13677,7 +13677,7 @@ namespace SportsManager.Model
 		
 		private long _CourseId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _TeeId;
 		
@@ -13747,7 +13747,7 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnCourseIdChanging(long value);
     partial void OnCourseIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnTeeIdChanging(long value);
     partial void OnTeeIdChanged();
@@ -13855,8 +13855,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -14436,7 +14436,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -15797,7 +15797,7 @@ namespace SportsManager.Model
 		
 		private int _YearInducted;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _Bio;
 		
@@ -15815,7 +15815,7 @@ namespace SportsManager.Model
     partial void OnAccountIdChanged();
     partial void OnYearInductedChanging(int value);
     partial void OnYearInductedChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnBioChanging(string value);
     partial void OnBioChanged();
@@ -15892,8 +15892,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -15997,7 +15997,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -18232,7 +18232,7 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private EntitySet<GameEjection> _GameEjections;
 		
@@ -18248,7 +18248,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -18304,8 +18304,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -18402,7 +18402,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -18450,7 +18450,7 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _Name;
 		
@@ -18476,7 +18476,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnNameChanging(string value);
     partial void OnNameChanged();
@@ -18522,8 +18522,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -18733,7 +18733,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -19055,7 +19055,7 @@ namespace SportsManager.Model
 		
 		private int _PostOrder;
 		
-		private int _ContactCreatorId;
+		private long _ContactCreatorId;
 		
 		private System.DateTime _PostDate;
 		
@@ -19081,7 +19081,7 @@ namespace SportsManager.Model
     partial void OnTopicIdChanged();
     partial void OnPostOrderChanging(int value);
     partial void OnPostOrderChanged();
-    partial void OnContactCreatorIdChanging(int value);
+    partial void OnContactCreatorIdChanging(long value);
     partial void OnContactCreatorIdChanged();
     partial void OnPostDateChanging(System.DateTime value);
     partial void OnPostDateChanged();
@@ -19166,8 +19166,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="Int NOT NULL")]
-		public int ContactCreatorId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="BigInt NOT NULL")]
+		public long ContactCreatorId
 		{
 			get
 			{
@@ -19317,7 +19317,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactCreatorId = default(int);
+						this._ContactCreatorId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -19389,7 +19389,7 @@ namespace SportsManager.Model
 		
 		private long _CategoryId;
 		
-		private int _ContactCreatorId;
+		private long _ContactCreatorId;
 		
 		private System.DateTime _TopicCreateDate;
 		
@@ -19413,7 +19413,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnCategoryIdChanging(long value);
     partial void OnCategoryIdChanged();
-    partial void OnContactCreatorIdChanging(int value);
+    partial void OnContactCreatorIdChanging(long value);
     partial void OnContactCreatorIdChanged();
     partial void OnTopicCreateDateChanging(System.DateTime value);
     partial void OnTopicCreateDateChanged();
@@ -19477,8 +19477,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="Int NOT NULL")]
-		public int ContactCreatorId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="BigInt NOT NULL")]
+		public long ContactCreatorId
 		{
 			get
 			{
@@ -19621,7 +19621,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactCreatorId = default(int);
+						this._ContactCreatorId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -20914,7 +20914,7 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _PlayerId;
+		private long _PlayerId;
 		
 		private long _QuestionId;
 		
@@ -20928,7 +20928,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnPlayerIdChanging(int value);
+    partial void OnPlayerIdChanging(long value);
     partial void OnPlayerIdChanged();
     partial void OnQuestionIdChanging(long value);
     partial void OnQuestionIdChanged();
@@ -20962,8 +20962,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PlayerId", DbType="Int NOT NULL")]
-		public int PlayerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PlayerId", DbType="BigInt NOT NULL")]
+		public long PlayerId
 		{
 			get
 			{
@@ -21053,7 +21053,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._PlayerId = default(int);
+						this._PlayerId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -22942,7 +22942,7 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private bool _SubmittedDriversLicense;
 		
@@ -22962,7 +22962,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnSubmittedDriversLicenseChanging(bool value);
     partial void OnSubmittedDriversLicenseChanged();
@@ -23021,8 +23021,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -23152,7 +23152,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -24805,7 +24805,7 @@ namespace SportsManager.Model
 		
 		private long _TeamSeasonId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private EntityRef<Contact> _Contact;
 		
@@ -24819,7 +24819,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnTeamSeasonIdChanging(long value);
     partial void OnTeamSeasonIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -24874,8 +24874,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -24925,7 +24925,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -25718,7 +25718,7 @@ namespace SportsManager.Model
 		
 		private long _OptionId;
 		
-		private System.Nullable<int> _ContactId;
+		private System.Nullable<long> _ContactId;
 		
 		private EntityRef<Contact> _Contact;
 		
@@ -25736,7 +25736,7 @@ namespace SportsManager.Model
     partial void OnQuestionIdChanged();
     partial void OnOptionIdChanging(long value);
     partial void OnOptionIdChanged();
-    partial void OnContactIdChanging(System.Nullable<int> value);
+    partial void OnContactIdChanging(System.Nullable<long> value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -25816,8 +25816,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int")]
-		public System.Nullable<int> ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt")]
+		public System.Nullable<long> ContactId
 		{
 			get
 			{
@@ -25867,7 +25867,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(Nullable<int>);
+						this._ContactId = default(Nullable<long>);
 					}
 					this.SendPropertyChanged("Contact");
 				}
