@@ -63,13 +63,13 @@
             other data that involves games played in a season.
         </p>
     Season: <select id="seasonList"></select>
-    <input type="button" onclick="leagueSetupData.copySeason(@Model.CurrentSeasonId);" value="Import Season" />
+    <button type="button" class="btn btn-default" onclick="leagueSetupData.copySeason(@Model.CurrentSeasonId);">Import Season</button>
     </div>
 </div>
 
 <div class="ui-widget" style="margin-bottom:20px">
     League Name: <input id="newLeagueName" type="text" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
-    <input type="button" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)" value="Add League" />
+    <button type="button" class="btn btn-primary" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)">Add League</button>
 </div>
 
 <div id="accordion">
@@ -92,14 +92,14 @@
 <div id='leagueData_{{:Id}}' class='leagueData'>
     <div style='float:right'>
     League Name: <input id='newLeagueName_{{:Id}}' value='{{>Name}}' /> 
-    <input type="button" onclick="leagueSetupData.editLeague({{:Id}})" value="Update Name" />
-    <input type="button" onclick="leagueSetupData.deleteLeague({{:Id}})" value="Delete League" />
+    <button type="button" class="btn btn-default" onclick="leagueSetupData.editLeague({{:Id}})">Update Name</button>
+    <button type="button" class="btn btn-danger" onclick="leagueSetupData.deleteLeague({{:Id}})">Delete League</button>
     </div>
     <div style='clear:both' />
     <br />
     Division Name: <input id="NewDivisionName_{{:Id}}" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
     Sort Order: <input id="NewDivisionPriority_{{:Id}}" type="number" style="width:50px" min="0" max="100" value="1" />
-    <input type="button" onclick="leagueSetupData.addDivision({{:Id}})" value="Add Division" />
+    <button type="button" class="btn btn-default" onclick="leagueSetupData.addDivision({{:Id}})">Add Division</button>
     <div id="LeagueSetupData_{{:Id}}" data-hasdata="False">
         Loading...
     </div>
@@ -117,7 +117,7 @@
 
 <script id="teamTemplate" type="text/x-jsrender">
 <li class="division_{{>DivisionId}} divisionTeam" id='divisionTeam_{{:Id}}' data-name='{{>Name}}'>
-    <input type="button" onclick="leagueSetupData.removeTeamFromDivision({{:LeagueId}}, {{:DivisionId}}, {{:Id}})" value="Remove" />
+    <button type="button" class="btn btn-danger" onclick="leagueSetupData.removeTeamFromDivision({{:LeagueId}}, {{:DivisionId}}, {{:Id}})">Remove</button>
     
     <img src='/images/busy.gif' id='teamLogoBusy_{{:Id}}'
          style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
@@ -138,26 +138,27 @@
 </script>
 
 <script id="divisionTemplate" type="text/x-jsrender">
-    <div class='divisionItem' id='division_{{:Id}}' data-priority='{{:Priority}}' data-name='{{>Name}}'>
-        <h4 id='divisionHeader_{{:Id}}'><span id='divisionHeaderName_{{:Id}}'>{{:Name}}</span>
-            <input type="button" onclick="leagueSetupData.editDivision({{:Id}})" value="Edit" />
-            <input type="button" onclick="leagueSetupData.deleteDivision({{:Id}})" value="Delete" />
-        </h4>
-    
+    <div class='divisionItem' style="margin-top:20px" id='division_{{:Id}}' data-priority='{{:Priority}}' data-name='{{>Name}}'>
+        <h4 style="float:left; margin-right:10px" id='divisionHeader_{{:Id}}'><span id='divisionHeaderName_{{:Id}}'>{{:Name}}</span></h4>
+        <div style="float: left">
+            <button type="button" class="btn btn-default" onclick="leagueSetupData.editDivision({{:Id}})">Edit</button>
+            <button type="button" class="btn btn-danger" onclick="leagueSetupData.deleteDivision({{:Id}})">Delete</button>
+        </div>
+        <div style="clear:both"></div>
         <div id='divisionEdit_{{:Id}}' style='display:none;font-size: 18px'>
             Division Name: <input id="editDivisionName_{{:Id}}" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" value='{{>Name}}' />
             Sort Order: <input id="editDivisionPriority_{{:Id}}" type="number" style="width:50px" min="0" max="100" value="{{:Priority}}" />
-            <input type="button" onclick="leagueSetupData.saveDivisionEdit({{:LeagueId}}, {{:Id}})" value="Save" />
-            <input type="button" onclick="leagueSetupData.cancelDivisionEdit({{:Id}})" value="Cancel" />
+            <button type="button" class="btn btn-success" onclick="leagueSetupData.saveDivisionEdit({{:LeagueId}}, {{:Id}})">Save</button>
+            <button type="button" class="btn btn-danger" onclick="leagueSetupData.cancelDivisionEdit({{:Id}})">Cancel</button>
         </div>
 
         <div style="margin-left:30px">
             <div id='addDivisionTeamPanel_{{:Id}}' class='addDivisionTeamPanel' style='display:none'>
-                <input type="button" onclick="leagueSetupData.addTeamToDivision({{:LeagueId}}, {{:Id}})" value="Add" />
-                <input type="button" onclick="leagueSetupData.stopAddTeam({{:LeagueId}}, {{:Id}})" value="Done" />
+                <button type="button" class="btn btn-success" onclick="leagueSetupData.addTeamToDivision({{:LeagueId}}, {{:Id}})">Add</button>
+                <button type="button" class="btn btn-default" onclick="leagueSetupData.stopAddTeam({{:LeagueId}}, {{:Id}})">Done</button>
             </div>
             <div id='divisionTeamEdit_{{:Id}}'>
-                <input type="button" onclick="leagueSetupData.startAddTeam({{:LeagueId}}, {{:Id}})" value="Add Team" />
+                <button type="button" class="btn btn-default" onclick="leagueSetupData.startAddTeam({{:LeagueId}}, {{:Id}})">Add Team</button>
             </div>
         </div>
 
