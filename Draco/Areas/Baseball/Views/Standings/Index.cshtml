@@ -6,12 +6,9 @@
 	ViewBag.Title = Model.AccountName + " Standings";
 }
 
-@section menu {
-	@Html.Partial("_LeagueMenu")
-}
-
-<h2>@Model.AccountName Standings</h2>
-
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
 
 @Html.Partial("_SeasonStandings")
 

@@ -1,13 +1,19 @@
-﻿function InitViewModels(accountId, accountName, firstYear, facebookFanPage, showPhotoGallery, isAdmin ) {
-    var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear);
+﻿function InitViewModels(accountId, accountName, firstYear, twitterAccountName, facebookFanPage, showPhotoGallery, isAdmin ) {
+    var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear, twitterAccountName);
     ko.applyBindings(editAccountVM, document.getElementById("accountName"));
 
-    var twitterVM = new TwitterViewModel(accountId, isAdmin);
-    ko.applyBindings(twitterVM, document.getElementById("twitterFeed"));
-    twitterVM.loadTwitterScript();
+    var twitterFeed = document.getElementById("twitterFeed");
+    if (twitterFeed) {
+        var twitterVM = new TwitterViewModel(accountId, isAdmin);
+        ko.applyBindings(twitterVM, twitterFeed);
+        twitterVM.loadTwitterScript();
+    }
 
-    var facebookVM = new FacebookViewModel(accountId, facebookFanPage, isAdmin);
-    ko.applyBindings(facebookVM, document.getElementById("facebookFeed"));
+    var facebookFeed = document.getElementById("facebookFeed");
+    if (facebookFeed) {
+        var facebookVM = new FacebookViewModel(accountId, facebookFanPage, isAdmin);
+        ko.applyBindings(facebookVM, facebookFeed);
+    }
 
     $('#fileupload').fileupload({
         dataType: 'json',
@@ -42,12 +48,13 @@
 }
 
 // edit account name
-var EditAccountNameViewModel = function (accountId, accountName, firstYear) {
+var EditAccountNameViewModel = function (accountId, accountName, firstYear, twitterAccountName) {
     var self = this;
     self.accountId = accountId;
 
     self.name = ko.protectedObservable(accountName);
     self.firstYear = ko.protectedObservable(firstYear);
+    self.twitterAccount = ko.protectedObservable(twitterAccountName);
     self.viewMode = ko.observable(true);
     self.hasYear = ko.computed(function() {
         return !!self.firstYear;
@@ -78,12 +85,17 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear) {
             url: '/api/AccountAPI/' + accountId + '/AccountName',
             data: {
                 Id: self.name.uncommitValue(),
-                Year: self.firstYear.uncommitValue()
+                Year: self.firstYear.uncommitValue(),
+                TwitterAccount: self.twitterAccount.uncommitValue()
             },
             success: function (accountName) {
-                self.commitChanges();
-                self.viewMode(true);
-                window.location.hash = 'update';
+                if (self.twitterAccount.uncommitValue() != self.twitterAccount())
+                    window.location.reload();
+                else {
+                    self.commitChanges();
+                    self.viewMode(true);
+                    window.location.hash = 'update';
+                }
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 var obj = JSON.parse(xhr.responseText);

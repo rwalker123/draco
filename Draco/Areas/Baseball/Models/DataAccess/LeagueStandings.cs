@@ -21,7 +21,8 @@ namespace DataAccess
 
 			foreach (Team t in rsTeams)
 			{
-				teams.Add(t.Id, new TeamStanding(t.Id, t.DivisionId, t.Name));
+                if (t.DivisionId > 0)
+				    teams.Add(t.Id, new TeamStanding(t.Id, t.DivisionId, t.Name));
 			}
 
             List<Game> completedGames = DataAccess.Schedule.GetCompletedGames(leagueId);

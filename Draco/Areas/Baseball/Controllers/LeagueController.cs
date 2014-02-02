@@ -88,13 +88,14 @@ namespace SportsManager.Areas.Baseball.Controllers
             string userId = User.Identity.GetUserId();
             bool updateModel = TryUpdateModel(vm);
 
+            System.Diagnostics.Debug.Assert(false, "Create a contact and use that for OwnerUserId below");
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
                 Account account = new Account();
                 account.AccountName = vm.LeagueName;
                 account.AccountURL = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
                 account.TimeZoneId = vm.TimeZone;
-                account.OwnerUserId = User.Identity.GetUserId();
+                //account.OwnerUserId = User.Identity.GetUserId();
                 account.AccountTypeId = (long)Account.AccountType.Baseball;
 
                 newAccountId = DataAccess.Accounts.AddAccount(account);

@@ -3,56 +3,56 @@
 @using GMS.Web.Mvc.Html;
 
 @{
-	ViewBag.Title = "Index";
+    ViewBag.Title = @Model.AccountName + " Teams";
 }
 
-@section menu {
-		@Html.Partial("_LeagueMenu")
+@section head {
+    <link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+    <style>
+        ul {
+            list-style-type: none;
+        }
+
+        .links {
+            margin-left:10px;
+        }
+    </style>
 }
 
-<br />
-
-<div>
-
-	@Html.Partial("_GoogleHorizontalAd")
-
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
 </div>
 
-	<h1>@Model.GetAccountName() Teams</h1>
+<div class="container">
+    @foreach (var league in Model.Leagues)
+    {
+        <div class="row">
+            <h2>@league.Name</h2>
 
-	@foreach (var league in Model.Leagues) {
+            @foreach (var division in Model.Divisions(league.Id))
+            {
+                <div class="col-md-4">
+                    <h3>@division.Name</h3>
 
-		<table>
-		<tr><th colspan="@Model.LoadDivisions(league.Id)">@league.Name</th></tr>
-		<tr>
-
-		@foreach (var division in Model.Divisions) {
-			<td valign="top">
-			<table>
-			<tr><th colspan="2" align="center">@division.Name</th></tr>
-			
-			@foreach (var team in Model.GetDivisionTeams(division.Id)) {
-
-				<tr><td rowspan="2">
-
-				@if (!String.IsNullOrEmpty(team.TeamLogoURL)) {
-					@Html.ActionImage(Url.Content(team.TeamLogoURL), "Team Logo", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
-				}
-
-				</td>
-				<td valign="bottom">@team.Name</td></tr>
-				<tr><td valign="top">
-					@Html.ActionLink("Home Page", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null )
-					@Html.ActionLink("Statistics", "Statistics", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
-					@Html.ActionLink("Schedule", "Schedule", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
-				</td></tr>
-
-			}
-
-			</table>
-			</td>
-		}
-
-		</tr>
-		</table>
-	}
+                    <ul>
+                        @foreach (var team in Model.GetDivisionTeams(division.Id))
+                        {
+                            <li>
+                                @if (!String.IsNullOrEmpty(team.TeamLogoURL))
+                                {
+                                    @Html.ActionImage(Url.Content(team.TeamLogoURL), "Team Logo", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+                                }
+                                <span class="lead">@team.Name</span>
+                                <div class="links">
+                                    @Html.ActionLink("Home Page", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+                                    @Html.ActionLink("Statistics", "Statistics", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+                                    @Html.ActionLink("Schedule", "Schedule", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        </div>
+    }
+</div>

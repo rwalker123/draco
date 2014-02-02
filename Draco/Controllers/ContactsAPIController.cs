@@ -113,7 +113,7 @@ namespace SportsManager.Controllers
             {
                 try
                 {
-                    DataAccess.Contacts.UpdateContact(contact);
+                    DataAccess.Contacts.UpdateContact(contact, false);
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
                     {

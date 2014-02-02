@@ -19,7 +19,7 @@ $.extend(UserRoleClass.prototype, {
     getAdminId: function (t) {
         var firstItemId = t.lastIndexOf('_');
         if (firstItemId == -1)
-            return -1;
+            return "";
 
         return t.substring(firstItemId + 1);
     },
@@ -164,7 +164,7 @@ $.extend(UserRoleClass.prototype, {
 
     populateAdminList: function (target, elem) {
             var roleId = target.getAdminId(elem.attr('id'));
-            if (roleId == -1) {
+            if (!roleId) {
                 return;
             }
 

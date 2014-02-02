@@ -1,16 +1,13 @@
-﻿
+﻿using SportsManager.ViewModels;
+using System.Web.Mvc;
+
 namespace SportsManager.Baseball.ViewModels
 {
-	public class LeagueFieldsViewModel
+	public class LeagueFieldsViewModel : AccountViewModel
 	{
-		public LeagueFieldsViewModel(long accountId)
+		public LeagueFieldsViewModel(Controller c, long accountId)
+            : base(c, accountId)
 		{
-			AccountId = accountId;
-			AccountName = DataAccess.Accounts.GetAccountName(accountId);
 		}
-
-		public string AccountName { get; private set; }
-		public long AccountId { get; private set; }
-
 	}
 }

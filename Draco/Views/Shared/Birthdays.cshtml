@@ -1,0 +1,25 @@
+﻿@model SportsManager.ViewModels.BirthdayViewModel
+
+<h4 style="margin-left:10px; margin-bottom:0px">Today's Birthdays</h4>
+
+<div style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
+    <ul style="margin-top: 10px;list-style-type: none">
+        @{
+            var birthdayBoys = DataAccess.TeamRoster.GetAllBirthdayBoys(Model.AccountId);
+        }
+
+        @if (birthdayBoys.Any())
+        {
+            foreach (var bp in birthdayBoys)
+            {
+                <li><a href="javascript:ShowPlayer(@bp.id, 1)">@bp.Contact.FirstName @bp.Contact.LastName</a></li>
+            }
+        }
+        else
+        {
+            <li><i>No birthdays today</i></li>
+        }
+    </ul>
+
+</div>
+

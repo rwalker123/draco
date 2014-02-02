@@ -70,9 +70,6 @@ namespace SportsManager
     partial void InsertContactRole(SportsManager.Model.ContactRole instance);
     partial void UpdateContactRole(SportsManager.Model.ContactRole instance);
     partial void DeleteContactRole(SportsManager.Model.ContactRole instance);
-    partial void InsertContact(SportsManager.Model.Contact instance);
-    partial void UpdateContact(SportsManager.Model.Contact instance);
-    partial void DeleteContact(SportsManager.Model.Contact instance);
     partial void InsertCurrentSeason(SportsManager.Model.CurrentSeason instance);
     partial void UpdateCurrentSeason(SportsManager.Model.CurrentSeason instance);
     partial void DeleteCurrentSeason(SportsManager.Model.CurrentSeason instance);
@@ -253,6 +250,12 @@ namespace SportsManager
     partial void InsertWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     partial void UpdateWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     partial void DeleteWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
+    partial void InsertAccountSetting(SportsManager.Model.AccountSetting instance);
+    partial void UpdateAccountSetting(SportsManager.Model.AccountSetting instance);
+    partial void DeleteAccountSetting(SportsManager.Model.AccountSetting instance);
+    partial void InsertContact(SportsManager.Model.Contact instance);
+    partial void UpdateContact(SportsManager.Model.Contact instance);
+    partial void DeleteContact(SportsManager.Model.Contact instance);
     #endregion
 		
 		public DB() : 
@@ -306,14 +309,6 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.Account>();
-			}
-		}
-		
-		public System.Data.Linq.Table<SportsManager.Model.AccountSetting> AccountSettings
-		{
-			get
-			{
-				return this.GetTable<SportsManager.Model.AccountSetting>();
 			}
 		}
 		
@@ -402,14 +397,6 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.ContactRole>();
-			}
-		}
-		
-		public System.Data.Linq.Table<SportsManager.Model.Contact> Contacts
-		{
-			get
-			{
-				return this.GetTable<SportsManager.Model.Contact>();
 			}
 		}
 		
@@ -890,6 +877,22 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.WorkoutAnnouncement>();
+			}
+		}
+		
+		public System.Data.Linq.Table<SportsManager.Model.AccountSetting> AccountSettings
+		{
+			get
+			{
+				return this.GetTable<SportsManager.Model.AccountSetting>();
+			}
+		}
+		
+		public System.Data.Linq.Table<SportsManager.Model.Contact> Contacts
+		{
+			get
+			{
+				return this.GetTable<SportsManager.Model.Contact>();
 			}
 		}
 	}
@@ -1476,7 +1479,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private string _OwnerId;
+		private long _OwnerId;
 		
 		private string _Name;
 		
@@ -1548,6 +1551,8 @@ namespace SportsManager.Model
 		
 		private EntitySet<WorkoutAnnouncement> _WorkoutAnnouncements;
 		
+		private EntitySet<AccountSetting> _AccountSettings;
+		
 		private EntityRef<AccountType> _AccountType;
 		
 		private EntityRef<Affiliation> _Affiliation;
@@ -1558,7 +1563,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnOwnerIdChanging(string value);
+    partial void OnOwnerIdChanging(long value);
     partial void OnOwnerIdChanged();
     partial void OnNameChanging(string value);
     partial void OnNameChanged();
@@ -1611,6 +1616,7 @@ namespace SportsManager.Model
 			this._VideoAccounts = new EntitySet<VideoAccount>(new Action<VideoAccount>(this.attach_VideoAccounts), new Action<VideoAccount>(this.detach_VideoAccounts));
 			this._VoteQuestions = new EntitySet<VoteQuestion>(new Action<VoteQuestion>(this.attach_VoteQuestions), new Action<VoteQuestion>(this.detach_VoteQuestions));
 			this._WorkoutAnnouncements = new EntitySet<WorkoutAnnouncement>(new Action<WorkoutAnnouncement>(this.attach_WorkoutAnnouncements), new Action<WorkoutAnnouncement>(this.detach_WorkoutAnnouncements));
+			this._AccountSettings = new EntitySet<AccountSetting>(new Action<AccountSetting>(this.attach_AccountSettings), new Action<AccountSetting>(this.detach_AccountSettings));
 			this._AccountType = default(EntityRef<AccountType>);
 			this._Affiliation = default(EntityRef<Affiliation>);
 			OnCreated();
@@ -1636,8 +1642,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_OwnerId", DbType="NVarChar(128) NOT NULL", CanBeNull=false)]
-		public string OwnerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_OwnerId", DbType="BigInt NOT NULL")]
+		public long OwnerId
 		{
 			get
 			{
@@ -2235,6 +2241,19 @@ namespace SportsManager.Model
 			}
 		}
 		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_AccountSetting", Storage="_AccountSettings", ThisKey="Id", OtherKey="AccountId")]
+		public EntitySet<AccountSetting> AccountSettings
+		{
+			get
+			{
+				return this._AccountSettings;
+			}
+			set
+			{
+				this._AccountSettings.Assign(value);
+			}
+		}
+		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="AccountType_Account", Storage="_AccountType", ThisKey="AccountTypeId", OtherKey="Id", IsForeignKey=true)]
 		public AccountType AccountType
 		{
@@ -2574,68 +2593,17 @@ namespace SportsManager.Model
 			this.SendPropertyChanging();
 			entity.Account = null;
 		}
-	}
-	
-	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.AccountSettings")]
-	public partial class AccountSetting
-	{
 		
-		private long _AccountId;
-		
-		private string _SettingKey;
-		
-		private string _SettingValue;
-		
-		public AccountSetting()
+		private void attach_AccountSettings(AccountSetting entity)
 		{
+			this.SendPropertyChanging();
+			entity.Account = this;
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL")]
-		public long AccountId
+		private void detach_AccountSettings(AccountSetting entity)
 		{
-			get
-			{
-				return this._AccountId;
-			}
-			set
-			{
-				if ((this._AccountId != value))
-				{
-					this._AccountId = value;
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SettingKey", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
-		public string SettingKey
-		{
-			get
-			{
-				return this._SettingKey;
-			}
-			set
-			{
-				if ((this._SettingKey != value))
-				{
-					this._SettingKey = value;
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SettingValue", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
-		public string SettingValue
-		{
-			get
-			{
-				return this._SettingValue;
-			}
-			set
-			{
-				if ((this._SettingValue != value))
-				{
-					this._SettingValue = value;
-				}
-			}
+			this.SendPropertyChanging();
+			entity.Account = null;
 		}
 	}
 	
@@ -5280,7 +5248,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _RoleId;
 		
@@ -5296,7 +5264,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnRoleIdChanging(string value);
     partial void OnRoleIdChanged();
@@ -5332,8 +5300,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -5443,7 +5411,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -5468,1053 +5436,6 @@ namespace SportsManager.Model
 			{
 				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 			}
-		}
-	}
-	
-	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Contacts")]
-	public partial class Contact : INotifyPropertyChanging, INotifyPropertyChanged
-	{
-		
-		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
-		
-		private int _Id;
-		
-		private string _Email;
-		
-		private string _LastName;
-		
-		private string _FirstName;
-		
-		private string _MiddleName;
-		
-		private string _Phone1;
-		
-		private string _Phone2;
-		
-		private string _Phone3;
-		
-		private long _CreatorAccountId;
-		
-		private string _StreetAddress;
-		
-		private string _City;
-		
-		private string _State;
-		
-		private string _Zip;
-		
-		private System.Nullable<int> _FirstYear;
-		
-		private System.Nullable<System.DateTime> _DateOfBirth;
-		
-		private System.Nullable<bool> _IsFemale;
-		
-		private string _UserId;
-		
-		private EntitySet<ContactRole> _ContactRoles;
-		
-		private EntitySet<FieldContact> _FieldContacts;
-		
-		private EntitySet<GolfCourseForContact> _GolfCourseForContacts;
-		
-		private EntitySet<GolferStatsConfiguration> _GolferStatsConfigurations;
-		
-		private EntitySet<GolferStatsValue> _GolferStatsValues;
-		
-		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups;
-		
-		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups1;
-		
-		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups2;
-		
-		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups3;
-		
-		private EntitySet<GolfRoster> _GolfRosters;
-		
-		private EntitySet<GolfScore> _GolfScores;
-		
-		private EntitySet<hof> _hofs;
-		
-		private EntitySet<LeagueUmpire> _LeagueUmpires;
-		
-		private EntitySet<MemberBusiness> _MemberBusinesses;
-		
-		private EntitySet<MessagePost> _MessagePosts;
-		
-		private EntitySet<MessageTopic> _MessageTopics;
-		
-		private EntitySet<PlayerProfile> _PlayerProfiles;
-		
-		private EntitySet<Roster> _Rosters;
-		
-		private EntitySet<TeamSeasonManager> _TeamSeasonManagers;
-		
-		private EntitySet<VoteAnswer> _VoteAnswers;
-		
-		private EntityRef<AspNetUser> _AspNetUser;
-		
-    #region Extensibility Method Definitions
-    partial void OnLoaded();
-    partial void OnValidate(System.Data.Linq.ChangeAction action);
-    partial void OnCreated();
-    partial void OnIdChanging(int value);
-    partial void OnIdChanged();
-    partial void OnEmailChanging(string value);
-    partial void OnEmailChanged();
-    partial void OnLastNameChanging(string value);
-    partial void OnLastNameChanged();
-    partial void OnFirstNameChanging(string value);
-    partial void OnFirstNameChanged();
-    partial void OnMiddleNameChanging(string value);
-    partial void OnMiddleNameChanged();
-    partial void OnPhone1Changing(string value);
-    partial void OnPhone1Changed();
-    partial void OnPhone2Changing(string value);
-    partial void OnPhone2Changed();
-    partial void OnPhone3Changing(string value);
-    partial void OnPhone3Changed();
-    partial void OnCreatorAccountIdChanging(long value);
-    partial void OnCreatorAccountIdChanged();
-    partial void OnStreetAddressChanging(string value);
-    partial void OnStreetAddressChanged();
-    partial void OnCityChanging(string value);
-    partial void OnCityChanged();
-    partial void OnStateChanging(string value);
-    partial void OnStateChanged();
-    partial void OnZipChanging(string value);
-    partial void OnZipChanged();
-    partial void OnFirstYearChanging(System.Nullable<int> value);
-    partial void OnFirstYearChanged();
-    partial void OnDateOfBirthChanging(System.Nullable<System.DateTime> value);
-    partial void OnDateOfBirthChanged();
-    partial void OnIsFemaleChanging(System.Nullable<bool> value);
-    partial void OnIsFemaleChanged();
-    partial void OnUserIdChanging(string value);
-    partial void OnUserIdChanged();
-    #endregion
-		
-		public Contact()
-		{
-			this._ContactRoles = new EntitySet<ContactRole>(new Action<ContactRole>(this.attach_ContactRoles), new Action<ContactRole>(this.detach_ContactRoles));
-			this._FieldContacts = new EntitySet<FieldContact>(new Action<FieldContact>(this.attach_FieldContacts), new Action<FieldContact>(this.detach_FieldContacts));
-			this._GolfCourseForContacts = new EntitySet<GolfCourseForContact>(new Action<GolfCourseForContact>(this.attach_GolfCourseForContacts), new Action<GolfCourseForContact>(this.detach_GolfCourseForContacts));
-			this._GolferStatsConfigurations = new EntitySet<GolferStatsConfiguration>(new Action<GolferStatsConfiguration>(this.attach_GolferStatsConfigurations), new Action<GolferStatsConfiguration>(this.detach_GolferStatsConfigurations));
-			this._GolferStatsValues = new EntitySet<GolferStatsValue>(new Action<GolferStatsValue>(this.attach_GolferStatsValues), new Action<GolferStatsValue>(this.detach_GolferStatsValues));
-			this._GolfLeagueSetups = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups));
-			this._GolfLeagueSetups1 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups1), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups1));
-			this._GolfLeagueSetups2 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups2), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups2));
-			this._GolfLeagueSetups3 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups3), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups3));
-			this._GolfRosters = new EntitySet<GolfRoster>(new Action<GolfRoster>(this.attach_GolfRosters), new Action<GolfRoster>(this.detach_GolfRosters));
-			this._GolfScores = new EntitySet<GolfScore>(new Action<GolfScore>(this.attach_GolfScores), new Action<GolfScore>(this.detach_GolfScores));
-			this._hofs = new EntitySet<hof>(new Action<hof>(this.attach_hofs), new Action<hof>(this.detach_hofs));
-			this._LeagueUmpires = new EntitySet<LeagueUmpire>(new Action<LeagueUmpire>(this.attach_LeagueUmpires), new Action<LeagueUmpire>(this.detach_LeagueUmpires));
-			this._MemberBusinesses = new EntitySet<MemberBusiness>(new Action<MemberBusiness>(this.attach_MemberBusinesses), new Action<MemberBusiness>(this.detach_MemberBusinesses));
-			this._MessagePosts = new EntitySet<MessagePost>(new Action<MessagePost>(this.attach_MessagePosts), new Action<MessagePost>(this.detach_MessagePosts));
-			this._MessageTopics = new EntitySet<MessageTopic>(new Action<MessageTopic>(this.attach_MessageTopics), new Action<MessageTopic>(this.detach_MessageTopics));
-			this._PlayerProfiles = new EntitySet<PlayerProfile>(new Action<PlayerProfile>(this.attach_PlayerProfiles), new Action<PlayerProfile>(this.detach_PlayerProfiles));
-			this._Rosters = new EntitySet<Roster>(new Action<Roster>(this.attach_Rosters), new Action<Roster>(this.detach_Rosters));
-			this._TeamSeasonManagers = new EntitySet<TeamSeasonManager>(new Action<TeamSeasonManager>(this.attach_TeamSeasonManagers), new Action<TeamSeasonManager>(this.detach_TeamSeasonManagers));
-			this._VoteAnswers = new EntitySet<VoteAnswer>(new Action<VoteAnswer>(this.attach_VoteAnswers), new Action<VoteAnswer>(this.detach_VoteAnswers));
-			this._AspNetUser = default(EntityRef<AspNetUser>);
-			OnCreated();
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="Int NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
-		public int Id
-		{
-			get
-			{
-				return this._Id;
-			}
-			set
-			{
-				if ((this._Id != value))
-				{
-					this.OnIdChanging(value);
-					this.SendPropertyChanging();
-					this._Id = value;
-					this.SendPropertyChanged("Id");
-					this.OnIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Email", DbType="VarChar(50)")]
-		public string Email
-		{
-			get
-			{
-				return this._Email;
-			}
-			set
-			{
-				if ((this._Email != value))
-				{
-					this.OnEmailChanging(value);
-					this.SendPropertyChanging();
-					this._Email = value;
-					this.SendPropertyChanged("Email");
-					this.OnEmailChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_LastName", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
-		public string LastName
-		{
-			get
-			{
-				return this._LastName;
-			}
-			set
-			{
-				if ((this._LastName != value))
-				{
-					this.OnLastNameChanging(value);
-					this.SendPropertyChanging();
-					this._LastName = value;
-					this.SendPropertyChanged("LastName");
-					this.OnLastNameChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FirstName", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
-		public string FirstName
-		{
-			get
-			{
-				return this._FirstName;
-			}
-			set
-			{
-				if ((this._FirstName != value))
-				{
-					this.OnFirstNameChanging(value);
-					this.SendPropertyChanging();
-					this._FirstName = value;
-					this.SendPropertyChanged("FirstName");
-					this.OnFirstNameChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_MiddleName", DbType="VarChar(25)")]
-		public string MiddleName
-		{
-			get
-			{
-				return this._MiddleName;
-			}
-			set
-			{
-				if ((this._MiddleName != value))
-				{
-					this.OnMiddleNameChanging(value);
-					this.SendPropertyChanging();
-					this._MiddleName = value;
-					this.SendPropertyChanged("MiddleName");
-					this.OnMiddleNameChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone1", DbType="VarChar(14)")]
-		public string Phone1
-		{
-			get
-			{
-				return this._Phone1;
-			}
-			set
-			{
-				if ((this._Phone1 != value))
-				{
-					this.OnPhone1Changing(value);
-					this.SendPropertyChanging();
-					this._Phone1 = value;
-					this.SendPropertyChanged("Phone1");
-					this.OnPhone1Changed();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone2", DbType="VarChar(14)")]
-		public string Phone2
-		{
-			get
-			{
-				return this._Phone2;
-			}
-			set
-			{
-				if ((this._Phone2 != value))
-				{
-					this.OnPhone2Changing(value);
-					this.SendPropertyChanging();
-					this._Phone2 = value;
-					this.SendPropertyChanged("Phone2");
-					this.OnPhone2Changed();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone3", DbType="VarChar(14)")]
-		public string Phone3
-		{
-			get
-			{
-				return this._Phone3;
-			}
-			set
-			{
-				if ((this._Phone3 != value))
-				{
-					this.OnPhone3Changing(value);
-					this.SendPropertyChanging();
-					this._Phone3 = value;
-					this.SendPropertyChanged("Phone3");
-					this.OnPhone3Changed();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_CreatorAccountId", DbType="BigInt NOT NULL")]
-		public long CreatorAccountId
-		{
-			get
-			{
-				return this._CreatorAccountId;
-			}
-			set
-			{
-				if ((this._CreatorAccountId != value))
-				{
-					this.OnCreatorAccountIdChanging(value);
-					this.SendPropertyChanging();
-					this._CreatorAccountId = value;
-					this.SendPropertyChanged("CreatorAccountId");
-					this.OnCreatorAccountIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_StreetAddress", DbType="VarChar(75)")]
-		public string StreetAddress
-		{
-			get
-			{
-				return this._StreetAddress;
-			}
-			set
-			{
-				if ((this._StreetAddress != value))
-				{
-					this.OnStreetAddressChanging(value);
-					this.SendPropertyChanging();
-					this._StreetAddress = value;
-					this.SendPropertyChanged("StreetAddress");
-					this.OnStreetAddressChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_City", DbType="VarChar(25)")]
-		public string City
-		{
-			get
-			{
-				return this._City;
-			}
-			set
-			{
-				if ((this._City != value))
-				{
-					this.OnCityChanging(value);
-					this.SendPropertyChanging();
-					this._City = value;
-					this.SendPropertyChanged("City");
-					this.OnCityChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_State", DbType="VarChar(25)")]
-		public string State
-		{
-			get
-			{
-				return this._State;
-			}
-			set
-			{
-				if ((this._State != value))
-				{
-					this.OnStateChanging(value);
-					this.SendPropertyChanging();
-					this._State = value;
-					this.SendPropertyChanged("State");
-					this.OnStateChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Zip", DbType="VarChar(15)")]
-		public string Zip
-		{
-			get
-			{
-				return this._Zip;
-			}
-			set
-			{
-				if ((this._Zip != value))
-				{
-					this.OnZipChanging(value);
-					this.SendPropertyChanging();
-					this._Zip = value;
-					this.SendPropertyChanged("Zip");
-					this.OnZipChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FirstYear", DbType="Int")]
-		public System.Nullable<int> FirstYear
-		{
-			get
-			{
-				return this._FirstYear;
-			}
-			set
-			{
-				if ((this._FirstYear != value))
-				{
-					this.OnFirstYearChanging(value);
-					this.SendPropertyChanging();
-					this._FirstYear = value;
-					this.SendPropertyChanged("FirstYear");
-					this.OnFirstYearChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_DateOfBirth", DbType="DateTime")]
-		public System.Nullable<System.DateTime> DateOfBirth
-		{
-			get
-			{
-				return this._DateOfBirth;
-			}
-			set
-			{
-				if ((this._DateOfBirth != value))
-				{
-					this.OnDateOfBirthChanging(value);
-					this.SendPropertyChanging();
-					this._DateOfBirth = value;
-					this.SendPropertyChanged("DateOfBirth");
-					this.OnDateOfBirthChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_IsFemale", DbType="Bit")]
-		public System.Nullable<bool> IsFemale
-		{
-			get
-			{
-				return this._IsFemale;
-			}
-			set
-			{
-				if ((this._IsFemale != value))
-				{
-					this.OnIsFemaleChanging(value);
-					this.SendPropertyChanging();
-					this._IsFemale = value;
-					this.SendPropertyChanged("IsFemale");
-					this.OnIsFemaleChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_UserId", DbType="NVarChar(128)")]
-		public string UserId
-		{
-			get
-			{
-				return this._UserId;
-			}
-			set
-			{
-				if ((this._UserId != value))
-				{
-					if (this._AspNetUser.HasLoadedOrAssignedValue)
-					{
-						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
-					}
-					this.OnUserIdChanging(value);
-					this.SendPropertyChanging();
-					this._UserId = value;
-					this.SendPropertyChanged("UserId");
-					this.OnUserIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_ContactRole", Storage="_ContactRoles", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<ContactRole> ContactRoles
-		{
-			get
-			{
-				return this._ContactRoles;
-			}
-			set
-			{
-				this._ContactRoles.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_FieldContact", Storage="_FieldContacts", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<FieldContact> FieldContacts
-		{
-			get
-			{
-				return this._FieldContacts;
-			}
-			set
-			{
-				this._FieldContacts.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfCourseForContact", Storage="_GolfCourseForContacts", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<GolfCourseForContact> GolfCourseForContacts
-		{
-			get
-			{
-				return this._GolfCourseForContacts;
-			}
-			set
-			{
-				this._GolfCourseForContacts.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsConfiguration", Storage="_GolferStatsConfigurations", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<GolferStatsConfiguration> GolferStatsConfigurations
-		{
-			get
-			{
-				return this._GolferStatsConfigurations;
-			}
-			set
-			{
-				this._GolferStatsConfigurations.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsValue", Storage="_GolferStatsValues", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<GolferStatsValue> GolferStatsValues
-		{
-			get
-			{
-				return this._GolferStatsValues;
-			}
-			set
-			{
-				this._GolferStatsValues.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup", Storage="_GolfLeagueSetups", ThisKey="Id", OtherKey="PresidentId")]
-		public EntitySet<GolfLeagueSetup> GolfLeagueSetups
-		{
-			get
-			{
-				return this._GolfLeagueSetups;
-			}
-			set
-			{
-				this._GolfLeagueSetups.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup1", Storage="_GolfLeagueSetups1", ThisKey="Id", OtherKey="VicePresidentId")]
-		public EntitySet<GolfLeagueSetup> GolfLeagueSetups1
-		{
-			get
-			{
-				return this._GolfLeagueSetups1;
-			}
-			set
-			{
-				this._GolfLeagueSetups1.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup2", Storage="_GolfLeagueSetups2", ThisKey="Id", OtherKey="SecretaryId")]
-		public EntitySet<GolfLeagueSetup> GolfLeagueSetups2
-		{
-			get
-			{
-				return this._GolfLeagueSetups2;
-			}
-			set
-			{
-				this._GolfLeagueSetups2.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup3", Storage="_GolfLeagueSetups3", ThisKey="Id", OtherKey="TreasurerId")]
-		public EntitySet<GolfLeagueSetup> GolfLeagueSetups3
-		{
-			get
-			{
-				return this._GolfLeagueSetups3;
-			}
-			set
-			{
-				this._GolfLeagueSetups3.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfRoster", Storage="_GolfRosters", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<GolfRoster> GolfRosters
-		{
-			get
-			{
-				return this._GolfRosters;
-			}
-			set
-			{
-				this._GolfRosters.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfScore", Storage="_GolfScores", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<GolfScore> GolfScores
-		{
-			get
-			{
-				return this._GolfScores;
-			}
-			set
-			{
-				this._GolfScores.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_hof", Storage="_hofs", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<hof> hofs
-		{
-			get
-			{
-				return this._hofs;
-			}
-			set
-			{
-				this._hofs.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_LeagueUmpire", Storage="_LeagueUmpires", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<LeagueUmpire> LeagueUmpires
-		{
-			get
-			{
-				return this._LeagueUmpires;
-			}
-			set
-			{
-				this._LeagueUmpires.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MemberBusiness", Storage="_MemberBusinesses", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<MemberBusiness> MemberBusinesses
-		{
-			get
-			{
-				return this._MemberBusinesses;
-			}
-			set
-			{
-				this._MemberBusinesses.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessagePost", Storage="_MessagePosts", ThisKey="Id", OtherKey="ContactCreatorId")]
-		public EntitySet<MessagePost> MessagePosts
-		{
-			get
-			{
-				return this._MessagePosts;
-			}
-			set
-			{
-				this._MessagePosts.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessageTopic", Storage="_MessageTopics", ThisKey="Id", OtherKey="ContactCreatorId")]
-		public EntitySet<MessageTopic> MessageTopics
-		{
-			get
-			{
-				return this._MessageTopics;
-			}
-			set
-			{
-				this._MessageTopics.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_PlayerProfile", Storage="_PlayerProfiles", ThisKey="Id", OtherKey="PlayerId")]
-		public EntitySet<PlayerProfile> PlayerProfiles
-		{
-			get
-			{
-				return this._PlayerProfiles;
-			}
-			set
-			{
-				this._PlayerProfiles.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_Roster", Storage="_Rosters", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<Roster> Rosters
-		{
-			get
-			{
-				return this._Rosters;
-			}
-			set
-			{
-				this._Rosters.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_TeamSeasonManager", Storage="_TeamSeasonManagers", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<TeamSeasonManager> TeamSeasonManagers
-		{
-			get
-			{
-				return this._TeamSeasonManagers;
-			}
-			set
-			{
-				this._TeamSeasonManagers.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_VoteAnswer", Storage="_VoteAnswers", ThisKey="Id", OtherKey="ContactId")]
-		public EntitySet<VoteAnswer> VoteAnswers
-		{
-			get
-			{
-				return this._VoteAnswers;
-			}
-			set
-			{
-				this._VoteAnswers.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="AspNetUser_Contact", Storage="_AspNetUser", ThisKey="UserId", OtherKey="Id", IsForeignKey=true, DeleteRule="SET NULL")]
-		public AspNetUser AspNetUser
-		{
-			get
-			{
-				return this._AspNetUser.Entity;
-			}
-			set
-			{
-				AspNetUser previousValue = this._AspNetUser.Entity;
-				if (((previousValue != value) 
-							|| (this._AspNetUser.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._AspNetUser.Entity = null;
-						previousValue.Contacts.Remove(this);
-					}
-					this._AspNetUser.Entity = value;
-					if ((value != null))
-					{
-						value.Contacts.Add(this);
-						this._UserId = value.Id;
-					}
-					else
-					{
-						this._UserId = default(string);
-					}
-					this.SendPropertyChanged("AspNetUser");
-				}
-			}
-		}
-		
-		public event PropertyChangingEventHandler PropertyChanging;
-		
-		public event PropertyChangedEventHandler PropertyChanged;
-		
-		protected virtual void SendPropertyChanging()
-		{
-			if ((this.PropertyChanging != null))
-			{
-				this.PropertyChanging(this, emptyChangingEventArgs);
-			}
-		}
-		
-		protected virtual void SendPropertyChanged(String propertyName)
-		{
-			if ((this.PropertyChanged != null))
-			{
-				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
-		}
-		
-		private void attach_ContactRoles(ContactRole entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_ContactRoles(ContactRole entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_FieldContacts(FieldContact entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_FieldContacts(FieldContact entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolfCourseForContacts(GolfCourseForContact entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolfCourseForContacts(GolfCourseForContact entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolferStatsConfigurations(GolferStatsConfiguration entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolferStatsConfigurations(GolferStatsConfiguration entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolferStatsValues(GolferStatsValue entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolferStatsValues(GolferStatsValue entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolfLeagueSetups(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolfLeagueSetups(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolfLeagueSetups1(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact1 = this;
-		}
-		
-		private void detach_GolfLeagueSetups1(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact1 = null;
-		}
-		
-		private void attach_GolfLeagueSetups2(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact2 = this;
-		}
-		
-		private void detach_GolfLeagueSetups2(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact2 = null;
-		}
-		
-		private void attach_GolfLeagueSetups3(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact3 = this;
-		}
-		
-		private void detach_GolfLeagueSetups3(GolfLeagueSetup entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact3 = null;
-		}
-		
-		private void attach_GolfRosters(GolfRoster entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolfRosters(GolfRoster entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_GolfScores(GolfScore entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_GolfScores(GolfScore entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_hofs(hof entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_hofs(hof entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_LeagueUmpires(LeagueUmpire entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_LeagueUmpires(LeagueUmpire entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_MemberBusinesses(MemberBusiness entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_MemberBusinesses(MemberBusiness entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_MessagePosts(MessagePost entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_MessagePosts(MessagePost entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_MessageTopics(MessageTopic entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_MessageTopics(MessageTopic entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_PlayerProfiles(PlayerProfile entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_PlayerProfiles(PlayerProfile entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_Rosters(Roster entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_Rosters(Roster entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_TeamSeasonManagers(TeamSeasonManager entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_TeamSeasonManagers(TeamSeasonManager entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
-		}
-		
-		private void attach_VoteAnswers(VoteAnswer entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = this;
-		}
-		
-		private void detach_VoteAnswers(VoteAnswer entity)
-		{
-			this.SendPropertyChanging();
-			entity.Contact = null;
 		}
 	}
 	
@@ -7249,7 +6170,7 @@ namespace SportsManager.Model
 		
 		private long _FieldId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private EntityRef<AvailableField> _AvailableField;
 		
@@ -7263,7 +6184,7 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnFieldIdChanging(long value);
     partial void OnFieldIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -7318,8 +6239,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -7403,7 +6324,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -10596,13 +9517,13 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _CourseId;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<GolfCourse> _GolfCourse;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -10610,7 +9531,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnCourseIdChanging(long value);
     partial void OnCourseIdChanged();
@@ -10618,8 +9539,8 @@ namespace SportsManager.Model
 		
 		public GolfCourseForContact()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._GolfCourse = default(EntityRef<GolfCourse>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -10643,8 +9564,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -10691,40 +9612,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfCourseForContact", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.GolfCourseForContacts.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.GolfCourseForContacts.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="GolfCourse_GolfCourseForContact", Storage="_GolfCourse", ThisKey="CourseId", OtherKey="Id", IsForeignKey=true)]
 		public GolfCourse GolfCourse
 		{
@@ -10759,6 +9646,40 @@ namespace SportsManager.Model
 			}
 		}
 		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfCourseForContact", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.GolfCourseForContacts.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.GolfCourseForContacts.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
+				}
+			}
+		}
+		
 		public event PropertyChangingEventHandler PropertyChanging;
 		
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -10788,13 +9709,13 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _StatId;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<GolfStatDef> _GolfStatDef;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -10802,7 +9723,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnStatIdChanging(long value);
     partial void OnStatIdChanged();
@@ -10810,8 +9731,8 @@ namespace SportsManager.Model
 		
 		public GolferStatsConfiguration()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._GolfStatDef = default(EntityRef<GolfStatDef>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -10835,8 +9756,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -10883,40 +9804,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsConfiguration", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true)]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.GolferStatsConfigurations.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.GolferStatsConfigurations.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="GolfStatDef_GolferStatsConfiguration", Storage="_GolfStatDef", ThisKey="StatId", OtherKey="id", IsForeignKey=true)]
 		public GolfStatDef GolfStatDef
 		{
@@ -10947,6 +9834,40 @@ namespace SportsManager.Model
 						this._StatId = default(long);
 					}
 					this.SendPropertyChanged("GolfStatDef");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsConfiguration", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true)]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.GolferStatsConfigurations.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.GolferStatsConfigurations.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -10982,15 +9903,15 @@ namespace SportsManager.Model
 		
 		private long _ScoreId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private int _HoleNo;
 		
 		private string _Value;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<GolfScore> _GolfScore;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -11000,7 +9921,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnScoreIdChanging(long value);
     partial void OnScoreIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnHoleNoChanging(int value);
     partial void OnHoleNoChanged();
@@ -11010,8 +9931,8 @@ namespace SportsManager.Model
 		
 		public GolferStatsValue()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._GolfScore = default(EntityRef<GolfScore>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -11059,8 +9980,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -11123,40 +10044,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsValue", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true)]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.GolferStatsValues.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.GolferStatsValues.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="GolfScore_GolferStatsValue", Storage="_GolfScore", ThisKey="ScoreId", OtherKey="Id", IsForeignKey=true)]
 		public GolfScore GolfScore
 		{
@@ -11187,6 +10074,40 @@ namespace SportsManager.Model
 						this._ScoreId = default(long);
 					}
 					this.SendPropertyChanged("GolfScore");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsValue", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true)]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.GolferStatsValues.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.GolferStatsValues.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -11438,13 +10359,13 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _PresidentId;
+		private long _PresidentId;
 		
-		private int _VicePresidentId;
+		private long _VicePresidentId;
 		
-		private int _SecretaryId;
+		private long _SecretaryId;
 		
-		private int _TreasurerId;
+		private long _TreasurerId;
 		
 		private int _LeagueDay;
 		
@@ -11528,13 +10449,13 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnPresidentIdChanging(int value);
+    partial void OnPresidentIdChanging(long value);
     partial void OnPresidentIdChanged();
-    partial void OnVicePresidentIdChanging(int value);
+    partial void OnVicePresidentIdChanging(long value);
     partial void OnVicePresidentIdChanged();
-    partial void OnSecretaryIdChanging(int value);
+    partial void OnSecretaryIdChanging(long value);
     partial void OnSecretaryIdChanged();
-    partial void OnTreasurerIdChanging(int value);
+    partial void OnTreasurerIdChanging(long value);
     partial void OnTreasurerIdChanged();
     partial void OnLeagueDayChanging(int value);
     partial void OnLeagueDayChanged();
@@ -11656,8 +10577,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PresidentId", DbType="Int NOT NULL")]
-		public int PresidentId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PresidentId", DbType="BigInt NOT NULL")]
+		public long PresidentId
 		{
 			get
 			{
@@ -11680,8 +10601,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_VicePresidentId", DbType="Int NOT NULL")]
-		public int VicePresidentId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_VicePresidentId", DbType="BigInt NOT NULL")]
+		public long VicePresidentId
 		{
 			get
 			{
@@ -11704,8 +10625,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SecretaryId", DbType="Int NOT NULL")]
-		public int SecretaryId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SecretaryId", DbType="BigInt NOT NULL")]
+		public long SecretaryId
 		{
 			get
 			{
@@ -11728,8 +10649,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TreasurerId", DbType="Int NOT NULL")]
-		public int TreasurerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TreasurerId", DbType="BigInt NOT NULL")]
+		public long TreasurerId
 		{
 			get
 			{
@@ -12453,7 +11374,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._PresidentId = default(int);
+						this._PresidentId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -12487,7 +11408,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._VicePresidentId = default(int);
+						this._VicePresidentId = default(long);
 					}
 					this.SendPropertyChanged("Contact1");
 				}
@@ -12521,7 +11442,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._SecretaryId = default(int);
+						this._SecretaryId = default(long);
 					}
 					this.SendPropertyChanged("Contact2");
 				}
@@ -12555,7 +11476,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._TreasurerId = default(int);
+						this._TreasurerId = default(long);
 					}
 					this.SendPropertyChanged("Contact3");
 				}
@@ -13359,7 +12280,7 @@ namespace SportsManager.Model
 		
 		private long _Id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _TeamSeasonId;
 		
@@ -13373,9 +12294,9 @@ namespace SportsManager.Model
 		
 		private EntitySet<GolfMatchScore> _GolfMatchScores;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<TeamsSeason> _TeamsSeason;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -13383,7 +12304,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnIdChanging(long value);
     partial void OnIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnTeamSeasonIdChanging(long value);
     partial void OnTeamSeasonIdChanged();
@@ -13400,8 +12321,8 @@ namespace SportsManager.Model
 		public GolfRoster()
 		{
 			this._GolfMatchScores = new EntitySet<GolfMatchScore>(new Action<GolfMatchScore>(this.attach_GolfMatchScores), new Action<GolfMatchScore>(this.detach_GolfMatchScores));
-			this._Contact = default(EntityRef<Contact>);
 			this._TeamsSeason = default(EntityRef<TeamsSeason>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -13425,8 +12346,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -13566,40 +12487,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfRoster", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.GolfRosters.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.GolfRosters.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="TeamsSeason_GolfRoster", Storage="_TeamsSeason", ThisKey="TeamSeasonId", OtherKey="id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
 		public TeamsSeason TeamsSeason
 		{
@@ -13630,6 +12517,40 @@ namespace SportsManager.Model
 						this._TeamSeasonId = default(long);
 					}
 					this.SendPropertyChanged("TeamsSeason");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfRoster", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.GolfRosters.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.GolfRosters.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -13677,7 +12598,7 @@ namespace SportsManager.Model
 		
 		private long _CourseId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private long _TeeId;
 		
@@ -13733,11 +12654,11 @@ namespace SportsManager.Model
 		
 		private EntitySet<GolfMatchScore> _GolfMatchScores;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<GolfCourse> _GolfCourse;
 		
 		private EntityRef<GolfTeeInformation> _GolfTeeInformation;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -13747,7 +12668,7 @@ namespace SportsManager.Model
     partial void OnIdChanged();
     partial void OnCourseIdChanging(long value);
     partial void OnCourseIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnTeeIdChanging(long value);
     partial void OnTeeIdChanged();
@@ -13805,9 +12726,9 @@ namespace SportsManager.Model
 		{
 			this._GolferStatsValues = new EntitySet<GolferStatsValue>(new Action<GolferStatsValue>(this.attach_GolferStatsValues), new Action<GolferStatsValue>(this.detach_GolferStatsValues));
 			this._GolfMatchScores = new EntitySet<GolfMatchScore>(new Action<GolfMatchScore>(this.attach_GolfMatchScores), new Action<GolfMatchScore>(this.detach_GolfMatchScores));
-			this._Contact = default(EntityRef<Contact>);
 			this._GolfCourse = default(EntityRef<GolfCourse>);
 			this._GolfTeeInformation = default(EntityRef<GolfTeeInformation>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -13855,8 +12776,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -14409,40 +13330,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfScore", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.GolfScores.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.GolfScores.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="GolfCourse_GolfScore", Storage="_GolfCourse", ThisKey="CourseId", OtherKey="Id", IsForeignKey=true)]
 		public GolfCourse GolfCourse
 		{
@@ -14507,6 +13394,40 @@ namespace SportsManager.Model
 						this._TeeId = default(long);
 					}
 					this.SendPropertyChanged("GolfTeeInformation");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfScore", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.GolfScores.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.GolfScores.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -15797,7 +14718,7 @@ namespace SportsManager.Model
 		
 		private int _YearInducted;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _Bio;
 		
@@ -15815,7 +14736,7 @@ namespace SportsManager.Model
     partial void OnAccountIdChanged();
     partial void OnYearInductedChanging(int value);
     partial void OnYearInductedChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnBioChanging(string value);
     partial void OnBioChanged();
@@ -15892,8 +14813,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -15997,7 +14918,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -18232,7 +17153,7 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private EntitySet<GameEjection> _GameEjections;
 		
@@ -18248,7 +17169,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
@@ -18304,8 +17225,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -18402,7 +17323,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -18450,7 +17371,7 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private string _Name;
 		
@@ -18476,7 +17397,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnNameChanging(string value);
     partial void OnNameChanged();
@@ -18522,8 +17443,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -18733,7 +17654,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -19055,7 +17976,7 @@ namespace SportsManager.Model
 		
 		private int _PostOrder;
 		
-		private int _ContactCreatorId;
+		private long _ContactCreatorId;
 		
 		private System.DateTime _PostDate;
 		
@@ -19067,9 +17988,9 @@ namespace SportsManager.Model
 		
 		private long _CategoryId;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<MessageTopic> _MessageTopic;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -19081,7 +18002,7 @@ namespace SportsManager.Model
     partial void OnTopicIdChanged();
     partial void OnPostOrderChanging(int value);
     partial void OnPostOrderChanged();
-    partial void OnContactCreatorIdChanging(int value);
+    partial void OnContactCreatorIdChanging(long value);
     partial void OnContactCreatorIdChanged();
     partial void OnPostDateChanging(System.DateTime value);
     partial void OnPostDateChanged();
@@ -19097,8 +18018,8 @@ namespace SportsManager.Model
 		
 		public MessagePost()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._MessageTopic = default(EntityRef<MessageTopic>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -19166,8 +18087,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="Int NOT NULL")]
-		public int ContactCreatorId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="BigInt NOT NULL")]
+		public long ContactCreatorId
 		{
 			get
 			{
@@ -19290,40 +18211,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessagePost", Storage="_Contact", ThisKey="ContactCreatorId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.MessagePosts.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.MessagePosts.Add(this);
-						this._ContactCreatorId = value.Id;
-					}
-					else
-					{
-						this._ContactCreatorId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="MessageTopic_MessagePost", Storage="_MessageTopic", ThisKey="TopicId", OtherKey="id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
 		public MessageTopic MessageTopic
 		{
@@ -19354,6 +18241,40 @@ namespace SportsManager.Model
 						this._TopicId = default(long);
 					}
 					this.SendPropertyChanged("MessageTopic");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessagePost", Storage="_Contact", ThisKey="ContactCreatorId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.MessagePosts.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.MessagePosts.Add(this);
+						this._ContactCreatorId = value.Id;
+					}
+					else
+					{
+						this._ContactCreatorId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -19389,7 +18310,7 @@ namespace SportsManager.Model
 		
 		private long _CategoryId;
 		
-		private int _ContactCreatorId;
+		private long _ContactCreatorId;
 		
 		private System.DateTime _TopicCreateDate;
 		
@@ -19401,9 +18322,9 @@ namespace SportsManager.Model
 		
 		private EntitySet<MessagePost> _MessagePosts;
 		
-		private EntityRef<Contact> _Contact;
-		
 		private EntityRef<MessageCategory> _MessageCategory;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -19413,7 +18334,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnCategoryIdChanging(long value);
     partial void OnCategoryIdChanged();
-    partial void OnContactCreatorIdChanging(int value);
+    partial void OnContactCreatorIdChanging(long value);
     partial void OnContactCreatorIdChanged();
     partial void OnTopicCreateDateChanging(System.DateTime value);
     partial void OnTopicCreateDateChanged();
@@ -19428,8 +18349,8 @@ namespace SportsManager.Model
 		public MessageTopic()
 		{
 			this._MessagePosts = new EntitySet<MessagePost>(new Action<MessagePost>(this.attach_MessagePosts), new Action<MessagePost>(this.detach_MessagePosts));
-			this._Contact = default(EntityRef<Contact>);
 			this._MessageCategory = default(EntityRef<MessageCategory>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -19477,8 +18398,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="Int NOT NULL")]
-		public int ContactCreatorId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactCreatorId", DbType="BigInt NOT NULL")]
+		public long ContactCreatorId
 		{
 			get
 			{
@@ -19594,40 +18515,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessageTopic", Storage="_Contact", ThisKey="ContactCreatorId", OtherKey="Id", IsForeignKey=true)]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.MessageTopics.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.MessageTopics.Add(this);
-						this._ContactCreatorId = value.Id;
-					}
-					else
-					{
-						this._ContactCreatorId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
-				}
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="MessageCategory_MessageTopic", Storage="_MessageCategory", ThisKey="CategoryId", OtherKey="id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
 		public MessageCategory MessageCategory
 		{
@@ -19658,6 +18545,40 @@ namespace SportsManager.Model
 						this._CategoryId = default(long);
 					}
 					this.SendPropertyChanged("MessageCategory");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessageTopic", Storage="_Contact", ThisKey="ContactCreatorId", OtherKey="Id", IsForeignKey=true)]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.MessageTopics.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.MessageTopics.Add(this);
+						this._ContactCreatorId = value.Id;
+					}
+					else
+					{
+						this._ContactCreatorId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -20914,7 +19835,7 @@ namespace SportsManager.Model
 		
 		private long _id;
 		
-		private int _PlayerId;
+		private long _PlayerId;
 		
 		private long _QuestionId;
 		
@@ -20928,7 +19849,7 @@ namespace SportsManager.Model
     partial void OnCreated();
     partial void OnidChanging(long value);
     partial void OnidChanged();
-    partial void OnPlayerIdChanging(int value);
+    partial void OnPlayerIdChanging(long value);
     partial void OnPlayerIdChanged();
     partial void OnQuestionIdChanging(long value);
     partial void OnQuestionIdChanged();
@@ -20962,8 +19883,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PlayerId", DbType="Int NOT NULL")]
-		public int PlayerId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_PlayerId", DbType="BigInt NOT NULL")]
+		public long PlayerId
 		{
 			get
 			{
@@ -21053,7 +19974,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._PlayerId = default(int);
+						this._PlayerId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -22942,7 +21863,7 @@ namespace SportsManager.Model
 		
 		private long _AccountId;
 		
-		private int _ContactId;
+		private long _ContactId;
 		
 		private bool _SubmittedDriversLicense;
 		
@@ -22962,7 +21883,7 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnAccountIdChanging(long value);
     partial void OnAccountIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     partial void OnSubmittedDriversLicenseChanging(bool value);
     partial void OnSubmittedDriversLicenseChanged();
@@ -23021,8 +21942,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -23152,7 +22073,7 @@ namespace SportsManager.Model
 					}
 					else
 					{
-						this._ContactId = default(int);
+						this._ContactId = default(long);
 					}
 					this.SendPropertyChanged("Contact");
 				}
@@ -24805,11 +23726,11 @@ namespace SportsManager.Model
 		
 		private long _TeamSeasonId;
 		
-		private int _ContactId;
-		
-		private EntityRef<Contact> _Contact;
+		private long _ContactId;
 		
 		private EntityRef<TeamsSeason> _TeamsSeason;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -24819,14 +23740,14 @@ namespace SportsManager.Model
     partial void OnidChanged();
     partial void OnTeamSeasonIdChanging(long value);
     partial void OnTeamSeasonIdChanged();
-    partial void OnContactIdChanging(int value);
+    partial void OnContactIdChanging(long value);
     partial void OnContactIdChanged();
     #endregion
 		
 		public TeamSeasonManager()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._TeamsSeason = default(EntityRef<TeamsSeason>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -24874,8 +23795,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int NOT NULL")]
-		public int ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt NOT NULL")]
+		public long ContactId
 		{
 			get
 			{
@@ -24894,40 +23815,6 @@ namespace SportsManager.Model
 					this._ContactId = value;
 					this.SendPropertyChanged("ContactId");
 					this.OnContactIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_TeamSeasonManager", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.TeamSeasonManagers.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.TeamSeasonManagers.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(int);
-					}
-					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -24962,6 +23849,40 @@ namespace SportsManager.Model
 						this._TeamSeasonId = default(long);
 					}
 					this.SendPropertyChanged("TeamsSeason");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_TeamSeasonManager", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.TeamSeasonManagers.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.TeamSeasonManagers.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(long);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -25718,13 +24639,13 @@ namespace SportsManager.Model
 		
 		private long _OptionId;
 		
-		private System.Nullable<int> _ContactId;
-		
-		private EntityRef<Contact> _Contact;
+		private System.Nullable<long> _ContactId;
 		
 		private EntityRef<VoteOption> _VoteOption;
 		
 		private EntityRef<VoteQuestion> _VoteQuestion;
+		
+		private EntityRef<Contact> _Contact;
 		
     #region Extensibility Method Definitions
     partial void OnLoaded();
@@ -25736,15 +24657,15 @@ namespace SportsManager.Model
     partial void OnQuestionIdChanged();
     partial void OnOptionIdChanging(long value);
     partial void OnOptionIdChanged();
-    partial void OnContactIdChanging(System.Nullable<int> value);
+    partial void OnContactIdChanging(System.Nullable<long> value);
     partial void OnContactIdChanged();
     #endregion
 		
 		public VoteAnswer()
 		{
-			this._Contact = default(EntityRef<Contact>);
 			this._VoteOption = default(EntityRef<VoteOption>);
 			this._VoteQuestion = default(EntityRef<VoteQuestion>);
+			this._Contact = default(EntityRef<Contact>);
 			OnCreated();
 		}
 		
@@ -25816,8 +24737,8 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="Int")]
-		public System.Nullable<int> ContactId
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_ContactId", DbType="BigInt")]
+		public System.Nullable<long> ContactId
 		{
 			get
 			{
@@ -25836,40 +24757,6 @@ namespace SportsManager.Model
 					this._ContactId = value;
 					this.SendPropertyChanged("ContactId");
 					this.OnContactIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_VoteAnswer", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteRule="CASCADE")]
-		public Contact Contact
-		{
-			get
-			{
-				return this._Contact.Entity;
-			}
-			set
-			{
-				Contact previousValue = this._Contact.Entity;
-				if (((previousValue != value) 
-							|| (this._Contact.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Contact.Entity = null;
-						previousValue.VoteAnswers.Remove(this);
-					}
-					this._Contact.Entity = value;
-					if ((value != null))
-					{
-						value.VoteAnswers.Add(this);
-						this._ContactId = value.Id;
-					}
-					else
-					{
-						this._ContactId = default(Nullable<int>);
-					}
-					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -25938,6 +24825,40 @@ namespace SportsManager.Model
 						this._QuestionId = default(long);
 					}
 					this.SendPropertyChanged("VoteQuestion");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_VoteAnswer", Storage="_Contact", ThisKey="ContactId", OtherKey="Id", IsForeignKey=true, DeleteRule="CASCADE")]
+		public Contact Contact
+		{
+			get
+			{
+				return this._Contact.Entity;
+			}
+			set
+			{
+				Contact previousValue = this._Contact.Entity;
+				if (((previousValue != value) 
+							|| (this._Contact.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Contact.Entity = null;
+						previousValue.VoteAnswers.Remove(this);
+					}
+					this._Contact.Entity = value;
+					if ((value != null))
+					{
+						value.VoteAnswers.Add(this);
+						this._ContactId = value.Id;
+					}
+					else
+					{
+						this._ContactId = default(Nullable<long>);
+					}
+					this.SendPropertyChanged("Contact");
 				}
 			}
 		}
@@ -26710,6 +25631,1204 @@ namespace SportsManager.Model
 		{
 			this.SendPropertyChanging();
 			entity.WorkoutAnnouncement = null;
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.AccountSettings")]
+	public partial class AccountSetting : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private long _AccountId;
+		
+		private string _SettingKey;
+		
+		private string _SettingValue;
+		
+		private EntityRef<Account> _Account;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnAccountIdChanging(long value);
+    partial void OnAccountIdChanged();
+    partial void OnSettingKeyChanging(string value);
+    partial void OnSettingKeyChanged();
+    partial void OnSettingValueChanging(string value);
+    partial void OnSettingValueChanged();
+    #endregion
+		
+		public AccountSetting()
+		{
+			this._Account = default(EntityRef<Account>);
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL", IsPrimaryKey=true)]
+		public long AccountId
+		{
+			get
+			{
+				return this._AccountId;
+			}
+			set
+			{
+				if ((this._AccountId != value))
+				{
+					if (this._Account.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnAccountIdChanging(value);
+					this.SendPropertyChanging();
+					this._AccountId = value;
+					this.SendPropertyChanged("AccountId");
+					this.OnAccountIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SettingKey", DbType="VarChar(25) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public string SettingKey
+		{
+			get
+			{
+				return this._SettingKey;
+			}
+			set
+			{
+				if ((this._SettingKey != value))
+				{
+					this.OnSettingKeyChanging(value);
+					this.SendPropertyChanging();
+					this._SettingKey = value;
+					this.SendPropertyChanged("SettingKey");
+					this.OnSettingKeyChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_SettingValue", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
+		public string SettingValue
+		{
+			get
+			{
+				return this._SettingValue;
+			}
+			set
+			{
+				if ((this._SettingValue != value))
+				{
+					this.OnSettingValueChanging(value);
+					this.SendPropertyChanging();
+					this._SettingValue = value;
+					this.SendPropertyChanged("SettingValue");
+					this.OnSettingValueChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_AccountSetting", Storage="_Account", ThisKey="AccountId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Account Account
+		{
+			get
+			{
+				return this._Account.Entity;
+			}
+			set
+			{
+				Account previousValue = this._Account.Entity;
+				if (((previousValue != value) 
+							|| (this._Account.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Account.Entity = null;
+						previousValue.AccountSettings.Remove(this);
+					}
+					this._Account.Entity = value;
+					if ((value != null))
+					{
+						value.AccountSettings.Add(this);
+						this._AccountId = value.Id;
+					}
+					else
+					{
+						this._AccountId = default(long);
+					}
+					this.SendPropertyChanged("Account");
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Contacts")]
+	public partial class Contact : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private long _Id;
+		
+		private string _Email;
+		
+		private string _LastName;
+		
+		private string _FirstName;
+		
+		private string _MiddleName;
+		
+		private string _Phone1;
+		
+		private string _Phone2;
+		
+		private string _Phone3;
+		
+		private long _CreatorAccountId;
+		
+		private string _StreetAddress;
+		
+		private string _City;
+		
+		private string _State;
+		
+		private string _Zip;
+		
+		private System.Nullable<int> _FirstYear;
+		
+		private System.Nullable<System.DateTime> _DateOfBirth;
+		
+		private System.Nullable<bool> _IsFemale;
+		
+		private string _UserId;
+		
+		private EntitySet<ContactRole> _ContactRoles;
+		
+		private EntitySet<FieldContact> _FieldContacts;
+		
+		private EntitySet<GolfCourseForContact> _GolfCourseForContacts;
+		
+		private EntitySet<GolferStatsConfiguration> _GolferStatsConfigurations;
+		
+		private EntitySet<GolferStatsValue> _GolferStatsValues;
+		
+		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups;
+		
+		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups1;
+		
+		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups2;
+		
+		private EntitySet<GolfLeagueSetup> _GolfLeagueSetups3;
+		
+		private EntitySet<GolfRoster> _GolfRosters;
+		
+		private EntitySet<GolfScore> _GolfScores;
+		
+		private EntitySet<hof> _hofs;
+		
+		private EntitySet<LeagueUmpire> _LeagueUmpires;
+		
+		private EntitySet<MemberBusiness> _MemberBusinesses;
+		
+		private EntitySet<MessagePost> _MessagePosts;
+		
+		private EntitySet<MessageTopic> _MessageTopics;
+		
+		private EntitySet<PlayerProfile> _PlayerProfiles;
+		
+		private EntitySet<Roster> _Rosters;
+		
+		private EntitySet<TeamSeasonManager> _TeamSeasonManagers;
+		
+		private EntitySet<VoteAnswer> _VoteAnswers;
+		
+		private EntityRef<AspNetUser> _AspNetUser;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnIdChanging(long value);
+    partial void OnIdChanged();
+    partial void OnEmailChanging(string value);
+    partial void OnEmailChanged();
+    partial void OnLastNameChanging(string value);
+    partial void OnLastNameChanged();
+    partial void OnFirstNameChanging(string value);
+    partial void OnFirstNameChanged();
+    partial void OnMiddleNameChanging(string value);
+    partial void OnMiddleNameChanged();
+    partial void OnPhone1Changing(string value);
+    partial void OnPhone1Changed();
+    partial void OnPhone2Changing(string value);
+    partial void OnPhone2Changed();
+    partial void OnPhone3Changing(string value);
+    partial void OnPhone3Changed();
+    partial void OnCreatorAccountIdChanging(long value);
+    partial void OnCreatorAccountIdChanged();
+    partial void OnStreetAddressChanging(string value);
+    partial void OnStreetAddressChanged();
+    partial void OnCityChanging(string value);
+    partial void OnCityChanged();
+    partial void OnStateChanging(string value);
+    partial void OnStateChanged();
+    partial void OnZipChanging(string value);
+    partial void OnZipChanged();
+    partial void OnFirstYearChanging(System.Nullable<int> value);
+    partial void OnFirstYearChanged();
+    partial void OnDateOfBirthChanging(System.Nullable<System.DateTime> value);
+    partial void OnDateOfBirthChanged();
+    partial void OnIsFemaleChanging(System.Nullable<bool> value);
+    partial void OnIsFemaleChanged();
+    partial void OnUserIdChanging(string value);
+    partial void OnUserIdChanged();
+    #endregion
+		
+		public Contact()
+		{
+			this._ContactRoles = new EntitySet<ContactRole>(new Action<ContactRole>(this.attach_ContactRoles), new Action<ContactRole>(this.detach_ContactRoles));
+			this._FieldContacts = new EntitySet<FieldContact>(new Action<FieldContact>(this.attach_FieldContacts), new Action<FieldContact>(this.detach_FieldContacts));
+			this._GolfCourseForContacts = new EntitySet<GolfCourseForContact>(new Action<GolfCourseForContact>(this.attach_GolfCourseForContacts), new Action<GolfCourseForContact>(this.detach_GolfCourseForContacts));
+			this._GolferStatsConfigurations = new EntitySet<GolferStatsConfiguration>(new Action<GolferStatsConfiguration>(this.attach_GolferStatsConfigurations), new Action<GolferStatsConfiguration>(this.detach_GolferStatsConfigurations));
+			this._GolferStatsValues = new EntitySet<GolferStatsValue>(new Action<GolferStatsValue>(this.attach_GolferStatsValues), new Action<GolferStatsValue>(this.detach_GolferStatsValues));
+			this._GolfLeagueSetups = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups));
+			this._GolfLeagueSetups1 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups1), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups1));
+			this._GolfLeagueSetups2 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups2), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups2));
+			this._GolfLeagueSetups3 = new EntitySet<GolfLeagueSetup>(new Action<GolfLeagueSetup>(this.attach_GolfLeagueSetups3), new Action<GolfLeagueSetup>(this.detach_GolfLeagueSetups3));
+			this._GolfRosters = new EntitySet<GolfRoster>(new Action<GolfRoster>(this.attach_GolfRosters), new Action<GolfRoster>(this.detach_GolfRosters));
+			this._GolfScores = new EntitySet<GolfScore>(new Action<GolfScore>(this.attach_GolfScores), new Action<GolfScore>(this.detach_GolfScores));
+			this._hofs = new EntitySet<hof>(new Action<hof>(this.attach_hofs), new Action<hof>(this.detach_hofs));
+			this._LeagueUmpires = new EntitySet<LeagueUmpire>(new Action<LeagueUmpire>(this.attach_LeagueUmpires), new Action<LeagueUmpire>(this.detach_LeagueUmpires));
+			this._MemberBusinesses = new EntitySet<MemberBusiness>(new Action<MemberBusiness>(this.attach_MemberBusinesses), new Action<MemberBusiness>(this.detach_MemberBusinesses));
+			this._MessagePosts = new EntitySet<MessagePost>(new Action<MessagePost>(this.attach_MessagePosts), new Action<MessagePost>(this.detach_MessagePosts));
+			this._MessageTopics = new EntitySet<MessageTopic>(new Action<MessageTopic>(this.attach_MessageTopics), new Action<MessageTopic>(this.detach_MessageTopics));
+			this._PlayerProfiles = new EntitySet<PlayerProfile>(new Action<PlayerProfile>(this.attach_PlayerProfiles), new Action<PlayerProfile>(this.detach_PlayerProfiles));
+			this._Rosters = new EntitySet<Roster>(new Action<Roster>(this.attach_Rosters), new Action<Roster>(this.detach_Rosters));
+			this._TeamSeasonManagers = new EntitySet<TeamSeasonManager>(new Action<TeamSeasonManager>(this.attach_TeamSeasonManagers), new Action<TeamSeasonManager>(this.detach_TeamSeasonManagers));
+			this._VoteAnswers = new EntitySet<VoteAnswer>(new Action<VoteAnswer>(this.attach_VoteAnswers), new Action<VoteAnswer>(this.detach_VoteAnswers));
+			this._AspNetUser = default(EntityRef<AspNetUser>);
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
+		public long Id
+		{
+			get
+			{
+				return this._Id;
+			}
+			set
+			{
+				if ((this._Id != value))
+				{
+					this.OnIdChanging(value);
+					this.SendPropertyChanging();
+					this._Id = value;
+					this.SendPropertyChanged("Id");
+					this.OnIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Email", DbType="VarChar(50)")]
+		public string Email
+		{
+			get
+			{
+				return this._Email;
+			}
+			set
+			{
+				if ((this._Email != value))
+				{
+					this.OnEmailChanging(value);
+					this.SendPropertyChanging();
+					this._Email = value;
+					this.SendPropertyChanged("Email");
+					this.OnEmailChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_LastName", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
+		public string LastName
+		{
+			get
+			{
+				return this._LastName;
+			}
+			set
+			{
+				if ((this._LastName != value))
+				{
+					this.OnLastNameChanging(value);
+					this.SendPropertyChanging();
+					this._LastName = value;
+					this.SendPropertyChanged("LastName");
+					this.OnLastNameChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FirstName", DbType="VarChar(25) NOT NULL", CanBeNull=false)]
+		public string FirstName
+		{
+			get
+			{
+				return this._FirstName;
+			}
+			set
+			{
+				if ((this._FirstName != value))
+				{
+					this.OnFirstNameChanging(value);
+					this.SendPropertyChanging();
+					this._FirstName = value;
+					this.SendPropertyChanged("FirstName");
+					this.OnFirstNameChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_MiddleName", DbType="VarChar(25)")]
+		public string MiddleName
+		{
+			get
+			{
+				return this._MiddleName;
+			}
+			set
+			{
+				if ((this._MiddleName != value))
+				{
+					this.OnMiddleNameChanging(value);
+					this.SendPropertyChanging();
+					this._MiddleName = value;
+					this.SendPropertyChanged("MiddleName");
+					this.OnMiddleNameChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone1", DbType="VarChar(14)")]
+		public string Phone1
+		{
+			get
+			{
+				return this._Phone1;
+			}
+			set
+			{
+				if ((this._Phone1 != value))
+				{
+					this.OnPhone1Changing(value);
+					this.SendPropertyChanging();
+					this._Phone1 = value;
+					this.SendPropertyChanged("Phone1");
+					this.OnPhone1Changed();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone2", DbType="VarChar(14)")]
+		public string Phone2
+		{
+			get
+			{
+				return this._Phone2;
+			}
+			set
+			{
+				if ((this._Phone2 != value))
+				{
+					this.OnPhone2Changing(value);
+					this.SendPropertyChanging();
+					this._Phone2 = value;
+					this.SendPropertyChanged("Phone2");
+					this.OnPhone2Changed();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Phone3", DbType="VarChar(14)")]
+		public string Phone3
+		{
+			get
+			{
+				return this._Phone3;
+			}
+			set
+			{
+				if ((this._Phone3 != value))
+				{
+					this.OnPhone3Changing(value);
+					this.SendPropertyChanging();
+					this._Phone3 = value;
+					this.SendPropertyChanged("Phone3");
+					this.OnPhone3Changed();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_CreatorAccountId", DbType="BigInt NOT NULL")]
+		public long CreatorAccountId
+		{
+			get
+			{
+				return this._CreatorAccountId;
+			}
+			set
+			{
+				if ((this._CreatorAccountId != value))
+				{
+					this.OnCreatorAccountIdChanging(value);
+					this.SendPropertyChanging();
+					this._CreatorAccountId = value;
+					this.SendPropertyChanged("CreatorAccountId");
+					this.OnCreatorAccountIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_StreetAddress", DbType="VarChar(75)")]
+		public string StreetAddress
+		{
+			get
+			{
+				return this._StreetAddress;
+			}
+			set
+			{
+				if ((this._StreetAddress != value))
+				{
+					this.OnStreetAddressChanging(value);
+					this.SendPropertyChanging();
+					this._StreetAddress = value;
+					this.SendPropertyChanged("StreetAddress");
+					this.OnStreetAddressChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_City", DbType="VarChar(25)")]
+		public string City
+		{
+			get
+			{
+				return this._City;
+			}
+			set
+			{
+				if ((this._City != value))
+				{
+					this.OnCityChanging(value);
+					this.SendPropertyChanging();
+					this._City = value;
+					this.SendPropertyChanged("City");
+					this.OnCityChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_State", DbType="VarChar(25)")]
+		public string State
+		{
+			get
+			{
+				return this._State;
+			}
+			set
+			{
+				if ((this._State != value))
+				{
+					this.OnStateChanging(value);
+					this.SendPropertyChanging();
+					this._State = value;
+					this.SendPropertyChanged("State");
+					this.OnStateChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Zip", DbType="VarChar(15)")]
+		public string Zip
+		{
+			get
+			{
+				return this._Zip;
+			}
+			set
+			{
+				if ((this._Zip != value))
+				{
+					this.OnZipChanging(value);
+					this.SendPropertyChanging();
+					this._Zip = value;
+					this.SendPropertyChanged("Zip");
+					this.OnZipChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FirstYear", DbType="Int")]
+		public System.Nullable<int> FirstYear
+		{
+			get
+			{
+				return this._FirstYear;
+			}
+			set
+			{
+				if ((this._FirstYear != value))
+				{
+					this.OnFirstYearChanging(value);
+					this.SendPropertyChanging();
+					this._FirstYear = value;
+					this.SendPropertyChanged("FirstYear");
+					this.OnFirstYearChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_DateOfBirth", DbType="DateTime")]
+		public System.Nullable<System.DateTime> DateOfBirth
+		{
+			get
+			{
+				return this._DateOfBirth;
+			}
+			set
+			{
+				if ((this._DateOfBirth != value))
+				{
+					this.OnDateOfBirthChanging(value);
+					this.SendPropertyChanging();
+					this._DateOfBirth = value;
+					this.SendPropertyChanged("DateOfBirth");
+					this.OnDateOfBirthChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_IsFemale", DbType="Bit")]
+		public System.Nullable<bool> IsFemale
+		{
+			get
+			{
+				return this._IsFemale;
+			}
+			set
+			{
+				if ((this._IsFemale != value))
+				{
+					this.OnIsFemaleChanging(value);
+					this.SendPropertyChanging();
+					this._IsFemale = value;
+					this.SendPropertyChanged("IsFemale");
+					this.OnIsFemaleChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_UserId", DbType="NVarChar(128)")]
+		public string UserId
+		{
+			get
+			{
+				return this._UserId;
+			}
+			set
+			{
+				if ((this._UserId != value))
+				{
+					if (this._AspNetUser.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnUserIdChanging(value);
+					this.SendPropertyChanging();
+					this._UserId = value;
+					this.SendPropertyChanged("UserId");
+					this.OnUserIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_ContactRole", Storage="_ContactRoles", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<ContactRole> ContactRoles
+		{
+			get
+			{
+				return this._ContactRoles;
+			}
+			set
+			{
+				this._ContactRoles.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_FieldContact", Storage="_FieldContacts", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<FieldContact> FieldContacts
+		{
+			get
+			{
+				return this._FieldContacts;
+			}
+			set
+			{
+				this._FieldContacts.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfCourseForContact", Storage="_GolfCourseForContacts", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<GolfCourseForContact> GolfCourseForContacts
+		{
+			get
+			{
+				return this._GolfCourseForContacts;
+			}
+			set
+			{
+				this._GolfCourseForContacts.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsConfiguration", Storage="_GolferStatsConfigurations", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<GolferStatsConfiguration> GolferStatsConfigurations
+		{
+			get
+			{
+				return this._GolferStatsConfigurations;
+			}
+			set
+			{
+				this._GolferStatsConfigurations.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolferStatsValue", Storage="_GolferStatsValues", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<GolferStatsValue> GolferStatsValues
+		{
+			get
+			{
+				return this._GolferStatsValues;
+			}
+			set
+			{
+				this._GolferStatsValues.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup", Storage="_GolfLeagueSetups", ThisKey="Id", OtherKey="PresidentId")]
+		public EntitySet<GolfLeagueSetup> GolfLeagueSetups
+		{
+			get
+			{
+				return this._GolfLeagueSetups;
+			}
+			set
+			{
+				this._GolfLeagueSetups.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup1", Storage="_GolfLeagueSetups1", ThisKey="Id", OtherKey="VicePresidentId")]
+		public EntitySet<GolfLeagueSetup> GolfLeagueSetups1
+		{
+			get
+			{
+				return this._GolfLeagueSetups1;
+			}
+			set
+			{
+				this._GolfLeagueSetups1.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup2", Storage="_GolfLeagueSetups2", ThisKey="Id", OtherKey="SecretaryId")]
+		public EntitySet<GolfLeagueSetup> GolfLeagueSetups2
+		{
+			get
+			{
+				return this._GolfLeagueSetups2;
+			}
+			set
+			{
+				this._GolfLeagueSetups2.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfLeagueSetup3", Storage="_GolfLeagueSetups3", ThisKey="Id", OtherKey="TreasurerId")]
+		public EntitySet<GolfLeagueSetup> GolfLeagueSetups3
+		{
+			get
+			{
+				return this._GolfLeagueSetups3;
+			}
+			set
+			{
+				this._GolfLeagueSetups3.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfRoster", Storage="_GolfRosters", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<GolfRoster> GolfRosters
+		{
+			get
+			{
+				return this._GolfRosters;
+			}
+			set
+			{
+				this._GolfRosters.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_GolfScore", Storage="_GolfScores", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<GolfScore> GolfScores
+		{
+			get
+			{
+				return this._GolfScores;
+			}
+			set
+			{
+				this._GolfScores.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_hof", Storage="_hofs", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<hof> hofs
+		{
+			get
+			{
+				return this._hofs;
+			}
+			set
+			{
+				this._hofs.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_LeagueUmpire", Storage="_LeagueUmpires", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<LeagueUmpire> LeagueUmpires
+		{
+			get
+			{
+				return this._LeagueUmpires;
+			}
+			set
+			{
+				this._LeagueUmpires.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MemberBusiness", Storage="_MemberBusinesses", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<MemberBusiness> MemberBusinesses
+		{
+			get
+			{
+				return this._MemberBusinesses;
+			}
+			set
+			{
+				this._MemberBusinesses.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessagePost", Storage="_MessagePosts", ThisKey="Id", OtherKey="ContactCreatorId")]
+		public EntitySet<MessagePost> MessagePosts
+		{
+			get
+			{
+				return this._MessagePosts;
+			}
+			set
+			{
+				this._MessagePosts.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_MessageTopic", Storage="_MessageTopics", ThisKey="Id", OtherKey="ContactCreatorId")]
+		public EntitySet<MessageTopic> MessageTopics
+		{
+			get
+			{
+				return this._MessageTopics;
+			}
+			set
+			{
+				this._MessageTopics.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_PlayerProfile", Storage="_PlayerProfiles", ThisKey="Id", OtherKey="PlayerId")]
+		public EntitySet<PlayerProfile> PlayerProfiles
+		{
+			get
+			{
+				return this._PlayerProfiles;
+			}
+			set
+			{
+				this._PlayerProfiles.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_Roster", Storage="_Rosters", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<Roster> Rosters
+		{
+			get
+			{
+				return this._Rosters;
+			}
+			set
+			{
+				this._Rosters.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_TeamSeasonManager", Storage="_TeamSeasonManagers", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<TeamSeasonManager> TeamSeasonManagers
+		{
+			get
+			{
+				return this._TeamSeasonManagers;
+			}
+			set
+			{
+				this._TeamSeasonManagers.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Contact_VoteAnswer", Storage="_VoteAnswers", ThisKey="Id", OtherKey="ContactId")]
+		public EntitySet<VoteAnswer> VoteAnswers
+		{
+			get
+			{
+				return this._VoteAnswers;
+			}
+			set
+			{
+				this._VoteAnswers.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="AspNetUser_Contact", Storage="_AspNetUser", ThisKey="UserId", OtherKey="Id", IsForeignKey=true, DeleteRule="SET NULL")]
+		public AspNetUser AspNetUser
+		{
+			get
+			{
+				return this._AspNetUser.Entity;
+			}
+			set
+			{
+				AspNetUser previousValue = this._AspNetUser.Entity;
+				if (((previousValue != value) 
+							|| (this._AspNetUser.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._AspNetUser.Entity = null;
+						previousValue.Contacts.Remove(this);
+					}
+					this._AspNetUser.Entity = value;
+					if ((value != null))
+					{
+						value.Contacts.Add(this);
+						this._UserId = value.Id;
+					}
+					else
+					{
+						this._UserId = default(string);
+					}
+					this.SendPropertyChanged("AspNetUser");
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+		
+		private void attach_ContactRoles(ContactRole entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_ContactRoles(ContactRole entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_FieldContacts(FieldContact entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_FieldContacts(FieldContact entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolfCourseForContacts(GolfCourseForContact entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolfCourseForContacts(GolfCourseForContact entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolferStatsConfigurations(GolferStatsConfiguration entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolferStatsConfigurations(GolferStatsConfiguration entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolferStatsValues(GolferStatsValue entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolferStatsValues(GolferStatsValue entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolfLeagueSetups(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolfLeagueSetups(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolfLeagueSetups1(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact1 = this;
+		}
+		
+		private void detach_GolfLeagueSetups1(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact1 = null;
+		}
+		
+		private void attach_GolfLeagueSetups2(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact2 = this;
+		}
+		
+		private void detach_GolfLeagueSetups2(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact2 = null;
+		}
+		
+		private void attach_GolfLeagueSetups3(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact3 = this;
+		}
+		
+		private void detach_GolfLeagueSetups3(GolfLeagueSetup entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact3 = null;
+		}
+		
+		private void attach_GolfRosters(GolfRoster entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolfRosters(GolfRoster entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_GolfScores(GolfScore entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_GolfScores(GolfScore entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_hofs(hof entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_hofs(hof entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_LeagueUmpires(LeagueUmpire entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_LeagueUmpires(LeagueUmpire entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_MemberBusinesses(MemberBusiness entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_MemberBusinesses(MemberBusiness entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_MessagePosts(MessagePost entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_MessagePosts(MessagePost entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_MessageTopics(MessageTopic entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_MessageTopics(MessageTopic entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_PlayerProfiles(PlayerProfile entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_PlayerProfiles(PlayerProfile entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_Rosters(Roster entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_Rosters(Roster entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_TeamSeasonManagers(TeamSeasonManager entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_TeamSeasonManagers(TeamSeasonManager entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
+		}
+		
+		private void attach_VoteAnswers(VoteAnswer entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = this;
+		}
+		
+		private void detach_VoteAnswers(VoteAnswer entity)
+		{
+			this.SendPropertyChanging();
+			entity.Contact = null;
 		}
 	}
 }

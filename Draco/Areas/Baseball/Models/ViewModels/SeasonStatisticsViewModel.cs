@@ -2,21 +2,20 @@
 using System.Linq;
 using System.Web.Mvc;
 using ModelObjects;
+using SportsManager.ViewModels;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class SeasonStatisticsViewModel
+    public class SeasonStatisticsViewModel : AccountViewModel
     {
-        public SeasonStatisticsViewModel(long accountId, long seasonId, long leagueId, long divisionId)
+        public SeasonStatisticsViewModel(Controller c, long accountId, long seasonId, long leagueId, long divisionId)
+            : base(c, accountId)
         {
             if (accountId == 0)
             {
                 League l = DataAccess.Leagues.GetLeague(leagueId);
                 accountId = l.AccountId;
             }
-
-            AccountId = accountId;
-            AccountName = DataAccess.Accounts.GetAccountName(accountId);
 
             SeasonId = seasonId;
             SeasonName = DataAccess.Seasons.GetSeasonName(seasonId);
@@ -34,10 +33,8 @@ namespace SportsManager.Baseball.ViewModels
             UseHistorical = seasonId == 0;
         }
 
-        public long AccountId { get; private set; }
         public long LeagueId { get; private set; }
         public long DivisionId { get; private set; }
-        public string AccountName { get; private set; }
         public string LeagueName { get; private set; }
         public string DivisionName { get; private set; }
         public bool UseHistorical { get; private set; }

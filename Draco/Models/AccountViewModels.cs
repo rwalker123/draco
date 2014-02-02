@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace SportsManager.Models
 {
@@ -59,5 +60,22 @@ namespace SportsManager.Models
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
+
+        [Required]
+        [Display(Name = "Your name")]
+        public string PlayerName { get; set; }
+
+        [Required]
+        [Display(Name = "Birth date")]
+        public DateTime BirthDate { get; set; }
+
+        [Required]
+        [Display(Name = "First year in league")]
+        public int FirstYear { get; set; }
+
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email address")]
+        public String Email { get; set; }
     }
 }

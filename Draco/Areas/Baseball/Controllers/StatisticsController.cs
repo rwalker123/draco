@@ -34,12 +34,12 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             long dId = divisionId.GetValueOrDefault(0);
 
-            return View(new SeasonStatisticsViewModel(aId, sId, lId, dId));
+            return View(new SeasonStatisticsViewModel(this, aId, sId, lId, dId));
         }
 
         public ActionResult HistoricalSeasonStandings(long accountId, long id)
         {
-            return View(new StandingsViewModel(accountId, id));
+            return View(new StandingsViewModel(this, accountId, id));
         }
 
         public ActionResult PlayerStatsByTeam(long accountId, long seasonId, long id)
@@ -57,7 +57,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             try
             {
-                return View(new SeasonStatisticsViewModel(0, long.Parse(collection["seasonId"]), long.Parse(collection["leagueId"]), long.Parse(collection["divisionId"])));
+                return View(new SeasonStatisticsViewModel(this, 0, long.Parse(collection["seasonId"]), long.Parse(collection["leagueId"]), long.Parse(collection["divisionId"])));
                 //return RedirectToAction("Home", new { accountId = long.Parse(collection["accountId"]) });
             }
             catch
@@ -77,7 +77,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             long sId = seasonId.Value;
             long lId = id.Value;
 
-            return View(new SeasonStatisticsViewModel(aId, sId, lId, 0));
+            return View(new SeasonStatisticsViewModel(this, aId, sId, lId, 0));
         }
 
         /// <summary>
@@ -124,7 +124,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             long sId = seasonId.Value;
             long lId = id.Value;
 
-            return View(new SeasonStatisticsViewModel(aId, sId, lId, 0));
+            return View(new SeasonStatisticsViewModel(this, aId, sId, lId, 0));
         }
 
         /// <summary>

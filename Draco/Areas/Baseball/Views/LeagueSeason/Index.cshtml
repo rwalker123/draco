@@ -36,22 +36,17 @@
     </style>
 }
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>@ViewBag.Title</h1>
-                <p>Leagues allow you to run multiple independent groups of teams. You may only schedule games between teams in the same league. Each
-                    League can be broken up into divisions.
-                </p>
-            </hgroup>
-                @if (Model.HasSeason)
-                {
-		            <h2>Current Season: @Model.SeasonName</h2>
-                }
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p class="help-block">
+        Leagues allow you to run multiple independent groups of teams. You may only schedule games between teams in the same league. Each
+        League can be broken up into divisions.
+    </p>
+    @if (Model.HasSeason)
+    {
+        <h2>Current Season: @Model.SeasonName</h2>
     }
+</div> <!-- content-wrapper -->
 
 @if (!Model.HasSeason)
 {
@@ -60,10 +55,10 @@
 }
 
 
-<div id="copyFromSeason" style="display:none;max-width:500px">
+<div id="copyFromSeason" style="display:none;max-width:500px;margin-bottom:20px">
     <h3>Import Previous Season</h3>
     <div >
-        <p style="width:400px">Importing a previous season will give you a head start in setting up your league. Importing will bring in the league setup of
+        <p class="help-block" style="width:400px">Importing a previous season will give you a head start in setting up your league. Importing will bring in the league setup of
             a previous season. This includes the leagues, divisions, teams, and rosters. It does not include schedules, statistics, or any
             other data that involves games played in a season.
         </p>
@@ -72,8 +67,10 @@
     </div>
 </div>
 
-League Name: <input id="newLeagueName" type="text" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
-<input type="button" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)" value="Add League" />
+<div class="ui-widget" style="margin-bottom:20px">
+    League Name: <input id="newLeagueName" type="text" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
+    <input type="button" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)" value="Add League" />
+</div>
 
 <div id="accordion">
 </div>        

@@ -258,6 +258,16 @@ namespace DataAccess
             return c.Id;
         }
 
+        static public String GetFirstNameFromUserName(string userName)
+        {
+            string userId = Globals.GetCurrentUserId();
+
+            DB db = DBConnection.GetContext();
+            return (from c in db.Contacts
+                    where c.UserId == userId
+                    select c.FirstName).SingleOrDefault();
+        }
+
         static public Contact GetContactFromName(long accountId, string firstName, string lastName, string middleName)
         {
             DB db = DBConnection.GetContext();
@@ -280,7 +290,7 @@ namespace DataAccess
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)).SingleOrDefault();
         }
 
-        static public void UpdateContact(Contact contact)
+        static public void UpdateContact(Contact contact, bool updateUserId)
         {
             DB db = DBConnection.GetContext();
             var dbContact = (from c in db.Contacts
@@ -295,6 +305,9 @@ namespace DataAccess
 
             string origEmail = dbContact.Email;
             string newEmail = contact.Email;
+
+            if (!updateUserId)
+                contact.UserId = dbContact.UserId;
 
             contact.Copy(dbContact);
             db.SubmitChanges();

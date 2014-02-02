@@ -19,6 +19,7 @@ namespace SportsManager.Controllers
         public class AccountNameYearData : IdData
         {
             public int Year { get; set; }
+            public string TwitterAccount { get; set; }
         }
 
         public class KeyValueData : IdData
@@ -117,7 +118,8 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Account a = DataAccess.Accounts.GetAccount(accountId);
-            a.OwnerUserId = userId.Id;
+            System.Diagnostics.Debug.Assert(false, "fix the user id, should be contact id");
+            //a.OwnerContactId = userId.Id;
             DataAccess.Accounts.ModifyAccount(a);
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -137,6 +139,7 @@ namespace SportsManager.Controllers
             Account a = DataAccess.Accounts.GetAccount(accountId);
             a.AccountName = accountName.Id;
             a.FirstYear = accountName.Year;
+            a.TwitterAccountName = accountName.TwitterAccount;
             try
             {
                 DataAccess.Accounts.ModifyAccount(a);

@@ -43,6 +43,13 @@ namespace SportsManager
             if (accountId == 0)
                 return null;
 
+            // let login/logoff process normally
+            if (httpContext.Request.FilePath.StartsWith("/Account", System.StringComparison.InvariantCultureIgnoreCase) ||
+                httpContext.Request.FilePath.StartsWith("/Season", System.StringComparison.InvariantCultureIgnoreCase))
+            {
+                return null;
+            }
+
             // Mostly works, need to handle links in ~/Controllers/.., for example, Account/Logon. With this
             // redirect, it would look for logOn in /Areas/baseball/.... How to show "shared" views when you
             // need menus and other things custom for each area.
@@ -61,20 +68,15 @@ namespace SportsManager
             }
             else if (accountType.Id == 3)
             {
-                // let login/logoff process normally
-                if (!httpContext.Request.FilePath.StartsWith("/Account", System.StringComparison.InvariantCultureIgnoreCase) &&
-                    !httpContext.Request.FilePath.StartsWith("/Season", System.StringComparison.InvariantCultureIgnoreCase))
-                {
-                    // route to the "base" url of the specific account.
-                    var routeData = new RouteData(this, new MvcRouteHandler());
-                    routeData.Values["controller"] = "League";
-                    routeData.Values["action"] = "Home";
-                    routeData.Values["accountId"] = accountId;
+                // route to the "base" url of the specific account.
+                var routeData = new RouteData(this, new MvcRouteHandler());
+                routeData.Values["controller"] = "League";
+                routeData.Values["action"] = "Home";
+                routeData.Values["accountId"] = accountId;
 
-                    routeData.DataTokens["area"] = "Golf";
-                    routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Golf.Controllers" };
-                    return routeData;
-                }
+                routeData.DataTokens["area"] = "Golf";
+                routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Golf.Controllers" };
+                return routeData;
             }
 
             return null;

@@ -1,76 +1,75 @@
 ﻿@model SportsManager.ViewModels.LeagueSeasonsViewModel
 @{
-    ViewBag.Title = "Season Setup";
+    ViewBag.Title = @Model.AccountName + " Season Setup";
 }
 
 @section head {
     <link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
     <style type="text/css">
-        h3.seasonHeader
-        {
-            font-size:24px;
+        h3.seasonHeader {
+            font-size: 24px;
         }
 
-        ul
-        {
+        ul {
             list-style-type: none;
         }
 
-        input.currentSeason
-        {
+        input.currentSeason {
             display: none;
         }
 
+        input[type="text"] {
+            height:30px;
+        }
     </style>
 }
 
-@section featured {
-    <section class="featured">
-        <div class="content-wrapper">
-            <hgroup class="title">
-                <h1>@ViewBag.Title</h1>
-                <p>Seasons allow you to store a history of your league. Each season contains its own set of teams, players, and statistics.</p>
-            </hgroup>
-                <h2 id="currentSeasonDisplay"></h2>
-            <p>To set a new season, select edit on any existing season below or create a new season.</p>
-        </div> <!-- content-wrapper -->
-    </section> <!-- featured -->
-}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+    <p class="help-block">Seasons allow you to store a history of your league. Each season contains its own set of teams, players, and statistics.</p>
+    <h2 id="currentSeasonDisplay"></h2>
+    <p class="help-block">To set a new season, select any existing season below or create a new season.</p>
+</div> <!-- jumbotron -->
 
-Season Name: <input id="newSeasonName" type="text" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
-<input type="button" value="Add Season" onclick="javascript: seasonSetupData.addSeason()" />
-<div id="accordion">
-</div>        
 
-@section scripts
-{
-@Scripts.Render("~/bundles/jsrender")
-
-<script id="seasonTemplate" type="text/x-jsrender">
-<h3 class="seasonHeader" id='seasonHeader_{{:Id}}'><a id='seasonHeaderLink_{{:Id}}' href="#">{{>Name}}</a></h3>
-<div id='seasonData_{{:Id}}'>
-    <div style='float:right'>
-    Season Name: <input id='newSeasonName_{{:Id}}' value='{{>Name}}' /> 
-    <input type="button" value="Update Name" onclick="javascript:seasonSetupData.editSeason({{:Id}})" />
-    <input type="button" value="Delete Season" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})" />
+<div class="row">
+    <div style="margin-top:20px;margin-bottom:20px">
+        Season Name: <input id="newSeasonName" type="text" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
+        <input type="button" value="Add Season" onclick="javascript: seasonSetupData.addSeason()" />
     </div>
-    <div style='clear:both' />
-    <br />
-    <input id='setCurrentSeasonBtn_{{:Id}}' type="button" value="Set as Current" onclick="javascript:seasonSetupData.setCurrentSeason({{:Id}})" />
 </div>
-</script>
 
-<script type="text/javascript" src="~/Scripts/seasonsetup.js"></script>
+<div class="row">
+    <div id="accordion">
+    </div>
+</div>
+    @section scripts
+{
+        @Scripts.Render("~/bundles/jsrender")
 
-<script type="text/javascript">
+        <script id="seasonTemplate" type="text/x-jsrender">
+            <h3 class="seasonHeader" id='seasonHeader_{{:Id}}'><a id='seasonHeaderLink_{{:Id}}' href="#">{{>Name}}</a></h3>
+            <div id='seasonData_{{:Id}}'>
+                <div style='float:right'>
+                    Season Name: <input id='newSeasonName_{{:Id}}' value='{{>Name}}' />
+                    <input type="button" value="Update Name" onclick="javascript:seasonSetupData.editSeason({{:Id}})" />
+                    <input type="button" value="Delete Season" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})" />
+                </div>
+                <div style='clear:both' />
+                <br />
+                <input id='setCurrentSeasonBtn_{{:Id}}' type="button" value="Set as Current" onclick="javascript:seasonSetupData.setCurrentSeason({{:Id}})" />
+            </div>
+        </script>
 
-    var seasonSetupData = new SeasonSetupClass(@Model.AccountId);
+        <script type="text/javascript" src="~/Scripts/seasonsetup.js"></script>
 
-    $(document).ready(function () {
-        seasonSetupData.fillSeasons();
-    });
+        <script type="text/javascript">
 
-</script>
+            var seasonSetupData = new SeasonSetupClass(@Model.AccountId);
 
+            $(document).ready(function () {
+                seasonSetupData.fillSeasons();
+            });
 
-}
+        </script>
+    }

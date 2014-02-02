@@ -5,15 +5,13 @@
 	ViewBag.Title = @Model.AccountName + " Season Statistics";
 }
 
-@section menu {
-	@Html.Partial("_LeagueMenu")
-}
-
 @section head {
 	<link href="@Url.Content("~/Content/jquery.jqGrid/ui.jqgrid.css")" rel="stylesheet" type="text/css" media="screen" />
 }
 
-<h2>@Model.AccountName Season Statistics</h2>
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
 
 
 	@Html.ActionLink("Player Search", "PlayerSearch", "Statistics", new { accountId = Model.AccountId }, null)<br />

@@ -12,21 +12,11 @@
     @RenderSection("head", required: false)
 </head>
 <body>
-    <!-- facebook like control -->
-    <div id="fb-root"></div>
-    <script>(function (d, s, id) {
-    var js, fjs = d.getElementsByTagName(s)[0];
-    if (d.getElementById(id)) return;
-    js = d.createElement(s); js.id = id;
-    js.src = '//connect.facebook.net/en_US/all.js#xfbml=1&appId=@System.Configuration.ConfigurationManager.AppSettings["FacebookAppId"]';
-    fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));</script>
-    <!-- end facebook like control -->
-
+    @RenderSection("facebooklike", required: false)
     <div class="navbar navbar-inverse navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-menu">
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
@@ -34,31 +24,54 @@
                 @if (String.IsNullOrEmpty((String)ViewData["AccountName"]))
                 {
                     ViewData["AccountName"] = "ezRecSports.com";
+                    @Html.ActionLink((String)ViewData["AccountName"], "Index", "Home", null, new { @class = "navbar-brand" });
                 }
-                @Html.ActionLink((String)ViewData["AccountName"], "Index", "Home", null, new { @class = "navbar-brand" })
+                else {
+                    @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = "Baseball", accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
+                }
             </div>
-            <div class="navbar-collapse collapse">
+            <div class="navbar-menu navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                @if (ViewData["AccountId"] != null)
-                {
-                    Html.RenderPartial("AccountMenu", ViewData["AccountId"]);
-                }
-                else
-                {
-                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                    <li>@Html.ActionLink("About", "About", "Home")</li>
-                    <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                }
+                    @if (ViewData["AccountId"] != null)
+                    {
+                        Html.RenderPartial("AccountMenu", ViewData["AccountId"]);
+                    }
+                    else
+                    {
+                        <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                        <li>@Html.ActionLink("About", "About", "Home")</li>
+                        <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
+                    }
                 </ul>
                 @Html.Partial("_LoginPartial")
             </div>
         </div>
     </div>
+@if (ViewData["AccountId"] != null && ViewData["IsAdmin"] != null && ViewData.Model.IsAdmin)
+{
+    <div class="navbar navbar-inverse navbar-fixed-bottom" >
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".admin-navbar">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <span class="navbar-brand">Admin</span>
+            </div>
+            <div class="admin-navbar navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    @{Html.RenderAction("AdminLinks", "Home", new { area = "", accountId = ViewData["AccountId"] });}
+                </ul>
+            </div>
+        </div>
+    </div>
+}
     <div class="container body-content">
         @RenderBody()
         <hr />
         <footer>
-            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+            <p>&copy; @DateTime.Now.Year - @ViewData["AccountName"]</p>
         </footer>
     </div>
 
