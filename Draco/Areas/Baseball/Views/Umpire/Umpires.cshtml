@@ -28,10 +28,11 @@
     <p class="help-block">Define umpires for the league.</p>
 </div> <!-- content-wrapper -->
 
-<h3 class="help-block" style="max-width:500px;text-align:center">Search for users to add as umpires. If this is a new umpire, add them as a @Html.ActionLink("User", "Users", "Account", new { area = "", accountId = Model.AccountId }, null) first.</h3>
+<h3 class="help-block" style="display: inline-block" >Search for users to add as umpires. If this is a new umpire, 
+    add them as a </h3><a class="btn btn-primary" style="margin-left: 5px; margin-right: 5px; margin-top: -6px" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a><h3 class="help-block" style="display: inline-block">first.</h3>
 
 <br /><span>(type last name to begin search)</span><br />
-<input type="text" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/><button style="margin-left:5px" data-bind="enable: hasSelectedPlayer, click: addUmpire">Add</button>
+<input type="text" style="width: 400px; margin-right: 5px" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/><button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire">Add</button>
 
 <div id="accordion">
     <div data-bind="foreach: umpires">
