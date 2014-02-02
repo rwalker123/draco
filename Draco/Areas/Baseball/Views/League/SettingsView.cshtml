@@ -17,33 +17,70 @@
 
     input[type="checkbox"] {
         margin-right:5px;
+        margin-left:-20px;
     }
-    
+
+    .panel-body {
+        margin-left: 10px;
+    }
 </style>
 }
 <div class="jumbotron">
     <h1>@ViewBag.Title.</h1>
 </div> <!-- content-wrapper -->
 
-<div style="padding-bottom: 10px">
-    <h4>Contact Information</h4>
-    <label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label>
-    <label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label>
+<div class="container-fluid">
+    <div class="row" style="margin-top:20px">
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Contact Information</h3>
+                </div>
+                <div class="panel-body">
+                    <div><label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label></div>
+                    <div><label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label></div>
+                </div>
+            </div>
+        </div>
 
-    <label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label>
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Player Data</h3>
+                </div>
+                <div class="panel-body">
+                    <div><label><input type="checkbox" data-bind="checked: playerWaiver" />Track player waiver </label></div>
+                    <div><label><input type="checkbox" data-bind="checked: waiverStatus" />Show waiver status on Roster page</label></div>
 
-    <h4>Player Data</h4>
-    <label><input type="checkbox" data-bind="checked: playerWaiver" />Track player waiver </label>
-        <label><input type="checkbox" data-bind="checked: waiverStatus" />Show waiver status on Roster page</label>
+                    <div><label><input type="checkbox" data-bind="checked: playerIdentification" />Track player identification submitted</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showIdentification" />Show Identification status on Roster page</label></div>
+                </div>
+            </div>
+        </div>
 
-    <label><input type="checkbox" data-bind="checked: playerIdentification" />Track player identification submitted</label>
-        <label><input type="checkbox" data-bind="checked: showIdentification" />Show Identification status on Roster page</label>
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Team Pages</h3>
+                </div>
+                <div class="panel-body">
+                    <div><label><input type="checkbox" data-bind="checked: printableRoster" />Show printable Roster Card</label></div>
+                </div>
+            </div>
+        </div>
 
-    <h4>Team Pages</h4>
-    <label><input type="checkbox" data-bind="checked: printableRoster" />Show printable Roster Card</label>
-
-    <h4>Message Board</h4>
-    <label><input type="checkbox" data-bind="checked: msgBoardPhoto" />Show photo of poster</label>
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Message Board</h3>
+                </div>
+                <div class="panel-body">
+                    <div><label><input type="checkbox" data-bind="checked: msgBoardPhoto" />Show photo of poster</label></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section scripts {
