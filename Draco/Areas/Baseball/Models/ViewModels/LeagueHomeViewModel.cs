@@ -15,35 +15,49 @@ namespace SportsManager.Baseball.ViewModels
             YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
             ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
+
+            ShowWorkouts = true;
+            ShowHallOfFame = true;
+            ShowPlayerInterview = true;
+
+            TwitterEnabled = false;
+            FacebookEnabled = false;
+            VideosEnabled = false;
         }
 
         public bool ShowWorkouts
         {
-            get { return true; }
+            get;
+            private set;
         }
         public bool ShowHallOfFame
         {
-            get { return true; }
+            get;
+            private set;
         }
 
         public bool ShowPlayerInterview
         {
-            get { return true; }
+            get;
+            private set;
         }
 
         public bool TwitterEnabled
         {
-            get { return false; }
+            get;
+            private set;
         }
 
         public bool FacebookEnabled
         {
-            get { return false; }
+            get;
+            private set;
         }
 
         public bool VideosEnabled
         {
-            get { return true; }
+            get;
+            private set;
         }
 
         public bool ShowVideos

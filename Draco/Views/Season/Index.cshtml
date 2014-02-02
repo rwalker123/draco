@@ -35,7 +35,7 @@
 <div class="row">
     <div style="margin-top:20px;margin-bottom:20px">
         Season Name: <input id="newSeasonName" type="text" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
-        <input type="button" value="Add Season" onclick="javascript: seasonSetupData.addSeason()" />
+        <button type="button" class="btn btn-primary" onclick="javascript: seasonSetupData.addSeason()">Add Season</button>
     </div>
 </div>
 
@@ -52,12 +52,12 @@
             <div id='seasonData_{{:Id}}'>
                 <div style='float:right'>
                     Season Name: <input id='newSeasonName_{{:Id}}' value='{{>Name}}' />
-                    <input type="button" value="Update Name" onclick="javascript:seasonSetupData.editSeason({{:Id}})" />
-                    <input type="button" value="Delete Season" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})" />
+                    <button type="button" class="btn btn-default" onclick="javascript:seasonSetupData.editSeason({{:Id}})">Update Name</button>
+                    <button type="button" class="btn btn-danger" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})">Delete Season</button>
                 </div>
                 <div style='clear:both' />
                 <br />
-                <input id='setCurrentSeasonBtn_{{:Id}}' type="button" value="Set as Current" onclick="javascript:seasonSetupData.setCurrentSeason({{:Id}})" />
+                <button id='setCurrentSeasonBtn_{{:Id}}' type="button" class="btn btn-success" onclick="javascript:seasonSetupData.setCurrentSeason({{:Id}})">Set as Current</button>
             </div>
         </script>
 

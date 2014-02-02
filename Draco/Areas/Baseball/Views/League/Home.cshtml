@@ -312,7 +312,7 @@
     <div id="accountName">
         @if (Model.IsAdmin)
         {
-            <input type="button" style="float:right" data-bind="click: editAccountName, visible: viewMode" value="Edit" />
+            <button type="button" class="btn btn-default" style="float:right" data-bind="click: editAccountName, visible: viewMode">edit</button>
         }
 
         <div data-bind="visible: viewMode">
@@ -342,8 +342,8 @@
                 <div style="margin:5px"><div style="display: inline-block; width:120px">Twitter account</div><input style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" /></div>
 
                 <div style="margin: 15px; margin-left: 30px">
-                    <input type="button" value="Save" data-bind="click: saveAccountName" />
-                    <input type="button" value="Cancel" data-bind="click: cancelEdit" />
+                    <button type="button" class="btn btn-primary" data-bind="click: saveAccountName">save</button>
+                    <button type="button" class="btn btn-danger" data-bind="click: cancelEdit">cancel</button>
                 </div>
             </div>
         }
@@ -374,7 +374,7 @@
                         <h3 class="panel-title" style="float: left;">Workouts</h3>
                         @if (Model.IsAdmin)
                         {
-                            <h3 class="panel-title" style="float: right"><a href="">[add]</a></h3>
+                            <button style="float: right" type="button" class="btn btn-default" onclick="">add</button>
                         }
                         <div style="clear:both"></div>
                     </div>
@@ -408,7 +408,7 @@
 
                     @if (Model.IsAdmin)
                     {
-                        <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
+                        <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick="">add</button></h3>
                     }
                     <div style="clear:both"></div>
                 </div>
@@ -451,11 +451,11 @@
                             {
                                 <div data-bind="visible: viewMode">
                                     <span style="font-size: larger">YouTube User Id: <span style="font-size: larger;font-weight: bold" data-bind="text: viewUserId"></span></span>
-                                    <input type="button" data-bind="click: editYouTube" value="edit" />
+                                    <button type="button" class="btn btn-link" style="padding:0px" data-bind="click: editYouTube">edit</button> 
                                 </div>
                                 <div data-bind="visible: !viewMode()">
                                     YouTube User Id: <input type="text" data-bind="value: userId" />
-                                    <input type="button" data-bind="click: saveUserId" value="save" /> <input type="button" data-bind="click: resetUserId" value="cancel" />
+                                    <button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveUserId">save</button> <button type="button" class="btn btn-warning" style="padding:0px" data-bind="click: resetUserId">cancel</button>
                                 </div>
                             }
                             <div style="float:left" id="player"></div>
@@ -480,7 +480,7 @@
 
                         @if (Model.IsAdmin)
                         {
-                            <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
+                            <button type="button" class="btn btn-default" style="float: right" onclick="">add</button>
                         }
                         <div style="clear:both"></div>
                     </div>
@@ -493,14 +493,14 @@
         
         @if (Model.ShowPlayerInterview)
         {
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="float: left; ">Player Interview</h3>
 
                         @if (Model.IsAdmin)
                         {
-                            <h3 class="panel-title" style="float: right; "><a href="">[add]</a></h3>
+                            <button class="btn btn-default" style="float: right" onclick="">add</button>
                         }
                         <div style="clear:both"></div>
                     </div>
@@ -521,7 +521,7 @@
                     @if (Model.IsAdmin)
                     {
                         <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
-                            <span>Twitter Widget: <input type="text" data-bind="value: twitterScript" placeholder="paste twitter widget code here" /></span><input style="margin-left: 5px" type="button" data-bind="click: saveTwitterScript" value="Save" /><br />
+                            <span>Twitter Widget: <input type="text" data-bind="value: twitterScript" placeholder="paste twitter widget code here" /></span><button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveTwitterScript">save</button><br />
                             <span>Click <a href='https://twitter.com/settings/widgets' target="twitter">here</a> to visit Twitter to create a widget.</span><br /><br />
                         </div>
                     }
@@ -541,8 +541,8 @@
                     {
                         <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
                             <span>Facebook Fan Page: <input type="text" data-bind="value: editFanPage" placeholder="enter Facebook Fan Page" /></span>
-                            <input style="margin-left: 5px" type="button" data-bind="click: saveFanPage" value="Save" />
-                            <input style="margin-left: 5px" type="button" data-bind="click: cancelSaveFanPage" value="Reset" /><br />
+                            <button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveFanPage">save</button>
+                            <button type="button" class="btn btn-danger" style="padding:0px" data-bind="click: cancelSaveFanPage">reset</button><br />
                         </div>
                     }
                     <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
