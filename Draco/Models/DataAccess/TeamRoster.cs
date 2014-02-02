@@ -671,39 +671,42 @@ namespace DataAccess
 			return rc;
 		}
 
-		static public List<Player> GetAllBirthdayBoys(long accountId)
+		static public IQueryable<SportsManager.Model.Roster> GetAllBirthdayBoys(long accountId)
 		{
-			List<Player> players = new List<Player>();
 			DateTime c = DateTime.Today;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetAllBirthdays", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.Parameters.Add("@d", SqlDbType.SmallDateTime).Value = c;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            /*
+	SELECT DISTINCT Roster.Id, Roster.AccountId, Roster.ContactId, Roster.SubmittedDriversLicense,
+	       Contacts.LastName, Contacts.FirstName, Contacts.MiddleName	       
+	FROM CurrentSeason 
+		LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId 
+		LEFT JOIN TeamsSeason ON TeamsSeason.LeagueSeasonID = LeagueSeason.ID 
+		LEFT JOIN RosterSeason ON RosterSeason.TeamSeasonId = TeamsSeason.Id 
+		LEFT JOIN Roster ON RosterSeason.PlayerId = Roster.Id 
+		LEFT JOIN Contacts ON Contacts.Id = Roster.ContactId
+	WHERE CurrentSeason.AccountId = @accountId AND 
+	      RosterSeason.Inactive = 0 AND 
+		  MONTH(DateOfBirth) = MONTH(@d) AND 
+		  DAY(DateOfBirth) = DAY(@d) 
+	      
+	ORDER BY Contacts.LastName, Contacts.FirstName, Contacts.MiddleName             * 
+             * */
 
-					SqlDataReader dr = myCommand.ExecuteReader();
 
-					while (dr.Read())
-					{
-						Contact contactInfo = Contacts.GetContact(dr.GetInt64(2));
-						if (contactInfo != null && contactInfo.DateOfBirth != DateTime.MinValue)
-							players.Add(new Player(dr.GetInt64(0), 0, 0, contactInfo, false, dr.GetBoolean(3), dr.GetInt64(1), DateTime.Now, string.Empty));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return players;
+            return (from cs in db.CurrentSeasons
+                    join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                    join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
+                    join rs in db.RosterSeasons on ts.id equals rs.TeamSeasonId
+                    join r in db.Rosters on rs.PlayerId equals r.id
+                    join co in db.Contacts on r.ContactId equals co.Id
+                    where cs.AccountId == accountId &&
+                        !rs.Inactive && co.DateOfBirth.HasValue &&
+                        co.DateOfBirth.Value.Day == c.Day &&
+                        co.DateOfBirth.Value.Month == c.Month
+                    orderby co.LastName, co.FirstName, co.MiddleName
+                    select r).Distinct();
 		}
 
         // get all the active players in the current season.

@@ -93,7 +93,8 @@ namespace DataAccess
                         FirstYear = a.FirstYear,
                         TimeZoneId = a.TimeZoneId,
                         OwnerContactId = a.OwnerId,
-                        YouTubeUserId = a.YouTubeUserId
+                        YouTubeUserId = a.YouTubeUserId,
+                        TwitterAccountName = a.TwitterAccountName
                     }).SingleOrDefault();
         }
 
@@ -171,9 +172,10 @@ namespace DataAccess
                                     select r.Id).SingleOrDefault();
 
                     var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
-                    rc = (from r in roles
-                            where r.RoleId == roleId && r.RoleData == accountId
-                            select r).Any();
+                    if (roles != null)
+                        rc = (from r in roles
+                              where r.RoleId == roleId && r.RoleData == accountId
+                              select r).Any();
                 }
             }
 
@@ -234,7 +236,8 @@ namespace DataAccess
                         AccountURL = a.URL,
                         FirstYear = a.FirstYear,
                         TimeZoneId = a.TimeZoneId,
-                        OwnerContactId = a.OwnerId
+                        OwnerContactId = a.OwnerId,
+                        TwitterAccountName = a.TwitterAccountName
                     });
         }
 
@@ -266,6 +269,7 @@ namespace DataAccess
                 dbAccount.AffiliationId = account.AffiliationId;
                 dbAccount.TimeZoneId = account.TimeZoneId;
                 dbAccount.YouTubeUserId = account.YouTubeUserId;
+                dbAccount.TwitterAccountName = account.TwitterAccountName;
 
                 db.SubmitChanges();
 

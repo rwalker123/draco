@@ -290,7 +290,7 @@ namespace DataAccess
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)).SingleOrDefault();
         }
 
-        static public void UpdateContact(Contact contact)
+        static public void UpdateContact(Contact contact, bool updateUserId)
         {
             DB db = DBConnection.GetContext();
             var dbContact = (from c in db.Contacts
@@ -305,6 +305,9 @@ namespace DataAccess
 
             string origEmail = dbContact.Email;
             string newEmail = contact.Email;
+
+            if (!updateUserId)
+                contact.UserId = dbContact.UserId;
 
             contact.Copy(dbContact);
             db.SubmitChanges();

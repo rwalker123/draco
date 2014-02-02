@@ -19,6 +19,7 @@ namespace SportsManager.Controllers
         public class AccountNameYearData : IdData
         {
             public int Year { get; set; }
+            public string TwitterAccount { get; set; }
         }
 
         public class KeyValueData : IdData
@@ -138,6 +139,7 @@ namespace SportsManager.Controllers
             Account a = DataAccess.Accounts.GetAccount(accountId);
             a.AccountName = accountName.Id;
             a.FirstYear = accountName.Year;
+            a.TwitterAccountName = accountName.TwitterAccount;
             try
             {
                 DataAccess.Accounts.ModifyAccount(a);

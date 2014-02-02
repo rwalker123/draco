@@ -42,7 +42,11 @@
 
 <div class="jumbotron">
     <h1>@ViewBag.Title.</h1>
-    <p class="help-block">Manage website users.</p>
+    <p class="help-block">
+        Manage website users.
+
+        <a class="btn btn-default" href="@Url.Action("EMail", "Account", new { area = "", accountId = @Model.AccountId }, null)">Email Users &raquo;</a>
+    </p>
 </div> <!-- content-wrapper -->
 
 <form id="newContact">

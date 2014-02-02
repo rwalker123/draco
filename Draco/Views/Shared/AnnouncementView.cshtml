@@ -5,23 +5,28 @@
     return;
 }
 
+        <h4 style="float: left; margin-left:10px; margin-bottom:0px">League Announcements</h4>
+
         @if (Model.IsAdmin)
         {
-    	    <div class="grad" id="newsEditLabel" style="float:right;"><a class="labellink" href="javascript:announcementData.startNewsAdd()">[add]</a></div>
-	        <div class="grad" id="newsSaveLabel" style="float:right; display: none"><a class="labellink" href="javascript:announcementData.saveNews()">[save]</a> <a class="labellink" href="javascript:announcementData.cancelNewsEdit()">[cancel]</a></div>
+    	    <h4 id="newsEditLabel" style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="javascript:announcementData.startNewsAdd()">[add]</a></h4>
         }
 
     <div style="clear:both"></div> 
 
 <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
-	<div id="editNews" style="display: none; font-weight:600; font-size: 1.3em;">
-		News Title: <input id="newsTitle" name="newsTitle" type="text" style="width: 600px" value="" /><br />
-        <input type="checkbox" id="specialAnnounce" name="specialAnnounce" />Show on home page<br />
+	<div id="editNews" style="margin-top:20px;display: none;">
+        <h4 id="newsSaveLabel" style="margin-bottom: 10px;">
+            <a href="javascript:announcementData.saveNews()">[save]</a>
+            <a href="javascript:announcementData.cancelNewsEdit()">[cancel]</a>
+        </h4>
+        <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
+        <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />display on home page</label><br />
 		<textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce" >
 		</textarea>
 	</div>
 
-    <div style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; background: url("/Images/paper.jpg") repeat;' >
+    <div style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; ' >
 
     <p id="noHeadlinesMessage" style="display: none">Click the <a class="labellink grad" href="javascript:announcementData.startNewsAdd()">[add]</a> button to add news items.</p>
 

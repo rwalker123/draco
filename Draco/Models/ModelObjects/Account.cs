@@ -131,6 +131,7 @@ namespace ModelObjects
 		public string TimeZoneId { get; set; }
 		public long OwnerContactId { get; set; }
         public string YouTubeUserId { get; set; }
+        public string TwitterAccountName { get; set; }
 
 		public TimeZoneInfo TimeZoneInfo
 		{
