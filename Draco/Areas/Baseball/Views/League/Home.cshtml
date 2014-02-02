@@ -336,13 +336,15 @@
         @if (Model.IsAdmin)
         {
             <div style="display:none" data-bind="visible: !viewMode()">
-                Account Name: <input type="text" style="width:200px" data-bind="value: name" /><br />
-                Year Established: <select data-bind="value: firstYear, options: availableYears"></select><br />
+                <div style="margin:5px"><div style="display: inline-block; width:120px">Account name</div><input type="text" style="width:200px" data-bind="value: name" /></div>
+                <div style="margin:5px"><div style="display: inline-block; width:120px">Year established</div><select data-bind="value: firstYear, options: availableYears"></select></div>
 
-                Twitter Account: <input style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" /><br />
+                <div style="margin:5px"><div style="display: inline-block; width:120px">Twitter account</div><input style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" /></div>
 
-                <input type="button" value="Save" data-bind="click: saveAccountName" />
-                <input type="button" value="Cancel" data-bind="click: cancelEdit" />
+                <div style="margin: 15px; margin-left: 30px">
+                    <input type="button" value="Save" data-bind="click: saveAccountName" />
+                    <input type="button" value="Cancel" data-bind="click: cancelEdit" />
+                </div>
             </div>
         }
 
