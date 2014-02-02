@@ -4,93 +4,94 @@
 {
     return;
 }
-
-        <h4 style="float: left; margin-left:10px; margin-bottom:0px">League Announcements</h4>
-
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">League Announcements</h3>
         @if (Model.IsAdmin)
         {
-    	    <h4 id="newsEditLabel" style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="javascript:announcementData.startNewsAdd()">[add]</a></h4>
+            <h3 id="newsEditLabel" class="panel-title" style="float: right;"><a href="javascript:announcementData.startNewsAdd()">[add]</a></h3>
         }
+        <div style="clear:both"></div>
+    </div>
 
-    <div style="clear:both"></div> 
+    <div class="panel-body">
 
-<!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
-	<div id="editNews" style="margin-top:20px;display: none;">
-        <h4 id="newsSaveLabel" style="margin-bottom: 10px;">
-            <a href="javascript:announcementData.saveNews()">[save]</a>
-            <a href="javascript:announcementData.cancelNewsEdit()">[cancel]</a>
-        </h4>
-        <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
-        <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />display on home page</label><br />
-		<textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce" >
-		</textarea>
-	</div>
+        <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
+        <div id="editNews" style="margin-top:20px;display: none;">
+            <h4 id="newsSaveLabel" style="margin-bottom: 10px;">
+                <a href="javascript:announcementData.saveNews()">[save]</a>
+                <a href="javascript:announcementData.cancelNewsEdit()">[cancel]</a>
+            </h4>
+            <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
+            <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />display on home page</label><br />
+            <textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
+        </div>
 
-    <div style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; ' >
+            <p id="noHeadlinesMessage" style="display: none">Click the <a class="labellink grad" href="javascript:announcementData.startNewsAdd()">[add]</a> button to add news items.</p>
 
-    <p id="noHeadlinesMessage" style="display: none">Click the <a class="labellink grad" href="javascript:announcementData.startNewsAdd()">[add]</a> button to add news items.</p>
+            <div id="NewsItems">
 
-	<div id="NewsItems" style='text-align:left; padding: 10px 20px 15px 20px;'>
-
-        <div id="specialAnnounceSection">
-		@foreach (var aw in Model.SpecialAnnouncements)
-        {
-			<div id='div_NewsItemChrome_@aw.id' class='newsSpecial'>
-                @if (Model.IsAdmin) {
-			        <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
-                }
-                <div id="div_NewsItem_@aw.id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
-                    <h1 id='specialNewsTitle_@aw.id'>@Html.Raw(aw.Title)</h1>
-                    <div id="specialNewsItem_@aw.id">
-                        @Html.Raw(aw.Text)
-                    </div>
+                <div id="specialAnnounceSection">
+                    @foreach (var aw in Model.SpecialAnnouncements)
+                    {
+                        <div id='div_NewsItemChrome_@aw.id' class='newsSpecial'>
+                            @if (Model.IsAdmin)
+                            {
+                                <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
+                            }
+                            <div id="div_NewsItem_@aw.id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                                <h1 id='specialNewsTitle_@aw.id'>@Html.Raw(aw.Title)</h1>
+                                <div id="specialNewsItem_@aw.id">
+                                    @Html.Raw(aw.Text)
+                                </div>
+                            </div>
+                        </div>
+                    }
                 </div>
-			</div>
-        }
-        </div>
 
-        <h3 id="otherNewsHeader" style="display:none">Other News:</h3>
+                <h3 id="otherNewsHeader" style="display:none">Other News:</h3>
 
-        <div id="otherNewsSection">
-		@foreach (var aw in Model.OtherNews)
-        {
-            string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";
-			<h3 class="newsMenuItem, otherNewsMenuItem" id="OtherNewsMenuLink_@aw.id">@aw.Date.ToString("MMM d, yyyy") <a id="OtherNewsTitle_@aw.id" href="@url">@aw.Title</a></h3>
+                <div id="otherNewsSection">
+                    @foreach (var aw in Model.OtherNews)
+                    {
+                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";
+                        <h3 class="newsMenuItem, otherNewsMenuItem" id="OtherNewsMenuLink_@aw.id">@aw.Date.ToString("MMM d, yyyy") <a id="OtherNewsTitle_@aw.id" href="@url">@aw.Title</a></h3>
 
-      		<div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
-            @if (Model.IsAdmin)
-            {
-			    <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
-            }
-                <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                        <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
+                            @if (Model.IsAdmin)
+                            {
+                                <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
+                            }
+                            <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                            </div>
+                        </div>
+                    }
                 </div>
-			</div>
-        }
-        </div>
 
-        <h5 id="olderNewsHeader" style="display:none">Older News:</h5>
+                <h5 id="olderNewsHeader" style="display:none">Older News:</h5>
 
-        <div id="olderNewsMenuSection">
-        @foreach (var aw in Model.OlderNews)
-        {
-            string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";                    
-            <a class="newsMenuItem, olderNewsMenuItem" style="padding: 10px" id="OlderNewsTitle_@aw.id" href="@url">@aw.Title</a>
-        }
-        </div>
-
-        <div id="olderNewsSection">
-        @foreach (var aw in Model.OlderNews)
-        {
-      		<div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
-            @if (Model.IsAdmin)
-            {
-			    <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
-            }
-                <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                <div id="olderNewsMenuSection">
+                    @foreach (var aw in Model.OlderNews)
+                    {
+                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";
+                        <a class="newsMenuItem, olderNewsMenuItem" style="padding: 10px" id="OlderNewsTitle_@aw.id" href="@url">@aw.Title</a>
+                    }
                 </div>
-			</div>			
-        }
+
+                <div id="olderNewsSection">
+                    @foreach (var aw in Model.OlderNews)
+                    {
+                        <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
+                            @if (Model.IsAdmin)
+                            {
+                                <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
+                            }
+                            <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                            </div>
+                        </div>
+                    }
+                </div>
         </div>
-	</div>
+    </div>
 </div>
 

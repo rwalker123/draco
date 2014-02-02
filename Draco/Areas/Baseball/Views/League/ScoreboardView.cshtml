@@ -2,136 +2,139 @@
 
 @using System.Collections.Generic;
 
-<h4 style="float: left; margin-left:10px; margin-bottom:0px">Scoreboard</h4>
-<div style="clear:both"></div>
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title">Scoreboard</h3>
+    </div>
 
-<div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
-    <table class="control" cellspacing="0" cellpadding="0" border="0">
-        <tr>
-            <td align="left" class="" nowrap="noWrap">
-                <b>Today</b>
-            </td>
-        </tr>
-        <tr>
-            <td align="center">
-                <table>
-                    @{
-                        var todayGames = DataAccess.Schedule.GetScoreboard(Model.AccountId, DateTime.Today);
-                    }
-                    @if (todayGames.Any())
-                    {
-                        DisplayScoreboard(todayGames, true);
-                    }
-                    else
-                    {
-                        <tr><td nowrap='noWrap'><i>No Games Scheduled</i></td></tr>
-                    }
+    <div class="panel-body">
+        <table class="control" cellspacing="0" cellpadding="0" border="0">
+            <tr>
+                <td align="left" class="" nowrap="noWrap">
+                    <b>Today</b>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <table>
+                        @{
+                            var todayGames = DataAccess.Schedule.GetScoreboard(Model.AccountId, DateTime.Today);
+                        }
+                        @if (todayGames.Any())
+                        {
+                            DisplayScoreboard(todayGames, true);
+                        }
+                        else
+                        {
+                            <tr><td nowrap='noWrap'><i>No Games Scheduled</i></td></tr>
+                        }
 
-                </table>
-            </td>
-        </tr>
-        <tr>
-            <td align="left" class="" nowrap="noWrap">
-                <b>Yesterday</b>
-            </td>
-        </tr>
-        <tr>
-            <td align="center">
-                <table>
-                    @{
-                        DateTime yesterday = DateTime.Today.AddDays(-1.0);
-                        var yesterdayGames = DataAccess.Schedule.GetScoreboard(Model.AccountId, yesterday);
-                    }
-                    @if (yesterdayGames.Any())
-                    {
-                        DisplayScoreboard(yesterdayGames, true);
-                    }
-                    else
-                    {
-                        <tr><td nowrap='noWrap'><i>No Games Scheduled</i></td></tr>
-                    }
-                </table>
-            </td>
-        </tr>
-    </table>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td align="left" class="" nowrap="noWrap">
+                    <b>Yesterday</b>
+                </td>
+            </tr>
+            <tr>
+                <td align="center">
+                    <table>
+                        @{
+                            DateTime yesterday = DateTime.Today.AddDays(-1.0);
+                            var yesterdayGames = DataAccess.Schedule.GetScoreboard(Model.AccountId, yesterday);
+                        }
+                        @if (yesterdayGames.Any())
+                        {
+                            DisplayScoreboard(yesterdayGames, true);
+                        }
+                        else
+                        {
+                            <tr><td nowrap='noWrap'><i>No Games Scheduled</i></td></tr>
+                        }
+                    </table>
+                </td>
+            </tr>
+        </table>
 
-    <table class="control" cellspacing="0" cellpadding="0" border="0">
-        @{
-            // go back three days for game summaries
-            DateTime curDay = yesterday.AddDays(-1.0);
-            var prevGames = new System.Collections.Generic.List<ModelObjects.Game>[3];
-            for (int i = 0; i < 3; i++)
-            {
-                var games = new System.Collections.Generic.List<ModelObjects.Game>();
-
-                games.AddRange(DataAccess.Schedule.GetScoreboard(Model.AccountId, curDay));
-                prevGames[i] = games;
-
-                curDay = curDay.AddDays(-1.0);
-            }
-
-            // parse out ones without game summaries
-            foreach (var games in prevGames)
-            {
-                var gameSummaries = new System.Collections.Generic.List<ModelObjects.Game>();
-                foreach (ModelObjects.Game g in games)
+        <table class="control" cellspacing="0" cellpadding="0" border="0">
+            @{
+                // go back three days for game summaries
+                DateTime curDay = yesterday.AddDays(-1.0);
+                var prevGames = new System.Collections.Generic.List<ModelObjects.Game>[3];
+                for (int i = 0; i < 3; i++)
                 {
-                    if (DataAccess.GameStats.HasGameRecap(g.Id))
-                    {
-                        gameSummaries.Add(g);
-                    }
+                    var games = new System.Collections.Generic.List<ModelObjects.Game>();
+
+                    games.AddRange(DataAccess.Schedule.GetScoreboard(Model.AccountId, curDay));
+                    prevGames[i] = games;
+
+                    curDay = curDay.AddDays(-1.0);
                 }
 
-                games.Clear();
-                games.AddRange(gameSummaries);
+                // parse out ones without game summaries
+                foreach (var games in prevGames)
+                {
+                    var gameSummaries = new System.Collections.Generic.List<ModelObjects.Game>();
+                    foreach (ModelObjects.Game g in games)
+                    {
+                        if (DataAccess.GameStats.HasGameRecap(g.Id))
+                        {
+                            gameSummaries.Add(g);
+                        }
+                    }
+
+                    games.Clear();
+                    games.AddRange(gameSummaries);
+                }
             }
-        }
 
-        <tr>
-            <th align="left" nowrap="noWrap">
-                <b>Game Summaries</b>
-            </th>
-        </tr>
-        <tr>
-            <td align="left">
-                <table>
-                    @{
-                        bool hasSummaries = false;
-                        foreach (var games in prevGames)
-                        {
-                            if (games.Any())
+            <tr>
+                <th align="left" nowrap="noWrap">
+                    <b>Game Summaries</b>
+                </th>
+            </tr>
+            <tr>
+                <td align="left">
+                    <table>
+                        @{
+                            bool hasSummaries = false;
+                            foreach (var games in prevGames)
                             {
-                                hasSummaries = true;
-                                break;
+                                if (games.Any())
+                                {
+                                    hasSummaries = true;
+                                    break;
+                                }
                             }
                         }
-                    }
 
-                    @if (hasSummaries)
-                    {
-                        curDay = yesterday.AddDays(-1.0);
-
-                        foreach (var games in prevGames)
+                        @if (hasSummaries)
                         {
-                            if (games.Count > 0)
-                            {
-                                <tr><td><small><b>@curDay.ToString("MMM d")</b></small></td></tr>
-                                DisplayScoreboard(games, false);
-                            }
+                            curDay = yesterday.AddDays(-1.0);
 
-                            curDay = curDay.AddDays(-1.0);
+                            foreach (var games in prevGames)
+                            {
+                                if (games.Count > 0)
+                                {
+                                    <tr><td><small><b>@curDay.ToString("MMM d")</b></small></td></tr>
+                                    DisplayScoreboard(games, false);
+                                }
+
+                                curDay = curDay.AddDays(-1.0);
+                            }
                         }
-                    }
-                    else
-                    {
-                        <tr><td align='left' nowrap='noWrap'><i>No Summaries Found</i></td></tr>
-                    }
-                </table>
-            </td>
-        </tr>
-    </table>
+                        else
+                        {
+                            <tr><td align='left' nowrap='noWrap'><i>No Summaries Found</i></td></tr>
+                        }
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 </div>
-    
+
 @functions {
     void DisplayScoreboard(IEnumerable<ModelObjects.Game> gameList, bool showNoRecords)
     {

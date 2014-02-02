@@ -369,52 +369,53 @@
     {
         <div class="row">
             <div class="col-md-12">
-                <h4 style="float: left; margin-left:10px; margin-bottom:0px">Workouts</h4>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Workouts</h3>
+                        @if (Model.IsAdmin)
+                        {
+                            <h3 class="panel-title" style="float: right"><a href="">[add]</a></h3>
+                        }
+                        <div style="clear:both"></div>
+                    </div>
 
-                @if (Model.IsAdmin)
-                {
-                    <h4 style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="">[add]</a></h4>
-                }
-                <div style="clear:both"></div>
-
-                <div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
+                    <div class="panel-body">
+                        workout content
+                    </div>
                 </div>
-            </div>    
+            </div>
         </div>
     }
 
     <div class="row" style="margin-top:20px">
         <div class="col-md-9">
-            @{
-                Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId));
-                <div style="margin-top:20px"></div>
-                Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId));
-            }
-        </div>
+            @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId));}
+            @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId));}
+        </div>      
+
         <div class="col-md-3">
-            @{
-                Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));
-            }
+            @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
 
-            <div style="margin-top:20px"></div>
-
-            @{
-                Html.RenderPartial("Birthdays", new SportsManager.ViewModels.BirthdayViewModel(Model.Controller, Model.AccountId));
-            }
+            @{Html.RenderPartial("Birthdays", new SportsManager.ViewModels.BirthdayViewModel(Model.Controller, Model.AccountId));}
         </div>
     </div>
 
     <div class="row" style="margin-top:20px">
         <div class="col-md-4">
-            <h4 style="float: left; margin-left:10px; margin-bottom:0px">Handouts</h4>
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="float: left;">Handouts</h3>
 
-            @if (Model.IsAdmin)
-            {
-                <h4 style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="">[add]</a></h4>
-            }
-            <div style="clear:both"></div>
-            
-            <div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
+                    @if (Model.IsAdmin)
+                    {
+                        <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
+                    }
+                    <div style="clear:both"></div>
+                </div>
+
+                <div class="panel-body">
+                    Handout content.
+                </div>
             </div>
         </div>
 
@@ -422,20 +423,11 @@
         {
             <div id="photoGallery" data-bind="visible: photoGalleryVisible">
                 <div class="col-md-8">
-                    <h4 style="float: left; margin-left:10px; margin-bottom:0px">Photo Gallery</h4>
-                    @if (Model.IsAdmin)
-                    {
-                        <h4 style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="">[add]</a></h4>
-                    }
-                    <div style="clear:both"></div>
-                    <div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
-                        @{
-                        Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));
-                        }
-                    </div>
+                    @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
         }
+        
     </div>
 
     <div class="row" style="margin-top:20px">
@@ -443,21 +435,34 @@
         {
             <div id="videos" data-bind="visible: videosVisible" >
                 <div class="col-md-8">
-                    <h4 style="margin-top:0px">Videos</h4>
-                    @if (Model.IsAdmin)
-                    {
-                        <div data-bind="visible: viewMode">
-                            <span style="font-size: larger">YouTube User Id: <span style="font-size: larger;font-weight: bold" data-bind="text: viewUserId"></span></span>
-                            <input type="button" data-bind="click: editYouTube" value="edit" />
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            <h3 class="panel-title" style="float: left;">Videos</h3>
+                            @if (Model.IsAdmin)
+                            {
+                                <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
+                            }
+
+                            <div style="clear:both"></div>
                         </div>
-                        <div data-bind="visible: !viewMode()">
-                            YouTube User Id: <input type="text" data-bind="value: userId" />
-                            <input type="button" data-bind="click: saveUserId" value="save" /> <input type="button" data-bind="click: resetUserId" value="cancel" />
+
+                        <div class="panel-body">
+                            @if (Model.IsAdmin)
+                            {
+                                <div data-bind="visible: viewMode">
+                                    <span style="font-size: larger">YouTube User Id: <span style="font-size: larger;font-weight: bold" data-bind="text: viewUserId"></span></span>
+                                    <input type="button" data-bind="click: editYouTube" value="edit" />
+                                </div>
+                                <div data-bind="visible: !viewMode()">
+                                    YouTube User Id: <input type="text" data-bind="value: userId" />
+                                    <input type="button" data-bind="click: saveUserId" value="save" /> <input type="button" data-bind="click: resetUserId" value="cancel" />
+                                </div>
+                            }
+                            <div style="float:left" id="player"></div>
+                            <div style="float:left" id="videos2"></div>
+                            <div style="clear:both"></div>
                         </div>
-                    }
-                    <div style="float:left" id="player"></div>
-                    <div style="float:left" id="videos2"></div>
-                    <div style="clear:both"></div>
+                    </div>
                 </div>
             </div>
         }
@@ -467,17 +472,21 @@
     <div class="row" style="margin-top:20px">
 
         @if (Model.ShowHallOfFame)
-        { 
+        {
             <div class="col-md-6">
-                <h4 style="float: left; margin-left:10px; margin-bottom:0px">Hall of Fame</h4>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Hall of Fame</h3>
 
-                @if (Model.IsAdmin)
-                {
-                    <h4 style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="">[add]</a></h4>
-                }
-                <div style="clear:both"></div>
+                        @if (Model.IsAdmin)
+                        {
+                            <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
+                        }
+                        <div style="clear:both"></div>
+                    </div>
 
-                <div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
+                    <div class="panel-body">
+                    </div>
                 </div>
             </div>
         }
@@ -485,15 +494,19 @@
         @if (Model.ShowPlayerInterview)
         {
             <div class="col-md-3">
-                <h4 style="float: left; margin-left:10px; margin-bottom:0px">Player Interview</h4>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left; ">Player Interview</h3>
 
-                @if (Model.IsAdmin)
-                {
-                    <h4 style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="">[add]</a></h4>
-                }
-                <div style="clear:both"></div>
+                        @if (Model.IsAdmin)
+                        {
+                            <h3 class="panel-title" style="float: right; "><a href="">[add]</a></h3>
+                        }
+                        <div style="clear:both"></div>
+                    </div>
 
-                <div style='height:200px;border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; '>
+                    <div class="panel-body">
+                    </div>
                 </div>
             </div>
         }

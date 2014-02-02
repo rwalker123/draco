@@ -2,64 +2,70 @@
 
 @if (!Model.HasMessage && !Model.IsAdmin)
 {
-	return;
+    return;
 }
 
-    <h4 style="float: left; margin-left:10px; margin-bottom:0px">League Information</h4>
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">League Information</h3>
 
-    @if (Model.IsAdmin)
-    {
-    	<h4 id="welcomeEditLabel" style="float: right; margin-bottom: 0px; margin-right: 10px"><a href="javascript:welcomeData.startWelcomeAdd()">[add]</a></h4>
-    }
-
-    <div style="clear:both"></div> 
-
-<!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
-<div id="editMessage" style="display: none; margin-top:20px;">
-    <h4 id="welcomeSaveLabel" style="margin-bottom:10px; display: none">
-        <a href="javascript:welcomeData.saveWelcome()">[save]</a> 
-        <a href="javascript:welcomeData.cancelWelcomeEdit()">[cancel]</a>
-    </h4>
-    <label style="margin-right:5px">Category</label> <input id="category" name="category" type="text" style="width: 200px" value="Welcome" />
-    <label style="margin-right:5px">Message position</label> <input id="position" name="position" type="text" style="width: 25px" value="1" />
-        <textarea id="welcomeMessageControl" name="welcomeMessageControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
-</div>
-
-
-	<div id="WelcomeMessages" style='border:2px solid; border-radius:5px; box-shadow: 10px 10px 5px #888888; text-align:left; padding: 10px 20px 15px 20px;'>
-
-        <p id="noWelcomeMessage" style="display: none">Click the <a class="labellink grad" href="javascript:welcomeData.startWelcomeAdd()">[add]</a> button to add welcome messages.</p>
-
-        @{
-            bool firstTime = true;
+        @if (Model.IsAdmin)
+        {
+            <h3 class="panel-title" id="welcomeEditLabel" style="float: right;"><a href="javascript:welcomeData.startWelcomeAdd()">[add]</a></h3>
         }
 
-        <div id="WelcomeMessageMenuSection">
-		@foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
-		{
-			string url = "javascript:welcomeData.ShowWelcomeMenu(" + aw.Id.ToString() + ")";
-			<a class="welcomeMenuItem" id="MenuLink_@aw.Id" data-menuposition="@aw.OrderNo" href="@url">@aw.CaptionText</a>
-		}
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
+        <div id="editMessage" style="display: none; margin-top:20px;">
+            <h4 id="welcomeSaveLabel" style="margin-bottom:10px; display: none">
+                <a href="javascript:welcomeData.saveWelcome()">[save]</a>
+                <a href="javascript:welcomeData.cancelWelcomeEdit()">[cancel]</a>
+            </h4>
+            <label style="margin-right:5px">Category</label> <input id="category" name="category" type="text" style="width: 200px" value="Welcome" />
+            <label style="margin-right:5px">Message position</label> <input id="position" name="position" type="text" style="width: 25px" value="1" />
+            <textarea id="welcomeMessageControl" name="welcomeMessageControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
         </div>
 
-        <div id="WelcomeMessageDataSection">
-		@foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
-		{
-			<div id='div_WelcomeMessageChrome_@aw.Id' style="display:none" class='details'>
-            @if (Model.IsAdmin)
-            {
-			    <div class="grad" style="float:right"><a class="labellink" href="javascript:welcomeData.startWelcomeEdit(@aw.Id)">[edit]</a> <a class="labellink" href="javascript:welcomeData.deleteWelcome(@aw.Id)">[delete]</a></div>
+
+        <div id="WelcomeMessages">
+
+            <p id="noWelcomeMessage" style="display: none">Click the <a class="labellink grad" href="javascript:welcomeData.startWelcomeAdd()">[add]</a> button to add welcome messages.</p>
+
+            @{
+                bool firstTime = true;
             }
-                <div id="div_WelcomeMessage_@aw.Id" data-hasdata="@firstTime">
-                    @if (firstTime) {
-                        @:@Html.Raw(aw.WelcomeText)
-                    }
-                </div>
-			</div>			
-      
-            firstTime = false;
-		}
-        </div>
-	
-	</div>
 
+            <div id="WelcomeMessageMenuSection">
+                @foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
+                {
+                    string url = "javascript:welcomeData.ShowWelcomeMenu(" + aw.Id.ToString() + ")";
+                    <a class="welcomeMenuItem" id="MenuLink_@aw.Id" data-menuposition="@aw.OrderNo" href="@url">@aw.CaptionText</a>
+                }
+            </div>
+
+            <div id="WelcomeMessageDataSection">
+                @foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
+                {
+                    <div id='div_WelcomeMessageChrome_@aw.Id' style="display:none" class='details'>
+                        @if (Model.IsAdmin)
+                        {
+                            <div class="grad" style="float:right"><a class="labellink" href="javascript:welcomeData.startWelcomeEdit(@aw.Id)">[edit]</a> <a class="labellink" href="javascript:welcomeData.deleteWelcome(@aw.Id)">[delete]</a></div>
+                        }
+                        <div id="div_WelcomeMessage_@aw.Id" data-hasdata="@firstTime">
+                            @if (firstTime)
+                            {
+                                @:@Html.Raw(aw.WelcomeText)
+                    }
+                        </div>
+                    </div>
+
+                    firstTime = false;
+                }
+            </div>
+
+        </div>
+    </div>
+</div>
