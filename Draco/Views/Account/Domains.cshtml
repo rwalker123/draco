@@ -19,7 +19,8 @@
 
 <h2>Mapped Domains</h2>
 
-<input style="width:400px;margin-right:10px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" /><input style="margin-left:2px;" type="button" value="Add Domain" onclick="addUrl()"/>
+<input style="width:400px;margin-right:10px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" />
+<button style="margin-left:2px;" type="button" class="btn btn-default" onclick="addUrl()">Add Domain</button>
 <hr />
 <div id="urlList">
 @if (Model.AccountUrls.Any())
@@ -27,7 +28,9 @@
     foreach (var mappedUrl in Model.AccountUrls)
     {
         <div style="margin-bottom:10px" id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
-            <input style="margin-right:5px" type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input style="margin-right:10px" type="button" value="Delete" onclick="deleteUrl('@mappedUrl')" /><h3 style="display: inline">@mappedUrl</h3>
+            <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')">Edit</button>
+            <button type="button" class="btn btn-danger" onclick="deleteUrl('@mappedUrl')">Delete</button>
+            <h3 style="display: inline">@mappedUrl</h3>
         </div>
     }
 }
@@ -41,7 +44,9 @@
 
 <script id="mappedUrlTemplate" type="text/x-jsrender">
 <div id='{{:Id}}' class='mappedUrl'>
-    <br /><input type="button" value="Edit" onclick="editUrl('{{:Url}}')" /><input type="button" value="Delete" onclick="deleteUrl('{{:Url}}')"/><h3 style="display: inline">{{:Url}}</h3>
+    <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')">Edit</button>
+    <button type="button" class="btn btn-danger" onclick="deleteUrl('{{:Url}}')">Delete</button>
+    <h3 style="display: inline">{{:Url}}</h3>
 </div>
 </script>
 
