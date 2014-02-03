@@ -40,7 +40,7 @@
 {
 <div id="accountOwner">
 <div id="changeAccountOwner" style="max-width:500px;text-align:center">
-    <h3>You are the Account Owner  <input type="button" onclick="userRolesData.startChangeAccountOwner()" value="Change" /></h3>
+    <h3 style="display:inline-block">You are the Account Owner</h3> <button type="button" class="btn btn-warning" onclick="userRolesData.startChangeAccountOwner()">Change</button>
     <p class="help-block">The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
 </div>
 <div id="changeAccountOwnerWarning" style="max-width:500px;text-align:center;display: none">
@@ -51,9 +51,9 @@
 <h6>Change Account Owner:</h6>
 <span>(type last name to begin search)</span><br />
 <div>
-    <input style="vertical-align:middle" id="ownerPlayerSelect"/>
-    <input type="button" value="Change" onclick="userRolesData.changeAccountOwner(@Model.AccountId)" />
-    <input type="button" onclick="userRolesData.cancelChangeAccountOwner()" value="Cancel" /><br />
+    <input style="width:350px" id="ownerPlayerSelect"/>
+    <button type="button" class="btn btn-success" onclick="userRolesData.changeAccountOwner(@Model.AccountId)">Change</button>
+    <button type="button" class="btn btn-danger" onclick="userRolesData.cancelChangeAccountOwner()">Cancel</button>
 </div>
 <hr />
     
@@ -70,7 +70,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountAdminId">
             <input style="vertical-align:middle" id="playerSelect"/>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')" /><br />
+            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')">Add</button>
         </div>
         <hr />
 
@@ -87,7 +87,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountPhotoAdminId">
 
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')" /><br />
+            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')">Add</button>
         </div>
         <hr />
 
@@ -103,7 +103,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.LeagueAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px"  id="avaliableLeagues" ></select>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')" /><br />
+            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')">Add</button>
         </div>
         <hr />
 
@@ -119,7 +119,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px" id="teamSelect" ></select>
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')" /><br />
+            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')">Add</button>
         </div>
         <hr />
 
@@ -135,7 +135,7 @@
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamPhotoAdminId">
 
-            <input type="button" value="Add" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')" /><br />
+            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')">Add</button>
         </div>
         <hr />
 
@@ -152,7 +152,7 @@
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <input type='button' value='Remove' onclick='javascript:userRolesData.removeUserFromRole({{:Id}}, '{{:~roleId}}', {{:RoleData}});' />
+    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole({{:Id}}, '{{:~roleId}}', {{:RoleData}});'>Remove</button>
     {{if PhotoURL}}
         <img class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}'/>
     {{else}}
