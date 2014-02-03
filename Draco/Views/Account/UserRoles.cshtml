@@ -7,7 +7,7 @@
 @section head
 {
 
-<link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+    @Styles.Render("~/Content/themes/base/css")
 
 <style type="text/css">
     h3.adminHeader
@@ -44,11 +44,11 @@
     <p class="help-block">The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
 </div>
 <div id="changeAccountOwnerWarning" style="max-width:500px;text-align:center;display: none">
-<h2 style="color: red">Warning</h2>
-<h4>You can only change the account owner if you are the account owner. If you change the account owner to someone else, you will not be able
+<div class="alert alert-warning">
+    <strong>Warning!</strong> You can only change the account owner if you are the account owner. If you change the account owner to someone else, you will not be able
     to change it back. Only the new account owner will be able to change it back.
-</h4>
-<h6>Change Account Owner:</h6>
+</div>
+<h4>Change Account Owner</h4>
 <span>(type last name to begin search)</span><br />
 <div>
     <input style="width:350px" id="ownerPlayerSelect"/>
@@ -66,7 +66,7 @@
     <div id="AdminData_@Model.AccountAdminId">
         <p>Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.</p>
 
-        <h6>Add Account Administrator:</h6>
+        <h4>Add Account Administrator</h4>
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountAdminId">
             <input style="vertical-align:middle" id="playerSelect"/>
@@ -83,7 +83,7 @@
     <div id="AdminData_@Model.AccountPhotoAdminId">
         <p>Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.</p>
 
-        <h6>Add Account Photo Administrator:</h6>
+        <h4>Add Account Photo Administrator</h4>
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.AccountPhotoAdminId">
 
@@ -99,7 +99,7 @@
     <div id="AdminData_@Model.LeagueAdminId">
         <p>League administrators have access to all functions for a specific league. The can create divisions and teams for a league, but cannot create or delete leagues in the account.</p>
 
-        <h6>Add League Administrator:</h6>
+        <h4>Add League Administrator</h4>
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.LeagueAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px"  id="avaliableLeagues" ></select>
@@ -115,7 +115,7 @@
     <div id="AdminData_@Model.TeamAdminId">
         <p>Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.</p>
 
-        <h6>Add Team Administrator:</h6>
+        <h4>Add Team Administrator</h4>
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamAdminId">
             <select style="vertical-align:middle;margin-left:3px;font-size:20px" id="teamSelect" ></select>
@@ -131,7 +131,7 @@
     <div id="AdminData_@Model.TeamPhotoAdminId">
         <p>Team photo administrators can manage all photos and videos related to a specific team.</p>
 
-        <h6>Add Team Photo Administrator:</h6>
+        <h4>Add Team Photo Administrator</h4>
         <span>(type last name to begin search)</span><br />
         <div id="div_playerSelect_@Model.TeamPhotoAdminId">
 
@@ -152,7 +152,7 @@
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole({{:Id}}, '{{:~roleId}}', {{:RoleData}});'>Remove</button>
+    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'>Remove</button>
     {{if PhotoURL}}
         <img class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}'/>
     {{else}}

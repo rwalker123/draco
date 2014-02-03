@@ -1,4 +1,5 @@
 ﻿@model SportsManager.ViewModels.AccountViewModel
+@using System.Web.Optimization;
 
 @{
     ViewBag.Title = @Model.AccountName + " Umpires";
@@ -6,7 +7,7 @@
 
 @section head
 {
-<link href="@Url.Content("~/Content/themes/base/jquery-ui.css")" rel="stylesheet" type="text/css" media="screen" />
+@Styles.Render("~/Content/themes/base/css")
 <style type="text/css">
     img.over {
         border: 2px dashed #000;
@@ -20,6 +21,16 @@
     {
         font-size:24px;
     }
+    .divLabel {
+        display: inline-block;
+        width: 125px;
+    }
+
+    .formLine {
+        margin: 5px;
+        margin-bottom: 10px;
+    }
+
 </style>
 }
 
@@ -56,38 +67,32 @@
 
 @section scripts 
 {
+@Scripts.Render("~/bundles/knockout")
 
-<script type="text/javascript" src="~/Scripts/knockout-3.0.0.js"></script>
-<script type="text/javascript" src="~/Scripts/knockoutjs-helpers.js"></script>
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/umpires.js"></script>
 <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
 
 <script id="viewUserDetailsTemplate" type="text/html">
 
     <div data-bind="with: details">
-        <table>
-        <tr data-bind="visible: email()">
-            <td class='label'>Email:</td><td data-bind="text: email"></td>
-        </tr>
-        <tr data-bind="visible: phone1()">
-            <td class='label'>Home Phone:</td> <td data-bind="text: phone1"></td>
-        </tr>
-        <tr data-bind="visible: phone2()">
-            <td class='label'>Cell Phone:</td> <td data-bind="text: phone2"></td>
-        </tr>
-        <tr data-bind="visible: phone3()">
-            <td class='label'>Work Phone:</td> <td data-bind="text: phone3"></td>
-        </tr>
-        <tr data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
-            <td class='label'>Address:</td>
-            <td>
-                <span data-bind="text: address"></span><br />
-                <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
-            </td>
-        </tr>
-        </table>
+        <div class="formLine" data-bind="visible: email()">
+            <div class='divLabel'>Email:</div><span data-bind="text: email"></span>
+        </div>
+        <div class="formLine" data-bind="visible: phone1()">
+            <div class='divLabel'>Home Phone:</div> <span data-bind="text: phone1"></span>
+        </div>
+        <div class="formLine" data-bind="visible: phone2()">
+            <div class='divLabel'>Cell Phone:</div> <span data-bind="text: phone2"></span>
+        </div>
+        <div class="formLine" data-bind="visible: phone3()">
+            <div class='divLabel'>Work Phone:</div> <span data-bind="text: phone3"></span>
+        </div>
+        <div class="formLine" data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
+            <div class='divLabel'>Address:</div><span data-bind="text: address"></span><br />
+            <div class='divLabel'></div><span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
+        </div>
     </div>
-    <input type="button" value="Remove" data-bind="click: $parent.deleteUmpire" />
+    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUmpire">Remove</button>
 
 </script>
 
