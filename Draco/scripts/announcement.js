@@ -326,7 +326,7 @@ $.extend(AnnouncementClass.prototype, {
         return ($('<div>', {
             'class': 'grad',
             'style': 'float:right',
-            'html': '<a class="labellink" href="javascript:announcementData.startNewsEdit(' + dbNewsId + ')">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(' + dbNewsId + ')">[delete]</a></div>'
+            'html': '<a class="btn btn-default" href="javascript:announcementData.startNewsEdit(' + dbNewsId + ')">edit</a> <a class="btn btn-danger" href="javascript:announcementData.deleteNews(' + dbNewsId + ')">delete</a></div>'
         }));
     },
 

@@ -86,7 +86,10 @@
                         <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><a class="labellink" href="javascript:announcementData.startNewsEdit(@aw.id)">[edit]</a> <a class="labellink" href="javascript:announcementData.deleteNews(@aw.id)">[delete]</a></div>
+                                <div style="float:right">
+                                    <a class="btn btn-default" href="javascript:announcementData.startNewsEdit(@aw.id)">edit</a> 
+                                    <a class="btn btn-danger" href="javascript:announcementData.deleteNews(@aw.id)">delete</a>
+                                </div>
                             }
                             <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                             </div>

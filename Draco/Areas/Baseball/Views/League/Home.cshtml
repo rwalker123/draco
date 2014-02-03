@@ -316,10 +316,9 @@
         }
 
         <div data-bind="visible: viewMode">
-            <h1>
-                Home of the <span data-bind="text: name"></span>
+            <h1 style="margin-bottom:0px;">
+                Home of the <span data-bind="text: name"></span></h1>
                 <span data-bind="visible: hasYear" class="yearEstablished">est. <span data-bind="text: firstYear"></span></span>            
-            </h1>
             
             @if (Model.CurrentSeasonId != 0)
             {
