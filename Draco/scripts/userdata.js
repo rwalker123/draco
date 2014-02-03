@@ -211,7 +211,10 @@ var UserClass = function (accountId) {
 
     self.beginCreateContact = function () {
         window.clearTimeout(self.errorTimeout);
-        if ($("#newContact").valid()) {
+        if (!self.firstName.uncommitValue() || !self.lastName.uncommitValue()) {
+            self.addNameMissingError($('#newContact > .contactView > .contactErrorLocation'));
+        }
+        else if ($("#newContact").valid()) {
             self.doAction(this, "commit"); // commit the names.
             self.validatingName(true);
             self.validateNameForNewContact();
@@ -251,26 +254,32 @@ var UserClass = function (accountId) {
     }
 
     self.addGenericError = function (errorElement, msg) {
-        var elem = jQuery('<label/>', {
-            'class': 'error',
+        var elem = jQuery('<div/>', {
+            'class': 'alert alert-danger',
             text: msg
         }).appendTo(errorElement);
         elem.delay(5000).hide('slow');
     }
 
+    self.addNameMissingError = function (errorElement) {
+        var elem = jQuery('<div/>', {
+            'class': 'alert alert-danger',
+            text: 'First name and Last name required.'
+        }).appendTo(errorElement);
+        elem.delay(5000).hide('slow');
+    }
+
     self.addNameExistsError = function (errorElement) {
-        var elem = jQuery('<label/>', {
-            'class': 'error',
-            'for': 'firstname',
+        var elem = jQuery('<div/>', {
+            'class': 'alert alert-danger',
             text: 'Name already exists.'
         }).appendTo(errorElement);
         elem.delay(5000).hide('slow');
     }
 
     self.addEmailExistsError = function (errorElement) {
-        var elem = jQuery('<label/>', {
-            'class': 'error',
-            'for': 'email',
+        var elem = jQuery('<div/>', {
+            'class': 'alert alert-danger',
             text: 'Email already exists.'
         }).appendTo(errorElement);
         elem.delay(5000).hide('slow');

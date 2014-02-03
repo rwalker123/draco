@@ -86,7 +86,7 @@
     }
     <span style="margin-left:10px">@Model.UserName<br /></span><span style="margin-left: 10px">@Model.Email</span>
     <div style="clear:both"></div>
-    <input type="button" value="Send" data-bind="click: sendEmail, enable: canSend" /><br />
+    <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button><br />
     <br /><br /><span class="toText">To</span><br />
 
     <select data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
