@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SportsManager.ViewModels;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace SportsManager.Models
@@ -44,8 +45,13 @@ namespace SportsManager.Models
         public bool RememberMe { get; set; }
     }
 
-    public class RegisterViewModel
+    public class RegisterViewModel : AccountViewModel
     {
+        public RegisterViewModel(System.Web.Mvc.Controller c, long accountId)
+            : base(c, accountId)
+        {
+        }
+
         [Required]
         [Display(Name = "User name")]
         public string UserName { get; set; }

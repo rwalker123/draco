@@ -119,8 +119,11 @@ namespace SportsManager.Controllers
         //
         // GET: /Account/Register
         [AllowAnonymous]
-        public ActionResult Register()
+        public ActionResult Register(long? accountId)
         {
+            if (accountId.HasValue)
+                return View(new RegisterViewModel(this, accountId.Value));
+
             return View();
         }
 
