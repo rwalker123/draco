@@ -105,13 +105,15 @@ namespace SportsManager.Models.Helpers
                 //homeMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(contacturl, "Contact", "Contact Page"));
 
                 var teamsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(teamsurl, "Teams", "Teams");
-                teamsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "Standings Page"));
-                teamsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
+
+                var leagueMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "League");
+                leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
 
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
 	            {
                     //homeMenu,
 		            teamsMenu,
+                    leagueMenu,
 		            scheduleMenu,
 		            forumsMenu		            
 	            };

@@ -15,11 +15,15 @@
     <p class="help-block">Map domains you own to your league website.</p>
 </div> <!-- content-wrapper -->
 
+<form class="form-inline" role="form" style="margin-top:20px">
+    <small>add domain</small><br />
+    <div class="form-group">
+        <label for="urlField" class="sr-only">Domain Name</label>
+        <input id="urlField" style="width:300px" type="url" class="form-control" placeholder="ex: http://www.yourdomain.com" pattern=".{1,}" title="Must supply a url" />
+        <button type="button" class="btn btn-primary" onclick="addUrl()"><span class="glyphicon glyphicon-plus"></span></button>
+    </div>
+</form>
 
-<h2>Mapped Domains</h2>
-
-<input style="width:400px;margin-right:10px" placeholder="enter domain name (ex: http://www.yourdomain.com)" type="url" id="urlField" />
-<button style="margin-left:2px;" type="button" class="btn btn-default" onclick="addUrl()">Add Domain</button>
 <hr />
 <div id="urlList">
 @if (Model.AccountUrls.Any())
@@ -27,8 +31,8 @@
     foreach (var mappedUrl in Model.AccountUrls)
     {
         <div style="margin-bottom:10px" id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
-            <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')">Edit</button>
-            <button type="button" class="btn btn-danger" onclick="deleteUrl('@mappedUrl')">Delete</button>
+            <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')"><span class="glyphicon glyphicon-edit"></span></button>
+            <button type="button" class="btn btn-danger" onclick="deleteUrl('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
             <h3 style="display: inline">@mappedUrl</h3>
         </div>
     }

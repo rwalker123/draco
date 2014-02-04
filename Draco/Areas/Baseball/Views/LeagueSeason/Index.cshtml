@@ -79,8 +79,9 @@
 </div>
 
 <form class="form-inline" role="form" style="margin-top:20px">
+    <small>create a league</small><br />
     <div class="form-group">
-        <label for="newLeagueName" class="control-label">League Name</label>
+        <label for="newLeagueName" class="sr-only">League Name</label>
         <input id="newLeagueName" style="width:200px" type="text" class="form-control" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
         <button type="button" class="btn btn-primary" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)"><span class="glyphicon glyphicon-plus"></span></button>
     </div>
@@ -104,8 +105,9 @@
 <h3 class="leagueHeader" id='leagueHeader_{{:Id}}'><a id='leagueHeaderLink_{{:Id}}' href="#">{{>Name}}</a></h3>
 <div id='leagueData_{{:Id}}' class='leagueData'>
     <form class="form-inline" role="form">
+        <small>update league name</small><br />
         <div class="form-group">
-            <label for="newLeagueName_{{:Id}}" class="control-label">League Name</label>
+            <label for="newLeagueName_{{:Id}}" class="sr-only">League Name</label>
             <input class="form-control" id='newLeagueName_{{:Id}}' type="text" value='{{>Name}}' />
             <button type="button" class="btn btn-default" onclick="leagueSetupData.editLeague({{:Id}})">Update Name</button>
             <button type="button" class="btn btn-danger" onclick="leagueSetupData.deleteLeague({{:Id}})"><span class="glyphicon glyphicon-remove"></span></button>
@@ -113,7 +115,7 @@
         <hr />
         <div class="form-group" style="margin-top:5px">
             <small>create a division</small><br />
-            <label for="NewDivisionName_{{:Id}}" class="control-label">Division Name</label>
+            <label for="NewDivisionName_{{:Id}}" class="sr-only">Division Name</label>
             <input class="form-control" id="NewDivisionName_{{:Id}}" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
             <label for="NewDivisionPriority_{{:Id}}" class="control-label">Sort Order</label>
             <input class="form-control" id="NewDivisionPriority_{{:Id}}" type="number" style="width:50px" min="0" max="100" value="1" />
@@ -133,7 +135,7 @@
         <select class="leagueselectpicker" id='divisionTeamSelect_{{:Id}}'>
             <option value='0'>New Team...</option>
         </select>
-        <span id='newTeam_{{:Id}}' style="display: none"><label for="newTeamName_{{:Id}}" class="control-label" style="margin-right:5px">Team Name</label><input class="form-control" type="text" id='newTeamName_{{:Id}}' /></span>
+        <span id='newTeam_{{:Id}}' style="display: none"><label for="newTeamName_{{:Id}}" class="sr-only">Team Name</label><input class="form-control" type="text" id='newTeamName_{{:Id}}' placeholder="enter team name" /></span>
     </span>
 
 
@@ -174,7 +176,7 @@
         </div>
         <div style="clear:both"></div>
         <form class="form-inline" role="form" id='divisionEdit_{{:Id}}' style='display:none'>
-            <label for="editDivisionName_{{:Id}}" class="control-label">Division Name</label>
+            <label for="editDivisionName_{{:Id}}" class="sr-only">Division Name</label>
             <input id="editDivisionName_{{:Id}}" class="form-control" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" value='{{>Name}}' />
             <label for="editDivisionPriority_{{:Id}}" class="control-label">Sort order</label>
             <input id="editDivisionPriority_{{:Id}}" class="form-control" type="number" style="width:50px" min="0" max="100" value="{{:Priority}}" />
