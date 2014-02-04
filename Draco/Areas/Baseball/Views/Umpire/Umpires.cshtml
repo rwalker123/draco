@@ -42,10 +42,17 @@
 <h3 class="help-block" style="display: inline-block" >Search for users to add as umpires. If this is a new umpire, 
     add them as a </h3><a class="btn btn-primary" style="margin-left: 5px; margin-right: 5px; margin-top: -6px" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a><h3 class="help-block" style="display: inline-block">first.</h3>
 
-<br /><span>(type last name to begin search)</span><br />
-<input type="text" style="width: 400px; margin-right: 5px" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/><button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire">Add</button>
+<br /><small>(type last name to begin search)</small><br />
 
-<div id="accordion">
+<form class="form-inline" role="form">
+    <div class="form-group">
+        <label for="_newUmpire" class="sr-only">Last Name</label>
+        <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+        <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire"><span class="glyphicon glyphicon-plus"></span></button>
+    </div>
+</form>
+
+<div id="accordion" style="margin-top:20px">
     <div data-bind="foreach: umpires">
         <h3 class="userHeader">
             <img src='/images/busy.gif'
@@ -75,24 +82,26 @@
 <script id="viewUserDetailsTemplate" type="text/html">
 
     <div data-bind="with: details">
-        <div class="formLine" data-bind="visible: email()">
-            <div class='divLabel'>Email:</div><span data-bind="text: email"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone1()">
-            <div class='divLabel'>Home Phone:</div> <span data-bind="text: phone1"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone2()">
-            <div class='divLabel'>Cell Phone:</div> <span data-bind="text: phone2"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone3()">
-            <div class='divLabel'>Work Phone:</div> <span data-bind="text: phone3"></span>
-        </div>
-        <div class="formLine" data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
-            <div class='divLabel'>Address:</div><span data-bind="text: address"></span><br />
-            <div class='divLabel'></div><span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
-        </div>
+        <address class="formLine" data-bind="visible: email()">
+            <small>email</small><br />
+            <a data-bind="text: email, attr: {href: 'mailto:' + email()}"></a>
+        </address>
+        <address class="formLine" data-bind="visible: phone1()">
+            <small>home phone</small><br /> <span data-bind="text: phone1"></span>
+        </address>
+        <address class="formLine" data-bind="visible: phone2()">
+            <small>cell phone</small><br /> <span data-bind="text: phone2"></span>
+        </address>
+        <address class="formLine" data-bind="visible: phone3()">
+            <small>work phone</small><br /> <span data-bind="text: phone3"></span>
+        </address>
+        <address class="formLine" data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
+            <small>address</small><br />
+            <span data-bind="text: address"></span><br />
+            <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
+        </address>
     </div>
-    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUmpire">Remove</button>
+    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUmpire"><span class="glyphicon glyphicon-remove"></span></button>
 
 </script>
 
