@@ -1,17 +1,27 @@
 ﻿@model SportsManager.ViewModels.RolesViewModel
 
 @if (Model.IsAccountAdmin)
-{ 
+{
     if (Model.AccountType.Id == 1)
     {
-        <li>@Html.ActionLink("Settings", "Settings", "League", new { area = "baseball", accountId = Model.AccountId }, null)</li>
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Account <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+                <li>@Html.ActionLink("Settings", "Settings", "League", new { area = "baseball", accountId = Model.AccountId }, null)</li>
+                <li>@Html.ActionLink("Domains", "Domains", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+            </ul>
+        </li>
         <li>@Html.ActionLink("Seasons", "Index", "Season", new { area = "", accountId = Model.AccountId }, null)</li>
         <li>@Html.ActionLink("League Setup", "Index", "LeagueSeason", new { area = "baseball", accountId = Model.AccountId }, null)</li>
         <li>@Html.ActionLink("Umpires", "Index", "Umpire", new { area = "baseball", accountId = Model.AccountId }, null)</li>
-        <li>@Html.ActionLink("Users", "Users", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
-        @*<li>@Html.ActionLink("Email Users", "EMail", "Account", new { area = "", accountId = Model.AccountId }, null)</li>*@
-        <li>@Html.ActionLink("Roles", "UserRoles", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
-        <li>@Html.ActionLink("Domains", "Domains", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Users <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+                <li>@Html.ActionLink("Users", "Users", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+                <li>@Html.ActionLink("Roles", "UserRoles", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+                <li>@Html.ActionLink("Email Users", "EMail", "Account", new { area = "", accountId = Model.AccountId }, null)</li>
+            </ul>
+        </li>
     }
     else if (Model.AccountType.Id == 3)
     {

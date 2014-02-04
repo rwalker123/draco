@@ -32,7 +32,8 @@ $.extend(LeagueSetupClass.prototype, {
 
 			    if (selectList.children().length > 0) {
 			        $('#copyFromSeason').show();
-			    }
+			        $('.selectpicker').selectpicker('refresh');
+                }
 			    else {
 			        $('#copyFromSeason').hide();
 			    }
@@ -104,6 +105,8 @@ $.extend(LeagueSetupClass.prototype, {
                 }
             });
         });
+
+        $(".leagueselectpicker").selectpicker();
     },
 
     makeAccordion: function () {
@@ -214,6 +217,8 @@ $.extend(LeagueSetupClass.prototype, {
 
                 selectList.append($('#teamOptionTemplate').render(teams));
                 target.selectFirstTeam(leagueId);
+                selectList.selectpicker("refresh");
+
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -338,6 +343,7 @@ $.extend(LeagueSetupClass.prototype, {
         // remove team from select list.
         var teamSelectList = $('#divisionTeamSelect_' + teamData.LeagueId);
         teamSelectList.find("option[value='" + teamData.Id + "']").remove();
+        teamSelectList.selectpicker("refresh");
 
         // avoid going back to New team selection if we didn't come from new team
         // and teams are available.
@@ -478,6 +484,7 @@ $.extend(LeagueSetupClass.prototype, {
         // select the team.
         $('#divisionTeamSelect_' + teamData.LeagueId).val(teamData.Id);
         $('#newTeam_' + teamData.LeagueId).hide();
+        $('#divisionTeamSelect_' + teamData.LeagueId).selectpicker("refresh");
     },
 
     addDivision: function (leagueId) {
@@ -658,7 +665,7 @@ $.extend(LeagueSetupClass.prototype, {
                 jsonObj.push({ Id: leagueId, Name: name });
                 target.createLeagueFromTemplate(target, jsonObj);
 
-			    $('#copyFromSeason').accordion("activate", false);            
+			    $('#copyFromSeason').accordion("option", "activate", false);            
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);

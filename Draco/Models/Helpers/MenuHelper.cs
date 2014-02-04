@@ -10,6 +10,7 @@ namespace SportsManager.Models.Helpers
     {
         public class MenuItem
         {
+            private List<MenuItem> m_subMenuItems = new List<MenuItem>();
             public MenuItem()
             {
 
@@ -20,6 +21,16 @@ namespace SportsManager.Models.Helpers
                 Url = url;
                 Title = title;
                 Description = description;
+            }
+
+            public void AddSubMenu(MenuItem subMenu)
+            {
+                m_subMenuItems.Add(subMenu);
+            }
+
+            public IEnumerable<MenuItem> SubMenuItems 
+            { 
+                get { return m_subMenuItems; } 
             }
 
             public string Url { get; set; }
@@ -83,16 +94,26 @@ namespace SportsManager.Models.Helpers
                 string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "MemberBusiness", action = "Index", accountId = accountId })).VirtualPath;
 
+                var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Forums", "Forums");
+                forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page"));
+
+                var scheduleMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(scheduleurl, "Schedule", "Schedule");
+                scheduleMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(fieldsurl, "Fields", "Fields Page"));
+
+                //var homeMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(homeurl, "Home", "Home Page");
+                //homeMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(abouturl, "About", "About Page"));
+                //homeMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(contacturl, "Contact", "Contact Page"));
+
+                var teamsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(teamsurl, "Teams", "Teams");
+                teamsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "Standings Page"));
+                teamsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
+
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
 	            {
-		            //new SportsManager.Models.Helpers.MenuHelper.MenuItem(homeurl, "Home", "Home Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(teamsurl, "Teams", "Teams Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "Standings Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(scheduleurl, "Schedule", "Schedule Page"),
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(fieldsurl, "Fields", "Fields Page"),
-		            //new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Discussions Page"),
-		            //new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page")
+                    //homeMenu,
+		            teamsMenu,
+		            scheduleMenu,
+		            forumsMenu		            
 	            };
 
             }

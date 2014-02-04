@@ -544,7 +544,6 @@
     <Content Include="Areas\Baseball\Views\League\SettingsView.cshtml" />
     <Content Include="Areas\Baseball\Views\MemberBusiness\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\_LeagueMenu.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\_SeasonStandings.cshtml" />
     <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\BattingSortableStatistics.cshtml" />
@@ -621,8 +620,19 @@
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
     <None Include="Properties\PublishProfiles\detroitmsbl %282%29.pubxml" />
+    <Content Include="Scripts\bootstrap-select\bootstrap-select.jquery.json" />
+    <Content Include="Scripts\bootstrap-select\bower.json" />
+    <Content Include="Scripts\bootstrap-select\composer.json" />
+    <Content Include="Scripts\bootstrap-select\CONTRIBUTING.md" />
+    <Content Include="Scripts\bootstrap-select\package.json" />
+    <Content Include="Scripts\bootstrap-select\README.md" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\announcement.js" />
+    <Content Include="Scripts\bootstrap-select\bootstrap-select.css" />
+    <Content Include="Scripts\bootstrap-select\bootstrap-select.js" />
+    <Content Include="Scripts\bootstrap-select\bootstrap-select.min.css" />
+    <Content Include="Scripts\bootstrap-select\bootstrap-select.min.js" />
+    <Content Include="Scripts\bootstrap-select\test.html" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\focusNextItem.js" />
