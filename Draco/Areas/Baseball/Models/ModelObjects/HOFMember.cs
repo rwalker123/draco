@@ -75,19 +75,9 @@ namespace ModelObjects
 			set { m_bio = value; }
 		}
 
-		public string PhotoFile
-		{
-			get { return m_contactInfo.LargePhotoFile; }
-		}
-
 		public string PhotoURL
 		{
 			get { return m_contactInfo.LargePhotoURL; }
-		}
-
-		public string PhotoURLName
-		{
-			get { return m_contactInfo.LargePhotoURLName; }
 		}
 
 		public Contact ContactInfo

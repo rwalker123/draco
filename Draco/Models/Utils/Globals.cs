@@ -1,4 +1,7 @@
 using Microsoft.AspNet.Identity;
+using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -27,9 +30,29 @@ static public class Globals
 		set { m_appRootDir = value; }
 	}
 
+    static public string uploadDirRoot = null;
 	static public string UploadDirRoot
 	{
-		get { return ConfigurationManager.AppSettings["UploadDir"]; }
+		get 
+        {
+            if (String.IsNullOrEmpty(uploadDirRoot))
+            {
+                // Retrieve storage account from connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    CloudConfigurationManager.GetSetting("StorageConnectionString"));
+
+                // Create the blob client.
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                // Retrieve a reference to a container. 
+                CloudBlobContainer container = blobClient.GetContainerReference("uploads");
+                uploadDirRoot = container.Uri.ToString();
+                uploadDirRoot += "/";
+                //return ConfigurationManager.AppSettings["UploadDir"]; 
+            }
+
+            return uploadDirRoot;
+        }
 	}
 
 	static public string UploadDir

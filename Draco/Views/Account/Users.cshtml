@@ -27,25 +27,6 @@
             list-style-type: none;
         }
 
-        input.phone
-        {
-            width: 135px;
-        }
-
-        input
-        {
-            margin: 3px;
-        }
-
-        .divLabel {
-            display: inline-block; 
-            width:125px;
-        }
-
-        .formLine {
-            margin: 5px;
-            margin-bottom: 10px;
-        }
     </style>
 }
 
@@ -59,22 +40,21 @@
     </p>
 </div> <!-- content-wrapper -->
 
-<form id="newContact">
-    <div data-bind="template: { name: function () { return selectedView(); } }" class="contactView" style="float:left"></div>
-    <button type="button" class="btn btn-primary" data-bind="visible: namesEnabled(), click: beginCreateContact" style="margin-left: 5px; float:left">Create Contact</button>
-    <div style="clear:both"></div>
+<form class="form-inline" role="form" id="newContact">
+    <small>create contact</small><br />
+    <div style="display:inline-block" data-bind="template: { name: function () { return selectedView(); } }" class="contactView" ></div>
 </form>
 
 <div id="accordion">
-    <div style="margin:5px; margin-bottom: 20px; margin-top:20px; border: 1px solid lightgray;padding:3px" >
 
-    Filter: 
-    <select class="selectpicker" data-style="btn-info" data-bind="value: filterField, options: availableFilters, optionsText: 'name', optionsValue: 'id'"></select>
-    <select class="selectpicker" data-style="btn-info" data-bind="value: filterOp, options: availableOperations, optionsText: 'name', optionsValue: 'id'"></select>
-    <input type="text" style="width:200px" data-bind="value: filterValue" />
-    <select class="selectpicker" data-style="btn-info" data-bind="value: filterSort, options: availableSort, optionsText: 'name', optionsValue: 'id'"></select>        
-    <button type="button" class="btn btn-default" data-bind="click: applyFilter">Apply Filter</button>
-    </div>
+    <small>filter user list</small><br />
+    <form class="form-inline" role="form">
+        <select class="selectpicker" data-style="btn-default" data-bind="value: filterField, options: availableFilters, optionsText: 'name', optionsValue: 'id'"></select>
+        <select class="selectpicker" data-style="btn-default" data-bind="value: filterOp, options: availableOperations, optionsText: 'name', optionsValue: 'id'"></select>
+        <input type="text" class="form-control" style="width:200px" data-bind="value: filterValue" placeholder="filter text" />
+        <select class="selectpicker" data-bind="value: filterSort, options: availableSort, optionsText: 'name', optionsValue: 'id'"></select>
+        <button type="button" class="btn btn-default" data-bind="click: applyFilter"><span class="glyphicon glyphicon-ok"></span></button>
+    </form>
 
     <button style="float:right" class="btn btn-info" type="button" data-bind="visible: nextPage, click: gotoNext">Next >></button>
     <button style="float:left" class="btn btn-info" type="button" data-bind="visible: prevPagesAvailable, click: gotoPrev"><< Prev</button>
@@ -91,7 +71,7 @@
             <a href="#" data-bind="text: fullName"></a>
         </h3>
         <div>
-            <form data-bind="attr: { id: id }">
+            <form class="form-inline" role="form" data-bind="attr: { id: id }">
                 <div class="contactView" data-bind="template: { name: function () { return selectedView(); }, afterRender: userRendered }"></div>
             </form>
         </div>
@@ -108,81 +88,107 @@
 <script id="viewUserDetailsTemplate" type="text/html">
 
     <div data-bind="with: details">
-        <div class="formLine" data-bind="visible: email()">
-            <div class="divLabel">Email:</div><span data-bind="text: email"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone1()">
-            <div class="divLabel">Home Phone:</div><span data-bind="text: phone1"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone2()">
-            <div class='divLabel'>Cell Phone:</div><span data-bind="text: phone2"></span>
-        </div>
-        <div class="formLine" data-bind="visible: phone3()">
-            <div class='divLabel'>Work Phone:</div><span data-bind="text: phone3"></span>
-        </div>
-        <div class="formLine" data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
-            <div class='divLabel'>Address:</div><span data-bind="text: address"></span><br />
-            <div class='divLabel'></div><span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
-        </div>
-        <div class="formLine" data-bind="visible: birthdate()">
-            <div class='divLabel'>Date of Birth:</div><span data-bind="text: $.datepicker.formatDate('mm-dd-yy', new Date(birthdate()))"></span>
-        </div>
-        <div class="formLine">
-            <div class='divLabel'>Gender:</div><span data-bind="text: gender() ? 'Female' : 'Male'"></span>
-        </div>
+        <address data-bind="visible: email()">
+            <small>email</small><br /><a data-bind="text: email, attr: {href: 'mailto:' + email()}"></a>
+        </address>
+        <address data-bind="visible: phone1()">
+            <small>home phone</small><br /><span data-bind="text: phone1"></span>
+        </address>
+        <address data-bind="visible: phone2()">
+            <small>cell phone</small><br /><span data-bind="text: phone2"></span>
+        </address>
+        <address data-bind="visible: phone3()">
+            <small>work phone</small><br /><span data-bind="text: phone3"></span>
+        </address>
+        <address data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
+            <small>address</small><br />
+            <span data-bind="text: address"></span><br />
+            <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
+        </address>
+        <address data-bind="visible: birthdate()">
+            <small>Date of Birth:</small><br /><span data-bind="text: $.datepicker.formatDate('mm-dd-yy', new Date(birthdate()))"></span>
+        </address>
+        <address>
+            <small>gender</small><br /><span data-bind="text: gender() ? 'Female' : 'Male'"></span>
+        </address>
     </div>
     <div class="contactErrorLocation" style="margin: 10px">
 
     </div>
 
-    <button type="button" class="btn btn-default" data-bind="click: beginEditContact">Edit</button>
-    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUser">Delete</button>
+    <button type="button" class="btn btn-default" data-bind="click: beginEditContact"><span class="glyphicon glyphicon-edit"></span></button>
+    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUser"><span class="glyphicon glyphicon-remove"></span></button>
     <button type="button" class="btn btn-warning" data-bind="visible: isRegistered, click: resetPassword">Reset Password</button><br />
 
 </script>
 
 <script id="editUserDetailsTemplate" type="text/html">
 
-    <div class="formLine">
-        <div class='divLabel' data-bind="visible: !namesEnabled()">Name:</div><input type="text" data-bind="value: firstName, enable: namesEnabled" placeholder="first name" name="firstname" style="width: 125px" />
-        <input type="text" data-bind="value: middleName, enable: namesEnabled" placeholder="middle name" style="width: 125px" />
-        <input type="text" data-bind="value: lastName, enable: namesEnabled" placeholder="last name" name="lastname" style="width: 125px" />
+    <div class="form-group" style="margin-bottom:10px">
+        <input type="text" class="form-control" data-bind="value: firstName, enable: namesEnabled" placeholder="first name" name="firstname" style="width: 150px" />
+        <input type="text" class="form-control" data-bind="value: middleName, enable: namesEnabled" placeholder="middle name" style="width: 125px" />
+        <input type="text" class="form-control" data-bind="value: lastName, enable: namesEnabled" placeholder="last name" name="lastname" style="width: 150px" />
+        <button type="button" class="btn btn-primary" data-bind="visible: namesEnabled() && !detailsVisible(), click: beginCreateContact"><span class="glyphicon glyphicon-plus"></span></button>
+    </div>
+
+    <div data-bind="with: details, fadeVisible: detailsVisible">
+
+        <div class="form-group">
+            <small>email</small><br />
+            <label for="email" class='sr-only'>email</label>
+            <input type="email" class="form-control" data-bind="value: email" id="email" placeholder="email address" style="width: 400px" />
+        </div>
+
+        <br />
+
+        <div class="form-group" style="margin-top:10px">
+            <small>phone numbers</small><br />
+            <label for="phone1" class="control-label"><abbr title="Cell Phone">c</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone1" id="phone1" class="form-control" placeholder="cell phone" />
+
+            <label for="phone2" class="control-label"><abbr title="Home Phone">h</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone2" id="phone2" class="form-control" placeholder="home phone" />
+
+            <label for="phone3" class="control-label"><abbr title="Work Phone">w</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone3" id="phone3" class="form-control" placeholder="work phone" />
+        </div>
+
+        <br />
+
+        <div class="form-group" style="margin-top:10px">
+            <small>address</small><br />
+            <label for="streetAddress" class="sr-only">Street Address</label>
+            <input type="text" class="form-control" id="streetAddress" data-bind="value: address" placeholder="street address" style="width: 300px" /> <br />
+
+            <label for="cityField" class="sr-only">City</label>
+            <input type="text" class="form-control" id="cityField" data-bind="value: city" placeholder="city" style="width: 200px" />
+
+            <label for="zipField" class="sr-only">State</label>
+            <select class="selectpicker" data-size="7" data-bind="value: state, options: $parent.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+
+            <label for="zipField" class="sr-only">Zip Code</label>
+            <input type="text" class="form-control" data-bind="value: zip" style="width: 75px" placeholder="zip" />
+        </div>
+
+        <br />
+
+        <div class="form-group" style="margin-top:10px">
+            <small>date of birth</small><br />
+            <label for="dateOfBirthField" class="sr-only">Date of Birth</label>
+            <input id="dateOfBirthField" data-bind="datepicker: birthdate, datepickerStartDate:'-21y', datepickerOptions: { changeMonth: true, changeYear: true, yearRange: '-99:-18', showButtonPanel: true }" style="display: inline-block" class="birthdate form-control" placeholder="birth date" /><br />
+            <small>gender</small><br />
+            <label for="genderField" class="sr-only">Gender</label>
+            <select id="genderField" class="selectpicker" data-bind="value: gender, options: $parent.availableGenders, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+        </div>
+    </div>
+    <div class="form-group" style="margin-top:10px;margin-bottom:20px" data-bind="visible: detailsVisible">
+        <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span></button>
+        <button type="button" class="btn btn-danger" data-bind="click: cancelContact"><span class="glyphicon glyphicon-remove"></span></button><br />
     </div>
 
     <div class="contactErrorLocation"></div>
     <div data-bind="visible: validatingName"><img src="/Images/busy.gif" /> validating name...</div>
 
-    <div data-bind="with: details, fadeVisible: detailsVisible">
-
-        <div class="formLine">
-            <div class='divLabel'>Email:</div><input type="email" data-bind="value: email" name="email" placeholder="email address" style="width: 400px" />
-        </div>
-
-        <div class="formLine">
-            <div class='divLabel'>Phone:</div><input type="tel" data-bind="phoneNumber: phone1" name="phone1" class="phone" placeholder="cell phone" />
-            <input type="tel" data-bind="phoneNumber: phone2" name="phone2" class="phone" placeholder="home phone" />
-            <input type="tel" data-bind="phoneNumber: phone3" name="phone3" class="phone" placeholder="work phone" />
-        </div>
-
-        <div class="formLine">
-            <div class='divLabel'>Address:</div><input type="text" data-bind="value: address" placeholder="street address" style="width: 300px" /> <br />
-            <div class='divLabel'></div><input type="text" data-bind="value: city" placeholder="city" style="width: 200px" />
-            <select class="selectpicker" data-style="btn-info" data-bind="value: state, options: $parent.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
-            <input type="text" data-bind="value: zip" style="width: 75px" placeholder="zip" />
-        </div>
-
-        <div class="formLine">
-            <div class='divLabel'>Date of Birth:</div><input data-bind="datepicker: birthdate, datepickerStartDate:'-21y', datepickerOptions: { changeMonth: true, changeYear: true, yearRange: '-99:-18', showButtonPanel: true }" style="display: inline-block" class="birthdate" placeholder="birth date" /><br />
-        </div>
-
-        <div class="formLine">
-            <div class='divLabel'>Gender:</div><select class="selectpicker" data-style="btn-info" data-bind="value: gender, options: $parent.availableGenders, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
-        </div>
-    </div>
-    <div style="margin-bottom:20px" data-bind="visible: detailsVisible">
-        <input type="submit" class="btn btn-success" value="Save" />
-        <input type="button" class="btn btn-danger" value="Cancel" data-bind="click: cancelContact" /><br />
-    </div>
 </script>
 
 @Scripts.Render("~/bundles/knockout")
@@ -195,6 +201,8 @@
 <script type="text/javascript">
     $(document).ready(function () {
         initUserData(@Model.AccountId, @Model.PageSize);
+
+        $(".selectpicker").selectpicker();
     });
 </script>
 }

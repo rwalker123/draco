@@ -91,15 +91,6 @@ namespace ModelObjects
 			}
 		}
 
-		public string AccountConfigurationDirectory
-		{
-			get
-			{
-				return System.Web.HttpContext.Current.Server.MapPath(AccountConfigurationURL);
-			}
-		}
-
-
 		public Account()
 		{
 		}
@@ -169,31 +160,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (LargeLogoFile != null)
-                    return LogoUploadDir + m_largeLogoName;
-				else
-					return null;
-			}
-		}
-
-		public string LargeLogoURLName
-		{
-			get
-			{
                 return LogoUploadDir + m_largeLogoName;
-			}
-		}
-
-		public string LargeLogoFile
-		{
-			get
-			{
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(LogoUploadDir + m_largeLogoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 
@@ -201,31 +168,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (SmallLogoFile != null)
-                    return LogoUploadDir + m_smallLogoName;
-				else
-					return null;
-			}
-		}
-
-		public string SmallLogoURLName
-		{
-			get
-			{
                 return LogoUploadDir + m_smallLogoName;
-			}
-		}
-
-		public string SmallLogoFile
-		{
-			get
-			{
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(LogoUploadDir + m_smallLogoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 	}

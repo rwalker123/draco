@@ -144,31 +144,7 @@ namespace ModelObjects
         {
             get
             {
-                if (PhotoFile != null)
-                    return ContactsUploadDir + Id + PhotoName;
-                else
-                    return null;
-            }
-        }
-
-        public string PhotoURLName
-        {
-            get
-            {
                 return ContactsUploadDir + Id + PhotoName;
-            }
-        }
-
-        public string PhotoFile
-        {
-            get
-            {
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(ContactsUploadDir + Id + PhotoName);
-                System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-                if (fileInfo.Exists)
-                    return fileInfo.FullName;
-                else
-                    return null;
             }
         }
 
@@ -176,31 +152,7 @@ namespace ModelObjects
         {
             get
             {
-                if (LargePhotoFile != null)
-                    return ContactsUploadDir + Id + LargePhotoName;
-                else
-                    return null;
-            }
-        }
-
-        public string LargePhotoURLName
-        {
-            get
-            {
                 return ContactsUploadDir + Id + LargePhotoName;
-            }
-        }
-
-        public string LargePhotoFile
-        {
-            get
-            {
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(ContactsUploadDir + Id + LargePhotoName);
-                System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-                if (fileInfo.Exists)
-                    return fileInfo.FullName;
-                else
-                    return null;
             }
         }
 

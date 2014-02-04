@@ -119,7 +119,7 @@
             <input class="form-control" id="NewDivisionName_{{:Id}}" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
             <label for="NewDivisionPriority_{{:Id}}" class="control-label">Sort Order</label>
             <input class="form-control" id="NewDivisionPriority_{{:Id}}" type="number" style="width:50px" min="0" max="100" value="1" />
-            <button type="button" class="btn btn-default" onclick="leagueSetupData.addDivision({{:Id}})"><span class="glyphicon glyphicon-plus"></span></button>
+            <button type="button" class="btn btn-primary" onclick="leagueSetupData.addDivision({{:Id}})"><span class="glyphicon glyphicon-plus"></span></button>
         </div>
         <hr />
     </form>
@@ -144,7 +144,7 @@
 
 <script id="teamTemplate" type="text/x-jsrender">
 <li class="division_{{>DivisionId}} divisionTeam" id='divisionTeam_{{:Id}}' data-name='{{>Name}}'>
-    <button type="button" class="btn btn-danger" onclick="leagueSetupData.removeTeamFromDivision({{:LeagueId}}, {{:DivisionId}}, {{:Id}})"><span class="glyphicon glyphicon-minus"></span></button>
+    <button type="button" class="btn btn-warning" onclick="leagueSetupData.removeTeamFromDivision({{:LeagueId}}, {{:DivisionId}}, {{:Id}})"><span class="glyphicon glyphicon-minus"></span></button>
     
     <img src='/images/busy.gif' id='teamLogoBusy_{{:Id}}'
          style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
@@ -185,7 +185,7 @@
         </form>
 
         <form class="form-inline addDivisionTeamPanel" style="margin-left:30px;display:none" role="form" id='addDivisionTeamPanel_{{:Id}}'>
-            <button type="button" class="btn btn-success form-control" style="width:55px" onclick="leagueSetupData.addTeamToDivision({{:LeagueId}}, {{:Id}})"><span class="glyphicon glyphicon-plus"></span></button>
+            <button type="button" class="btn btn-success form-control" style="width:55px" onclick="leagueSetupData.addTeamToDivision({{:LeagueId}}, {{:Id}})"><span class="glyphicon glyphicon-ok"></span></button>
             <button type="button" class="btn btn-default form-control" style="width:75px" onclick="leagueSetupData.stopAddTeam({{:LeagueId}}, {{:Id}})">Done</button>
             <hr />
         </form>

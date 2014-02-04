@@ -12,6 +12,10 @@ using System.Web;
 using System.Web.Http;
 using ModelObjects;
 using SportsManager.Models;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Storage.Blob;
+using System.Text;
 
 namespace SportsManager.Controllers
 {
@@ -59,7 +63,7 @@ namespace SportsManager.Controllers
 
             if (item.Id > 0)
             {
-                return ProcessUploadRequest(file, accountId, item.PhotoURLName, ImageFormat.Jpeg, new Size(640, 480), eSizeType.Maximum, true, item.PhotoThumbURLName, new Size(160, 120));
+                return await ProcessUploadRequest(file, accountId, item.PhotoURLName, ImageFormat.Jpeg, new Size(640, 480), eSizeType.Maximum, true, item.PhotoThumbURLName, new Size(160, 120));
             }
             else
             {
@@ -90,7 +94,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return ProcessUploadRequest(file, accountId, c.PhotoURLName, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
         }
 
 
@@ -103,7 +107,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return ProcessUploadRequest(file, accountId, t.TeamLogoURLName, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.TeamLogoURLName, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -115,7 +119,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return ProcessUploadRequest(file, accountId, t.TeamPhotoURLName, ImageFormat.Jpeg, new Size(640, 280), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.TeamPhotoURLName, ImageFormat.Jpeg, new Size(640, 280), eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -127,7 +131,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return ProcessUploadRequest(file, accountId, a.LargeLogoURLName, ImageFormat.Png, new Size(512, 125), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, a.LargeLogoURL, ImageFormat.Png, new Size(512, 125), eSizeType.Maximum);
         }
 
         private async Task<MultipartFormDataStreamProvider> prep()
@@ -165,9 +169,9 @@ namespace SportsManager.Controllers
             }
         }
 
-        private HttpResponseMessage ProcessUploadRequest(MultipartFileData file, long accountId, string imageUri, 
-            ImageFormat imageFormat, Size photoSize, eSizeType sizeType,
-            bool createThumbnail = false, string thumbnailImageUri = null, Size? thumbnailSize = null)
+        private async Task<HttpResponseMessage> ProcessUploadRequest(MultipartFileData file, long accountId,
+            String imageUri, ImageFormat imageFormat, Size photoSize, eSizeType sizeType,
+            bool createThumbnail = false, string thumbnailUri = null, Size? thumbnailSize = null)
         {
             try
             {
@@ -178,10 +182,6 @@ namespace SportsManager.Controllers
                     File.Delete(file.LocalFileName);
                     return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Image file must be specified");
                 }
-
-                string imageFile = HttpContext.Current.Server.MapPath(imageUri);
-                System.IO.FileInfo fi = new FileInfo(imageFile);
-                System.IO.Directory.CreateDirectory(fi.DirectoryName);
 
                 ImageCodecInfo encoder = GetEncoder(imageFormat);
                 // Create an Encoder object based on the GUID 
@@ -220,29 +220,91 @@ namespace SportsManager.Controllers
                     {
                         System.Drawing.Image thumbnailImage = FixedSize(scaledImage, thumbnailSize.GetValueOrDefault().Width, thumbnailSize.GetValueOrDefault().Height);
 
-                        string thumnailPhotoFileName = HttpContext.Current.Server.MapPath(thumbnailImageUri);
-                        System.IO.FileInfo tnFileInfo = new System.IO.FileInfo(thumnailPhotoFileName);
-                        System.IO.DirectoryInfo tnDirInfo = tnFileInfo.Directory;
-                        if (!tnDirInfo.Exists)
-                            tnDirInfo.Create();
-
-                        thumbnailImage.Save(tnFileInfo.FullName, encoder, myEncoderParameters);
+                        string tnFile = file.LocalFileName + "-thumbnail";
+                        
+                        thumbnailImage.Save(tnFile, encoder, myEncoderParameters);
+                        await SaveToCloudBlob(tnFile, thumbnailUri);
                     }
 
-                    // save to correct name
-                    scaledImage.Save(fi.FullName, encoder, myEncoderParameters);
+                    // save file in correct format.
+                    string imgFile = file.LocalFileName + "-scaledimage";
+                    scaledImage.Save(imgFile, encoder, myEncoderParameters);
                     scaledImage.Dispose();
+                    imageUri = await SaveToCloudBlob(imgFile, imageUri);
                 }
 
-                File.Delete(file.LocalFileName);
-
                 // return URI of file
-                return Request.CreateResponse<string>(HttpStatusCode.OK, MapUrl(imageFile));
+                return Request.CreateResponse<string>(HttpStatusCode.OK, imageUri);
             }
             catch (System.Exception e)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
             }
+
+            if (File.Exists(file.LocalFileName))
+                File.Delete(file.LocalFileName);
+
+        }
+
+        private async Task<string> SaveToCloudBlob(string localFileName, string storageUri)
+        {
+            // Retrieve storage account from connection string.
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                CloudConfigurationManager.GetSetting("StorageConnectionString"));
+
+            // Create the blob client.
+            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+            // Retrieve a reference to a container. 
+            CloudBlobContainer container = blobClient.GetContainerReference("uploads");
+
+            // Create the container if it doesn't already exist.
+            bool containerExists = await container.ExistsAsync();
+            if (!containerExists)
+            {
+                await container.CreateIfNotExistsAsync();
+                await container.SetPermissionsAsync(
+                    new BlobContainerPermissions
+                    {
+                        PublicAccess =
+                            BlobContainerPublicAccessType.Blob
+                    });
+            }
+
+            StringBuilder relativePath = new StringBuilder();
+            bool startAppending = false;
+
+            char cloudFileSep = '/';
+
+            var dirs = storageUri.Split(new char[] { cloudFileSep }, StringSplitOptions.RemoveEmptyEntries);
+            // last entry is the filename
+            string fileName = dirs[dirs.Length - 1];
+            for (int i = 0; i < dirs.Length-1; ++i)
+            {
+                var dir = dirs[i];
+                if (startAppending)
+                {
+                    relativePath.Append(dir);
+                    relativePath.Append(cloudFileSep);
+                }
+
+                if (dir.Equals("uploads", StringComparison.InvariantCultureIgnoreCase))
+                    startAppending = true;
+            }
+
+            CloudBlobDirectory cloudDirectory = container.GetDirectoryReference(relativePath.ToString().TrimEnd(new char[] { cloudFileSep }));
+
+            // no directory, store in root.
+            var blockBlob = cloudDirectory.GetBlockBlobReference(fileName);
+
+            // Create or overwrite the "myblob" blob with contents from a local file.
+            using (var fileStream = System.IO.File.OpenRead(localFileName))
+            {
+                await blockBlob.UploadFromStreamAsync(fileStream);
+            }
+
+            System.IO.File.Delete(localFileName);
+            return blockBlob.Uri.ToString();
         }
 
         private ImageCodecInfo GetEncoder(ImageFormat format)

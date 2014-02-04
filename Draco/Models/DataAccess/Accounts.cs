@@ -611,7 +611,7 @@ namespace DataAccess
                 account.URL += ";";
             
             account.URL += url;
-            account.URL = account.URL.Replace(";;", ";").TrimEnd(new char[] { ';' });
+            account.URL = account.URL.Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
             db.SubmitChanges();
         }
 
@@ -625,7 +625,7 @@ namespace DataAccess
 
             if (account.URL.Contains(url))
             {
-                account.URL = account.URL.Replace(url, String.Empty).Replace(";;", ";").TrimEnd(new char[] { ';' });
+                account.URL = account.URL.Replace(url, String.Empty).Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
             }
 
             db.SubmitChanges();

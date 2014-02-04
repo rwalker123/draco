@@ -89,25 +89,26 @@
     <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button><br />
     <br /><br /><span class="toText">To</span><br />
 
-    <select data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
+    <select class="selectpicker" data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
     <div data-bind="fadeVisible: toOptionsAvailable">
         <div data-bind="visible: toField() == 5">
-            <span>(type last name to begin search)</span><br />
-            <input type="text" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/>
+            <small>(type last name to begin search)</small><br />
+            <input type="text" class="form-control" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/>
         </div>
         <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
-        <div style="background-color: white" data-bind="visible: availableToData().length > 0">
-            <div style="vertical-align:middle; border: 2px solid gray; overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
-                <label><input style="vertical-align:middle;margin-left: 3px" type="checkbox" data-bind="checked: selected, value: id" /><img style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;vertical-align:middle;" data-bind="text: text"></span></label>
-                <hr />
-            </div>
+        <div data-bind="visible: availableToData().length > 0">
+                <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
+                    <li class="list-group-item">
+                        <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
+                    </li>
+                </ul>
         </div>
     </div>
 </div>
 
 <div class="messageArea">
     
-    <input type="text" style="width:600px;border:none;font-weight:bolder;font-size:larger" data-bind="value: subject" placeholder="add a subject" />
+    <input type="text" class="form-control" data-bind="value: subject" placeholder="add a subject" />
     <hr />
     <div style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: selectedData">
         <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
@@ -154,11 +155,11 @@
         self.accountId = accountId;
 
         self.availableTo = [
-                { id: 1, text: 'Current Season', title: 'All players/managers in current season' },
-                { id: 2, text: 'Selected League(s)', title: 'All players/managers in selected league' },
-                { id: 3, text: 'Selected Team(s)', title: 'All players/managers on selected team' },
-                { id: 4, text: 'Selected Manager(s)', title: 'All selected managers' },
-                { id: 5, text: 'Selected Users(s)', title: 'All selected users' },
+                { id: 1, title: 'Current Season', text: 'All players/managers in current season' },
+                { id: 2, title: 'Selected League(s)', text: 'All players/managers in selected league' },
+                { id: 3, title: 'Selected Team(s)', text: 'All players/managers on selected team' },
+                { id: 4, title: 'Selected Manager(s)', text: 'All selected managers' },
+                { id: 5, title: 'Selected Users(s)', text: 'All selected users' },
         ];
 
         self.toField = ko.observable();
@@ -435,6 +436,7 @@
 
     $(document).ready(function () {
         initViewModel();
+        $(".selectpicker").selectpicker();
     });
 </script>
 }

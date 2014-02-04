@@ -39,8 +39,8 @@
     <p class="help-block">Define umpires for the league.</p>
 </div> <!-- content-wrapper -->
 
-<h3 class="help-block" style="display: inline-block" >Search for users to add as umpires. If this is a new umpire, 
-    add them as a </h3><a class="btn btn-primary" style="margin-left: 5px; margin-right: 5px; margin-top: -6px" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a><h3 class="help-block" style="display: inline-block">first.</h3>
+<p class="help-block" style="display: inline-block" >Search for users to add as umpires. If this is a new umpire, 
+    add them as a </p><a class="btn btn-primary" style="margin-left: 5px; margin-right: 5px; margin-top: -6px" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a><p class="help-block" style="display: inline-block">first.</p>
 
 <br /><small>(type last name to begin search)</small><br />
 
@@ -86,16 +86,16 @@
             <small>email</small><br />
             <a data-bind="text: email, attr: {href: 'mailto:' + email()}"></a>
         </address>
-        <address class="formLine" data-bind="visible: phone1()">
+        <address data-bind="visible: phone1()">
             <small>home phone</small><br /> <span data-bind="text: phone1"></span>
         </address>
-        <address class="formLine" data-bind="visible: phone2()">
+        <address data-bind="visible: phone2()">
             <small>cell phone</small><br /> <span data-bind="text: phone2"></span>
         </address>
-        <address class="formLine" data-bind="visible: phone3()">
+        <address data-bind="visible: phone3()">
             <small>work phone</small><br /> <span data-bind="text: phone3"></span>
         </address>
-        <address class="formLine" data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
+        <address data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
             <small>address</small><br />
             <span data-bind="text: address"></span><br />
             <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>

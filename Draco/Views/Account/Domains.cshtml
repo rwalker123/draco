@@ -7,6 +7,13 @@
 @section head
 {
 @Styles.Render("~/Content/themes/base/css")
+
+    <style>
+        .mappedUrl
+        {
+            margin-bottom: 10px;
+        }
+    </style>
 }
 
 
@@ -30,26 +37,48 @@
 {
     foreach (var mappedUrl in Model.AccountUrls)
     {
-        <div style="margin-bottom:10px" id='@mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty)' class="mappedUrl">
-            <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')"><span class="glyphicon glyphicon-edit"></span></button>
-            <button type="button" class="btn btn-danger" onclick="deleteUrl('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
-            <h3 style="display: inline">@mappedUrl</h3>
+        string urlId = @mappedUrl.Replace("http://", String.Empty).Replace(".", String.Empty);
+
+        <div id="@urlId">
+            <div id='view_@urlId' class="mappedUrl">
+                <button type="button" class="btn btn-default" onclick="startEditUrl('@mappedUrl')"><span class="glyphicon glyphicon-edit"></span></button>
+                <button type="button" class="btn btn-danger" onclick="deleteUrl('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
+                <h3 id="urlText_@urlId" style="display: inline">@mappedUrl</h3>
+            </div>
+            <form id='edit_@urlId' class="form-inline mappedUrl" style="display:none" role="form">
+                <div class="form-group">
+                    <label for="url_@urlId" class="sr-only">Url</label>
+                    <input type="url" id="url_@urlId" style="width:300px" class="form-control" placeholder="ex: http://www.yourdomain.com" />
+                    <button type="button" class="btn btn-success" onclick="saveEditMode('@mappedUrl')"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-danger" onclick="cancelEditMode('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </form>
         </div>
     }
 }
 </div>
 
-<h3 id="noDomainsText" style="display:none">No domains mapped to this account.</h3>
+<h3 id="noDomainsText" class="alert alert-info" style="display:none">No domains mapped to this account.</h3>
 
 @section scripts
 {
 @Scripts.Render("~/bundles/jsrender")
 
 <script id="mappedUrlTemplate" type="text/x-jsrender">
-<div id='{{:Id}}' class='mappedUrl'>
-    <button type="button" class="btn btn-default" onclick="editUrl('{{:Url}}')">Edit</button>
-    <button type="button" class="btn btn-danger" onclick="deleteUrl('{{:Url}}')">Delete</button>
-    <h3 style="display: inline">{{:Url}}</h3>
+<div id="{{:Id}}">
+    <div id='view_{{:Id}}' class='mappedUrl'>
+        <button type="button" class="btn btn-default" onclick="startEditUrl('{{:Url}}')"><span class="glyphicon glyphicon-edit"></span></button>
+        <button type="button" class="btn btn-danger" onclick="deleteUrl('{{:Url}}')"><span class="glyphicon glyphicon-remove"></span></button>
+        <h3 id='urlText_{{:Id}}' style="display: inline">{{:Url}}</h3>
+    </div>
+    <form id='edit_{{:Id}}' class="form-inline mappedUrl" style="display:none" role="form">
+        <div class="form-group">
+            <label for="url_{{:Id}}" class="sr-only">Url</label>
+            <input type="url" id="url_{{:Id}}" style="width:300px" class="form-control" placeholder="ex: http://www.yourdomain.com" />
+            <button type="button" class="btn btn-success" onclick="saveEditMode('{{:Url}}')"><span class="glyphicon glyphicon-ok"></span></button>
+            <button type="button" class="btn btn-danger" onclick="cancelEditMode('{{:Url}}')"><span class="glyphicon glyphicon-remove"></span></button>
+        </div>
+    </form>
 </div>
 </script>
 
@@ -82,11 +111,68 @@
         });
     }
 
-    function editUrl(url) {
-        alert('todo');
+    function updateUrl(accountUri) {
+        $.ajax({
+            type: "POST",
+            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            data: {
+                Uri: accountUri
+            },
+            success: function (accountUrl) {
+                window.location.hash = 'update';
+                $('#noDomainsText').hide();
+                var id = generateIdFromUrl(accountUrl);
+                $('#urlList').append($('#mappedUrlTemplate').render({ Id: id, Url: accountUrl }));
+
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert(xhr.responseText);
+            }
+        });
+    }
+    var currentEditUrl = "";
+    
+    function startEditUrl(url) {
+        if (currentEditUrl) {
+            cancelEditMode(currentEditUrl);
+        }
+        var urlId = generateIdFromUrl(url);
+        $("#view_" + urlId).hide();
+
+        currentEditUrl = url;
+
+        $("#url_" + urlId).val(url);
+        $("#edit_" + urlId).show();
+
     }
 
-    function deleteUrl(url) {
+    function cancelEditMode(url) {
+        var urlId = generateIdFromUrl(url);
+
+        $("#edit_" + urlId).hide();
+        $("#view_" + urlId).show();
+
+        currentEditUrl = "";
+    }
+
+    function saveEditMode(url) {
+        var urlId = generateIdFromUrl(url);
+
+        deleteUrl(currentEditUrl, function (accountName) {
+            // get entered value, will delete control in next step.
+            var newValue = $("#url_" + urlId).val();
+
+            // delete the old control.
+            $('#' + urlId).remove();
+
+            // add it back..
+            updateUrl(newValue);
+        });
+
+        currentEditUrl = "";
+    }
+
+    function deleteUrl(url, successCallback) {
         $.ajax({
             type: "DELETE",
             url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
@@ -94,11 +180,16 @@
                 Uri: url
             },
             success: function (accountName) {
-                window.location.hash = 'update';
-                var urlId = generateIdFromUrl(url);
-                $('#' + urlId).remove();
-                if ($('.mappedUrl').length == 0) {
-                    $('#noDomainsText').show();
+                if (successCallback) {
+                    successCallback(accountName);
+                }
+                else {
+                    window.location.hash = 'update';
+                    var urlId = generateIdFromUrl(url);
+                    $('#' + urlId).remove();
+                    if ($('.mappedUrl').length == 0) {
+                        $('#noDomainsText').show();
+                    }
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {

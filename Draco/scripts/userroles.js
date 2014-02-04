@@ -86,8 +86,8 @@ $.extend(UserRoleClass.prototype, {
         var roleDataText = '';
 
         if (this.isLeagueAdmin(roleId)) {
-            roleData = $('#avaliableLeagues').val();
-            roleDataText = $("#avaliableLeagues option[value='" + roleData + "']").text()
+            roleData = $('#availableLeagues').val();
+            roleDataText = $("#availableLeagues option[value='" + roleData + "']").text()
         }
         else if (this.isTeamAdmin(roleId)) {
             roleData = $('#teamSelect').val();
@@ -215,7 +215,7 @@ $.extend(UserRoleClass.prototype, {
                     url: url,
                     success: function (leagues) {
                         window.location.hash = 'update';
-                        var leagueSelect = $('#avaliableLeagues');
+                        var leagueSelect = $('#availableLeagues');
                         $.each(leagues, function () {
                             leagueSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
                         });

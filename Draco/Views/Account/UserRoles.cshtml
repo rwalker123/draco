@@ -49,12 +49,12 @@
     to change it back. Only the new account owner will be able to change it back.
 </div>
 <h4>Change Account Owner</h4>
-<span>(type last name to begin search)</span><br />
-<div>
-    <input style="width:350px" id="ownerPlayerSelect"/>
-    <button type="button" class="btn btn-success" onclick="userRolesData.changeAccountOwner(@Model.AccountId)">Change</button>
-    <button type="button" class="btn btn-danger" onclick="userRolesData.cancelChangeAccountOwner()">Cancel</button>
-</div>
+<small>(type last name to begin search)</small><br />
+<form class="form-inline" role="form">
+    <input style="width:350px" class="form-control" id="ownerPlayerSelect"/>
+    <button type="button" class="btn btn-success" onclick="userRolesData.changeAccountOwner(@Model.AccountId)"><span class="glyphicon glyphicon-ok"></span></button>
+    <button type="button" class="btn btn-danger" onclick="userRolesData.cancelChangeAccountOwner()"><span class="glyphicon glyphicon-remove"></span></button>
+</form>
 <hr />
     
 </div>
@@ -64,14 +64,20 @@
 <div id="accordion">
     <h3 class="adminHeader" id="AdminHeader_@Model.AccountAdminId">Account Administrators</h3>
     <div id="AdminData_@Model.AccountAdminId">
-        <p>Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.</p>
+        <p class="help-block">Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.</p>
 
-        <h4>Add Account Administrator</h4>
-        <span>(type last name to begin search)</span><br />
-        <div id="div_playerSelect_@Model.AccountAdminId">
-            <input style="vertical-align:middle" id="playerSelect"/>
-            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')">Add</button>
-        </div>
+        <small>add administrator (type last name to begin search)</small><br />
+        <form class="form-inline" role="form">
+            <div id="div_playerSelect_@Model.AccountAdminId" class="form-group">
+                <div style="display:inline-block" id="playerSelect">
+                    <label for="playerSelectInput" class="sr-only">Last Name</label>
+                    <input class="form-control" type="text" id="playerSelectInput" style="width: 400px;" />
+                </div>
+                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </form>
+
+
         <hr />
 
         <p style="font-style:italic;max-width:400px;display:none" id="noAdminText_@Model.AccountAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
@@ -81,30 +87,32 @@
     </div>
     <h3 class="adminHeader" id="AdminHeader_@Model.AccountPhotoAdminId">Account Photo Administrators</h3>
     <div id="AdminData_@Model.AccountPhotoAdminId">
-        <p>Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.</p>
+        <p class="help-block">Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.</p>
 
-        <h4>Add Account Photo Administrator</h4>
-        <span>(type last name to begin search)</span><br />
-        <div id="div_playerSelect_@Model.AccountPhotoAdminId">
+        <small>add administrator (type last name to begin search)</small><br />
+        <form class="form-inline" role="form">
+            <div id="div_playerSelect_@Model.AccountPhotoAdminId" class="form-group">
+                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </form>
 
-            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')">Add</button>
-        </div>
         <hr />
 
         <p style="font-style:italic;max-width:400px;display:none" id="noAdminText_@Model.AccountPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
         <div id="adminsList_@Model.AccountPhotoAdminId" data-hasdata="false" style="display:none">
         </div>
-    </div>
+</div>
     <h3 class="adminHeader" id="AdminHeader_@Model.LeagueAdminId">League Administrators</h3>
     <div id="AdminData_@Model.LeagueAdminId">
-        <p>League administrators have access to all functions for a specific league. The can create divisions and teams for a league, but cannot create or delete leagues in the account.</p>
+        <p class="help-block">League administrators have access to all functions for a specific league. The can create divisions and teams for a league, but cannot create or delete leagues in the account.</p>
 
-        <h4>Add League Administrator</h4>
-        <span>(type last name to begin search)</span><br />
-        <div id="div_playerSelect_@Model.LeagueAdminId">
-            <select style="vertical-align:middle;margin-left:3px;font-size:20px"  id="avaliableLeagues" ></select>
-            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')">Add</button>
-        </div>
+        <small>add administrator (type last name to begin search)</small><br />
+        <form class="form-inline" role="form">
+            <div id="div_playerSelect_@Model.LeagueAdminId" class="form-group">
+                <select class="selectpicker" id="availableLeagues"></select>
+                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </form>
         <hr />
 
         <p style="font-style:italic;max-width:400px;display:none" id="noAdminText_@Model.LeagueAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
@@ -113,14 +121,15 @@
     </div>
     <h3 class="adminHeader" id="AdminHeader_@Model.TeamAdminId">Team Administrators</h3>
     <div id="AdminData_@Model.TeamAdminId">
-        <p>Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.</p>
+        <p class="help-block">Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.</p>
 
-        <h4>Add Team Administrator</h4>
-        <span>(type last name to begin search)</span><br />
-        <div id="div_playerSelect_@Model.TeamAdminId">
-            <select style="vertical-align:middle;margin-left:3px;font-size:20px" id="teamSelect" ></select>
-            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')">Add</button>
-        </div>
+        <small>add administrator (type last name to begin search)</small><br />
+        <form class="form-inline" role="form">
+            <div id="div_playerSelect_@Model.TeamAdminId" class="form-group">
+                <select class="selectpicker" id="teamSelect"></select>
+                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </form>
         <hr />
 
         <p style="font-style:italic;max-width:400px;display:none" id="noAdminText_@Model.TeamAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
@@ -129,14 +138,15 @@
     </div>
     <h3 class="adminHeader" id="AdminHeader_@Model.TeamPhotoAdminId">Team Photo Administrators</h3>
     <div id="AdminData_@Model.TeamPhotoAdminId">
-        <p>Team photo administrators can manage all photos and videos related to a specific team.</p>
+        <p class="help-block">Team photo administrators can manage all photos and videos related to a specific team.</p>
 
-        <h4>Add Team Photo Administrator</h4>
-        <span>(type last name to begin search)</span><br />
-        <div id="div_playerSelect_@Model.TeamPhotoAdminId">
+        <small>add administrator (type last name to begin search)</small><br />
+        <form class="form-inline" role="form">
+            <div id="div_playerSelect_@Model.TeamPhotoAdminId" class="form-group">
 
-            <button type="button" class="btn btn-default" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')">Add</button>
-        </div>
+                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+            </div>
+        </form>
         <hr />
 
         <p style="font-style:italic;max-width:400px;display:none" id="noAdminText_@Model.TeamPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
@@ -152,7 +162,7 @@
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'>Remove</button>
+    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'><span class="glyphicon glyphicon-minus"></span></button>
     {{if PhotoURL}}
         <img class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}'/>
     {{else}}
@@ -182,7 +192,9 @@
 
         userRolesData.makeAccordion();
 
-        $("input#playerSelect, input#ownerPlayerSelect").autocomplete({
+        $(".selectpicker").selectpicker();
+
+        $("input#playerSelectInput, input#ownerPlayerSelect").autocomplete({
 
             source: function (request, response) {
                 var searchTerm = this.term;

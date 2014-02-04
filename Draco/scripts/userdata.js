@@ -202,6 +202,7 @@ var UserClass = function (accountId) {
 
     self.beginEditContact = function () {
         self.selectedView('editUserDetailsTemplate');
+        $(".selectpicker").selectpicker();
     }
 
     self.cancelEditContact = function () {

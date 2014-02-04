@@ -325,12 +325,7 @@ namespace DataAccess
                 db.Contacts.DeleteOnSubmit(item);
                 db.SubmitChanges();
 
-                if (System.IO.File.Exists(contact.PhotoFile))
-                    System.IO.File.Delete(contact.PhotoFile);
-
-                if (System.IO.File.Exists(contact.LargePhotoFile))
-                    System.IO.File.Delete(contact.LargePhotoFile);
-
+                System.Diagnostics.Debug.Assert(false, "Clean up storage of photos");
                 return true;
             }
 
