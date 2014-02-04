@@ -31,31 +31,36 @@
     <p class="help-block">To set a new season, select any existing season below or create a new season.</p>
 </div> <!-- jumbotron -->
 
-
-<div class="row">
-    <div style="margin-top:20px;margin-bottom:20px">
-        Season Name: <input id="newSeasonName" type="text" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
-        <button type="button" class="btn btn-primary" onclick="javascript: seasonSetupData.addSeason()">Add Season</button>
+<form class="form-inline" role="form" style="margin-top:20px">
+    <small>add season</small><br />
+    <div class="form-group">
+        <label for="newSeasonName" class="sr-only">Season Name</label>
+        <input id="newSeasonName" style="width:300px" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
+        <button type="button" class="btn btn-primary" onclick="javascript: seasonSetupData.addSeason()"><span class="glyphicon glyphicon-plus"></span></button>
     </div>
+</form>
+
+
+<div id="accordion" style="margin-top:20px">
 </div>
 
-<div class="row">
-    <div id="accordion">
-    </div>
-</div>
-    @section scripts
+@section scripts
 {
         @Scripts.Render("~/bundles/jsrender")
 
         <script id="seasonTemplate" type="text/x-jsrender">
             <h3 class="seasonHeader" id='seasonHeader_{{:Id}}'><a id='seasonHeaderLink_{{:Id}}' href="#">{{>Name}}</a></h3>
             <div id='seasonData_{{:Id}}'>
-                <div style='float:right'>
-                    Season Name: <input id='newSeasonName_{{:Id}}' value='{{>Name}}' />
-                    <button type="button" class="btn btn-default" onclick="javascript:seasonSetupData.editSeason({{:Id}})">Update Name</button>
-                    <button type="button" class="btn btn-danger" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})">Delete Season</button>
-                </div>
-                <div style='clear:both' />
+                <form class="form-inline" role="form" >
+                    <small>update season name</small><br />
+                    <div class="form-group">
+                        <label for="newSeasonName_{{:Id}}" class="sr-only">Season Name</label>
+                        <input id="newSeasonName_{{:Id}}" value='{{>Name}}' style="width:300px" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
+                        <button type="button" class="btn btn-default" onclick="javascript:seasonSetupData.editSeason({{:Id}})">Update Name</button>
+                        <button type="button" class="btn btn-danger" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})"><span class="glyphicon glyphicon-remove"></button>
+                    </div>
+                </form>
+
                 <br />
                 <button id='setCurrentSeasonBtn_{{:Id}}' type="button" class="btn btn-success" onclick="javascript:seasonSetupData.setCurrentSeason({{:Id}})">Set as Current</button>
             </div>
