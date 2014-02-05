@@ -314,7 +314,7 @@ namespace DataAccess
             db.SubmitChanges();
         }
 
-        static public bool RemoveContact(Contact contact)
+        static async public Task<bool> RemoveContact(Contact contact)
         {
             DB db = DBConnection.GetContext();
             var item = (from c in db.Contacts
@@ -326,8 +326,8 @@ namespace DataAccess
                 db.Contacts.DeleteOnSubmit(item);
                 db.SubmitChanges();
 
-                AzureStorageUtils.RemoveCloudFile(contact.PhotoURL);
-                AzureStorageUtils.RemoveCloudFile(contact.LargePhotoURL);
+                await AzureStorageUtils.RemoveCloudFile(contact.PhotoURL);
+                await AzureStorageUtils.RemoveCloudFile(contact.LargePhotoURL);
                 return true;
             }
 
@@ -370,7 +370,7 @@ namespace DataAccess
                     await userStore.DeleteAsync(user);
                 }
             }
-            return RemoveContact(c);
+            return await RemoveContact(c);
         }
 
         public static bool ResetPassword(ModelObjects.Contact contact)
