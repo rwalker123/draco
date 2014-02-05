@@ -51,7 +51,7 @@
 
 @if (!Model.HasSeason)
 {
-	<h2>You must select an active @Html.ActionLink("Season", "Index", "Season", new { area = "", accountId = Model.AccountId }, null) before creating any Leagues.</h2> 
+	<h3 class="alert alert-info">You must select an active <a class="btn btn-primary" href='@Url.Action("Index", "Season", new { area = "", accountId = Model.AccountId }, null)'>season</a> before creating any Leagues.</h3> 
     return;
 }
 
@@ -148,9 +148,9 @@
     
     <img src='/images/busy.gif' id='teamLogoBusy_{{:Id}}'
          style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
-    <img id='teamLogo_{{:Id}}' class='fileupload'
+    <img id='teamLogo_{{:Id}}' class='fileupload img-rounded'
          style="position: relative;vertical-align:middle;width:80px;height:60px" alt="upload team logo"
-         data-url='/api/FileUploaderAPI/@Model.AccountId/TeamLogo/{{:TeamId}}' src='/uploads/teams/{{:TeamId}}/logo/teamlogo.png'/>
+         data-url='/api/FileUploaderAPI/@Model.AccountId/TeamLogo/{{:TeamId}}' src='{{:TeamLogoURL}}'/>
     <!--
     <img src='/images/busy.gif' id='teamPhotoBusy_{{:Id}}'
          style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
@@ -193,9 +193,9 @@
         <ul class="divisionTeams" id="divisionTeams_{{:Id}}">
             {{for Teams tmpl="#teamTemplate" /}}
             {{if Teams.length <= 0}}
-            <li class="placeholder" id='placeholder_{{:Id}}'>{Click add team to add teams to this division.}</li>
+            <li class="placeholder alert alert-info" id='placeholder_{{:Id}}'>Click add team to add teams to this division.</li>
             {{else}}
-            <li class="placeholder" id='placeholder_{{:Id}}' style='display:none'>{Click add team to add teams to this division.}</li>
+            <li class="placeholder alert alert-info" id='placeholder_{{:Id}}' style='display:none'>Click add team to add teams to this division.</li>
             {{/if}}
         </ul>
         <hr />

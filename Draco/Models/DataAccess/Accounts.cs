@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -308,11 +309,11 @@ namespace DataAccess
             return account.Id;
         }
 
-        static public bool RemoveAccount(Account account)
+        static public async Task<bool> RemoveAccount(Account account)
         {
             int rowCount = 0;
 
-            Seasons.RemoveAccountSeasons(account.Id);
+            await Seasons.RemoveAccountSeasons(account.Id);
 
             string accountName = Accounts.GetAccountName(account.Id);
 

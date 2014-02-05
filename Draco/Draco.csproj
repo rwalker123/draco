@@ -428,6 +428,7 @@
     <Compile Include="Models\ModelObjects\VoteQuestion.cs" />
     <Compile Include="Models\ModelObjects\VoteResults.cs" />
     <Compile Include="Models\RandomPassword.cs" />
+    <Compile Include="Models\Utils\AzureStorageUtils.cs" />
     <Compile Include="Models\Utils\Globals.cs" />
     <Compile Include="Models\Utils\PhoneUtils.cs" />
     <Compile Include="Models\Utils\YearListData.cs" />

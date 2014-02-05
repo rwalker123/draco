@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -116,9 +117,10 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage Delete(long accountId, long id)
+        public async Task<HttpResponseMessage> Delete(long accountId, long id)
         {
-            if (DataAccess.Seasons.RemoveSeason(id))
+            bool removeSuccess = await DataAccess.Seasons.RemoveSeason(id);
+            if (removeSuccess)
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {

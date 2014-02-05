@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
@@ -176,9 +177,10 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage LeagueSetup(long accountId, long id)
+        public async Task<HttpResponseMessage> LeagueSetup(long accountId, long id)
         {
-            if (DataAccess.Leagues.RemoveLeague(id))
+            bool removeSuccess = await DataAccess.Leagues.RemoveLeague(id);
+            if (removeSuccess)
             {
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {

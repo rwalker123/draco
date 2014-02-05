@@ -41,7 +41,8 @@
                             <li>
                                 @if (!String.IsNullOrEmpty(team.TeamLogoURL))
                                 {
-                                    @Html.ActionImage(Url.Content(team.TeamLogoURL), "Team Logo", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)
+                                    <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'><img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" /></a>
+                                    @*@Html.ActionImage(Url.Content(team.TeamLogoURL), "Team Logo", "Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, new { @class = "img-rounded"} )*@
                                 }
                                 <span class="lead">@team.Name</span>
                                 <div class="links">
@@ -57,3 +58,4 @@
         </div>
     }
 </div>
+

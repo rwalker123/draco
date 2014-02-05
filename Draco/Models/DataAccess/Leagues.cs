@@ -7,6 +7,7 @@ using System.Web.SessionState;
 using ModelObjects;
 using SportsManager;
 using System.Transactions;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -194,20 +195,22 @@ namespace DataAccess
             return newLeague.Id;
         }
 
-        static public void RemoveLeagueSeason(long seasonId)
+        static public async Task<bool> RemoveLeagueSeason(long seasonId)
         {
-            IQueryable<League> leagues = GetLeaguesFromSeason(seasonId, false);
+            var leagues = GetLeaguesFromSeason(seasonId, false);
 
             foreach (League l in leagues)
             {
-                RemoveLeague(l.Id);
+                await RemoveLeague(l.Id);
             }
+
+            return true;
         }
 
-        static public bool RemoveLeague(long leagueSeasonId)
+        static public async Task<bool> RemoveLeague(long leagueSeasonId)
         {
             Divisions.RemoveLeagueDivisions(leagueSeasonId);
-            Teams.RemoveLeagueTeams(leagueSeasonId);
+            await Teams.RemoveLeagueTeams(leagueSeasonId);
 
             DB db = DBConnection.GetContext();
 

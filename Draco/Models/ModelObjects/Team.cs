@@ -71,7 +71,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return (Globals.UploadDirRoot + @"Teams\" + TeamId + @"\Logo\");
+				return (Globals.UploadDirRoot + "Teams/" + TeamId + @"/Logo/");
 			}
 		}
 
@@ -79,10 +79,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (TeamPhotoFile != null)
-					return TeamDir + m_teamPhotoName;
-				else
-					return null;
+			    return TeamDir + m_teamPhotoName;
 			}
 		}
 
@@ -90,33 +87,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (TeamPhotoFile != null)
-				{
-					return TeamDir + m_teamPhotoName + "?id='" + Guid.NewGuid().ToString() + "'";
-				}
-				else
-					return null;
-			}
-		}
-
-		public string TeamPhotoURLName
-		{
-			get
-			{
-				return TeamDir + m_teamPhotoName;
-			}
-		}
-
-		public string TeamPhotoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(TeamDir + m_teamPhotoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
+				return TeamDir + m_teamPhotoName + "?id='" + Guid.NewGuid().ToString() + "'";
 			}
 		}
 
@@ -124,42 +95,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (SubmittedPhotoFile != null)
-					return TeamDir + m_submittedPhotoName;
-				else
-					return null;
-			}
-		}
-
-		public string SubmittedPhotoURLWithTimestamp
-		{
-			get
-			{
-				if (SubmittedPhotoFile != null)
-					return TeamDir + m_submittedPhotoName + "?id='" + Guid.NewGuid().ToString() + "'";
-				else
-					return null;
-			}
-		}
-
-		public string SubmittedPhotoURLName
-		{
-			get
-			{
 				return TeamDir + m_submittedPhotoName;
-			}
-		}
-
-		public string SubmittedPhotoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(TeamDir + m_submittedPhotoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 
@@ -167,53 +103,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (TeamLogoFile != null)
-					return TeamDir + m_teamLogoName;
-				else
-					return null;
-			}
-		}
-
-		public string TeamLogoURLWithTimestamp
-		{
-			get
-			{
-				if (TeamLogoFile != null)
-					return TeamDir + m_teamLogoName + "?id='" + Guid.NewGuid().ToString() + "'";
-				else
-					return null;
-			}
-		}
-
-		public string TeamLogoURLName
-		{
-			get
-			{
 				return TeamDir + m_teamLogoName;
-			}
-		}
-
-		public string TeamLogoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(TeamDir + m_teamLogoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
-			}
-		}
-
-		public string SubmittedLogoURL
-		{
-			get
-			{
-				if (SubmittedLogoFile != null)
-					return TeamDir + m_submittedLogoName;
-				else
-					return null;
 			}
 		}
 
@@ -221,31 +111,15 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (SubmittedLogoFile != null)
-					return TeamDir + m_submittedLogoName + "?id='" + Guid.NewGuid().ToString() + "'";
-				else
-					return null;
+				return TeamDir + m_submittedLogoName + "?id='" + Guid.NewGuid().ToString() + "'";
 			}
 		}
 
-		public string SubmittedLogoURLName
+		public string SubmittedLogoURL
 		{
 			get
 			{
 				return TeamDir + m_submittedLogoName;
-			}
-		}
-
-		public string SubmittedLogoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(TeamDir + m_submittedLogoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 

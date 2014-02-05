@@ -478,7 +478,7 @@ var UsersClass = function (accountId, pageSize) {
                 Phone1: userData.details.phone1.uncommitValue(),
                 Phone2: userData.details.phone2.uncommitValue(),
                 Phone3: userData.details.phone3.uncommitValue(),
-                IsFemale: userData.details.gender.uncommitValue()
+                IsFemale: userData.details.gender.uncommitValue() ? true : false
             },
             success: function (data) {
                 //userData.commitChanges();

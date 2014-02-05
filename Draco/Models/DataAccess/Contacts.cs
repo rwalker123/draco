@@ -9,6 +9,7 @@ using Microsoft.AspNet.Identity;
 using SportsManager.Models;
 using Microsoft.AspNet.Identity.EntityFramework;
 using System.Threading.Tasks;
+using SportsManager.Models.Utils;
 
 namespace DataAccess
 {
@@ -325,7 +326,8 @@ namespace DataAccess
                 db.Contacts.DeleteOnSubmit(item);
                 db.SubmitChanges();
 
-                System.Diagnostics.Debug.Assert(false, "Clean up storage of photos");
+                AzureStorageUtils.RemoveCloudFile(contact.PhotoURL);
+                AzureStorageUtils.RemoveCloudFile(contact.LargePhotoURL);
                 return true;
             }
 

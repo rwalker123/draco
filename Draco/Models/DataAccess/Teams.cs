@@ -6,6 +6,8 @@ using System.Linq;
 using System.Web.SessionState;
 using ModelObjects;
 using SportsManager;
+using SportsManager.Models.Utils;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -266,17 +268,19 @@ namespace DataAccess
 			return t.Id;
 		}
 
-		static public void RemoveLeagueTeams(long leagueId)
+		static public async Task<bool> RemoveLeagueTeams(long leagueId)
 		{
-			IEnumerable<Team> teams = Teams.GetTeams(leagueId);
+			var teams = Teams.GetTeams(leagueId);
 
 			foreach (Team t in teams)
 			{
-				Teams.RemoveTeam(t);
+				await Teams.RemoveTeam(t);
 			}
+
+            return true;
 		}
 
-		static public bool RemoveTeam(Team t)
+		static public async Task<bool> RemoveTeam(Team t)
 		{
 			TeamRoster.RemoveTeamPlayers(t.Id);
 			IQueryable<TeamManager> managers = Teams.GetTeamManagers(t.Id);
@@ -336,14 +340,8 @@ namespace DataAccess
 				db.SubmitChanges();
 
 				// remove uploads directory for account
-				System.Web.HttpContext context = System.Web.HttpContext.Current;
-				if (context != null)
-				{
-					string dirToRemove = context.Server.MapPath(String.Format("{0}Teams\\{1}\\", Globals.UploadDirRoot, teamId));
-					System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(dirToRemove);
-					if (di.Exists)
-						di.Delete(true);
-				}
+                string storageDir = Globals.UploadDirRoot + "Teams/" + teamId + "/";
+                await AzureStorageUtils.RemoveCloudDirectory(storageDir);
 			}
 
 			return true;

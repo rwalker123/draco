@@ -3,6 +3,7 @@ using System.Web.Mvc;
 using ModelObjects;
 using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
+using System.Threading.Tasks;
 
 namespace SportsManager.Areas.Golf.Controllers
 {
@@ -106,10 +107,10 @@ namespace SportsManager.Areas.Golf.Controllers
 		}
 
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Delete(long accountId, long seasonId, long id)
+		public async Task<ActionResult> Delete(long accountId, long seasonId, long id)
 		{
 			League l = DataAccess.Leagues.GetLeague(id);
-			bool success = DataAccess.Leagues.RemoveLeague(l.Id);
+			bool success = await DataAccess.Leagues.RemoveLeague(l.Id);
 
 			if (Request.IsAjaxRequest())
 			{

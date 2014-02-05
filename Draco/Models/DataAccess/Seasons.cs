@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using ModelObjects;
 using SportsManager;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -129,15 +130,16 @@ namespace DataAccess
             return newSeason.id;
         }
 
-        static public void RemoveAccountSeasons(long accountId)
+        static public async Task<bool> RemoveAccountSeasons(long accountId)
         {
             var seasons = Seasons.GetSeasons(accountId);
             foreach (Season s in seasons)
             {
-                Seasons.RemoveSeason(s.Id);
+                await Seasons.RemoveSeason(s.Id);
             }
 
             Seasons.RemoveCurrentSeason(accountId);
+            return true;
         }
 
         static public void RemoveCurrentSeason(long accountId)
@@ -153,7 +155,7 @@ namespace DataAccess
             }
         }
 
-        static public bool RemoveSeason(long id)
+        static public async Task<bool> RemoveSeason(long id)
         {
             DB db = DBConnection.GetContext();
 
@@ -165,7 +167,7 @@ namespace DataAccess
 
             long accountId = dbSeason.AccountId;
 
-            Leagues.RemoveLeagueSeason(dbSeason.id);
+            await Leagues.RemoveLeagueSeason(dbSeason.id);
 
             db.Seasons.DeleteOnSubmit(dbSeason);
             db.SubmitChanges();
