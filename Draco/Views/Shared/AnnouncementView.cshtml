@@ -9,7 +9,7 @@
         <h3 class="panel-title" style="float: left;">League Announcements</h3>
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float:right" onclick="javascript:announcementData.startNewsAdd()">add</button>
+            <button type="button" class="btn btn-default" style="float:right" onclick="javascript:announcementData.startNewsAdd()"><span class="glyphicon glyphicon-plus"></span></button>
         }
         <div style="clear:both"></div>
     </div>
@@ -19,15 +19,15 @@
         <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
         <div id="editNews" style="margin-top:20px;display: none;">
             <h4 id="newsSaveLabel" style="margin-bottom: 10px;">
-                <button type="button" class="btn btn-primary" onclick="javascript:announcementData.saveNews()">save</button>
-                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.cancelNewsEdit()">cancel</button>
+                <button type="button" class="btn btn-primary" onclick="javascript:announcementData.saveNews()"><span class="glyphicon glyphicon-ok"></span></button>
+                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.cancelNewsEdit()"><span class="glyphicon glyphicon-remove"></span></button>
             </h4>
             <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
             <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />display on home page</label><br />
             <textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
         </div>
 
-            <p id="noHeadlinesMessage" style="display: none">Click the <button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsAdd()">add</button> button to add news items.</p>
+            <p id="noHeadlinesMessage" class="help-block" style="display: none">Click the <button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsAdd()"><span class="glyphicon glyphicon-plus"></span></button> button to add league announcements.</p>
 
             <div id="NewsItems">
 
@@ -37,8 +37,8 @@
                         <div id='div_NewsItemChrome_@aw.id' class='newsSpecial'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button class="btn btn-primary" onclick="javascript:announcementData.startNewsEdit(@aw.id)">edit</button> 
-                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)">delete</button></div>
+                                <div class="grad" style="float:right"><button class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></button></div>
                             }
                             <div id="div_NewsItem_@aw.id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                                 <h1 id='specialNewsTitle_@aw.id'>@Html.Raw(aw.Title)</h1>
@@ -61,8 +61,8 @@
                         <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button type="button" class="btn btn-primary" onclick="javascript:announcementData.startNewsEdit(@aw.id)">edit</button> 
-                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)">delete</button></div>
+                                <div class="grad" style="float:right"><button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></button></div>
                             }
                             <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                             </div>
@@ -87,8 +87,8 @@
                             @if (Model.IsAdmin)
                             {
                                 <div style="float:right">
-                                    <a class="btn btn-default" href="javascript:announcementData.startNewsEdit(@aw.id)">edit</a> 
-                                    <a class="btn btn-danger" href="javascript:announcementData.deleteNews(@aw.id)">delete</a>
+                                    <a class="btn btn-default" href="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></a> 
+                                    <a class="btn btn-danger" href="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></a>
                                 </div>
                             }
                             <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>

@@ -75,10 +75,10 @@ $.extend(LeagueSetupClass.prototype, {
 			    // if no more leagues, import from previous season becomes a
 			    // move viable option.
 			    if ($(".leagueHeader").length > 0) {
-			        $('#copyFromSeason').accordion("option", "activate", false);
+			        $('#copyFromSeason').accordion({ active: false });
 			    }
 			    else {
-			        $('#copyFromSeason').accordion("option", "activate", 0);
+			        $('#copyFromSeason').accordion({ active: 0 });
 			    }
 			});
     },
@@ -665,7 +665,7 @@ $.extend(LeagueSetupClass.prototype, {
                 jsonObj.push({ Id: leagueId, Name: name });
                 target.createLeagueFromTemplate(target, jsonObj);
 
-			    $('#copyFromSeason').accordion("option", "activate", false);            
+                $('#copyFromSeason').accordion({ active: false });
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -700,14 +700,22 @@ $.extend(LeagueSetupClass.prototype, {
         
         var target = this;
 
+        $("#deleteModal").modal("show");
+
+        $("#confirmDeleteBtn").one("click", function () {
+            target.makeLeagueDeleteCall(target, leagueId)
+        });
+    },
+
+    makeLeagueDeleteCall: function(target, leagueId) {
         $.ajax({
             type: "DELETE",
             url: '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
-            success: function (leagueId) {
+            success: function (deletedLeagueId) {
                 window.location.hash = 'update';
 
-                $('#leagueHeader_' + leagueId).remove();
-                $('#leagueData_' + leagueId).remove();
+                $('#leagueHeader_' + deletedLeagueId).remove();
+                $('#leagueData_' + deletedLeagueId).remove();
 
                 if ($("#accordion").hasClass("ui-accordion"))
                     $("#accordion").accordion("destroy");
@@ -715,9 +723,9 @@ $.extend(LeagueSetupClass.prototype, {
                 target.makeAccordion();
 
                 // if no more leagues, import from previous season becomes a
-                // move viable option.
+                // more viable option.
                 if ($(".leagueHeader").length == 0) {
-                    $('#copyFromSeason').accordion("activate", 0);
+                    $('#copyFromSeason').accordion({ active: 0 });
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {

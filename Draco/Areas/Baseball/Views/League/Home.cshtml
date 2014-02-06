@@ -105,6 +105,7 @@
             welcomeData.ShowFirstMenu();
             announcementData.AdjustNewsMenuHeaders();
 
+            $(".selectpicker").selectpicker();
         });
     </script>
 
@@ -312,7 +313,7 @@
     <div id="accountName">
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float:right" data-bind="click: editAccountName, visible: viewMode">edit</button>
+            <button type="button" class="btn btn-default" style="float:right" data-bind="click: editAccountName, visible: viewMode"><span class="glyphicon glyphicon-edit"></span></button>
         }
 
         <div data-bind="visible: viewMode">
@@ -334,17 +335,34 @@
         </div>
         @if (Model.IsAdmin)
         {
-            <div style="display:none" data-bind="visible: !viewMode()">
-                <div style="margin:5px"><div style="display: inline-block; width:120px">Account name</div><input type="text" style="width:200px" data-bind="value: name" /></div>
-                <div style="margin:5px"><div style="display: inline-block; width:120px">Year established</div><select class="selectpicker" data-bind="value: firstYear, options: availableYears"></select></div>
-
-                <div style="margin:5px"><div style="display: inline-block; width:120px">Twitter account</div><input style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" /></div>
-
-                <div style="margin: 15px; margin-left: 30px">
-                    <button type="button" class="btn btn-primary" data-bind="click: saveAccountName">save</button>
-                    <button type="button" class="btn btn-danger" data-bind="click: cancelEdit">cancel</button>
+            <form class="form-horizontal" style="display:none" role="form" data-bind="visible: !viewMode()">
+                <div class="form-group">
+                    <label for="_accountName" class="col-sm-2 control-label">Account name</label>
+                    <div class="col-sm-10">
+                        <input id="_accountName" type="text" class="form-control" style="width:200px" data-bind="value: name" />
+                    </div>
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="_yearEst" class="col-sm-2 control-label">Year established</label>
+                    <div class="col-sm-10">
+                        <select id="_yearEst" class="selectpicker" data-bind="value: firstYear, options: availableYears"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="_twitterAcct" class="col-sm-2 control-label">Twitter account</label>
+                    <div class="col-sm-10">
+                        <input class="form-control" style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
+                    </div>
+                    <div class="col-sm-10">
+                        <button type="button" class="btn btn-primary" data-bind="click: saveAccountName"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-danger" data-bind="click: cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+            </form>
         }
 
         @if (ViewData["TwitterAccountName"] != null)
@@ -373,7 +391,7 @@
                         <h3 class="panel-title" style="float: left;">Workouts</h3>
                         @if (Model.IsAdmin)
                         {
-                            <button style="float: right" type="button" class="btn btn-default" onclick="">add</button>
+                            <button style="float: right" type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
                         }
                         <div style="clear:both"></div>
                     </div>
@@ -407,7 +425,7 @@
 
                     @if (Model.IsAdmin)
                     {
-                        <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick="">add</button></h3>
+                        <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button></h3>
                     }
                     <div style="clear:both"></div>
                 </div>
@@ -479,7 +497,7 @@
 
                         @if (Model.IsAdmin)
                         {
-                            <button type="button" class="btn btn-default" style="float: right" onclick="">add</button>
+                            <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
                         }
                         <div style="clear:both"></div>
                     </div>
@@ -499,7 +517,7 @@
 
                         @if (Model.IsAdmin)
                         {
-                            <button class="btn btn-default" style="float: right" onclick="">add</button>
+                            <button class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
                         }
                         <div style="clear:both"></div>
                     </div>

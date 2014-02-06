@@ -445,6 +445,15 @@ var UsersClass = function (accountId, pageSize) {
     self.newUserData.detailsVisible(false);
 
     self.deleteUser = function (user) {
+
+        $("#deleteModal").modal("show");
+
+        $("#confirmDeleteBtn").one("click", function () {
+            self.makeUserDeleteCall(user)
+        });
+    }
+
+    self.makeUserDeleteCall = function (user) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",

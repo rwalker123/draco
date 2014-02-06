@@ -142,7 +142,7 @@ $.extend(WelcomeClass.prototype, {
             var adminLink = $('<div>', {
                 'class': 'grad',
                 'style': 'float:right',
-                'html': '<a class="btn btn-default" href="javascript:welcomeData.startWelcomeEdit(' + dbWelcomeId + ')">edit</a> <a class="btn btn-danger" href="javascript:welcomeData.deleteWelcome(' + dbWelcomeId + ')">delete</a>'
+                'html': '<a class="btn btn-default" href="javascript:welcomeData.startWelcomeEdit(' + dbWelcomeId + ')"><span class="glyphicon glyphicon-edit"></span></a> <a class="btn btn-danger" href="javascript:welcomeData.deleteWelcome(' + dbWelcomeId + ')"><span class="glyphicon glyphicon-remove"></span></a>'
             });
 
             adminLink.appendTo(welcomeMessageChrome);

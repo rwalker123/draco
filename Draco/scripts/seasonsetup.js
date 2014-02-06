@@ -55,15 +55,23 @@ $.extend(SeasonSetupClass.prototype, {
 
     deleteSeason: function (seasonId) {
         var target = this;
+        $("#myModal").modal("show");
+
+        $("#confirmDeleteBtn").one("click", function () {
+            target.makeDeleteCall(target, seasonId);
+        });
+    },
+
+    makeDeleteCall: function (target, seasonId) {
 
         $.ajax({
             type: "DELETE",
             url: '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
-            success: function (seasonId) {
+            success: function (deletedSeasonId) {
                 window.location.hash = 'update';
 
-                $('#seasonHeader_' + seasonId).remove();
-                $('#seasonData_' + seasonId).remove();
+                $('#seasonHeader_' + deletedSeasonId).remove();
+                $('#seasonData_' + deletedSeasonId).remove();
                 target.makeAccordion();
                 target.setCurrentSeasonDisplay();
             },
@@ -71,6 +79,7 @@ $.extend(SeasonSetupClass.prototype, {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
+
     },
 
     editSeason: function (seasonId) {

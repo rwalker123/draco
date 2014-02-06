@@ -12,47 +12,17 @@ using System.Web.Mvc;
 
 namespace SportsManager.Controllers
 {
-    //public class EmailUserValidator<TUser> : IIdentityValidator<TUser> where TUser : global::Microsoft.AspNet.Identity.IUser
-    //{
-    //    private static readonly Regex EmailRegex = new Regex(@"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    //    UserManager<TUser> _manager;
-
-    //    public EmailUserValidator(UserManager<TUser> manager)
-    //    {
-    //        _manager = manager;
-    //    }
-
-    //    public async Task<IdentityResult> ValidateAsync(TUser item)
-    //    {
-    //        var errors = new List<string>();
-    //        if (!EmailRegex.IsMatch(item.UserName))
-    //            errors.Add("Enter a valid email address.");
-
-    //        if (_manager != null)
-    //        {
-    //            var otherAccount = await _manager.FindByNameAsync(item.UserName);
-    //            if (otherAccount != null && otherAccount.Id != item.Id)
-    //                errors.Add("Select a different email address. An account has already been created with this email address.");
-    //        }
-
-    //        return errors.Any()
-    //            ? IdentityResult.Failed(errors.ToArray())
-    //            : IdentityResult.Success;
-    //    }
-    //}
-
     [Authorize]
     public class AccountController : Controller
     {
         public AccountController()
-            : this(new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext())))
+            : this(Globals.GetUserManager())
         {
         }
 
         public AccountController(UserManager<ApplicationUser> userManager)
         {
             UserManager = userManager;
-            //UserManager.UserValidator = new EmailUserValidator<ApplicationUser>(UserManager);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

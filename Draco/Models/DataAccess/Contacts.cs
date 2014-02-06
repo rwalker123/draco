@@ -1,15 +1,15 @@
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
+using ModelObjects;
+using SportsManager;
+using SportsManager.Models;
+using SportsManager.Models.Utils;
 using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Web.Security;
-using ModelObjects;
-using SportsManager;
-using Microsoft.AspNet.Identity;
-using SportsManager.Models;
-using Microsoft.AspNet.Identity.EntityFramework;
 using System.Threading.Tasks;
-using SportsManager.Models.Utils;
+using System.Web.Security;
 
 namespace DataAccess
 {
@@ -82,16 +82,6 @@ namespace DataAccess
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName,
                         c.Phone1, c.Phone2, c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City,
                         c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
-        }
-
-        static public string GetLoggedInUserName()
-        {
-            System.Web.Security.MembershipUser loggedInUser = System.Web.Security.Membership.GetUser();
-
-            if (loggedInUser != null)
-                return loggedInUser.UserName;
-
-            return String.Empty;
         }
 
         static public Contact GetContact(String aspNetUserId)
@@ -251,10 +241,17 @@ namespace DataAccess
             db.Contacts.InsertOnSubmit(dbContact);
             db.SubmitChanges();
 
-            if (!String.IsNullOrEmpty(dbContact.Email))
-                CreateAndEmailAccount(c.CreatorAccountId, dbContact.Email, forAdd: true);
-
             c.Id = dbContact.Id;
+
+            if (!String.IsNullOrEmpty(dbContact.Email))
+            {
+                dbContact.UserId = CreateAndEmailAccount(c.CreatorAccountId, dbContact.Email, forAdd: true);
+                if (!String.IsNullOrEmpty(dbContact.UserId))
+                {
+                    db.SubmitChanges();
+                    c.UserId = dbContact.UserId;
+                }
+            }
 
             return c.Id;
         }
@@ -307,8 +304,7 @@ namespace DataAccess
             string origEmail = dbContact.Email;
             string newEmail = contact.Email;
 
-            if (!updateUserId)
-                contact.UserId = dbContact.UserId;
+            System.Diagnostics.Debug.Assert(false, "send email if email address changed");
 
             contact.Copy(dbContact);
             db.SubmitChanges();
@@ -362,12 +358,12 @@ namespace DataAccess
         {
             if (!String.IsNullOrEmpty(c.UserId))
             {
-                var userStore = new UserStore<ApplicationUser>(new ApplicationDbContext());
-                var user = await userStore.FindByIdAsync(c.UserId);
+                var userManager = Globals.GetUserManager();
+                var user = await userManager.FindByIdAsync(c.UserId);
 
                 if (user != null)
                 {
-                    await userStore.DeleteAsync(user);
+                    //await userManager.DeleteAsync(user);
                 }
             }
             return await RemoveContact(c);
@@ -435,68 +431,73 @@ namespace DataAccess
 
         static private void NotifyUserPasswordChange(ModelObjects.Contact contact, string newPassword)
         {
-            MembershipUser currentUser = Membership.GetUser();
-            if (currentUser == null)
+            String currentUser = Globals.GetCurrentUserName();
+            if (String.IsNullOrEmpty(currentUser))
                 return;
 
             string accountName = DataAccess.Accounts.GetAccountName(contact.CreatorAccountId);
             string subject = String.Format(AccountPasswordSubject, accountName);
-            string body = String.Format(AccountPasswordBody, accountName, currentUser.UserName, newPassword);
-            Globals.MailMessage(currentUser.UserName, contact.Email, subject, body);
+            string body = String.Format(AccountPasswordBody, accountName, currentUser, newPassword);
+            Globals.MailMessage(currentUser, contact.Email, subject, body);
         }
 
         static private void NotifyUserOfNewEmail(long accountId, string oldEmail, string newEmail)
         {
-            MembershipUser currentUser = Membership.GetUser();
-            if (currentUser == null)
+            String currentUser = Globals.GetCurrentUserName();
+            if (String.IsNullOrEmpty(currentUser))
                 return;
 
             string accountName = DataAccess.Accounts.GetAccountName(accountId);
             string subject = String.Format(AccountModifiedSubject, accountName);
-            string body = String.Format(AccountModifiedBody, accountName, currentUser.UserName, newEmail);
-            Globals.MailMessage(currentUser.UserName, oldEmail, subject, body);
+            string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail);
+            Globals.MailMessage(currentUser, oldEmail, subject, body);
         }
 
-        static private void CreateAndEmailAccount(long accountId, string email, bool forAdd = false)
+        static private String CreateAndEmailAccount(long accountId, string email, bool forAdd = false)
         {
-            System.Diagnostics.Debug.Assert(true, "TODO");
-            throw new NotImplementedException();
+            String currentUser = Globals.GetCurrentUserName();
+            if (String.IsNullOrEmpty(currentUser))
+                return String.Empty;
 
-            //MembershipUser currentUser = Membership.GetUser();
-            //if (currentUser == null)
-            //    return;
+            var userManager = Globals.GetUserManager();
 
-            //// email is set in contacts db, check to see if a user exists in
-            //// webPages_Membership
-            //MembershipUser newUser = null;
-            //if (!forAdd) // the user data may already exist if this is not a new user.
-            //    newUser = Membership.GetUser(email);
+            // email is set in contacts db, check to see if a user exists in
+            // webPages_Membership
+            ApplicationUser newUser = null;
+            if (!forAdd) // the user data may already exist if this is not a new user.
+                newUser = userManager.FindByName(email);
 
-            //if (newUser == null)
-            //{
-            //    string password = Membership.GeneratePassword(8, 2);
-            //    WebSecurity.CreateAccount(email, password);
-            //    string accountName = DataAccess.Accounts.GetAccountName(accountId);
-            //    string subject = String.Format(AccountCreatedSubject, accountName);
-            //    string body = String.Format(AccountCreatedBody, accountName, currentUser.UserName, email, password);
-            //    Globals.MailMessage(currentUser.UserName, email, subject, body);
+            if (newUser == null)
+            {
+                string password = Membership.GeneratePassword(8, 2);
 
-            //    // new way to create user and sign in.
-            //    var user = new ApplicationUser() { UserName = userName };
-            //    var result = await UserManager.CreateAsync(user, model.Password);
-            //    if (result.Succeeded)
-            //    {
-            //        await SignInAsync(user, isPersistent: false);
-            //        return RedirectToAction("Index", "Home");
-            //    }
+                // new way to create user and sign in.
+                var user = new ApplicationUser() { UserName = email };
+                var result = userManager.Create(user, password);
+                if (result.Succeeded)
+                {
+                    newUser = userManager.FindByName(email);
+                    if (newUser != null)
+                    {
+                        // notify user
+                        string accountName = DataAccess.Accounts.GetAccountName(accountId);
+                        string subject = String.Format(AccountCreatedSubject, accountName);
+                        string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password);
+                        Globals.MailMessage(currentUser, email, subject, body);
 
-            //}
-            //else
-            //{
-            //    NotifyUserOfNewEmail(accountId, email, email);
-            //}
+                        return newUser.Id;
+                    }
+                }
+
+            }
+            else
+            {
+                NotifyUserOfNewEmail(accountId, email, email);
+
+                return newUser.Id;
+            }
+
+            return String.Empty;
         }
-
-
     }
 }

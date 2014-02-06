@@ -40,6 +40,23 @@
     </div>
 </form>
 
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">Confirm Delete Season</h4>
+            </div>
+            <div class="modal-body">
+               You are about to delete a season. All data associated with the season will be permanently deleted. You cannot undo this operation. Are you sure you want to continue? 
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeleteBtn">Continue</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="accordion" style="margin-top:20px">
 </div>
@@ -57,7 +74,7 @@
                         <label for="newSeasonName_{{:Id}}" class="sr-only">Season Name</label>
                         <input id="newSeasonName_{{:Id}}" value='{{>Name}}' style="width:300px" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
                         <button type="button" class="btn btn-default" onclick="javascript:seasonSetupData.editSeason({{:Id}})">Update Name</button>
-                        <button type="button" class="btn btn-danger" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})"><span class="glyphicon glyphicon-remove"></button>
+                        <button type="button" class="btn btn-danger" onclick="javascript:seasonSetupData.deleteSeason({{:Id}})"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </form>
 

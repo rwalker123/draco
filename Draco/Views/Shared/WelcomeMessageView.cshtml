@@ -11,7 +11,7 @@
 
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float: right" onclick="javascript:welcomeData.startWelcomeAdd()">add</button>
+            <button type="button" class="btn btn-default" style="float: right" onclick="javascript:welcomeData.startWelcomeAdd()"><span class="glyphicon glyphicon-plus"></span></button>
         }
 
         <div style="clear:both"></div>
@@ -21,8 +21,8 @@
         <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
         <div id="editMessage" style="display: none; margin-top:20px;">
             <h4 id="welcomeSaveLabel" style="margin-bottom:10px; display: none">
-                <button type="button" class="btn btn-primary" onclick="javascript:welcomeData.saveWelcome()">save</button>
-                <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.cancelWelcomeEdit()">cancel</button>
+                <button type="button" class="btn btn-primary" onclick="javascript:welcomeData.saveWelcome()"><span class="glyphicon glyphicon-ok"></span></button>
+                <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.cancelWelcomeEdit()"><span class="glyphicon glyphicon-remove"></span></button>
             </h4>
             <label style="margin-right:5px">Category</label> <input id="category" name="category" type="text" style="width: 200px" value="Welcome" />
             <label style="margin-right:5px">Message position</label> <input id="position" name="position" type="text" style="width: 25px" value="1" />
@@ -32,7 +32,7 @@
 
         <div id="WelcomeMessages">
 
-            <p id="noWelcomeMessage" style="display: none">Click the <a href="javascript:welcomeData.startWelcomeAdd()">[add]</a> button to add welcome messages.</p>
+            <p id="noWelcomeMessage" class="help-block" style="display: none">Click the <a class="btn btn-default" href="javascript:welcomeData.startWelcomeAdd()"><span class="glyphicon glyphicon-plus"></span></a> button to add welcome messages.</p>
 
             @{
                 bool firstTime = true;
@@ -53,8 +53,8 @@
                         @if (Model.IsAdmin)
                         {
                             <div style="float:right">
-                                <button type="button" class="btn btn-primary" onclick="javascript:welcomeData.startWelcomeEdit(@aw.Id)">edit</button>
-                                <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.deleteWelcome(@aw.Id)">delete</button>
+                                <button type="button" class="btn btn-primary" onclick="javascript:welcomeData.startWelcomeEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.deleteWelcome(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button>
                             </div>
                         }
                         <div id="div_WelcomeMessage_@aw.Id" data-hasdata="@firstTime">

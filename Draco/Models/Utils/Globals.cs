@@ -1,12 +1,17 @@
 using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using System.Net.Mail;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web.UI.WebControls;
 
@@ -218,4 +223,41 @@ static public class Globals
         return System.Web.HttpContext.Current.User.Identity.GetUserName();
     }
 
+    public static UserManager<ApplicationUser> GetUserManager()
+    {
+        var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()));
+        userManager.UserValidator = new EmailUserValidator<ApplicationUser>(userManager);
+
+        return userManager;
+    }
 }
+
+public class EmailUserValidator<TUser> : IIdentityValidator<TUser> where TUser : global::Microsoft.AspNet.Identity.IUser
+{
+    private static readonly Regex EmailRegex = new Regex(@"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+    UserManager<TUser> _manager;
+
+    public EmailUserValidator(UserManager<TUser> manager)
+    {
+        _manager = manager;
+    }
+
+    public async Task<IdentityResult> ValidateAsync(TUser item)
+    {
+        var errors = new List<string>();
+        if (!EmailRegex.IsMatch(item.UserName))
+            errors.Add("Enter a valid email address.");
+
+        if (_manager != null)
+        {
+            var otherAccount = await _manager.FindByNameAsync(item.UserName);
+            if (otherAccount != null && otherAccount.Id != item.Id)
+                errors.Add("Select a different email address. An account has already been created with this email address.");
+        }
+
+        return errors.Any()
+            ? IdentityResult.Failed(errors.ToArray())
+            : IdentityResult.Success;
+    }
+}
+
