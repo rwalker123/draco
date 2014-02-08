@@ -175,7 +175,7 @@ namespace DataAccess
                     var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
                     if (roles != null)
                         rc = (from r in roles
-                              where r.RoleId == roleId && r.RoleData == accountId
+                              where r.RoleId == roleId && r.AccountId == accountId
                               select r).Any();
                 }
             }
