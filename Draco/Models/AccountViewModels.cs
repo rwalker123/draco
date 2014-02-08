@@ -1,5 +1,6 @@
 ﻿using SportsManager.ViewModels;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace SportsManager.Models
@@ -47,14 +48,37 @@ namespace SportsManager.Models
 
     public class RegisterViewModel : AccountViewModel
     {
+        public RegisterViewModel()
+        {
+            YearList = new List<System.Web.Mvc.SelectListItem>();
+        }
+
         public RegisterViewModel(System.Web.Mvc.Controller c, long accountId)
             : base(c, accountId)
         {
+            BirthDate = DateTime.Now;
+            RegisterAccountId = accountId;
+            InitYearList(accountId);
         }
 
-        [Required]
-        [Display(Name = "User name")]
-        public string UserName { get; set; }
+        public void InitYearList(long accountId)
+        {
+            var yearList = new List<System.Web.Mvc.SelectListItem>();
+
+            ModelObjects.Account account = DataAccess.Accounts.GetAccount(accountId);
+            if (account != null)
+            {
+                int currentYear = DateTime.Now.Year;
+                for (int i = account.FirstYear; i <= currentYear; ++i)
+                {
+                    yearList.Add(new System.Web.Mvc.SelectListItem() { Text = i.ToString() });
+                }
+            }
+
+            YearList = yearList;            
+        }
+
+        public IEnumerable<System.Web.Mvc.SelectListItem> YearList { get; private set; }
 
         [Required]
         [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
@@ -70,6 +94,12 @@ namespace SportsManager.Models
         [Required]
         [Display(Name = "Your name")]
         public string PlayerName { get; set; }
+
+        [Required]
+        public long PlayerId { get; set; }
+
+        [Required]
+        public long RegisterAccountId { get; set; }
 
         [Required]
         [Display(Name = "Birth date")]

@@ -89,12 +89,12 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage ResetPassword(long accountId, long id)
+        public async Task<HttpResponseMessage> ResetPassword(long accountId, long id)
         {
             ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
             if (c != null)
             {
-                DataAccess.Contacts.ResetPassword(c);
+                await DataAccess.Contacts.ResetPassword(c);
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
             else

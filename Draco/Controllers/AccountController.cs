@@ -3,6 +3,7 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.Owin.Security;
 using SportsManager.Models;
 using SportsManager.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -93,8 +94,8 @@ namespace SportsManager.Controllers
         {
             if (accountId.HasValue)
                 return View(new RegisterViewModel(this, accountId.Value));
-
-            return View();
+            else
+                return RedirectToAction("Index", "Home");
         }
 
         //
@@ -104,22 +105,57 @@ namespace SportsManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Register(RegisterViewModel model)
         {
+            ModelState["Controller"].Errors.Clear();
+
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser() { UserName = model.UserName };
-                var result = await UserManager.CreateAsync(user, model.Password);
-                if (result.Succeeded)
+                // find the contact and compare values.
+                var contact = DataAccess.Contacts.GetContact(model.PlayerId);
+                if (contact == null)
                 {
-                    await SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
+                    ModelState.AddModelError("PlayerName", "Could not find player. Please try another name or contact your league administrator.");
                 }
                 else
                 {
-                    AddErrors(result);
+                    if (!String.IsNullOrEmpty(contact.UserId))
+                    {
+                        ModelState.AddModelError("PlayerName", "Player is already registered. Click here if you forgot your password.");
+                    }
+                    else if (contact.DateOfBirth != model.BirthDate || contact.FirstYear != model.FirstYear)
+                    {
+                        ModelState.AddModelError("", "Verification information does not match our records. Please try again or contact your league administrator.");
+                    }
+                    else
+                    {
+                        var existingUser = await UserManager.FindByNameAsync(model.Email);
+                        if (existingUser != null)
+                        {
+                            ModelState.AddModelError("Email", "Email is already registered, click here if you forgot your password.");
+                        }
+                        else
+                        {
+                            var user = new ApplicationUser() { UserName = model.Email };
+                            var result = await UserManager.CreateAsync(user, model.Password);
+                            if (result.Succeeded)
+                            {
+                                contact.UserId = user.Id;
+                                DataAccess.Contacts.UpdateUserId(contact);
+                                await SignInAsync(user, isPersistent: false);
+                                return RedirectToAction("Index", "Home");
+                            }
+                            else
+                            {
+                                AddErrors(result);
+                            }
+                        }
+                    }
                 }
             }
 
+            model.AccountId = model.RegisterAccountId;
+
             // If we got this far, something failed, redisplay form
+            model.InitYearList(model.RegisterAccountId);
             return View(model);
         }
 

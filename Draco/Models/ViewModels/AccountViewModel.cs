@@ -10,6 +10,11 @@ namespace SportsManager.ViewModels
     {
         ModelObjects.Account m_account;
 
+        public AccountViewModel()
+        {
+
+        }
+
         public AccountViewModel(Controller c, long accountId)
         {
             AccountId = accountId;
@@ -42,7 +47,7 @@ namespace SportsManager.ViewModels
         public long AccountId
         {
             get;
-            private set;
+            set;
         }
 
         [ScaffoldColumn(false)]

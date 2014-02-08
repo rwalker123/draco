@@ -310,6 +310,19 @@ namespace DataAccess
             db.SubmitChanges();
         }
 
+        static public void UpdateUserId(Contact contact)
+        {
+            DB db = DBConnection.GetContext();
+            var dbContact = (from c in db.Contacts
+                             where c.Id == contact.Id
+                             select c).SingleOrDefault();
+            if (dbContact == null)
+                return;
+
+            dbContact.UserId = contact.UserId;
+            db.SubmitChanges();
+        }
+
         static async public Task<bool> RemoveContact(Contact contact)
         {
             DB db = DBConnection.GetContext();
@@ -369,14 +382,16 @@ namespace DataAccess
             return await RemoveContact(c);
         }
 
-        public static bool ResetPassword(ModelObjects.Contact contact)
+        public static async Task<bool> ResetPassword(ModelObjects.Contact contact)
         {
             if (!String.IsNullOrEmpty(contact.Email))
             {
-                MembershipUser user = Membership.GetUser(contact.Email);
+                var userManager = Globals.GetUserManager();
+                var user = await userManager.FindByIdAsync(contact.UserId);
+
                 if (user != null)
                 {
-                    String newPassword = CreateNewPassword(contact);
+                    String newPassword = await CreateNewPassword(userManager, user);
                     NotifyUserPasswordChange(contact, newPassword);
                     return true;
                 }
@@ -385,14 +400,13 @@ namespace DataAccess
             return false;
         }
 
-        private static String CreateNewPassword(ModelObjects.Contact contact)
+        private static async Task<String> CreateNewPassword(UserManager<ApplicationUser> userManager, ApplicationUser user)
         {
-            System.Diagnostics.Debug.Assert(true, "TODO");
-            throw new NotImplementedException();
-            //string newPassword = Membership.GeneratePassword(8, 2);
-            //var token = WebMatrix.WebData.WebSecurity.GeneratePasswordResetToken(contact.UserName, 2);
-            //WebMatrix.WebData.WebSecurity.ResetPassword(token, newPassword);
-            //return newPassword;
+            String newPassword = Membership.GeneratePassword(8, 2);
+            String hashedPassword = userManager.PasswordHasher.HashPassword(newPassword);
+            var userStore = new UserStore<ApplicationUser>(new ApplicationDbContext());
+            await userStore.SetPasswordHashAsync(user, hashedPassword);
+            return newPassword;
         }
 
         public static string EncryptVerifyCode(long pendingId, long requesterContactId, long pendingContactId)
