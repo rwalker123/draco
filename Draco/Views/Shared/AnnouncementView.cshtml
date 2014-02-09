@@ -6,7 +6,7 @@
 }
 <div class="panel panel-info">
     <div class="panel-heading">
-        <h3 class="panel-title" style="float: left;">League Announcements</h3>
+        <h3 class="panel-title" style="float: left;">Announcements</h3>
         @if (Model.IsAdmin)
         {
             <button type="button" class="btn btn-default" style="float:right" onclick="javascript:announcementData.startNewsAdd()"><span class="glyphicon glyphicon-plus"></span></button>
@@ -23,7 +23,7 @@
                 <button type="button" class="btn btn-danger" onclick="javascript:announcementData.cancelNewsEdit()"><span class="glyphicon glyphicon-remove"></span></button>
             </h4>
             <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
-            <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />display on home page</label><br />
+            <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />always display opened</label><br />
             <textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
         </div>
 
@@ -34,15 +34,15 @@
                 <div id="specialAnnounceSection">
                     @foreach (var aw in Model.SpecialAnnouncements)
                     {
-                        <div id='div_NewsItemChrome_@aw.id' class='newsSpecial'>
+                        <div id='div_NewsItemChrome_@aw.Id' class='newsSpecial'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></button> 
-                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></button></div>
+                                <div class="grad" style="float:right"><button class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button></div>
                             }
-                            <div id="div_NewsItem_@aw.id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
-                                <h1 id='specialNewsTitle_@aw.id'>@Html.Raw(aw.Title)</h1>
-                                <div id="specialNewsItem_@aw.id">
+                            <div id="div_NewsItem_@aw.Id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                                <h1 id='specialNewsTitle_@aw.Id'>@Html.Raw(aw.Title)</h1>
+                                <div id="specialNewsItem_@aw.Id">
                                     @Html.Raw(aw.Text)
                                 </div>
                             </div>
@@ -55,16 +55,16 @@
                 <div id="otherNewsSection">
                     @foreach (var aw in Model.OtherNews)
                     {
-                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";
-                        <h3 class="newsMenuItem, otherNewsMenuItem" id="OtherNewsMenuLink_@aw.id">@aw.Date.ToString("MMM d, yyyy") <a id="OtherNewsTitle_@aw.id" href="@url">@aw.Title</a></h3>
+                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.Id.ToString() + ")";
+                        <h3 class="newsMenuItem, otherNewsMenuItem" id="OtherNewsMenuLink_@aw.Id">@aw.Date.ToString("MMM d, yyyy") <a id="OtherNewsTitle_@aw.Id" href="@url">@aw.Title</a></h3>
 
-                        <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
+                        <div id='div_NewsItemChrome_@aw.Id' style="display:none" class='newsdetails'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></button> 
-                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></button></div>
+                                <div class="grad" style="float:right"><button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button></div>
                             }
-                            <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                            <div id="div_NewsItem_@aw.Id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                             </div>
                         </div>
                     }
@@ -75,23 +75,23 @@
                 <div id="olderNewsMenuSection">
                     @foreach (var aw in Model.OlderNews)
                     {
-                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.id.ToString() + ")";
-                        <a class="newsMenuItem, olderNewsMenuItem" style="padding: 10px" id="OlderNewsTitle_@aw.id" href="@url">@aw.Title</a>
+                        string url = "javascript:announcementData.ShowNewsMenu(" + aw.Id.ToString() + ")";
+                        <a class="newsMenuItem, olderNewsMenuItem" style="padding: 10px" id="OlderNewsTitle_@aw.Id" href="@url">@aw.Title</a>
                     }
                 </div>
 
                 <div id="olderNewsSection">
                     @foreach (var aw in Model.OlderNews)
                     {
-                        <div id='div_NewsItemChrome_@aw.id' style="display:none" class='newsdetails'>
+                        <div id='div_NewsItemChrome_@aw.Id' style="display:none" class='newsdetails'>
                             @if (Model.IsAdmin)
                             {
                                 <div style="float:right">
-                                    <a class="btn btn-default" href="javascript:announcementData.startNewsEdit(@aw.id)"><span class="glyphicon glyphicon-edit"></span></a> 
-                                    <a class="btn btn-danger" href="javascript:announcementData.deleteNews(@aw.id)"><span class="glyphicon glyphicon-remove"></span></a>
+                                    <a class="btn btn-default" href="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></a> 
+                                    <a class="btn btn-danger" href="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></a>
                                 </div>
                             }
-                            <div id="div_NewsItem_@aw.id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
+                            <div id="div_NewsItem_@aw.Id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                             </div>
                         </div>
                     }

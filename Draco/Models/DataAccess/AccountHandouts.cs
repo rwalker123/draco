@@ -3,6 +3,8 @@ using System.Data;
 using System.Collections;
 using System.Data.SqlClient;
 using ModelObjects;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -48,35 +50,22 @@ namespace DataAccess
 			return h;
 		}
 
-		static public AccountHandout[] GetAccountHandouts(long accountId)
+		static public IQueryable<AccountHandout> GetAccountHandouts(long accountId)
 		{
-			ArrayList items = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
+            var x = (from ah in db.AccountHandouts
+                     where ah.AccountId == accountId
+                     orderby ah.Id descending
+                     select new AccountHandout()
+                     {
+                         Id = ah.Id,
+                         ReferenceId = ah.AccountId,
+                         Description = ah.Description,
+                         FileName = ah.FileName
+                     });
 
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetAccountHandouts", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						items.Add(CreateHandout(dr));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return (AccountHandout[])items.ToArray(typeof(AccountHandout));
+            return x;
 		}
 
 		static public bool ModifyAccountHandout(AccountHandout item)

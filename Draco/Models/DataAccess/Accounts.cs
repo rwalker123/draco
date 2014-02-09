@@ -350,34 +350,20 @@ namespace DataAccess
             return (rowCount > 0);
         }
 
-        static public IEnumerable<AccountWelcome> GetAccountWelcomeText(long accountId)
+        static public IQueryable<AccountWelcome> GetAccountWelcomeText(long accountId)
         {
-            List<AccountWelcome> welcomeText = new List<AccountWelcome>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetAccountWelcomeText", myConnection);
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = accountId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            DB db = DBConnection.GetContext();
+            return (from aw in db.AccountWelcomes
+                    where aw.AccountId == accountId && aw.TeamId == 0
+                    select new AccountWelcome()
                     {
-                        welcomeText.Add(new AccountWelcome(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt16(2), dr.GetString(3), dr.GetString(4)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return welcomeText;
+                        Id = aw.Id,
+                        AccountId = accountId,
+                        TeamId = 0,
+                        CaptionText = aw.CaptionMenu,
+                        OrderNo = aw.OrderNo,
+                        WelcomeText = aw.WelcomeText
+                    });
         }
 
         static public AccountWelcome GetWelcomeText(long id)
@@ -398,34 +384,6 @@ namespace DataAccess
                     if (dr.Read())
                     {
                         welcomeText = new AccountWelcome(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt16(2), dr.GetString(3), dr.GetString(4));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return welcomeText;
-        }
-
-        static public List<AccountWelcome> GetWelcomeTexts()
-        {
-            List<AccountWelcome> welcomeText = new List<AccountWelcome>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetAccountWelcomeTexts", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        welcomeText.Add(new AccountWelcome(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt16(2), dr.GetString(3), dr.GetString(4)));
                     }
                 }
             }

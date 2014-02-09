@@ -1,17 +1,19 @@
-﻿var WelcomeClass = function (accountId, isAdmin) {
-    this.init(accountId, isAdmin);
+﻿var WelcomeClass = function (accountId, isAdmin, teamId) {
+    this.init(accountId, isAdmin, teamId);
 };
 
 $.extend(WelcomeClass.prototype, {
     // object variables
     welcomeId: 0,
     accountId: 0,
+    teamId: 0,
     menuLinkSelector: 'a[id^="MenuLink_"]',
 
-    init: function (accountId, isAdmin) {
+    init: function (accountId, isAdmin, teamId) {
         this.welcomeId = 0;
         this.accountId = accountId;
         this.isAdmin = isAdmin;
+        this.teamId = teamId;
     },
 
     cancelWelcomeEdit: function () {
@@ -24,7 +26,7 @@ $.extend(WelcomeClass.prototype, {
     startWelcomeAdd: function () {
         $('#WelcomeMessages').hide();
         $('#welcomeEditLabel').hide();
-        $('noWelcomeMessage').hide();
+        $('#noWelcomeMessage').hide();
 
         $('#welcomeMessageControl').tinymce().setContent('');
         $('#category').val('Welcome');

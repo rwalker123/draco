@@ -4,6 +4,8 @@ using System.Collections;
 using System.Data.SqlClient;
 using ModelObjects;
 using System.Collections.Generic;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -48,35 +50,23 @@ namespace DataAccess
 			return newsItem;
 		}
 
-		static public List<LeagueNewsItem> GetTeamAnnouncements(long teamSeasonId)
+		static public IQueryable<LeagueNewsItem> GetTeamAnnouncements(long teamSeasonId)
 		{
-            List<LeagueNewsItem> news = new List<LeagueNewsItem>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeamAnnouncements", myConnection);
-					myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						news.Add(CreateNewsItem(dr));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return news;
+            return (from tn in db.TeamNews
+                    join ts in db.TeamsSeasons on tn.TeamId equals ts.TeamId
+                    where ts.id == teamSeasonId
+                    orderby tn.Date descending
+                    select new LeagueNewsItem()
+                    {
+                        Id = tn.id,
+                        Title = tn.Title,
+                        Text = tn.Text,
+                        Date = tn.Date,
+                        SpecialAnnounce = tn.SpecialAnnounce,
+                        AccountId = teamSeasonId
+                    });
 		}
 
         static public List<LeagueNewsItem> GetContactTeamNews(long accountId, long contactId)

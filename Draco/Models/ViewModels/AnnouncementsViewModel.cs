@@ -1,4 +1,5 @@
 ﻿using DataAccess;
+using ModelObjects;
 using SportsManager.Model;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,20 +9,28 @@ namespace SportsManager.ViewModels
 {
     public class AnnouncementsViewModel : AccountViewModel
     {
-        List<LeagueNew> m_specialAnnouncments;
-        List<LeagueNew> m_headlineLinks;
-        List<LeagueNew> m_otherLinks;
+        List<LeagueNewsItem> m_specialAnnouncments = new List<LeagueNewsItem>();
+        List<LeagueNewsItem> m_headlineLinks = new List<LeagueNewsItem>();
+        List<LeagueNewsItem> m_otherLinks = new List<LeagueNewsItem>();
 
         const int NumHeadlineLinks = 3;
+
+        public AnnouncementsViewModel(Controller c, long accountId, long teamId)
+            : base(c, accountId)
+        {
+            var allNews = DataAccess.TeamNews.GetTeamAnnouncements(teamId);
+            ProcessNews(allNews);
+        }
 
         public AnnouncementsViewModel(Controller c, long accountId)
             : base(c, accountId)
         {
-            m_specialAnnouncments = new List<LeagueNew>();
-            m_headlineLinks = new List<LeagueNew>();
-            m_otherLinks = new List<LeagueNew>();
-
             var allNews = LeagueNews.GetAllNews(accountId);
+            ProcessNews(allNews);
+        }
+
+        public void ProcessNews(IQueryable<LeagueNewsItem> allNews)
+        {
             foreach (var news in allNews)
             {
                 if (news.SpecialAnnounce)
@@ -46,7 +55,7 @@ namespace SportsManager.ViewModels
             private set;
         }
 
-        public IEnumerable<LeagueNew> OtherNews
+        public IEnumerable<LeagueNewsItem> OtherNews
         {
             get
             {
@@ -54,7 +63,7 @@ namespace SportsManager.ViewModels
             }
         }
 
-        public IEnumerable<LeagueNew> SpecialAnnouncements
+        public IEnumerable<LeagueNewsItem> SpecialAnnouncements
         {
             get
             {
@@ -62,7 +71,7 @@ namespace SportsManager.ViewModels
             }
         }
 
-        public IEnumerable<LeagueNew> OlderNews
+        public IEnumerable<LeagueNewsItem> OlderNews
         {
             get
             {

@@ -446,6 +446,7 @@
     <Compile Include="Models\ViewModels\UserRolesViewModel.cs" />
     <Compile Include="Models\ViewModels\UsersViewModel.cs" />
     <Compile Include="Models\ViewModels\BirthdayViewModel.cs" />
+    <Compile Include="Models\ViewModels\HandoutsViewModel.cs" />
     <Compile Include="Models\ViewModels\WelcomeMessageViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
@@ -547,12 +548,10 @@
     <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueTeam\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
     <Content Include="Areas\Baseball\Views\League\Home.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\Home.Mobile.cshtml" />
     <Content Include="Areas\Baseball\Views\League\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\ScoreboardView.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\ScoreboardView.cshtml" />
     <Content Include="Areas\Baseball\Views\League\SettingsView.cshtml" />
     <Content Include="Areas\Baseball\Views\MemberBusiness\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
@@ -992,6 +991,7 @@
     <Content Include="Views\Shared\Birthdays.cshtml" />
     <Content Include="Views\Shared\_Layout.Mobile.cshtml" />
     <Content Include="Views\Shared\_ViewSwitcher.cshtml" />
+    <Content Include="Views\Shared\HandoutsView.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

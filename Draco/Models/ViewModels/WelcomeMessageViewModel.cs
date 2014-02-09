@@ -8,6 +8,12 @@ namespace SportsManager.ViewModels
 {
     public class WelcomeMessageViewModel : AccountViewModel
     {
+        public WelcomeMessageViewModel(Controller c, long accountId, long teamId)
+            : base(c, accountId)
+        {
+            AccountTexts = DataAccess.Teams.GetWelcomeText(accountId, teamId);
+        }
+
         public WelcomeMessageViewModel(Controller c, long accountId)
             : base(c, accountId)
         {

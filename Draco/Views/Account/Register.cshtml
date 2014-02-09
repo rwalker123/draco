@@ -3,6 +3,20 @@
     ViewBag.Title = "Register";
 }
 
+@section head
+{
+    @Styles.Render("~/Content/themes/base/css")
+
+    <style type="text/css">
+        .ui-autocomplete {
+            max-height: 100px;
+            overflow-y: auto;
+            /* prevent horizontal scrollbar */
+            overflow-x: hidden;
+        }
+    </style>
+}
+
 <h2>@ViewBag.Title.</h2>
 
 @using (Html.BeginForm("Register", "Account", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
@@ -13,36 +27,34 @@
     @Html.ValidationSummary()
     
     <h3>Player Validation</h3>
+        <div class="col-md-2"></div>
+        <small>type last name to begin search</small>
     <div class="form-group">
         @Html.LabelFor(m => m.PlayerName, new { @class = "col-md-2 control-label" })
         <div class="col-md-10">
-            @Html.TextBoxFor(m => m.PlayerName, new { @class = "form-control" })
+            @Html.TextBoxFor(m => m.PlayerName, new { @class = "form-control", @id="playerName" })
+            @Html.TextBoxFor(m => m.PlayerId, new { @style = "display: none", @id = "playerId" })
+            @Html.TextBoxFor(m => m.RegisterAccountId, new { @style = "display: none" })
         </div>
     </div>
     <div class="form-group">
         @Html.LabelFor(m => m.BirthDate, new { @class = "col-md-2 control-label" })
         <div class="col-md-10">
-            @Html.TextBoxFor(m => m.BirthDate, new { @class = "form-control" })
+            @Html.TextBoxFor(m => m.BirthDate, new { @class = "form-control", @id="birthDate" })
         </div>
     </div>
     <div class="form-group">
         @Html.LabelFor(m => m.FirstYear, new { @class = "col-md-2 control-label" })
         <div class="col-md-10">
-            @Html.TextBoxFor(m => m.FirstYear, new { @class = "form-control" })
-        </div>
-    </div>
-    <div class="form-group">
-        @Html.LabelFor(m => m.Email, new { @class = "col-md-2 control-label" })
-        <div class="col-md-10">
-            @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })
+            @Html.DropDownListFor(m => m.FirstYear, Model.YearList, new { @class = "selectpicker" })
         </div>
     </div>
 
     <h3>Account Information</h3>
     <div class="form-group">
-        @Html.LabelFor(m => m.UserName, new { @class = "col-md-2 control-label" })
+        @Html.LabelFor(m => m.Email, new { @class = "col-md-2 control-label" })
         <div class="col-md-10">
-            @Html.TextBoxFor(m => m.UserName, new { @class = "form-control" })
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", @type="email" })
         </div>
     </div>
     <div class="form-group">
@@ -66,4 +78,74 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $("input#playerName").autocomplete({
+
+            source: function (request, response) {
+                var searchTerm = this.term;
+
+                $.ajax({
+                    url: '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                    dataType: "json",
+                    data: {
+                        lastName: searchTerm,
+                        firstName: '',
+                        page: 1
+                    },
+                    success: function (data) {
+
+                        var results = $.map(data, function (item) {
+                            var fullName = item.LastName + ", " + item.FirstName;
+                            if (item.MiddleName)
+                                fullName = fullName + ' ' + item.MiddleName;
+
+                            return {
+                                label:  fullName,
+                                Id: item.Id,
+                                PhotoURL: item.PhotoURL,
+                                FirstName: item.FirstName,
+                                LastName: item.LastName
+                            }
+                        });
+                        response(results);
+                    },
+                });
+            },
+            minLength: 1,
+            select: function (e, ui) {
+                var playerId = ui.item.Id;
+                document.getElementById("playerId").value = playerId;
+            }
+        });
+
+        $(".selectpicker").selectpicker();
+
+        $('#birthDate').datepicker({
+            dateFormat: 'MM dd, yy',
+            changeMonth: true,
+            changeYear: true,
+            showTime: false,
+            yearRange: "-100:+0",
+            onSelect: function (dateText, inst) {
+                console.log(inst);
+            }
+        });
+        $('#birthDate').datepicker("setDate", new Date);
+
+        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
+            var li = $("<li>");
+            li.data("item.autocomplete", item);
+            var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+            li.appendTo(ul);
+
+            return li;
+        };
+    });
+
+</script>  
 }

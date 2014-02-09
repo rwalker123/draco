@@ -1,0 +1,24 @@
+﻿@model SportsManager.ViewModels.HandoutsViewModel
+
+@if (!Model.HasHandouts && !Model.IsAdmin)
+{
+    return;
+}
+
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Handouts</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button></h3>
+        }
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        Handout content.
+    </div>
+</div>
+
+

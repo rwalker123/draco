@@ -30,23 +30,39 @@ namespace DataAccess
                     select ln).Take(3);
 		}
 
-		static public IQueryable<SportsManager.Model.LeagueNew> GetNews(long accountId)
+		static public IQueryable<LeagueNewsItem> GetNews(long accountId)
 		{
             DB db = DBConnection.GetContext();
             return (from ln in db.LeagueNews
                     where ln.AccountId == accountId && !ln.SpecialAnnounce
                     orderby ln.Date descending
-                    select ln);
+                    select new LeagueNewsItem()
+                    {
+                        Id = ln.id,
+                        AccountId = accountId,
+                        Date = ln.Date,
+                        SpecialAnnounce = ln.SpecialAnnounce,
+                        Text = ln.Text,
+                        Title = ln.Title
+                    });
 		}
 
-		static public IQueryable<SportsManager.Model.LeagueNew> GetAllNews(long accountId)
+		static public IQueryable<LeagueNewsItem> GetAllNews(long accountId)
 		{
             DB db = DBConnection.GetContext();
             return (from ln in db.LeagueNews
                     where ln.AccountId == accountId
                     orderby ln.Date descending
-                    select ln);
-		}
+                    select new LeagueNewsItem()
+                    {
+                        Id = ln.id,
+                        AccountId = accountId,
+                        Date = ln.Date,
+                        SpecialAnnounce = ln.SpecialAnnounce,
+                        Text = ln.Text,
+                        Title = ln.Title
+                    });
+        }
 
 		static public IQueryable<SportsManager.Model.LeagueNew> GetSpecialAnnouncements(long accountId)
 		{

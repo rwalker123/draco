@@ -19,10 +19,19 @@ namespace SportsManager.Baseball.ViewModels
             ShowWorkouts = true;
             ShowHallOfFame = true;
             ShowPlayerInterview = true;
+            ShowLeagueLeaders = true;
+            ShowSponsors = true;
+            HasTeams = true;
 
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = false;
+        }
+
+        public bool HasTeams
+        {
+            get;
+            private set;
         }
 
         public bool ShowWorkouts
@@ -37,6 +46,19 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowPlayerInterview
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowLeagueLeaders
+        {
+            get;
+            private set;
+
+        }
+
+        public bool ShowSponsors
         {
             get;
             private set;

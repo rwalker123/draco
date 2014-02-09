@@ -24,6 +24,10 @@ namespace ModelObjects
             dbAw.AccountId = AccountId;
             dbAw.OrderNo = OrderNo;
             dbAw.CaptionMenu = CaptionText;
+            if (TeamId == 0)
+                dbAw.TeamId = null;
+            else
+                dbAw.TeamId = TeamId;
             dbAw.WelcomeText = String.IsNullOrEmpty(WelcomeText) ? String.Empty : WelcomeText;
         }
 
@@ -41,5 +45,6 @@ namespace ModelObjects
         public short OrderNo { get; set; }
         public string CaptionText { get; set; }
         public string WelcomeText { get; set; }
+        public long TeamId { get; set; }
     }
 }

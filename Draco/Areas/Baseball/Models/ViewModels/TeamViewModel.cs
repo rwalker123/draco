@@ -1,34 +1,27 @@
-﻿using System;
+﻿using ModelObjects;
+using SportsManager.ViewModels;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-using ModelObjects;
+using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class TeamViewModel
+    public class TeamViewModel : AccountViewModel
     {
-        public TeamViewModel(long accountId, long id)
+        public TeamViewModel(Controller c, long accountId, long id)
+            : base(c, accountId)
         {
-            AccountId = accountId;
-            Id = id;
+            Team = DataAccess.Teams.GetTeam(id);
 
-            Handouts = DataAccess.TeamHandouts.GetTeamHandouts(Id, 0);
-            Announcements = DataAccess.TeamNews.GetTeamAnnouncements(Id);
-            Sponsors = DataAccess.Sponsors.GetTeamSponsors(id, true);
+            Handouts = DataAccess.TeamHandouts.GetTeamHandouts(Team.Id, 0);
+            Sponsors = DataAccess.Sponsors.GetTeamSponsors(Team.Id, true);
+            SeasonName = DataAccess.Seasons.GetSeasonName(CurrentSeasonId);
+            ShowPhotoGallery = true;
         }
 
-        public long AccountId { get; private set; }
-        public string AccountName
-        {
-            get
-            {
-                return DataAccess.Accounts.GetAccountName(AccountId);
-            }
-        }
+        public Team Team { get; private set; }
 
-        public long Id { get; private set; }
-
+        public bool ShowPhotoGallery { get; private set; }
         public List<TeamHandout> Handouts { get; private set; }
         public List<LeagueNewsItem> Announcements { get; private set; }
         public List<Sponsor> Sponsors { get; private set; }
@@ -36,11 +29,6 @@ namespace SportsManager.Baseball.ViewModels
         public bool IsPhotoAdmin 
         {
             get { return IsAdmin || true; }
-        }
-
-        public bool IsAdmin 
-        {
-            get { return true; }
         }
 
         public bool IsTeamMember
@@ -53,16 +41,7 @@ namespace SportsManager.Baseball.ViewModels
             get { return AccountId != 0; }
         }
 
-        public String GetTitle()
-        {
-            String accountName = DataAccess.Accounts.GetAccountName(AccountId);
-            String teamName = DataAccess.Teams.GetTeamName(Id);
-
-            if (String.IsNullOrEmpty(accountName))
-                return teamName;
-            else
-                return String.Format("{0} - {1}", accountName, teamName);
-        }
+        public String SeasonName { get; private set; }
 
     }
 }

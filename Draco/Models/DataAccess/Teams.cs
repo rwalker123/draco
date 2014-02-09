@@ -99,32 +99,20 @@ namespace DataAccess
 
 		static public Team GetTeam(long teamId)
 		{
-			Team team = null;
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeam", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						team = new Team(dr.GetInt64(1), dr.GetInt64(2), dr.GetString(3), dr.GetInt64(4), dr.GetInt64(0), dr.GetInt64(6));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return team;
+            return (from ts in db.TeamsSeasons
+                    join t in db.Teams on ts.TeamId equals t.id
+                    where ts.id == teamId
+                    select new Team()
+                    {
+                        Id = ts.id,
+                        TeamId = t.id,
+                        AccountId = t.AccountId,
+                        DivisionId = ts.DivisionSeasonId,
+                        LeagueId = ts.LeagueSeasonId,
+                        Name = ts.Name
+                    }).SingleOrDefault();
 		}
 
 		static public long GetTeamSeasonIdFromId(long teamId)
@@ -169,39 +157,29 @@ namespace DataAccess
 					select new Team(ts.id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
 		}
 
-		static public List<Team> GetAccountTeams(long accountId, bool includeNone)
+		static public IQueryable<Team> GetAccountTeams(long accountId)
 		{
-			List<Team> teams = new List<Team>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetAccountTeams", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var seasonId = (from s in db.CurrentSeasons
+                            where s.AccountId == accountId
+                            select s.SeasonId).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (includeNone)
-						teams.Add(new Team(0, 0, "No Team Selected", 0, 0, 0));
-
-					while (dr.Read())
-					{
-						teams.Add(new Team(dr.GetInt64(1), dr.GetInt64(2), dr.GetString(3), dr.GetInt64(4), dr.GetInt64(0), dr.GetInt64(6)));
-					}
-
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return teams;
+            return (from ts in db.TeamsSeasons
+                    join t in db.Teams on ts.TeamId equals t.id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
+                    join l in db.Leagues on ls.LeagueId equals l.id
+                    where t.AccountId == accountId && ls.SeasonId == seasonId
+                    orderby l.Name, ts.Name
+                    select new Team()
+                    {
+                        Id = ts.id,
+                        TeamId = t.id,
+                        Name = l.Name + " " + ts.Name,
+                        DivisionId = ts.DivisionSeasonId,
+                        LeagueId = ts.LeagueSeasonId,
+                        AccountId = accountId
+                    });
 		}
 
         static public IQueryable<Team> GetDivisionTeams(long divisionSeasonId)
@@ -549,36 +527,31 @@ namespace DataAccess
 
 		static public bool IsTeamAdmin(ModelObjects.Contact c, long teamId)
 		{
-			bool isManager = false;
-
 			if (c == null || teamId == 0)
 				return false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.IsTeamManager", myConnection);
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = c.Id;
-					myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
+            var isMgr = (from tsm in db.TeamSeasonManagers
+                         where tsm.TeamSeasonId == teamId && tsm.ContactId == c.Id
+                         select tsm.ContactId).Any();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (!isMgr)
+            {
+                var teamAdminIds = (from a in db.AspNetRoles
+                                    where a.Name == "TeamAdmin" || a.Name == "TeamPhotoAdmin"
+                                    select a.Id);
 
-					object result = myCommand.ExecuteScalar();
-					if (result != null)
-					{
-						isManager = ((long)result > 0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                var teamIds = (from cr in db.ContactRoles
+                                where cr.ContactId == c.Id && teamAdminIds.Contains(cr.RoleId)
+                                select cr.RoleData);
 
-			return isManager;
+                return (from ts in db.TeamsSeasons
+                        where ts.id == teamId && teamIds.Contains(ts.TeamId)
+                        select ts.id).Any();
+            
+            }
+
+            return isMgr;
 		}
 
 		static public IQueryable<Contact> GetTeamContacts(long teamSeasonId)
@@ -594,6 +567,22 @@ namespace DataAccess
                         c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip,
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
 		}
+
+        static public IQueryable<AccountWelcome> GetWelcomeText(long accountId, long teamId)
+        {
+            DB db = DBConnection.GetContext();
+            return (from aw in db.AccountWelcomes
+                    where aw.AccountId == accountId && aw.TeamId == teamId
+                    select new AccountWelcome()
+                    {
+                        Id = aw.Id,
+                        AccountId = accountId,
+                        TeamId = teamId,
+                        CaptionText = aw.CaptionMenu,
+                        OrderNo = aw.OrderNo,
+                        WelcomeText = aw.WelcomeText
+                    });
+        }
 
 	}
 }

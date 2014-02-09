@@ -125,9 +125,9 @@ namespace DataAccess
             }
             else if (String.Compare(role, "TeamAdmin") == 0 || String.Compare(role, "TeamPhotoAdmin") == 0)
             {
-                List<Team> teams = Teams.GetAccountTeams(accountId, false);
+                var teams = Teams.GetAccountTeams(accountId);
 
-                foreach (Team t in teams)
+                foreach (var t in teams)
                 {
                     roleData.Add(new RoleData(t.Name, t.TeamId));
                 }

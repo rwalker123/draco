@@ -44,13 +44,6 @@
     <!-- main javascript -->
     <script type="text/javascript">
 
-        function ToggleElement(hideElement, showElement) {
-            var animTime = 750;
-
-            $(hideElement).hide('fold', animTime);
-            $(showElement).show('fold', animTime);
-        }
-
         $(document).ready(function () {
             // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
             // on this page, hash is set to update. If back is pressed in that case, then reload the page.
@@ -382,6 +375,24 @@
 </div>
 
 <div class="container-fluid">
+    @if (Model.HasTeams)
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Your Teams</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        Quick links to your teams
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     @if (Model.ShowWorkouts)
     {
         <div class="row">
@@ -417,23 +428,34 @@
         </div>
     </div>
 
-    <div class="row" style="margin-top:20px">
-        <div class="col-md-4">
-            <div class="panel panel-info">
-                <div class="panel-heading">
-                    <h3 class="panel-title" style="float: left;">Handouts</h3>
+    @if (Model.ShowLeagueLeaders)
+    {
+        <div class="row" style="margin-top:20px">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">League Leaders</h3>
 
-                    @if (Model.IsAdmin)
-                    {
-                        <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button></h3>
-                    }
-                    <div style="clear:both"></div>
-                </div>
+                        @if (Model.IsAdmin)
+                        {
+                            <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
+                        }
+                        <div style="clear:both"></div>
+                    </div>
 
-                <div class="panel-body">
-                    Handout content.
+                    <div class="panel-body">
+                        League Leaders
+                    </div>
                 </div>
             </div>
+        </div>
+    }
+
+
+
+    <div class="row" style="margin-top:20px">
+        <div class="col-md-4">
+            @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
         </div>
 
         @if (Model.ShowPhotoGallery)
@@ -447,10 +469,10 @@
         
     </div>
 
-    <div class="row" style="margin-top:20px">
-        @if (Model.VideosEnabled && Model.ShowVideos)
-        {
-            <div id="videos" data-bind="visible: videosVisible" >
+    @if (Model.VideosEnabled && Model.ShowVideos)
+    {
+        <div class="row" style="margin-top:20px">
+            <div id="videos" data-bind="visible: videosVisible">
                 <div class="col-md-8">
                     <div class="panel panel-default">
                         <div class="panel-heading">
@@ -468,7 +490,7 @@
                             {
                                 <div data-bind="visible: viewMode">
                                     <span style="font-size: larger">YouTube User Id: <span style="font-size: larger;font-weight: bold" data-bind="text: viewUserId"></span></span>
-                                    <button type="button" class="btn btn-link" style="padding:0px" data-bind="click: editYouTube">edit</button> 
+                                    <button type="button" class="btn btn-link" style="padding:0px" data-bind="click: editYouTube">edit</button>
                                 </div>
                                 <div data-bind="visible: !viewMode()">
                                     YouTube User Id: <input type="text" data-bind="value: userId" />
@@ -482,9 +504,9 @@
                     </div>
                 </div>
             </div>
-        }
+        </div>
+    }
 
-    </div>
 
     <div class="row" style="margin-top:20px">
 
@@ -527,6 +549,28 @@
                 </div>
             </div>
         }
+        
+        @if (Model.ShowSponsors)
+        {
+            <div class="col-md-2">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Sponsors</h3>
+
+                        @if (Model.IsAdmin)
+                        {
+                            <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
+                        }
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        Sponsors
+                    </div>
+                </div>
+            </div>
+        }
+
     </div>
 
     <div class="row" style="margin-top:20px">

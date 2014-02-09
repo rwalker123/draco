@@ -107,6 +107,7 @@ namespace DataAccess
 
         static public List<MessageCategory> GetContactTeamCategoriesWithDetails(long accountId, Contact contact)
         {
+            System.Diagnostics.Debug.Assert(false, "NOT IMPLEMENTED");
             List<MessageCategory> cats = new List<MessageCategory>();
 
             long contactId = contact.Id;
@@ -119,6 +120,44 @@ namespace DataAccess
             if (contactId == 0)
                 return cats;
 
+//CREATE PROCEDURE [dbo].[GetContactTeams]( @accountId bigint, @contactId bigint)
+//AS
+
+//    IF @contactId = -1
+//    BEGIN
+//        SELECT Distinct TeamsSeason.TeamId
+//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
+//                       LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
+//                       LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
+//        WHERE CurrentSeason.AccountId = @accountId 
+//    END
+//    ELSE
+//    BEGIN	
+//        SELECT Distinct TeamsSeason.TeamId
+//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
+//                           LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
+//                           LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
+//                           LEFT JOIN RosterSeason ON TeamsSeason.Id = RosterSeason.TeamSeasonId
+//                           LEFT JOIN Roster ON RosterSeason.PlayerId = Roster.Id
+//        WHERE CurrentSeason.AccountId = @accountId 
+//                AND Roster.ContactId = @contactId 
+//                AND RosterSeason.Inactive = 0
+
+//        UNION 
+//        SELECT Distinct TeamsSeason.TeamId
+//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
+//                           LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
+//                           LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
+//                           LEFT JOIN TeamSeasonManager ON TeamsSeason.Id = TeamSeasonManager.TeamSeasonId
+//        WHERE CurrentSeason.AccountId = @accountId
+//              AND TeamSeasonManager.ContactId = @contactId
+			  
+//        UNION
+//        SELECT Distinct RoleData 
+//        FROM ContactRoles LEFT JOIN Contacts ON ContactRoles.ContactId = Contacts.Id
+//        WHERE CreatorAccountId = @accountId AND ContactId = @contactId AND (RoleName = 'TeamAdmin' OR RoleName = 'TeamPhotoAdmin')
+		
+//    END
             try
             {
                 using (SqlConnection myConnection = DBConnection.GetSqlConnection())

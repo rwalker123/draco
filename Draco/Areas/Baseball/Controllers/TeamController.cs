@@ -19,7 +19,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Index", "Baseball");
             }
 
-            return View(new SportsManager.Baseball.ViewModels.TeamViewModel(aId, teamSeasonId));
+            return View(new SportsManager.Baseball.ViewModels.TeamViewModel(this, aId, teamSeasonId));
         }
 
         [HttpPost]

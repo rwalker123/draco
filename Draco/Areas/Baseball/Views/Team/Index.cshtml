@@ -1,86 +1,146 @@
 ﻿@model SportsManager.Baseball.ViewModels.TeamViewModel
+@using System.Web.Optimization;
 
 @{
-    ViewBag.Title = Model.GetTitle();
+    ViewBag.Title = Model.AccountName + " " + Model.Team.Name;
 }
-
-<h2>@Model.GetTitle()</h2>
-
-@if (Model.FromLeagueAccount) {     
-    <p>Back to: @Model.AccountName</p>
-}  
-
-    
-<div id="colmask">
-	<div id="colmid">
-		<div id="colright">
-			<div id="col1wrap">
-				<div id="col1pad">
-					<div id="col1">
-						<!-- Column 1 start -->
-                        @if (Model.IsTeamMember) {
-
-                            <div id="theAnnouncements">
-                                <h3>Announcements 
-                                @if (Model.IsAdmin) {
-                                    <a>[add new]</a>
-                                }
-
-                                </h3>
-                            </div>    
-                        } 
-
-                        <div id="theHandouts">
-                            <h3>Handouts
-                            @if (Model.IsAdmin) {
-                                <a>[add new]</a>
-                            } 
-                            </h3>
-                        </div>
-
-						<!-- Column 1 end -->
-					</div>
-				</div>
-			</div>
-            <div id="col2">
-				<!-- Column 2 start -->
-                @if (Model.IsPhotoAdmin) {
-                    <a>[Upload Logo]</a>
-                    <a>[Upload Team Photo]</a><br />
-                }
-
-                [Logo] <br />
-                [Team Record] <br />
-                <ul>
-                    <li><a href="javascript:onLoadPhotoGallery()">Photo Gallery</a></li>
-                    <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Id }, null)</li>
-                    <li>Roster</li>
-                    <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
-                </ul>
-
-				<!-- Column 2 end -->
-			</div>
-			<div id="col3">
-			    <!-- Column 3 start -->
-                <div id="currentGames">
-                <h3>Schedule</h3>
-                <<- Prev Game    Next Game ->><br />
-                @Html.ActionLink("Complete Team Schedule", "TeamSchedule", "Index", new { id = Model.Id }, null)<br />
-                <a>Game Summaries</a>
-                </div>
-                <div id="theSponsors">
-                    <h3>Sponsors 
-                    @if (Model.IsAdmin) { 
-                        <a>[add new]</a>
-                    } 
-                    </h3>
-                </div>
-				<!-- Column 3 end -->
-			</div>
-		</div>
-	</div>
+@section head {
+    @Styles.Render("~/Content/themes/base/css")
+}
+<div class="jumbotron">
+    <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name</h1><br />
+    @if (Model.FromLeagueAccount)
+    {
+        <small>@Model.AccountName @Model.SeasonName season</small>
+    }
 </div>
 
-<div style="clear:both;"></div>
+<div class="container-fluid">
 
+    <div class="row" style="margin-top:20px">
+    @if (Model.IsTeamMember)
+    {
+        <div class="col-md-9">
+            @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+            @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+        </div>
+    }
+    
+    <div class="col-md-3">
+        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
+    </div>
 
+    </div>
+            
+    <div class="row" style="margin-top:20px">
+    @if (Model.IsTeamMember)
+    {
+        <div class="col-md-4">
+            @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
+        </div>
+    }
+
+    @if (Model.ShowPhotoGallery)
+    {
+        <div id="photoGallery" data-bind="visible: photoGalleryVisible">
+            <div class="col-md-8">
+                @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
+            </div>
+        </div>
+    }
+        
+    </div>
+
+    [Team Record] <br />
+    <ul>
+        <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Team.Id }, null)</li>
+        <li>Roster</li>
+        <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
+    </ul>
+
+    <div id="currentGames">
+        <h3>Schedule</h3>
+        prev game next game
+            ><br />
+            @Html.ActionLink("Complete Team Schedule", "TeamSchedule", "Index", new { id = Model.Team.Id }, null)<br />
+            <a>Game Summaries</a>
+    </div>
+    <div id="theSponsors">
+        <h3>
+            Sponsors
+            @if (Model.IsAdmin)
+            {
+                <a>[add new]</a>
+            }
+        </h3>
+    </div>
+</div>
+
+@section scripts
+{
+<script type="text/javascript" src="~/Scripts/tiny_mce/jquery.tinymce.js"></script>
+<script type="text/javascript" src="~/Scripts/welcome.js"></script>
+<script type="text/javascript" src="~/Scripts/announcement.js"></script>
+<script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
+
+@Scripts.Render("~/bundles/knockout")
+
+    <!-- main javascript -->
+<script type="text/javascript">
+
+        $(document).ready(function () {
+            // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
+            // on this page, hash is set to update. If back is pressed in that case, then reload the page.
+            if (window.location.hash == '#update') {
+                window.location.hash = '';
+                window.location.reload();
+            }
+
+            initKOHelpers();
+
+            welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+            announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+            scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+
+            $('textarea.tinymce').tinymce({
+                // Location of TinyMCE script
+                script_url : '/scripts/tiny_mce/tiny_mce.js',
+
+                // General options
+                theme : "advanced",
+                plugins : "pagebreak,layer,table,save,advhr,advimage,advlink,emotions,iespell,inlinepopups,insertdatetime,preview,media,searchreplace,print,contextmenu,paste,directionality,fullscreen,noneditable,visualchars,nonbreaking,xhtmlxtras,template",
+
+                // Theme options
+                theme_advanced_buttons1 : "bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,styleselect,formatselect,fontselect,fontsizeselect",
+                theme_advanced_buttons2 : "cut,copy,paste,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,|,forecolor,backcolor",
+                theme_advanced_buttons3 : "tablecontrols,|,hr,iespell",
+                theme_advanced_toolbar_location : "top",
+                theme_advanced_toolbar_align : "left",
+                theme_advanced_statusbar_location : "bottom",
+                theme_advanced_resizing : false,
+
+                // Example content CSS (should be your site CSS)
+                //content_css : "~/Content/site.css",
+
+                // Drop lists for link/image/media/template dialogs
+                template_external_list_url : "lists/template_list.js",
+                external_link_list_url : "lists/link_list.js",
+                external_image_list_url : "lists/image_list.js",
+                media_external_list_url : "lists/media_list.js",
+
+                // Replace values for the template plugin
+                template_replace_values : {
+                    username : "Some User",
+                    staffid : "991234"
+                }
+
+            });
+
+            // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
+            welcomeData.ShowFirstMenu();
+            announcementData.AdjustNewsMenuHeaders();
+
+            $(".selectpicker").selectpicker();
+        });
+</script>
+}
