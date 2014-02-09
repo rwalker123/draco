@@ -1,69 +1,24 @@
 ﻿function initKOHelpers() {
 
-    // tinymce
-    ko.bindingHandlers.tinymce = {
-        init: function (element, valueAccessor, allBindingsAccessor, context) {
-            var options = allBindingsAccessor().tinymceOptions || {};
-            var modelValue = valueAccessor();
-            var value = ko.utils.unwrapObservable(valueAccessor());
-            var el = $(element);
+    ko.bindingHandlers.htmlValue = {
+        init: function (element, valueAccessor, allBindingsAccessor) {
+            var updateHandler = function () {
+                var modelValue = valueAccessor(),
+                    elementValue = element.innerHTML;
 
-            // default options.
-            var mce_config = {
-                // Location of TinyMCE script
-                script_url: '/scripts/tiny_mce/tiny_mce.js',
-
-                // General options
-                theme : "advanced",
-                // Theme options
-                theme_advanced_buttons1 : "save,|,bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,|,formatselect,fontselect,fontsizeselect",
-                theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,image,cleanup,code,|,forecolor,backcolor",
-                theme_advanced_buttons3 : "",
-                theme_advanced_toolbar_location : "top",
-                theme_advanced_toolbar_align : "left",
-                theme_advanced_statusbar_location : "bottom",
-                theme_advanced_resizing : false,
-
-                //handle edits made in the editor
-                setup: function (ed) {
-                    ed.onChange.add(function (ed, l) {
-                        if (ko.isWriteableObservable(modelValue)) {
-                            modelValue(l.content);
-                        }
-                    })
-                },
+                //update the value on keyup
+                modelValue(elementValue);
             };
 
-            // add user options.
-            mce_config = $.extend(mce_config, options);
-
-            //handle destroying an editor (based on what jQuery plugin does)
-            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-                $(element).parent().find("span.mceEditor,div.mceEditor").each(function (i, node) {
-                    var ed = tinyMCE.get(node.id.replace(/_parent$/, ""));
-                    if (ed) {
-                        ed.remove();
-                    }
-                });
-            });
-
-            //$(element).tinymce(mce_config);
-            setTimeout(function () { el.tinymce(mce_config); }, 0);
-            el.html(value);
+            ko.utils.registerEventHandler(element, "keyup", updateHandler);
+            ko.utils.registerEventHandler(element, "input", updateHandler);
         },
-        update: function (element, valueAccessor, allBindingsAccessor, context) {
-            var el = $(element)
-            var value = ko.utils.unwrapObservable(valueAccessor());
-            var id = el.attr('id')
+        update: function (element, valueAccessor) {
+            var value = ko.utils.unwrapObservable(valueAccessor()) || "",
+                current = element.innerHTML;
 
-            //handle programmatic updates to the observable
-            // also makes sure it doesn't update it if it's the same. 
-            // otherwise, it will reload the instance, causing the cursor to jump.
-            if (id) {
-                var content = tinyMCE.getInstanceById(id).getContent({ format: 'raw' })
-                if (content !== value) {
-                    el.html(value);
-                }
+            if (value !== current) {
+                element.innerHTML = value;
             }
         }
     };

@@ -28,7 +28,7 @@ $.extend(WelcomeClass.prototype, {
         $('#welcomeEditLabel').hide();
         $('#noWelcomeMessage').hide();
 
-        $('#welcomeMessageControl').tinymce().setContent('');
+        $('#welcomeMessageControl').html('');
         $('#category').val('Welcome');
 
         $('#editMessage').show();
@@ -41,7 +41,7 @@ $.extend(WelcomeClass.prototype, {
         $('#WelcomeMessages').hide();
         $('#welcomeEditLabel').hide();
 
-        $('#welcomeMessageControl').tinymce().setContent($('#div_WelcomeMessage_' + id).html());
+        $('#welcomeMessageControl').html($('#div_WelcomeMessage_' + id).html());
         $('#category').val($('#MenuLink_' + id).text());
         $('#position').val($('#MenuLink_' + id).data("menuposition"));
 

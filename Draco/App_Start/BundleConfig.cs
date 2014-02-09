@@ -21,8 +21,13 @@ namespace SportsManager
                         "~/Scripts/jsrender.js"));
 
             bundles.Add(new ScriptBundle("~/bundles/knockout").Include(
-                        "~/Scripts/knockout-3.0.0.js",
+                        "~/Scripts/knockout-{version}.js",
                         "~/Scripts/knockoutjs-helpers.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/bootstrap-wysiwyg").Include(
+                        "~/Scripts/jquery.hotkeys.js",
+                        "~/Scripts/bootstrap-wysiwyg.js",
+                        "~/Scripts/bootstrap-wysiwyg-helper.js"));
 
             // Use the development version of Modernizr to develop with and learn from. Then, when you're
             // ready for production, use the build tool at http://modernizr.com to pick only the tests you need.
@@ -38,6 +43,9 @@ namespace SportsManager
                       "~/Content/bootstrap.css",
                       "~/Scripts/bootstrap-select/bootstrap-select.css",
                       "~/Content/site.css"));
+
+            bundles.Add(new StyleBundle("~/Content/font-awesome").Include(
+                      "~/Content/font-awesome-4.0.3/css/font-awesome.css"));
 
             bundles.Add(new StyleBundle("~/Content/themes/base/css").Include(
                         "~/Content/themes/base/jquery.ui.base.css",                        

@@ -7,7 +7,8 @@
 
 @section head
 {
-@Styles.Render("~/Content/themes/base/css")
+    @Styles.Render("~/Content/themes/base/css")
+    @Styles.Render("~/Content/font-awesome")
 
     <style>
         .bar
@@ -134,7 +135,9 @@
 
     <hr />
 
-    <textarea style="height: 500px; width:625px;" class="tinymce" data-bind="tinymce: emailText"></textarea>
+    @{Html.RenderPartial("_bootstrap-wysiwyg-menu");}
+    <div data-bind="htmlValue: emailText" class="wysiwygEditor">
+    </div>
 
 </div>
 
@@ -144,9 +147,9 @@
 
 @section scripts 
 {
+@Scripts.Render("~/bundles/bootstrap-wysiwyg")
 @Scripts.Render("~/bundles/knockout")
 
-<script type="text/javascript" src="~/Scripts/tiny_mce/jquery.tinymce.js"></script>
 <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
 
 <script type="text/javascript">
@@ -437,6 +440,10 @@
     $(document).ready(function () {
         initViewModel();
         $(".selectpicker").selectpicker();
+
+        initToolbarBootstrapBindings();
+        $('.wysiwygEditor').wysiwyg();
+        $('.wysiwygEditor').cleanHtml();
     });
 </script>
 }

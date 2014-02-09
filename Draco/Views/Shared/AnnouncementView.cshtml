@@ -16,16 +16,17 @@
 
     <div class="panel-body">
 
-        <!-- Gets replaced with TinyMCE, remember HTML in a textarea should be encoded -->
-        <div id="editNews" style="margin-top:20px;display: none;">
+        <form class="form-inline" id="editNews" style="margin-top:20px;display: none;">
             <h4 id="newsSaveLabel" style="margin-bottom: 10px;">
                 <button type="button" class="btn btn-primary" onclick="javascript:announcementData.saveNews()"><span class="glyphicon glyphicon-ok"></span></button>
                 <button type="button" class="btn btn-danger" onclick="javascript:announcementData.cancelNewsEdit()"><span class="glyphicon glyphicon-remove"></span></button>
             </h4>
-            <label style="margin-right:5px">Annoucement headline</label><input id="newsTitle" name="newsTitle" type="text" style="width: 650px" value="" />
-            <label><input type="checkbox" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" />always display opened</label><br />
-            <textarea id="newsEditControl" name="newsEditControl" style="height: 500px; width:700px;" class="tinymce"></textarea>
-        </div>
+            <label style="margin-right:5px" for="newsTitle" class="control-label">Announcement headline</label><input id="newsTitle" name="newsTitle" class="form-control" type="text" style="width: 650px" value="" />
+            <input type="checkbox" class="form-control" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" /><label class="control-label" for="specialAnnounce">always display opened</label><br />
+            @{Html.RenderPartial("_bootstrap-wysiwyg-menu");}
+            <div id="newsEditControl" class="wysiwygEditor">
+            </div>
+        </form>
 
             <p id="noHeadlinesMessage" class="help-block" style="display: none">Click the <button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsAdd()"><span class="glyphicon glyphicon-plus"></span></button> button to add league announcements.</p>
 
