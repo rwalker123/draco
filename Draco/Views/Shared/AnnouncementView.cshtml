@@ -38,7 +38,7 @@
                         <div id='div_NewsItemChrome_@aw.Id' class='newsSpecial'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                <div style="float:right"><button class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
                                 <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button></div>
                             }
                             <div id="div_NewsItem_@aw.Id" data-hasdata="true" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
@@ -62,8 +62,10 @@
                         <div id='div_NewsItemChrome_@aw.Id' style="display:none" class='newsdetails'>
                             @if (Model.IsAdmin)
                             {
-                                <div class="grad" style="float:right"><button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
-                                <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button></div>
+                                <div style="float:right">
+                                    <button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button> 
+                                    <button type="button" class="btn btn-danger" onclick="javascript:announcementData.deleteNews(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button>
+                                </div>
                             }
                             <div id="div_NewsItem_@aw.Id" data-hasdata="False" data-newsdate='@aw.Date.ToString(Model.OtherNewsDateFmt)'>
                             </div>
