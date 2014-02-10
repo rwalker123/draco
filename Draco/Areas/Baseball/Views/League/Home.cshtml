@@ -115,7 +115,25 @@
 
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-9"> <!-- column 1-->
+        <div class="col-md-8"> <!-- column 1-->
+            @if (Model.HasTeams)
+            {
+                <div class="row">
+                    <div class="item col-md-12">
+                        <div class="panel panel-success">
+                            <div class="panel-heading">
+                                <h3 class="panel-title" style="float: left;">Your Teams</h3>
+                                <div style="clear:both"></div>
+                            </div>
+
+                            <div class="panel-body">
+                                Quick links to your teams
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
             @if (Model.ShowWorkouts)
             {
                 <div class="row">
@@ -253,25 +271,7 @@
     
     </div>
 
-    <div class="col-md-3"> <!-- second column -->
-
-    @if (Model.HasTeams)
-    {
-        <div class="row">
-        <div class="item col-md-12">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    <h3 class="panel-title" style="float: left;">Your Teams</h3>
-                    <div style="clear:both"></div>
-                </div>
-
-                <div class="panel-body">
-                    Quick links to your teams<br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-                </div>
-            </div>
-        </div>
-        </div>
-    }
+    <div class="col-md-4"> <!-- second column -->
 
     <div class="item col-md-12">
         @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
