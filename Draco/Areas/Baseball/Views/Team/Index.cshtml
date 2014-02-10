@@ -17,65 +17,91 @@
 </div>
 
 <div class="container-fluid">
-
-    <div class="row" style="margin-top:20px">
-    @if (Model.IsTeamMember)
-    {
-        <div class="col-md-9">
-            @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
-            @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
-        </div>
-    }
-    
-    <div class="col-md-3">
-        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
-    </div>
-
-    </div>
-            
-    <div class="row" style="margin-top:20px">
-    @if (Model.IsTeamMember)
-    {
-        <div class="col-md-4">
-            @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
-        </div>
-    }
-
-    @if (Model.ShowPhotoGallery)
-    {
-        <div id="photoGallery" data-bind="visible: photoGalleryVisible">
-            <div class="col-md-8">
-                @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
+    <div class="row">
+        <div class="col-md-3">
+            <!-- column 1-->
+            <div class="row">
+                <div class="col-md-12">
+                    [Team Record] <br />
+                    <ul>
+                        <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Team.Id }, null)</li>
+                        <li>Roster</li>
+                        <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    }
-        
-    </div>
 
-    [Team Record] <br />
-    <ul>
-        <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Team.Id }, null)</li>
-        <li>Roster</li>
-        <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
-    </ul>
+            <div class="row">
+                <div class="col-md-12">
+                    @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
+                </div>
+            </div>
 
-    <div id="currentGames">
-        <h3>Schedule</h3>
-        prev game next game
-            ><br />
-            @Html.ActionLink("Complete Team Schedule", "TeamSchedule", "Index", new { id = Model.Team.Id }, null)<br />
-            <a>Game Summaries</a>
-    </div>
-    <div id="theSponsors">
-        <h3>
-            Sponsors
-            @if (Model.IsAdmin)
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="currentGames">
+                        <h3>Schedule</h3>
+                        prev game next game
+                        ><br />
+                        @Html.ActionLink("Complete Team Schedule", "TeamSchedule", "Index", new { id = Model.Team.Id }, null)<br />
+                        <a>Game Summaries</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="theSponsors">
+                        <h3>
+                            Sponsors
+                            @if (Model.IsAdmin)
+                            {
+                                <a>[add new]</a>
+                            }
+                        </h3>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end column 1-->
+
+        <div class="col-md-9"> <!-- column 2 -->
+            @if (Model.IsTeamMember)
             {
-                <a>[add new]</a>
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
             }
-        </h3>
-    </div>
-</div>
+
+            @if (Model.IsTeamMember)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
+                    </div>
+                </div>
+            }
+
+            @if (Model.ShowPhotoGallery)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="photoGallery" data-bind="visible: photoGalleryVisible">
+                            @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div> <!-- end column 2-->
+    </div> <!-- end main row -->
+</div> <!-- end container-->
 
 @section scripts
 {
