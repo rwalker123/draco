@@ -106,7 +106,7 @@
 
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert(xhr.responseText);
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -126,7 +126,7 @@
 
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert(xhr.responseText);
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -193,7 +193,7 @@
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert(xhr.responseText);
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }

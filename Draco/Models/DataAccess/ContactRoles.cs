@@ -60,15 +60,15 @@ namespace DataAccess
         {
             string roleDataName = string.Empty;
 
-            if (String.Compare(role, "AccountAdmin") == 0 || String.Compare(role, "PhotoAdmin") == 0)
+            if (role.Equals("AccountAdmin") || role.Equals("PhotoAdmin"))
             {
                 roleDataName = DataAccess.Accounts.GetAccountName(data);
             }
-            else if (String.Compare(role, "LeagueAdmin") == 0)
+            else if (role.Equals("LeagueAdmin"))
             {
                 roleDataName = DataAccess.Leagues.GetLeagueName(data);
             }
-            else if (String.Compare(role, "TeamAdmin") == 0 || String.Compare(role, "TeamPhotoAdmin") == 0)
+            else if (role.Equals("TeamAdmin") || role.Equals("TeamPhotoAdmin"))
             {
                 roleDataName = Teams.GetTeamName(DataAccess.Teams.GetTeamSeasonIdFromId(data));
             }
@@ -76,44 +76,23 @@ namespace DataAccess
             return roleDataName;
         }
 
-        static public bool IsPhotoAdmin(long accountId, Contact c, long teamId)
+        static public bool IsPhotoAdmin(long accountId, String userId)
         {
-            bool photoAdmin = false;
-
-            if (c != null)
-            {
-                if (Roles.IsUserInRole(c.UserName, "PhotoAdmin"))
-                {
-                    photoAdmin = true;
-                }
-                else if (teamId > 0 && Roles.IsUserInRole(c.UserName, "TeamPhotoAdmin"))
-                {
-                    DB db = DBConnection.GetContext();
-                    String teamPhotoRoleId = (from r in db.AspNetRoles
-                                           where r.Name == "TeamPhotoAdmin"
-                                           select r.Id).SingleOrDefault();
-
-                    var roles = GetContactRoles(accountId, c.Id);
-                    photoAdmin = (from r in roles
-                                  where r.RoleId == teamPhotoRoleId && r.RoleData == teamId
-                                  select r).Any();
-                }
-            }
-
-            return photoAdmin;
+            return (DataAccess.ContactRoles.IsContactInRole(accountId, userId, GetAdminAccountId()) ||
+                    DataAccess.ContactRoles.IsContactInRole(accountId, userId, GetAccountPhotoAdminId()));
         }
 
         static public List<RoleData> GetRoleData(long accountId, string role)
         {
             List<RoleData> roleData = new List<RoleData>();
 
-            if (String.Compare(role, "AccountAdmin") == 0 || String.Compare(role, "PhotoAdmin") == 0)
+            if (role.Equals("AccountAdmin") || role.Equals("PhotoAdmin"))
             {
                 ModelObjects.Account curAccount = DataAccess.Accounts.GetAccount(accountId);
                 if (curAccount != null)
                     roleData.Add(new RoleData(curAccount.AccountName, curAccount.Id));
             }
-            else if (String.Compare(role, "LeagueAdmin") == 0)
+            else if (role.Equals("LeagueAdmin"))
             {
                 IEnumerable<League> leagues = Leagues.GetLeagues(DataAccess.Seasons.GetCurrentSeason(accountId));
 
@@ -123,7 +102,7 @@ namespace DataAccess
                 }
 
             }
-            else if (String.Compare(role, "TeamAdmin") == 0 || String.Compare(role, "TeamPhotoAdmin") == 0)
+            else if (role.Equals("TeamAdmin") || role.Equals("TeamPhotoAdmin"))
             {
                 var teams = Teams.GetAccountTeams(accountId);
 
@@ -136,9 +115,11 @@ namespace DataAccess
             return roleData;
         }
 
-        static public bool IsContactInRole(long accountId, long contactId, String roleId)
+        static public bool IsContactInRole(long accountId, String aspNetUserId, String roleId)
         {
-            var roles = GetContactRoles(accountId, contactId);
+            var roles = GetContactRoles(accountId, aspNetUserId);
+            if (roles == null)
+                return false;
 
             return (from r in roles
                     where r.RoleId == roleId

@@ -16,24 +16,6 @@ namespace DataAccess
 	/// </summary>
 	static public class Teams
 	{
-		static public long GetCurrentTeam()
-		{
-			long aId = 0;
-
-			System.Web.HttpContext context = System.Web.HttpContext.Current;
-			if (context != null)
-			{
-				aId = DataAccess.Teams.GetCurrentTeam(context.Session);
-			}
-
-			return aId;
-		}
-
-		static public long GetCurrentTeam(HttpSessionState s)
-		{
-			return s["AdminCurrentTeam"] != null ? Int32.Parse((string)s["AdminCurrentTeam"]) : 0;
-		}
-
         static public Team GetTeamSeason(long teamId)
         {
             DB db = DBConnection.GetContext();
@@ -271,7 +253,7 @@ namespace DataAccess
 			List<ModelObjects.PhotoGalleryItem> items = DataAccess.PhotoGallery.GetTeamPhotos(t.TeamId);
 			foreach (ModelObjects.PhotoGalleryItem item in items)
 			{
-				DataAccess.PhotoGallery.RemovePhoto(item);
+				await DataAccess.PhotoGallery.RemovePhoto(item);
 			}
 
 			DataAccess.PhotoGallery.RemoveTeamPhotoAlbum(new ModelObjects.PhotoGalleryAlbum(0, String.Empty, 0, 0, t.TeamId));
@@ -491,9 +473,7 @@ namespace DataAccess
                                    select tsm.TeamSeasonId);
 
                     // get the list of teams the contact is admin for...
-                    string roleId = (from r in db.AspNetRoles
-                                  where r.Name == "TeamAdmin"
-                                  select r.Id).SingleOrDefault();
+                    string roleId = DataAccess.ContactRoles.GetTeamAdminId();
 
                     var teamAdmins = (from cr in db.ContactRoles
                                       where cr.ContactId == contactId && cr.AccountId == accountId && cr.RoleId == roleId &&

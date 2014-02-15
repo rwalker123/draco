@@ -1,5 +1,6 @@
 using ModelObjects;
 using SportsManager;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -7,6 +8,7 @@ using System.Data;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Security;
 
 namespace DataAccess
@@ -22,65 +24,58 @@ namespace DataAccess
 
 		}
 
-		public static List<PhotoGalleryAlbum> GetEditablePhotoAlbums(long accountId)
+		public static IQueryable<PhotoGalleryAlbum> GetEditablePhotoAlbums(long accountId)
 		{
-			if (!Roles.IsUserInRole("PhotoAdmin") && Roles.IsUserInRole("TeamPhotoAdmin"))
+            var userId = Globals.GetCurrentUserId();
+            bool isSitePhotoAdmin = ContactRoles.IsPhotoAdmin(accountId, userId);
+            if (isSitePhotoAdmin)
+            {
+                return GetPhotoAlbums(accountId);
+            }
+            else 
 			{
-				var roles = ContactRoles.GetContactRoles(accountId, Globals.GetCurrentUserId());
-
                 DB db = DBConnection.GetContext();
 
-                String roleId = (from r in db.AspNetRoles
-                              where r.Name == "TeamPhotoAdmin"
-                              select r.Id).SingleOrDefault();
+                var roles = ContactRoles.GetContactRoles(accountId, userId);
+                if (roles != null)
+                {
+                    String roleId = DataAccess.ContactRoles.GetTeamPhotoAdminId();
 
-                var teamPhotoAdmins = (from r in roles
-                                       where r.RoleId == roleId
-                                       select r);
+                    // find all the teams the user is a photo admin
+                    var teamPhotoAdminIds = (from r in roles
+                                             where r.RoleId == roleId
+                                             select r.RoleData);
 
-                List<PhotoGalleryAlbum> albums = new List<PhotoGalleryAlbum>();
-				foreach (SportsManager.Model.ContactRole teamPhotoAdmin in teamPhotoAdmins)
-				{
-					albums.AddRange(GetTeamPhotoAlbums(teamPhotoAdmin.RoleData));
-				}
 
-                return albums;
+                    IQueryable<PhotoGalleryAlbum> albums = null;
+                    foreach (var teamPhotoAdminId in teamPhotoAdminIds)
+                    {
+                        if (albums == null)
+                            albums = GetTeamPhotoAlbums(accountId, teamPhotoAdminId);
+                        else
+                            albums.Concat(GetTeamPhotoAlbums(accountId, teamPhotoAdminId));
+                    }
+
+                    return albums;
+                }
 			}
 
-            return GetPhotoAlbums(accountId);
+            return null;
 		}
 
-		public static List<PhotoGalleryAlbum> GetPhotoAlbums(long accountId)
+		public static IQueryable<PhotoGalleryAlbum> GetPhotoAlbums(long accountId)
 		{
-			List<PhotoGalleryAlbum> photos = new List<PhotoGalleryAlbum>();
-
-			try
-			{
-
-				photos.Add(new PhotoGalleryAlbum(0, "Default", accountId, 0, 0));
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetGalleryAlbums", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						photos.Add(new PhotoGalleryAlbum(dr.GetInt64(0), dr.GetString(2), dr.GetInt64(1), dr.GetInt64(3), dr.GetInt64(4)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return photos;
+            DB db = DBConnection.GetContext();
+            return (from pga in db.PhotoGalleryAlbums
+                    where pga.AccountId == accountId
+                    select new PhotoGalleryAlbum()
+                    {
+                        Id = pga.id,
+                        AccountId = accountId,
+                        ParentAlbumId = pga.ParentAlbumId,
+                        TeamId = pga.TeamId,
+                        Title = pga.Title
+                    });
 		}
 
         public static IQueryable<PhotoGalleryItem> GetPhotos(long accountId, long albumId = -1)
@@ -130,69 +125,77 @@ namespace DataAccess
 
 		public static PhotoGalleryItem GetPhoto(long id)
 		{
-			PhotoGalleryItem photo = null;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPhotoGalleryItem", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						photo = CreatePhotoGalleryItem(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return photo;
+            DB db = DBConnection.GetContext();
+            return (from pg in db.PhotoGalleries
+                    where pg.id == id
+                    select new PhotoGalleryItem()
+                    {
+                        Id = pg.id,
+                        AlbumId = pg.AlbumId,
+                        AccountId = pg.AccountId,
+                        Title = pg.Title,
+                        Caption = pg.Caption
+                    }).SingleOrDefault();
 		}
 
 		public static bool AddPhotoAlbum(PhotoGalleryAlbum p)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			int maxAlbums = PhotoGallery.GetMaxAlbums();
+            // account photo album
+            if (p.TeamId == 0)
+            {
+                var numAccountAlbums = (from pga in db.PhotoGalleryAlbums
+                                        where pga.AccountId == p.AccountId && pga.TeamId == 0
+                                        select pga).Count();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreatePhotoAlbum", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@title", SqlDbType.VarChar, 25).Value = p.Title;
-					myCommand.Parameters.Add("@albumId", SqlDbType.BigInt).Value = p.ParentAlbumId;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = p.AccountId;
-					myCommand.Parameters.Add("@maxAlbums", SqlDbType.Int).Value = maxAlbums;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = p.TeamId;
+			    int maxAlbums = PhotoGallery.GetMaxAlbums();
 
-					myConnection.Open();
-					myCommand.Prepare();
+                if (numAccountAlbums < maxAlbums)
+                {
+                    SportsManager.Model.PhotoGalleryAlbum dbAlbum = new SportsManager.Model.PhotoGalleryAlbum()
+                    {
+                        AccountId = p.AccountId,
+                        ParentAlbumId = 0,
+                        TeamId = p.TeamId,
+                        Title = p.Title
+                    };
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                    db.PhotoGalleryAlbums.InsertOnSubmit(dbAlbum);
+                    db.SubmitChanges();
 
-			return rowCount <= 0 ? false : true;
+                    p.Id = dbAlbum.id;
+                    return true;
+                }
+            }
+            else
+            {
+                var teamAlbumExists = (from pga in db.PhotoGalleryAlbums
+                                       where pga.TeamId == p.TeamId
+                                       select pga).Any();
+                if (!teamAlbumExists)
+                {
+                    SportsManager.Model.PhotoGalleryAlbum dbAlbum = new SportsManager.Model.PhotoGalleryAlbum()
+                    {
+                        AccountId = p.AccountId,
+                        ParentAlbumId = 0,
+                        TeamId = p.TeamId,
+                        Title = p.Title
+                    };
+
+                    db.PhotoGalleryAlbums.InsertOnSubmit(dbAlbum);
+                    db.SubmitChanges();
+
+                    p.Id = dbAlbum.id;
+                    return true;
+                }
+            }
+
+            return false;
 		}
 
-		public static long AddPhotoGiveId(PhotoGalleryItem p)
+		public static bool AddPhoto(PhotoGalleryItem p)
 		{
-            p.Id = 0;
             if (p.AccountId > 0)
             {
                 int maxPhotosPerAlbum = PhotoGallery.GetMaxPhotosPerAlbum();
@@ -217,10 +220,12 @@ namespace DataAccess
                     db.SubmitChanges();
 
                     p.Id = dbPhotoGalleryItem.id;
+
+                    return true;
                 }
             }
 
-            return p.Id;
+            return false;
 		}
 
 		public static bool ModifyPhotoAlbum(PhotoGalleryAlbum p)
@@ -254,95 +259,75 @@ namespace DataAccess
 
 		public static bool ModifyPhoto(PhotoGalleryItem p)
 		{
-			int rowCount = 0;
-
 			int maxPhotosPerAlbum = PhotoGallery.GetMaxPhotosPerAlbum();
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
+            DB db = DBConnection.GetContext();
 
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePhotoGalleryItem", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@title", SqlDbType.VarChar, 25).Value = p.Title;
-					myCommand.Parameters.Add("@caption", SqlDbType.VarChar, 255).Value = p.Caption;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
-					myCommand.Parameters.Add("@albumId", SqlDbType.BigInt).Value = p.AlbumId;
-					myCommand.Parameters.Add("@maxPhotosPerAlbum", SqlDbType.Int).Value = maxPhotosPerAlbum;
+            var numPhotosInAlbum = (from pg in db.PhotoGalleries
+                                    where pg.AccountId == p.AccountId && pg.AlbumId == p.AlbumId
+                                    select pg).Count();
+            if (numPhotosInAlbum < maxPhotosPerAlbum)
+            {
+                var dbPhotoItem = (from pg in db.PhotoGalleries
+                                   where pg.id == p.Id
+                                   select pg).SingleOrDefault();
+                if (dbPhotoItem != null)
+                {
+                    dbPhotoItem.Title = p.Title;
+                    dbPhotoItem.Caption = p.Caption == null ? String.Empty : p.Caption;
+                    dbPhotoItem.AlbumId = p.AlbumId;
 
-					myConnection.Open();
-					myCommand.Prepare();
+                    db.SubmitChanges();
+                    return true;
+                }
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
-		public static bool RemovePhoto(PhotoGalleryItem p)
+		public static async Task<bool> RemovePhoto(PhotoGalleryItem p)
 		{
-			int rowCount = 0;
+            bool rc = false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePhotoGalleryItem", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
+            DB db = DBConnection.GetContext();
+            var dbItem = (from pg in db.PhotoGalleries
+                          where pg.id == p.Id
+                          select pg).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbItem != null)
+            {
+                db.PhotoGalleries.DeleteOnSubmit(dbItem);
+                db.SubmitChanges();
+                rc = true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
+            await AzureStorageUtils.RemoveCloudFile(p.PhotoURL);
+            await AzureStorageUtils.RemoveCloudFile(p.PhotoThumbURL);
 
-					if (rowCount > 0)
-					{
-						if (p.PhotoFile != null)
-							System.IO.File.Delete(p.PhotoFile);
-
-						if (p.PhotoThumbFile != null)
-							System.IO.File.Delete(p.PhotoThumbFile);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return rc;
 		}
 
 		public static bool RemovePhotoAlbum(PhotoGalleryAlbum p)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePhotoGalleryAlbum", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
+            var dbAlbum = (from pga in db.PhotoGalleryAlbums
+                           where pga.id == p.Id
+                           select pga).SingleOrDefault();
+            if (dbAlbum != null)
+            {
+                var photosInGallery = (from pg in db.PhotoGalleries
+                                       where pg.AlbumId == p.Id
+                                       select pg);
+                foreach (var photo in photosInGallery)
+                    photo.AlbumId = 0;
 
-					myConnection.Open();
-					myCommand.Prepare();
+                db.PhotoGalleryAlbums.DeleteOnSubmit(dbAlbum);
+                db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                return true;
+            }
 
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
 		public static bool RemoveTeamPhotoAlbum(PhotoGalleryAlbum p)
@@ -403,31 +388,8 @@ namespace DataAccess
 
 		public static bool DeletePendingPhoto(PhotoGalleryItem item)
 		{
-			try
-			{
-				string photoDir = PhotoGalleryItem.SubmittedPhotoDir;
-
-				if (System.IO.Directory.Exists(photoDir))
-				{
-					string[] files = System.IO.Directory.GetFiles(photoDir, item.SubmittedPhotoKey.ToString() + "*.*");
-
-					foreach (string file in files)
-					{
-						try
-						{
-							System.IO.File.Delete(file);
-						}
-						catch (System.IO.IOException ex)
-						{
-							Globals.LogException(ex);
-						}
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+			//string photoDir = PhotoGalleryItem.SubmittedPhotoDirURL;
+            // item.SubmittedThumbPhotoThumbUrl
 
 			return true;
 		}
@@ -436,102 +398,58 @@ namespace DataAccess
 		{
 			List<PhotoGalleryItem> photos = new List<PhotoGalleryItem>();
 
-			try
-			{
-				string photoDir = PhotoGalleryItem.SubmittedPhotoDir;
+            //PhotoGalleryItem item = new PhotoGalleryItem(0, title, caption, accountId, 0);
+            //item.SubmittedPhotoName = System.IO.Path.GetFileNameWithoutExtension(commentFile) + ".jpg";
+            //item.SubmittedThumbPhotoName = System.IO.Path.GetFileNameWithoutExtension(commentFile) + "Thumb.jpg";
+            //item.SubmittedPhotoKey = new Guid(System.IO.Path.GetFileNameWithoutExtension(commentFile));
+            //item.SubmittedBy = user;
+            //item.SubmittedForTeamId = teamId;
 
-				if (System.IO.Directory.Exists(photoDir))
-				{
-					string[] commentFiles = System.IO.Directory.GetFiles(photoDir, "*.txt");
-
-					foreach (string commentFile in commentFiles)
-					{
-						System.IO.StreamReader tr = new StreamReader(commentFile);
-						string title = String.Empty;
-						string caption = String.Empty;
-						string user = String.Empty;
-						long teamId = 0;
-
-						title = tr.ReadLine();
-						if (title != null)
-						{
-							caption = tr.ReadLine();
-							if (caption != null)
-							{
-								user = tr.ReadLine();
-								if (user != null)
-								{
-									string teamIdStr = tr.ReadLine();
-									if (teamIdStr != null)
-									{
-										Int64.TryParse(teamIdStr, out teamId);
-									}
-								}
-								else
-								{
-									user = string.Empty;
-								}
-							}
-							else
-							{
-								caption = String.Empty;
-							}
-						}
-						else
-						{
-							title = String.Empty;
-						}
-
-						tr.Close();
-						tr.Dispose();
-
-						PhotoGalleryItem item = new PhotoGalleryItem(0, title, caption, accountId, 0);
-						item.SubmittedPhotoName = System.IO.Path.GetFileNameWithoutExtension(commentFile) + ".jpg";
-						item.SubmittedThumbPhotoName = System.IO.Path.GetFileNameWithoutExtension(commentFile) + "Thumb.jpg";
-						item.SubmittedPhotoKey = new Guid(System.IO.Path.GetFileNameWithoutExtension(commentFile));
-						item.SubmittedBy = user;
-						item.SubmittedForTeamId = teamId;
-
-						photos.Add(item);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            //photos.Add(item);
 
 			return photos;
 		}
 
-		public static List<PhotoGalleryAlbum> GetTeamPhotoAlbums(long teamId)
+		public static IQueryable<PhotoGalleryAlbum> GetTeamPhotoAlbums(long accountId, long teamId)
 		{
-			List<PhotoGalleryAlbum> photos = new List<PhotoGalleryAlbum>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeamPhotoAlbums", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+            var album = (from pga in db.PhotoGalleryAlbums
+                         where pga.AccountId == accountId && pga.TeamId == teamId
+                         select new PhotoGalleryAlbum()
+                         {
+                             Id = pga.id,
+                             TeamId = pga.TeamId,
+                             Title = pga.Title,
+                             AccountId = pga.AccountId,
+                             ParentAlbumId = pga.ParentAlbumId
+                         });
 
-					myConnection.Open();
-					myCommand.Prepare();
+            // create a default album for the team
+            if (!album.Any())
+            {
+                SportsManager.Model.PhotoGalleryAlbum dbAlbum = new SportsManager.Model.PhotoGalleryAlbum();
+                dbAlbum.ParentAlbumId = 0;
+                dbAlbum.Title = DataAccess.Teams.GetTeamNameFromTeamId(teamId, false);
+                dbAlbum.AccountId = accountId;
+                dbAlbum.TeamId = teamId;
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						photos.Add(new PhotoGalleryAlbum(dr.GetInt64(0), dr.GetString(2), dr.GetInt64(1), dr.GetInt64(3), dr.GetInt64(4)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                db.PhotoGalleryAlbums.InsertOnSubmit(dbAlbum);
+                db.SubmitChanges();
 
-			return photos;
+                return (from pga in db.PhotoGalleryAlbums
+                        where pga.AccountId == accountId && pga.TeamId == teamId
+                        select new PhotoGalleryAlbum()
+                        {
+                            Id = pga.id,
+                            TeamId = pga.TeamId,
+                            Title = pga.Title,
+                            AccountId = pga.AccountId,
+                            ParentAlbumId = pga.ParentAlbumId
+                        });
+            }
+
+            return album;
 		}
 
 		static public int GetMaxPhotosPerAlbum()

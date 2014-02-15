@@ -168,10 +168,8 @@ namespace DataAccess
                 if (!rc)
                 {
                     DB db = DBConnection.GetContext();
-                    var roleId = (from r in db.AspNetRoles
-                                    where r.Name == "AccountAdmin"
-                                    select r.Id).SingleOrDefault();
 
+                    var roleId = DataAccess.ContactRoles.GetAdminAccountId();
                     var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
                     if (roles != null)
                         rc = (from r in roles

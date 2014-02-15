@@ -28,7 +28,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public bool IsPhotoAdmin 
         {
-            get { return IsAdmin || true; }
+            get { return IsAdmin; }
         }
 
         public bool IsTeamMember

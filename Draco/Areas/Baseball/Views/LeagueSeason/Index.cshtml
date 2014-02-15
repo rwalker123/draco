@@ -166,7 +166,7 @@
     <img src='/images/busy.gif' id='teamLogoBusy_{{:Id}}'
          style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
     <img id='teamLogo_{{:Id}}' class='fileupload img-rounded'
-         style="position: relative;vertical-align:middle;width:80px;height:60px" alt="upload team logo"
+         style="position: relative;vertical-align:middle;width:80px;height:45px" alt="upload team logo"
          data-url='/api/FileUploaderAPI/@Model.AccountId/TeamLogo/{{:TeamId}}' src='{{:TeamLogoURL}}'/>
     <!--
     <img src='/images/busy.gif' id='teamPhotoBusy_{{:Id}}'
@@ -221,9 +221,7 @@
 
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/leaguesetup.js"></script>
 
-<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/vendor/jquery.ui.widget.js"></script>
-<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.iframe-transport.js"></script>
-<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
+@Scripts.Render("~/bundles/jquery-file-upload")
 
 <script type="text/javascript">
 

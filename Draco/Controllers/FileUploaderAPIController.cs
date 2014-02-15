@@ -21,6 +21,13 @@ namespace SportsManager.Controllers
 {
     public class FileUploaderAPIController : ApiController
     {
+        // try to keep all at a 16 x 9 format
+        private readonly Size largeImageSize = new Size(800, 450); // "50" units 16 x 50 = 800
+        private readonly Size largeImageThumbSize = new Size(160, 90); // "10" units 
+        private readonly Size smallImageSize = new Size(80, 45); // 5 units
+        private readonly Size mediumImageSize = new Size(640, 360); // 40 units 
+        private readonly Size wideImageSize = new Size(512, 288); // 32 units
+
         enum eSizeType
         {
             Normal,
@@ -46,6 +53,9 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> PhotoGallery(long accountId)
         {
+            if (accountId == 0)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
             var formData = multipartData.FormData;
@@ -59,18 +69,28 @@ namespace SportsManager.Controllers
                 AccountId = accountId
             };
 
-            item.Id = DataAccess.PhotoGallery.AddPhotoGiveId(item);
+            if (String.IsNullOrEmpty(item.Title))
+                item.Title = System.IO.Path.GetFileNameWithoutExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' }));
 
-            if (item.Id > 0)
+            bool rc = DataAccess.PhotoGallery.AddPhoto(item);
+
+            if (rc)
             {
-                return await ProcessUploadRequest(file, accountId, item.PhotoURLName, ImageFormat.Jpeg, new Size(640, 480), eSizeType.Maximum, true, item.PhotoThumbURLName, new Size(160, 120));
+                HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
+                if (msg.IsSuccessStatusCode)
+                    return Request.CreateResponse<PhotoGalleryItem>(HttpStatusCode.OK, item);
+                else
+                {
+                    await DataAccess.PhotoGallery.RemovePhoto(item);
+                    return msg;
+                }
             }
             else
             {
                 File.Delete(file.LocalFileName);
             }
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -94,7 +114,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
         }
 
 
@@ -107,7 +127,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, t.TeamLogoURL, ImageFormat.Png, new Size(80, 60), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.TeamLogoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -119,7 +139,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, t.TeamPhotoURL, ImageFormat.Jpeg, new Size(640, 280), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.TeamPhotoURL, ImageFormat.Jpeg, mediumImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -131,7 +151,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, a.LargeLogoURL, ImageFormat.Png, new Size(512, 125), eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, a.LargeLogoURL, ImageFormat.Png, wideImageSize, eSizeType.Maximum);
         }
 
         private async Task<MultipartFormDataStreamProvider> prep()

@@ -130,7 +130,7 @@
     <div style="clear:both"></div>
     <div style="display: block; width: 200px; height: 30px; overflow: hidden;">
         <img style="border:none;vertical-align:middle;margin-left:5px" src="~/Images/attach.png" /><span style="vertical-align:middle"> Attach Files</span>
-        <input type="file" id="fileupload"  data-maxFileSize="1" style="cursor:pointer;font-size: 50px; width: 130px; opacity: 0; filter:alpha(opacity: 0);  position: relative; top: -40px;; left: -20px" />
+        <input type="file" id="fileupload"  data-maxFileSize="1" style="cursor:pointer;font-size: 50px; width: 130px; opacity: 0; filter:alpha(opacity: 0);  position: relative; top: -40px; left: -20px" />
     </div>
 
     <hr />
@@ -149,8 +149,7 @@
 {
 @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 @Scripts.Render("~/bundles/knockout")
-
-<script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
+@Scripts.Render("~/bundles/jquery-file-upload")
 
 <script type="text/javascript">
     var EmailUsersClass = function (accountId) {

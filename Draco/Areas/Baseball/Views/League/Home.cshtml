@@ -33,12 +33,6 @@
 
     @Styles.Render("~/Content/font-awesome")
 
-    <style>
-        .item {
-
-        }
-
-    </style>
 }
 
 <div class="jumbotron">
@@ -119,7 +113,7 @@
             @if (Model.HasTeams)
             {
                 <div class="row">
-                    <div class="item col-md-12">
+                    <div class="col-md-12">
                         <div class="panel panel-success">
                             <div class="panel-heading">
                                 <h3 class="panel-title" style="float: left;">Your Teams</h3>
@@ -137,7 +131,7 @@
             @if (Model.ShowWorkouts)
             {
                 <div class="row">
-                    <div class="item col-md-12">
+                    <div class="col-md-12">
                         <div class="panel panel-primary">
                             <div class="panel-heading">
                                 <h3 class="panel-title" style="float: left;">Workouts</h3>
@@ -159,7 +153,7 @@
             @if (Model.ShowLeagueLeaders)
             {
                 <div class="row">
-                    <div class="item col-md-12">
+                    <div class="col-md-12">
                         <div class="panel panel-default">
                             <div class="panel-heading">
                                 <h3 class="panel-title" style="float: left;">League Leaders</h3>
@@ -180,19 +174,19 @@
             }
 
             <div class="row">
-                <div class="item col-md-12">
+                <div class="col-md-12">
                     @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
 
             <div class="row">
-                <div class="item col-md-12">
+                <div class="col-md-12">
                     @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
 
         <div class="row">
-            <div class="item col-md-12">
+            <div class="col-md-12">
                 @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
             </div>
         </div>
@@ -200,7 +194,7 @@
         @if (Model.ShowPhotoGallery)
         {
             <div class="row">
-                <div class="item col-md-12">
+                <div class="col-md-12">
                     <div id="photoGallery" data-bind="visible: photoGalleryVisible">
                         @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
                     </div>
@@ -250,7 +244,7 @@
         @if (Model.ShowHallOfFame)
         {
             <div class="row">
-                <div class="item col-md-12">
+                <div class="col-md-12">
                     <div class="panel panel-default">
                         <div class="panel-heading">
                             <h3 class="panel-title" style="float: left;">Hall of Fame</h3>
@@ -273,18 +267,18 @@
 
     <div class="col-md-4"> <!-- second column -->
 
-    <div class="item col-md-12">
+    <div class="col-md-12">
         @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
     </div>
 
-    <div class="item col-md-12">
+    <div class="col-md-12">
         @{Html.RenderPartial("Birthdays", new SportsManager.ViewModels.BirthdayViewModel(Model.Controller, Model.AccountId));}
     </div>
 
         
         @if (Model.ShowPlayerInterview)
         {
-            <div class="item col-md-12">
+            <div class="col-md-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="float: left; ">Player Interview</h3>
@@ -304,7 +298,7 @@
         
         @if (Model.ShowSponsors)
         {
-            <div class="item col-md-12">
+            <div class="col-md-12">
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3 class="panel-title" style="float: left;">Sponsors</h3>
@@ -369,13 +363,12 @@
 
 @section scripts {
 
+    @Scripts.Render("~/bundles/knockout")
     @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
     <script type="text/javascript" src="~/Scripts/announcement.js"></script>
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
-
-    @Scripts.Render("~/bundles/knockout")
 
     <!-- main javascript -->
     <script type="text/javascript">
@@ -406,10 +399,6 @@
             $('.wysiwygEditor').wysiwyg();
             $('.wysiwygEditor').cleanHtml();
 
-            //$('.container').masonry({
-            //    itemSelector: '.item',
-            //    columnWidth: '.item'
-            //});
         });
     </script>
 
@@ -557,9 +546,7 @@
     <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
         -->
     <!-- drag/drop support for logo -->
-    <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/vendor/jquery.ui.widget.js"></script>
-    <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.iframe-transport.js"></script>
-    <script type="text/javascript" src="~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"></script>
+    @Scripts.Render("~/bundles/jquery-file-upload")
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/leagueHome.js"></script>
 
     @if (Model.IsAdmin)

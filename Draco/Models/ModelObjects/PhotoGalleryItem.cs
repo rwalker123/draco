@@ -60,63 +60,15 @@ namespace ModelObjects
 		{
 			get 
 			{
-				if (PhotoFile != null)
-					return m_PhotoGalleryUploadDir + Id + m_photoName;
-				else
-					return null;
-			}
-		}
-
-		public string PhotoURLName
-		{
-			get
-			{
 				return m_PhotoGalleryUploadDir + Id + m_photoName;
-			}
-		}
-
-		public string PhotoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(m_PhotoGalleryUploadDir + Id + m_photoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 
 		public string PhotoThumbURL
 		{
-			get 
-			{
-				if (PhotoThumbFile != null)
-					return m_PhotoGalleryUploadDir + Id + m_thumbPhotoName;
-				else
-					return null;
-			}
-		}
-
-		public string PhotoThumbURLName
-		{
 			get
 			{
 				return m_PhotoGalleryUploadDir + Id + m_thumbPhotoName;
-			}
-		}
-
-		public string PhotoThumbFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(m_PhotoGalleryUploadDir + Id + m_thumbPhotoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
 			}
 		}
 
@@ -125,14 +77,6 @@ namespace ModelObjects
             get
             {
                 return m_SubmittedPhotoDir;
-            }
-        }
-
-        static public string SubmittedPhotoDir
-        {
-            get
-            {
-                return System.Web.HttpContext.Current.Server.MapPath(m_SubmittedPhotoDir);
             }
         }
 
@@ -155,10 +99,7 @@ namespace ModelObjects
         {
             get
             {
-                if (SubmittedPhotoThumbFile != null)
-                    return m_SubmittedPhotoDir + SubmittedThumbPhotoName;
-                else
-                    return null;
+                return m_SubmittedPhotoDir + SubmittedThumbPhotoName;
             }
         }
 
@@ -167,19 +108,6 @@ namespace ModelObjects
             get
             {
                 return m_SubmittedPhotoDir + SubmittedThumbPhotoName;
-            }
-        }
-
-        public string SubmittedPhotoThumbFile
-        {
-            get
-            {
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(m_SubmittedPhotoDir + SubmittedThumbPhotoName);
-                System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-                if (fileInfo.Exists)
-                    return fileInfo.FullName;
-                else
-                    return null;
             }
         }
 
@@ -193,31 +121,7 @@ namespace ModelObjects
         {
             get
             {
-                if (SubmittedPhotoFile != null)
-                    return m_SubmittedPhotoDir + SubmittedPhotoName;
-                else
-                    return null;
-            }
-        }
-
-        public string SubmittedPhotoURLName
-        {
-            get
-            {
                 return m_SubmittedPhotoDir + SubmittedPhotoName;
-            }
-        }
-
-        public string SubmittedPhotoFile
-        {
-            get
-            {
-                string logoPath = System.Web.HttpContext.Current.Server.MapPath(m_SubmittedPhotoDir + SubmittedPhotoName);
-                System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-                if (fileInfo.Exists)
-                    return fileInfo.FullName;
-                else
-                    return null;
             }
         }
 

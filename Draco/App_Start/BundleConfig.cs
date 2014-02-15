@@ -29,6 +29,11 @@ namespace SportsManager
                         "~/Scripts/bootstrap-wysiwyg.js",
                         "~/Scripts/bootstrap-wysiwyg-helper.js"));
 
+            bundles.Add(new ScriptBundle("~/bundles/jquery-file-upload").Include(
+                    "~/Scripts/jQuery-File-Upload-jquery-ui/js/vendor/jquery.ui.widget.js",
+                    "~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.iframe-transport.js",
+                    "~/Scripts/jQuery-File-Upload-jquery-ui/js/jquery.fileupload.js"));
+
             // Use the development version of Modernizr to develop with and learn from. Then, when you're
             // ready for production, use the build tool at http://modernizr.com to pick only the tests you need.
             bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
