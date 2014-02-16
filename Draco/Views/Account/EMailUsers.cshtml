@@ -135,8 +135,8 @@
 
     <hr />
 
-    @{Html.RenderPartial("_bootstrap-wysiwyg-menu");}
-    <div data-bind="htmlValue: emailText" class="wysiwygEditor">
+    @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "emailEditor");}
+    <div data-bind="htmlValue: emailText" class="wysiwygEditor" id="emailEditor">
     </div>
 
 </div>
@@ -410,6 +410,8 @@
                 }
             });
         }
+
+        $('#emailEditor').wysiwyg({ toolbarSelector: '[data-role=emailEditor-toolbar]' });
     }
 
 </script>
@@ -441,8 +443,6 @@
         $(".selectpicker").selectpicker();
 
         initToolbarBootstrapBindings();
-        $('.wysiwygEditor').wysiwyg();
-        $('.wysiwygEditor').cleanHtml();
     });
 </script>
 }

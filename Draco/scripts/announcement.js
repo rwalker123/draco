@@ -10,6 +10,9 @@ $.extend(AnnouncementClass.prototype, {
     init: function (accountId, isAdmin) {
         this.accountId = accountId;
         this.isAdmin = isAdmin;
+
+        $('#newsEditControl').wysiwyg({ toolbarSelector: '[data-role=newsEditControl-toolbar]' });
+
     },
 
     cancelNewsEdit: function () {

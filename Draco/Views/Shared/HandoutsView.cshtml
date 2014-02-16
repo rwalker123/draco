@@ -5,19 +5,99 @@
     return;
 }
 
-<div class="panel panel-info">
+<div class="panel panel-info" id="handouts">
     <div class="panel-heading">
         <h3 class="panel-title" style="float: left;">Handouts</h3>
 
         @if (Model.IsAdmin)
         {
-            <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button></h3>
+            <h3 class="panel-title" style="float: right;"><button type="button" class="btn btn-default" data-bind="click: startHandoutAdd"><span class="glyphicon glyphicon-plus"></span></button></h3>
         }
         <div style="clear:both"></div>
     </div>
 
     <div class="panel-body">
-        Handout content.
+        @if (Model.IsAdmin)
+        {
+            <form class="form-horizontal" style="margin-left:10px;" data-bind="visible: !viewMode()">
+                <div class="form-group">
+                    <button class="btn btn-default" data-bind="click: endHandoutAdd">Done Adding Handouts</button>
+                </div>
+                <div class="form-group">
+                    <label for="enterHandoutDescripton" class="col-sm-2 control-label">description</label>
+                    <div class="col-sm-10">
+                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "enterHandoutDescription");}
+                        <div class="wysiwygEditor" id="enterHandoutDescription" data-bind="htmlValue: handoutDescription">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
+                        <span class="btn btn-default fileinput-button">
+                            <i class="glyphicon glyphicon-plus"></i>
+                            <span>Select File...</span>
+                            <input id="handoutupload" class="form-control" type="file" data-maxfilesize="1">
+                        </span>
+                    </div>
+                    <div class="col-sm-10">
+                        <span id="handoutSelectedFileName" class="form-control" data-bind="html: selectedFileName"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" id="handoutUploadBtn" class="btn btn-primary" data-bind="visible: readyToUpload">Upload</button>
+                    <span class="alert alert-info col-sm-4" data-bind="visible: isUploading">Uploading...</span>
+                </div>
+            </form>
+        }
+        
+        @if (Model.IsAdmin)
+        {
+            <form data-bind='visible: $root.editHandoutMode'>
+                <h3 class="list-group-item-heading" data-bind="html: handoutEdit_FileName"></h3>
+
+                <div class="form-group">
+                    <label for="handoutEditor" class="sr-only">description</label>
+                    <div class="col-sm-12">
+                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "handoutEditor");}
+                        <div class="wysiwygEditor" id="handoutEditor" data-bind="htmlValue: handoutEdit_Description">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" data-bind="click: $root.saveHandout"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-danger" data-bind="click: $root.endHandoutEdit"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </form>
+        }
+        
+        <ul class="list-group" data-bind="foreach: handouts, visible: !editHandoutMode()">
+            <li class="list-group-item">
+                <div data-bind="visible: viewMode">
+                    <h3 class="list-group-item-heading" data-bind="html: FileName"></h3>
+                    <p class="list-group-item-text" data-bind="html: Description"></p>
+                    <div class="alert alert-info">
+                        <a class="alert-link" data-bind="attr: { href: HandoutURL, title: FileName }">Download File</a>
+                    </div>
+                    @if (Model.IsAdmin)
+                    {
+                        <form>
+                            <div class="form-group">
+                                <button type="button" class="btn btn-default" data-bind="click: $root.startHandoutEdit"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button type="button" class="btn btn-danger" data-bind="click: $root.deleteHandout"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        </form>
+                    }
+                </div>
+            </li>
+        </ul>
+        @if (Model.IsAdmin)
+        { 
+            <p class="help-block" data-bind='if: handouts().length == 0'>
+                click the <button type="button" class="btn btn-default" data-bind="click: startHandoutAdd"><span class='glyphicon glyphicon-plus'></span></button> button to add handouts.
+            </p>
+        }
     </div>
 </div>
 

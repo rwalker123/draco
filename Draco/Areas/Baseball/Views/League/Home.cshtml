@@ -369,6 +369,7 @@
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
     <script type="text/javascript" src="~/Scripts/announcement.js"></script>
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
+    <script type="text/javascript" src="~/Scripts/handouts.js"></script>
 
     <!-- main javascript -->
     <script type="text/javascript">
@@ -388,6 +389,10 @@
             welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            
+            var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            ko.applyBindings(handoutData, document.getElementById("handouts"));
+
 
             // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
             welcomeData.ShowFirstMenu();
@@ -396,8 +401,6 @@
             $(".selectpicker").selectpicker();
 
             initToolbarBootstrapBindings();
-            $('.wysiwygEditor').wysiwyg();
-            $('.wysiwygEditor').cleanHtml();
 
         });
     </script>

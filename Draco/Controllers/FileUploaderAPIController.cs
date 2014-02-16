@@ -95,6 +95,48 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public async Task<HttpResponseMessage> Handout(long accountId)
+        {
+            if (accountId == 0)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
+            var multipartData = await prep();
+            MultipartFileData file = multipartData.FileData[0];
+            var formData = multipartData.FormData;
+
+            String fileName = file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' });
+
+            AccountHandout item = new AccountHandout()
+            {
+                Id = 0,
+                Description = formData["Description"],
+                FileName = fileName,
+                ReferenceId = accountId
+            };
+
+            bool rc = DataAccess.AccountHandouts.AddAccountHandout(item);
+
+            if (rc)
+            {
+                var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
+                if (msg.IsSuccessStatusCode)
+                    return Request.CreateResponse<AccountHandout>(HttpStatusCode.OK, item);
+                else
+                {
+                    await DataAccess.AccountHandouts.RemoveAccountHandout(item);
+                    return msg;
+                }
+            }
+            else
+            {
+                File.Delete(file.LocalFileName);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> MailAttachment(long accountId)
         {
             var multipartData = await prep();
@@ -182,6 +224,19 @@ namespace SportsManager.Controllers
             try
             {
                 return Request.CreateResponse(HttpStatusCode.OK, MapUrl(file.LocalFileName));
+            }
+            catch (System.Exception e)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
+            }
+        }
+
+        private async Task<HttpResponseMessage> ProcessUploadRequest(MultipartFileData file, long accountId, String fileUri)
+        {
+            try
+            {
+                String blobUri = await SportsManager.Models.Utils.AzureStorageUtils.SaveToCloudBlob(file.LocalFileName, fileUri);
+                return Request.CreateResponse<string>(HttpStatusCode.OK, blobUri);
             }
             catch (System.Exception e)
             {

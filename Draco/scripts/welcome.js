@@ -14,6 +14,8 @@ $.extend(WelcomeClass.prototype, {
         this.accountId = accountId;
         this.isAdmin = isAdmin;
         this.teamId = teamId;
+
+        $('#welcomeMessageControl').wysiwyg({ toolbarSelector: '[data-role=welcomeMessageControl-toolbar]' });
     },
 
     cancelWelcomeEdit: function () {

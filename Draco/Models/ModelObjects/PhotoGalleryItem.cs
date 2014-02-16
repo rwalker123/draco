@@ -11,7 +11,6 @@ namespace ModelObjects
 		private const string m_photoName = "PhotoGallery.jpg";
 		private const string m_thumbPhotoName = "PhotoGalleryThumb.jpg";
         private static string m_SubmittedPhotoDir = Globals.UploadDirRoot + "SubmittedPhotos/";
-        private static string m_PhotoGalleryUploadDir = Globals.UploadDirRoot + "PhotoGallery/";
 
 		public PhotoGalleryItem()
 		{
@@ -60,7 +59,7 @@ namespace ModelObjects
 		{
 			get 
 			{
-				return m_PhotoGalleryUploadDir + Id + m_photoName;
+                return Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_photoName;
 			}
 		}
 
@@ -68,7 +67,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return m_PhotoGalleryUploadDir + Id + m_thumbPhotoName;
+                return Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_thumbPhotoName;
 			}
 		}
 

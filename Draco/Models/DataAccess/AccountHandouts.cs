@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using ModelObjects;
 using System.Linq;
 using SportsManager;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -20,34 +21,16 @@ namespace DataAccess
 
 		static public AccountHandout GetHandout(long id)
 		{
-			AccountHandout h = null;
-
-			try
-			{
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetHandout", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-					myCommand.Parameters.Add("@isAccount", SqlDbType.Int).Value = 1;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						h = CreateHandout(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return h;
+            DB db = DBConnection.GetContext();
+            return (from h in db.AccountHandouts
+                    where h.Id == id
+                    select new AccountHandout()
+                    {
+                        Id = h.Id,
+                        ReferenceId = h.AccountId,
+                        Description = h.Description,
+                        FileName = h.FileName
+                    }).SingleOrDefault();
 		}
 
 		static public IQueryable<AccountHandout> GetAccountHandouts(long accountId)
@@ -70,93 +53,61 @@ namespace DataAccess
 
 		static public bool ModifyAccountHandout(AccountHandout item)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateAccountHandout", myConnection);
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = item.Description;
-					myCommand.Parameters.Add("@fileName", SqlDbType.VarChar, 255).Value = item.FileName;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbHandout = (from h in db.AccountHandouts
+                             where h.Id == item.Id
+                             select h).SingleOrDefault();
+            if (dbHandout != null)
+            {
+                dbHandout.Description = item.Description;
+                dbHandout.FileName = item.FileName;
 
-					myConnection.Open();
-					myCommand.Prepare();
+                db.SubmitChanges();
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
-		static public long AddAccountHandout(AccountHandout item)
+		static public bool AddAccountHandout(AccountHandout item)
 		{
-			long id = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateAccountHandout", myConnection);
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = item.Description;
-					myCommand.Parameters.Add("@fileName", SqlDbType.VarChar, 255).Value = item.FileName;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = item.ReferenceId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbHandout = new SportsManager.Model.AccountHandout()
+            {
+                AccountId = item.ReferenceId,
+                Description = item.Description,
+                FileName = item.FileName
+            };
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.AccountHandouts.InsertOnSubmit(dbHandout);
+            db.SubmitChanges();
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						id = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            item.Id = dbHandout.Id;
 
-			return id;
+            return true;
 		}
 
-		static public bool RemoveAccountHandout(AccountHandout item)
+		static public async Task<bool> RemoveAccountHandout(AccountHandout item)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteAccountHandout", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbHandout = (from h in db.AccountHandouts
+                             where h.Id == item.Id
+                             select h).SingleOrDefault();
+            if (dbHandout != null)
+            {
+                db.AccountHandouts.DeleteOnSubmit(dbHandout);
+                db.SubmitChanges();
 
-					myConnection.Open();
-					myCommand.Prepare();
+                item.FileName = dbHandout.FileName;
 
-					rowCount = myCommand.ExecuteNonQuery();
+                await SportsManager.Models.Utils.AzureStorageUtils.RemoveCloudFile(item.HandoutURL);
+                return true;
+            }
 
-					if (item.HandoutFile != null)
-					{
-						System.IO.FileInfo fi = new System.IO.FileInfo(item.HandoutFile);
-						fi.Delete();
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount > 0);
+            return false;
 		}
 	}
 }

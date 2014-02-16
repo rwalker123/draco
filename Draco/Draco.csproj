@@ -344,6 +344,7 @@
     <Compile Include="Controllers\GoogleSearchController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LeagueAPIController.cs" />
+    <Compile Include="Controllers\HandoutsAPIController.cs" />
     <Compile Include="Controllers\PhotoGalleryAPIController.cs" />
     <Compile Include="Controllers\SeasonController.cs" />
     <Compile Include="Controllers\SeasonsApiController.cs" />
@@ -639,6 +640,7 @@
     <Content Include="Content\font-awesome-4.0.3\fonts\fontawesome-webfont.woff" />
     <Content Include="Content\font-awesome-4.0.3\fonts\FontAwesome.otf" />
     <None Include="Properties\PublishProfiles\detroitmsbl %282%29.pubxml" />
+    <Content Include="Scripts\handouts.js" />
     <Content Include="Scripts\bootstrap-select\bootstrap-select.jquery.json" />
     <Content Include="Scripts\bootstrap-select\bower.json" />
     <Content Include="Scripts\bootstrap-select\composer.json" />

@@ -1,9 +1,12 @@
 using System;
 using System.Data;
+using System.Linq;
 using System.Collections;
 using System.Data.SqlClient;
 using ModelObjects;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -142,37 +145,23 @@ namespace DataAccess
 			return id;
 		}
 
-		static public bool RemoveTeamHandout(TeamHandout item)
+		static public async Task<bool> RemoveTeamHandout(TeamHandout item)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteTeamHandout", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbHandout = (from h in db.TeamHandouts
+                             where h.Id == item.Id
+                             select h).SingleOrDefault();
+            if (dbHandout != null)
+            {
+                db.TeamHandouts.DeleteOnSubmit(dbHandout);
+                db.SubmitChanges();
 
-					myConnection.Open();
-					myCommand.Prepare();
+                await SportsManager.Models.Utils.AzureStorageUtils.RemoveCloudFile(item.HandoutURL);
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-
-					if (item.HandoutFile != null)
-					{
-						System.IO.FileInfo fi = new System.IO.FileInfo(item.HandoutFile);
-						fi.Delete();
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 	}
 }

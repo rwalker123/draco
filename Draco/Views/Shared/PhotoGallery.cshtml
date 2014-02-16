@@ -13,7 +13,7 @@
     <div class="panel-body">
 
         @if (Model.IsAdmin) { 
-            <form class="form-horizontal" style="margin-left:10px;" data-bind="visible: !viewMode()" id="editForm">
+            <form class="form-horizontal" style="margin-left:10px;" data-bind="visible: !viewMode()">
                 <div class="form-group">
                     <button class="btn btn-default" data-bind="click: endEditMode">Done Adding Photos</button>
                 </div>
@@ -59,9 +59,15 @@
                 </div>
 
                 <div id="pg" class="form-group">
-
                 </div>
             </form>
+        }
+        
+        @if (Model.IsAdmin)
+        {
+            <p class="help-block" data-bind='if: photoGalleryItemsCount() == 0'>
+                click the <button type="button" class="btn btn-default" data-bind="click: startEditMode"><span class='glyphicon glyphicon-plus'></span></button> button to add handouts.
+            </p>
         }
         
         <div data-bind="if: photoGalleryItemsCount() > 0">

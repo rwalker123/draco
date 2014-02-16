@@ -7,8 +7,6 @@ namespace ModelObjects
 	/// </summary>
 	abstract public class Handout
 	{
-		private string m_handoutName = "handout";
-
 		public Handout()
 		{
 		}
@@ -27,67 +25,14 @@ namespace ModelObjects
 		public long ReferenceId { get; set; }
 		abstract protected string HandoutDir { get; }
 
-		public string HandoutFileURL
-		{
-			get
-			{
-				if (HandoutFile != null)
-				{
-					string handoutURL = HandoutDir + Id + m_handoutName;
-					return handoutURL.Replace("http://", "file://");
-				}
-				else
-				{
-					return null;
-				}
-			}
-		}
-
-		public string HandoutDownloadURL
-		{
-			get
-			{
-				String downloadURL = "~/Forms/FileDownload.aspx";
-				String handoutFile = System.Web.HttpContext.Current.Server.HtmlEncode(HandoutFile);
-				String fileName = System.Web.HttpContext.Current.Server.HtmlEncode(FileName);
-
-				String urlParams = "?downloadPath=" + handoutFile + "&localFileName=" + fileName + "";
-
-				return downloadURL + urlParams;
-			}
-		}
-
 		public string HandoutURL
 		{
 			get
 			{
-				if (HandoutFile != null)
-					return HandoutDir + Id + m_handoutName;
-				else
-					return null;
+				return HandoutDir + Id + "/" + FileName;
 			}
 		}
 
-		public string HandoutURLName
-		{
-			get
-			{
-				return HandoutDir + Id + m_handoutName;
-			}
-		}
-
-		public string HandoutFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(HandoutDir + Id + m_handoutName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
-			}
-		}
 	}
 
 	public class TeamHandout : Handout
@@ -105,7 +50,7 @@ namespace ModelObjects
 		{
 			get 
 			{ 
-				return Globals.UploadDir + @"Teams\" + ReferenceId + @"\"; 
+				return Globals.UploadDirRoot + "Teams/" + ReferenceId + "/Handouts/"; 
 			}
 		}
 	}
@@ -125,7 +70,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return Globals.UploadDir;
+				return Globals.UploadDirRoot + "Accounts/" + ReferenceId + "/Handouts/";
 			}
 		}
 	}

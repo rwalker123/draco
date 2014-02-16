@@ -28,7 +28,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
-        public HttpResponseMessage Get(long accountId, int id, PhotoGalleryItem item)
+        public HttpResponseMessage UpdatePhoto(long accountId, int id, PhotoGalleryItem item)
         {
             if (String.IsNullOrEmpty(item.Title))
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Title cannot be empty.");

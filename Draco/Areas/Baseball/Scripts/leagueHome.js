@@ -348,7 +348,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
-
     }
 
     self.endEditPhoto = function (photo) {
@@ -442,7 +441,8 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
                         return false;
                     }
                     // if we have a selected file, button is already visible.
-                    if (self.selectedFileName() == self.selectedFileNameDefaultText) {
+                    if (self.selectedFileName() == self.selectedFileNameDefaultText ||
+                        self.selectedFileName() == '') {
                         data.context = $('<button/>')
                             .text('Upload')
                             .attr('class', 'btn btn-primary')

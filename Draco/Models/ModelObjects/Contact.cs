@@ -27,7 +27,6 @@ namespace ModelObjects
 
         private static string PhotoName = "ContactPhoto.jpg";
         private static string LargePhotoName = "ContactActionPhoto.jpg";
-        private static string ContactsUploadDir = Globals.UploadDirRoot + "Contacts/";
 
         public Contact()
         {
@@ -144,7 +143,7 @@ namespace ModelObjects
         {
             get
             {
-                return ContactsUploadDir + Id + PhotoName;
+                return Globals.UploadDirRoot + "Contacts/" + Id + "/" + PhotoName;
             }
         }
 
@@ -152,7 +151,7 @@ namespace ModelObjects
         {
             get
             {
-                return ContactsUploadDir + Id + LargePhotoName;
+                return Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName;
             }
         }
 
