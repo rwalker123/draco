@@ -7,6 +7,8 @@ using System.Web.SessionState;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -101,35 +103,40 @@ namespace DataAccess
 			return name;
 		}
 
+        static public IQueryable<WorkoutAnnouncement> GetActiveWorkoutAnnouncements(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+            var now = DateTime.Now.AddDays(1);
+            
+            return (from wa in db.WorkoutAnnouncements
+                    where wa.AccountId == accountId && wa.WorkoutDate >= now
+                    select new WorkoutAnnouncement()
+                    {
+                        Id = wa.id,
+                        AccountId = accountId,
+                        Comments = wa.Comments,
+                        Description = wa.WorkoutDesc,
+                        WorkoutDate = wa.WorkoutDate,
+                        WorkoutLocation = wa.FieldId,
+                        WorkoutTime = wa.WorkoutTime
+                    });
+        }
 
-		static public List<WorkoutAnnouncement> GetWorkoutAnnouncements(long accountId)
+		static public IQueryable<WorkoutAnnouncement> GetWorkoutAnnouncements(long accountId)
 		{
-			List<WorkoutAnnouncement> workoutAnnouncements = new List<WorkoutAnnouncement>();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetWorkoutAnnouncements", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						workoutAnnouncements.Add(new WorkoutAnnouncement(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2), dr.GetDateTime(3), dr.GetDateTime(4), dr.GetInt64(5), dr.GetString(6)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return workoutAnnouncements;
+            DB db = DBConnection.GetContext();
+            return (from wa in db.WorkoutAnnouncements
+                    where wa.AccountId == accountId
+                    select new WorkoutAnnouncement()
+                    {
+                        Id = wa.id,
+                        AccountId = accountId,
+                        Comments = wa.Comments,
+                        Description = wa.WorkoutDesc,
+                        WorkoutDate = wa.WorkoutDate,
+                        WorkoutLocation = wa.FieldId,
+                        WorkoutTime = wa.WorkoutTime
+                    });
 		}
 
 		static public WorkoutAnnouncement GetWorkoutAnnouncement(long workoutId)

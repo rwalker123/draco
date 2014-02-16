@@ -6,6 +6,8 @@ using System.Data.SqlClient;
 using ModelObjects;
 
 using System.Collections.Generic;
+using SportsManager;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -14,34 +16,25 @@ namespace DataAccess
 /// </summary>
 	static public class Sponsors
 	{
-		static public List<Sponsor> GetSponsors( long accountId )
+		static public IQueryable<Sponsor> GetSponsors( long accountId )
 		{
-			List<Sponsor> sponsors = new List<Sponsor>();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetSponsors", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						sponsors.Add(new Sponsor(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9), dr.GetInt64(10), dr.GetInt64(1)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-
-			return sponsors;
+            DB db = DBConnection.GetContext();
+            return (from s in db.Sponsors
+                    where s.AccountId == accountId && s.TeamId == 0
+                    select new Sponsor()
+                    {
+                        Id = s.id,
+                        AccountId = accountId,
+                        CityStateZip = s.CityStateZip,
+                        Description = s.Description,
+                        EMail = s.EMail,
+                        Fax = s.Fax,
+                        Phone = s.Phone,
+                        StreetAddress = s.StreetAddress,
+                        Name = s.Name,
+                        Website = s.WebSite,
+                        TeamId = s.TeamId
+                    });
 		}
 
 		static public Sponsor GetSponsorOfDay( long accountId )

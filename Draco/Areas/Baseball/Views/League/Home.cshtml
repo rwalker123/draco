@@ -185,12 +185,15 @@
                 </div>
             </div>
 
-        <div class="row">
-            <div class="col-md-12">
-                @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
+        @if (Model.ShowHandouts)
+        { 
+            <div class="row">
+                <div class="col-md-12">
+                    @{Html.RenderPartial("HandoutsView", new SportsManager.ViewModels.HandoutsViewModel(Model.Controller, Model.AccountId));}
+                </div>
             </div>
-        </div>
-
+        }
+        
         @if (Model.ShowPhotoGallery)
         {
             <div class="row">

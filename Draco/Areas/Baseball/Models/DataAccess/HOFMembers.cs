@@ -21,35 +21,19 @@ namespace DataAccess
 			return new HOFMember(dr.GetInt64(0), dr.GetInt32(2), contactInfo, dr.GetString(4), dr.GetInt64(1));
 		}
 
-		static public HOFMember[] GetMembers(long accountId)
+		static public IQueryable<HOFMember> GetMembers(long accountId)
 		{
-			ArrayList members = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetHOFMembers", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-					
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while ( dr.Read() ) 
-					{
-						members.Add( CreateHOFMember(dr) );
-					}
-				} 
-			}
-			catch(SqlException ex) 
-			{
-				System.Diagnostics.Trace.WriteLine(ex.Message);
-			}
-		
-			return (HOFMember[])members.ToArray(typeof(HOFMember));
+            return (from h in db.hofs
+                    where h.AccountId == accountId
+                    select new HOFMember()
+                    {
+                        Id = h.id,
+                        AccountId = accountId,
+                        Biography = h.Bio,
+                        YearInducted = h.YearInducted
+                    });
 		}
 
 		static public HOFMember GetMemberOfDay(long accountId)

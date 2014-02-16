@@ -16,11 +16,12 @@ namespace SportsManager.Baseball.ViewModels
             ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
 
-            ShowWorkouts = true;
-            ShowHallOfFame = true;
+            ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();
+            ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
+            ShowHallOfFame = IsAdmin || DataAccess.HOFMembers.GetMembers(accountId).Any();
             ShowPlayerInterview = true;
             ShowLeagueLeaders = true;
-            ShowSponsors = true;
+            ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
             HasTeams = true;
 
             TwitterEnabled = false;
@@ -29,6 +30,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool HasTeams
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowHandouts
         {
             get;
             private set;
