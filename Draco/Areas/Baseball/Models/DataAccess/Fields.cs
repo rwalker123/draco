@@ -82,36 +82,29 @@ namespace DataAccess
             return field;
         }
 
-        static public List<Field> GetFields(long accountId)
+        static public IQueryable<Field> GetFields(long accountId)
         {
-            List<Field> fields = new List<Field>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetFields", myConnection);
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from f in db.AvailableFields
+                    where f.AccountId == accountId
+                    orderby f.Name
+                    select new Field()
                     {
-                        fields.Add(new Field(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2), dr.GetString(3), dr.GetString(4),
-                                            dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9),
-                                            dr.GetString(10), dr.GetString(11), dr.GetString(12)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                System.Diagnostics.Trace.WriteLine(ex.Message);
-            }
-
-            return fields;
+                        Id = f.id,
+                        AccountId = accountId,
+                        Address = f.Address,
+                        City = f.City,
+                        Comment = f.Comment,
+                        Directions = f.Directions,
+                        Latitude = f.Latitude,
+                        Longitude = f.Longitude,
+                        Name = f.Name,
+                        RainoutNumber = f.RainoutNumber,
+                        ShortName = f.ShortName,
+                        State = f.State,
+                        ZipCode = f.ZipCode
+                    });
         }
 
         static public bool ModifyField(Field field)

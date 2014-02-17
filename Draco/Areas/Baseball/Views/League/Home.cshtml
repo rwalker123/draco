@@ -30,9 +30,6 @@
     }
 
     <link rel="stylesheet" href="/Areas/Baseball/Content/LeagueHome.css" />
-
-    @Styles.Render("~/Content/font-awesome")
-
 }
 
 <div class="jumbotron">
@@ -132,20 +129,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="panel panel-primary">
-                            <div class="panel-heading">
-                                <h3 class="panel-title" style="float: left;">Workouts</h3>
-                                @if (Model.IsAdmin)
-                                {
-                                    <button style="float: right" type="button" class="btn btn-default" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                                }
-                                <div style="clear:both"></div>
-                            </div>
-
-                            <div class="panel-body">
-                                workout content
-                            </div>
-                        </div>
+                        @{Html.RenderPartial("WorkoutsView", new SportsManager.Baseball.ViewModels.WorkoutsViewModel(Model.Controller, Model.AccountId));}
                     </div>
                 </div>
             }
@@ -173,18 +157,24 @@
                 </div>
             }
 
+        @if (Model.ShowAnnouncements)
+        { 
             <div class="row">
                 <div class="col-md-12">
                     @{Html.RenderPartial("AnnouncementView", new SportsManager.ViewModels.AnnouncementsViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
-
+        }
+        
+        @if (Model.ShowWelcomeMessages)
+        { 
             <div class="row">
                 <div class="col-md-12">
                     @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
-
+        }
+        
         @if (Model.ShowHandouts)
         { 
             <div class="row">
@@ -270,97 +260,100 @@
 
     <div class="col-md-4"> <!-- second column -->
 
-    <div class="col-md-12">
-        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
-    </div>
+    @if (Model.ShowScoreboard)
+    { 
+        <div class="col-md-12">
+            @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
+        </div>
+    }
 
-    <div class="col-md-12">
-        @{Html.RenderPartial("Birthdays", new SportsManager.ViewModels.BirthdayViewModel(Model.Controller, Model.AccountId));}
-    </div>
+    @if (Model.ShowBirthdays)
+    {     
+        <div class="col-md-12">
+            @{Html.RenderPartial("Birthdays", new SportsManager.ViewModels.BirthdayViewModel(Model.Controller, Model.AccountId));}
+        </div>
+    }
 
-        
-        @if (Model.ShowPlayerInterview)
-        {
-            <div class="col-md-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title" style="float: left; ">Player Interview</h3>
+    @if (Model.ShowPlayerInterview)
+    {
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="float: left; ">Player Interview</h3>
 
-                        @if (Model.IsAdmin)
-                        {
-                            <button class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                        }
-                        <div style="clear:both"></div>
-                    </div>
+                    @if (Model.IsAdmin)
+                    {
+                        <button class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
+                    }
+                    <div style="clear:both"></div>
+                </div>
 
-                    <div class="panel-body">
-                    </div>
+                <div class="panel-body">
                 </div>
             </div>
-        }
+        </div>
+    }
         
-        @if (Model.ShowSponsors)
-        {
-            <div class="col-md-12">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title" style="float: left;">Sponsors</h3>
+    @if (Model.ShowSponsors)
+    {
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="float: left;">Sponsors</h3>
 
-                        @if (Model.IsAdmin)
-                        {
-                            <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                        }
-                        <div style="clear:both"></div>
-                    </div>
+                    @if (Model.IsAdmin)
+                    {
+                        <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
+                    }
+                    <div style="clear:both"></div>
+                </div>
 
-                    <div class="panel-body">
-                        Sponsors
-                    </div>
+                <div class="panel-body">
+                    Sponsors
                 </div>
             </div>
-        }
+        </div>
+    }
     </div> <!-- end second column -->
 
     </div> <!-- end main single row -->
 
-    @*<div class="row" style="margin-top:20px">*@
-        @if (Model.TwitterEnabled)
-        {
-            <div class="col-md-6">
-                <div id="twitterFeed" data-bind="visible: displayTwitterFeed" style="margin-top:20px;margin-left:20px;width:400px;float:left">
-                    <h3 class="grad" style="margin-top:0px">Twitter</h3>
-                    @if (Model.IsAdmin)
-                    {
-                        <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
-                            <span>Twitter Widget: <input type="text" data-bind="value: twitterScript" placeholder="paste twitter widget code here" /></span><button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveTwitterScript">save</button><br />
-                            <span>Click <a href='https://twitter.com/settings/widgets' target="twitter">here</a> to visit Twitter to create a widget.</span><br /><br />
-                        </div>
-                    }
+    @if (Model.TwitterEnabled)
+    {
+        <div class="col-md-6">
+            <div id="twitterFeed" data-bind="visible: displayTwitterFeed" style="margin-top:20px;margin-left:20px;width:400px;float:left">
+                <h3 class="grad" style="margin-top:0px">Twitter</h3>
+                @if (Model.IsAdmin)
+                {
+                    <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
+                        <span>Twitter Widget: <input type="text" data-bind="value: twitterScript" placeholder="paste twitter widget code here" /></span><button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveTwitterScript">save</button><br />
+                        <span>Click <a href='https://twitter.com/settings/widgets' target="twitter">here</a> to visit Twitter to create a widget.</span><br /><br />
+                    </div>
+                }
 
-                    <div data-bind="html: htmlTwitterScript"></div>
+                <div data-bind="html: htmlTwitterScript"></div>
 
-                </div>
             </div>
-        }
+        </div>
+    }
 
-        @if (Model.FacebookEnabled)
-        {
-            <div class="col-md-6">
-                <div id="facebookFeed" data-bind="visible: isVisible" style="margin-top:20px;margin-left:20px;width:500px;float:left">
-                    <h3 class="grad" style="margin-top:0px">Facebook</h3>
-                    @if (Model.IsAdmin)
-                    {
-                        <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
-                            <span>Facebook Fan Page: <input type="text" data-bind="value: editFanPage" placeholder="enter Facebook Fan Page" /></span>
-                            <button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveFanPage">save</button>
-                            <button type="button" class="btn btn-danger" style="padding:0px" data-bind="click: cancelSaveFanPage">reset</button><br />
-                        </div>
-                    }
-                    <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
-                </div>
+    @if (Model.FacebookEnabled)
+    {
+        <div class="col-md-6">
+            <div id="facebookFeed" data-bind="visible: isVisible" style="margin-top:20px;margin-left:20px;width:500px;float:left">
+                <h3 class="grad" style="margin-top:0px">Facebook</h3>
+                @if (Model.IsAdmin)
+                {
+                    <div style="border: 1px solid lightGray;margin-top:5px;padding:3px">
+                        <span>Facebook Fan Page: <input type="text" data-bind="value: editFanPage" placeholder="enter Facebook Fan Page" /></span>
+                        <button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveFanPage">save</button>
+                        <button type="button" class="btn btn-danger" style="padding:0px" data-bind="click: cancelSaveFanPage">reset</button><br />
+                    </div>
+                }
+                <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
             </div>
-        }
-    @*</div>*@
+        </div>
+    }
 
 </div>
 
@@ -372,8 +365,17 @@
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
     <script type="text/javascript" src="~/Scripts/announcement.js"></script>
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
-    <script type="text/javascript" src="~/Scripts/handouts.js"></script>
 
+@if (Model.ShowHandouts)
+{
+    <script type="text/javascript" src="~/Scripts/handouts.js"></script>
+}
+
+@if (Model.ShowWorkouts)
+{ 
+    <script type="text/javascript" src="~/Areas/Baseball/Scripts/workouts.js"></script>
+}
+    
     <!-- main javascript -->
     <script type="text/javascript">
 
@@ -393,9 +395,21 @@
             announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             
+        @if (Model.ShowHandouts)
+        { 
+            <text>
             var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             ko.applyBindings(handoutData, document.getElementById("handouts"));
+            </text>
+        }
 
+        @if (Model.ShowWorkouts)
+        {         
+            <text>
+            var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            ko.applyBindings(workoutsData, document.getElementById("workouts"));
+            </text>
+        }
 
             // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
             welcomeData.ShowFirstMenu();

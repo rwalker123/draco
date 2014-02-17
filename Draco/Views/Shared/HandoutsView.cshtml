@@ -77,8 +77,8 @@
                 <div data-bind="visible: viewMode">
                     <h3 class="list-group-item-heading" data-bind="html: FileName"></h3>
                     <p class="list-group-item-text" data-bind="html: Description"></p>
-                    <div class="alert alert-info">
-                        <a class="alert-link" data-bind="attr: { href: HandoutURL, title: FileName }">Download File</a>
+                    <div class="well">
+                        <a class="btn btn-primary" data-bind="attr: { href: HandoutURL, title: FileName }">Download File</a>
                     </div>
                     @if (Model.IsAdmin)
                     {

@@ -1,0 +1,94 @@
+﻿@model SportsManager.Baseball.ViewModels.WorkoutsViewModel
+
+@using System.Collections.Generic;
+
+<div class="panel panel-primary" id="workouts">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Workouts</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right" data-bind="click: startWorkoutAdd"><span class="glyphicon glyphicon-plus"></span></button>
+        }
+
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+
+        @if (Model.IsAdmin)
+        {
+            <form class="form-horizontal" style="margin-left: 5px;display:none" data-bind="visible: !viewMode()">
+                <div class="form-group">
+                    <button class="btn btn-default" data-bind="click: stopWorkoutAdd">Done Adding Workouts</button>
+                </div>
+                <div class="form-group">
+                    <label for="newWorkoutTitle" class="control-label col-sm-2">title</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" data-bind="value: newWorkoutTitle, valueUpdate: 'input' " id="newWorkoutTitle" />
+                        <p class="alert alert-danger" data-bind="visible: titleMissingError">You must supply a title.</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newWorkoutDate" class="control-label col-sm-2">date</label>
+                    <div class="col-sm-10">
+                        <input class="form-control" data-provide="datepicker" data-date-format="MM dd, yyyy" data-date-autoclose="true" data-date-start-view="1" type="text" data-bind="value: newWorkoutDate" id="newWorkoutDate" />
+                    </div> 
+                </div>
+                <div class="form-group">
+                    <label for="newWorkoutTime" class="control-label col-sm-2">time</label>
+                    <div class="col-sm-8">
+                        <div class="bootstrap-timepicker">
+                            <input id="newWorkoutTime" class="form-control add-on" data-bind="value: newWorkoutTime" type="text">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newWorkoutField" class="control-label col-sm-2">location</label>
+                    <div class="col-sm-10">
+                        <select data-container="body" id="newWorkoutField" data-bind="value: newWorkoutField, options: workoutAvailableFields, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Choose field...'"></select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="newWorkoutDescription" class="control-label col-sm-2">description</label>
+                    <div class="col-sm-10">
+                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "newWorkoutEditControl");}
+                        <div id="newWorkoutEditControl" class="wysiwygEditor" data-bind="htmlValue: newWorkoutDescription">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" data-bind="click: addNewWorkout"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-danger" data-bind="click: clearNewData"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </form>
+        }
+        
+    <ul class="list-group" data-bind="foreach: workouts">
+        <li class="list-group-item">
+            @if (Model.IsAdmin)
+            { 
+                <span class="badge"><span data-bind="html: NumRegistered"></span> registered</span>
+            }
+            <h3 data-bind="html: Description"></h3>
+            <div class="alert alert-info">
+                <h4><span data-bind="html: WorkoutDate"></span>, <span data-bind="html: WorkoutTime"></span></h4>
+                <a class="alert-link" href=""><span data-bind="html: WorkoutLocation"></span></a>
+            </div>
+            <p data-bind="html: Comments"></p>
+            @if (Model.IsAdmin)
+            {
+                <button type="button" class="btn btn-info"><span class="fa fa-envelope"></span></button>
+                <button type="button" class="btn btn-info"><span class="fa fa-twitter"></span></button>
+                <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button>
+                <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-success">Register for <span data-bind="html: Description"></span></button>                
+            }
+        </li>
+    </ul>
+    </div>
+</div>
+

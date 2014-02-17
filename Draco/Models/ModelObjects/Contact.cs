@@ -32,7 +32,7 @@ namespace ModelObjects
         {
         }
 
-        public void Copy(SportsManager.Model.Contact copyTo)
+        public void Copy(SportsManager.Model.Contact copyTo, bool updateUserId = false)
         {
             copyTo.Email = Email;
             copyTo.FirstName = FirstName;
@@ -48,7 +48,8 @@ namespace ModelObjects
             copyTo.Zip = Zip;
             copyTo.FirstYear = FirstYear;
             copyTo.DateOfBirth = DateOfBirth;
-            copyTo.UserId = UserId;
+            if (updateUserId)
+                copyTo.UserId = UserId;
         }
         
         public Contact(long id, string email, string lastName, string firstName, string middleName,

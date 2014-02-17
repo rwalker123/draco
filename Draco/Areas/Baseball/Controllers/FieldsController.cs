@@ -20,20 +20,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 				return RedirectToAction("Index", "League");
 			}
 
-			if (Request.IsAjaxRequest())
-			{
-				List<Field> fields = DataAccess.Fields.GetFields(accountId.Value);
-				foreach (Field f in fields)
-				{
-					f.Contacts = DataAccess.Fields.GetFieldContacts(accountId.Value, f.Id);
-				}
-
-				return Json(fields, JsonRequestBehavior.AllowGet);
-			}
-			else
-			{
-				return View("Fields", new LeagueFieldsViewModel(this, accountId.Value));
-			}
+			return View("Fields", new LeagueFieldsViewModel(this, accountId.Value));
 		}
 
 		//

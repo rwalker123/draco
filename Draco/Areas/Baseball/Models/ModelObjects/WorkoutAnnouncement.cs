@@ -73,6 +73,12 @@ namespace ModelObjects
 			get { return m_comments; }
 			set { m_comments = value; }
 		}
+
+        public int NumRegistered
+        {
+            get;
+            set;
+        }
 	}
 }
 

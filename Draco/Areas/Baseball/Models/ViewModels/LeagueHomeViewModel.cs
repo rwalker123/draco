@@ -19,9 +19,15 @@ namespace SportsManager.Baseball.ViewModels
             ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();
             ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
             ShowHallOfFame = IsAdmin || DataAccess.HOFMembers.GetMembers(accountId).Any();
+            ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
+
             ShowPlayerInterview = true;
             ShowLeagueLeaders = true;
-            ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
+            ShowAnnouncements = true;
+            ShowBirthdays = true;
+            ShowWelcomeMessages = true;
+            ShowScoreboard = true;
+
             HasTeams = true;
 
             TwitterEnabled = false;
@@ -30,6 +36,30 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool HasTeams
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowWelcomeMessages
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowAnnouncements
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowScoreboard
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowBirthdays
         {
             get;
             private set;

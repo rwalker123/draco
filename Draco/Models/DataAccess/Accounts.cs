@@ -352,7 +352,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             return (from aw in db.AccountWelcomes
-                    where aw.AccountId == accountId && aw.TeamId == 0
+                    where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
                     select new AccountWelcome()
                     {
                         Id = aw.Id,

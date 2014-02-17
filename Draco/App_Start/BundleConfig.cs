@@ -40,17 +40,20 @@ namespace SportsManager
                         "~/Scripts/modernizr-*"));
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/moment.js",
                       "~/Scripts/bootstrap.js",
-                      "~/Scripts/bootstrap-select/bootstrap-select.js",
+                      "~/Scripts/bootstrap-select.js",
+                      "~/Scripts/bootstrap-datepicker.js",
+                      "~/Scripts/bootstrap-timepicker/bootstrap-timepicker.js",
                       "~/Scripts/respond.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
                       "~/Content/bootstrap.css",
-                      "~/Scripts/bootstrap-select/bootstrap-select.css",
+                      "~/Content/bootstrap-select.css",
+                      "~/Content/bootstrap-datepicker3.css",
+                      "~/Content/bootstrap-timepicker/bootstrap-timepicker.css",
                       "~/Content/site.css"));
 
-            bundles.Add(new StyleBundle("~/Content/font-awesome").Include(
-                      "~/Content/font-awesome-4.0.3/css/font-awesome.css"));
 
             bundles.Add(new StyleBundle("~/Content/themes/base/css").Include(
                         "~/Content/themes/base/jquery.ui.base.css",                        
@@ -63,7 +66,7 @@ namespace SportsManager
                         "~/Content/themes/base/jquery.ui.dialog.css",
                         //"~/Content/themes/base/jquery.ui.slider.css",
                         //"~/Content/themes/base/jquery.ui.tabs.css",
-                        "~/Content/themes/base/jquery.ui.datepicker.css",
+                        //"~/Content/themes/base/jquery.ui.datepicker.css",
                         //"~/Content/themes/base/jquery.ui.progressbar.css",
                         "~/Content/themes/base/jquery.ui.theme.css"));
         }

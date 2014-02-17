@@ -306,7 +306,7 @@ namespace DataAccess
 
             System.Diagnostics.Debug.Assert(false, "send email if email address changed");
 
-            contact.Copy(dbContact);
+            contact.Copy(dbContact, updateUserId);
             db.SubmitChanges();
         }
 

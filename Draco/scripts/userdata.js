@@ -10,7 +10,9 @@
     });
 
     $('#newContact').validate({
-        submitHandler: userData.createUser,
+        submitHandler: function (form) {
+            userData.createUser(form);
+        },
         rules: {
             firstname: { required: true, minlength: 1 },
             lastname: { required: true, minlength: 1 },
@@ -320,7 +322,7 @@ var UserClass = function (accountId) {
                 City: self.details.city.uncommitValue(),
                 State: self.details.state.uncommitValue(),
                 Zip: self.details.zip.uncommitValue(),
-                DateOfBirth: self.details.birthdate.uncommitValue() ? $.datepicker.formatDate('yy-mm-dd', new Date(self.details.birthdate.uncommitValue())) : null,
+                DateOfBirth: self.details.birthdate.uncommitValue() ? $.datepicker.formatDate('MM dd, yy', new Date(self.details.birthdate.uncommitValue())) : null,
                 Phone1: self.details.phone1.uncommitValue(),
                 Phone2: self.details.phone2.uncommitValue(),
                 Phone3: self.details.phone3.uncommitValue(),
@@ -483,7 +485,7 @@ var UsersClass = function (accountId, pageSize) {
                 City: userData.details.city.uncommitValue(),
                 State: userData.details.state.uncommitValue(),
                 Zip: userData.details.zip.uncommitValue(),
-                DateOfBirth: userData.details.birthdate.uncommitValue() ? $.datepicker.formatDate('yy-mm-dd', new Date(userData.details.birthdate.uncommitValue())) : null,
+                DateOfBirth: userData.details.birthdate.uncommitValue() ? $.datepicker.formatDate('MM dd, yy', new Date(userData.details.birthdate.uncommitValue())) : null,
                 Phone1: userData.details.phone1.uncommitValue(),
                 Phone2: userData.details.phone2.uncommitValue(),
                 Phone3: userData.details.phone3.uncommitValue(),

@@ -122,7 +122,27 @@ namespace DataAccess
                     });
         }
 
-		static public IQueryable<WorkoutAnnouncement> GetWorkoutAnnouncements(long accountId)
+        static public IQueryable<WorkoutAnnouncement> GetWorkoutAnnouncementsWithRegistered(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from wa in db.WorkoutAnnouncements
+                 join wr in db.WorkoutRegistrations on wa.id equals wr.WorkoutId into regsInWorkout
+                    select new WorkoutAnnouncement()
+                    {
+                        Id = wa.id,
+                        AccountId = accountId,
+                        Comments = wa.Comments,
+                        Description = wa.WorkoutDesc,
+                        WorkoutDate = wa.WorkoutDate,
+                        WorkoutLocation = wa.FieldId,
+                        WorkoutTime = wa.WorkoutTime,
+                        NumRegistered = regsInWorkout.Count()
+                    });
+        }
+
+
+        static public IQueryable<WorkoutAnnouncement> GetWorkoutAnnouncements(long accountId)
 		{
             DB db = DBConnection.GetContext();
             return (from wa in db.WorkoutAnnouncements
@@ -203,37 +223,24 @@ namespace DataAccess
 
 		static public bool AddWorkoutAnnouncement(WorkoutAnnouncement w)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            if (w.AccountId <= 0)
-                return false;
+            var dbWorkout = new SportsManager.Model.WorkoutAnnouncement()
+            {
+                AccountId = w.AccountId,
+                FieldId = w.WorkoutLocation,
+                WorkoutTime = w.WorkoutTime,
+                WorkoutDate = w.WorkoutDate,
+                WorkoutDesc = w.Description == null ? String.Empty : w.Description,
+                Comments = w.Comments == null ? String.Empty : w.Comments
+            };
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateWorkoutAnnouncement", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.WorkoutAnnouncements.InsertOnSubmit(dbWorkout);
+            db.SubmitChanges();
 
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 100).Value = w.Description;
-					myCommand.Parameters.Add("@workoutDate", SqlDbType.SmallDateTime).Value = w.WorkoutDate;
-					myCommand.Parameters.Add("@workoutTime", SqlDbType.SmallDateTime).Value = w.WorkoutTime;
-					myCommand.Parameters.Add("@location", SqlDbType.BigInt).Value = w.WorkoutLocation;
-					myCommand.Parameters.Add("@comments", SqlDbType.VarChar, 255).Value = w.Comments;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = w.AccountId;
+            w.Id = dbWorkout.id;
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
 		static public bool RemoveWorkoutAnnouncement(WorkoutAnnouncement w)
