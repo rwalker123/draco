@@ -335,8 +335,8 @@ namespace DataAccess
                 db.Contacts.DeleteOnSubmit(item);
                 db.SubmitChanges();
 
-                await AzureStorageUtils.RemoveCloudFile(contact.PhotoURL);
-                await AzureStorageUtils.RemoveCloudFile(contact.LargePhotoURL);
+                await Storage.Provider.DeleteFile(contact.PhotoURL);
+                await Storage.Provider.DeleteFile(contact.LargePhotoURL);
                 return true;
             }
 

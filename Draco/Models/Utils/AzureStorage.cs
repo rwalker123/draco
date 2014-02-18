@@ -2,14 +2,77 @@
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SportsManager.Models.Utils
 {
-    public class AzureStorageUtils
+    class AzureStorage : IStorage
     {
-        static public async Task<string> SaveToCloudBlob(string localFileName, string storageUri)
+        public String RootPath
+        {
+            get
+            {
+                // Retrieve storage account from connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(
+                    CloudConfigurationManager.GetSetting("StorageConnectionString"));
+
+                // Create the blob client.
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                // Retrieve a reference to a container. 
+                CloudBlobContainer container = blobClient.GetContainerReference("uploads");
+                String uploadDirRoot = container.Uri.ToString();
+                uploadDirRoot += "/";
+
+                return uploadDirRoot;
+            }
+        }
+
+        public async Task<String> Save(string localFileName, string storageUri)
+        {
+            Uri uri = await SaveToCloudBlob(localFileName, storageUri);
+            return uri.ToString();
+        }
+
+        public async Task<bool> DeleteDirectory(string storageUri)
+        {
+            return await RemoveCloudDirectory(storageUri);
+        }
+
+        public async Task<bool> DeleteFile(string storageUri)
+        {
+            return await RemoveCloudFile(storageUri);
+        }
+
+        public async Task<Stream> GetFileAsText(string storageUri)
+        {
+            return await GetCloudBlobAsText(storageUri);
+        }
+        
+        static async Task<Stream> GetCloudBlobAsText(string storageUri)
+        {
+            // Retrieve a reference to a container. 
+            CloudBlobContainer container = await GetUploadsContainer();
+
+            CloudBlockBlob fileBlob = container.GetBlockBlobReference(storageUri);
+            if (await fileBlob.ExistsAsync())
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await fileBlob.DownloadToStreamAsync(stream);
+
+                    stream.Position = 0;
+
+                    return stream;
+                }
+            }
+
+            return null;
+        }
+
+        static async Task<Uri> SaveToCloudBlob(string localFileName, string storageUri)
         {
             // Retrieve a reference to a container. 
             CloudBlobContainer container = await GetUploadsContainer();
@@ -27,10 +90,10 @@ namespace SportsManager.Models.Utils
             }
 
             System.IO.File.Delete(localFileName);
-            return blockBlob.Uri.ToString();
+            return blockBlob.Uri;
         }
 
-        static public async Task<bool> RemoveCloudDirectory(string storageUri)
+        static async Task<bool> RemoveCloudDirectory(string storageUri)
         {
             // Retrieve a reference to a container. 
             CloudBlobContainer container = await GetUploadsContainer();
@@ -48,7 +111,7 @@ namespace SportsManager.Models.Utils
             return true;
         }
 
-        static public async Task<bool> RemoveCloudFile(string storageUri)
+        static async Task<bool> RemoveCloudFile(string storageUri)
         {
             // Retrieve a reference to a container. 
             CloudBlobContainer container = await GetUploadsContainer();
@@ -60,7 +123,7 @@ namespace SportsManager.Models.Utils
             return true;
         }
 
-        static private async Task<CloudBlobContainer> GetUploadsContainer()
+        static async Task<CloudBlobContainer> GetUploadsContainer()
         {
             // Retrieve storage account from connection string.
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(

@@ -9,6 +9,8 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Linq;
 using SportsManager;
+using SportsManager.Models.Utils;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -24,29 +26,34 @@ namespace DataAccess
         {
         }
 
-        static public string FileName()
+        static public string FileUri(long accountId)
         {
-            return System.Web.HttpContext.Current.Server.MapPath(Globals.UploadDirRoot + "WhereHeardOptions.xml");
+            return Globals.UploadDirRoot + "Accounts/" + accountId + "/WhereHeardOptions.xml";
         }
     }
 
 
     static public class Workouts
 	{
-        static public List<String> GetWorkoutWhereHeard(long accountId)
+        static public async Task<IEnumerable<String>> GetWorkoutWhereHeard(long accountId)
         {
             List<String> whereHeardList = new List<string>();
 
             if (accountId > 0)
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(WorkoutWhereHeard));
-                string fileName = WorkoutWhereHeard.FileName();
-                if (System.IO.File.Exists(fileName))
+
+                Stream fileText = await Storage.Provider.GetFileAsText(WorkoutWhereHeard.FileUri(accountId));
+                if (fileText != null)
                 {
-                    using (TextReader tr = new StreamReader(fileName))
+                    try
                     {
-                        WorkoutWhereHeard wwh = (WorkoutWhereHeard)serializer.Deserialize(tr);
+                        WorkoutWhereHeard wwh = (WorkoutWhereHeard)serializer.Deserialize(fileText);
                         whereHeardList = wwh.WhereHeardList;
+                    }
+                    catch(Exception)
+                    {
+                        // todo.
                     }
                 }
             }
@@ -62,7 +69,7 @@ namespace DataAccess
                 wwh.WhereHeardList = whereHeardOptions;
 
                 XmlSerializer serializer = new XmlSerializer(typeof(WorkoutWhereHeard));
-                string fileName = WorkoutWhereHeard.FileName();
+                string fileName = WorkoutWhereHeard.FileUri(accountId);
 
                 System.IO.DirectoryInfo di = new DirectoryInfo(System.IO.Path.GetDirectoryName(fileName));
                 if (!di.Exists)

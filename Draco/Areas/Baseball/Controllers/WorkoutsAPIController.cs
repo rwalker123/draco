@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
@@ -24,6 +25,22 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
         }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("whereheard")]
+        public async Task<HttpResponseMessage> GetWhereHeard(long accountId)
+        {
+            var whereHeard = await DataAccess.Workouts.GetWorkoutWhereHeard(accountId);
+            if (whereHeard != null)
+            {
+                return Request.CreateResponse<IEnumerable<String>>(HttpStatusCode.OK, whereHeard);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
+
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("activeworkouts")]

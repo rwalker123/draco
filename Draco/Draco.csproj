@@ -436,8 +436,10 @@
     <Compile Include="Models\ModelObjects\VoteQuestion.cs" />
     <Compile Include="Models\ModelObjects\VoteResults.cs" />
     <Compile Include="Models\RandomPassword.cs" />
-    <Compile Include="Models\Utils\AzureStorageUtils.cs" />
+    <Compile Include="Models\Utils\AzureStorage.cs" />
+    <Compile Include="Models\Utils\FileSystemStorage.cs" />
     <Compile Include="Models\Utils\Globals.cs" />
+    <Compile Include="Models\Utils\IStorage.cs" />
     <Compile Include="Models\Utils\PhoneUtils.cs" />
     <Compile Include="Models\Utils\YearListData.cs" />
     <Compile Include="Models\ValidationAttributes.cs" />
@@ -661,6 +663,8 @@
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.js" />
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.min.js" />
     <Content Include="Scripts\handouts.js" />
+    <None Include="Properties\PublishProfiles\walkerhome.org - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\walkerhome.org - Web Deploy.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\announcement.js" />
     <Content Include="Scripts\bootstrap-wysiwyg-helper.js" />
@@ -890,11 +894,11 @@
     <VisualStudio>
       <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
         <WebProjectProperties>
-          <UseIIS>False</UseIIS>
+          <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>11398</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:44200/</IISUrl>
+          <IISUrl>http://localhost:11398</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>

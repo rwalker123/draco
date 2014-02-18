@@ -235,7 +235,7 @@ namespace SportsManager.Controllers
         {
             try
             {
-                String blobUri = await SportsManager.Models.Utils.AzureStorageUtils.SaveToCloudBlob(file.LocalFileName, fileUri);
+                String blobUri = await SportsManager.Models.Utils.Storage.Provider.Save(file.LocalFileName, fileUri);
                 return Request.CreateResponse<string>(HttpStatusCode.OK, blobUri);
             }
             catch (System.Exception e)
@@ -298,14 +298,14 @@ namespace SportsManager.Controllers
                         string tnFile = file.LocalFileName + "-thumbnail";
                         
                         thumbnailImage.Save(tnFile, encoder, myEncoderParameters);
-                        await SportsManager.Models.Utils.AzureStorageUtils.SaveToCloudBlob(tnFile, thumbnailUri);
+                        await SportsManager.Models.Utils.Storage.Provider.Save(tnFile, thumbnailUri);
                     }
 
                     // save file in correct format.
                     string imgFile = file.LocalFileName + "-scaledimage";
                     scaledImage.Save(imgFile, encoder, myEncoderParameters);
                     scaledImage.Dispose();
-                    imageUri = await SportsManager.Models.Utils.AzureStorageUtils.SaveToCloudBlob(imgFile, imageUri);
+                    imageUri = await SportsManager.Models.Utils.Storage.Provider.Save(imgFile, imageUri);
                 }
 
                 if (File.Exists(file.LocalFileName))

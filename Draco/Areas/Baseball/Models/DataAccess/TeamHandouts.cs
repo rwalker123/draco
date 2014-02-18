@@ -157,7 +157,7 @@ namespace DataAccess
                 db.TeamHandouts.DeleteOnSubmit(dbHandout);
                 db.SubmitChanges();
 
-                await SportsManager.Models.Utils.AzureStorageUtils.RemoveCloudFile(item.HandoutURL);
+                await SportsManager.Models.Utils.Storage.Provider.DeleteFile(item.HandoutURL);
                 return true;
             }
 

@@ -300,8 +300,7 @@ namespace DataAccess
                 rc = true;
             }
 
-            await AzureStorageUtils.RemoveCloudFile(p.PhotoURL);
-            await AzureStorageUtils.RemoveCloudFile(p.PhotoThumbURL);
+            await Storage.Provider.DeleteDirectory(p.PhotoURL);
 
             return rc;
 		}

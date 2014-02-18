@@ -301,7 +301,7 @@ namespace DataAccess
 
 				// remove uploads directory for account
                 string storageDir = Globals.UploadDirRoot + "Teams/" + teamId + "/";
-                await AzureStorageUtils.RemoveCloudDirectory(storageDir);
+                await Storage.Provider.DeleteDirectory(storageDir);
 			}
 
 			return true;
