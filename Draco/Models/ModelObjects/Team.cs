@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 
@@ -79,15 +80,7 @@ namespace ModelObjects
 		{
 			get
 			{
-			    return TeamDir + m_teamPhotoName;
-			}
-		}
-
-		public string TeamPhotoURLWithTimestamp
-		{
-			get
-			{
-				return TeamDir + m_teamPhotoName + "?id='" + Guid.NewGuid().ToString() + "'";
+			    return Storage.Provider.GetUrl(TeamDir + m_teamPhotoName);
 			}
 		}
 
@@ -95,7 +88,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return TeamDir + m_submittedPhotoName;
+				return Storage.Provider.GetUrl(TeamDir + m_submittedPhotoName);
 			}
 		}
 
@@ -103,15 +96,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return TeamDir + m_teamLogoName;
-			}
-		}
-
-		public string SubmittedLogoURLWithTimestamp
-		{
-			get
-			{
-				return TeamDir + m_submittedLogoName + "?id='" + Guid.NewGuid().ToString() + "'";
+				return Storage.Provider.GetUrl(TeamDir + m_teamLogoName);
 			}
 		}
 
@@ -119,7 +104,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return TeamDir + m_submittedLogoName;
+				return Storage.Provider.GetUrl(TeamDir + m_submittedLogoName);
 			}
 		}
 

@@ -133,7 +133,7 @@
             self.settingChanged = function (settingKey, value) {
                 $.ajax({
                     type: "POST",
-                    url: '/api/AccountAPI/' + self.accountId + '/Settings',
+                    url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/Settings',
                     datatype: "json",
                     data: {
                         Id: settingKey,
@@ -178,7 +178,7 @@
             }
 
             $.ajax({
-                url: '/api/AccountAPI/' + self.accountId + '/Settings',
+                url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/Settings',
                 dataType: "json",
                 success: function (data) {
                     $.each(data.KeyValues, function (index, value) {

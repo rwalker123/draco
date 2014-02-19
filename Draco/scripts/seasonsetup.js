@@ -12,7 +12,7 @@ $.extend(SeasonSetupClass.prototype, {
 
     fillSeasons: function () {
         var target = this;
-        $.getJSON('/api/SeasonsAPI/' + this.accountId + '/Seasons',
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Seasons',
 			function (data) {
 			    if (data.length) {
 			        window.location.hash = 'update';
@@ -32,7 +32,7 @@ $.extend(SeasonSetupClass.prototype, {
         var target = this;
         $.ajax({
             type: "POST",
-            url: '/api/SeasonsAPI/' + this.accountId + '/Season/',
+            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/',
             data: {
                 AccountId: this.accountId,
                 Name: name
@@ -66,7 +66,7 @@ $.extend(SeasonSetupClass.prototype, {
 
         $.ajax({
             type: "DELETE",
-            url: '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
+            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
             success: function (deletedSeasonId) {
                 window.location.hash = 'update';
 
@@ -90,7 +90,7 @@ $.extend(SeasonSetupClass.prototype, {
         var target = this;
         $.ajax({
             type: "PUT",
-            url: '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
+            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
             data: {
                 AccountId: this.accountId,
                 Name: name
@@ -139,7 +139,7 @@ $.extend(SeasonSetupClass.prototype, {
 
         $.ajax({
             type: "PUT",
-            url: '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason/' + seasonId,
+            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason/' + seasonId,
             success: function (currentSeasonId) {
                 window.location.hash = 'update';
                 target.setCurrentSeasonDisplay();
@@ -153,7 +153,7 @@ $.extend(SeasonSetupClass.prototype, {
 
     setCurrentSeasonDisplay: function () {
 
-        $.getJSON('/api/SeasonsAPI/' + this.accountId + '/CurrentSeason',
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason',
             function (data) {
                 if (data.HasSeasons)
                 {

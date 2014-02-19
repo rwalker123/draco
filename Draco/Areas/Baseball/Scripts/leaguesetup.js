@@ -17,7 +17,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         var target = this;
 
-        $.getJSON('/api/SeasonsAPI/' + this.accountId + '/Seasons',
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Seasons',
 			function (data) {
 			    var selectList = $('#seasonList');
 
@@ -64,7 +64,7 @@ $.extend(LeagueSetupClass.prototype, {
 
     fillLeagues: function () {
         var target = this;
-        $.getJSON('/api/LeaguesAPI/' + this.accountId + '/Leagues',
+        $.getJSON(window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/Leagues',
 			function (data) {
 			    if (data.length) {
 			        window.location.hash = 'update';
@@ -179,7 +179,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         $.ajax({
             type: "GET",
-            url: '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueSeasonId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueSeasonId,
             success: function (divisionData) {
                 window.location.hash = 'update';
                 elem.data('hasdata', 'True');
@@ -211,7 +211,7 @@ $.extend(LeagueSetupClass.prototype, {
         var target = this;
         $.ajax({
             type: "GET",
-            url: '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + leagueId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + leagueId,
             success: function (teams) {
                 window.location.hash = 'update';
 
@@ -285,7 +285,7 @@ $.extend(LeagueSetupClass.prototype, {
 
             $.ajax({
                 type: "POST",
-                url: '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + leagueId,
+                url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + leagueId,
                 data: {
                     AccountId: this.accountId,
                     LeagueId: leagueId,
@@ -311,7 +311,7 @@ $.extend(LeagueSetupClass.prototype, {
 
             $.ajax({
                 type: "PUT",
-                url: '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + divisionId,
+                url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + divisionId,
                 data: {
                     Id: selectedValue
                 },
@@ -433,7 +433,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         $.ajax({
             type: "DELETE",
-            url: '/api/LeaguesAPI/' + this.accountId + '/DivisionTeams/' + teamId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionTeams/' + teamId,
             success: function (divisionId) {
                 window.location.hash = 'update';
 
@@ -501,7 +501,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         $.ajax({
             type: "POST",
-            url: '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueId,
             data: {
                 LeagueId: leagueId,
                 Name: name,
@@ -570,7 +570,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         $.ajax({
             type: "PUT",
-            url: '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
             data: {
                 Id: divisionId,
                 LeagueId: leagueId,
@@ -632,7 +632,7 @@ $.extend(LeagueSetupClass.prototype, {
     deleteDivision: function (divisionId) {
         $.ajax({
             type: "DELETE",
-            url: '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
             success: function (divisionId) {
                 window.location.hash = 'update';
 
@@ -653,7 +653,7 @@ $.extend(LeagueSetupClass.prototype, {
         var target = this;
         $.ajax({
             type: "POST",
-            url: '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + seasonId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + seasonId,
             data: {
                 Name: name
             },
@@ -681,7 +681,7 @@ $.extend(LeagueSetupClass.prototype, {
         var target = this;
         $.ajax({
             type: "PUT",
-            url: '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
             data: {
                 Name: name
             },
@@ -710,7 +710,7 @@ $.extend(LeagueSetupClass.prototype, {
     makeLeagueDeleteCall: function(target, leagueId) {
         $.ajax({
             type: "DELETE",
-            url: '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
             success: function (deletedLeagueId) {
                 window.location.hash = 'update';
 
@@ -746,7 +746,7 @@ $.extend(LeagueSetupClass.prototype, {
 
         $.ajax({
             type: "POST",
-            url: '/api/LeaguesAPI/' + this.accountId + '/CopyLeagueSetup/' + seasonId,
+            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/CopyLeagueSetup/' + seasonId,
             data: {
                 AccountId: this.accountId,
                 Id: copyFromSeasonId

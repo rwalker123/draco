@@ -100,7 +100,7 @@
     self.loadHandouts = function () {
         $.ajax({
             type: "GET",
-            url: '/api/HandoutsAPI/' + self.accountId + '/handouts',
+            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts',
             success: function (handouts) {
                 var mappedHandouts = $.map(handouts, function (handout) {
                     return {
@@ -162,7 +162,7 @@
 
         $.ajax({
             type: "PUT",
-            url: '/api/HandoutsAPI/' + self.accountId + '/handouts/' + self.handoutEdit_Id,
+            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts/' + self.handoutEdit_Id,
             data: {
                 Id: self.handoutEdit_Id,
                 Description: self.handoutEdit_Description(),
@@ -197,7 +197,7 @@
     self.deleteHandout = function (handout) {
         $.ajax({
             type: "DELETE",
-            url: '/api/HandoutsAPI/' + self.accountId + '/handouts/' + handout.Id,
+            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts/' + handout.Id,
             success: function (id) {
                 self.handouts.remove(function (item) {
                     return item.Id == id;
@@ -210,7 +210,7 @@
     }
 
     self.fileUploaderUrl = ko.computed(function () {
-        return '/api/FileUploaderAPI/' + self.accountId + '/Handout';
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/Handout';
     }, self);
 
     self.getFileNameExtension = function (filename) {

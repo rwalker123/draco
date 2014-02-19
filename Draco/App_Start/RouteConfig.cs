@@ -44,8 +44,11 @@ namespace SportsManager
                 return null;
 
             // let login/logoff process normally
-            if (httpContext.Request.FilePath.StartsWith("/Account", System.StringComparison.InvariantCultureIgnoreCase) ||
-                httpContext.Request.FilePath.StartsWith("/Season", System.StringComparison.InvariantCultureIgnoreCase))
+
+            String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(new char[] { '/' });
+
+            if (httpContext.Request.FilePath.StartsWith(virtualPath + "/Account", System.StringComparison.InvariantCultureIgnoreCase) ||
+                httpContext.Request.FilePath.StartsWith(virtualPath + "/Season", System.StringComparison.InvariantCultureIgnoreCase))
             {
                 return null;
             }

@@ -57,7 +57,7 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
 
         $.ajax({
             type: "PUT",
-            url: '/api/AccountAPI/' + accountId + '/AccountName',
+            url: window.config.rootUri + '/api/AccountAPI/' + accountId + '/AccountName',
             data: {
                 Id: self.name.uncommitValue(),
                 Year: self.firstYear.uncommitValue(),
@@ -125,7 +125,7 @@ var TwitterViewModel = function (accountId, isAdmin) {
         $.ajax({
             type: "GET",
             dataType: "json",
-            url: '/api/AccountAPI/' + self.accountId + '/TwitterScript',
+            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/TwitterScript',
             success: function (data) {
                 self.htmlTwitterScript(data);
                 setTimeout(function () {
@@ -142,7 +142,7 @@ var TwitterViewModel = function (accountId, isAdmin) {
         $.ajax({
             type: "PUT",
             dataType: "json",
-            url: '/api/AccountAPI/' + self.accountId + '/SaveTwitterScript',
+            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/SaveTwitterScript',
             data: {
                 Script: self.twitterScript()
             },
@@ -213,7 +213,7 @@ var youTubeViewModel = function(accountId, id) {
     self.saveUserId = function () {
         $.ajax({
             type: "PUT",
-            url: '/api/AccountAPI/' + self.accountId + '/YouTubeUserId',
+            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/YouTubeUserId',
             data: {
                 Id: self.userId()
             },
@@ -252,7 +252,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.newPhotoAlbumName = ko.observable();
 
     self.fileUploaderUrl = ko.computed(function () {
-        return '/api/FileUploaderAPI/' + self.accountId + '/PhotoGallery';
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/PhotoGallery';
     }, self);
 
     self.init = function () {
@@ -266,7 +266,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.deletePhotoAlbum = function () {
         $.ajax({
             type: "DELETE",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/albums/' + self.selectedPhotoAlbum(),
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums/' + self.selectedPhotoAlbum(),
             success: function (id) {
                 self.photoAlbums.remove(function (item)
                 {
@@ -283,7 +283,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.addPhotoAlbum = function () {
         $.ajax({
             type: "POST",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/albums',
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums',
             data: {
                 Id: self.newPhotoAlbumName()
             },
@@ -330,7 +330,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.savePhoto = function (photo) {
         $.ajax({
             type: "PUT",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/photos/' + photo.Id,
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/photos/' + photo.Id,
             data: {
                 Id: photo.Id,
                 Title: photo.photoHeading.uncommitValue(),
@@ -361,7 +361,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.deletePhoto = function (photo) {
         $.ajax({
             type: "DELETE",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/photos/' + photo.Id,
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/photos/' + photo.Id,
             success: function (id) {
 
                 photo.Id = -1;
@@ -392,7 +392,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.loadPhotos = function () {
         $.ajax({
             type: "GET",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/photos',
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/photos',
             success: function (photos) {
                 var count = 0;
                 var mappedPhotos = $.map(photos, function (photo) {
@@ -504,7 +504,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin) {
     self.loadPhotoAlbums = function () {
         $.ajax({
             type: "GET",
-            url: '/api/PhotoGalleryAPI/' + self.accountId + '/albums',
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums',
             success: function (photoAlbums) {
                 var mappedAlbums = $.map(photoAlbums, function (album) {
                     return {

@@ -200,7 +200,7 @@
                 var searchTerm = this.term;
 
                 $.ajax({
-                    url: '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                    url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
                     dataType: "json",
                     data: {
                         lastName: searchTerm,

@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 
 namespace ModelObjects
@@ -29,7 +30,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return HandoutDir + Id + "/" + FileName;
+				return Storage.Provider.GetUrl(HandoutDir + Id + "/" + FileName);
 			}
 		}
 

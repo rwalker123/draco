@@ -6,6 +6,11 @@
     <meta name="description" content="Create Baseball League, Teams. Track Golf Leagues and Handicaps." />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
+    <script type="text/javascript">
+        window.config = {
+            rootUri : '@System.Web.VirtualPathUtility.ToAbsolute("~/")'.slice(0, -1)
+        };
+    </script>
     <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/fontawesome")

@@ -209,7 +209,7 @@
 
         $('#fileupload').fileupload({
             dataType: 'json',
-            url: '/api/FileUploaderAPI/@Model.AccountId/MailAttachment',
+            url: window.config.rootUri + '/api/FileUploaderAPI/@Model.AccountId/MailAttachment',
             done: function (e, data) {
                 data.context.isUploading(false);
                 data.context.fileUri = data.result;
@@ -243,7 +243,7 @@
         self.removeAttachment = function (attachmentItem) {
             $.ajax({
                 type: 'DELETE',
-                url: '/api/FileUploaderAPI/@Model.AccountId/RemoveTempFile?fileUri=' + encodeURIComponent(attachmentItem.fileUri),
+                url: window.config.rootUri + '/api/FileUploaderAPI/@Model.AccountId/RemoveTempFile?fileUri=' + encodeURIComponent(attachmentItem.fileUri),
                 dataType: "json",
                 success: function () {
                     self.attachments.remove(attachmentItem);
@@ -259,7 +259,7 @@
             var searchTerm = this.term;
 
             $.ajax({
-                url: '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
                 dataType: "json",
                 data: {
                     lastName: searchTerm,
@@ -305,7 +305,7 @@
         self.getLeagues = function () {
             $.ajax({
                 type: "GET",
-                url: '/api/leaguesAPI/' + self.accountId + '/Leagues',
+                url: window.config.rootUri + '/api/leaguesAPI/' + self.accountId + '/Leagues',
                 success: function (leagues) {
                     $.each(leagues, function () {
                         self.availableToData.push({
@@ -326,7 +326,7 @@
         self.getTeams = function () {
             $.ajax({
                 type: "GET",
-                url: '/api/leaguesAPI/' + self.accountId + '/LeagueTeams',
+                url: window.config.rootUri + '/api/leaguesAPI/' + self.accountId + '/LeagueTeams',
                 success: function (teams) {
                     $.each(teams, function () {
                         self.availableToData.push({
@@ -347,7 +347,7 @@
         self.getManagers = function () {
             $.ajax({
                 type: "GET",
-                url: '/api/leaguesAPI/' + self.accountId + '/LeagueManagers',
+                url: window.config.rootUri + '/api/leaguesAPI/' + self.accountId + '/LeagueManagers',
                 success: function (managers) {
                     if (managers.length == 0) {
                         return;
@@ -386,7 +386,7 @@
 
             $.ajax({
                 type: 'POST',
-                url: '/api/BaseballAPI/@Model.AccountId/EmailContacts',
+                url: window.config.rootUri + '/api/BaseballAPI/@Model.AccountId/EmailContacts',
                 dataType: "json",
                 data: {
                     Subject: self.subject(),
@@ -426,7 +426,7 @@
         $.ui.autocomplete.prototype._renderItem = function (ul, item) {
             var li = $("<li>");
             li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
             li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
             li.appendTo(ul);
 

@@ -93,7 +93,7 @@
         var accountUri = $('#urlField').val();
         $.ajax({
             type: "POST",
-            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
             data: {
                 Uri: accountUri
             },
@@ -114,7 +114,7 @@
     function updateUrl(accountUri) {
         $.ajax({
             type: "POST",
-            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
             data: {
                 Uri: accountUri
             },
@@ -175,7 +175,7 @@
     function deleteUrl(url, successCallback) {
         $.ajax({
             type: "DELETE",
-            url: '/api/AccountAPI/@Model.AccountId/AccountUrl',
+            url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
             data: {
                 Uri: url
             },

@@ -89,7 +89,7 @@
                 var searchTerm = this.term;
 
                 $.ajax({
-                    url: '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                    url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
                     dataType: "json",
                     data: {
                         lastName: searchTerm,
@@ -139,7 +139,7 @@
         $.ui.autocomplete.prototype._renderItem = function (ul, item) {
             var li = $("<li>");
             li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
             li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
             li.appendTo(ul);
 

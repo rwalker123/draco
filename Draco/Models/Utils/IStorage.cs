@@ -25,5 +25,6 @@ namespace SportsManager.Models.Utils
         Task<bool> DeleteDirectory(string storageUri);
         Task<bool> DeleteFile(string storageUri);
         Task<Stream> GetFileAsText(string storageUri);
+        String GetUrl(string storageUri);
     }
 }

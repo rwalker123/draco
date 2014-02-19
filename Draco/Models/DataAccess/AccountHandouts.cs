@@ -103,7 +103,7 @@ namespace DataAccess
 
                 item.FileName = dbHandout.FileName;
 
-                await SportsManager.Models.Utils.Storage.Provider.DeleteFile(item.HandoutURL);
+                await SportsManager.Models.Utils.Storage.Provider.DeleteDirectory(item.HandoutURL);
                 return true;
             }
 

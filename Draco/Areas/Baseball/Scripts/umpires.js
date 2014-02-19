@@ -8,7 +8,7 @@
     $.ui.autocomplete.prototype._renderItem = function (ul, item) {
         var li = $("<li>");
         li.data("item.autocomplete", item);
-        var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+        var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
         li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
         li.appendTo(ul);
 
@@ -40,7 +40,7 @@ var UmpireClass = function (accountId) {
     }, this);
 
     self.fileUploaderUrl = ko.computed(function () {
-        return '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId();
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId();
     }, this);
 
     self.details = {};
@@ -73,7 +73,7 @@ var UmpiresClass = function (accountId) {
         var searchTerm = this.term;
 
         $.ajax({
-            url: '/api/UmpireAPI/' + self.accountId + '/AvailableUmpires',
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AvailableUmpires',
             dataType: "json",
             data: {
                 lastName: searchTerm,
@@ -122,7 +122,7 @@ var UmpiresClass = function (accountId) {
 
         $.ajax({
             type: "POST",
-            url: '/api/UmpireAPI/' + self.accountId + '/AddUmpire/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AddUmpire/' + self.selectedPlayer().id,
             dataType: "json",
             success: function (data) {
                 self.populateUmpires();
@@ -136,7 +136,7 @@ var UmpiresClass = function (accountId) {
     self.populateUmpires = function () {
         $.ajax({
             type: "GET",
-            url: '/api/UmpireAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId,
             success: function (data) {
                 var mappedUsers = $.map(data, function (item) {
                     var umpire = new UmpireClass(item.AccountId);
@@ -196,7 +196,7 @@ var UmpiresClass = function (accountId) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: '/api/UmpireAPI/' + self.accountId + '/RemoveUmpire/' + umpire.id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/RemoveUmpire/' + umpire.id,
             success: function (data) {
                 // remove from data model.
                 self.umpires.remove(umpire);
@@ -210,7 +210,7 @@ var UmpiresClass = function (accountId) {
     self.fillUmpireDetails = function (userData) {
         $.ajax({
             type: "GET",
-            url: '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.contactId(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.contactId(),
             success: function (data) {
                 if (data) {
                     window.location.hash = 'update';

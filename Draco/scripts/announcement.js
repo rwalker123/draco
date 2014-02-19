@@ -75,7 +75,7 @@ $.extend(AnnouncementClass.prototype, {
         var target = this;
 
         var requestType;
-        var url = '/api/AnnouncementAPI/' + this.accountId + '/Announcement';
+        var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement';
 
         if (this.newsId == 0) {
             requestType = 'POST'; // new message
@@ -164,7 +164,7 @@ $.extend(AnnouncementClass.prototype, {
         var target = this;
         $.ajax({
             type: 'DELETE',
-            url: '/api/AnnouncementAPI/' +  this.accountId + '/Announcement/' + id,
+            url: window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement/' + id,
             success: function (dbNewsId) {
                 window.location.hash = 'update';
 
@@ -238,7 +238,7 @@ $.extend(AnnouncementClass.prototype, {
 
             $.ajax({
                 type: 'GET',
-                url: '/api/AnnouncementAPI/' + this.accountId + '/Announcement/' + newsId,
+                url: window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement/' + newsId,
                 success: function (theText) {
                     newsItemElement.html(theText);
                     newsItemElement.data('hasdata', 'True');

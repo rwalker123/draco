@@ -29,7 +29,7 @@
         <meta name="msapplication-TileImage" content="@Url.Content(@Model.AccountLogoUrl)" />
     }
 
-    <link rel="stylesheet" href="/Areas/Baseball/Content/LeagueHome.css" />
+    <link rel="stylesheet" href='@Url.Content("~/Areas/Baseball/Content/LeagueHome.css")' />
 }
 
 <div class="jumbotron">
@@ -595,7 +595,7 @@
                 elem.fileupload({
                     dataType: 'json',
                     dropZone: elem,
-                    url: '/api/FileUploaderAPI/@Model.AccountId/AccountLargeLogo',
+                    url: window.config.rootUri + '/api/FileUploaderAPI/@Model.AccountId/AccountLargeLogo',
                     add: function (e, data) {
 
                         // set opacity of current image and show busy cusor.

@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 using System.Configuration;
 
@@ -59,7 +60,7 @@ namespace ModelObjects
 		{
 			get 
 			{
-                return Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_photoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_photoName);
 			}
 		}
 
@@ -67,7 +68,7 @@ namespace ModelObjects
 		{
 			get
 			{
-                return Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_thumbPhotoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_thumbPhotoName);
 			}
 		}
 
@@ -98,15 +99,7 @@ namespace ModelObjects
         {
             get
             {
-                return m_SubmittedPhotoDir + SubmittedThumbPhotoName;
-            }
-        }
-
-        public string SubmittedPhotoThumbURLName
-        {
-            get
-            {
-                return m_SubmittedPhotoDir + SubmittedThumbPhotoName;
+                return Storage.Provider.GetUrl(m_SubmittedPhotoDir + SubmittedThumbPhotoName);
             }
         }
 
@@ -120,7 +113,7 @@ namespace ModelObjects
         {
             get
             {
-                return m_SubmittedPhotoDir + SubmittedPhotoName;
+                return Storage.Provider.GetUrl(m_SubmittedPhotoDir + SubmittedPhotoName);
             }
         }
 

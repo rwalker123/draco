@@ -128,7 +128,7 @@ var UserClass = function (accountId) {
     }, this);
 
     self.fileUploaderUrl = ko.computed(function () {
-        return '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.id();
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.id();
     }, this);
 
 
@@ -164,7 +164,7 @@ var UserClass = function (accountId) {
     self.unlockUser = function () {
         $.ajax({
             type: "PUT",
-            url: '/api/ContactsAPI/' + self.accountId + '/UnlockUser/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/UnlockUser/' + self.id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
             },
@@ -177,7 +177,7 @@ var UserClass = function (accountId) {
     self.lockUser = function () {
         $.ajax({
             type: "PUT",
-            url: '/api/ContactsAPI/' + self.accountId + '/LockUser/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/LockUser/' + self.id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
             },
@@ -190,7 +190,7 @@ var UserClass = function (accountId) {
     self.resetPassword = function () {
         $.ajax({
             type: "PUT",
-            url: '/api/ContactsAPI/' + self.accountId + '/ResetPassword/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/ResetPassword/' + self.id(),
             success: function () {
                 var form = $('#' + self.id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
@@ -232,7 +232,7 @@ var UserClass = function (accountId) {
     self.validateNameForNewContact = function () {
         $.ajax({
             type: "GET",
-            url: '/api/ContactsAPI/' + self.accountId + '/DoesContactNameExist',
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/DoesContactNameExist',
             data: {
                 Id: self.id(),
                 FirstName: self.firstName(),
@@ -311,7 +311,7 @@ var UserClass = function (accountId) {
 
         $.ajax({
             type: "PUT",
-            url: '/api/ContactsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId,
             data: {
                 Id: self.id(),
                 Email: self.details.email.uncommitValue(),
@@ -459,7 +459,7 @@ var UsersClass = function (accountId, pageSize) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: '/api/ContactsAPI/' + self.accountId + '/DeleteContact/' + user.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/DeleteContact/' + user.id(),
             success: function (data) {
                 // remove from data model.
                 self.populateUsers();
@@ -475,7 +475,7 @@ var UsersClass = function (accountId, pageSize) {
         var userData = ko.dataFor(form);
         $.ajax({
             type: "POST",
-            url: '/api/ContactsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId,
             data: {
                 Email: userData.details.email.uncommitValue(),
                 FirstName: userData.firstName.uncommitValue(),
@@ -565,7 +565,7 @@ var UsersClass = function (accountId, pageSize) {
             }
             else { // first time.
                 
-                url = '/odata/ContactsOData/?accountId=' + self.accountId + '&$inlinecount=allpages';
+                url = window.config.rootUri + '/odata/ContactsOData/?accountId=' + self.accountId + '&$inlinecount=allpages';
                 url += '&$orderby=LastName ' + self.filterSort() + ', FirstName ' + self.filterSort();
                 if (self.filterOp() == 'startswith' ||
                     self.filterOp() == 'endswith') {
@@ -686,7 +686,7 @@ var UsersClass = function (accountId, pageSize) {
     self.fillUserDetails = function (userData) {
         $.ajax({
             type: "GET",
-            url: '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.id(),
             success: function (data) {
                 if (data) {
                     window.location.hash = 'update';

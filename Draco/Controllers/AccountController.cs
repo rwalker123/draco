@@ -56,8 +56,14 @@ namespace SportsManager.Controllers
         //
         // GET: /Account/Login
         [AllowAnonymous]
-        public ActionResult Login(string returnUrl)
+        public ActionResult Login(long? accountId, string returnUrl)
         {
+            if (accountId.HasValue)
+            {
+                ViewData["AccountId"] = accountId.Value;
+                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+            }
+
             ViewBag.ReturnUrl = returnUrl;
             return View();
         }
@@ -67,8 +73,14 @@ namespace SportsManager.Controllers
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Login(LoginViewModel model, string returnUrl)
+        public async Task<ActionResult> Login(LoginViewModel model, string returnUrl, long? accountId)
         {
+            if (accountId.HasValue)
+            {
+                ViewData["AccountId"] = accountId.Value;
+                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+            }
+
             if (ModelState.IsValid)
             {
                 var user = await UserManager.FindAsync(model.UserName, model.Password);

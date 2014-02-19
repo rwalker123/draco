@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 
 namespace ModelObjects
@@ -144,7 +145,7 @@ namespace ModelObjects
         {
             get
             {
-                return Globals.UploadDirRoot + "Contacts/" + Id + "/" + PhotoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + PhotoName);
             }
         }
 
@@ -152,7 +153,7 @@ namespace ModelObjects
         {
             get
             {
-                return Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
             }
         }
 

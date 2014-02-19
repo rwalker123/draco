@@ -16,6 +16,11 @@ namespace SportsManager.Models.Utils
             }
         }
 
+        public String GetUrl(string storageUri)
+        {
+           return HttpContext.Current.Server.MapUrl(storageUri);
+        }
+
         public async System.Threading.Tasks.Task<String> Save(string localFileName, string storageUri)
         {
             String localPath = GetLocalPath(storageUri);
@@ -30,7 +35,7 @@ namespace SportsManager.Models.Utils
 
                     File.Copy(localFileName, localPath, true); 
                 });
-                return storageUri;
+                return HttpContext.Current.Server.MapUrl(localPath);
             }
 
             return String.Empty;
@@ -86,6 +91,22 @@ namespace SportsManager.Models.Utils
 
         private String GetLocalPath(string storageUri)
         {
+            if (!storageUri.StartsWith("~/"))
+            {
+                Uri uri = new Uri(storageUri);
+                int index = uri.AbsoluteUri.IndexOf(uri.AbsolutePath);
+                if (index != 0)
+                {
+                    string serverPath = uri.AbsoluteUri.Substring(0, index + 1);
+                    string physicalRoot = storageUri.Replace(serverPath, "~/");
+                    string virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(new char[] { '/' });
+                    if (!String.IsNullOrEmpty(virtualPath))
+                        physicalRoot = physicalRoot.Replace(virtualPath, String.Empty);
+
+                    return HttpContext.Current.Server.MapPath(physicalRoot);
+                }
+            }
+
             return HttpContext.Current.Server.MapPath(storageUri);
         }
     }

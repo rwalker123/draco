@@ -58,7 +58,7 @@ $.extend(WelcomeClass.prototype, {
 
         $.ajax({
             type: 'DELETE',
-            url: '/api/WelcomeAPI/' + target.accountId + '/WelcomeText/' + id,
+            url: window.config.rootUri + '/api/WelcomeAPI/' + target.accountId + '/WelcomeText/' + id,
             success: function (dbWelcomeId) {
                 window.location.hash = 'update';
 
@@ -86,7 +86,7 @@ $.extend(WelcomeClass.prototype, {
         var target = this;
 
         var requestType;
-        var url = '/api/WelcomeAPI/' + target.accountId + '/WelcomeText';
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId + '/WelcomeText';
 
         if (this.welcomeId == 0) {
             requestType = 'POST'; // new message
@@ -218,7 +218,7 @@ $.extend(WelcomeClass.prototype, {
 
             $.ajax({
                 type: 'GET',
-                url: '/api/WelcomeAPI/' + this.accountId + '/WelcomeText/' + welcomeTextId,
+                url: window.config.rootUri + '/api/WelcomeAPI/' + this.accountId + '/WelcomeText/' + welcomeTextId,
                 success: function (theText) {
                     welcomeMessageElement.html(theText);
                     welcomeMessageElement.data('hasdata', 'True');

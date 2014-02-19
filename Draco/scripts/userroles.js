@@ -81,7 +81,7 @@ $.extend(UserRoleClass.prototype, {
             return;
 
         var target = this;
-        var url = '/api/UserRolesAPI/' + this.accountId + '/AddToRole';
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/AddToRole';
         var roleData = 0;
         var roleDataText = '';
 
@@ -124,7 +124,7 @@ $.extend(UserRoleClass.prototype, {
     removeUserFromRole: function (userId, roleId, roleData) {
         var target = this;
         var roleDiv = $('#div_adminItem' + roleId + '_' + roleData + '_' + userId);
-        var url = '/api/UserRolesAPI/' + this.accountId + '/DeleteFromRole';
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/DeleteFromRole';
 
         $.ajax({
             type: 'DELETE',
@@ -168,7 +168,7 @@ $.extend(UserRoleClass.prototype, {
                 return;
             }
 
-            var url = '/api/UserRolesAPI/' + this.accountId + '/AdminsForRole/' + roleId;
+            var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/AdminsForRole/' + roleId;
 
             $.ajax({
                 type: 'GET',
@@ -209,7 +209,7 @@ $.extend(UserRoleClass.prototype, {
 
         if (this.isLeagueAdmin(roleId)) { // league admin
             if (!this.retrievedLeagues) {
-                var url = '/api/LeaguesAPI/' + this.accountId + '/Leagues';
+                var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/Leagues';
                 $.ajax({
                     type: 'GET',
                     url: url,
@@ -230,7 +230,7 @@ $.extend(UserRoleClass.prototype, {
         }
         else if (this.isTeamAdmin(roleId)) { // team admin
             if (!this.retrievedTeams) {
-                var url = '/api/LeaguesAPI/' + this.accountId + '/LeagueTeams';
+                var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueTeams';
                 $.ajax({
                     type: 'GET',
                     url: url,
@@ -274,7 +274,7 @@ $.extend(UserRoleClass.prototype, {
 
         $.ajax({
             type: "PUT",
-            url: '/api/AccountAPI/' + this.accountId + '/AccountOwner',
+            url: window.config.rootUri + '/api/AccountAPI/' + this.accountId + '/AccountOwner',
             data: {
                 Id: this.selectedAccountOwner.Id
             },

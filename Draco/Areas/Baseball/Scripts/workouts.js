@@ -51,7 +51,7 @@
     self.getAvailableFields = function () {
         $.ajax({
             type: "GET",
-            url: '/api/FieldsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
             success: function (fields) {
                 var mappedFields = $.map(fields, function (field) {
                     return {
@@ -78,7 +78,7 @@
     self.getWhereHeardOptions = function () {
         $.ajax({
             type: "GET",
-            url: '/api/WorkoutsAPI/' + self.accountId + '/whereheard',
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/whereheard',
             success: function (options) {
                 var mappedOptions = $.map(options, function (option) {
                     return {
@@ -112,7 +112,7 @@
 
         $.ajax({
             type: "POST",
-            url: '/api/WorkoutsAPI/' + self.accountId + '/workouts',
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/workouts',
             data: {
                 Description: self.newWorkoutTitle(),
                 WorkoutDate: self.newWorkoutDate(),
@@ -148,7 +148,7 @@
     }
 
     self.loadWorkoutAnnouncements = function () {
-        var url = '/api/WorkoutsAPI/' + self.accountId + '/';
+        var url = window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/';
         if (self.isAdmin)
             url += 'workouts';
         else

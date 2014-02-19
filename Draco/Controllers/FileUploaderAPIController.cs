@@ -12,9 +12,6 @@ using System.Web;
 using System.Web.Http;
 using ModelObjects;
 using SportsManager.Models;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Storage.Blob;
 using System.Text;
 
 namespace SportsManager.Controllers
