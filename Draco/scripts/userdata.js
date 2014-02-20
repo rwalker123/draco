@@ -1,9 +1,14 @@
-﻿function initUserData(accountId, pageSize) {
+﻿function initUserData(accountId, pageSize, firstYear) {
     initKOHelpers();
 
-    var userData = new UsersClass(accountId, pageSize);
+    var userData = new UsersClass(accountId, pageSize, firstYear);
     ko.applyBindings(userData, document.getElementById("accordion"));
-    ko.applyBindings(userData.newUserData, document.getElementById("newContact"));
+
+    var newUserData = new UserClass(accountId, firstYear, true);
+    newUserData.selectedView('editUserDetailsTemplate');
+    newUserData.detailsVisible(false);
+
+    ko.applyBindings(newUserData, document.getElementById("newContact"));
 
     $(document).bind('drop dragover', function (e) {
         e.preventDefault();
@@ -16,9 +21,9 @@
         rules: {
             firstname: { required: true, minlength: 1 },
             lastname: { required: true, minlength: 1 },
-            email: { email: true },
+            email: { email: true }
         },
-        errorPlacement: function(error, element) {
+        errorPlacement: function (error, element) {
             error.appendTo($("#newContact > .contactView > .contactErrorLocation"));
         }
     });
@@ -26,14 +31,21 @@
     userData.populateUsers();
 }
 
-var UserClass = function (accountId) {
+var UserClass = function (accountId, firstYear, showCreateAccount) {
     var self = this;
 
-    self.availableGenders = [
+    self.firstYear = firstYear;
+    self.availableYears = ko.observableArray([]);
+
+    self.showCreateAccount = ko.observable(showCreateAccount);
+    self.createAccount = ko.observable(false);
+
+    self.availableGenders = ko.observableArray([
     { id: false, name: "Male" },
     { id: true, name: "Female" }
-    ];
-    self.availableStates = [
+    ]);
+    
+    self.availableStates = ko.observableArray([
         { name: "Alabama", abbrev: "AL" },
         { name: "Alaska", abbrev: "AK" },
         { name: "Arizona", abbrev: "AZ" },
@@ -84,9 +96,26 @@ var UserClass = function (accountId) {
         { name: "West Virginia", abbrev: "WV" },
         { name: "Wisconsin", abbrev: "WI" },
         { name: "Wyoming", abbrev: "WY" }
-    ];
+    ]);
 
+    self.initFirstYear = function () {
+        var currentYear = (new Date).getFullYear();
+        if (self.firstYear > 0) {
+            var maxBack = 50;
+            while (maxBack >= 0 && currentYear >= self.firstYear) {
+                self.availableYears.push({ name: currentYear + '' });
+                currentYear--;
+                maxBack--;
+            }
+        }
+    }
+
+    self.initFirstYear();
     self.accountId = accountId;
+
+    var initDate = new Date();
+    var newYear = initDate.getFullYear() - 21;
+    initDate.setYear(newYear);
 
     // declare ko stuff here, otherwise it is static to the class.
     self.id = ko.observable(0);
@@ -95,18 +124,29 @@ var UserClass = function (accountId) {
     self.lastName = ko.protectedObservable('');
     self.photoUrl = '';
 
-    self.details = {};
-    self.details.loaded = false;
-    self.details.email = ko.protectedObservable('');
-    self.details.address = ko.protectedObservable('');
-    self.details.city = ko.protectedObservable('');
-    self.details.state = ko.protectedObservable('');
-    self.details.zip = ko.protectedObservable('');
-    self.details.birthdate = ko.protectedObservable('');
-    self.details.phone1 = ko.protectedObservable('');
-    self.details.phone2 = ko.protectedObservable('');
-    self.details.phone3 = ko.protectedObservable('');
-    self.details.gender = ko.protectedObservable('');
+    self.details = {
+        loaded: false,
+        email: ko.protectedObservable(''),
+        userid: ko.observable(''),
+        address: ko.protectedObservable(''),
+        city: ko.protectedObservable(''),
+        state: ko.protectedObservable(''),
+        zip: ko.protectedObservable(''),
+        birthdate: ko.protectedObservable(''),
+        firstYear: ko.protectedObservable((new Date()).getFullYear()),
+        phone1: ko.protectedObservable(''),
+        phone2: ko.protectedObservable(''),
+        phone3: ko.protectedObservable(''),
+        gender: ko.protectedObservable(''),
+    };
+
+    self.birthdateDisplay = ko.computed(function () {
+        if (!self.details.birthdate())
+            return '';
+        else
+            return moment(new Date(self.details.birthdate())).format('MMMM D, YYYY');
+    });
+
 
     self.namesEnabled = ko.observable(true);
     self.detailsVisible = ko.observable(true);
@@ -116,7 +156,13 @@ var UserClass = function (accountId) {
     self.isLocked = ko.observable(false);
 
     self.isRegistered = ko.computed(function () {
-        return self.details.email() && self.details.email().length > 0;
+        return self.details.userid() && self.details.userid().length > 0;
+    }, this);
+
+    self.canRegister = ko.computed(function () {
+        // must have email and can't be already registered.
+        var hasEmail = self.details.email() && self.details.email().length > 0;
+        return !self.isRegistered() && hasEmail;
     }, this);
 
     self.fullName = ko.computed(function () {
@@ -131,34 +177,31 @@ var UserClass = function (accountId) {
         return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.id();
     }, this);
 
-
     self.initData = function () {
 
         self.id(0);
         self.photoUrl = '';
-        self.details.loaded = false;
-
-        self.namesEnabled(true);
-        self.detailsVisible(false);
-
         self.firstName('');
         self.middleName('');
         self.lastName('');
 
+        self.details.loaded = false;
         self.details.email('');
+        self.details.userid('');
         self.details.address('');
         self.details.city('');
         self.details.state('');
         self.details.zip('');
-        var initDate = new Date();
-        var newYear = initDate.getYear() - 21;
-        initDate.setYear(newYear);
-        self.details.birthdate(initDate);
+        self.details.birthdate(self.initDate);
+        self.details.firstYear((new Date()).getFullYear());
         self.details.phone1('');
         self.details.phone2('');
         self.details.phone3('');
         self.details.gender('');
         self.commitChanges();
+
+        self.namesEnabled(true);
+        self.detailsVisible(false);
     }
 
     self.unlockUser = function () {
@@ -187,6 +230,22 @@ var UserClass = function (accountId) {
         });
     }
 
+    self.registerUser = function () {
+        $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/RegisterAccount/' + self.id(),
+            success: function (userId) {
+                self.details.userid(userId);
+                var form = $('#' + self.id());
+                self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
+                    "User has been registered. Email sent to user.");
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
     self.resetPassword = function () {
         $.ajax({
             type: "PUT",
@@ -204,7 +263,6 @@ var UserClass = function (accountId) {
 
     self.beginEditContact = function () {
         self.selectedView('editUserDetailsTemplate');
-        $(".selectpicker").selectpicker();
     }
 
     self.cancelEditContact = function () {
@@ -311,7 +369,7 @@ var UserClass = function (accountId) {
 
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=1',
             data: {
                 Id: self.id(),
                 Email: self.details.email.uncommitValue(),
@@ -322,7 +380,8 @@ var UserClass = function (accountId) {
                 City: self.details.city.uncommitValue(),
                 State: self.details.state.uncommitValue(),
                 Zip: self.details.zip.uncommitValue(),
-                DateOfBirth: self.details.birthdate.uncommitValue() ? $.datepicker.formatDate('MM dd, yy', new Date(self.details.birthdate.uncommitValue())) : null,
+                DateOfBirth: self.details.birthdate.uncommitValue() ? moment(new Date(self.details.birthdate.uncommitValue())).format('MMMM D, YYYY') : null,
+                FirstYear: self.details.firstYear.uncommitValue(),
                 Phone1: self.details.phone1.uncommitValue(),
                 Phone2: self.details.phone2.uncommitValue(),
                 Phone3: self.details.phone3.uncommitValue(),
@@ -377,25 +436,27 @@ var UserClass = function (accountId) {
             rules: {
                 firstname: { required: true, minlength: 1 },
                 lastname: { required: true, minlength: 1 },
-                email: { email: true },
+                email: { email: true }
             },
             errorPlacement: function (error, element) {
                 var formElem = $(element).closest('form');
+
                 error.appendTo(formElem.find(".contactView > .contactErrorLocation"));
             }
         });
     }
 }
 
-var UsersClass = function (accountId, pageSize) {
+var UsersClass = function (accountId, pageSize, firstYear) {
     var self = this;
     self.accountId = accountId;
     self.pageSize = pageSize;
+    self.firstYear = firstYear;
 
-    self.availableFilters = [
+    self.availableFilters = ko.observableArray([
         { id: 'LastName', name: "Last Name" },
         { id: 'FirstName', name: "First Name" },
-    ];
+    ]);
     // other possible filter fields. ContactName is the data
     // model and it doesn't contains these fields. If they are
     // brought back, contactName would have to include them.
@@ -405,7 +466,7 @@ var UsersClass = function (accountId, pageSize) {
 
     // ex: $filter=not endswith(LastName, 'r')
     //     $filter=Price gt 20
-    self.availableOperations = [
+    self.availableOperations = ko.observableArray([
         { id: 'startswith', name: "starts with" },
         { id: 'endswith', name: "ends with" },
         { id: 'eq', name: "equals" }, 
@@ -414,12 +475,12 @@ var UsersClass = function (accountId, pageSize) {
         { id: 'ge', name: "greater than or equal" },
         { id: 'lt', name: 'less than' },
         { id: 'le', name: 'less than or equal' }
-    ];
+    ]);
 
-    self.availableSort = [
+    self.availableSort = ko.observableArray([
         { id: 'asc', name: "asending sort" },
         { id: 'desc', name: "descending sort" },
-    ];
+    ]);
 
     self.filterField = ko.observable('LastName');
     self.filterOp = ko.observable('startswith');
@@ -441,10 +502,6 @@ var UsersClass = function (accountId, pageSize) {
     self.prevPagesAvailable = ko.computed(function () {
         return self.prevPages().length > 0;
     }, this);
-
-    self.newUserData = new UserClass(self.accountId);
-    self.newUserData.selectedView('editUserDetailsTemplate');
-    self.newUserData.detailsVisible(false);
 
     self.deleteUser = function (user) {
 
@@ -473,9 +530,13 @@ var UsersClass = function (accountId, pageSize) {
 
     self.createUser = function (form) {
         var userData = ko.dataFor(form);
+        var id = userData.createAccount() == true ? 1 : 0;
+        if (id == 1 && !userData.details.email.uncommitValue())
+            alert("Will not register account, no email specified");
+
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=' + id,
             data: {
                 Email: userData.details.email.uncommitValue(),
                 FirstName: userData.firstName.uncommitValue(),
@@ -485,22 +546,18 @@ var UsersClass = function (accountId, pageSize) {
                 City: userData.details.city.uncommitValue(),
                 State: userData.details.state.uncommitValue(),
                 Zip: userData.details.zip.uncommitValue(),
-                DateOfBirth: userData.details.birthdate.uncommitValue() ? $.datepicker.formatDate('MM dd, yy', new Date(userData.details.birthdate.uncommitValue())) : null,
+                DateOfBirth: userData.details.birthdate.uncommitValue() ? moment(new Date(userData.details.birthdate.uncommitValue())).format('MMMM D, YYYY') : null,
+                FirstYear: userData.details.firstYear.uncommitValue(),
                 Phone1: userData.details.phone1.uncommitValue(),
                 Phone2: userData.details.phone2.uncommitValue(),
                 Phone3: userData.details.phone3.uncommitValue(),
                 IsFemale: userData.details.gender.uncommitValue() ? true : false
             },
             success: function (data) {
-                //userData.commitChanges();
-                //var newUser = self.copyUser(userData);
-                //newUser.id = data;
-                //self.users.push(newUser);
-
+                userData.commitChanges();
                 userData.initData();
 
                 // Refresh the accordion, make sure not to change the active one.
-                //self.refreshUserList();                
                 self.populateUsers();
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -515,30 +572,6 @@ var UsersClass = function (accountId, pageSize) {
                 }
             }
         });
-    }
-
-    self.copyUser = function (user) {
-        var newUser = new UserClass(self.accountId);
-
-        newUser.firstName(user.firstName());
-        newUser.middleName(user.middleName());
-        newUser.lastName(user.lastName());
-        newUser.photoUrl = user.photoUrl;
-
-        newUser.details.email(user.details.email());
-        newUser.details.address(user.details.address());
-        newUser.details.city(user.details.city());
-        newUser.details.state(user.details.state());
-        newUser.details.zip(user.details.zip());
-        newUser.details.birthdate(user.details.birthdate());
-        newUser.details.phone1(user.details.phone1());
-        newUser.details.phone2(user.details.phone2());
-        newUser.details.phone3(user.details.phone3());
-        newUser.details.gender(user.details.gender());
-
-        newUser.commitChanges();
-
-        return newUser;
     }
 
     self.gotoNext = function () {
@@ -620,7 +653,7 @@ var UsersClass = function (accountId, pageSize) {
                     window.location.hash = 'update';
 
                     var mappedUsers = $.map(data.value, function (item) {
-                        var theUser = new UserClass(self.accountId);
+                        var theUser = new UserClass(self.accountId, self.firstYear, false);
                         theUser.id(item.Id);
                         theUser.firstName(item.FirstName);
                         theUser.lastName(item.LastName);
@@ -692,11 +725,16 @@ var UsersClass = function (accountId, pageSize) {
                     window.location.hash = 'update';
 
                     userData.details.email(data.Email);
+                    userData.details.userid(data.UserId);
                     userData.details.address(data.StreetAddress);
                     userData.details.city(data.City);
                     userData.details.state(data.State); 
                     userData.details.zip(data.Zip);
-                    userData.details.birthdate(new Date(data.DateOfBirth));
+                    if (data.DateOfBirth)
+                        userData.details.birthdate(new Date(data.DateOfBirth));
+                    else
+                        userData.details.birthdate('');
+                    userData.details.firstYear(data.FirstYear);
                     userData.details.phone1(data.Phone1);
                     userData.details.phone2(data.Phone2);
                     userData.details.phone3(data.Phone3);

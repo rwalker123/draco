@@ -67,17 +67,19 @@
 
     <small>filter user list</small><br />
     <form class="form-inline" role="form">
-        <select class="selectpicker" data-container="body" data-bind="value: filterField, options: availableFilters, optionsText: 'name', optionsValue: 'id'"></select>
-        <select class="selectpicker" data-container="body" data-bind="value: filterOp, options: availableOperations, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-container="body" data-bind="selectPicker: filterField, selectPickerOptions: {optionsArray: availableFilters}, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-container="body" data-bind="selectPicker: filterOp, selectPickerOptions: {optionsArray: availableOperations}, optionsText: 'name', optionsValue: 'id'"></select>
         <input type="text" class="form-control" style="width:200px" data-bind="value: filterValue" placeholder="filter text" />
-        <select class="selectpicker" data-container="body" data-bind="value: filterSort, options: availableSort, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-container="body" data-bind="selectPicker: filterSort, selectPickerOptions: {optionsArray: availableSort}, optionsText: 'name', optionsValue: 'id'"></select>
         <button type="button" class="btn btn-default" data-bind="click: applyFilter"><span class="glyphicon glyphicon-ok"></span></button>
     </form>
 
-    <button style="float:right" class="btn btn-info" type="button" data-bind="visible: nextPage, click: gotoNext">Next >></button>
-    <button style="float:left" class="btn btn-info" type="button" data-bind="visible: prevPagesAvailable, click: gotoPrev"><< Prev</button>
-    <div style="text-align:center;padding-top:10px">Page: <span data-bind="text: currentPageNo"></span>/<span data-bind="    text: totalPages"></span></div>
-    <div style="clear: both"></div>
+    <ul class="pager">
+        <li class="previous"><a data-bind="visible: prevPagesAvailable, click: gotoPrev">&larr; Prev</a></li>
+        <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
+        @*<li>Page: <span data-bind="text: currentPageNo"></span>/<span data-bind="text: totalPages"></span></li>*@
+    </ul>
+    @*<div style="clear: both"></div>*@
     <div data-bind="foreach: users">
         <h3 class="userHeader">
             <img src='/images/busy.gif'
@@ -94,10 +96,14 @@
             </form>
         </div>
     </div>
-    <button style="float:right" class="btn btn-info" type="button" data-bind="visible: nextPage, click: gotoNext">Next >></button>
-    <button style="float:left" class="btn btn-info" type="button" data-bind="visible: prevPagesAvailable, click: gotoPrev"><< Prev</button>
-    <div style="text-align:center;padding-top:10px">Page: <span data-bind="text: currentPageNo"></span>/<span data-bind="text:totalPages"></span></div>
-    <div style="clear: both"></div>
+    <ul class="pager">
+        <li class="previous"><a data-bind="visible: prevPagesAvailable, click: gotoPrev">&larr; Prev</a></li>
+        <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
+    </ul>
+    @*<button style="float:right" class="btn btn-info" type="button" data-bind="visible: nextPage, click: gotoNext">Next >></button>
+        <button style="float:left" class="btn btn-info" type="button" data-bind="visible: prevPagesAvailable, click: gotoPrev"><< Prev</button>
+        <div style="text-align:center;padding-top:10px">Page: <span data-bind="text: currentPageNo"></span>/<span data-bind="text:totalPages"></span></div>
+        <div style="clear: both"></div>*@
 </div>
 
 @section scripts 
@@ -124,7 +130,10 @@
             <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
         </address>
         <address data-bind="visible: birthdate()">
-            <small>Date of Birth:</small><br /><span data-bind="text: $.datepicker.formatDate('MM dd, yy', new Date(birthdate()))"></span>
+            <small>Date of Birth:</small><br /><span data-bind="text: $parent.birthdateDisplay"></span>
+        </address>
+        <address>
+            <small>first year</small><br /><span data-bind="text: firstYear"></span>
         </address>
         <address>
             <small>gender</small><br /><span data-bind="text: gender() ? 'Female' : 'Male'"></span>
@@ -136,7 +145,9 @@
 
     <button type="button" class="btn btn-default" data-bind="click: beginEditContact"><span class="glyphicon glyphicon-edit"></span></button>
     <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUser"><span class="glyphicon glyphicon-remove"></span></button>
-    <button type="button" class="btn btn-warning" data-bind="visible: isRegistered, click: resetPassword">Reset Password</button><br />
+    <button type="button" class="btn btn-warning" data-bind="visible: isRegistered, click: resetPassword">Reset Password</button>
+    <button type="button" class="btn btn-warning" data-bind="visible: canRegister, click: registerUser">Register User</button><br />
+    <br />
 
 </script>
 
@@ -153,59 +164,72 @@
 
         <div class="form-group">
             <small>email</small><br />
-            <label for="email" class='sr-only'>email</label>
-            <input type="email" class="form-control" data-bind="value: email" id="email" placeholder="email address" style="width: 400px" />
+            <label data-bind="uniqueFor: $parent.id" class='sr-only'>email</label>
+            <input type="email" class="form-control" data-bind="value: email, uniqueId: $parent.id" placeholder="email address" style="width: 400px" />
         </div>
-
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>phone numbers</small><br />
-            <label for="phone1" class="control-label"><abbr title="Cell Phone">c</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone1" id="phone1" class="form-control" placeholder="cell phone" />
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Cell Phone">c</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone1, uniqueId: $parent.id" class="form-control" placeholder="cell phone" />
 
-            <label for="phone2" class="control-label"><abbr title="Home Phone">h</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone2" id="phone2" class="form-control" placeholder="home phone" />
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Home Phone">h</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone2, uniqueId: $parent.id" class="form-control" placeholder="home phone" />
 
-            <label for="phone3" class="control-label"><abbr title="Work Phone">w</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone3" id="phone3" class="form-control" placeholder="work phone" />
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Work Phone">w</abbr></label>
+            <input type="tel" data-bind="phoneNumber: phone3, uniqueId: $parent.id" class="form-control" placeholder="work phone" />
         </div>
 
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>address</small><br />
-            <label for="streetAddress" class="sr-only">Street Address</label>
-            <input type="text" class="form-control" id="streetAddress" data-bind="value: address" placeholder="street address" style="width: 300px" /> <br />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">Street Address</label>
+            <input type="text" class="form-control" data-bind="value: address, uniqueId: $parent.id" placeholder="street address" style="width: 300px" /> <br />
 
-            <label for="cityField" class="sr-only">City</label>
-            <input type="text" class="form-control" id="cityField" data-bind="value: city" placeholder="city" style="width: 200px" />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">City</label>
+            <input type="text" class="form-control" data-bind="value: city, uniqueId: $parent.id" placeholder="city" style="width: 200px" />
 
-            <label for="zipField" class="sr-only">State</label>
-            <select class="selectpicker" data-container="body" data-size="7" data-bind="value: state, options: $parent.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">State</label>
+            <select data-container="body" data-size="7" data-bind="uniqueId: $parent.id, selectPicker: state, selectPickerOptions: {optionsArray: $parent.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
 
-            <label for="zipField" class="sr-only">Zip Code</label>
-            <input type="text" class="form-control" data-bind="value: zip" style="width: 75px" placeholder="zip" />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">Zip Code</label>
+            <input type="text" class="form-control" data-bind="value: zip, uniqueId: $parent.id" style="width: 75px" placeholder="zip" />
         </div>
 
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>date of birth</small><br />
-            <label for="dateOfBirthField" class="sr-only">Date of Birth</label>
-            <input id="dateOfBirthField" type="text" data-provide="datepicker" data-date-format="MM dd, yyyy" data-date-autoclose="true" data-date-start-view="2" data-bind="value: birthdate" class="form-control" placeholder="birth date" /><br />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">Date of Birth</label>
+            <input type="text" data-bind="uniqueId: $parent.id, datepicker: birthdate, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" class="form-control" placeholder="birth date" /><br />
+            <small>choose first year</small><br />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">First Year</label>
+            <select data-container="body" data-bind="uniqueId: $parent.id, selectPicker: firstYear, selectPickerOptions: { optionsArray: $parent.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+        </div>
+        <br />
+        <div class="form-group" style="margin-top:10px">
             <small>gender</small><br />
-            <label for="genderField" class="sr-only">Gender</label>
-            <select id="genderField" class="selectpicker" data-container="body" data-bind="value: gender, options: $parent.availableGenders, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+            <label data-bind="uniqueFor: $parent.id" class="sr-only">Gender</label>
+            <select data-container="body" data-bind="uniqueId: $parent.id, selectPicker: gender, selectPickerOptions: { optionsArray: $parent.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+        </div>
+        <br />
+        <div class="form-group" style="margin-top:10px" data-bind="visible: $parent.showCreateAccount">
+            <input type="checkbox" data-bind="checked: $parent.createAccount, uniqueId: $parent.id">
+            <label data-bind="uniqueFor: $parent.id">
+                register user account (email will be sent to user)
+            </label>
         </div>
     </div>
+
     <div class="form-group" style="margin-top:10px;margin-bottom:20px" data-bind="visible: detailsVisible">
         <button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span></button>
         <button type="button" class="btn btn-danger" data-bind="click: cancelContact"><span class="glyphicon glyphicon-remove"></span></button><br />
     </div>
 
     <div class="contactErrorLocation"></div>
-    <div data-bind="visible: validatingName"><img src="/Images/busy.gif" /> validating name...</div>
+    <div data-bind="visible: validatingName" class="alert alert-info"><img src="/Images/busy.gif" /> validating name...</div>
 
 </script>
 
@@ -218,9 +242,7 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        initUserData(@Model.AccountId, @Model.PageSize);
-
-        $(".selectpicker").selectpicker();
+        initUserData(@Model.AccountId, @Model.PageSize, @Model.AccountFirstYear);
     });
 </script>
 }

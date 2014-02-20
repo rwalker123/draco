@@ -13,5 +13,10 @@ namespace SportsManager.ViewModels
         {
             get { return SportsManager.Controllers.ContactsODataController.PageSize; }
         }
+
+        public int AccountFirstYear
+        {
+            get { return Account.FirstYear;  }
+        }
     }
 }

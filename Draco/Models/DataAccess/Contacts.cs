@@ -8,6 +8,7 @@ using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web.Security;
 
@@ -19,13 +20,40 @@ namespace DataAccess
     static public class Contacts
     {
         private const String AccountCreatedSubject = "{0} Account Created";
-        private const String AccountCreatedBody = "Hello, \n\nA new {0} account has been created for you by {1}. You can use this account to log into the {0} website.\n\nLogin information:\n\n\tUser Name: {2}\n\tPassword: {3}\n\nIf you have any questions, please reply to this email.\n\nThank you,\n\n\n{0}";
+        private const String AccountCreatedBody =
+        @"<h4>Welcome to the {0}!</h4> 
+            <p>A new user account has been created on your behalf by <a href='mailto:{1}'>{4}</a>. You can use this account to log into the {0} website.</p>
+            <h3>Login information</h3>
+            <p>User Name: {2}</p>
+            <p>Password: {3}</p>
+            <p>If you have any questions, please reply to this email.</p>
+            Thank you,<br />
+            <br />
+            <br />
+            {0}";
 
         private const String AccountModifiedSubject = "{0} Account Modified";
-        private const String AccountModifiedBody = "Hello, \n\nA new email address has been associated with your {0} account by {1}.\n\nYour new email address is: {2}. You will need to use this email when logging onto the site.\n\nIf this change was made in error, please reply to this email.\n\nThank you,\n\n\n{0}";
+        private const String AccountModifiedBody =
+        @"<h4>{0} Account User Name/Email Change Notice</h4>
+          <p>A new email address has been associated with your {0} account by <a href='mailto:{1}'>{3}</a>. Your new email address is: {2}.</p>
+          <p>This email address is your new <b>user name</b> when logging into the site.</p>
+          <p>If this change was made in error, please reply to this email.</p>
+          Thank you,<br />
+            <br />
+            <br />
+            {0}";
 
         private const String AccountPasswordSubject = "{0} Account Password Reset";
-        private const String AccountPasswordBody = "Hello,\n\nYour password on {0} has been reset by {1}. Please use this new password the next time you log in.\n\n\tNew Password: {2}\n\nIf you have any questions, please reply to this email.\n\nThank you, \n\n\n{0}";
+        private const String AccountPasswordBody = 
+            @"<h4>{0} Account Password Reset Notice</h4>
+              <p>Your password on {0} has been reset by <a href='mailto:{1}'>{3}</a>. Please use this new password the next time you log in.</p>
+              <h3>New Password</h3>
+              <p>{2}</p>
+              <p>If you have any questions, please reply to this email.</p>
+              Thank you,<br />
+              <br />
+              <br />
+              {0}";
 
         static public bool DoesContactExist(long accountId, long contactId, string firstName, string middleName, string lastName)
         {
@@ -180,34 +208,7 @@ namespace DataAccess
                             select c);
         }
 
-        static public bool SetAccountCreator(long contactId, long accountId)
-        {
-            int rowCount = 0;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.SetContactAccountCreator", myConnection);
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = contactId;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount > 0) ? true : false;
-        }
-
-        static public long AddContact(Contact c)
+        static public async Task<long> AddContact(Contact c, bool registerAccount)
         {
             c.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(c.Phone1));
             c.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(c.Phone2));
@@ -243,9 +244,9 @@ namespace DataAccess
 
             c.Id = dbContact.Id;
 
-            if (!String.IsNullOrEmpty(dbContact.Email))
+            if (!String.IsNullOrEmpty(dbContact.Email) && registerAccount)
             {
-                dbContact.UserId = CreateAndEmailAccount(c.CreatorAccountId, dbContact.Email, forAdd: true);
+                dbContact.UserId = await CreateAndEmailAccount(c.CreatorAccountId, dbContact.Email);
                 if (!String.IsNullOrEmpty(dbContact.UserId))
                 {
                     db.SubmitChanges();
@@ -288,14 +289,51 @@ namespace DataAccess
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)).SingleOrDefault();
         }
 
-        static public void UpdateContact(Contact contact, bool updateUserId)
+        static public async Task<String> RegisterUser(Contact c)
         {
+            DB db = DBConnection.GetContext();
+
+            var contact = (from con in db.Contacts
+                           where con.Id == c.Id
+                           select con).SingleOrDefault();
+
+            if (contact == null)
+                throw new Exception("user doesn't exist.");
+
+            if (String.IsNullOrEmpty(contact.Email))
+                throw new Exception("User must have an email.");
+
+            // account already registered.
+            if (!String.IsNullOrEmpty(contact.UserId))
+                throw new Exception("Email already registered.");
+
+            var userManager = Globals.GetUserManager();
+
+            // see if user is registerd.
+            var user = await userManager.FindByNameAsync(contact.Email);
+            if (user != null)
+                throw new Exception("Email already registered.");
+
+            contact.UserId = await CreateAndEmailAccount(contact.CreatorAccountId, contact.Email);
+            if (!String.IsNullOrEmpty(contact.UserId)) 
+            {
+                db.SubmitChanges();
+                return contact.UserId;
+            }
+
+            return String.Empty;
+        }
+
+        static public async Task<bool> UpdateContact(Contact contact, bool registerIfNeeded)
+        {
+            bool updateUserId = false;
+
             DB db = DBConnection.GetContext();
             var dbContact = (from c in db.Contacts
                              where c.Id == contact.Id
                              select c).SingleOrDefault();
             if (dbContact == null)
-                return;
+                return false;
 
             contact.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone1));
             contact.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone2));
@@ -304,10 +342,77 @@ namespace DataAccess
             string origEmail = dbContact.Email;
             string newEmail = contact.Email;
 
-            System.Diagnostics.Debug.Assert(false, "send email if email address changed");
+            if (String.Compare(newEmail, origEmail, StringComparison.InvariantCultureIgnoreCase) != 0)
+            {
+                ApplicationUser user = null;
+                var userManager = Globals.GetUserManager();
+
+                // see if user is registerd.
+                if (!String.IsNullOrEmpty(origEmail))
+                {
+                    user = await userManager.FindByNameAsync(origEmail);
+                }
+
+                // if user id does not equal contact.UserId something is wrong. The email in the Users
+                // table is the same as this contact, but it is a different user id.
+                if (String.Compare(user.Id, contact.UserId) != 0)
+                    throw new Exception(String.Format("Internal Error: contact id = {0}, userId = {1}, doesn't match users table user id = {2}", contact.Id, contact.UserId, user.Id));
+
+                if (user == null)
+                {
+                    // not registered. See if new email is specfied and we want to register.
+                    if (!String.IsNullOrEmpty(newEmail) && registerIfNeeded)
+                    {
+                        // need to create the account.
+                        contact.UserId = await CreateAndEmailAccount(contact.CreatorAccountId, newEmail);
+                        if (!String.IsNullOrEmpty(contact.UserId))
+                            updateUserId = true;
+                    }
+                }
+                else
+                {
+                    // user account exists.
+                    if (!String.IsNullOrEmpty(newEmail))
+                    {
+                        // see if new email is already registered.
+                        var newUser = await userManager.FindByNameAsync(newEmail);
+                        if (newUser != null)
+                        {
+                            // something wrong, the email is being used. See if it is used by a contact.
+                            Contact c = DataAccess.Contacts.GetContact(newUser.Id);
+                            if (c != null)
+                            {
+                                if (String.Compare(c.Email, newEmail, StringComparison.InvariantCultureIgnoreCase) == 0)
+                                {
+                                    throw new Exception(String.Format("{1} Email address is already registered to another contact {0}", c.Id, newEmail));
+                                }
+                                else
+                                {
+                                    throw new Exception(String.Format("Internal Error: User account (id={0}) associated with email ({1}) is tied to a contact {2} but emails don't match.", newUser.Id, newEmail, c.Id));
+                                }
+                            }
+
+                            throw new Exception(String.Format("Internal Error: {0} email address already registered in users table but no Contact using it.", newEmail));
+                        }
+
+                        // update the user name with new email.
+                        if (UpdateUserName(user, newEmail))
+                            NotifyUserOfNewEmail(dbContact.CreatorAccountId, origEmail, newEmail);
+                    }
+                    else
+                    {
+                        // removed the email, remove the account.
+                        //var userManager = Globals.GetUserManager();
+                        //await userManager.DeleteAsync(user);   
+                        //contact.UserId = null;
+                        //updateUserId = true;
+                    }
+                }
+            }
 
             contact.Copy(dbContact, updateUserId);
             db.SubmitChanges();
+            return true;
         }
 
         static public void UpdateUserId(Contact contact)
@@ -384,14 +489,14 @@ namespace DataAccess
 
         public static async Task<bool> ResetPassword(ModelObjects.Contact contact)
         {
-            if (!String.IsNullOrEmpty(contact.Email))
+            if (!String.IsNullOrEmpty(contact.UserId))
             {
                 var userManager = Globals.GetUserManager();
                 var user = await userManager.FindByIdAsync(contact.UserId);
 
                 if (user != null)
                 {
-                    String newPassword = await CreateNewPassword(userManager, user);
+                    String newPassword = CreateNewPassword(userManager, user);
                     NotifyUserPasswordChange(contact, newPassword);
                     return true;
                 }
@@ -400,47 +505,23 @@ namespace DataAccess
             return false;
         }
 
-        private static async Task<String> CreateNewPassword(UserManager<ApplicationUser> userManager, ApplicationUser user)
+        private static String CreateNewPassword(UserManager<ApplicationUser> userManager, ApplicationUser user)
         {
             String newPassword = Membership.GeneratePassword(8, 2);
             String hashedPassword = userManager.PasswordHasher.HashPassword(newPassword);
-            var userStore = new UserStore<ApplicationUser>(new ApplicationDbContext());
-            await userStore.SetPasswordHashAsync(user, hashedPassword);
+            DB db = DBConnection.GetContext();
+            var dbUser = (from u in db.AspNetUsers
+                          where u.Id == user.Id
+                          select u).SingleOrDefault();
+            if (dbUser == null)
+                throw new Exception("User not found.");
+
+            dbUser.PasswordHash = hashedPassword;
+            db.SubmitChanges();
+            //var userStore = new UserStore<ApplicationUser>(new ApplicationDbContext());
+            //await userStore.SetPasswordHashAsync(user, hashedPassword);
+            //await userStore.UpdateAsync(user);
             return newPassword;
-        }
-
-        public static string EncryptVerifyCode(long pendingId, long requesterContactId, long pendingContactId)
-        {
-            pendingId += 54;
-            requesterContactId += 33;
-            pendingContactId += 11;
-
-            return pendingId.ToString("0000000000") + requesterContactId.ToString("0000000000") + pendingContactId.ToString("0000000000");
-        }
-
-        public static void DecryptVerifyCode(string code, out long pendingId, out long requesterContactId, out long pendingContactId)
-        {
-            pendingId = 0;
-            requesterContactId = 0;
-            pendingContactId = 0;
-
-            if (code.Length < 30)
-                return;
-
-            string str = code.Substring(0, 10);
-            Int64.TryParse(str, out pendingId);
-            if (pendingId != 0)
-                pendingId -= 54;
-
-            str = code.Substring(10, 10);
-            Int64.TryParse(str, out requesterContactId);
-            if (requesterContactId != 0)
-                requesterContactId -= 33;
-
-            str = code.Substring(20, 10);
-            Int64.TryParse(str, out pendingContactId);
-            if (pendingContactId != 0)
-                pendingContactId -= 11;
         }
 
         static private void NotifyUserPasswordChange(ModelObjects.Contact contact, string newPassword)
@@ -449,9 +530,15 @@ namespace DataAccess
             if (String.IsNullOrEmpty(currentUser))
                 return;
 
+            var sender = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+            if (sender == null)
+                return;
+
+            string senderFullName = sender.FullNameFirst;
+
             string accountName = DataAccess.Accounts.GetAccountName(contact.CreatorAccountId);
             string subject = String.Format(AccountPasswordSubject, accountName);
-            string body = String.Format(AccountPasswordBody, accountName, currentUser, newPassword);
+            string body = String.Format(AccountPasswordBody, accountName, currentUser, newPassword, senderFullName);
             Globals.MailMessage(currentUser, contact.Email, subject, body);
         }
 
@@ -461,57 +548,81 @@ namespace DataAccess
             if (String.IsNullOrEmpty(currentUser))
                 return;
 
+            var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+            if (contact == null)
+                return;
+
+            string senderFullName = contact.FullNameFirst;
+
             string accountName = DataAccess.Accounts.GetAccountName(accountId);
             string subject = String.Format(AccountModifiedSubject, accountName);
-            string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail);
+            string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail, senderFullName);
             Globals.MailMessage(currentUser, oldEmail, subject, body);
         }
 
-        static private String CreateAndEmailAccount(long accountId, string email, bool forAdd = false)
+        static private async Task<String> CreateAndEmailAccount(long accountId, string email)
         {
             String currentUser = Globals.GetCurrentUserName();
             if (String.IsNullOrEmpty(currentUser))
                 return String.Empty;
 
+            var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+            if (contact == null)
+                return String.Empty;
+
+            string senderFullName = contact.FullNameFirst;
+
             var userManager = Globals.GetUserManager();
 
-            // email is set in contacts db, check to see if a user exists in
-            // webPages_Membership
-            ApplicationUser newUser = null;
-            if (!forAdd) // the user data may already exist if this is not a new user.
-                newUser = userManager.FindByName(email);
+            string password = Membership.GeneratePassword(8, 2);
 
-            if (newUser == null)
+            // new way to create user and sign in.
+            var user = new ApplicationUser() { UserName = email };
+            var result = await userManager.CreateAsync(user, password);
+            if (result.Succeeded)
             {
-                string password = Membership.GeneratePassword(8, 2);
-
-                // new way to create user and sign in.
-                var user = new ApplicationUser() { UserName = email };
-                var result = userManager.Create(user, password);
-                if (result.Succeeded)
+                var newUser = await userManager.FindByNameAsync(email);
+                if (newUser != null)
                 {
-                    newUser = userManager.FindByName(email);
-                    if (newUser != null)
-                    {
-                        // notify user
-                        string accountName = DataAccess.Accounts.GetAccountName(accountId);
-                        string subject = String.Format(AccountCreatedSubject, accountName);
-                        string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password);
-                        Globals.MailMessage(currentUser, email, subject, body);
+                    // notify user
+                    string accountName = DataAccess.Accounts.GetAccountName(accountId);
+                    string subject = String.Format(AccountCreatedSubject, accountName);
+                    string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password, senderFullName);
+                    Globals.MailMessage(currentUser, email, subject, body);
 
-                        return newUser.Id;
-                    }
+                    return newUser.Id;
                 }
-
             }
             else
             {
-                NotifyUserOfNewEmail(accountId, email, email);
+                StringBuilder errorString = new StringBuilder();
+                // couldn't create user.
+                foreach(var error in result.Errors)
+                {
+                    errorString.Append(error);
+                    errorString.Append(Environment.NewLine);
+                }
 
-                return newUser.Id;
+                throw new Exception(errorString.ToString());
             }
 
             return String.Empty;
+        }
+
+        private static bool UpdateUserName(ApplicationUser user, string userName)
+        {
+            DB db = DBConnection.GetContext();
+            var dbUser = (from users in db.AspNetUsers
+                          where users.Id == user.Id
+                          select users).SingleOrDefault();
+            if (dbUser != null)
+            {
+                dbUser.UserName = userName;
+                db.SubmitChanges();
+                return true;
+            }
+
+            return false;
         }
     }
 }

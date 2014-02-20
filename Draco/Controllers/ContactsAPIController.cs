@@ -8,6 +8,7 @@ using System.Web.Http.OData;
 using ModelObjects;
 using SportsManager.Models;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace SportsManager.Controllers
 {
@@ -45,7 +46,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostContact(long accountId, ModelObjects.Contact newContact)
+        public async Task<HttpResponseMessage> PostContact(long accountId, ModelObjects.Contact newContact)
         {
             newContact.CreatorAccountId = accountId;
 
@@ -53,7 +54,13 @@ namespace SportsManager.Controllers
             {
                 try
                 {
-                    long contactId = DataAccess.Contacts.AddContact(newContact);
+                    bool registerAccount = false;
+                    var qsRegisterAccount = HttpContext.Current.Request["register"];
+                    if (qsRegisterAccount != null && qsRegisterAccount.Equals("1"))
+                    {
+                        registerAccount = true;
+                    }
+                    long contactId = await DataAccess.Contacts.AddContact(newContact, registerAccount);
                     if (contactId == 0)
                         return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
@@ -105,7 +112,19 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutContact(long accountId, ModelObjects.Contact contact)
+        public async Task<HttpResponseMessage> RegisterAccount(long accountId, long id)
+        {
+            var contact = DataAccess.Contacts.GetContact(id);
+            var userId = await DataAccess.Contacts.RegisterUser(contact);
+            if (!String.IsNullOrEmpty(userId))
+                return Request.CreateResponse<string>(HttpStatusCode.OK, userId);
+            else
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("PUT"), HttpPut]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public async Task<HttpResponseMessage> PutContact(long accountId, ModelObjects.Contact contact)
         {
             contact.CreatorAccountId = accountId;
 
@@ -113,7 +132,13 @@ namespace SportsManager.Controllers
             {
                 try
                 {
-                    DataAccess.Contacts.UpdateContact(contact, false);
+                    bool registerIfNeeded = false;
+                    string qsRegister = HttpContext.Current.Request["register"];
+                    if (qsRegister == "1")
+                        registerIfNeeded = true;
+
+                    await DataAccess.Contacts.UpdateContact(contact, registerIfNeeded);
+
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
                     {

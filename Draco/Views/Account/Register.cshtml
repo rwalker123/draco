@@ -122,20 +122,6 @@
             }
         });
 
-        $(".selectpicker").selectpicker();
-
-        $('#birthDate').datepicker({
-            dateFormat: 'MM dd, yy',
-            changeMonth: true,
-            changeYear: true,
-            showTime: false,
-            yearRange: "-100:+0",
-            onSelect: function (dateText, inst) {
-                console.log(inst);
-            }
-        });
-        $('#birthDate').datepicker("setDate", new Date);
-
         $.ui.autocomplete.prototype._renderItem = function (ul, item) {
             var li = $("<li>");
             li.data("item.autocomplete", item);
@@ -145,6 +131,16 @@
 
             return li;
         };
+
+        $(".selectpicker").selectpicker();
+
+        $('#birthDate').datepicker({
+            format: 'MM dd, yyyy',
+            autoclose: true,
+            startView: 2
+        });
+        $('#birthDate').datepicker("setDate", new Date);
+
     });
 
 </script>  

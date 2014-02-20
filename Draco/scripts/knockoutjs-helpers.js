@@ -144,52 +144,93 @@
     };
 
     ko.bindingHandlers.datepicker = {
-        current: '',
-
         init: function (element, valueAccessor, allBindingsAccessor) {
             //initialize datepicker with some optional options
             var options = allBindingsAccessor().datepickerOptions || {};
             $(element).datepicker(options);
 
-            var startdate = allBindingsAccessor().datepickerStartDate;
-            if (startdate)
-                $(element).datepicker('setDate', startdate);
-
-            //handle the field changing
-            ko.utils.registerEventHandler(element, "change", function () {
-                var observable = valueAccessor();
-                observable($(element).val());
-                if (observable.isValid && observable.isValid()) {
-                    observable($(element).datepicker("getDate"));
-
-                    $(element).blur();
+            //when a user changes the date, update the view model
+            ko.utils.registerEventHandler(element, "changeDate", function (event) {
+                var value = valueAccessor();
+                if (ko.isObservable(value)) {
+                    value(event.date);
                 }
             });
 
-            //handle disposal (if KO removes by the template binding)
-            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-                $(element).datepicker("destroy");
+            ko.utils.registerEventHandler(element, "change", function () {
+                var value = valueAccessor();
+                if (ko.isObservable(value)) {
+                    value(new Date(element.value));
+                }
             });
-
-            if (ko.bindingHandlers.validationCore)
-                ko.bindingHandlers.validationCore.init(element, valueAccessor, allBindingsAccessor);
-
         },
         update: function (element, valueAccessor) {
-            var value = ko.utils.unwrapObservable(valueAccessor());
+            var widget = $(element).data("datepicker");
+            //when the view model is updated, update the widget
+            if (widget) {
+                widget.date = ko.utils.unwrapObservable(valueAccessor());
 
-            //handle date data coming via json from Microsoft
-            if (String(value).indexOf('/Date(') == 0) {
-                value = new Date(parseInt(value.replace(/\/Date\((.*?)\)\//gi, "$1")));
-            }
+                if (!widget.date) {
+                    return;
+                }
 
-            current = $(element).datepicker("getDate");
+                if ($.type(widget.date) === 'string') {
+                //if (_.isString(widget.date)) {
+                    widget.date = new Date(widget.date);
+                }
 
-            if (value && value - current !== 0) {
-                $(element).datepicker("setDate", value);
+                widget.setDate(widget.date); //.value
             }
         }
     };
+
+    ko.bindingHandlers.selectPicker = {
+        init: function (element, valueAccessor, allBindingsAccessor) {
+            if ($(element).is('select')) {
+                if (ko.isObservable(valueAccessor())) {
+                    if ($(element).prop('multiple') && $.isArray(ko.utils.unwrapObservable(valueAccessor()))) {
+                        // in the case of a multiple select where the valueAccessor() is an observableArray, call the default Knockout selectedOptions binding
+                        ko.bindingHandlers.selectedOptions.init(element, valueAccessor, allBindingsAccessor);
+                    } else {
+                        // regular select and observable so call the default value binding
+                        ko.bindingHandlers.value.init(element, valueAccessor, allBindingsAccessor);
+                    }
+                }
+                $(element).selectpicker();
+            }
+        },
+        update: function (element, valueAccessor, allBindingsAccessor) {
+            if ($(element).is('select')) {
+                var selectPickerOptions = allBindingsAccessor().selectPickerOptions;
+                if (typeof selectPickerOptions !== 'undefined' && selectPickerOptions !== null) {
+                    var options = selectPickerOptions.optionsArray,
+                        isDisabled = selectPickerOptions.disabledCondition || false,
+                        resetOnDisabled = selectPickerOptions.resetOnDisabled || false;
+                    if (options !== undefined && ko.utils.unwrapObservable(options).length > 0) {
+                        // call the default Knockout options binding
+                        ko.bindingHandlers.options.update(element, options, allBindingsAccessor);
+                    }
+                    if (isDisabled && resetOnDisabled) {
+                        // the dropdown is disabled and we need to reset it to its first option
+                        $(element).selectpicker('val', $(element).children('option:first').val());
+                    }
+                    $(element).prop('disabled', isDisabled);
+                }
+                if (ko.isObservable(valueAccessor())) {
+                    if ($(element).prop('multiple') && $.isArray(ko.utils.unwrapObservable(valueAccessor()))) {
+                        // in the case of a multiple select where the valueAccessor() is an observableArray, call the default Knockout selectedOptions binding
+                        ko.bindingHandlers.selectedOptions.update(element, valueAccessor);
+                    } else {
+                        // call the default Knockout value binding
+                        ko.bindingHandlers.value.update(element, valueAccessor);
+                    }
+                }
+
+                $(element).selectpicker('refresh');
+            }
+        }
+    };
+
 
     ko.bindingHandlers['optionsTitle'] = {
         'update': function (element, valueAccessor, allBindingsAccessor) {

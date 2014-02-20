@@ -131,7 +131,7 @@ namespace SportsManager.Controllers
                 {
                     if (!String.IsNullOrEmpty(contact.UserId))
                     {
-                        ModelState.AddModelError("PlayerName", "Player is already registered. Click here if you forgot your password.");
+                        ModelState.AddModelError("PlayerName", "Player is already registered.");
                     }
                     else if (contact.DateOfBirth != model.BirthDate || contact.FirstYear != model.FirstYear)
                     {
@@ -165,6 +165,9 @@ namespace SportsManager.Controllers
             }
 
             model.AccountId = model.RegisterAccountId;
+            ViewData["AccountId"] = model.AccountId;
+            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(model.AccountId);
+
 
             // If we got this far, something failed, redisplay form
             model.InitYearList(model.RegisterAccountId);
