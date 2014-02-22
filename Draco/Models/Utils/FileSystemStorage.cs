@@ -89,7 +89,7 @@ namespace SportsManager.Models.Utils
             return memoryStream;
         }
 
-        private String GetLocalPath(string storageUri)
+        public String GetLocalPath(string storageUri)
         {
             if (!storageUri.StartsWith("~/"))
             {

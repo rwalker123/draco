@@ -23,6 +23,7 @@ namespace SportsManager
             bundles.Add(new ScriptBundle("~/bundles/knockout").Include(
                         "~/Scripts/knockout-{version}.js",
                         "~/Scripts/knockoutjs-helpers.js"));
+                        //"~/Scripts/knockout.validation.js"
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap-wysiwyg").Include(
                         "~/Scripts/jquery.hotkeys.js",

@@ -17,90 +17,98 @@
 
     <div class="panel-body">
 
+        <div class="modal fade" id="deleteWorkoutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Confirm Delete Workout</h4>
+                    </div>
+                    <div class="modal-body" >
+                        You are about to delete a workout. All data associated with the workout and registrations will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmWorkoutDeleteBtn">Continue</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @if (Model.IsAdmin)
         {
             <form class="form-horizontal" style="display:none" data-bind="visible: editWhereHeard">
                 <div class="form-group">
-                    <button class="btn btn-default" data-bind="click: stopWorkoutAdd">Done Editing Where Heard</button>
+                    <button class="btn btn-default" data-bind="click: stopWorkoutWhereHeardAdd">Done Editing Where Heard</button>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-10">
-                        <ul class="list-group">
+                        <ul class="list-group" data-bind="foreach: whereHeardOptions">
                             <li class="list-group-item">
-                                <span>Craigs List</span>
-                                <button class="btn btn-danger pull-right"><span class="glyphicon glyphicon-remove" data-bind="click: removeWhereHeard"></span></button>
-                                <button class="btn btn-info pull-right"><span class="glyphicon glyphicon-arrow-down" data-bind="click: moveWhereHeardDown"></span></button>
-                                <button class="btn btn-info pull-right"><span class="glyphicon glyphicon-arrow-up"></span></button>
-                                <div class="clearfix"></div>
-                            </li>
-                            <li class="list-group-item">
-                                <span>Detroit News</span>
-                                <button class="btn btn-danger pull-right"><span class="glyphicon glyphicon-remove"></span></button>
-                                <button class="btn btn-info pull-right"><span class="glyphicon glyphicon-arrow-down"></span></button>
-                                <button class="btn btn-info pull-right"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                                <span data-bind="html: $data"></span>
+                                <button class="btn btn-danger pull-right" data-bind="click: $parent.removeWhereHeard"><span class="glyphicon glyphicon-remove"></span></button>
                                 <div class="clearfix"></div>
                             </li>
                         </ul>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="workoutWhere" class="sr-only col-sm-1"></label>
+                    <label for="workoutWhere" class="sr-only"></label>
                     <div class="col-sm-9">
-                        <input type="text" class="form-control " placeholder="add new where heard (ex: google)" />
+                        <input type="text" class="form-control" id="workoutWhere" data-bind="value: newWhereHeardName" placeholder="add new where heard (ex: google)" />
                     </div>
                     <div class="col-sm-2">
-                        <button type="button" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-success" data-bind="click: addNewWhereHeard"><span class="glyphicon glyphicon-ok"></span></button>
                     </div>
                 </div>
             </form>
             
-            <form class="form-horizontal" style="margin-left: 5px;display:none" data-bind="visible: !viewMode()">
+            <form class="form-horizontal" id="workoutEditForm" style="margin-left: 5px;display:none" data-bind="visible: !viewMode(), with: currentEditWorkout">
                 <div class="form-group">
-                    <button class="btn btn-default" data-bind="click: stopWorkoutAdd">Done Adding Workouts</button>
+                    <button class="btn btn-default" data-bind="click: $parent.stopWorkoutAdd, visible: !$parent.editWorkoutMode()">Done Adding Workouts</button>
                 </div>
                 <div class="form-group">
-                    <label for="newWorkoutTitle" class="control-label col-sm-2">title</label>
+                    <label for="WorkoutTitle" class="control-label col-sm-2">title</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" data-bind="value: newWorkoutTitle, valueUpdate: 'input' " id="newWorkoutTitle" />
-                        <p class="alert alert-danger" data-bind="visible: titleMissingError">You must supply a title.</p>
+                        <input type="text" class="form-control" data-bind="value: Description, valueUpdate: 'input' " id="WorkoutTitle" />
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="newWorkoutDate" class="control-label col-sm-2">date</label>
+                    <label for="WorkoutDate" class="control-label col-sm-2">date</label>
                     <div class="col-sm-10">
-                        <input class="form-control" data-provide="datepicker" data-date-format="MM dd, yyyy" data-date-autoclose="true" data-date-start-view="1" type="text" data-bind="value: newWorkoutDate" id="newWorkoutDate" />
+                        <input class="form-control" type="text" data-bind="datepicker: WorkoutDate, datepickerOptions: {format: 'mm-dd-yyyy', autoclose: true, startView: 1 }" id="WorkoutDate" />
                     </div> 
                 </div>
                 <div class="form-group">
-                    <label for="newWorkoutTime" class="control-label col-sm-2">time</label>
+                    <label for="WorkoutTime" class="control-label col-sm-2">time</label>
                     <div class="col-sm-8">
                         <div class="bootstrap-timepicker">
-                            <input id="newWorkoutTime" class="form-control add-on" data-bind="value: newWorkoutTime" type="text">
+                            <input id="WorkoutTime" class="form-control add-on" data-bind="timepicker: WorkoutTime, timepickerOptions: {minuteStep: 5, showInputs: false, disableFocus: true}" type="text">
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="newWorkoutField" class="control-label col-sm-2">location</label>
+                    <label for="WorkoutField" class="control-label col-sm-2">location</label>
                     <div class="col-sm-10">
-                        <select data-container="body" id="newWorkoutField" data-bind="value: newWorkoutField, options: workoutAvailableFields, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Choose field...'"></select>
+                        <select data-container="body" id="WorkoutField" data-bind="selectPicker: WorkoutLocation, selectPickerOptions: { optionsArray: $parent.workoutAvailableFields }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Choose field...'"></select>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="newWorkoutDescription" class="control-label col-sm-2">description</label>
+                    <label for="WorkoutDescription" class="control-label col-sm-2">description</label>
                     <div class="col-sm-10">
-                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "newWorkoutEditControl");}
-                        <div id="newWorkoutEditControl" class="wysiwygEditor" data-bind="htmlValue: newWorkoutDescription">
+                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "WorkoutEditControl");}
+                        <div id="WorkoutEditControl" class="wysiwygEditor" data-bind="htmlValue: Comments">
                         </div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <button type="button" class="btn btn-primary" data-bind="click: addNewWorkout"><span class="glyphicon glyphicon-ok"></span></button>
-                    <button type="button" class="btn btn-danger" data-bind="click: clearNewData"><span class="glyphicon glyphicon-remove"></span></button>
+                    <button type="button" class="btn btn-primary" data-bind="click: $parent.addNewWorkout"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-danger" data-bind="click: $parent.cancelEditMode"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
-            </form>
+            </form>         
         }
         
-    <ul class="list-group" data-bind="foreach: workouts">
+    <ul class="list-group" data-bind="foreach: workouts, visible: !editWorkoutMode()">
         <li class="list-group-item">
             @if (Model.IsAdmin)
             { 
@@ -108,16 +116,19 @@
             }
             <h3 data-bind="html: Description"></h3>
             <div class="alert alert-info">
-                <h4><span data-bind="html: WorkoutDate"></span>, <span data-bind="html: WorkoutTime"></span></h4>
-                <a class="btn btn-info"  href=""><span data-bind="html: WorkoutFieldName"></span></a>
+                <h4><span data-bind="html: DisplayDate"></span>, <span data-bind="html: WorkoutTime"></span></h4>
+                <a class="btn btn-info" data-bind="visible: WorkoutLocation() > 0"  href=""><span data-bind="html: WorkoutField"></span></a>
             </div>
             <p data-bind="html: Comments"></p>
             @if (Model.IsAdmin)
             {
                 <button type="button" class="btn btn-info"><span class="fa fa-envelope"></span></button>
-                <button type="button" class="btn btn-info"><span class="fa fa-twitter"></span></button>
-                <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button>
-                <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                if (!String.IsNullOrEmpty((String)ViewData["TwitterAccountName"]))
+                { 
+                    <button type="button" class="btn btn-info" data-bind="click: $parent.postTwitter"><span class="fa fa-twitter"></span></button>
+                }
+                <button type="button" class="btn btn-default" data-bind="click: $parent.editWorkout"><span class="glyphicon glyphicon-edit"></span></button>
+                <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteWorkout"><span class="glyphicon glyphicon-remove"></span></button>
             }
             else
             {
@@ -156,7 +167,7 @@
                     <div class="form-group">
                         <label data-bind="uniqueFor: Id" class="control-label col-sm-2">where heard</label>
                         <div class="col-sm-10">
-                            <select class="registerworkoutselectpicker" data-bind="uniqueId: Id, value: whereHeardOption, options: $root.whereHeardOptions, optionsText: 'Name' , optionsValue: 'Id'" data-container=" body"></select>
+                            <select data-bind="uniqueId: Id, selectPicker: whereHeardOption, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
                         </div>
                     </div>
                     <div class="form-group">

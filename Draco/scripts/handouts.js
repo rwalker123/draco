@@ -195,6 +195,14 @@
     }
 
     self.deleteHandout = function (handout) {
+        $("#deleteHandoutModal").modal("show");
+
+        $("#confirmHandoutDeleteBtn").one("click", function () {
+            self.makeHandoutDeleteCall(handout)
+        });
+    }
+
+    self.makeHandoutDeleteCall = function (handout) {
         $.ajax({
             type: "DELETE",
             url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts/' + handout.Id,

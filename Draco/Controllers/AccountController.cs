@@ -151,6 +151,7 @@ namespace SportsManager.Controllers
                             if (result.Succeeded)
                             {
                                 contact.UserId = user.Id;
+                                contact.Email = model.Email;
                                 DataAccess.Contacts.UpdateUserId(contact);
                                 await SignInAsync(user, isPersistent: false);
                                 return RedirectToAction("Index", "Home");

@@ -424,6 +424,7 @@ namespace DataAccess
             if (dbContact == null)
                 return;
 
+            dbContact.Email = contact.Email;
             dbContact.UserId = contact.UserId;
             db.SubmitChanges();
         }

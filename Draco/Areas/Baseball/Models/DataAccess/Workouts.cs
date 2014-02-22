@@ -1,16 +1,14 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
-using System.Web.SessionState;
-using System.Collections.Generic;
-using System.IO;
-using System.Xml.Serialization;
-using System.Linq;
 using SportsManager;
 using SportsManager.Models.Utils;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace DataAccess
 {
@@ -69,8 +67,7 @@ namespace DataAccess
                 wwh.WhereHeardList = whereHeardOptions;
 
                 XmlSerializer serializer = new XmlSerializer(typeof(WorkoutWhereHeard));
-                string fileName = WorkoutWhereHeard.FileUri(accountId);
-
+                string fileName = Storage.Provider.GetLocalPath(WorkoutWhereHeard.FileUri(accountId));
                 System.IO.DirectoryInfo di = new DirectoryInfo(System.IO.Path.GetDirectoryName(fileName));
                 if (!di.Exists)
                     System.IO.Directory.CreateDirectory(di.FullName);
@@ -198,34 +195,23 @@ namespace DataAccess
 
 		static public bool ModifyWorkoutAnnouncement(WorkoutAnnouncement w)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
+            var dbWorkout = (from wa in db.WorkoutAnnouncements
+                             where wa.id == w.Id
+                             select wa).SingleOrDefault();
+            if (dbWorkout != null)
+            {
+                dbWorkout.WorkoutDate = w.WorkoutDate;
+                dbWorkout.WorkoutDesc = w.Description;
+                dbWorkout.WorkoutTime = w.WorkoutTime;
+                dbWorkout.Comments = w.Comments;
+                dbWorkout.FieldId = w.WorkoutLocation;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateWorkoutAnnouncement", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                db.SubmitChanges();
+                return true;
+            }
 
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 100).Value = w.Description;
-					myCommand.Parameters.Add("@workoutDate", SqlDbType.SmallDateTime).Value = w.WorkoutDate;
-					myCommand.Parameters.Add("@workoutTime", SqlDbType.SmallDateTime).Value = w.WorkoutTime;
-					myCommand.Parameters.Add("@location", SqlDbType.BigInt).Value = w.WorkoutLocation;
-					myCommand.Parameters.Add("@comments", SqlDbType.VarChar, 255).Value = w.Comments;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = w.Id;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
 		static public bool AddWorkoutAnnouncement(WorkoutAnnouncement w)
@@ -250,31 +236,21 @@ namespace DataAccess
             return true;
 		}
 
-		static public bool RemoveWorkoutAnnouncement(WorkoutAnnouncement w)
-		{
-			int rowCount = 0;
+        static public bool RemoveWorkoutAnnouncement(long id)
+        {
+            DB db = DBConnection.GetContext();
+            var dbWorkout = (from w in db.WorkoutAnnouncements
+                             where w.id == id
+                             select w).SingleOrDefault();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteWorkoutAnnouncement", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            if (dbWorkout != null)
+            {
+                db.WorkoutAnnouncements.DeleteOnSubmit(dbWorkout);
+                db.SubmitChanges();
+                return true;
+            }
 
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = w.Id;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
-		}
+            return false;
+        }
 	}
 }

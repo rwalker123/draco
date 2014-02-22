@@ -150,17 +150,17 @@
             $(element).datepicker(options);
 
             //when a user changes the date, update the view model
-            ko.utils.registerEventHandler(element, "changeDate", function (event) {
-                var value = valueAccessor();
-                if (ko.isObservable(value)) {
-                    value(event.date);
-                }
-            });
+            //ko.utils.registerEventHandler(element, "changeDate", function (event) {
+            //    var value = valueAccessor();
+            //    if (ko.isObservable(value)) {
+            //        value(moment(event.date).format("MM DD, YYYY"));
+            //    }
+            //});
 
             ko.utils.registerEventHandler(element, "change", function () {
                 var value = valueAccessor();
                 if (ko.isObservable(value)) {
-                    value(new Date(element.value));
+                    value(element.value);
                 }
             });
         },
@@ -180,6 +180,32 @@
                 }
 
                 widget.setDate(widget.date); //.value
+            }
+        }
+    };
+
+    ko.bindingHandlers.timepicker = {
+        init: function (element, valueAccessor, allBindingsAccessor) {
+            //initialize datepicker with some optional options
+            var options = allBindingsAccessor().timepickerOptions || {};
+            $(element).timepicker(options);
+
+            //when a user changes the time, update the view model
+            ko.utils.registerEventHandler(element, "change", function () {
+                var value = valueAccessor();
+                if (ko.isObservable(value)) {
+                    value(element.value);
+                }
+            });
+        },
+        update: function (element, valueAccessor) {
+            var widget = $(element).data("timepicker");
+            //when the view model is updated, update the widget
+            if (widget) {
+                widget.time = ko.utils.unwrapObservable(valueAccessor());
+
+                if (widget.time)
+                    widget.setTime(widget.time); //.value
             }
         }
     };
