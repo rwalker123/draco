@@ -27,9 +27,7 @@
             <input id="category" name="category" class="form-control" type="text" style="width: 200px" value="Welcome" />
             <label style="margin-right:5px" for="position" class="control-label">Message position</label>
             <input id="position" name="position" class="form-control" type="number" value="1" style="width: 70px" />
-            @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "welcomeMessageControl");}
-            <div id="welcomeMessageControl" class="wysiwygEditor">
-            </div>
+            <textarea class="welcomeTextArea" id="welcomeMessageControl"></textarea>
         </form>
 
         <div id="WelcomeMessages">

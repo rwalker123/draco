@@ -37,6 +37,16 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid && welcomeData != null)
             {
+                if (welcomeData.TeamId > 0)
+                {
+                    var team = DataAccess.Teams.GetTeam(welcomeData.TeamId);
+                    if (team == null)
+                        return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                    // need to use the teamId not team Season.
+                    welcomeData.TeamId = team.TeamId;
+                }
+
                 // Convert any HTML markup in the status text.
                 DataAccess.Accounts.AddWelcomeText(welcomeData);
                 if (welcomeData.Id == 0)

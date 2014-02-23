@@ -16,26 +16,6 @@
             background: green;
         }
 
-        a.labellink:link 
-        {
-            text-decoration: none;
-        }
-
-        a.labellink:visited
-        {
-            text-decoration: none;
-        }
-
-        a.labellink:hover
-        {
-            text-decoration: none;
-        }
-
-        a.labellink:active
-        {
-            text-decoration: none;
-        }
-
     div.toArea {
         float:left;
         width:300px;
@@ -134,9 +114,7 @@
 
     <hr />
 
-    @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "emailEditor");}
-    <div data-bind="htmlValue: emailText" class="wysiwygEditor" id="emailEditor">
-    </div>
+    <textarea style="height: 300px" id="emailEditor" data-bind="wysiwyg: emailText"></textarea>
 
 </div>
 
@@ -146,8 +124,8 @@
 
 @section scripts 
 {
-@Scripts.Render("~/bundles/bootstrap-wysiwyg")
 @Scripts.Render("~/bundles/knockout")
+@Scripts.Render("~/bundles/bootstrap-wysiwyg")
 @Scripts.Render("~/bundles/jquery-file-upload")
 
 <script type="text/javascript">
@@ -400,6 +378,15 @@
                         alert("failed sends: " + failedSends.length);
                     }
                     alert('email sent!');
+
+                    self.subject('');
+                    self.emailText('');
+                    self.toField('');
+                    self.attachments.removeAll();
+
+                    // tinyMCE editor will not bind two-ways, have to manually set the control
+                    // when changing the data model.
+                    tinymce.get('emailEditor').setContent('');
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
                     if (xhr.status == 404)
@@ -409,8 +396,6 @@
                 }
             });
         }
-
-        $('#emailEditor').wysiwyg({ toolbarSelector: '[data-role=emailEditor-toolbar]' });
     }
 
 </script>
@@ -440,8 +425,6 @@
     $(document).ready(function () {
         initViewModel();
         $(".selectpicker").selectpicker();
-
-        initToolbarBootstrapBindings();
     });
 </script>
 }

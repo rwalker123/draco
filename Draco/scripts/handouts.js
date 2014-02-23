@@ -114,8 +114,6 @@
 
                 self.handouts(mappedHandouts);
 
-                $('#enterHandoutDescription').wysiwyg({ toolbarSelector: '[data-role=enterHandoutDescription-toolbar]' });
-                $('#handoutEditor').wysiwyg({ toolbarSelector: '[data-role=handoutEditor-toolbar]' });
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
@@ -133,12 +131,17 @@
 
     self.startHandoutEdit = function (handout) {
         self.currentHandout(handout);
+        self.handoutEdit_Description('');
         self.handoutEdit_Description(handout.Description());
         self.handoutEdit_FileName(handout.FileName());
         self.handoutEdit_Id = handout.Id;
 
         handout.viewMode(false);
         self.editHandoutMode(true);
+
+        // tinyMCE editor will not bind two-ways, have to manually set the control
+        // when changing the data model.
+        tinymce.get('handoutEditor').setContent(self.handoutEdit_Description());
     }
 
     self.endHandoutEdit = function (handout) {
@@ -156,9 +159,6 @@
     }
 
     self.saveHandout = function (handout) {
-        // mouse only changes (select/formatting) aren't picked up by knockoutjs,
-        // just grab the html here.
-        self.handoutEdit_Description($('#handoutEditor').html());
 
         $.ajax({
             type: "PUT",

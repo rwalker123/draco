@@ -1,5 +1,5 @@
-﻿var AnnouncementClass = function (accountId, isAdmin) {
-    this.init(accountId, isAdmin);
+﻿var AnnouncementClass = function (accountId, isAdmin, teamId) {
+    this.init(accountId, isAdmin, teamId);
 };
 
 $.extend(AnnouncementClass.prototype, {
@@ -7,11 +7,12 @@ $.extend(AnnouncementClass.prototype, {
     newsId: 0,
     dateFormat: "M d, yy",
 
-    init: function (accountId, isAdmin) {
+    init: function (accountId, isAdmin, teamId) {
         this.accountId = accountId;
         this.isAdmin = isAdmin;
+        this.teamId = teamId;
 
-        $('#newsEditControl').wysiwyg({ toolbarSelector: '[data-role=newsEditControl-toolbar]' });
+        $('#newsEditControl').tinymce({ selector: "textarea.newsEditor" });
 
     },
 
@@ -75,7 +76,12 @@ $.extend(AnnouncementClass.prototype, {
         var target = this;
 
         var requestType;
-        var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement';
+        var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId;
+
+        if (this.teamId)
+            url = url + '/TeamAnnouncement';
+        else
+            url = url + '/Announcement';
 
         if (this.newsId == 0) {
             requestType = 'POST'; // new message
@@ -90,7 +96,7 @@ $.extend(AnnouncementClass.prototype, {
             url: url,
             data: {
                 Id: this.newsId,
-                AccountId: this.accountId,
+                AccountId: this.teamId || this.accountId,
                 Title: $('#newsTitle').val(),
                 SpecialAnnounce: $('#specialAnnounce').is(':checked'),
                 Text: $('#newsEditControl').html()
@@ -162,9 +168,16 @@ $.extend(AnnouncementClass.prototype, {
 
     deleteNews: function (id) {
         var target = this;
+
+        var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId;
+        if (this.teamId)
+            url = url + '/TeamAnnouncement/' + id;
+        else
+            url = url + '/Announcement/' + id;
+
         $.ajax({
             type: 'DELETE',
-            url: window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement/' + id,
+            url: url,
             success: function (dbNewsId) {
                 window.location.hash = 'update';
 
@@ -236,9 +249,17 @@ $.extend(AnnouncementClass.prototype, {
 
         if (newsItemElement.data('hasdata') == 'False') {
 
+            var url = window.config.rootUri + '/api/AnnouncementAPI/';
+            if (this.teamId)
+                url = url + this.teamId + '/TeamAnnouncement/';
+            else
+                url = url + this.accountId + '/Announcement/';
+            
+            url = url + newsId;
+
             $.ajax({
                 type: 'GET',
-                url: window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId + '/Announcement/' + newsId,
+                url: url,
                 success: function (theText) {
                     newsItemElement.html(theText);
                     newsItemElement.data('hasdata', 'True');

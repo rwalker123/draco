@@ -82,6 +82,9 @@ namespace SportsManager.Models.Helpers
                 string statsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "Statistics", action = "Index", accountId = accountId })).VirtualPath;
 
+                string hofurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                   new RouteValueDictionary(new { area = "baseball", controller = "HallOfFame", action = "Index", accountId = accountId })).VirtualPath;
+
                 string scheduleurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "LeagueSchedule", action = "Index", accountId = accountId })).VirtualPath;
 
@@ -108,6 +111,7 @@ namespace SportsManager.Models.Helpers
 
                 var leagueMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "League");
                 leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
+                leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Hall of Fame", "Hall of Fame Page"));
 
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
 	            {

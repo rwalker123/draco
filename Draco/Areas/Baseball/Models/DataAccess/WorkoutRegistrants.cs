@@ -1,10 +1,10 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
-using System.Web.SessionState;
+using SportsManager;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Mail;
+using System.Text;
 
 namespace DataAccess
 {
@@ -13,107 +13,65 @@ namespace DataAccess
 	/// </summary>
 	static public class WorkoutRegistrants
 	{
-		static public string GetWorkoutRegistrantName(int workoutRegistrantId)
+		static public IQueryable<WorkoutRegistrant> GetWorkoutRegistrants(long workoutId)
 		{
-			string name = String.Empty;
+            DB db = DBConnection.GetContext();
+            return (from wr in db.WorkoutRegistrations
+                    where wr.WorkoutId == workoutId
+                    select new WorkoutRegistrant()
+                    {
+                        Id = wr.id,
+                        Name = wr.Name,
+                        Email = wr.EMail,
+                        DateRegistered = wr.DateRegistered,
+                        Age = wr.Age,
+                        Positions = wr.Positions,
+                        WantToManager = wr.IsManager,
+                        WorkoutId = workoutId,
+                        WhereHeard = wr.WhereHeard,
+                        Phone1 = wr.Phone1,
+                        Phone2 = wr.Phone2,
+                        Phone3 = wr.Phone3,
+                        Phone4 = wr.Phone4
+                    });
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetWorkoutRegistrantName", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = workoutRegistrantId;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-						name = dr.GetString(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return name;
-		}
-
-		static public List<WorkoutRegistrant> GetWorkoutRegistrants(long workoutId)
-		{
-			List<WorkoutRegistrant> workoutRegistrants = new List<WorkoutRegistrant>();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetWorkoutRegistrants", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@workoutId", SqlDbType.BigInt).Value = workoutId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-                        workoutRegistrants.Add(new WorkoutRegistrant(dr.GetInt64(0), dr.GetString(1), dr.GetString(2), dr.GetInt32(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetBoolean(9), dr.GetInt64(10), dr.GetString(12), dr.GetDateTime(11)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return workoutRegistrants;
 		}
 
 		static public bool ModifyWorkoutRegistrant(WorkoutRegistrant wr)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            wr.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone1));
-            wr.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone2));
-            wr.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone3));
+            var dbRegistrant = (from w in db.WorkoutRegistrations
+                                where w.id == wr.Id
+                                select w).SingleOrDefault();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateWorkoutRegistrant", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            if (dbRegistrant != null)
+            {
+                wr.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone1));
+                wr.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone2));
+                wr.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone3));
 
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 100).Value = wr.Name;
-					myCommand.Parameters.Add("@email", SqlDbType.VarChar, 100).Value = wr.Email;
-					myCommand.Parameters.Add("@age", SqlDbType.Int).Value = wr.Age;
-					myCommand.Parameters.Add("@phone1", SqlDbType.VarChar, 14).Value = wr.Phone1;
-					myCommand.Parameters.Add("@phone2", SqlDbType.VarChar, 14).Value = wr.Phone2;
-					myCommand.Parameters.Add("@phone3", SqlDbType.VarChar, 14).Value = wr.Phone3;
-					myCommand.Parameters.Add("@positions", SqlDbType.VarChar, 50).Value = wr.Positions;
-					myCommand.Parameters.Add("@manager", SqlDbType.Bit).Value = wr.WantToManager;
-                    myCommand.Parameters.Add("@whereHeard", SqlDbType.VarChar, 25).Value = wr.WhereHeard;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = wr.Id;
+                dbRegistrant.Name = wr.Name;
+                dbRegistrant.EMail = wr.Email;
+                dbRegistrant.Age = wr.Age;
+                dbRegistrant.Phone1 = wr.Phone1;
+                dbRegistrant.Phone2 = wr.Phone2;
+                dbRegistrant.Phone3 = wr.Phone3;
+                dbRegistrant.Phone4 = wr.Phone4;
+                dbRegistrant.Positions = wr.Positions;
+                dbRegistrant.IsManager = wr.WantToManager;
+                dbRegistrant.WhereHeard = wr.WhereHeard;
 
-					myConnection.Open();
-					myCommand.Prepare();
+                db.SubmitChanges();
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
 		static public bool AddWorkoutRegistrant(WorkoutRegistrant wr)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
             if (wr.Phone3 == null)
                 wr.Phone3 = String.Empty;
@@ -124,67 +82,94 @@ namespace DataAccess
             wr.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone1));
             wr.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone2));
             wr.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone3));
+            wr.Phone4 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone4));
 
+            var dbRegister = new SportsManager.Model.WorkoutRegistration()
+            {
+                Age = wr.Age,
+                DateRegistered = DateTime.Now,
+                EMail = wr.Email,
+                IsManager = wr.WantToManager,
+                Name = wr.Name,
+                Phone1 = wr.Phone1,
+                Phone2 = wr.Phone2,
+                Phone3 = wr.Phone3,
+                Phone4 = wr.Phone4,
+                Positions = wr.Positions,
+                WhereHeard = wr.WhereHeard,
+                WorkoutId = wr.WorkoutId
+            };
 
-            if (wr.WorkoutId == 0 && System.Web.HttpContext.Current.Session["AdminCurrentWorkout"] != null)
-                wr.WorkoutId = (long)System.Web.HttpContext.Current.Session["AdminCurrentWorkout"];
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateWorkoutRegistrant", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.WorkoutRegistrations.InsertOnSubmit(dbRegister);
+            db.SubmitChanges();
 
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 100).Value = wr.Name;
-					myCommand.Parameters.Add("@email", SqlDbType.VarChar, 100).Value = wr.Email;
-					myCommand.Parameters.Add("@age", SqlDbType.Int).Value = wr.Age;
-					myCommand.Parameters.Add("@phone1", SqlDbType.VarChar, 14).Value = wr.Phone1;
-					myCommand.Parameters.Add("@phone2", SqlDbType.VarChar, 14).Value = wr.Phone2;
-					myCommand.Parameters.Add("@phone3", SqlDbType.VarChar, 14).Value = wr.Phone3;
-					myCommand.Parameters.Add("@positions", SqlDbType.VarChar, 50).Value = wr.Positions;
-					myCommand.Parameters.Add("@manager", SqlDbType.Bit).Value = wr.WantToManager;
-                    myCommand.Parameters.Add("@whereHeard", SqlDbType.VarChar, 25).Value = wr.WhereHeard;
-					myCommand.Parameters.Add("@workoutId", SqlDbType.BigInt).Value = wr.WorkoutId;
+            wr.Id = dbRegister.id;
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-            return (rowCount > 0);
+            return true;
 		}
 
 		static public bool RemoveWorkoutRegistrant(WorkoutRegistrant wr)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteWorkoutRegistrant", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbWr = (from w in db.WorkoutRegistrations
+                        where w.id == wr.Id
+                        select w).SingleOrDefault();
 
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = wr.Id;
+            if (dbWr != null)
+            {
+                db.WorkoutRegistrations.DeleteOnSubmit(dbWr);
+                db.SubmitChanges();
+                return true;
+            }
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
+
+        static public String EmailRegistrants(long workoutId, String subject, String message)
+        {
+            string sender = Globals.GetCurrentUserName();
+            if (String.IsNullOrEmpty(sender))
+                return String.Empty;
+
+            DB db = DBConnection.GetContext();
+
+            var registrants = (from wr in db.WorkoutRegistrations
+                               where wr.WorkoutId == workoutId
+                               select wr);
+
+            if (!registrants.Any())
+                return "No registrants found.";
+
+            StringBuilder result = new StringBuilder();
+
+            List<MailAddress> bccList = new List<MailAddress>();
+            foreach (var reg in registrants)
+            {
+                try
+                {
+                    var address = new MailAddress(reg.EMail);
+                    bccList.Add(address);
+                }
+                catch(Exception)
+                {
+                    // skip invalid emails.
+                    result.Append(reg.EMail);
+                    result.Append("; ");
+                }
+            }
+
+            if (bccList.Any())
+            {
+                var failedSends = Globals.MailMessage(sender, bccList, subject, message);
+                foreach(var failedSend in failedSends)
+                {
+                    result.Append(failedSend.Address);
+                    result.Append("; ");
+                }
+            }
+
+            return result.ToString();
+        }
 	}
 }

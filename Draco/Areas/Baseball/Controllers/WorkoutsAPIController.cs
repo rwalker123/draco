@@ -88,6 +88,82 @@ namespace SportsManager.Baseball.Controllers
             }
         }
 
+
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("register")]
+        public HttpResponseMessage RegisterWorkout(long accountId, long id, ModelObjects.WorkoutRegistrant workoutData)
+        {
+            workoutData.WorkoutId = id;
+
+            if (ModelState.IsValid && workoutData != null)
+            {
+                bool success = DataAccess.WorkoutRegistrants.AddWorkoutRegistrant(workoutData);
+                if (!success)
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+                // Create a 201 response.
+                var response = new HttpResponseMessage(HttpStatusCode.Created)
+                {
+                    Content = new StringContent(workoutData.Id.ToString())
+                };
+                response.Headers.Location =
+                    new Uri(Url.Link("ActionApi", new { action = "registereduser", accountId = accountId, id = workoutData.Id }));
+                return response;
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+        }
+
+        public class EmailData
+        {
+            public String Subject;
+            public String Message;
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("registrants")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage GetRegistrantsForWorkout(long accountId, long id)
+        {
+            var workouts = DataAccess.WorkoutRegistrants.GetWorkoutRegistrants(id);
+            if (workouts != null)
+            {
+                return Request.CreateResponse<IEnumerable<ModelObjects.WorkoutRegistrant>>(HttpStatusCode.OK, workouts);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
+
+
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("email")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage EmailRegistrants(long accountId, long id, EmailData emailData)
+        {
+            var workoutId = id;
+
+            if (ModelState.IsValid && emailData != null)
+            {
+                String failedSends = DataAccess.WorkoutRegistrants.EmailRegistrants(workoutId, emailData.Subject, emailData.Message);
+
+                // Create a 201 response.
+                var response = new HttpResponseMessage(HttpStatusCode.Created)
+                {
+                    Content = new StringContent(failedSends)
+                };
+                return response;
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+        }
+
+
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("workouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

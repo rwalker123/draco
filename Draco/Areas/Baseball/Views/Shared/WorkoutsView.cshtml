@@ -96,93 +96,154 @@
                 <div class="form-group">
                     <label for="WorkoutDescription" class="control-label col-sm-2">description</label>
                     <div class="col-sm-10">
-                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "WorkoutEditControl");}
-                        <div id="WorkoutEditControl" class="wysiwygEditor" data-bind="htmlValue: Comments">
-                        </div>
+                        <textarea id="workoutEditor" data-bind="wysiwyg: Comments">
+                        </textarea>
                     </div>
                 </div>
                 <div class="form-group">
                     <button type="button" class="btn btn-primary" data-bind="click: $parent.addNewWorkout"><span class="glyphicon glyphicon-ok"></span></button>
                     <button type="button" class="btn btn-danger" data-bind="click: $parent.cancelEditMode"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
-            </form>         
+            </form>             
         }
         
     <ul class="list-group" data-bind="foreach: workouts, visible: !editWorkoutMode()">
         <li class="list-group-item">
             @if (Model.IsAdmin)
             { 
-                <span class="badge"><span data-bind="html: NumRegistered"></span> registered</span>
+                <a class="badge" data-bind="click: editRegistrants"><span data-bind="html: NumRegistered"></span> registered</a>
             }
             <h3 data-bind="html: Description"></h3>
             <div class="alert alert-info">
                 <h4><span data-bind="html: DisplayDate"></span>, <span data-bind="html: WorkoutTime"></span></h4>
-                <a class="btn btn-info" data-bind="visible: WorkoutLocation() > 0"  href=""><span data-bind="html: WorkoutField"></span></a>
+                <a class="btn btn-info" data-bind="visible: WorkoutLocation() > 0, attr: { href: fieldUrl }"><span data-bind="html: WorkoutField"></span></a>
             </div>
-            <p data-bind="html: Comments"></p>
+            <p data-bind="html: Comments, visible: viewMode"></p>
             @if (Model.IsAdmin)
             {
-                <button type="button" class="btn btn-info"><span class="fa fa-envelope"></span></button>
-                if (!String.IsNullOrEmpty((String)ViewData["TwitterAccountName"]))
-                { 
-                    <button type="button" class="btn btn-info" data-bind="click: $parent.postTwitter"><span class="fa fa-twitter"></span></button>
-                }
-                <button type="button" class="btn btn-default" data-bind="click: $parent.editWorkout"><span class="glyphicon glyphicon-edit"></span></button>
-                <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteWorkout"><span class="glyphicon glyphicon-remove"></span></button>
+                <form class="form-horizontal" data-bind="visible: sendEmail">
+                    <div class="form-group">
+                        <label for="" class="control-label col-sm-2">subject</label>
+                        <div class="col-sm-10">
+                            <input data-bind="value: emailSubject" class="form-control"/>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="" class="control-label col-sm-2">message</label>
+                        <div class="col-sm-10">
+                            <textarea data-bind="attr: { id: Id() + '_workoutEmailEditor' }, wysiwyg: emailText"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="button" class="btn btn-primary" data-bind="click: sendEmailToRegistrants" ><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-danger" data-bind="click: cancelSendEmail" ><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+
+                </form>
+
+                <form class="form-horizontal" data-bind="visible: editRegistrantsMode">
+                    <div class="form-group">
+                        <button class="btn btn-default" data-bind="click: stopRegistrantEdit">Done Editing Registrants</button>
+                    </div>
+                    <h4>Registrants</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered" >
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Positions</th>
+                                    <th>Where Heard</th>
+                                </tr>
+                            </thead>
+                            <tbody data-bind ="foreach: workoutRegistrants">
+                                <tr>
+                                    <td >
+                                        <span data-bind="html: Name"></span><br />
+                                        Age: <span data-bind="html: Age"></span><br />
+                                        Manage: <span data-bind="html: interestInManage() ? 'Yes' : 'No'"></span>
+                                    </td>
+                                    <td>
+                                        <span data-bind="html: Email"></span><br />
+                                        <span data-bind="html: Phone"></span>
+                                    </td>
+                                    <td data-bind="html: Positions"></td>
+                                    <td data-bind="html: whereHeardOption"></td>
+                                    <td>
+                                        <button class="btn btn-default btn-sm" data-bind="click: editRegistrant"><span class="glyphicon glyphicon-edit"></span></button>
+                                        <button class="btn btn-danger btn-sm" data-bind="click: removeRegistrant"><span class="glyphicon glyphicon-remove"></span></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </form>
+                
+                <div data-bind="visible: viewMode">
+                    <button type="button" class="btn btn-info" data-bind="click: sendEmailMode, visible: NumRegistered() > 0"><span class="fa fa-envelope"></span></button>
+
+                    @if (!String.IsNullOrEmpty((String)ViewData["TwitterAccountName"]))
+                    {
+                        <button type="button" class="btn btn-info" data-bind="click: $parent.postTwitter"><span class="fa fa-twitter"></span></button>
+                    }
+                    
+                    <button type="button" class="btn btn-default" data-bind="click: $parent.editWorkout"><span class="glyphicon glyphicon-edit"></span></button>
+                    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteWorkout"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
             }
             else
             {
                 <form class="form-horizontal" data-bind="visible: registerForWorkout, with: registerData">
                     <h3>Register for <span data-bind="html: $parent.Description"></span></h3>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">name</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">name</label>
                         <div class="col-sm-10">
-                            <input data-bind="uniqueId: Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
+                            <input data-bind="uniqueId: $parent.Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">age</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">age</label>
                         <div class="col-sm-10">
-                            <input data-bind="uniqueId: Id, value: Age" type="number" class="form-control" />
+                            <input data-bind="uniqueId: $parent.Id, value: Age" type="number" class="form-control" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">positions</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">positions</label>
                         <div class="col-sm-10">
-                            <input data-bind="uniqueId: Id, value: Positions" type="text" class="form-control" />
+                            <input data-bind="uniqueId: $parent.Id, value: Positions" type="text" class="form-control" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">phone</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">phone</label>
                         <div class="col-sm-10">
-                            <input data-bind="phoneNumber: Phone, uniqueId: Id" type="text" class="form-control" />
+                            <input data-bind="phoneNumber: Phone, uniqueId: $parent.Id" type="text" class="form-control" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">email</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">email</label>
                         <div class="col-sm-10">
-                            <input data-bind="uniqueId: Id, value: Email" type="email" class="form-control" />
+                            <input data-bind="uniqueId: $parent.Id, value: Email" type="email" class="form-control" />
                         </div>
                     </div>
                     <div class="form-group">
-                        <label data-bind="uniqueFor: Id" class="control-label col-sm-2">where heard</label>
+                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">where heard</label>
                         <div class="col-sm-10">
-                            <select data-bind="uniqueId: Id, selectPicker: whereHeardOption, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
+                            <select data-bind="uniqueId: $parent.Id, selectPicker: whereHeardOption, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
                         </div>
                     </div>
                     <div class="form-group">
                         <div class="col-sm-2">
                         </div>
                         <div class="col-sm-10">
-                            <label class="control-label"><input type="checkbox" /> interested in managing</label>
+                            <label class="control-label"><input type="checkbox" data-bind="checked: interestInManage" /> interested in managing</label>
                         </div>
                     </div>
                                         
-                    <button type="button" class="btn btn-success"><span class="glyphicon glyphicon-ok"></span></button> 
+                    <button type="button" class="btn btn-success" data-bind="click: $parent.registerWorkoutData"><span class="glyphicon glyphicon-ok"></span></button> 
                     <button type="button" class="btn btn-danger" data-bind="click: $parent.endRegisterForWorkout($parent)"><span class="glyphicon glyphicon-remove"></span></button>
                 </form>
                 
-                <button type="button" data-bind="visible: !registerForWorkout(), click: startRegisterForWorkout" class="btn btn-success">Register for <span data-bind="html: Description"></span></button>                
+                <button type="button" data-bind="visible: !registerForWorkout(), click: startRegisterForWorkout" class="btn btn-success">Register for <span data-bind="html: Description"></span></button>
             }
         </li>
     </ul>

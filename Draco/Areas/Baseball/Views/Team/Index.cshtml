@@ -104,13 +104,12 @@
 
 @section scripts
 {
+@Scripts.Render("~/bundles/knockout")
 @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
 <script type="text/javascript" src="~/Scripts/welcome.js"></script>
 <script type="text/javascript" src="~/Scripts/announcement.js"></script>
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
-
-@Scripts.Render("~/bundles/knockout")
 
     <!-- main javascript -->
 <script type="text/javascript">
@@ -132,9 +131,6 @@
             // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
             welcomeData.ShowFirstMenu();
             announcementData.AdjustNewsMenuHeaders();
-
-            $(".selectpicker").selectpicker();
-            initToolbarBootstrapBindings();
         });
 </script>
 }

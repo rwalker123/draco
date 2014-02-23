@@ -15,7 +15,7 @@ $.extend(WelcomeClass.prototype, {
         this.isAdmin = isAdmin;
         this.teamId = teamId;
 
-        $('#welcomeMessageControl').wysiwyg({ toolbarSelector: '[data-role=welcomeMessageControl-toolbar]' });
+        $('#welcomeMessageControl').tinymce({ selector: "textarea.welcomeTextArea" });
     },
 
     cancelWelcomeEdit: function () {
@@ -104,7 +104,8 @@ $.extend(WelcomeClass.prototype, {
                 OrderNo: $('#position').val(),
                 AccountId: this.accountId,
                 CaptionText: $('#category').val(),
-                WelcomeText: $('#welcomeMessageControl').html()
+                WelcomeText: $('#welcomeMessageControl').html(),
+                TeamId: this.teamId || 0
             },
             success: function (dbWelcomeId) {
                 target.cancelWelcomeEdit();
@@ -216,9 +217,14 @@ $.extend(WelcomeClass.prototype, {
 
         if (welcomeMessageElement.data('hasdata') == 'False') {
 
+            var url = window.config.rootUri + '/api/WelcomeAPI/' + this.accountId + '/WelcomeText/' + welcomeTextId;
+
+            if (this.teamId)
+                url = url + '/' + this.teamId;
+
             $.ajax({
                 type: 'GET',
-                url: window.config.rootUri + '/api/WelcomeAPI/' + this.accountId + '/WelcomeText/' + welcomeTextId,
+                url: url,
                 success: function (theText) {
                     welcomeMessageElement.html(theText);
                     welcomeMessageElement.data('hasdata', 'True');

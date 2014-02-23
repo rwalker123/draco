@@ -107,24 +107,6 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-8"> <!-- column 1-->
-            @if (Model.HasTeams)
-            {
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="panel panel-success">
-                            <div class="panel-heading">
-                                <h3 class="panel-title" style="float: left;">Your Teams</h3>
-                                <div style="clear:both"></div>
-                            </div>
-
-                            <div class="panel-body">
-                                Quick links to your teams
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
             @if (Model.ShowWorkouts)
             {
                 <div class="row">
@@ -234,31 +216,25 @@
     }
 
 
-        @if (Model.ShowHallOfFame)
-        {
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title" style="float: left;">Hall of Fame</h3>
-
-                            @if (Model.IsAdmin)
-                            {
-                                <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                            }
-                            <div style="clear:both"></div>
-                        </div>
-
-                        <div class="panel-body">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    
     </div>
 
     <div class="col-md-4"> <!-- second column -->
+
+    @if (Model.HasTeams)
+    {
+        <div class="col-md-12">
+            <div class="panel panel-success">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="float: left;">Your Teams</h3>
+                    <div style="clear:both"></div>
+                </div>
+
+                <div class="panel-body">
+                    Quick links to your teams
+                </div>
+            </div>
+        </div>
+    }
 
     @if (Model.ShowScoreboard)
     { 
@@ -274,26 +250,6 @@
         </div>
     }
 
-    @if (Model.ShowPlayerInterview)
-    {
-        <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title" style="float: left; ">Player Interview</h3>
-
-                    @if (Model.IsAdmin)
-                    {
-                        <button class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                    }
-                    <div style="clear:both"></div>
-                </div>
-
-                <div class="panel-body">
-                </div>
-            </div>
-        </div>
-    }
-        
     @if (Model.ShowSponsors)
     {
         <div class="col-md-12">
@@ -416,10 +372,7 @@
             welcomeData.ShowFirstMenu();
             announcementData.AdjustNewsMenuHeaders();
 
-            $(".selectpicker").selectpicker();
-
-            initToolbarBootstrapBindings();
-
+            $("#_yearEst").selectpicker();
         });
     </script>
 

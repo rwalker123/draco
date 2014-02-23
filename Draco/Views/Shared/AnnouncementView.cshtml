@@ -23,9 +23,7 @@
             </h4>
             <label style="margin-right:5px" for="newsTitle" class="control-label">Announcement headline</label><input id="newsTitle" name="newsTitle" class="form-control" type="text" style="width: 650px" value="" />
             <input type="checkbox" class="form-control" id="specialAnnounce" name="specialAnnounce" style="margin:5px; margin-right:10px" /><label class="control-label" for="specialAnnounce">always display opened</label><br />
-            @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "newsEditControl");}
-            <div id="newsEditControl" class="wysiwygEditor">
-            </div>
+            <textarea class="newsEditor" id="newsEditControl"></textarea>
         </form>
 
             <p id="noHeadlinesMessage" class="help-block" style="display: none">Click the <button type="button" class="btn btn-default" onclick="javascript:announcementData.startNewsAdd()"><span class="glyphicon glyphicon-plus"></span></button> button to add league announcements.</p>

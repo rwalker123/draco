@@ -11,6 +11,11 @@ namespace SportsManager.ViewModels
         public WelcomeMessageViewModel(Controller c, long accountId, long teamId)
             : base(c, accountId)
         {
+            // convert teamSeasonId to teamId
+            var team = DataAccess.Teams.GetTeam(teamId);
+            if (team != null)
+                teamId = team.TeamId;
+
             AccountTexts = DataAccess.Teams.GetWelcomeText(accountId, teamId);
         }
 

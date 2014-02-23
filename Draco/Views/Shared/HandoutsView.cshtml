@@ -45,9 +45,7 @@
                 <div class="form-group">
                     <label for="enterHandoutDescripton" class="col-sm-3 control-label">description</label>
                     <div class="col-sm-9">
-                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "enterHandoutDescription");}
-                        <div class="wysiwygEditor" id="enterHandoutDescription" data-bind="htmlValue: handoutDescription">
-                        </div>
+                        <textarea data-bind="wysiwyg: handoutDescription"></textarea>
                     </div>
                 </div>
                 <div class="form-group">
@@ -78,9 +76,8 @@
                 <div class="form-group">
                     <label for="handoutEditor" class="sr-only">description</label>
                     <div class="col-sm-12">
-                        @{Html.RenderPartial("_bootstrap-wysiwyg-menu", "handoutEditor");}
-                        <div class="wysiwygEditor" id="handoutEditor" data-bind="htmlValue: handoutEdit_Description">
-                        </div>
+                        <textarea id="handoutEditor" data-bind="wysiwyg: handoutEdit_Description">
+                        </textarea>
                     </div>
                 </div>
 
@@ -88,7 +85,7 @@
                     <button type="button" class="btn btn-primary" data-bind="click: $root.saveHandout"><span class="glyphicon glyphicon-ok"></span></button>
                     <button type="button" class="btn btn-danger" data-bind="click: $root.endHandoutEdit"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
-            </form>
+            </form>            
         }
         
         <ul class="list-group" data-bind="foreach: handouts, visible: !editHandoutMode()">

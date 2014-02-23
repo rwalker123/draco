@@ -402,7 +402,10 @@ namespace DataAccess
                                                        select aw).SingleOrDefault();
             if (dbAw != null)
             {
+                // don't want to overwrite teamId, it isn't changeable.
+                var teamId = dbAw.TeamId;
                 accountWelcome.CopyTo(dbAw);
+                dbAw.TeamId = teamId;
                 db.SubmitChanges();
                 return true;
             }

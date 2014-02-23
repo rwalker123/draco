@@ -26,9 +26,10 @@ namespace SportsManager
                         //"~/Scripts/knockout.validation.js"
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap-wysiwyg").Include(
-                        "~/Scripts/jquery.hotkeys.js",
-                        "~/Scripts/bootstrap-wysiwyg.js",
-                        "~/Scripts/bootstrap-wysiwyg-helper.js"));
+                "~/Scripts/tinymce/tinymce.js",
+                "~/Scripts/tinymce/jquery.tinymce.min.js",
+                "~/Scripts/wysiwyg.js"));
+                        
 
             bundles.Add(new ScriptBundle("~/bundles/jquery-file-upload").Include(
                     "~/Scripts/jQuery-File-Upload-9.5.4/js/vendor/jquery.ui.widget.js",
@@ -49,11 +50,13 @@ namespace SportsManager
                       "~/Scripts/respond.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
+                      "~/Content/site.css"));
+
+            bundles.Add(new StyleBundle("~/Content/bootstrap").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/bootstrap-select.css",
                       "~/Content/bootstrap-datepicker3.css",
-                      "~/Content/bootstrap-timepicker/bootstrap-timepicker.css",
-                      "~/Content/site.css"));
+                      "~/Content/bootstrap-timepicker/bootstrap-timepicker.css"));
 
 
             bundles.Add(new StyleBundle("~/Content/themes/base/css").Include(
