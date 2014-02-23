@@ -26,7 +26,7 @@ namespace SportsManager
                         //"~/Scripts/knockout.validation.js"
 
             bundles.Add(new ScriptBundle("~/bundles/bootstrap-wysiwyg").Include(
-                "~/Scripts/tinymce/tinymce.js",
+                //"~/Scripts/tinymce/tinymce.js",
                 "~/Scripts/tinymce/jquery.tinymce.min.js",
                 "~/Scripts/wysiwyg.js"));
                         

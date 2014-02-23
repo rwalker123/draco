@@ -316,6 +316,15 @@
 @section scripts {
 
     @Scripts.Render("~/bundles/knockout")
+@* tinymce doesn't work with bundles because of the plug directory.*@
+@if (BundleTable.EnableOptimizations)
+{
+    <script type="text/javascript" src="~/scripts/tinymce/tinymce.min.js"></script>
+}
+else
+{
+    <script type="text/javascript" src="~/scripts/tinymce/tinymce.js"></script>
+}
     @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
