@@ -31,9 +31,26 @@ namespace SportsManager.Controllers
         }
 
 
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage TeamGetWelcomeText(long accountId, long teamSeasonId, long id)
+        {
+            return GetWelcomeText(accountId, id);
+        }
+
+
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage TeamPostWelcomeText(long accountId, long teamSeasonId, ModelObjects.AccountWelcome welcomeData)
+        {
+            return PostWelcomeText(accountId, welcomeData);
+        }
+
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
-        public HttpResponseMessage WelcomeText(long accountId, ModelObjects.AccountWelcome welcomeData)
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage PostWelcomeText(long accountId, ModelObjects.AccountWelcome welcomeData)
         {
             if (ModelState.IsValid && welcomeData != null)
             {
@@ -67,9 +84,18 @@ namespace SportsManager.Controllers
             }
         }
 
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage PutTeamWelcomeText(long accountId, long teamSeasonId, long id, ModelObjects.AccountWelcome welcomeData)
+        {
+            return PutWelcomeText(accountId, id, welcomeData);
+        }
+
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage WelcomeText(long accountId, long id, ModelObjects.AccountWelcome welcomeData)
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage PutWelcomeText(long accountId, long id, ModelObjects.AccountWelcome welcomeData)
         {
             if (id != 0 && ModelState.IsValid && welcomeData != null)
             {
@@ -94,9 +120,18 @@ namespace SportsManager.Controllers
             }
         }
 
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage TeamDeleteWelcomeText(long accountId, long teamSeasonId, long id)
+        {
+            return DeleteWelcomeText(accountId, id);
+        }
+
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
-        public HttpResponseMessage WelcomeText(long accountId, long id)
+        [ActionName("WelcomeText")]
+        public HttpResponseMessage DeleteWelcomeText(long accountId, long id)
         {
             if (id > 0)
             {

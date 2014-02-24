@@ -79,7 +79,7 @@ $.extend(AnnouncementClass.prototype, {
         var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId;
 
         if (this.teamId)
-            url = url + '/TeamAnnouncement';
+            url = url + '/Team/' + this.teamId + '/Announcement';
         else
             url = url + '/Announcement';
 
@@ -171,7 +171,7 @@ $.extend(AnnouncementClass.prototype, {
 
         var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId;
         if (this.teamId)
-            url = url + '/TeamAnnouncement/' + id;
+            url = url + '/Team/' + this.teamId + '/Announcement/' + id;
         else
             url = url + '/Announcement/' + id;
 
@@ -249,11 +249,11 @@ $.extend(AnnouncementClass.prototype, {
 
         if (newsItemElement.data('hasdata') == 'False') {
 
-            var url = window.config.rootUri + '/api/AnnouncementAPI/';
+            var url = window.config.rootUri + '/api/AnnouncementAPI/' + this.accountId;
             if (this.teamId)
-                url = url + this.teamId + '/TeamAnnouncement/';
+                url = url + '/Team/' + this.teamId + '/Announcement/';
             else
-                url = url + this.accountId + '/Announcement/';
+                url = url + '/Announcement/';
             
             url = url + newsId;
 

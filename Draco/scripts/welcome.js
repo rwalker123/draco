@@ -56,9 +56,16 @@ $.extend(WelcomeClass.prototype, {
     deleteWelcome: function (id) {
         var target = this;
 
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId;
+
+        if (target.teamId)
+            url = url + '/Team/' + target.teamId + '/WelcomeText/' + id;
+        else
+            url = url + '/WelcomeText/' + id;
+
         $.ajax({
             type: 'DELETE',
-            url: window.config.rootUri + '/api/WelcomeAPI/' + target.accountId + '/WelcomeText/' + id,
+            url: url,
             success: function (dbWelcomeId) {
                 window.location.hash = 'update';
 
@@ -86,7 +93,12 @@ $.extend(WelcomeClass.prototype, {
         var target = this;
 
         var requestType;
-        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId + '/WelcomeText';
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId;
+
+        if (target.teamId)
+            url = url + '/Team/' + target.teamId + '/WelcomeText';
+        else
+            url = url + '/WelcomeText';
 
         if (this.welcomeId == 0) {
             requestType = 'POST'; // new message
@@ -217,10 +229,12 @@ $.extend(WelcomeClass.prototype, {
 
         if (welcomeMessageElement.data('hasdata') == 'False') {
 
-            var url = window.config.rootUri + '/api/WelcomeAPI/' + this.accountId + '/WelcomeText/' + welcomeTextId;
+            var url = window.config.rootUri + '/api/WelcomeAPI/' + this.accountId;
 
             if (this.teamId)
-                url = url + '/' + this.teamId;
+                url = url + '/Team/' + this.teamId;
+
+            url = url + '/WelcomeText/' + welcomeTextId;
 
             $.ajax({
                 type: 'GET',

@@ -2,6 +2,7 @@
 using SportsManager.ViewModels;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
@@ -13,27 +14,41 @@ namespace SportsManager.Baseball.ViewModels
         {
             Team = DataAccess.Teams.GetTeam(id);
 
-            Handouts = DataAccess.TeamHandouts.GetTeamHandouts(Team.Id, 0);
-            Sponsors = DataAccess.Sponsors.GetTeamSponsors(Team.Id, true);
             SeasonName = DataAccess.Seasons.GetSeasonName(CurrentSeasonId);
+
+            IsTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, id);
+            IsTeamPhotoAdmin = DataAccess.Teams.IsTeamPhotoAdmin(accountId, id);
+
+            IsTeamMember = DataAccess.Teams.IsTeamMember(id);
+
+            ShowHandouts = true;
+            ShowWelcome = true;
+            ShowAnnouncements = true;
+
             ShowPhotoGallery = true;
         }
 
         public Team Team { get; private set; }
 
         public bool ShowPhotoGallery { get; private set; }
-        public List<TeamHandout> Handouts { get; private set; }
-        public List<LeagueNewsItem> Announcements { get; private set; }
-        public List<Sponsor> Sponsors { get; private set; }
+        public bool ShowHandouts { get; private set; }
+        public bool ShowWelcome { get; private set; }
+        public bool ShowAnnouncements { get; private set; }
 
-        public bool IsPhotoAdmin 
+        public bool IsTeamPhotoAdmin
         {
-            get { return IsAdmin; }
+            get;
+            private set;
+        }
+
+        public bool IsTeamAdmin
+        {
+            get; private set;
         }
 
         public bool IsTeamMember
         {
-            get { return true; }
+            get; private set;
         }
 
         public bool FromLeagueAccount

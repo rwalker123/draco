@@ -31,8 +31,8 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
-        [ActionName("TeamAnnouncement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long id)
+        [ActionName("Announcement")]
+        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
             var newsItem = DataAccess.TeamNews.GetTeamAnnouncement(id);
             if (newsItem != null)
@@ -107,17 +107,17 @@ namespace SportsManager.Controllers
             }
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("POST"), HttpPost]
-        [ActionName("TeamAnnouncement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, ModelObjects.LeagueNewsItem announcementData)
+        [ActionName("Announcement")]
+        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, ModelObjects.LeagueNewsItem announcementData)
         {
             if (ModelState.IsValid && announcementData != null)
             {
                 announcementData.Date = DateTime.Now;
 
                 // convert teamSeasonId to teamId
-                var team = DataAccess.Teams.GetTeam(announcementData.AccountId);
+                var team = DataAccess.Teams.GetTeam(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -142,17 +142,17 @@ namespace SportsManager.Controllers
             }
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        [ActionName("TeamAnnouncement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long id, ModelObjects.LeagueNewsItem announcementData)
+        [ActionName("Announcement")]
+        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id, ModelObjects.LeagueNewsItem announcementData)
         {
             if (id != 0 && ModelState.IsValid && announcementData != null)
             {
                 announcementData.Date = DateTime.Now;
 
                 // convert teamSeasonId to teamId
-                var team = DataAccess.Teams.GetTeam(announcementData.AccountId);
+                var team = DataAccess.Teams.GetTeam(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -199,10 +199,10 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
-        [ActionName("TeamAnnouncement")]
-        public HttpResponseMessage DeleteTeamAnnouncement(long accountId, long id)
+        [ActionName("Announcement")]
+        public HttpResponseMessage DeleteTeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
             if (id > 0)
             {

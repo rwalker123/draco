@@ -15,11 +15,17 @@ namespace SportsManager.ViewModels
 
         const int NumHeadlineLinks = 3;
 
-        public AnnouncementsViewModel(Controller c, long accountId, long teamId)
+        public AnnouncementsViewModel(Controller c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
-            var allNews = DataAccess.TeamNews.GetTeamAnnouncements(teamId);
+            var allNews = DataAccess.TeamNews.GetTeamAnnouncements(teamSeasonId);
             ProcessNews(allNews);
+
+            // account admins and team admins.
+            if (!IsAdmin)
+            {
+                IsAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+            }            
         }
 
         public AnnouncementsViewModel(Controller c, long accountId)

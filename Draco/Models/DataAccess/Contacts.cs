@@ -355,7 +355,7 @@ namespace DataAccess
 
                 // if user id does not equal contact.UserId something is wrong. The email in the Users
                 // table is the same as this contact, but it is a different user id.
-                if (String.Compare(user.Id, contact.UserId) != 0)
+                if (user != null && String.Compare(user.Id, contact.UserId) != 0)
                     throw new Exception(String.Format("Internal Error: contact id = {0}, userId = {1}, doesn't match users table user id = {2}", contact.Id, contact.UserId, user.Id));
 
                 if (user == null)

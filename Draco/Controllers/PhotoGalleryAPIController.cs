@@ -2,6 +2,7 @@
 using SportsManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -26,8 +27,36 @@ namespace SportsManager.Controllers
             }
         }
 
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("photos")]
+        public HttpResponseMessage GetTeamPhotos(long accountId, long teamSeasonId)
+        {
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
+            // should always be an album.
+            if (!teamAlbums.Any())
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            // should only be 1 team photo album.
+            var teamAlbum = teamAlbums.First();
+
+            var photos = DataAccess.PhotoGallery.GetPhotos(accountId, teamAlbum.Id);
+            if (photos != null)
+            {
+                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
+
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage UpdatePhoto(long accountId, int id, PhotoGalleryItem item)
         {
             if (String.IsNullOrEmpty(item.Title))
@@ -51,6 +80,27 @@ namespace SportsManager.Controllers
             }
         }
 
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("photos")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        public HttpResponseMessage UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoGalleryItem item)
+        {
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
+            // should always be an album.
+            if (!teamAlbums.Any())
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            // should only be 1 team photo album.
+            var teamAlbum = teamAlbums.First();
+
+            item.AlbumId = teamAlbum.Id;
+
+            return UpdatePhoto(accountId, id, item);
+        }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("photos")]
@@ -76,6 +126,17 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("photos")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        public async Task<HttpResponseMessage> DeleteTeamPhoto(long accountId, long teamSeasonId, long id)
+        {
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            return await DeletePhoto(accountId, id);
+        }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("albums")]

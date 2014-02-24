@@ -71,11 +71,12 @@ namespace SportsManager.ViewModels
             private set;
         }
 
+        // allow "team" view models to override.
         [ScaffoldColumn(false)]
         public bool IsAdmin
         {
             get;
-            private set;
+            protected set;
         }
 
     }

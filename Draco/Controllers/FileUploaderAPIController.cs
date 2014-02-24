@@ -6,6 +6,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Net;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
@@ -47,7 +48,67 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        [ActionName("PhotoGallery")]
+        public async Task<HttpResponseMessage> TeamPhotoGallery(long accountId, long teamSeasonId)
+        {
+            if (accountId == 0)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
+            if (teamSeasonId== 0)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
+            // this is should never happen as GetTeamPhotoAlbums should create the album if it doesn't exist.
+            if (!teamAlbums.Any())
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var teamAlbum = teamAlbums.First();
+
+            var multipartData = await prep();
+            MultipartFileData file = multipartData.FileData[0];
+            var formData = multipartData.FormData;
+
+            PhotoGalleryItem item = new PhotoGalleryItem()
+            {
+                Id = 0,
+                Title = formData["Title"],
+                Caption = formData["Caption"],
+                AlbumId = teamAlbum.Id,
+                AccountId = accountId
+            };
+
+            if (String.IsNullOrEmpty(item.Title))
+                item.Title = System.IO.Path.GetFileNameWithoutExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' }));
+
+            bool rc = DataAccess.PhotoGallery.AddPhoto(item);
+
+            if (rc)
+            {
+                HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
+                if (msg.IsSuccessStatusCode)
+                    return Request.CreateResponse<PhotoGalleryItem>(HttpStatusCode.OK, item);
+                else
+                {
+                    await DataAccess.PhotoGallery.RemovePhoto(item);
+                    return msg;
+                }
+            }
+            else
+            {
+                File.Delete(file.LocalFileName);
+            }
+
+            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("PhotoGallery")]
         public async Task<HttpResponseMessage> PhotoGallery(long accountId)
         {
             if (accountId == 0)

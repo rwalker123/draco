@@ -109,7 +109,7 @@
         <small>add administrator (type last name to begin search)</small><br />
         <form class="form-inline" role="form">
             <div id="div_playerSelect_@Model.LeagueAdminId" class="form-group">
-                <select class="selectpicker" id="availableLeagues"></select>
+                <select class="selectpicker" id="availableLeagues" data-container="body" title="Choose a league..."></select>
                 <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
             </div>
         </form>
@@ -126,7 +126,7 @@
         <small>add administrator (type last name to begin search)</small><br />
         <form class="form-inline" role="form">
             <div id="div_playerSelect_@Model.TeamAdminId" class="form-group">
-                <select class="selectpicker" id="teamSelect"></select>
+                <select class="selectpicker" id="teamSelect" data-container="body" title="Choose a team..."></select>
                 <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
             </div>
         </form>
@@ -180,7 +180,7 @@
 <script type="text/javascript" src="~/Scripts/userroles.js"></script>
 
 <script type="text/javascript">
-    var userRolesData = new UserRoleClass(@Model.AccountId, '@Model.CurrentUserId');
+    var userRolesData = new UserRoleClass(@Model.AccountId, '@Model.CurrentUserId', '@Model.LeagueAdminId', '@Model.TeamAdminId', '@Model.TeamPhotoAdminId');
 
     $(document).ready(function () {
         // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax

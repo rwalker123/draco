@@ -93,34 +93,24 @@ namespace DataAccess
                     });
         }
 
-		public static List<PhotoGalleryItem> GetTeamPhotos(long teamId)
+		public static IQueryable<PhotoGalleryItem> GetTeamPhotos(long teamId)
 		{
-			List<PhotoGalleryItem> photos = new List<PhotoGalleryItem>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeamGalleryPhotos", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+            var teamAlbumId = (from pga in db.PhotoGalleryAlbums
+                                   where pga.TeamId == teamId
+                                   select pga.id).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						photos.Add(CreatePhotoGalleryItem(dr));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return photos;
+            return (from p in db.PhotoGalleries
+                    where p.AlbumId == teamAlbumId
+                    select new PhotoGalleryItem()
+                    {
+                        Id = p.id,
+                        AccountId = p.AccountId,
+                        AlbumId = p.AlbumId,
+                        Caption = p.Caption,
+                        Title = p.Title
+                    });
 		}
 
 		public static PhotoGalleryItem GetPhoto(long id)
@@ -312,7 +302,9 @@ namespace DataAccess
             var dbAlbum = (from pga in db.PhotoGalleryAlbums
                            where pga.id == p.Id
                            select pga).SingleOrDefault();
-            if (dbAlbum != null)
+
+            // not allowing to delete a team photo album until there is a reason for it.
+            if (dbAlbum != null && dbAlbum.TeamId == 0)
             {
                 var photosInGallery = (from pg in db.PhotoGalleries
                                        where pg.AlbumId == p.Id
@@ -329,61 +321,43 @@ namespace DataAccess
             return false;
 		}
 
-		public static bool RemoveTeamPhotoAlbum(PhotoGalleryAlbum p)
+		public static async Task<bool> RemoveTeamPhotoAlbum(PhotoGalleryAlbum p)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteTeamPhotoGalleryAlbum", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = p.TeamId;
+            var dbAlbums = (from pga in db.PhotoGalleryAlbums
+                         where pga.TeamId == p.TeamId
+                         select pga);
 
-					myConnection.Open();
-					myCommand.Prepare();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            // not allowing to delete a team photo album until there is a reason for it.
+            foreach (var album in dbAlbums)
+            {
+                var photosInGallery = (from pg in db.PhotoGalleries
+                                       where pg.AlbumId == album.id
+                                       select pg);
 
-			return (rowCount <= 0) ? false : true;
-		}
+                var savedPhotos = new List<PhotoGalleryItem>();
+                foreach (var photo in photosInGallery)
+                    savedPhotos.Add(new PhotoGalleryItem()
+                        {
+                            Id = photo.id,
+                            AccountId = photo.AccountId
+                        });
 
-		public static PhotoGalleryItem GetPhotoOfDay(long accountId)
-		{
-			PhotoGalleryItem photo = null;
+                db.PhotoGalleries.DeleteAllOnSubmit(photosInGallery);
+                db.PhotoGalleryAlbums.DeleteOnSubmit(album);
+                db.SubmitChanges();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPhotoGalleryItemOfDay", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                foreach (var photo in savedPhotos)
+                {
+                    await Storage.Provider.DeleteDirectory(photo.PhotoURL);
+                }
+            }
 
-					myConnection.Open();
-					myCommand.Prepare();
+            return true;
+        }
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						photo = CreatePhotoGalleryItem(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return photo;
-		}
 
 		public static bool DeletePendingPhoto(PhotoGalleryItem item)
 		{

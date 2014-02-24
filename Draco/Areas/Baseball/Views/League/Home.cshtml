@@ -170,9 +170,7 @@
         {
             <div class="row">
                 <div class="col-md-12">
-                    <div id="photoGallery" data-bind="visible: photoGalleryVisible">
-                        @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
-                    </div>
+                    @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
                 </div>
             </div>
         }
@@ -316,6 +314,7 @@
 @section scripts {
 
     @Scripts.Render("~/bundles/knockout")
+
 @* tinymce doesn't work with bundles because of the plug directory.*@
 @if (BundleTable.EnableOptimizations)
 {
@@ -327,8 +326,16 @@ else
 }
     @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
+@if (Model.ShowWelcomeMessages)
+{ 
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
+}
+
+@if (Model.ShowAnnouncements)
+{ 
     <script type="text/javascript" src="~/Scripts/announcement.js"></script>
+}
+
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
     <script type="text/javascript" src="~/Scripts/jquery.maskedinput-1.3.1.min.js"></script>
 
@@ -341,25 +348,49 @@ else
 { 
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/workouts.js"></script>
 }
+
+@if (Model.ShowPhotoGallery)
+{
+    <script type="text/javascript" src="~/Scripts/photogallery.js"></script>
+}
     
-    <!-- main javascript -->
-    <script type="text/javascript">
+<!-- main javascript -->
+<script type="text/javascript">
 
-        $(document).ready(function () {
-            // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
-            // on this page, hash is set to update. If back is pressed in that case, then reload the page.
-            if (window.location.hash == '#update') {
-                window.location.hash = '';
-                window.location.reload();
-            }
+    $(document).ready(function () {
+        // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
+        // on this page, hash is set to update. If back is pressed in that case, then reload the page.
+        if (window.location.hash == '#update') {
+            window.location.hash = '';
+            window.location.reload();
+        }
 
-            initKOHelpers();
+        initKOHelpers();
 
-            InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@ViewData["FacebookFanPage"]', @Model.ShowPhotoGallery.ToString().ToLower(), @Model.IsAdmin.ToString().ToLower() );
+        InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@ViewData["FacebookFanPage"]', @Model.IsAdmin.ToString().ToLower() );
 
+        @if (Model.ShowPhotoGallery)
+        {
+            <text>
+            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+
+        @if (Model.ShowWelcomeMessages)
+        {             
+            <text>
             welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+
+        @if (Model.ShowAnnouncements)
+        { 
+            <text>
             announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+    
+        scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             
         @if (Model.ShowHandouts)
         { 
@@ -377,13 +408,24 @@ else
             </text>
         }
 
+        @if (Model.ShowWelcomeMessages)
+        { 
+            <text>
             // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
             welcomeData.ShowFirstMenu();
+            </text>
+        }
+        
+        @if (Model.ShowAnnouncements)
+        { 
+            <text>
             announcementData.AdjustNewsMenuHeaders();
-
-            $("#_yearEst").selectpicker();
-        });
-    </script>
+            </text>
+        }
+        
+        $("#_yearEst").selectpicker();
+    });
+</script>
 
 
     @if (Model.VideosEnabled && Model.ShowVideos)

@@ -1,12 +1,7 @@
-using System;
-using System.Data;
-using System.Linq;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using SportsManager;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
@@ -15,134 +10,71 @@ namespace DataAccess
 	/// </summary>
 	static public class TeamHandouts
 	{
-		static private TeamHandout CreateHandout(SqlDataReader dr)
-		{
-			return new TeamHandout(dr.GetInt64(0), dr.GetString(1), dr.GetString(2), dr.GetInt64(3));
-		}
-
 		static public TeamHandout GetHandout(long id)
 		{
-			TeamHandout h = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetHandout", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-					myCommand.Parameters.Add("@isAccount", SqlDbType.Int).Value = 0;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						h = CreateHandout(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return h;
+            return (from h in db.TeamHandouts
+                    where h.Id == id
+                    select new TeamHandout()
+                    {
+                        Id = h.Id,
+                        Description = h.Description,
+                        ReferenceId = h.TeamId,
+                        FileName = h.FileName
+                    }).SingleOrDefault();
 		}
 
-		static public List<TeamHandout> GetTeamHandouts(long teamSeasonId, int fromTeamId)
+		static public IQueryable<TeamHandout> GetTeamHandouts(long teamId)
 		{
-            List<TeamHandout> items = new List<TeamHandout>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeamHandouts", myConnection);
-					myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-					myCommand.Parameters.Add("@fromTeamId", SqlDbType.Int).Value = fromTeamId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						items.Add(CreateHandout(dr));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return items;
+            return (from h in db.TeamHandouts
+                    where h.TeamId == teamId
+                    select new TeamHandout()
+                    {
+                        Id = h.Id,
+                        Description = h.Description,
+                        ReferenceId = h.TeamId,
+                        FileName = h.FileName
+                    });
 		}
 
 		static public bool ModifyTeamHandout(TeamHandout item)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateTeamHandout", myConnection);
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = item.Description;
-					myCommand.Parameters.Add("@fileName", SqlDbType.VarChar, 255).Value = item.FileName;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbItem = (from h in db.TeamHandouts
+                          where h.Id == item.Id
+                          select h).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbItem != null)
+            {
+                dbItem.Description = item.Description;
+                db.SubmitChanges();
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
-		static public long AddTeamHandout(TeamHandout item)
+		static public bool AddTeamHandout(TeamHandout item)
 		{
-			long id = 0;
+            DB db = DBConnection.GetContext();
 
-            if (item.Description == null)
-                item.Description = String.Empty;
+            var dbItem = new SportsManager.Model.TeamHandout()
+            {
+                FileName = item.FileName,
+                Description = item.Description,
+                TeamId = item.ReferenceId
+            };
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateTeamHandout", myConnection);
-					myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = item.Description;
-					myCommand.Parameters.Add("@fileName", SqlDbType.VarChar, 255).Value = item.FileName;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = item.ReferenceId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.TeamHandouts.InsertOnSubmit(dbItem);
+            db.SubmitChanges();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            item.Id = dbItem.Id;
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						id = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return id;
+            return true;
 		}
 
 		static public async Task<bool> RemoveTeamHandout(TeamHandout item)

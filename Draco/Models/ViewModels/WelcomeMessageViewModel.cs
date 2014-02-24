@@ -8,15 +8,22 @@ namespace SportsManager.ViewModels
 {
     public class WelcomeMessageViewModel : AccountViewModel
     {
-        public WelcomeMessageViewModel(Controller c, long accountId, long teamId)
+        public WelcomeMessageViewModel(Controller c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             // convert teamSeasonId to teamId
-            var team = DataAccess.Teams.GetTeam(teamId);
-            if (team != null)
-                teamId = team.TeamId;
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return;
 
-            AccountTexts = DataAccess.Teams.GetWelcomeText(accountId, teamId);
+            AccountTexts = DataAccess.Teams.GetWelcomeText(accountId, team.TeamId);
+            HasMessage = AccountTexts.Any();
+            
+            // account admins and team admins.
+            if (!IsAdmin)
+            {
+                IsAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+            }            
         }
 
         public WelcomeMessageViewModel(Controller c, long accountId)

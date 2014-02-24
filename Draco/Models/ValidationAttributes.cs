@@ -41,31 +41,39 @@ namespace SportsManager.Models
                 {
                     if (accountId != 0)
                     {
-                        // check roles in reverse order from least restrictive to most. This allows
-                        // only checking for the RouteData.Values that we need without having to pass
-                        // all in every time. For example, a LeagueAdmin needs the leagueSeasonId, but 
-                        // not the accountId.
-                        if (this.Roles.Contains("TeamAdmin") || this.Roles.Contains("TeamPhotoAdmin"))
-                        {
-                            long teamSeasonId;
-                            if (long.TryParse(actionContext.ControllerContext.RouteData.Values["teamSeasonId"].ToString(), out teamSeasonId))
-                            {
-                            }
-
-                            isAuthorized = false;
-                        }
-                        else if (this.Roles.Contains("LeagueAdmin"))
-                        {
-                            long leagueSeasonId;
-                            if (long.TryParse(actionContext.ControllerContext.RouteData.Values["leagueSeasonId"].ToString(), out leagueSeasonId))
-                            {
-                            }
-
-                            isAuthorized = false;
-                        }
-                        else if (this.Roles.Contains("AccountAdmin"))
+                        // support multiple roles, the user can be authorized in any of the roles (i.e. multiple roles are an "or" match)
+                        if (this.Roles.Contains("AccountAdmin"))
                         {
                             isAuthorized = DataAccess.Accounts.IsAccountAdmin(accountId, user.Identity.GetUserId());
+                        }
+
+                        if (!isAuthorized)
+                        {
+                            if (this.Roles.Contains("LeagueAdmin"))
+                            {
+                                long leagueSeasonId;
+                                var sId = actionContext.ControllerContext.RouteData.Values["leagueSeasonId"];
+                                if (sId != null && long.TryParse(sId.ToString(), out leagueSeasonId))
+                                {
+                                }
+                            }
+                        }
+
+                        if (!isAuthorized)
+                        {
+                            if (this.Roles.Contains("TeamAdmin") || this.Roles.Contains("TeamPhotoAdmin"))
+                            {
+                                long teamSeasonId;
+                                var sId = actionContext.ControllerContext.RouteData.Values["teamSeasonId"];
+                                if (sId != null && long.TryParse(sId.ToString(), out teamSeasonId))
+                                {
+                                    if (this.Roles.Contains("TeamAdmin"))
+                                        isAuthorized = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                    
+                                    if (!isAuthorized && this.Roles.Contains("TeamPhotoAdmin"))
+                                        isAuthorized = DataAccess.Teams.IsTeamPhotoAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                }
+                            }
                         }
                     }
                 }

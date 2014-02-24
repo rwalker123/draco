@@ -1,12 +1,11 @@
+using ModelObjects;
+using SportsManager;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using System.Web.SessionState;
-using ModelObjects;
-using SportsManager;
-using SportsManager.Models.Utils;
 using System.Threading.Tasks;
 
 namespace DataAccess
@@ -250,13 +249,13 @@ namespace DataAccess
 				Teams.RemoveManager(tm);
 			}
 
-			List<ModelObjects.PhotoGalleryItem> items = DataAccess.PhotoGallery.GetTeamPhotos(t.TeamId);
+			var items = DataAccess.PhotoGallery.GetTeamPhotos(t.TeamId);
 			foreach (ModelObjects.PhotoGalleryItem item in items)
 			{
 				await DataAccess.PhotoGallery.RemovePhoto(item);
 			}
 
-			DataAccess.PhotoGallery.RemoveTeamPhotoAlbum(new ModelObjects.PhotoGalleryAlbum(0, String.Empty, 0, 0, t.TeamId));
+			await DataAccess.PhotoGallery.RemoveTeamPhotoAlbum(new ModelObjects.PhotoGalleryAlbum(0, String.Empty, 0, 0, t.TeamId));
 
             DB db = DBConnection.GetContext();
 
@@ -505,35 +504,6 @@ namespace DataAccess
     //SELECT @mgrId
         }
 
-		static public bool IsTeamAdmin(ModelObjects.Contact c, long teamId)
-		{
-			if (c == null || teamId == 0)
-				return false;
-
-            DB db = DBConnection.GetContext();
-            var isMgr = (from tsm in db.TeamSeasonManagers
-                         where tsm.TeamSeasonId == teamId && tsm.ContactId == c.Id
-                         select tsm.ContactId).Any();
-
-            if (!isMgr)
-            {
-                var teamAdminIds = (from a in db.AspNetRoles
-                                    where a.Name == "TeamAdmin" || a.Name == "TeamPhotoAdmin"
-                                    select a.Id);
-
-                var teamIds = (from cr in db.ContactRoles
-                                where cr.ContactId == c.Id && teamAdminIds.Contains(cr.RoleId)
-                                select cr.RoleData);
-
-                return (from ts in db.TeamsSeasons
-                        where ts.id == teamId && teamIds.Contains(ts.TeamId)
-                        select ts.id).Any();
-            
-            }
-
-            return isMgr;
-		}
-
 		static public IQueryable<Contact> GetTeamContacts(long teamSeasonId)
 		{
             DB db = DBConnection.GetContext();
@@ -563,6 +533,93 @@ namespace DataAccess
                         WelcomeText = aw.WelcomeText
                     });
         }
+
+        static public bool IsTeamMember(long teamSeasonId, string aspNetUserId = null)
+        {
+            bool isTeamAdmin = false;
+
+            if (String.IsNullOrEmpty(aspNetUserId))
+            {
+                aspNetUserId = Globals.GetCurrentUserId();
+            }
+
+            if (!String.IsNullOrEmpty(aspNetUserId))
+            {
+                var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+
+
+            }
+
+            return isTeamAdmin;
+        }
+
+        static public bool IsTeamAdmin(long accountId, long teamSeasonId, string aspNetUserId = null)
+        {
+            bool isTeamAdmin = false;
+            
+            if (String.IsNullOrEmpty(aspNetUserId))
+            {
+                aspNetUserId = Globals.GetCurrentUserId();
+            }
+
+            if (!String.IsNullOrEmpty(aspNetUserId))
+            {
+                var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+
+                // first check to see if this user the manager, they get admin rights to the team.
+                var managers = GetTeamManagers(teamSeasonId);
+                isTeamAdmin = (from m in managers
+                               where m.Id == contact.Id
+                               select m).Any();
+
+
+                // if not a manager, see if user was given the team admin role.
+                if (!isTeamAdmin)
+                {
+                    DB db = DBConnection.GetContext();
+
+                    var roleId = DataAccess.ContactRoles.GetTeamAdminId();
+                    var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
+                    if (roles != null)
+                        isTeamAdmin = (from r in roles
+                                       where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
+                                       select r).Any();
+                }
+            }
+
+            return isTeamAdmin;
+        }
+        
+        static public bool IsTeamPhotoAdmin(long accountId, long teamSeasonId, string aspNetUserId = null)
+        {
+            bool isTeamAdmin = false;
+
+            if (String.IsNullOrEmpty(aspNetUserId))
+            {
+                aspNetUserId = Globals.GetCurrentUserId();
+            }
+
+            if (!String.IsNullOrEmpty(aspNetUserId))
+            {
+                var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+
+                // see if user was given the team photo admin role. Note this only checks for 
+                // photo admin, if team admin was desired, that role should have been added
+                // in the role list. Team admin/account admin/etc does not imply photo admin.
+                DB db = DBConnection.GetContext();
+
+                var roleId = DataAccess.ContactRoles.GetTeamPhotoAdminId();
+                var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
+                if (roles != null)
+                    isTeamAdmin = (from r in roles
+                                    where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
+                                    select r).Any();
+            }
+
+            return isTeamAdmin;
+
+        }
+
 
 	}
 }

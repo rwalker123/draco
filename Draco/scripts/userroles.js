@@ -1,5 +1,5 @@
-﻿var UserRoleClass = function (accountId, currentUserId) {
-    this.init(accountId, currentUserId);
+﻿var UserRoleClass = function (accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId) {
+    this.init(accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId);
 };
 
 $.extend(UserRoleClass.prototype, {
@@ -11,9 +11,12 @@ $.extend(UserRoleClass.prototype, {
     selectedAccountOwner: null,
     currentUserId: null,
 
-    init: function (accountId, currentUserId) {
+    init: function (accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId) {
         this.accountId = accountId;
         this.currentUserId = currentUserId;
+        this.teamAdminId = teamAdminId;
+        this.teamPhotoAdminId = teamPhotoAdminId;
+        this.leagueAdminId = leagueAdminId;
     },
 
     getAdminId: function (t) {
@@ -25,11 +28,12 @@ $.extend(UserRoleClass.prototype, {
     },
 
     isTeamAdmin: function (roleId) {
-        return (roleId == 4 || roleId == 5);
+
+        return (roleId == this.teamAdminId || roleId == this.teamPhotoAdminId);
     },
 
     isLeagueAdmin: function (roleId) {
-        return (roleId == 3);
+        return (roleId == this.leagueAdminId);
     },
 
     makeAccordion: function () {
@@ -221,6 +225,8 @@ $.extend(UserRoleClass.prototype, {
                         });
 
                         target.retrievedLeagues = true;
+
+                        leagueSelect.selectpicker('refresh');
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". ResponseText: " + xhr.responseText);
@@ -242,6 +248,8 @@ $.extend(UserRoleClass.prototype, {
                         });
 
                         target.retrievedTeams = true;
+
+                        teamSelect.selectpicker('refresh');
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". ResponseText: " + xhr.responseText);
