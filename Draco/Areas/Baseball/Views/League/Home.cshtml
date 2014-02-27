@@ -116,29 +116,6 @@
                 </div>
             }
 
-            @if (Model.ShowLeagueLeaders)
-            {
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="panel panel-default">
-                            <div class="panel-heading">
-                                <h3 class="panel-title" style="float: left;">League Leaders</h3>
-
-                                @if (Model.IsAdmin)
-                                {
-                                    <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                                }
-                                <div style="clear:both"></div>
-                            </div>
-
-                            <div class="panel-body">
-                                League Leaders
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
         @if (Model.ShowAnnouncements)
         { 
             <div class="row">
@@ -241,6 +218,13 @@
         </div>
     }
 
+        @if (Model.ShowLeagueLeaders)
+        {
+            <div class="col-md-12">
+                @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId));}
+            </div>
+        }
+
     @if (Model.ShowBirthdays)
     {     
         <div class="col-md-12">
@@ -251,21 +235,7 @@
     @if (Model.ShowSponsors)
     {
         <div class="col-md-12">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title" style="float: left;">Sponsors</h3>
-
-                    @if (Model.IsAdmin)
-                    {
-                        <button type="button" class="btn btn-default" style="float: right" onclick=""><span class="glyphicon glyphicon-plus"></span></button>
-                    }
-                    <div style="clear:both"></div>
-                </div>
-
-                <div class="panel-body">
-                    Sponsors
-                </div>
-            </div>
+            @{Html.RenderPartial("Sponsors", new SportsManager.ViewModels.SponsorsViewModel(Model.Controller, Model.AccountId));}
         </div>
     }
     </div> <!-- end second column -->

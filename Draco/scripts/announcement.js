@@ -25,6 +25,12 @@ $.extend(AnnouncementClass.prototype, {
 
 
     startNewsAdd: function () {
+        if ($('#editNews').is(':visible')) {
+            this.cancelNewsEdit();
+            return;
+        }
+
+
         $('#NewsItems').hide();
         $('#newsEditLabel').hide();
         $('#noHeadlinesMessage').hide();

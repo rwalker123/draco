@@ -47,18 +47,15 @@ namespace ModelObjects
 		{
 			get
 			{
-				if (!Contact.DateOfBirth.HasValue)
-					return 0;
-
 				DateTime today = DateTime.Today;
 
-				int years = today.Year - Contact.DateOfBirth.Value.Year;
-				if (today.Month == Contact.DateOfBirth.Value.Month)
+				int years = today.Year - Contact.DateOfBirth.Year;
+				if (today.Month == Contact.DateOfBirth.Month)
 				{
-					if (today.Day < Contact.DateOfBirth.Value.Day)
+					if (today.Day < Contact.DateOfBirth.Day)
 						years--;
 				}
-				else if (today.Month < Contact.DateOfBirth.Value.Month)
+				else if (today.Month < Contact.DateOfBirth.Month)
 				{
 					years--;
 				}

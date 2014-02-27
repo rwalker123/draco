@@ -1,0 +1,222 @@
+﻿function InitRosterViewModel(accountId, isAdmin, isTeamAdmin, teamId) {
+    var rosterElem = document.getElementById("roster");
+    if (rosterElem) {
+
+        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
+            var li = $("<li>");
+            li.data("item.autocomplete", item);
+            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
+            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+            li.appendTo(ul);
+
+            return li;
+        };
+
+        var rosterVM = new RosterViewModel(accountId, isAdmin, isTeamAdmin, teamId);
+        rosterVM.init();
+        ko.applyBindings(rosterVM, rosterElem);
+    }
+}
+
+var PlayerViewModel = function (accountId, contactId) {
+    var self = this;
+
+    self.id = 0;
+    self.contactId = contactId;
+    self.accountId = accountId;
+    self.PhotoUrl = '';
+    self.DateSigned = '';
+    self.Age = '';
+
+    self.PlayerNumber = ko.protectedObservable(0);
+    self.Name = ko.protectedObservable('');
+    self.SubmittedWaiver = ko.protectedObservable(false);
+    self.SubmittedDriversLicense = ko.protectedObservable(false);
+    self.AffiliationDuesPaid = ko.protectedObservable('');
+
+    self.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId;
+    });
+
+
+    self.commit = function () {
+        self.PlayerNumber.commit();
+        self.Name.commit();
+        self.SubmittedWaiver.commit();
+        self.SubmittedDriversLicense.commit();
+        self.AffiliationDuesPaid.commit();
+    }
+}
+
+var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
+    var self = this;
+
+    self.accountId = accountId;
+    self.teamId = teamId;
+    self.isAdmin = isAdmin;
+    self.isTeamAdmin = isTeamAdmin;
+
+    self.players = ko.observableArray();
+
+    self.viewMode = ko.observable(true);
+    self.signPlayerVisible = ko.observable(false);
+    self.addPlayerVisible = ko.observable(false);
+
+    self.selectedPlayer = ko.observable();
+
+    self.init = function () {
+        var elem = $("#handoutSelectedFileName");
+
+        elem.bind('dragenter', function (e) {
+            $(this).addClass('dragover');
+        });
+
+        elem.bind('dragleave drop', function (e) {
+            $(this).removeClass('dragover');
+        });
+
+
+        self.loadPlayers();
+    }
+
+    self.isPlayerSelected = ko.computed(function () {
+        return self.selectedPlayer();
+    });
+
+    self.showSignPlayer = function () {
+        if (self.signPlayerVisible()) {
+            self.addPlayerVisible(false);
+            self.signPlayerVisible(false);
+        }
+        else {
+            self.addPlayerVisible(false);
+            self.signPlayerVisible(true);
+        }
+    }
+
+    self.showAddPlayer = function () {
+        self.signPlayerVisible(false);
+        self.addPlayerVisible(true);
+    }
+
+    self.createPlayer = function () {
+
+    }
+
+    self.releasePlayer = function () {
+
+    }
+
+    self.deletePlayer = function () {
+
+    }
+
+    self.signPlayer = function () {
+        if (!self.selectedPlayer())
+            return;
+
+        $.ajax({
+            type: "POST",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + self.selectedPlayer().id,
+            success: function (item) {
+                var player = new PlayerViewModel(self.accountId, item.Contact.Id);
+                player.id = item.Id;
+                player.Name(item.Contact.FullName);
+                player.PhotoUrl = item.Contact.PhotoURL;
+                player.Age = item.Age;
+                player.PlayerNumber(item.PlayerNumber);
+                player.DateSigned = item.DateAdded;
+                player.SubmittedWaiver(item.SubmittedWaiver);
+                player.SubmittedDriversLicense(item.SubmittedDriversLicense);
+                player.AffiliationDuesPaid(item.AffiliationDuesPaid);
+                player.commit();
+
+                self.players.push(player);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.addPlayer = function () {
+    }
+
+    self.loadPlayers = function () {
+        $.ajax({
+            type: "GET",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players',
+            success: function (data) {
+                var mappedPlayers = $.map(data, function (item) {
+                    var player = new PlayerViewModel(self.accountId, item.Contact.Id);
+                    player.id = item.Id;
+                    player.PhotoUrl = item.Contact.PhotoURL;
+                    player.DateSigned = item.DateAdded ? moment(item.DateAdded).format("MM DD, YYYY") : '';
+                    player.Age = item.Age;
+
+                    player.PlayerNumber(item.PlayerNumber);
+                    player.Name(item.Contact.FullName);
+                    player.SubmittedWaiver(item.SubmittedWaiver);
+                    player.SubmittedDriversLicense(item.SubmittedDriversLicense);
+                    player.AffiliationDuesPaid(item.AffiliationDuesPaid);
+                    player.commit();
+
+                    return player;
+                });
+
+                self.players(mappedPlayers);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
+
+    self.getPlayers = function (request, response) {
+        var searchTerm = this.term;
+
+        $.ajax({
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availableplayers',
+            data: {
+                lastName: searchTerm,
+                firstName: '',
+                page: 1
+            },
+            success: function (data) {
+
+                var results = $.map(data, function (item) {
+                    var fullName = item.LastName + ", " + item.FirstName;
+                    if (item.MiddleName)
+                        fullName += " " + item.MiddleName;
+
+                    return {
+                        label: fullName,
+                        Id: item.Id,
+                        PhotoURL: item.PhotoURL,
+                        FirstName: item.FirstName,
+                        LastName: item.LastName
+                    }
+                });
+                response(results);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.selectPlayer = function (e, ui) {
+        if (ui && ui.item) {
+            self.selectedPlayer({
+                id: ui.item.Id,
+                text: ui.item.value,
+                logo: ui.item.PhotoURL,
+                hasLogo: (!!ui.item.PhotoURL)
+            });
+        }
+
+        return true;
+    }
+
+}

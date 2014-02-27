@@ -18,15 +18,16 @@ namespace DataAccess
     {
         static public long GetCurrentLeague()
         {
-            long aId = 0;
+            throw new NotImplementedException();
+            //long aId = 0;
 
-            System.Web.HttpContext context = System.Web.HttpContext.Current;
-            if (context != null)
-            {
-                aId = DataAccess.Leagues.GetCurrentLeague(context.Session);
-            }
+            //System.Web.HttpContext context = System.Web.HttpContext.Current;
+            //if (context != null)
+            //{
+            //    aId = DataAccess.Leagues.GetCurrentLeague(context.Session);
+            //}
 
-            return aId;
+            //return aId;
         }
 
         static public long GetCurrentLeague(HttpSessionState s)
@@ -37,7 +38,7 @@ namespace DataAccess
 
         static public string GetLeagueNameFromLeagueId(long leagueId)
         {
-            SportsManager.DB db = new SportsManager.DB();
+            DB db = DBConnection.GetContext();
 
             return (from x in db.Leagues
                     where x.id == leagueId
@@ -46,30 +47,13 @@ namespace DataAccess
 
         static public string GetLeagueName(long leagueId)
         {
-            string name = String.Empty;
+            	//SELECT League.Name FROM LeagueSeason LEFT JOIN League ON (LeagueSeason.LeagueID=League.ID) WHERE LeagueSeason.ID = @leagueId
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLeagueName", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        name = dr.GetString(0);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return name;
+            return (from ls in db.LeagueSeasons
+                    join l in db.Leagues on ls.LeagueId equals l.id
+                    where ls.id == leagueId
+                    select l.Name).SingleOrDefault();
         }
 
         static public League GetLeague(long leagueId)
@@ -85,7 +69,6 @@ namespace DataAccess
                         AccountId = l.AccountId
                     }).SingleOrDefault();
         }
-
 
         static public IQueryable<League> GetLeagues(long seasonId)
         {

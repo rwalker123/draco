@@ -30,9 +30,18 @@
                 </div>
             </div>
 
+            @if (Model.ShowLeaders)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+            }
+        
             <div class="row">
                 <div class="col-md-12">
-                    @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
+                    @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                 </div>
             </div>
 
@@ -48,19 +57,14 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="theSponsors">
-                        <h3>
-                            Sponsors
-                            @if (Model.IsTeamAdmin)
-                            {
-                                <a>[add new]</a>
-                            }
-                        </h3>
-                    </div>
-                </div>
-            </div>
+                    @if (Model.ShowSponsors)
+                    {
+                        <div class="row">
+                            <div class="col-md-12">
+                                @{Html.RenderPartial("Sponsors", new SportsManager.ViewModels.SponsorsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                            </div>
+                        </div>
+                    }
         </div> <!-- end column 1-->
 
         <div class="col-md-8"> <!-- column 2 -->
@@ -99,6 +103,15 @@
                     </div>
                 </div>
             }
+            
+            @if (Model.ShowRoster)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("RosterView", new SportsManager.Baseball.ViewModels.RosterViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>                
+            }
 
         </div> <!-- end column 2-->
     </div> <!-- end main row -->
@@ -136,6 +149,11 @@ else
     <script type="text/javascript" src="~/Scripts/photogallery.js"></script>
 }
 
+@if (Model.ShowRoster)
+{
+    <script type="text/javascript" src="~/Areas/Baseball/Scripts/roster.js"></script>   
+}
+
 @Scripts.Render("~/bundles/jquery-file-upload")
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
 
@@ -155,14 +173,14 @@ else
         @if (Model.ShowWelcome)
         {
             <text> 
-            welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+                welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
             </text>
         }
         
         @if (Model.ShowAnnouncements)
         { 
             <text> 
-            announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+                announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
             </text>
         }
         
@@ -171,7 +189,7 @@ else
             <text> 
             var handoutElem = document.getElementById("handouts");
             if (handoutElem) {
-                var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+                var handoutData = new HandoutViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
                 ko.applyBindings(handoutData, handoutElem);
             }
             </text>
@@ -180,7 +198,14 @@ else
         @if (Model.ShowPhotoGallery)
         {
             <text>
-            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id );
+                InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
+            </text>
+        }
+
+        @if (Model.ShowRoster)
+        {
+            <text>
+                InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id );
             </text>
         }
 
@@ -200,6 +225,7 @@ else
             announcementData.AdjustNewsMenuHeaders();
             </text>
         }
+        
     });
 </script>
 }

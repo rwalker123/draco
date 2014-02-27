@@ -536,7 +536,7 @@ namespace DataAccess
 
         static public bool IsTeamMember(long teamSeasonId, string aspNetUserId = null)
         {
-            bool isTeamAdmin = false;
+            bool isTeamMember = false;
 
             if (String.IsNullOrEmpty(aspNetUserId))
             {
@@ -546,11 +546,11 @@ namespace DataAccess
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
                 var contact = DataAccess.Contacts.GetContact(aspNetUserId);
-
+                isTeamMember = DataAccess.TeamRoster.IsTeamMember(contact.Id, teamSeasonId);
 
             }
 
-            return isTeamAdmin;
+            return isTeamMember;
         }
 
         static public bool IsTeamAdmin(long accountId, long teamSeasonId, string aspNetUserId = null)

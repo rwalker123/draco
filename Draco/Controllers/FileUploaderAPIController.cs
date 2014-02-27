@@ -194,6 +194,52 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        public async Task<HttpResponseMessage> Handout(long accountId, long teamSeasonId)
+        {
+            if (accountId == 0)
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var multipartData = await prep();
+            MultipartFileData file = multipartData.FileData[0];
+            var formData = multipartData.FormData;
+
+            String fileName = file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' });
+
+            TeamHandout item = new TeamHandout()
+            {
+                Id = 0,
+                Description = formData["Description"],
+                FileName = fileName,
+                ReferenceId = team.TeamId
+            };
+
+            bool rc = DataAccess.TeamHandouts.AddTeamHandout(item);
+
+            if (rc)
+            {
+                var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
+                if (msg.IsSuccessStatusCode)
+                    return Request.CreateResponse<TeamHandout>(HttpStatusCode.OK, item);
+                else
+                {
+                    await DataAccess.TeamHandouts.RemoveTeamHandout(item);
+                    return msg;
+                }
+            }
+            else
+            {
+                File.Delete(file.LocalFileName);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> MailAttachment(long accountId)
         {

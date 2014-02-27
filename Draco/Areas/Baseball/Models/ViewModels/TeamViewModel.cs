@@ -21,11 +21,13 @@ namespace SportsManager.Baseball.ViewModels
 
             IsTeamMember = DataAccess.Teams.IsTeamMember(id);
 
-            ShowHandouts = true;
-            ShowWelcome = true;
-            ShowAnnouncements = true;
-
+            ShowHandouts = IsTeamMember || IsAdmin || IsTeamAdmin;
+            ShowWelcome = IsTeamMember || IsAdmin || IsTeamAdmin;
+            ShowAnnouncements = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowPhotoGallery = true;
+            ShowLeaders = true;
+            ShowSponsors = true;
+            ShowRoster = true;
         }
 
         public Team Team { get; private set; }
@@ -34,6 +36,9 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowHandouts { get; private set; }
         public bool ShowWelcome { get; private set; }
         public bool ShowAnnouncements { get; private set; }
+        public bool ShowLeaders { get; private set; }
+        public bool ShowSponsors { get; private set; }
+        public bool ShowRoster { get; private set; }
 
         public bool IsTeamPhotoAdmin
         {

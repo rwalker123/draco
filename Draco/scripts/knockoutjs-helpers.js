@@ -76,11 +76,11 @@
     ko.bindingHandlers.imageUploader = {
         init: function (element, valueAccessor) {
             $(element).bind('dragenter', function (e) {
-                $(this).addClass('over');
+                $(this).addClass('dragover');
             });
 
             $(element).bind('dragleave drop', function (e) {
-                $(this).removeClass('over');
+                $(this).removeClass('dragover');
             });
 
             var value = ko.utils.unwrapObservable(valueAccessor());

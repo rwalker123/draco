@@ -1,10 +1,11 @@
-﻿var HandoutViewModel = function (accountId, isAdmin) {
+﻿var HandoutViewModel = function (accountId, isAdmin, teamId) {
     var self = this;
 
     self.selectedFileNameDefaultText = "Select a file or drag/drop a handout here.";
 
     self.accountId = accountId;
     self.isAdmin = isAdmin;
+    self.teamId = teamId;
 
     self.selectedFileName = ko.observable(self.selectedFileNameDefaultText);
 
@@ -98,9 +99,16 @@
     }
 
     self.loadHandouts = function () {
+
+        var url = window.config.rootUri + '/api/HandoutsAPI/' + self.accountId;
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/handouts';
+
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts',
+            url: url,
             success: function (handouts) {
                 var mappedHandouts = $.map(handouts, function (handout) {
                     return {
@@ -121,12 +129,11 @@
         });
     }
 
-    self.endHandoutAdd = function () {
-        self.viewMode(true);
-    }
-
     self.startHandoutAdd = function () {
-        self.viewMode(false);
+        if (self.viewMode())
+            self.viewMode(false);
+        else
+            self.viewMode(true);
     }
 
     self.startHandoutEdit = function (handout) {
@@ -160,9 +167,15 @@
 
     self.saveHandout = function (handout) {
 
+        var url = window.config.rootUri + '/api/HandoutsAPI/' + self.accountId;
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/handouts/' + self.handoutEdit_Id;
+
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts/' + self.handoutEdit_Id,
+            url: url,
             data: {
                 Id: self.handoutEdit_Id,
                 Description: self.handoutEdit_Description(),
@@ -203,9 +216,16 @@
     }
 
     self.makeHandoutDeleteCall = function (handout) {
+
+        var url = window.config.rootUri + '/api/HandoutsAPI/' + self.accountId;
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/handouts/' + handout.Id;
+
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/HandoutsAPI/' + self.accountId + '/handouts/' + handout.Id,
+            url: url,
             success: function (id) {
                 self.handouts.remove(function (item) {
                     return item.Id == id;
@@ -218,7 +238,13 @@
     }
 
     self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/Handout';
+        var url = window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId;
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/Handout';
+
+        return url;
     }, self);
 
     self.getFileNameExtension = function (filename) {

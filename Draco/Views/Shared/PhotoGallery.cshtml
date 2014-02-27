@@ -20,9 +20,6 @@
         @if (Model.IsAdmin) { 
             <form class="form-horizontal" style="margin-left:10px;" data-bind="visible: !viewMode()">
                 <div class="form-group">
-                    <button class="btn btn-default" data-bind="click: endEditMode">Done Adding Photos</button>
-                </div>
-                <div class="form-group">
                     <label for="enterPhotoGalleryTitle" class="col-sm-4 control-label">photo title</label>
                     <div class="col-sm-8">
                         <input type="text" class="form-control" id="enterPhotoGalleryTitle" placeholder="enter title" data-bind="value: photoGalleryTitle" />

@@ -1,0 +1,103 @@
+﻿@model SportsManager.Baseball.ViewModels.RosterViewModel
+
+<div class="panel panel-primary" id="roster">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Roster</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right" data-bind="click: showSignPlayer"><span class="glyphicon glyphicon-pencil"></span></button>
+        }
+
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        @if (Model.IsAdmin)
+        {
+            // create a new player
+            <form class="form-horizontal" data-bind="visible: addPlayerVisible">
+
+            </form>
+            
+            //Sign an existing player
+            <form data-bind="visible: signPlayerVisible">
+                <div class="form-group">
+                    <label class="control-label">enter a player name to sign</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="form-control" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+                    </div>
+                    <div class="col-sm-2">
+                        <button class="btn btn-primary" data-bind="click: signPlayer, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button> 
+                    </div>
+                    <div class="help-block">If you don't find the player in your search: 
+                        <ol>
+                            <li>Ensure the player is not already on another team in the league.</li>
+                            <li>Ensure the player exists as a user, you can add new <a class="btn btn-success" href="@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)">Users &raquo;</a>.</li>
+                        </ol>
+                    </div>
+                </div>
+            </form>
+        }
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>No</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+                        { 
+                            <th>Paper Work</th>
+                        }
+                        @if (Model.IsAdmin)
+                        {
+                            <th>Actions</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: players">
+                    <tr>
+                        <td class="col-sm-2"><img @if (!Model.IsAdmin && !Model.IsTeamAdmin) { <text> onerror="this.style.display = 'none';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
+                        <td class="col-sm-1"  data-bind="html: PlayerNumber"></td>
+                        <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>   } else if (Model.IsTeamAdmin) { <text> class="col-sm-6" </text>  } else { <text> class="col-sm-8" </text>   }>
+                            <span data-bind="html: Name"></span>
+                            @if (Model.IsAdmin || Model.IsTeamAdmin)
+                            {
+                                <br /><text>signed: </text><span data-bind="html: DateSigned"></span>
+                            }
+                        </td>
+
+                        <td class="col-sm-1" data-bind="html: Age"></td>
+                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+                            {
+                                <td class="col-sm-2">
+                                    <div class="row">
+                                        <span class="col-sm-6">Waiver:</span>
+                                        <span class="col-sm-6" data-bind="html: SubmittedWaiver() ? 'yes' : 'no'"></span>
+                                    </div>
+                                    <div class="row">
+                                        <span class="col-sm-6">License:</span>
+                                        <span class="col-sm-6" data-bind="html: SubmittedDriversLicense() ? 'yes' : 'no'"></span>
+                                    </div>
+                                    <div class="row">
+                                        <span class="col-sm-6">Dues:</span>
+                                        <span class="col-sm-6" data-bind="html: AffiliationDuesPaid"></span>
+                                    </div>
+                                </td>
+                            }
+                        @if (Model.IsAdmin)
+                        {
+                            <td class ="col-sm-2">
+                                <button class="btn btn-default btn-sm" data-bind="click: $parent.editPlayer"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button class="btn btn-warning btn-sm" data-bind="click: $parent.releasePlayer"><span class="glyphicon glyphicon-minus"></span></button>
+                                <button class="btn btn-danger btn-sm" data-bind="click: $parent.deletePlayer"><span class="glyphicon glyphicon-remove"></span></button>
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

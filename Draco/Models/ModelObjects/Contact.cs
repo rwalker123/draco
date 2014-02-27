@@ -22,7 +22,7 @@ namespace ModelObjects
         public string State { get; set; }
         public string Zip { get; set; }
         public int FirstYear { get; set; }
-        public DateTime? DateOfBirth { get; set; }
+        public DateTime DateOfBirth { get; set; }
         public bool IsFemale { get; set; }
         public string UserId { get; set; }
 
@@ -56,7 +56,7 @@ namespace ModelObjects
         public Contact(long id, string email, string lastName, string firstName, string middleName,
                     string phone1, string phone2, string phone3, long creatorAccountId, 
                     string streetAddress, string city, string state, string zip, int fy, 
-                    DateTime? dob, string userId)
+                    DateTime dob, string userId)
         {
             Id = id;
             Email = email;

@@ -26,6 +26,11 @@ $.extend(WelcomeClass.prototype, {
     },
 
     startWelcomeAdd: function () {
+        if ($('#editMessage').is(':visible')) {
+            this.cancelWelcomeEdit();
+            return;
+        }
+
         $('#WelcomeMessages').hide();
         $('#welcomeEditLabel').hide();
         $('#noWelcomeMessage').hide();

@@ -1,0 +1,17 @@
+﻿@model SportsManager.Baseball.ViewModels.LeadersViewModel
+
+<div class="panel panel-primary" id="leaders">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Leaders</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right" ><span class="glyphicon glyphicon-plus"></span></button>
+        }
+
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+    </div>
+</div>

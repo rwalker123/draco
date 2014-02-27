@@ -225,6 +225,7 @@
     <Compile Include="Areas\Baseball\Controllers\LeagueSeasonController.cs" />
     <Compile Include="Areas\Baseball\Controllers\LeagueTeamsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\MemberBusinessController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\RosterAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StandingsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StatisticsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamController.cs" />
@@ -270,6 +271,8 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\Umpire.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutAnnouncement.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutRegistrant.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\RosterViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\LeadersViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueFieldsViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueHomeViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueIndexViewModel.cs" />
@@ -444,6 +447,7 @@
     <Compile Include="Models\ViewModels\LeagueSeasonsViewModel.cs" />
     <Compile Include="Models\ViewModels\PhotoGalleryViewModel.cs" />
     <Compile Include="Models\ViewModels\RolesViewModel.cs" />
+    <Compile Include="Models\ViewModels\SponsorsViewModel.cs" />
     <Compile Include="Models\ViewModels\UserRolesViewModel.cs" />
     <Compile Include="Models\ViewModels\UsersViewModel.cs" />
     <Compile Include="Models\ViewModels\BirthdayViewModel.cs" />
@@ -456,6 +460,7 @@
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
     <Content Include="Areas\Baseball\Scripts\leagueHome.js" />
     <Content Include="Areas\Baseball\Scripts\leaguesetup.js" />
+    <Content Include="Areas\Baseball\Scripts\roster.js" />
     <Content Include="Areas\Baseball\Scripts\scoreboard.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />
@@ -646,6 +651,8 @@
     <Content Include="fonts\fontawesome-webfont.ttf" />
     <Content Include="fonts\fontawesome-webfont.eot" />
     <Content Include="fonts\FontAwesome.otf" />
+    <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
     <None Include="Properties\PublishProfiles\detroitmsbl %282%29.pubxml" />
     <Content Include="Scripts\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap-select.js" />
@@ -1027,6 +1034,7 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
     <Content Include="Scripts\tinymce\langs\readme.md" />
     <Content Include="Scripts\wysiwyg.min.map" />
+    <Content Include="Views\Shared\Sponsors.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

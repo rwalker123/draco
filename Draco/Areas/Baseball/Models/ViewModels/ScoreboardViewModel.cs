@@ -9,6 +9,11 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class ScoreboardViewModel : AccountViewModel
     {
+        public ScoreboardViewModel(Controller c, long accountId, long teamSeasonId)
+            : base(c, accountId)
+        {
+        }
+
         public ScoreboardViewModel(Controller c, long accountId)
             : base(c, accountId)
         {

@@ -228,14 +228,23 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     self.currentEditWorkout = ko.observable(self.newWorkout);
 
     self.startWorkoutWhereHeardEdit = function () {
-        self.editWhereHeard(true);
+        if (self.editWhereHeard()) {
+            self.stopWorkoutWhereHeardAdd();
+        }
+        else {
+            self.stopWorkoutAdd();
+            self.editWhereHeard(true);
+        }
     }
 
     self.startWorkoutAdd = function () {
         if (self.viewMode()) {
+            self.stopWorkoutWhereHeardAdd();
             self.currentEditWorkout(self.newWorkout);
             self.viewMode(false);
         }
+        else
+            self.stopWorkoutAdd();
     }
 
     self.stopWorkoutAdd = function () {
