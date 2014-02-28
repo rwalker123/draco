@@ -60,7 +60,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     self.viewMode = ko.observable(true);
     self.signPlayerVisible = ko.observable(false);
-    self.addPlayerVisible = ko.observable(false);
 
     self.selectedPlayer = ko.observable();
 
@@ -85,29 +84,45 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     self.showSignPlayer = function () {
         if (self.signPlayerVisible()) {
-            self.addPlayerVisible(false);
             self.signPlayerVisible(false);
         }
         else {
-            self.addPlayerVisible(false);
             self.signPlayerVisible(true);
         }
     }
 
-    self.showAddPlayer = function () {
-        self.signPlayerVisible(false);
-        self.addPlayerVisible(true);
+    self.releasePlayer = function (player) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.id,
+            success: function () {
+                self.players.remove(player);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
     }
 
-    self.createPlayer = function () {
+    self.deletePlayer = function (player) {
+        $("#deletePlayerModal").modal("show");
 
+        $("#confirmPlayerDeleteBtn").one("click", function () {
+            self.makePlayerDeleteCall(player)
+        });
     }
 
-    self.releasePlayer = function () {
-
-    }
-
-    self.deletePlayer = function () {
+    self.makePlayerDeleteCall = function (player) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + player.id,
+            success: function () {
+                self.players.remove(player);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
 
     }
 
@@ -117,7 +132,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + self.selectedPlayer().id,
             success: function (item) {
                 var player = new PlayerViewModel(self.accountId, item.Contact.Id);
                 player.id = item.Id;
@@ -125,21 +140,27 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                 player.PhotoUrl = item.Contact.PhotoURL;
                 player.Age = item.Age;
                 player.PlayerNumber(item.PlayerNumber);
-                player.DateSigned = item.DateAdded;
+                player.DateSigned = moment(item.DateAdded).format("MM DD, YYYY");
                 player.SubmittedWaiver(item.SubmittedWaiver);
                 player.SubmittedDriversLicense(item.SubmittedDriversLicense);
                 player.AffiliationDuesPaid(item.AffiliationDuesPaid);
                 player.commit();
 
                 self.players.push(player);
+                self.players.sort(function (left, right) {
+                    var lName = left.Name().toUpperCase();
+                    var rName = right.Name().toUpperCase();
+                    return lName == rName ? 0 : (lName < rName ? -1 : 1);
+                });
+
+                self.selectedPlayer(null);
+                $("input.autocomplete").val('');
+
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
-    }
-
-    self.addPlayer = function () {
     }
 
     self.loadPlayers = function () {

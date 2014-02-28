@@ -38,7 +38,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [ActionName("players")]
+        [ActionName("roster")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage SignPlayer(long accountId, long teamSeasonId, long id)
         {
@@ -46,5 +46,26 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse<ModelObjects.Player>(HttpStatusCode.OK, players);
         }
 
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("roster")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage ReleasePlayer(long accountId, long teamSeasonId, long id)
+        {
+            if (DataAccess.TeamRoster.ReleasePlayer(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("players")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeletePlayer(long accountId, long teamSeasonId, long id)
+        {
+            if (DataAccess.TeamRoster.RemovePlayer(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
     }
 }

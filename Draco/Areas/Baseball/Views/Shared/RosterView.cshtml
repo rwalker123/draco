@@ -13,19 +13,33 @@
     </div>
 
     <div class="panel-body">
+
         @if (Model.IsAdmin)
         {
-            // create a new player
-            <form class="form-horizontal" data-bind="visible: addPlayerVisible">
+            <div class="modal fade" id="deletePlayerModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title">Confirm Delete Player</h4>
+                        </div>
+                        <div class="modal-body">
+                            You are about to delete a player. All data associated with the player will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmPlayerDeleteBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-            </form>
-            
             //Sign an existing player
             <form data-bind="visible: signPlayerVisible">
                 <div class="form-group">
                     <label class="control-label">enter a player name to sign</label>
                     <div class="col-sm-10">
-                        <input type="text" class="form-control" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+                        <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
                     </div>
                     <div class="col-sm-2">
                         <button class="btn btn-primary" data-bind="click: signPlayer, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button> 
@@ -59,7 +73,7 @@
                 </thead>
                 <tbody data-bind="foreach: players">
                     <tr>
-                        <td class="col-sm-2"><img @if (!Model.IsAdmin && !Model.IsTeamAdmin) { <text> onerror="this.style.display = 'none';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
+                        <td class="col-sm-2"><img @if (!Model.IsAdmin && !Model.IsTeamAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
                         <td class="col-sm-1"  data-bind="html: PlayerNumber"></td>
                         <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>   } else if (Model.IsTeamAdmin) { <text> class="col-sm-6" </text>  } else { <text> class="col-sm-8" </text>   }>
                             <span data-bind="html: Name"></span>

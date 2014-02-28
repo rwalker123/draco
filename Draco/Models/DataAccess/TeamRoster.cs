@@ -410,63 +410,75 @@ namespace DataAccess
 			IQueryable<Player> players = TeamRoster.GetAllPlayers(teamSeasonId);
 			foreach (Player p in players)
 			{
-				TeamRoster.RemovePlayer(p);
+				TeamRoster.RemovePlayer(p.Id);
 			}
 		}
 
-		static public bool RemovePlayer(Player p)
+		static public bool RemovePlayer(long playerSeasonId)
 		{
-			int rowCount = 0;
-
 			// remove player stats for season.
-			GameStats.RemovePlayerStats(p.Id);
+			GameStats.RemovePlayerStats(playerSeasonId);
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePlayer", myConnection);
-					myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = p.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            var playerId = (from rs in db.RosterSeasons
+                            where rs.id == playerSeasonId
+                            select rs.PlayerId).SingleOrDefault();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            var playerRecaps = (from pr in db.PlayerRecaps
+                                where pr.PlayerId == playerSeasonId
+                                select pr);
+            db.PlayerRecaps.DeleteAllOnSubmit(playerRecaps);
 
-			return (rowCount <= 0) ? false : true;
+            var rosterSeasons = (from rs in db.RosterSeasons
+                                 where rs.id == playerSeasonId
+                                 select rs);
+            db.RosterSeasons.DeleteAllOnSubmit(rosterSeasons);
+
+            var playerProfiles = (from pp in db.PlayerProfiles
+                                  where pp.PlayerId == playerId
+                                  select pp);
+            db.PlayerProfiles.DeleteAllOnSubmit(playerProfiles);
+
+            db.SubmitChanges();
+
+            // is this player on any other team in season?
+            var cnt = (from rs in db.RosterSeasons
+                       where rs.PlayerId == playerId
+                       select rs).Any();
+
+            var affs = (from ps in db.PlayerSeasonAffiliationDues
+                        where ps.PlayerId == playerId
+                        select ps);
+            db.PlayerSeasonAffiliationDues.DeleteAllOnSubmit(affs);
+
+            db.SubmitChanges();
+
+            var rosters = (from r in db.Rosters
+                           where r.id == playerId
+                           select r);
+            db.Rosters.DeleteAllOnSubmit(rosters);
+
+            db.SubmitChanges();
+            return true;
 		}
 
-		static public bool ReleasePlayer(Player p)
+		static public bool ReleasePlayer(long playerSeasonId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.ReleasePlayer", myConnection);
-					myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = p.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbPlayer = (from rs in db.RosterSeasons
+                            where rs.id == playerSeasonId
+                            select rs).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbPlayer != null)
+            {
+                dbPlayer.Inactive = true;
+                db.SubmitChanges();
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false; 
 		}
 
 		static public Player SignContact(long accountId, long teamSeasonId, long contactId)

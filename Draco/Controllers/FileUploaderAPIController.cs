@@ -107,7 +107,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         [ActionName("PhotoGallery")]
         public async Task<HttpResponseMessage> PhotoGallery(long accountId)
         {
@@ -250,7 +250,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> ContactPhoto(long accountId, long id)
         {
             ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
