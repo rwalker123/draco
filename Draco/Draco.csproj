@@ -58,11 +58,13 @@
       <HintPath>Bin\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Data.Edm, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.Edm.5.6.0\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Data.Edm.5.6.1\lib\net40\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Data.OData.5.6.0\lib\net40\Microsoft.Data.OData.dll</HintPath>
+    <Reference Include="Microsoft.Data.OData, Version=5.6.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.Data.OData.5.6.1\lib\net40\Microsoft.Data.OData.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin, Version=2.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -113,8 +115,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.1.1\lib\net45\System.Net.Http.Formatting.dll</HintPath>
     </Reference>
-    <Reference Include="System.Spatial, Version=5.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Spatial.5.6.0\lib\net40\System.Spatial.dll</HintPath>
+    <Reference Include="System.Spatial, Version=5.6.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\System.Spatial.5.6.1\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web.DynamicData" />
@@ -189,9 +192,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.5.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core">
       <HintPath>..\packages\Microsoft.AspNet.Identity.Core.1.0.0\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
@@ -271,6 +271,7 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\Umpire.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutAnnouncement.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutRegistrant.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\ManagersViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\RosterViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeadersViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueFieldsViewModel.cs" />
@@ -460,7 +461,9 @@
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
     <Content Include="Areas\Baseball\Scripts\leagueHome.js" />
     <Content Include="Areas\Baseball\Scripts\leaguesetup.js" />
+    <Content Include="Areas\Baseball\Scripts\managers.js" />
     <Content Include="Areas\Baseball\Scripts\roster.js" />
+    <Content Include="Areas\Baseball\Scripts\schedule.js" />
     <Content Include="Areas\Baseball\Scripts\scoreboard.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />
@@ -641,11 +644,6 @@
     <Content Include="Areas\Golf\Views\Teams\TeamsGrid.cshtml" />
     <Content Include="Areas\Golf\Views\Web.config" />
     <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap-theme.css.map" />
-    <Content Include="Content\bootstrap.css.map" />
     <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
     <Content Include="fonts\fontawesome-webfont.woff" />
     <Content Include="fonts\fontawesome-webfont.ttf" />
@@ -653,20 +651,26 @@
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
     <None Include="Properties\PublishProfiles\detroitmsbl %282%29.pubxml" />
     <Content Include="Scripts\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap-select.js" />
     <Content Include="Scripts\bootstrap-select.min.js" />
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.js" />
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.min.js" />
+    <Content Include="Scripts\bootstrap.js" />
+    <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\handouts.js" />
     <None Include="Properties\PublishProfiles\Local IIS.pubxml" />
     <None Include="Properties\PublishProfiles\walkerhome.org - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\walkerhome.org - Web Deploy.pubxml" />
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\announcement.js" />
-    <Content Include="Scripts\bootstrap.js" />
-    <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\focusNextItem.js" />
     <Content Include="Scripts\jquery-1.10.2.js" />
     <Content Include="Scripts\jquery-1.10.2.min.js" />
@@ -811,6 +815,8 @@
     <Content Include="Scripts\moment.min.js" />
     <Content Include="Scripts\photogallery.js" />
     <Content Include="Scripts\respond.js" />
+    <Content Include="Scripts\respond.matchmedia.addListener.js" />
+    <Content Include="Scripts\respond.matchmedia.addListener.min.js" />
     <Content Include="Scripts\respond.min.js" />
     <Content Include="Scripts\seasonsetup.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />

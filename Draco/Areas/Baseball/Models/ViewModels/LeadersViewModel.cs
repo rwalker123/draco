@@ -8,11 +8,14 @@ namespace SportsManager.Baseball.ViewModels
         public LeadersViewModel(Controller c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
+            TeamSeasonId = teamSeasonId;
         }
 
         public LeadersViewModel(Controller c, long accountId)
             : base(c, accountId)
         {
         }
+
+        public long TeamSeasonId { get; private set; }
     }
 }

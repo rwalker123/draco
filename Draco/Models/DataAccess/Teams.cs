@@ -381,34 +381,18 @@ namespace DataAccess
 
 		static public long AddManager(TeamManager m)
 		{
-			long id = 0;
+            DB db = DBConnection.GetContext();
 
-			if (m.AccountId <= 0 || m.TeamId <= 0)
-				return 0;
+            var dbManager = new SportsManager.Model.TeamSeasonManager()
+            {
+                TeamSeasonId = m.TeamId,
+                ContactId = m.Id
+            };
 
+            db.TeamSeasonManagers.InsertOnSubmit(dbManager);
+            db.SubmitChanges();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateTeamManager", myConnection);
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = m.TeamId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						id = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return id;
+            return dbManager.id;
 		}
 
 		static public bool CopySeasonTeams(long leagueSeasonId, long copyLeagueSeasonId)

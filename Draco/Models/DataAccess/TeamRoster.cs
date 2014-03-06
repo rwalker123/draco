@@ -112,6 +112,7 @@ namespace DataAccess
 			long seasonId = (from rs in db.RosterSeasons
 							 join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.id
 							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
+                             where rs.id == playerSeasonId
 							 select ls.SeasonId).SingleOrDefault();
 
 
@@ -246,7 +247,7 @@ namespace DataAccess
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
 		}
 
-		static public IQueryable<Contact> GetAvailableManagers(long accountId, long leagueSeasonId, long teamSeasonId)
+		static public IQueryable<Contact> GetAvailableManagers(long accountId, long leagueSeasonId, long teamSeasonId, string firstName, string lastName)
 		{
             DB db = DBConnection.GetContext();
             long affiliationId = (from a in db.Accounts
@@ -266,7 +267,9 @@ namespace DataAccess
 
                 return (from c in db.Contacts
                         where aIds.Contains(c.CreatorAccountId) &&
-                        !cIds.Contains(c.Id)
+                        !cIds.Contains(c.Id) &&
+                        (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
+                        (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
                         orderby c.LastName, c.FirstName, c.MiddleName
                         select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2,
                             c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip, 
@@ -282,7 +285,9 @@ namespace DataAccess
                         join r in db.Rosters on rs.PlayerId equals r.id
                         join c in db.Contacts on r.ContactId equals c.Id
                         where rs.TeamSeasonId == teamSeasonId && !rs.Inactive &&
-                        !cIds.Contains(c.Id)
+                        !cIds.Contains(c.Id) &&
+                        (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
+                        (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
                         orderby c.LastName, c.FirstName, c.MiddleName
                         select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2,
                             c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip,
@@ -292,117 +297,52 @@ namespace DataAccess
 
 		static public bool ModifyPlayer(Player player)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			player.Contact.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone1));
-			player.Contact.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone2));
-			player.Contact.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone3));
+            var dbPlayer = (from p in db.RosterSeasons
+                            where p.id == player.Id
+                            select p).SingleOrDefault();
 
-			try
-			{
-				System.Web.Security.MembershipUser user = System.Web.Security.Membership.GetUser(player.Contact.UserName);
-				if (user != null)
-				{
-					user.Email = player.Contact.Email;
-					System.Web.Security.Membership.UpdateUser(user);
-				}
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
+            if (dbPlayer != null)
+            {
+                dbPlayer.SubmittedWaiver = player.SubmittedWaiver;
+                dbPlayer.PlayerNumber = player.PlayerNumber;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayer", myConnection);
-					myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = player.Id;
-					myCommand.Parameters.Add("@playerNumber", SqlDbType.Int).Value = player.PlayerNumber;
-					myCommand.Parameters.Add("@submittedWaiver", SqlDbType.Bit).Value = player.SubmittedWaiver;
-					myCommand.Parameters.Add("@submittedDriversLicense", SqlDbType.Bit).Value = player.SubmittedDriversLicense;
-					myCommand.Parameters.Add("@lastName", SqlDbType.VarChar, 25).Value = player.Contact.LastName;
-					myCommand.Parameters.Add("@firstName", SqlDbType.VarChar, 25).Value = player.Contact.FirstName;
-					myCommand.Parameters.Add("@middleName", SqlDbType.VarChar, 25).Value = player.Contact.MiddleName;
-					myCommand.Parameters.Add("@firstYear", SqlDbType.Int).Value = player.Contact.FirstYear;
-					myCommand.Parameters.Add("@dateOfBirth", SqlDbType.SmallDateTime).Value = player.Contact.DateOfBirth;
-					myCommand.Parameters.Add("@streetAddress", SqlDbType.VarChar, 75).Value = player.Contact.StreetAddress;
-					myCommand.Parameters.Add("@city", SqlDbType.VarChar, 25).Value = player.Contact.City;
-					myCommand.Parameters.Add("@state", SqlDbType.VarChar, 25).Value = player.Contact.State;
-					myCommand.Parameters.Add("@zip", SqlDbType.VarChar, 15).Value = player.Contact.Zip;
-					myCommand.Parameters.Add("@affiliationDuesPaid", SqlDbType.VarChar, 50).Value = player.AffiliationDuesPaid;
-					myCommand.Parameters.Add("@phone1", SqlDbType.VarChar, 14).Value = player.Contact.Phone1;
-					myCommand.Parameters.Add("@phone2", SqlDbType.VarChar, 14).Value = player.Contact.Phone2;
-					myCommand.Parameters.Add("@phone3", SqlDbType.VarChar, 14).Value = player.Contact.Phone3;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                var dbRoster = (from r in db.Rosters
+                                where dbPlayer.PlayerId == r.id
+                                select r).SingleOrDefault();
+                if (dbRoster != null)
+                {
+                    dbRoster.SubmittedDriversLicense = player.SubmittedDriversLicense;
 
-					myConnection.Open();
-					myCommand.Prepare();
+                    var seasonId = DataAccess.Seasons.GetCurrentSeason(player.AccountId);
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                    var dbAffDues = (from ad in db.PlayerSeasonAffiliationDues
+                                     where ad.PlayerId == dbRoster.id && ad.SeasonId == seasonId
+                                     select ad).SingleOrDefault();
 
-			return (rowCount <= 0) ? false : true;
-		}
+                    if (dbAffDues != null)
+                    {
+                        dbAffDues.AffiliationDuesPaid = player.AffiliationDuesPaid == null ? String.Empty : player.AffiliationDuesPaid;
+                    }
+                    else
+                    {
+                        dbAffDues = new SportsManager.Model.PlayerSeasonAffiliationDue()
+                        {
+                            PlayerId = dbRoster.id,
+                            AffiliationDuesPaid = player.AffiliationDuesPaid == null ? String.Empty : player.AffiliationDuesPaid,
+                            SeasonId = seasonId
+                        };
 
-		static public long AddPlayer(Player player)
-		{
-			long playerId = 0;
+                        db.PlayerSeasonAffiliationDues.InsertOnSubmit(dbAffDues);
+                    }
+                }
 
-			if (player.AccountId <= 0 || player.TeamId <= 0)
-				return 0;
+                db.SubmitChanges();
+                return true;
+            }
 
-
-			try
-			{
-				if (player.Contact == null)
-				{
-					string homePhone = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone1));
-					string workPhone = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone3));
-					string cellPhone = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(player.Contact.Phone2));
-					string streetAddress = player.Contact.StreetAddress;
-					string city = player.Contact.City;
-					string state = player.Contact.State;
-					string zip = player.Contact.Zip;
-
-					System.Diagnostics.Debug.Assert(false, "Fix this");
-					//player.SetContactInfo(Contacts.AddContact(new Contact(0, player.LastName, player.FirstName, player.MiddleName,
-					//                                        homePhone, workPhone, cellPhone, null, player.AccountId,
-					//                                        streetAddress, city, state, zip,
-					//                                        player.FirstYear, player.DateOfBirth)));
-				}
-
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreatePlayer", myConnection);
-					myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = player.TeamId;
-					myCommand.Parameters.Add("@playerNumber", SqlDbType.Int).Value = player.PlayerNumber;
-					myCommand.Parameters.Add("@submittedWaiver", SqlDbType.Bit).Value = player.SubmittedWaiver;
-					myCommand.Parameters.Add("@submittedDriversLicense", SqlDbType.Bit).Value = player.SubmittedDriversLicense;
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = player.Contact.Id;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = player.AccountId;
-					myCommand.Parameters.Add("@affiliationDuesPaid", SqlDbType.VarChar, 50).Value = player.AffiliationDuesPaid;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						playerId = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return playerId;
+            return false;
 		}
 
 		static public void RemoveTeamPlayers(long teamSeasonId)

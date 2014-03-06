@@ -33,6 +33,8 @@ var PlayerViewModel = function (accountId, contactId) {
     self.SubmittedWaiver = ko.protectedObservable(false);
     self.SubmittedDriversLicense = ko.protectedObservable(false);
     self.AffiliationDuesPaid = ko.protectedObservable('');
+    self.viewMode = ko.observable(true);
+    self.editPlayerNumber = ko.observable(false);
 
     self.fileUploaderUrl = ko.computed(function () {
         return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId;
@@ -46,6 +48,22 @@ var PlayerViewModel = function (accountId, contactId) {
         self.SubmittedDriversLicense.commit();
         self.AffiliationDuesPaid.commit();
     }
+
+    self.reset = function () {
+        self.PlayerNumber.reset();
+        self.Name.reset();
+        self.SubmittedWaiver.reset();
+        self.SubmittedDriversLicense.reset();
+        self.AffiliationDuesPaid.reset();
+    }
+
+    self.editPlayerNumberMode = function () {
+        self.editPlayerNumber(!self.editPlayerNumber());
+    }
+
+    self.cancelEditPlayerNumber = function () {
+        self.editPlayerNumber(false);
+    }
 }
 
 var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
@@ -58,7 +76,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     self.players = ko.observableArray();
 
-    self.viewMode = ko.observable(true);
     self.signPlayerVisible = ko.observable(false);
 
     self.selectedPlayer = ko.observable();
@@ -80,7 +97,62 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     self.isPlayerSelected = ko.computed(function () {
         return self.selectedPlayer();
-    });
+    })
+
+    self.editPlayer = function (player) {
+        player.viewMode(!player.viewMode());
+    }
+
+    self.cancelEditPlayer = function (player) {
+        player.viewMode(true);
+        player.reset();
+    }
+
+    self.editPlayerNumber = function (player) {
+
+        $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/playernumber/' + player.id,
+            data: {
+                PlayerNumber: player.PlayerNumber.uncommitValue(),
+            },
+            success: function (item) {
+                player.commit();
+
+                player.viewMode(true);
+                player.commit();
+
+                player.cancelEditPlayerNumber();
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.savePlayer = function (player) {
+
+        $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.id,
+            data: {
+                SubmittedWaiver: player.SubmittedWaiver.uncommitValue(),
+                SubmittedDriversLicense: player.SubmittedDriversLicense.uncommitValue(),
+                PlayerNumber: player.PlayerNumber.uncommitValue(),
+                AffiliationDuesPaid: player.AffiliationDuesPaid.uncommitValue()
+            },
+            success: function (item) {
+                player.commit();
+
+                player.viewMode(true);
+                player.commit();
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
 
     self.showSignPlayer = function () {
         if (self.signPlayerVisible()) {

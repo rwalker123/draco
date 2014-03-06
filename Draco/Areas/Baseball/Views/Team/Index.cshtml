@@ -9,6 +9,7 @@
 }
 <div class="jumbotron">
     <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name</h1><br />
+    [Team Record] <br />
     @if (Model.FromLeagueAccount)
     {
         <small>@Model.AccountName @Model.SeasonName season</small>
@@ -21,12 +22,7 @@
             <!-- column 1-->
             <div class="row">
                 <div class="col-md-12">
-                    [Team Record] <br />
-                    <ul>
-                        <li>@Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.Team.Id }, null)</li>
-                        <li>Roster</li>
-                        <li><a href="javascript:onLoadPrintableRosterCard()">Printable Roster Card</a></li>
-                    </ul>
+                    @{Html.RenderPartial("TeamManager", new SportsManager.Baseball.ViewModels.ManagersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                 </div>
             </div>
 
@@ -156,6 +152,7 @@ else
 
 @Scripts.Render("~/bundles/jquery-file-upload")
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
+<script type="text/javascript" src="~/Areas/Baseball/Scripts/managers.js"></script>
 
     <!-- main javascript -->
 <script type="text/javascript">
@@ -209,7 +206,8 @@ else
             </text>
         }
 
-        scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        var scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
 
         @if (Model.ShowWelcome)
         { 

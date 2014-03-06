@@ -1,0 +1,59 @@
+﻿@model SportsManager.Baseball.ViewModels.ManagersViewModel
+
+<div class="panel panel-primary" id="teamManagers">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Managers</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right" data-bind="click: addManagerMode"><span class="glyphicon glyphicon-plus"></span></button>
+        }
+
+        <div class="clearfix"></div>
+    </div>
+
+    <div class="panel-body">
+        @if (Model.IsAdmin)
+        {
+            <form style="display:none" data-bind="visible: !viewMode()">
+                <div class="form-group">
+                    <label class="control-label">enter a manager name</label>
+                    <div class="col-sm-10">
+                        <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: getAvailableManagers, select: selectPlayer, minLength: 1 }" />
+                    </div>
+                    <div class="col-sm-2">
+                        <button class="btn btn-primary" data-bind="click: addManager, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button> 
+                    </div>
+                    <div class="help-block">If you don't find the manager in your search: 
+                        <ol>
+                            <li>Ensure the manager is not already on another team in the league.</li>
+                            <li>Ensure the manager exists as a user, you can add new <a class="btn btn-success" href="@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)">Users &raquo;</a>.</li>
+                        </ol>
+                    </div>
+                </div>
+            </form>
+        }
+
+        <div data-bind="foreach: managers">
+            <div class="row" style="margin-bottom: 10px">
+                <div class="col-sm-3">
+                    <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: fileUploaderUrl, attr: { src: photoUrl }" />
+                </div>
+                <div class="col-sm-7">
+                    <span data-bind="html: name"></span>
+                </div>
+                @if (Model.IsAdmin)
+                {
+                    <div class="col-sm-2">
+                        <button class="btn btn-warning" data-bind="click: $parent.removeManager"><span class="glyphicon glyphicon-minus"></span></button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.IsAdmin || Model.isTeamAdmin)
+        { 
+            <a href="javascript:onLoadPrintableRosterCard()" class="btn btn-info">Printable Roster Card</a>
+        }
+    </div>
+</div>
