@@ -61,52 +61,82 @@
                         <th>No</th>
                         <th>Name</th>
                         <th>Age</th>
-                        @if (Model.IsAdmin || Model.IsTeamAdmin)
-                        { 
-                            <th>Paper Work</th>
-                        }
                         @if (Model.IsAdmin)
                         {
+                            <th>Signed</th>
                             <th>Actions</th>
                         }
                     </tr>
                 </thead>
                 <tbody data-bind="foreach: players">
                     <tr>
-                        <td class="col-sm-2"><img @if (!Model.IsAdmin && !Model.IsTeamAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
-                        <td class="col-sm-1"  data-bind="html: PlayerNumber"></td>
-                        <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>   } else if (Model.IsTeamAdmin) { <text> class="col-sm-6" </text>  } else { <text> class="col-sm-8" </text>   }>
-                            <span data-bind="html: Name"></span>
+                        <td class="col-sm-1"><img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
+                        <td class="col-sm-1">
+                            <span style="float:left;width:19px" data-bind="visible: viewMode() && !editPlayerNumber(), html: PlayerNumber"></span>
                             @if (Model.IsAdmin || Model.IsTeamAdmin)
                             {
-                                <br /><text>signed: </text><span data-bind="html: DateSigned"></span>
+                                <input class="form-control" data-bind="value: PlayerNumber, visible: !viewMode() || editPlayerNumber()" type="number" />
+                                if (!Model.IsAdmin)
+                                {
+                                <button class="btn btn-default btn-sm" data-bind="visible: !editPlayerNumber(), click: editPlayerNumberMode"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button class="btn btn-success btn-xs" data-bind="visible: editPlayerNumber, click: $parent.editPlayerNumber"><span class="glyphicon glyphicon-ok"></span></button>
+                                <button class="btn btn-danger btn-xs" data-bind="visible: editPlayerNumber, click: cancelEditPlayerNumber"><span class="glyphicon glyphicon-remove"></span></button>
+                                }
+                            }
+                        </td>
+                        <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>    } else if (Model.IsTeamAdmin) { <text> class="col-sm-6" </text>   } else { <text> class="col-sm-8" </text>    }>
+                            <span data-bind="html: Name"></span>
+                            @if (Model.IsAdmin)
+                            {
+                                <form class="form-horizontal" role="form">
+                                    <div class="form-group" style="margin:0px">
+                                        <div class="checkbox">
+                                            <div class="col-sm-12">
+                                                <label>
+                                                    <input type="checkbox" data-bind="checked: SubmittedWaiver, uniqueId: id, visible: !viewMode()" />
+                                                    Waiver
+                                                    <span style="margin-left:10px" data-bind="visible: viewMode, html: SubmittedWaiver() ? 'yes' : 'no'"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="margin: 0px">
+                                        <div class="checkbox">
+                                            <div class="col-sm-12">
+                                                <label>
+                                                    <input type="checkbox" data-bind="checked: SubmittedDriversLicense, uniqueId: id, visible: !viewMode()" />
+                                                    License
+                                                    <span style="margin-left:4px" data-bind="visible: viewMode, html: SubmittedDriversLicense() ? 'yes' : 'no'"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-sm-5" data-bind="uniqueFor: id">Aff. Dues</label>
+                                        <div class="col-sm-7">
+                                            <span data-bind="visible: viewMode(), html: AffiliationDuesPaid"></span>
+                                            <input type="text" class="form-control" data-bind="value: AffiliationDuesPaid, uniqueId: id, visible: !viewMode()" />
+                                        </div>
+                                    </div>
+                                </form>
                             }
                         </td>
 
-                        <td class="col-sm-1" data-bind="html: Age"></td>
-                        @if (Model.IsAdmin || Model.IsTeamAdmin)
-                            {
-                                <td class="col-sm-2">
-                                    <div class="row">
-                                        <span class="col-sm-6">Waiver:</span>
-                                        <span class="col-sm-6" data-bind="html: SubmittedWaiver() ? 'yes' : 'no'"></span>
-                                    </div>
-                                    <div class="row">
-                                        <span class="col-sm-6">License:</span>
-                                        <span class="col-sm-6" data-bind="html: SubmittedDriversLicense() ? 'yes' : 'no'"></span>
-                                    </div>
-                                    <div class="row">
-                                        <span class="col-sm-6">Dues:</span>
-                                        <span class="col-sm-6" data-bind="html: AffiliationDuesPaid"></span>
-                                    </div>
-                                </td>
-                            }
+                        <td class="col-sm-1" data-bind="html: Age">
+                        </td>
+
                         @if (Model.IsAdmin)
                         {
+                            <td class="col-sm-2">
+                                <span data-bind="html: DateSigned"></span>
+                            </td>
                             <td class ="col-sm-2">
-                                <button class="btn btn-default btn-sm" data-bind="click: $parent.editPlayer"><span class="glyphicon glyphicon-edit"></span></button>
-                                <button class="btn btn-warning btn-sm" data-bind="click: $parent.releasePlayer"><span class="glyphicon glyphicon-minus"></span></button>
-                                <button class="btn btn-danger btn-sm" data-bind="click: $parent.deletePlayer"><span class="glyphicon glyphicon-remove"></span></button>
+                                <button class="btn btn-default btn-sm" data-bind="visible: viewMode, click: $parent.editPlayer"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button class="btn btn-warning btn-sm" data-bind="visible: viewMode, click: $parent.releasePlayer"><span class="glyphicon glyphicon-minus"></span></button>
+                                <button class="btn btn-danger btn-sm" data-bind="visible: viewMode, click: $parent.deletePlayer"><span class="glyphicon glyphicon-remove"></span></button>
+
+                                <button class="btn btn-success btn-sm" data-bind="visible: !viewMode(), click: $parent.savePlayer"><span class="glyphicon glyphicon-ok"></span></button>
+                                <button class="btn btn-danger btn-sm" data-bind="visible: !viewMode(), click: $parent.cancelEditPlayer"><span class="glyphicon glyphicon-remove"></span></button>
                             </td>
                         }
                     </tr>
