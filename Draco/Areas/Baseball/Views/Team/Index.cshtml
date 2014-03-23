@@ -35,12 +35,15 @@
                 </div>
             }
         
-            <div class="row">
-                <div class="col-md-12">
-                    @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+            @if (Model.ShowScoreboard)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
                 </div>
-            </div>
-
+            }
+            
             <div class="row">
                 <div class="col-md-12">
                     <div id="currentGames">
@@ -151,7 +154,11 @@ else
 }
 
 @Scripts.Render("~/bundles/jquery-file-upload")
-<script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
+@if (Model.ShowScoreboard)
+{
+    <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
+}
+
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/managers.js"></script>
 
     <!-- main javascript -->
@@ -206,7 +213,13 @@ else
             </text>
         }
 
-        var scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        @if (Model.ShowScoreboard)
+        { 
+            <text>
+            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+            </text>
+        }
+        
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
 
         @if (Model.ShowWelcome)

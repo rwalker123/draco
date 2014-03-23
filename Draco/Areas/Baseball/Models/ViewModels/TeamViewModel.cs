@@ -28,6 +28,7 @@ namespace SportsManager.Baseball.ViewModels
             ShowLeaders = true;
             ShowSponsors = true;
             ShowRoster = true;
+            ShowScoreboard = true;
         }
 
         public Team Team { get; private set; }
@@ -39,6 +40,7 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowLeaders { get; private set; }
         public bool ShowSponsors { get; private set; }
         public bool ShowRoster { get; private set; }
+        public bool ShowScoreboard { get; private set; }
 
         public bool IsTeamPhotoAdmin
         {

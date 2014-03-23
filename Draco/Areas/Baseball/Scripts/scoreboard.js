@@ -1,8 +1,8 @@
-﻿function initScoreboardViewModel(accountId, isAdmin) {
+﻿function initScoreboardViewModel(accountId, isAdmin, teamId) {
 
     var scoreboardElem = document.getElementById("scoreboardView");
     if (scoreboardElem) {
-        var scoreboardVM = new ScoreboardViewModel(accountId, isAdmin);
+        var scoreboardVM = new ScoreboardViewModel(accountId, isAdmin, teamId);
         ko.applyBindings(scoreboardVM, scoreboardElem);
     }
 }
@@ -38,11 +38,12 @@ var GamesForDayViewModel = function (title) {
     self.games = ko.observableArray();
 }
 
-var ScoreboardViewModel = function (accountId, isAdmin) {
+var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     var self = this;
 
     self.accountId = accountId;
     self.isAdmin = isAdmin;
+    self.teamId = teamId;
 
     self.scheduledGames = ko.observableArray();
 
@@ -52,6 +53,9 @@ var ScoreboardViewModel = function (accountId, isAdmin) {
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate eq datetime'" + today + "'";
+        if (self.teamId) {
+            url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
+        }
         url += '&$inlinecount=allpages';
         url += '&$orderby=GameDate asc';
 
@@ -84,6 +88,9 @@ var ScoreboardViewModel = function (accountId, isAdmin) {
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate eq datetime'" + yesterday + "'";
+        if (self.teamId) {
+            url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
+        }
         url += '&$inlinecount=allpages';
         url += '&$orderby=GameDate asc';
 
@@ -121,6 +128,9 @@ var ScoreboardViewModel = function (accountId, isAdmin) {
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate ge datetime'" + startDate + "' and GameDate le datetime'" + endDate + "'";
+        if (self.teamId) {
+            url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
+        }
         url += " and HasGameRecap eq true"
         url += '&$inlinecount=allpages';
         url += '&$orderby=GameDate asc';
