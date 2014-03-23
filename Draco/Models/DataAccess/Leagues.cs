@@ -41,7 +41,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from x in db.Leagues
-                    where x.id == leagueId
+                    where x.Id == leagueId
                     select x.Name).SingleOrDefault();
         }
 
@@ -51,8 +51,8 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from ls in db.LeagueSeasons
-                    join l in db.Leagues on ls.LeagueId equals l.id
-                    where ls.id == leagueId
+                    join l in db.Leagues on ls.LeagueId equals l.Id
+                    where ls.Id == leagueId
                     select l.Name).SingleOrDefault();
         }
 
@@ -60,11 +60,11 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             return (from ls in db.LeagueSeasons
-                    join l in db.Leagues on ls.LeagueId equals l.id
-                    where ls.id == leagueId
+                    join l in db.Leagues on ls.LeagueId equals l.Id
+                    where ls.Id == leagueId
                     select new League()
                     {
-                        Id = ls.id,
+                        Id = ls.Id,
                         Name = l.Name,
                         AccountId = l.AccountId
                     }).SingleOrDefault();
@@ -75,11 +75,11 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from ls in db.LeagueSeasons
-                    join l in db.Leagues on ls.LeagueId equals l.id
+                    join l in db.Leagues on ls.LeagueId equals l.Id
                     where ls.SeasonId == seasonId
                     select new League()
                     {
-                        Id = ls.id,
+                        Id = ls.Id,
                         AccountId = l.AccountId,
                         Name = l.Name
                     });
@@ -92,12 +92,12 @@ namespace DataAccess
             long currentSeason = DataAccess.Seasons.GetCurrentSeason(accountId);
 
             return (from ls in db.LeagueSeasons
-                    join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
+                    join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
                     where ls.SeasonId == currentSeason
                     orderby ls.League.Name, ts.Name
                     select new Team()
                     {
-                        Id = ts.id,
+                        Id = ts.Id,
                         AccountId = accountId,
                         TeamId = ts.TeamId,
                         DivisionId = ts.DivisionSeasonId,
@@ -114,14 +114,14 @@ namespace DataAccess
             {
                 return (from l in db.Leagues
                         where l.AccountId == id
-                        select new League(l.id, l.Name, l.AccountId));
+                        select new League(l.Id, l.Name, l.AccountId));
             }
             else
             {
                 return (from ls in db.LeagueSeasons
-                        join l in db.Leagues on ls.LeagueId equals l.id
+                        join l in db.Leagues on ls.LeagueId equals l.Id
                         where ls.SeasonId == id
-                        select new League(ls.id, l.Name, l.AccountId));
+                        select new League(ls.Id, l.Name, l.AccountId));
             }
         }
 
@@ -130,8 +130,8 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.League dbLeague = (from ls in db.LeagueSeasons
-                                                   join l in db.Leagues on ls.LeagueId equals l.id
-                                                   where ls.id == league.Id
+                                                   join l in db.Leagues on ls.LeagueId equals l.Id
+                                                   where ls.Id == league.Id
                                                    select l).SingleOrDefault();
             if (dbLeague == null)
                 return false;
@@ -165,7 +165,7 @@ namespace DataAccess
 
             SportsManager.Model.LeagueSeason dbLeagueSeason = new SportsManager.Model.LeagueSeason()
             {
-                LeagueId = dbLeague.id,
+                LeagueId = dbLeague.Id,
                 SeasonId = seasonId
             };
 
@@ -173,7 +173,7 @@ namespace DataAccess
 
             db.SubmitChanges();
 
-            newLeague.Id = dbLeagueSeason.id;
+            newLeague.Id = dbLeagueSeason.Id;
 
             return newLeague.Id;
         }
@@ -198,7 +198,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.LeagueSeason dbLeague = (from l in db.LeagueSeasons
-                                                         where l.id == leagueSeasonId
+                                                         where l.Id == leagueSeasonId
                                                          select l).SingleOrDefault();
             if (dbLeague == null)
                 return false;
@@ -207,7 +207,7 @@ namespace DataAccess
             long leagueId = dbLeague.LeagueId;
 
             var displayLeagueLeaders = (from ll in db.DisplayLeagueLeaders
-                                        where ll.id == leagueSeasonId
+                                        where ll.Id == leagueSeasonId
                                         select ll);
             db.DisplayLeagueLeaders.DeleteAllOnSubmit(displayLeagueLeaders);
 
@@ -222,7 +222,7 @@ namespace DataAccess
             if (!anyUses)
             {
                 var leagueToDelete = (from l in db.Leagues
-                                      where l.id == leagueId
+                                      where l.Id == leagueId
                                       select l);
 
                 db.Leagues.DeleteAllOnSubmit(leagueToDelete);
@@ -242,7 +242,7 @@ namespace DataAccess
 
             // if no league season is using a leagueId, we can remove it.
             var unusedLeagues = (from l in db.Leagues
-                                 where l.AccountId == accountId && !accountLeagues.Contains(l.id)
+                                 where l.AccountId == accountId && !accountLeagues.Contains(l.Id)
                                  select l);
 
             db.Leagues.DeleteAllOnSubmit(unusedLeagues);
@@ -272,7 +272,7 @@ namespace DataAccess
                     
                     // Copy Divisions
                     var divisions = (from ds in db.DivisionSeasons
-                                     where ds.LeagueSeasonId == league.id
+                                     where ds.LeagueSeasonId == league.Id
                                      select ds);
 
                     foreach (var division in divisions)
@@ -280,7 +280,7 @@ namespace DataAccess
                         SportsManager.Model.DivisionSeason ds = new SportsManager.Model.DivisionSeason()
                         {
                             DivisionId = division.DivisionId,
-                            LeagueSeasonId = ls.id,
+                            LeagueSeasonId = ls.Id,
                             Priority = division.Priority
                         };
 
@@ -292,24 +292,24 @@ namespace DataAccess
                     // copy teams
                     //Exec CopySeasonTeams @newLeagueSeasonId, @leagueSeasonId
                     var teams = (from ts in db.TeamsSeasons
-                                 where ts.LeagueSeasonId == league.id
+                                 where ts.LeagueSeasonId == league.Id
                                  select ts);
 
                     foreach (var team in teams)
                     {
                         // get divisiondef id of old team.
                         var divId = (from ds in db.DivisionSeasons
-                                     where ds.id == team.DivisionSeasonId
+                                     where ds.Id == team.DivisionSeasonId
                                      select ds.DivisionId).SingleOrDefault();
 
                         // find new division season given division def id, we should have added this division above.
                         var divisionSeasonId = (from ds in db.DivisionSeasons
-                                                where ds.DivisionId == divId && ds.LeagueSeasonId == ls.id
-                                                select ds.id).SingleOrDefault();
+                                                where ds.DivisionId == divId && ds.LeagueSeasonId == ls.Id
+                                                select ds.Id).SingleOrDefault();
 
                         var newTeam = new SportsManager.Model.TeamsSeason()
                         {
-                           LeagueSeasonId = ls.id,
+                           LeagueSeasonId = ls.Id,
                            TeamId = team.TeamId,
                            Name = team.Name,
                            DivisionSeasonId = divisionSeasonId
@@ -321,7 +321,7 @@ namespace DataAccess
                         //    -- copy roster.                
                         //    EXEC dbo.CopySeasonRoster @teamSeasonId, @oldTeamSeasonId
                         var rosters = (from rs in db.RosterSeasons
-                                       where rs.TeamSeasonId == team.id && !rs.Inactive
+                                       where rs.TeamSeasonId == team.Id && !rs.Inactive
                                        select rs);
 
                         foreach (var roster in rosters)
@@ -329,7 +329,7 @@ namespace DataAccess
                             var newPlayer = new SportsManager.Model.RosterSeason()
                             {
                                 PlayerId = roster.PlayerId,
-                                TeamSeasonId = newTeam.id,
+                                TeamSeasonId = newTeam.Id,
                                 PlayerNumber = roster.PlayerNumber,
                                 DateAdded = roster.DateAdded,
                                 Inactive = false,
@@ -344,14 +344,14 @@ namespace DataAccess
                         //    -- copy managers.                                        
                         //    EXEC dbo.CopySeasonManager @teamSeasonId, @oldTeamSeasonId
                         var managers = (from tsm in db.TeamSeasonManagers
-                                        where tsm.TeamSeasonId == team.id
+                                        where tsm.TeamSeasonId == team.Id
                                         select tsm);
 
                         foreach (var manager in managers)
                         {
                             var newManager = new SportsManager.Model.TeamSeasonManager()
                             {
-                                TeamSeasonId = newTeam.id,
+                                TeamSeasonId = newTeam.Id,
                                 ContactId = manager.ContactId
                             };
 
@@ -373,12 +373,12 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from ls in db.LeagueSeasons
-                    join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
-                    join rs in db.RosterSeasons on ts.id equals rs.TeamSeasonId
-                    join r in db.Rosters on rs.PlayerId equals r.id
+                    join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in db.Rosters on rs.PlayerId equals r.Id
                     join c in db.Contacts on r.ContactId equals c.Id
                     orderby c.LastName, c.FirstYear, c.MiddleName
-                    where (c.Email != "" && c.Email != null) && ls.id == leagueSeasonId && !rs.Inactive
+                    where (c.Email != "" && c.Email != null) && ls.Id == leagueSeasonId && !rs.Inactive
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2, c.Phone3, c.CreatorAccountId,
                         c.StreetAddress, c.City, c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
         }

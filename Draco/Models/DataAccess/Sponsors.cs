@@ -23,7 +23,7 @@ namespace DataAccess
                     where s.AccountId == accountId && s.TeamId == 0
                     select new Sponsor()
                     {
-                        Id = s.id,
+                        Id = s.Id,
                         AccountId = accountId,
                         CityStateZip = s.CityStateZip,
                         Description = s.Description,

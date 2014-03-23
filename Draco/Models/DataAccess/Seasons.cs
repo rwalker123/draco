@@ -15,15 +15,15 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             return (from s in db.Seasons
-                    where s.id == seasonId
-                    select new ModelObjects.Season(s.id, s.Name, s.AccountId)).SingleOrDefault();
+                    where s.Id == seasonId
+                    select new ModelObjects.Season(s.Id, s.Name, s.AccountId)).SingleOrDefault();
         }
 
         static public string GetSeasonName(long seasonId)
         {
             DB db = DBConnection.GetContext();
             return (from s in db.Seasons
-                    where s.id == seasonId
+                    where s.Id == seasonId
                     select s.Name).SingleOrDefault();
         }
 
@@ -42,7 +42,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from cs in db.CurrentSeasons
                     join s in db.Seasons on cs.AccountId equals s.AccountId
-                    where cs.SeasonId == s.id && cs.AccountId == accountId
+                    where cs.SeasonId == s.Id && cs.AccountId == accountId
                     select s.Name).SingleOrDefault();
         }
 
@@ -85,7 +85,7 @@ namespace DataAccess
                     where s.AccountId == accountId
                     select new Season()
                     {
-                        Id = s.id,
+                        Id = s.Id,
                         AccountId = s.AccountId,
                         Name = s.Name
                     }).ToList();
@@ -96,7 +96,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.Season dbSeason = (from seas in db.Seasons
-                                                   where seas.id == s.Id
+                                                   where seas.Id == s.Id
                                                    select seas).SingleOrDefault();
             if (dbSeason == null)
                 return false;
@@ -127,7 +127,7 @@ namespace DataAccess
             db.Seasons.InsertOnSubmit(newSeason);
             db.SubmitChanges();
 
-            return newSeason.id;
+            return newSeason.Id;
         }
 
         static public async Task<bool> RemoveAccountSeasons(long accountId)
@@ -160,20 +160,20 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.Season dbSeason = (from s in db.Seasons
-                                                   where id == s.id
+                                                   where id == s.Id
                                                    select s).SingleOrDefault();
             if (dbSeason == null)
                 return false;
 
             long accountId = dbSeason.AccountId;
 
-            await Leagues.RemoveLeagueSeason(dbSeason.id);
+            await Leagues.RemoveLeagueSeason(dbSeason.Id);
 
             db.Seasons.DeleteOnSubmit(dbSeason);
             db.SubmitChanges();
 
             long currentSeason = GetCurrentSeason(accountId);
-            if (currentSeason == dbSeason.id)
+            if (currentSeason == dbSeason.Id)
                 SetCurrentSeason(0, dbSeason.AccountId);
 
             // do some cleanup.

@@ -70,7 +70,7 @@ namespace DataAccess
                     where pga.AccountId == accountId
                     select new PhotoGalleryAlbum()
                     {
-                        Id = pga.id,
+                        Id = pga.Id,
                         AccountId = accountId,
                         ParentAlbumId = pga.ParentAlbumId,
                         TeamId = pga.TeamId,
@@ -85,7 +85,7 @@ namespace DataAccess
                     where pg.AccountId == accountId && (albumId == -1 || pg.AlbumId == albumId)
                     select new PhotoGalleryItem()
                     {
-                        Id = pg.id,
+                        Id = pg.Id,
                         AccountId = pg.AccountId,
                         AlbumId = pg.AlbumId,
                         Title = pg.Title,
@@ -99,13 +99,13 @@ namespace DataAccess
 
             var teamAlbumId = (from pga in db.PhotoGalleryAlbums
                                    where pga.TeamId == teamId
-                                   select pga.id).SingleOrDefault();
+                                   select pga.Id).SingleOrDefault();
 
             return (from p in db.PhotoGalleries
                     where p.AlbumId == teamAlbumId
                     select new PhotoGalleryItem()
                     {
-                        Id = p.id,
+                        Id = p.Id,
                         AccountId = p.AccountId,
                         AlbumId = p.AlbumId,
                         Caption = p.Caption,
@@ -117,10 +117,10 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
             return (from pg in db.PhotoGalleries
-                    where pg.id == id
+                    where pg.Id == id
                     select new PhotoGalleryItem()
                     {
-                        Id = pg.id,
+                        Id = pg.Id,
                         AlbumId = pg.AlbumId,
                         AccountId = pg.AccountId,
                         Title = pg.Title,
@@ -154,7 +154,7 @@ namespace DataAccess
                     db.PhotoGalleryAlbums.InsertOnSubmit(dbAlbum);
                     db.SubmitChanges();
 
-                    p.Id = dbAlbum.id;
+                    p.Id = dbAlbum.Id;
                     return true;
                 }
             }
@@ -176,7 +176,7 @@ namespace DataAccess
                     db.PhotoGalleryAlbums.InsertOnSubmit(dbAlbum);
                     db.SubmitChanges();
 
-                    p.Id = dbAlbum.id;
+                    p.Id = dbAlbum.Id;
                     return true;
                 }
             }
@@ -200,7 +200,7 @@ namespace DataAccess
                 {
                     var dbPhotoGalleryItem = new SportsManager.Model.PhotoGallery()
                     {
-                        id = p.Id,
+                        Id = p.Id,
                         AlbumId = p.AlbumId,
                         AccountId = p.AccountId,
                         Caption = p.Caption,
@@ -209,7 +209,7 @@ namespace DataAccess
                     db.PhotoGalleries.InsertOnSubmit(dbPhotoGalleryItem);
                     db.SubmitChanges();
 
-                    p.Id = dbPhotoGalleryItem.id;
+                    p.Id = dbPhotoGalleryItem.Id;
 
                     return true;
                 }
@@ -258,7 +258,7 @@ namespace DataAccess
             if (numPhotosInAlbum < maxPhotosPerAlbum)
             {
                 var dbPhotoItem = (from pg in db.PhotoGalleries
-                                   where pg.id == p.Id
+                                   where pg.Id == p.Id
                                    select pg).SingleOrDefault();
                 if (dbPhotoItem != null)
                 {
@@ -280,7 +280,7 @@ namespace DataAccess
 
             DB db = DBConnection.GetContext();
             var dbItem = (from pg in db.PhotoGalleries
-                          where pg.id == p.Id
+                          where pg.Id == p.Id
                           select pg).SingleOrDefault();
 
             if (dbItem != null)
@@ -300,7 +300,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbAlbum = (from pga in db.PhotoGalleryAlbums
-                           where pga.id == p.Id
+                           where pga.Id == p.Id
                            select pga).SingleOrDefault();
 
             // not allowing to delete a team photo album until there is a reason for it.
@@ -334,14 +334,14 @@ namespace DataAccess
             foreach (var album in dbAlbums)
             {
                 var photosInGallery = (from pg in db.PhotoGalleries
-                                       where pg.AlbumId == album.id
+                                       where pg.AlbumId == album.Id
                                        select pg);
 
                 var savedPhotos = new List<PhotoGalleryItem>();
                 foreach (var photo in photosInGallery)
                     savedPhotos.Add(new PhotoGalleryItem()
                         {
-                            Id = photo.id,
+                            Id = photo.Id,
                             AccountId = photo.AccountId
                         });
 
@@ -391,7 +391,7 @@ namespace DataAccess
                          where pga.AccountId == accountId && pga.TeamId == teamId
                          select new PhotoGalleryAlbum()
                          {
-                             Id = pga.id,
+                             Id = pga.Id,
                              TeamId = pga.TeamId,
                              Title = pga.Title,
                              AccountId = pga.AccountId,
@@ -414,7 +414,7 @@ namespace DataAccess
                         where pga.AccountId == accountId && pga.TeamId == teamId
                         select new PhotoGalleryAlbum()
                         {
-                            Id = pga.id,
+                            Id = pga.Id,
                             TeamId = pga.TeamId,
                             Title = pga.Title,
                             AccountId = pga.AccountId,

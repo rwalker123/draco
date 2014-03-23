@@ -1,5 +1,5 @@
 /*!
- * bootstrap-select v1.4.3
+ * bootstrap-select v1.4.1
  * http://silviomoreto.github.io/bootstrap-select/
  *
  * Copyright 2013 bootstrap-select
@@ -8,9 +8,9 @@
 
 !function($) {
 
-    'use strict';
+    "use strict";
 
-    $.expr[':'].icontains = function(obj, index, meta) {
+    $.expr[":"].icontains = function(obj, index, meta) {
         return $(obj).text().toUpperCase().indexOf(meta[3].toUpperCase()) >= 0;
     };
 
@@ -23,13 +23,12 @@
         this.$newElement = null;
         this.$button = null;
         this.$menu = null;
-        this.$lis = null;
 
         //Merge defaults, options and data-attributes to make our options
         this.options = $.extend({}, $.fn.selectpicker.defaults, this.$element.data(), typeof options == 'object' && options);
 
         //If we have no title yet, check the attribute 'title' (this is missed by jq as its not a data-attribute
-        if (this.options.title === null) {
+        if (this.options.title == null) {
             this.options.title = this.$element.attr('title');
         }
 
@@ -48,12 +47,9 @@
         constructor: Selectpicker,
 
         init: function() {
-            var that = this,
-                id = this.$element.attr('id');
-
             this.$element.hide();
             this.multiple = this.$element.prop('multiple');
-            this.autofocus = this.$element.prop('autofocus');
+            var id = this.$element.attr('id');
             this.$newElement = this.createView();
             this.$element.after(this.$newElement);
             this.$menu = this.$newElement.find('> .dropdown-menu');
@@ -61,6 +57,7 @@
             this.$searchbox = this.$newElement.find('input');
 
             if (id !== undefined) {
+                var that = this;
                 this.$button.attr('data-id', id);
                 $('label[for="' + id + '"]').click(function(e) {
                     e.preventDefault();
@@ -70,12 +67,16 @@
 
             this.checkDisabled();
             this.clickListener();
-            if (this.options.liveSearch) this.liveSearchListener();
+            if (this.options.liveSearch) {
+                this.liveSearchListener();
+            }
             this.render();
             this.liHeight();
             this.setStyle();
             this.setWidth();
-            if (this.options.container) this.selectPosition();
+            if (this.options.container) {
+                this.selectPosition();
+            }
             this.$menu.data('this', this);
             this.$newElement.data('this', this);
         },
@@ -83,22 +84,21 @@
         createDropdown: function() {
             //If we are multiple, then add the show-tick class by default
             var multiple = this.multiple ? ' show-tick' : '';
-            var autofocus = this.autofocus ? ' autofocus' : '';
             var header = this.options.header ? '<div class="popover-title"><button type="button" class="close" aria-hidden="true">&times;</button>' + this.options.header + '</div>' : '';
             var searchbox = this.options.liveSearch ? '<div class="bootstrap-select-searchbox"><input type="text" class="input-block-level form-control" /></div>' : '';
             var drop =
-                '<div class="btn-group bootstrap-select' + multiple + '">' +
-                    '<button type="button" class="btn dropdown-toggle selectpicker" data-toggle="dropdown"'+ autofocus +'>' +
-                        '<span class="filter-option pull-left"></span>&nbsp;' +
-                        '<span class="caret"></span>' +
-                    '</button>' +
-                    '<div class="dropdown-menu open">' +
+                "<div class='btn-group bootstrap-select" + multiple + "'>" +
+                    "<button type='button' class='btn dropdown-toggle selectpicker' data-toggle='dropdown'>" +
+                        "<span class='filter-option pull-left'></span>&nbsp;" +
+                        "<span class='caret'></span>" +
+                    "</button>" +
+                    "<div class='dropdown-menu open'>" +
                         header +
                         searchbox +
-                        '<ul class="dropdown-menu inner selectpicker" role="menu">' +
-                        '</ul>' +
-                    '</div>' +
-                '</div>';
+                        "<ul class='dropdown-menu inner selectpicker' role='menu'>" +
+                        "</ul>" +
+                    "</div>" +
+                "</div>";
 
             return $(drop);
         },
@@ -131,8 +131,8 @@
                 var $this = $(this);
 
                 //Get the class and text for the option
-                var optionClass = $this.attr('class') || '';
-                var inline = $this.attr('style') || '';
+                var optionClass = $this.attr("class") || '';
+                var inline = $this.attr("style") || '';
                 var text =  $this.data('content') ? $this.data('content') : $this.html();
                 var subtext = $this.data('subtext') !== undefined ? '<small class="muted text-muted">' + $this.data('subtext') + '</small>' : '';
                 var icon = $this.data('icon') !== undefined ? '<i class="' + that.options.iconBase + ' ' + $this.data('icon') + '"></i> ' : '';
@@ -148,26 +148,26 @@
                 if (that.options.hideDisabled && ($this.is(':disabled') || $this.parent().is(':disabled'))) {
                     _liA.push('<a style="min-height: 0; padding: 0"></a>');
                 } else if ($this.parent().is('optgroup') && $this.data('divider') !== true) {
-                    if ($this.index() === 0) {
+                    if ($this.index() == 0) {
                         //Get the opt group label
                         var label = $this.parent().attr('label');
                         var labelSubtext = $this.parent().data('subtext') !== undefined ? '<small class="muted text-muted">'+$this.parent().data('subtext')+'</small>' : '';
                         var labelIcon = $this.parent().data('icon') ? '<i class="'+$this.parent().data('icon')+'"></i> ' : '';
                         label = labelIcon + '<span class="text">' + label + labelSubtext + '</span>';
 
-                        if ($this[0].index !== 0) {
+                        if ($this[0].index != 0) {
                             _liA.push(
                                 '<div class="div-contain"><div class="divider"></div></div>'+
                                 '<dt>'+label+'</dt>'+
-                                that.createA(text, 'opt ' + optionClass, inline )
+                                that.createA(text, "opt " + optionClass, inline )
                                 );
                         } else {
                             _liA.push(
                                 '<dt>'+label+'</dt>'+
-                                that.createA(text, 'opt ' + optionClass, inline ));
+                                that.createA(text, "opt " + optionClass, inline ));
                         }
                     } else {
-                         _liA.push(that.createA(text, 'opt ' + optionClass, inline ));
+                         _liA.push(that.createA(text, "opt " + optionClass, inline ));
                     }
                 } else if ($this.data('divider') === true) {
                     _liA.push('<div class="div-contain"><div class="divider"></div></div>');
@@ -179,11 +179,11 @@
             });
 
             $.each(_liA, function(i, item) {
-                _liHtml += '<li rel=' + i + '>' + item + '</li>';
+                _liHtml += "<li rel=" + i + ">" + item + "</li>";
             });
 
             //If we are not multiple, and we dont have a selected item, and we dont have a title, select the first element so something is set in the button
-            if (!this.multiple && this.$element.find('option:selected').length===0 && !this.options.title) {
+            if (!this.multiple && this.$element.find('option:selected').length==0 && !this.options.title) {
                 this.$element.find('option').eq(0).prop('selected', true).attr('selected', 'selected');
             }
 
@@ -197,16 +197,14 @@
                  '</a>';
         },
 
-        render: function(updateLi) {
+        render: function() {
             var that = this;
 
             //Update the LI to match the SELECT
-            if (updateLi !== false) {
-                this.$element.find('option').each(function(index) {
-                   that.setDisabled(index, $(this).is(':disabled') || $(this).parent().is(':disabled') );
-                   that.setSelected(index, $(this).is(':selected') );
-                });
-            }
+            this.$element.find('option').each(function(index) {
+               that.setDisabled(index, $(this).is(':disabled') || $(this).parent().is(':disabled') );
+               that.setSelected(index, $(this).is(':selected') );
+            });
 
             this.tabIndex();
 
@@ -221,7 +219,7 @@
                 }
                 if ($this.data('content') && that.options.showContent) {
                     return $this.data('content');
-                } else if ($this.attr('title') !== undefined) {
+                } else if ($this.attr('title') != undefined) {
                     return $this.attr('title');
                 } else {
                     return icon + $this.html() + subtext;
@@ -234,7 +232,7 @@
 
             //If this is multi select, and the selectText type is count, the show 1 of 2 selected etc..
             if (this.multiple && this.options.selectedTextFormat.indexOf('count') > -1) {
-                var max = this.options.selectedTextFormat.split('>');
+                var max = this.options.selectedTextFormat.split(">");
                 var notDisabled = this.options.hideDisabled ? ':not([disabled])' : '';
                 if ( (max.length>1 && selectedItems.length > max[1]) || (max.length==1 && selectedItems.length>=2)) {
                     title = this.options.countSelectedText.replace('{0}', selectedItems.length).replace('{1}', this.$element.find('option:not([data-divider="true"]):not([data-hidden="true"])'+notDisabled).length);
@@ -243,7 +241,7 @@
 
             //If we dont have a title, then use the default, or if nothing is set at all, use the not selected text
             if (!title) {
-                title = this.options.title !== undefined ? this.options.title : this.options.noneSelectedText;
+                title = this.options.title != undefined ? this.options.title : this.options.noneSelectedText;
             }
 
             this.$button.attr('title', $.trim(title));
@@ -268,7 +266,7 @@
         },
 
         liHeight: function() {
-            var $selectClone = this.$menu.parent().clone().find('> .dropdown-toggle').prop('autofocus', false).end().appendTo('body'),
+            var $selectClone = this.$menu.parent().clone().appendTo('body'),
                 $menuClone = $selectClone.addClass('open').find('> .dropdown-menu'),
                 liHeight = $menuClone.find('li > a').outerHeight(),
                 headerHeight = this.options.header ? $menuClone.find('.popover-title').outerHeight() : 0,
@@ -331,8 +329,8 @@
                 $(window).resize(getSize);
                 $(window).scroll(getSize);
             } else if (this.options.size && this.options.size != 'auto' && menu.find('li'+notDisabled).length > this.options.size) {
-                var optIndex = menu.find('li'+notDisabled+' > *').filter(':not(.div-contain)').slice(0,this.options.size).last().parent().index();
-                var divLength = menu.find('li').slice(0,optIndex + 1).find('.div-contain').length;
+                var optIndex = menu.find("li"+notDisabled+" > *").filter(':not(.div-contain)').slice(0,this.options.size).last().parent().index();
+                var divLength = menu.find("li").slice(0,optIndex + 1).find('.div-contain').length;
                 menuHeight = liHeight*this.options.size + divLength*divHeight + menuPadding;
                 if (that.options.dropupAuto) {
                     this.$newElement.toggleClass('dropup', (selectOffsetTop > selectOffsetBot) && (menuHeight < menu.height()));
@@ -373,7 +371,7 @@
 
         selectPosition: function() {
             var that = this,
-                drop = '<div />',
+                drop = "<div />",
                 $drop = $(drop),
                 pos,
                 actualHeight,
@@ -408,7 +406,6 @@
         },
 
         refresh: function() {
-            this.$lis = null;
             this.reloadLi();
             this.render();
             this.setWidth();
@@ -426,16 +423,14 @@
         },
 
         setSelected: function(index, selected) {
-            if (this.$lis == null) this.$lis = this.$menu.find('li');
-            $(this.$lis[index]).toggleClass('selected', selected);
+            this.$menu.find('li').eq(index).toggleClass('selected', selected);
         },
 
         setDisabled: function(index, disabled) {
-            if (this.$lis == null) this.$lis = this.$menu.find('li');
             if (disabled) {
-                $(this.$lis[index]).addClass('disabled').find('a').attr('href', '#').attr('tabindex', -1);
+                this.$menu.find('li').eq(index).addClass('disabled').find('a').attr('href', '#').attr('tabindex', -1);
             } else {
-                $(this.$lis[index]).removeClass('disabled').find('a').removeAttr('href').attr('tabindex', 0);
+                this.$menu.find('li').eq(index).removeClass('disabled').find('a').removeAttr('href').attr('tabindex', 0);
             }
         },
 
@@ -465,7 +460,7 @@
 
         tabIndex: function() {
             if (this.$element.is('[tabindex]')) {
-                this.$element.data('tabindex', this.$element.attr('tabindex'));
+                this.$element.data('tabindex', this.$element.attr("tabindex"));
                 this.$button.attr('tabindex', this.$element.data('tabindex'));
             }
         },
@@ -500,21 +495,19 @@
 
                 //Dont run if we have been disabled
                 if (!that.isDisabled() && !$(this).parent().hasClass('disabled')) {
-                    var $options = that.$element.find('option'),
-                        $option = $options.eq(clickedIndex),
-                        state = $option.prop('selected');
+                    var $options = that.$element.find('option');
+                    var $option = $options.eq(clickedIndex);
 
                     //Deselect all others if not multi select box
                     if (!that.multiple) {
                         $options.prop('selected', false);
                         $option.prop('selected', true);
-                        that.$menu.find('.selected').removeClass('selected');
-                        that.setSelected(clickedIndex, true);
                     }
                     //Else toggle the one we have chosen if we are multi select.
                     else {
+                        var state = $option.prop('selected');
+
                         $option.prop('selected', !state);
-                        that.setSelected(clickedIndex, !state);
                     }
 
                     if (!that.multiple) {
@@ -551,7 +544,7 @@
             });
 
             this.$element.change(function() {
-                that.render(false);
+                that.render();
             });
         },
 
@@ -578,7 +571,7 @@
                     
                     if (!that.$menu.find('li').filter(':visible:not(.no-results)').length) {
                         if (!!no_results.parent().length) no_results.remove();
-                        no_results.html(that.options.noneResultsText + ' "'+ that.$searchbox.val() + '"').show();
+                        no_results.html('No results match "'+ that.$searchbox.val() + '"').show();
                         that.$menu.find('li').last().after(no_results);
                     } else if (!!no_results.parent().length) {
                         no_results.remove();
@@ -606,7 +599,7 @@
 
         val: function(value) {
 
-            if (value !== undefined) {
+            if (value != undefined) {
                 this.$element.val( value );
 
                 this.$element.change();
@@ -640,10 +633,10 @@
                 prevIndex,
                 isActive,
                 keyCodeMap = {
-                    32:' ', 48:'0', 49:'1', 50:'2', 51:'3', 52:'4', 53:'5', 54:'6', 55:'7', 56:'8', 57:'9', 59:';',
-                    65:'a', 66:'b', 67:'c', 68:'d', 69:'e', 70:'f', 71:'g', 72:'h', 73:'i', 74:'j', 75:'k', 76:'l',
-                    77:'m', 78:'n', 79:'o', 80:'p', 81:'q', 82:'r', 83:'s', 84:'t', 85:'u', 86:'v', 87:'w', 88:'x',
-                    89:'y', 90:'z', 96:'0', 97:'1', 98:'2', 99:'3', 100:'4', 101:'5', 102:'6', 103:'7', 104:'8', 105:'9'
+                    32:" ", 48:"0", 49:"1", 50:"2", 51:"3", 52:"4", 53:"5", 54:"6", 55:"7", 56:"8", 57:"9", 59:";",
+                    65:"a", 66:"b", 67:"c", 68:"d", 69:"e", 70:"f", 71:"g", 72:"h", 73:"i", 74:"j", 75:"k", 76:"l",
+                    77:"m", 78:"n", 79:"o", 80:"p", 81:"q", 82:"r", 83:"s", 84:"t", 85:"u", 86:"v", 87:"w", 88:"x", 
+                    89:"y", 90:"z", 96:"0", 97:"1", 98:"2", 99:"3", 100:"4", 101:"5", 102:"6", 103:"7", 104:"8", 105:"9"
                 };
 
             $this = $(this);
@@ -661,23 +654,16 @@
             $items = $('[role=menu] li:not(.divider) a', $parent);
             
             isActive = that.$menu.parent().hasClass('open');
-
-            if (!isActive && /([0-9]|[A-z])/.test(String.fromCharCode(e.keyCode))) {
-                that.setSize();
-                that.$menu.parent().addClass('open');
-                isActive = that.$menu.parent().hasClass('open');
-                that.$searchbox.focus();
-            }
             
             if (that.options.liveSearch) {
-                if (/(^9$|27)/.test(e.keyCode) && isActive && that.$menu.find('.active').length === 0) {
+                if (/(^9$|27)/.test(e.keyCode) && isActive && that.$menu.find('.active').length == 0) {
                     e.preventDefault();
                     that.$menu.parent().removeClass('open');
                     that.$button.focus();
                 }
                 $items = $('[role=menu] li:not(.divider):visible', $parent);
                 if (!$this.val() && !/(38|40)/.test(e.keyCode)) {
-                    if ($items.filter('.active').length === 0) {
+                    if ($items.filter('.active').length == 0) {
                         $items = that.$newElement.find('li').filter(':icontains(' + keyCodeMap[e.keyCode] + ')');
                     }
                 }
@@ -686,6 +672,10 @@
             if (!$items.length) return;
 
             if (/(38|40)/.test(e.keyCode)) {
+                
+                if (!isActive) {
+                    that.$menu.parent().addClass('open');
+                }
                 
                 index = $items.index($items.filter(':focus'));
                 first = $items.parent(':not(.disabled):visible').first().index();
@@ -740,9 +730,7 @@
                 
             } else if (!$this.is('input')) {
 
-                var keyIndex = [],
-                    count,
-                    prevKey;
+                var keyIndex = [];
 
                 $items.each(function() {
                     if ($(this).parent().is(':not(.disabled)')) {
@@ -752,18 +740,17 @@
                     }
                 });
 
-                count = $(document).data('keycount');
+                var count = $(document).data('keycount');
                 count++;
                 $(document).data('keycount',count);
 
-                prevKey = $.trim($(':focus').text().toLowerCase()).substring(0,1);
+                var prevKey = $.trim($(':focus').text().toLowerCase()).substring(0,1);
 
                 if (prevKey != keyCodeMap[e.keyCode]) {
                     count = 1;
-                    $(document).data('keycount', count);
+                    $(document).data('keycount',count);
                 } else if (count >= keyIndex.length) {
-                    $(document).data('keycount', 0);
-                    if (count > keyIndex.length) count = 1;
+                    $(document).data('keycount',0);
                 }
 
                 $items.eq(keyIndex[count - 1]).focus();
@@ -834,7 +821,7 @@
             }
         });
 
-        if (value !== undefined) {
+        if (value != undefined) {
             return value;
         } else {
             return chain;
@@ -847,7 +834,6 @@
         title: null,
         selectedTextFormat : 'values',
         noneSelectedText : 'Nothing selected',
-        noneResultsText : 'No results match',
         countSelectedText: '{0} of {1} selected',
         width: false,
         container: false,
@@ -865,7 +851,6 @@
 
     $(document)
         .data('keycount', 0)
-        .on('keydown', '.bootstrap-select [data-toggle=dropdown], .bootstrap-select [role=menu], .bootstrap-select-searchbox input', Selectpicker.prototype.keydown)
-        .on('focusin.modal', '.bootstrap-select [data-toggle=dropdown], .bootstrap-select [role=menu], .bootstrap-select-searchbox input', function (e) { e.stopPropagation(); });
+        .on('keydown', '.bootstrap-select [data-toggle=dropdown], .bootstrap-select [role=menu], .bootstrap-select-searchbox input', Selectpicker.prototype.keydown);
 
 }(window.jQuery);

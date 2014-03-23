@@ -125,6 +125,15 @@
             </div>
         }
         
+        @if (Model.ShowPhotoGallery)
+        {
+            <div class="row">
+                <div class="col-md-12">
+                    @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
+                </div>
+            </div>
+        }
+        
         @if (Model.ShowWelcomeMessages)
         { 
             <div class="row">
@@ -143,15 +152,6 @@
             </div>
         }
         
-        @if (Model.ShowPhotoGallery)
-        {
-            <div class="row">
-                <div class="col-md-12">
-                    @{Html.RenderPartial("PhotoGallery", new SportsManager.ViewModels.PhotoGalleryViewModel(Model.Controller, Model.AccountId));}
-                </div>
-            </div>
-        }
-
     @if (Model.VideosEnabled && Model.ShowVideos)
     {
         <div class="row">
@@ -306,8 +306,12 @@ else
     <script type="text/javascript" src="~/Scripts/announcement.js"></script>
 }
 
+@if (Model.ShowScoreboard)
+{
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
-    <script type="text/javascript" src="~/Scripts/jquery.maskedinput-1.3.1.min.js"></script>
+}
+
+<script type="text/javascript" src="~/Scripts/jquery.maskedinput-1.3.1.min.js"></script>
 
 @if (Model.ShowHandouts)
 {
@@ -360,8 +364,13 @@ else
             </text>
         }
     
-        scoreboardData = new ScoreboardClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            
+        @if (Model.ShowScoreboard)
+        { 
+            <text>
+            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+                
         @if (Model.ShowHandouts)
         { 
             <text>

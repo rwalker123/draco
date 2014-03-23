@@ -34,7 +34,7 @@ namespace DataAccess.Golf
                 Globals.LogException(ex);
             }
 
-            return gs.id;
+            return gs.Id;
         }
 
         public static bool ModifyGolfStat(GolfStatDef gs)
@@ -44,7 +44,7 @@ namespace DataAccess.Golf
                 DB db = DBConnection.GetContext();
 
                 GolfStatDef cur = (from gsd in db.GolfStatDefs
-                                   where gsd.id == gs.id
+                                   where gsd.Id == gs.Id
                                    select gsd).FirstOrDefault();
 
                 cur.Name = gs.Name;
@@ -75,7 +75,7 @@ namespace DataAccess.Golf
 
                 db.GolfStatDefs.DeleteOnSubmit(
                     (from gsd in db.GolfStatDefs
-                    where gsd.id == gs.id
+                    where gsd.Id == gs.Id
                     select gsd).FirstOrDefault()
                     );
                 db.SubmitChanges();
@@ -93,7 +93,7 @@ namespace DataAccess.Golf
             DB db = DBConnection.GetContext();
 
             return (from gsc in db.GolferStatsConfigurations
-                    join gsd in db.GolfStatDefs on gsc.StatId equals gsd.id
+                    join gsd in db.GolfStatDefs on gsc.StatId equals gsd.Id
                     into j1
                     from gsc_gsd in j1
                     where gsc.ContactId == contactId
@@ -106,7 +106,7 @@ namespace DataAccess.Golf
 
             return (from gsd in db.GolfStatDefs
                     select gsd).Except(from gsc in db.GolferStatsConfigurations
-                                       join gsd in db.GolfStatDefs on gsc.StatId equals gsd.id
+                                       join gsd in db.GolfStatDefs on gsc.StatId equals gsd.Id
                                        into j1
                                        from gsc_gsd in j1
                                        where gsc.ContactId == contactId
@@ -123,7 +123,7 @@ namespace DataAccess.Golf
 
                 int recCount = (from gsc in db.GolferStatsConfigurations
                                 where gsc.ContactId == contactId && gsc.StatId == statId
-                                select gsc.id).Count();
+                                select gsc.Id).Count();
 
                 if (recCount == 0)
                 {
@@ -135,7 +135,7 @@ namespace DataAccess.Golf
 
                     db.SubmitChanges();
 
-                    newId = newConfig.id;
+                    newId = newConfig.Id;
                 }
             }
             catch (Exception ex)

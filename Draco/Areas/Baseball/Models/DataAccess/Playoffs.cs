@@ -799,12 +799,12 @@ namespace DataAccess
 
                         dr.Close();
 
-                        long gameId = Schedule.AddGameGiveId(game);
-                        if (gameId > 0)
+                        var newGame = Schedule.AddGame(game);
+                        if (newGame.Id > 0)
                         {
                             myCommand = new SqlCommand("dbo.UpdatePlayoffGameId", myConnection);
                             myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
+                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = newGame.Id;
                             myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffGameId;
                             myCommand.Prepare();
 

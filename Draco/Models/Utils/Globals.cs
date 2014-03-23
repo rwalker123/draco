@@ -213,23 +213,23 @@ static public class Globals
     public static UserManager<ApplicationUser> GetUserManager()
     {
         var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()));
-        userManager.UserValidator = new EmailUserValidator<ApplicationUser>(userManager);
+        userManager.UserValidator = new EmailUserValidator(userManager);
 
         return userManager;
     }
 }
 
-public class EmailUserValidator<TUser> : IIdentityValidator<TUser> where TUser : global::Microsoft.AspNet.Identity.IUser
+public class EmailUserValidator : IIdentityValidator<ApplicationUser>
 {
     private static readonly Regex EmailRegex = new Regex(@"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    UserManager<TUser> _manager;
+    UserManager<ApplicationUser> _manager;
 
-    public EmailUserValidator(UserManager<TUser> manager)
+    public EmailUserValidator(UserManager<ApplicationUser> manager)
     {
         _manager = manager;
     }
 
-    public async Task<IdentityResult> ValidateAsync(TUser item)
+    public async Task<IdentityResult> ValidateAsync(ApplicationUser item)
     {
         var errors = new List<string>();
         if (!EmailRegex.IsMatch(item.UserName))

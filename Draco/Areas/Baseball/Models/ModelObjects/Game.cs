@@ -27,7 +27,7 @@ namespace ModelObjects
 		{
 		}
 
-		public Game(long leagueId, long gameId, DateTime gameDate, DateTime gameTime,
+		public Game(long leagueId, long gameId, DateTime gameDate, 
 			long hTeamId, long vTeamId, int hScore, int vScore, string comment,
 			long fieldId, int gameStatus, long gameType,
 			long umpire1, long umpire2, long umpire3, long umpire4)
@@ -35,7 +35,6 @@ namespace ModelObjects
 			Id = gameId;
 			LeagueId = leagueId;
 			GameDate = gameDate; // .ToString("d");
-			GameTime = gameTime; // .ToString("t");
 			HomeTeamId = hTeamId;
 			AwayTeamId = vTeamId;
 			AwayScore = vScore;
@@ -54,7 +53,6 @@ namespace ModelObjects
 		public long Id { get; set; }
 		public long LeagueId { get; set; }
 		public DateTime GameDate { get; set; }
-		public DateTime GameTime { get; set; }
 		public long HomeTeamId { get; set; }
 		public long AwayTeamId { get; set; }
 		public int HomeScore { get; set; }
@@ -67,6 +65,12 @@ namespace ModelObjects
 		public long Umpire2 { get; set; }
 		public long Umpire3 { get; set; }
 		public long Umpire4 { get; set; }
+        public bool HasGameRecap { get; set; }
+
+        public string HomeTeamName { get; set; }
+        public string AwayTeamName { get; set; }
+        public string FieldName { get; set; }
+        public string LeagueName { get; set; }
 
 		public string GameStatusText
 		{
@@ -114,11 +118,6 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
-		}
-
-		public string DateFirstToString
-		{
-			get { return GameDate.ToShortDateString() + " " + GameTime.ToShortTimeString() + " " + DataAccess.Teams.GetTeamName(AwayTeamId) + " @ " + DataAccess.Teams.GetTeamName(HomeTeamId); }
 		}
 
 		public long GameWinner

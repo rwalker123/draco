@@ -13,9 +13,29 @@ namespace SportsManager.Baseball.ViewModels
             SeasonId = seasonId;
 
             Leagues = DataAccess.Leagues.GetLeagues(seasonId);
+            Fields = DataAccess.Fields.GetFields(accountId);
+            var umpires = DataAccess.Umpires.GetUmpires(accountId);
+            Umpires = new List<Contact>();
+            foreach(var u in umpires)
+            {
+                ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
+            }
         }
 
         public long SeasonId { get; private set; }
+
+        public IEnumerable<Contact> Umpires
+        {
+            get;
+            private set;
+        }
+
+
+        public IEnumerable<Field> Fields
+        {
+            get;
+            private set;
+        }
 
         public IEnumerable<League> Leagues
         {

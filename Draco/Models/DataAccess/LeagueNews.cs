@@ -17,7 +17,7 @@ namespace DataAccess
             //	SELECT * FROM LeagueNews WHERE Id = @id
             DB db = DBConnection.GetContext();
             return (from ln in db.LeagueNews
-                    where ln.id == newsId
+                    where ln.Id == newsId
                     select ln).SingleOrDefault();
         }
 
@@ -38,7 +38,7 @@ namespace DataAccess
                     orderby ln.Date descending
                     select new LeagueNewsItem()
                     {
-                        Id = ln.id,
+                        Id = ln.Id,
                         AccountId = accountId,
                         Date = ln.Date,
                         SpecialAnnounce = ln.SpecialAnnounce,
@@ -55,7 +55,7 @@ namespace DataAccess
                     orderby ln.Date descending
                     select new LeagueNewsItem()
                     {
-                        Id = ln.id,
+                        Id = ln.Id,
                         AccountId = accountId,
                         Date = ln.Date,
                         SpecialAnnounce = ln.SpecialAnnounce,
@@ -112,7 +112,7 @@ namespace DataAccess
             db.LeagueNews.InsertOnSubmit(dbLeagueNews);
             db.SubmitChanges();
 
-            newsItem.Id = dbLeagueNews.id;
+            newsItem.Id = dbLeagueNews.Id;
 		}
 
 		static public bool RemoveNews(long newsId)

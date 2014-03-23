@@ -15,7 +15,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             var dbUmp = (from u in db.LeagueUmpires
-                         where u.id == id
+                         where u.Id == id
                          select u).SingleOrDefault();
             if (dbUmp != null)
             {
@@ -36,7 +36,7 @@ namespace DataAccess
                     orderby u.Contact.LastName, u.Contact.FirstName, u.Contact.MiddleName
                     select new Umpire()
                     {
-                        Id = u.id,
+                        Id = u.Id,
                         AccountId = accountId,
                         ContactId = u.ContactId,
                         FirstName = u.Contact.FirstName,
@@ -50,10 +50,10 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             return (from u in db.LeagueUmpires
-                    where u.id == id
+                    where u.Id == id
                     select new Umpire()
                     {
-                        Id = u.id,
+                        Id = u.Id,
                         AccountId = u.AccountId,
                         ContactId = u.ContactId,
                         FirstName = u.Contact.FirstName,
@@ -76,7 +76,7 @@ namespace DataAccess
             db.LeagueUmpires.InsertOnSubmit(dbUmp);
             db.SubmitChanges();
 
-            return dbUmp.id;
+            return dbUmp.Id;
         }
 
 

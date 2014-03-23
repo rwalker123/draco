@@ -30,8 +30,8 @@ namespace DataAccess.Golf
             DB db = DBConnection.GetContext();
 
 			var playersOnTeam = (from ls in db.LeagueSeasons
-								 join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
-								 join gr in db.GolfRosters on ts.id equals gr.TeamSeasonId
+								 join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+								 join gr in db.GolfRosters on ts.Id equals gr.TeamSeasonId
 								 where gr.IsActive == true && ls.SeasonId == seasonId
 								 select gr.ContactId).Distinct();
 
@@ -50,9 +50,9 @@ namespace DataAccess.Golf
             DB db = DBConnection.GetContext();
 
 			var playersOnTeam = (from ls in db.LeagueSeasons
-								 join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
-								 join gr in db.GolfRosters on ts.id equals gr.TeamSeasonId
-								 where ls.id == flightId && gr.IsActive == true
+								 join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+								 join gr in db.GolfRosters on ts.Id equals gr.TeamSeasonId
+								 where ls.Id == flightId && gr.IsActive == true
 								 select gr.ContactId).Distinct();
 
 			// if you aren't on a team, you can be signed.
@@ -66,7 +66,7 @@ namespace DataAccess.Golf
             DB db = DBConnection.GetContext();
 
 			return (from ts in db.TeamsSeasons
-					join gr in db.GolfRosters on ts.id equals gr.TeamSeasonId
+					join gr in db.GolfRosters on ts.Id equals gr.TeamSeasonId
 					where ts.LeagueSeasonId == flightId && gr.IsActive == true
 					select gr);
 		}

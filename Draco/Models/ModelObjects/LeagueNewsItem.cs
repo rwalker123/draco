@@ -26,7 +26,7 @@ namespace ModelObjects
 
         public void CopyTo(SportsManager.Model.LeagueNew copy)
         {
-            copy.id = Id;
+            copy.Id = Id;
             copy.AccountId = AccountId;
             copy.Date = Date;
             copy.Title = Title;

@@ -18,7 +18,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from fields in db.AvailableFields
-                    where fields.id == fieldId
+                    where fields.Id == fieldId
                     select fields.Name).SingleOrDefault();
         }
 
@@ -91,7 +91,7 @@ namespace DataAccess
                     orderby f.Name
                     select new Field()
                     {
-                        Id = f.id,
+                        Id = f.Id,
                         AccountId = accountId,
                         Address = f.Address,
                         City = f.City,

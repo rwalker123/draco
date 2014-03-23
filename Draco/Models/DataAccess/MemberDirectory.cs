@@ -28,13 +28,13 @@ namespace DataAccess
 			return (from mb in db.MemberBusinesses
 					join c in db.Contacts on mb.ContactId equals c.Id
 					join r in db.Rosters on c.Id equals r.ContactId
-					join rs in db.RosterSeasons on r.id equals rs.PlayerId
-					join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.id
-					join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
+					join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+					join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+					join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
 					where ls.SeasonId == seasonId
 					orderby mb.Name
 					select new Sponsor(
-						mb.id,
+						mb.Id,
 						mb.Name,
 						mb.StreetAddress,
 						mb.CityStateZip,

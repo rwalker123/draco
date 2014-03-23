@@ -116,7 +116,7 @@ namespace DataAccess
                     where wa.AccountId == accountId && wa.WorkoutDate >= now
                     select new WorkoutAnnouncement()
                     {
-                        Id = wa.id,
+                        Id = wa.Id,
                         AccountId = accountId,
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
@@ -131,10 +131,10 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from wa in db.WorkoutAnnouncements
-                 join wr in db.WorkoutRegistrations on wa.id equals wr.WorkoutId into regsInWorkout
+                 join wr in db.WorkoutRegistrations on wa.Id equals wr.WorkoutId into regsInWorkout
                     select new WorkoutAnnouncement()
                     {
-                        Id = wa.id,
+                        Id = wa.Id,
                         AccountId = accountId,
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
@@ -153,7 +153,7 @@ namespace DataAccess
                     where wa.AccountId == accountId
                     select new WorkoutAnnouncement()
                     {
-                        Id = wa.id,
+                        Id = wa.Id,
                         AccountId = accountId,
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
@@ -197,7 +197,7 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
             var dbWorkout = (from wa in db.WorkoutAnnouncements
-                             where wa.id == w.Id
+                             where wa.Id == w.Id
                              select wa).SingleOrDefault();
             if (dbWorkout != null)
             {
@@ -231,7 +231,7 @@ namespace DataAccess
             db.WorkoutAnnouncements.InsertOnSubmit(dbWorkout);
             db.SubmitChanges();
 
-            w.Id = dbWorkout.id;
+            w.Id = dbWorkout.Id;
 
             return true;
 		}
@@ -240,7 +240,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             var dbWorkout = (from w in db.WorkoutAnnouncements
-                             where w.id == id
+                             where w.Id == id
                              select w).SingleOrDefault();
 
             if (dbWorkout != null)

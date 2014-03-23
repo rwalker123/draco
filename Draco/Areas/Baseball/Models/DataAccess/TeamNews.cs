@@ -14,10 +14,10 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from n in db.TeamNews
-                    where n.id == newsId
+                    where n.Id == newsId
                     select new LeagueNewsItem()
                     {
-                        Id = n.id,
+                        Id = n.Id,
                         AccountId = n.TeamId,
                         Date = n.Date,
                         SpecialAnnounce = n.SpecialAnnounce,
@@ -32,11 +32,11 @@ namespace DataAccess
 
             return (from tn in db.TeamNews
                     join ts in db.TeamsSeasons on tn.TeamId equals ts.TeamId
-                    where ts.id == teamSeasonId
+                    where ts.Id == teamSeasonId
                     orderby tn.Date descending
                     select new LeagueNewsItem()
                     {
-                        Id = tn.id,
+                        Id = tn.Id,
                         Title = tn.Title,
                         Text = tn.Text,
                         Date = tn.Date,
@@ -50,7 +50,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbItem = (from n in db.TeamNews
-                          where n.id == newsItem.Id
+                          where n.Id == newsItem.Id
                           select n).SingleOrDefault();
             if (dbItem != null)
             {
@@ -89,7 +89,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbItem = (from n in db.TeamNews
-                          where n.id == newsId
+                          where n.Id == newsId
                           select n).SingleOrDefault();
             if (dbItem == null)
                 return false;

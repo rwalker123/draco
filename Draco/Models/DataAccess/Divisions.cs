@@ -45,10 +45,10 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             return (from ds in db.DivisionSeasons
-                    join dd in db.DivisionDefs on ds.DivisionId equals dd.id
+                    join dd in db.DivisionDefs on ds.DivisionId equals dd.Id
                     where ds.LeagueSeasonId == leagueId
                     orderby ds.Priority ascending, dd.Name ascending
-                    select new Division(ds.id, leagueId, dd.Name, ds.Priority, dd.AccountId));
+                    select new Division(ds.Id, leagueId, dd.Name, ds.Priority, dd.AccountId));
         }
 
 		static public bool ModifyDivision(Division division)
@@ -96,7 +96,7 @@ namespace DataAccess
 
             var divisionSeason = new SportsManager.Model.DivisionSeason()
             {
-                DivisionId = divisionDef.id,
+                DivisionId = divisionDef.Id,
                 LeagueSeasonId = d.LeagueId,
                 Priority = d.Priority
             };
@@ -104,7 +104,7 @@ namespace DataAccess
             db.DivisionSeasons.InsertOnSubmit(divisionSeason);
             db.SubmitChanges();
 
-            d.Id = divisionSeason.id;
+            d.Id = divisionSeason.Id;
 
             return d.Id;
 		}
@@ -151,7 +151,7 @@ namespace DataAccess
 									select ds.DivisionId).Distinct();
 
 			var unusedDivisions = (from dd in db.DivisionDefs
-								   where dd.AccountId == accountId && !accountDivisions.Contains(dd.id)
+								   where dd.AccountId == accountId && !accountDivisions.Contains(dd.Id)
 								   select dd);
 
 			db.DivisionDefs.DeleteAllOnSubmit(unusedDivisions);

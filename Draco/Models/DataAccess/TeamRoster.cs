@@ -64,20 +64,20 @@ namespace DataAccess
 			if (fromRoster)
 			{
 				return (from r in db.Rosters
-						where r.id == playerId
+						where r.Id == playerId
 						select new ContactName()
 						{
 							Id = r.Contact.Id,
 							FirstName = r.Contact.FirstName,
 							LastName = r.Contact.LastName,
 							MiddleName = r.Contact.MiddleName,
-							PhotoURL = Contact.GetPhotoURL(r.id)
+							PhotoURL = Contact.GetPhotoURL(r.Id)
 						}).FirstOrDefault();
 			}
 			else
 			{
 				return (from rs in db.RosterSeasons
-						where rs.id == playerId
+						where rs.Id == playerId
 						select new ContactName()
 						{
 							Id = rs.Roster.Contact.Id,
@@ -95,10 +95,10 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from r in db.Rosters
-                    where r.id == playerId
+                    where r.Id == playerId
                     select new Player()
                     {
-                        Id = r.id,
+                        Id = r.Id,
                         AccountId = r.AccountId,
                         Contact = new Contact() { Id = r.ContactId },
                         SubmittedDriversLicense = r.SubmittedDriversLicense
@@ -110,22 +110,22 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
 			long seasonId = (from rs in db.RosterSeasons
-							 join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.id
-							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
-                             where rs.id == playerSeasonId
+							 join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                             where rs.Id == playerSeasonId
 							 select ls.SeasonId).SingleOrDefault();
 
 
 			long rosterId = (from rs in db.RosterSeasons
-							 where rs.id == playerSeasonId
+							 where rs.Id == playerSeasonId
 							 select rs.PlayerId).SingleOrDefault();
 
 			return (from rs in db.RosterSeasons
-					join r in db.Rosters on rs.PlayerId equals r.id
-					where rs.id == playerSeasonId
+					join r in db.Rosters on rs.PlayerId equals r.Id
+					where rs.Id == playerSeasonId
 					select new Player()
 					{
-						Id = rs.id,
+						Id = rs.Id,
 						TeamId = rs.TeamSeasonId,
 						PlayerNumber = rs.PlayerNumber,
 						SubmittedWaiver = rs.SubmittedWaiver,
@@ -142,18 +142,18 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
 			long seasonId = (from ts in db.TeamsSeasons
-							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
-							 where ts.id == teamSeasonId
+							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+							 where ts.Id == teamSeasonId
 							 select ls.SeasonId).SingleOrDefault();
 
 			return (from rs in db.RosterSeasons
-					join r in db.Rosters on rs.PlayerId equals r.id
+					join r in db.Rosters on rs.PlayerId equals r.Id
 					join c in db.Contacts on r.ContactId equals c.Id
 					where rs.TeamSeasonId == teamSeasonId && rs.Inactive == false
 					orderby c.LastName, c.FirstName, c.MiddleName
 					select new Player()
 					{
-						Id = rs.id,
+						Id = rs.Id,
 						TeamId = rs.TeamSeasonId,
 						PlayerNumber = rs.PlayerNumber,
 						SubmittedWaiver = rs.SubmittedWaiver,
@@ -170,16 +170,16 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
 			long seasonId = (from ts in db.TeamsSeasons
-							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.id
-							 where ts.id == teamSeasonId
+							 join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+							 where ts.Id == teamSeasonId
 							 select ls.SeasonId).SingleOrDefault();
 
 			return (from rs in db.RosterSeasons
-					join r in db.Rosters on rs.PlayerId equals r.id
+					join r in db.Rosters on rs.PlayerId equals r.Id
 					where rs.TeamSeasonId == teamSeasonId
 					select new Player()
 					{
-						Id = rs.id,
+						Id = rs.Id,
 						TeamId = rs.TeamSeasonId,
 						PlayerNumber = rs.PlayerNumber,
 						Contact = new Contact(r.Contact.Id, r.Contact.LastName, r.Contact.FirstName, r.Contact.MiddleName, r.Contact.Phone1, r.Contact.Phone2, r.Contact.Phone3, null, r.Contact.CreatorAccountId, r.Contact.StreetAddress, r.Contact.City, r.Contact.State, r.Contact.Zip, r.Contact.FirstYear.GetValueOrDefault(), r.Contact.DateOfBirth, r.Contact.UserId),
@@ -231,8 +231,8 @@ namespace DataAccess
                         select a.Id);
 
             var cIds = (from ts in db.TeamsSeasons
-                        join rs in db.RosterSeasons on ts.id equals rs.TeamSeasonId
-                        join r in db.Rosters on rs.PlayerId equals r.id
+                        join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                        join r in db.Rosters on rs.PlayerId equals r.Id
                         where ts.LeagueSeasonId == leagueSeasonId && !rs.Inactive
                         select r.ContactId);
 
@@ -257,7 +257,7 @@ namespace DataAccess
             if (teamSeasonId == 0)
             {
                 var cIds = (from tsm in db.TeamSeasonManagers
-                            join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.id
+                            join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
                             where ts.LeagueSeasonId == leagueSeasonId
                             select tsm.ContactId);
 
@@ -282,7 +282,7 @@ namespace DataAccess
                             select tsm.ContactId);
 
                 return (from rs in db.RosterSeasons
-                        join r in db.Rosters on rs.PlayerId equals r.id
+                        join r in db.Rosters on rs.PlayerId equals r.Id
                         join c in db.Contacts on r.ContactId equals c.Id
                         where rs.TeamSeasonId == teamSeasonId && !rs.Inactive &&
                         !cIds.Contains(c.Id) &&
@@ -300,7 +300,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbPlayer = (from p in db.RosterSeasons
-                            where p.id == player.Id
+                            where p.Id == player.Id
                             select p).SingleOrDefault();
 
             if (dbPlayer != null)
@@ -309,7 +309,7 @@ namespace DataAccess
                 dbPlayer.PlayerNumber = player.PlayerNumber;
 
                 var dbRoster = (from r in db.Rosters
-                                where dbPlayer.PlayerId == r.id
+                                where dbPlayer.PlayerId == r.Id
                                 select r).SingleOrDefault();
                 if (dbRoster != null)
                 {
@@ -318,7 +318,7 @@ namespace DataAccess
                     var seasonId = DataAccess.Seasons.GetCurrentSeason(player.AccountId);
 
                     var dbAffDues = (from ad in db.PlayerSeasonAffiliationDues
-                                     where ad.PlayerId == dbRoster.id && ad.SeasonId == seasonId
+                                     where ad.PlayerId == dbRoster.Id && ad.SeasonId == seasonId
                                      select ad).SingleOrDefault();
 
                     if (dbAffDues != null)
@@ -329,7 +329,7 @@ namespace DataAccess
                     {
                         dbAffDues = new SportsManager.Model.PlayerSeasonAffiliationDue()
                         {
-                            PlayerId = dbRoster.id,
+                            PlayerId = dbRoster.Id,
                             AffiliationDuesPaid = player.AffiliationDuesPaid == null ? String.Empty : player.AffiliationDuesPaid,
                             SeasonId = seasonId
                         };
@@ -362,7 +362,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var playerId = (from rs in db.RosterSeasons
-                            where rs.id == playerSeasonId
+                            where rs.Id == playerSeasonId
                             select rs.PlayerId).SingleOrDefault();
 
             var playerRecaps = (from pr in db.PlayerRecaps
@@ -371,7 +371,7 @@ namespace DataAccess
             db.PlayerRecaps.DeleteAllOnSubmit(playerRecaps);
 
             var rosterSeasons = (from rs in db.RosterSeasons
-                                 where rs.id == playerSeasonId
+                                 where rs.Id == playerSeasonId
                                  select rs);
             db.RosterSeasons.DeleteAllOnSubmit(rosterSeasons);
 
@@ -395,7 +395,7 @@ namespace DataAccess
             db.SubmitChanges();
 
             var rosters = (from r in db.Rosters
-                           where r.id == playerId
+                           where r.Id == playerId
                            select r);
             db.Rosters.DeleteAllOnSubmit(rosters);
 
@@ -408,7 +408,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbPlayer = (from rs in db.RosterSeasons
-                            where rs.id == playerSeasonId
+                            where rs.Id == playerSeasonId
                             select rs).SingleOrDefault();
 
             if (dbPlayer != null)
@@ -426,7 +426,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             var playerId = (from r in db.Rosters
                             where r.ContactId == contactId
-                            select r.id).SingleOrDefault();
+                            select r.Id).SingleOrDefault();
             if (playerId == 0)
             {
                 SportsManager.Model.Roster dbRoster = new SportsManager.Model.Roster()
@@ -439,7 +439,7 @@ namespace DataAccess
                 db.Rosters.InsertOnSubmit(dbRoster);
                 db.SubmitChanges();
 
-                playerId = dbRoster.id;
+                playerId = dbRoster.Id;
             }
     
             return SignPlayer(teamSeasonId, playerId);
@@ -474,7 +474,7 @@ namespace DataAccess
             }
 
             var dbRoster = (from r in db.Rosters
-                             where r.id == playerId
+                             where r.Id == playerId
                              select r).SingleOrDefault();
 
             if (dbRoster != null)
@@ -483,7 +483,7 @@ namespace DataAccess
 
                 return new Player()
                 {
-                    Id = rosterPlayer.id,
+                    Id = rosterPlayer.Id,
                     TeamId = rosterPlayer.TeamSeasonId,
                     PlayerNumber = rosterPlayer.PlayerNumber,
                     Contact = c,
@@ -607,9 +607,9 @@ namespace DataAccess
 
             return (from cs in db.CurrentSeasons
                     join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
-                    join ts in db.TeamsSeasons on ls.id equals ts.LeagueSeasonId
-                    join rs in db.RosterSeasons on ts.id equals rs.TeamSeasonId
-                    join r in db.Rosters on rs.PlayerId equals r.id
+                    join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in db.Rosters on rs.PlayerId equals r.Id
                     join co in db.Contacts on r.ContactId equals co.Id
                     where cs.AccountId == accountId &&
                         !rs.Inactive && 
@@ -644,9 +644,9 @@ namespace DataAccess
 
             // is on roster?
             var isTeamMember = (from r in db.Rosters
-                              join rs in db.RosterSeasons on r.id equals rs.PlayerId
-                              join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.id
-                              where r.ContactId == contactId && ts.id == teamSeasonId
+                              join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+                              join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                              where r.ContactId == contactId && ts.Id == teamSeasonId
                               select r.ContactId).Any();
             if (!isTeamMember)
             {

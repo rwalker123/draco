@@ -14,6 +14,12 @@ namespace SportsManager
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
+                name: "LeagueApi",
+                routeTemplate: "api/{controller}/{accountId}/League/{leagueSeasonId}/{action}/{id}",
+                defaults: new { id = RouteParameter.Optional }
+            );
+
+            config.Routes.MapHttpRoute(
                 name: "TeamApi",
                 routeTemplate: "api/{controller}/{accountId}/Team/{teamSeasonId}/{action}/{id}",
                 defaults: new { id = RouteParameter.Optional }
@@ -38,6 +44,7 @@ namespace SportsManager
 
             ODataModelBuilder modelBuilder = new ODataConventionModelBuilder();
             modelBuilder.EntitySet<ModelObjects.ContactName>("ContactsOData");
+            modelBuilder.EntitySet<ModelObjects.Game>("ScheduleOData");
 
             Microsoft.Data.Edm.IEdmModel model = modelBuilder.GetEdmModel();
             config.Routes.MapODataRoute("ODataRoute", "odata", model);

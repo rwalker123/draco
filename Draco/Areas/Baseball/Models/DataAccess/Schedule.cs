@@ -18,7 +18,7 @@ namespace DataAccess
     {
         static Game CreateGame(SqlDataReader dr)
         {
-            return new Game(dr.GetInt64(9), dr.GetInt64(0), dr.GetDateTime(1), dr.GetDateTime(2),
+            return new Game(dr.GetInt64(9), dr.GetInt64(0), dr.GetDateTime(1),
                 dr.GetInt64(3), dr.GetInt64(4), dr.GetInt32(5), dr.GetInt32(6),
                 dr.GetString(7), dr.GetInt64(8), dr.GetInt32(10), dr.GetInt64(11),
                 dr.GetInt64(12), dr.GetInt64(13), dr.GetInt64(14), dr.GetInt64(15));
@@ -79,108 +79,95 @@ namespace DataAccess
 
         static public Game GetGame(long gameId)
         {
-            Game g = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetGame", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+            return (from ls in db.LeagueSchedules
+                    where ls.Id == gameId
+                    select new Game()
                     {
-                        g = CreateGame(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+                        Id = ls.Id,
+                        AwayScore = ls.VScore,
+                        AwayTeamId = ls.VTeamId,
+                        Comment = ls.Comment,
+                        FieldId = ls.FieldId,
+                        GameDate = ls.GameDate,
+                        GameStatus = ls.GameStatus,
+                        GameType = ls.GameType,
+                        HomeScore = ls.HScore,
+                        HomeTeamId = ls.HTeamId,
+                        LeagueId = ls.LeagueId,
+                        Umpire1 = ls.Umpire1,
+                        Umpire2 = ls.Umpire2,
+                        Umpire3 = ls.Umpire3,
+                        Umpire4 = ls.Umpire4,
+                        HasGameRecap = ls.GameRecaps.Any(),
+                        FieldName  = DataAccess.Fields.GetFieldShortName(ls.FieldId),
+                        HomeTeamName = DataAccess.Teams.GetTeamName(ls.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(ls.VTeamId),
+                        LeagueName = DataAccess.Leagues.GetLeagueName(ls.LeagueId)
+                    }).SingleOrDefault();
 
-            return g;
         }
 
-        static public List<Game> GetSchedule(long leagueId)
-        {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetSchedule", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
-        }
-
-        static public List<Game> GetSchedule(long leagueId, int month)
-        {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetScheduleMonth", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myCommand.Parameters.Add("@month", SqlDbType.Int).Value = month;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
-        }
-
-        static public IEnumerable<Game> GetSchedule(long leagueSeasonId, DateTime curDate)
+        static public IQueryable<Game> GetGames(long accountId)
         {
             DB db = DBConnection.GetContext();
 
+            long curSeason = DataAccess.Seasons.GetCurrentSeason(accountId);
+
+            return (from ls in db.LeagueSchedules
+                    join l in db.LeagueSeasons on ls.LeagueId equals l.Id
+                    join s in db.Seasons on l.SeasonId equals s.Id
+                    where s.Id == curSeason
+                    select new Game()
+                    {
+                        Id = ls.Id,
+                        AwayScore = ls.VScore,
+                        AwayTeamId = ls.VTeamId,
+                        Comment = ls.Comment,
+                        FieldId = ls.FieldId,
+                        GameDate = ls.GameDate,
+                        GameStatus = ls.GameStatus,
+                        GameType = ls.GameType,
+                        HomeScore = ls.HScore,
+                        HomeTeamId = ls.HTeamId,
+                        LeagueId = ls.LeagueId,
+                        Umpire1 = ls.Umpire1,
+                        Umpire2 = ls.Umpire2,
+                        Umpire3 = ls.Umpire3,
+                        Umpire4 = ls.Umpire4,
+                        HasGameRecap = ls.GameRecaps.Any(),
+                        FieldName = DataAccess.Fields.GetFieldShortName(ls.FieldId),
+                        HomeTeamName = DataAccess.Teams.GetTeamName(ls.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(ls.VTeamId),
+                        LeagueName = DataAccess.Leagues.GetLeagueName(ls.LeagueId)
+                    });
+
+        }
+
+        static public IQueryable<Game> GetSchedule(long leagueSeasonId, DateTime startDate, DateTime endDate)
+        {
+            //SELECT LeagueSchedule.* 
+            //FROM LeagueSchedule 
+            //            LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
+            //            LEFT JOIN League ON League.Id = LeagueSeason.LeagueId
+            //WHERE League.AccountId = @accountId AND GameDate >= @startDate AND GameDate <= @endDate 
+            //Order By GameDate, LeagueSchedule.LeagueId, GameTime
+
+            DB db = DBConnection.GetContext();
+
             return (from sched in db.LeagueSchedules
-                    join seas in db.LeagueSeasons on sched.LeagueId equals seas.id
-                    where seas.id == leagueSeasonId && sched.GameDate.Date.Equals(curDate.Date)
-                    orderby sched.GameDate, sched.GameTime
-                    select new Game(sched.LeagueId, sched.id, sched.GameDate, sched.GameTime, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
-                        sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4));
+                    join seas in db.LeagueSeasons on sched.LeagueId equals seas.Id
+                    where seas.Id == leagueSeasonId && sched.GameDate >= startDate &&
+                    sched.GameDate <= endDate
+                    orderby sched.GameDate
+                    select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
+                        sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4)
+                        {
+                            HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
+                            AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
+                            FieldName = DataAccess.Fields.GetFieldName(sched.FieldId)
+                        });
         }
 
 
@@ -378,11 +365,11 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from sched in db.LeagueSchedules
-                    join seas in db.LeagueSeasons on sched.LeagueId equals seas.id
-                    join leag in db.Leagues on seas.LeagueId equals leag.id
+                    join seas in db.LeagueSeasons on sched.LeagueId equals seas.Id
+                    join leag in db.Leagues on seas.LeagueId equals leag.Id
                     where leag.AccountId == accountId && sched.GameDate.Date.Equals(when.Date)
-                    orderby sched.GameDate, sched.GameTime
-                    select new Game(sched.LeagueId, sched.id, sched.GameDate, sched.GameTime, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
+                    orderby sched.GameDate
+                    select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
                         sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4));
         }
 
@@ -559,161 +546,88 @@ namespace DataAccess
 
         static public bool ModifyGame(Game g)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateGame", myConnection);
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = g.GameDate;
-                    myCommand.Parameters.Add("@gameTime", SqlDbType.SmallDateTime).Value = g.GameTime;
-                    myCommand.Parameters.Add("@hTeamId", SqlDbType.BigInt).Value = g.HomeTeamId;
-                    myCommand.Parameters.Add("@vTeamId", SqlDbType.BigInt).Value = g.AwayTeamId;
-                    myCommand.Parameters.Add("@hScore", SqlDbType.Int).Value = g.HomeScore;
-                    myCommand.Parameters.Add("@vScore", SqlDbType.Int).Value = g.AwayScore;
-                    myCommand.Parameters.Add("@comment", SqlDbType.VarChar, 255).Value = g.Comment;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = g.FieldId;
-                    myCommand.Parameters.Add("@gameStatus", SqlDbType.Int).Value = g.GameStatus;
-                    myCommand.Parameters.Add("@gameType", SqlDbType.BigInt).Value = g.GameType;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = g.Id;
-                    myCommand.Parameters.Add("@umpire1", SqlDbType.BigInt).Value = g.Umpire1;
-                    myCommand.Parameters.Add("@umpire2", SqlDbType.BigInt).Value = g.Umpire2;
-                    myCommand.Parameters.Add("@umpire3", SqlDbType.BigInt).Value = g.Umpire3;
-                    myCommand.Parameters.Add("@umpire4", SqlDbType.BigInt).Value = g.Umpire4;
+            var dbGame = (from ls in db.LeagueSchedules
+                          where ls.Id == g.Id
+                          select ls).SingleOrDefault();
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            if (dbGame == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbGame.Id = g.Id;
+            dbGame.FieldId = g.FieldId;
+            dbGame.Comment = String.Empty;
+            dbGame.GameDate = g.GameDate;
+            dbGame.HTeamId = g.HomeTeamId;
+            dbGame.VTeamId = g.AwayTeamId;
+            dbGame.HScore = g.HomeScore;
+            dbGame.VScore = g.AwayScore;
+            dbGame.LeagueId = g.LeagueId;
+            dbGame.GameStatus = g.GameStatus;
+            dbGame.Umpire1 = g.Umpire1;
+            dbGame.Umpire2 = g.Umpire2;
+            dbGame.Umpire3 = g.Umpire3;
+            dbGame.Umpire4 = g.Umpire4;
+            dbGame.GameType = g.GameType;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            db.SubmitChanges();
 
-            return (rowCount <= 0) ? false : true;
+            g.HomeTeamName = DataAccess.Teams.GetTeamName(g.HomeTeamId);
+            g.AwayTeamName = DataAccess.Teams.GetTeamName(g.AwayTeamId);
+            g.FieldName = DataAccess.Fields.GetFieldName(g.FieldId);
+
+            return true;
         }
 
-        static public bool AddGame(Game g)
+        static public ModelObjects.Game AddGame(Game g)
         {
-            if (g.LeagueId <= 0)
-                g.LeagueId = Leagues.GetCurrentLeague();
+            DB db = DBConnection.GetContext();
 
-            int rowCount = 0;
-
-            try
+            var dbGame = new SportsManager.Model.LeagueSchedule()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateGame", myConnection);
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = g.GameDate;
-                    myCommand.Parameters.Add("@gameTime", SqlDbType.SmallDateTime).Value = g.GameTime;
-                    myCommand.Parameters.Add("@hTeamId", SqlDbType.BigInt).Value = g.HomeTeamId;
-                    myCommand.Parameters.Add("@vTeamId", SqlDbType.BigInt).Value = g.AwayTeamId;
-                    myCommand.Parameters.Add("@hScore", SqlDbType.Int).Value = g.HomeScore;
-                    myCommand.Parameters.Add("@vScore", SqlDbType.Int).Value = g.AwayScore;
-                    myCommand.Parameters.Add("@comment", SqlDbType.VarChar, 255).Value = g.Comment;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = g.FieldId;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = g.LeagueId;
-                    myCommand.Parameters.Add("@gameStatus", SqlDbType.Int).Value = g.GameStatus;
-                    myCommand.Parameters.Add("@gameType", SqlDbType.BigInt).Value = g.GameType;
-                    myCommand.Parameters.Add("@umpire1", SqlDbType.BigInt).Value = g.Umpire1;
-                    myCommand.Parameters.Add("@umpire2", SqlDbType.BigInt).Value = g.Umpire2;
-                    myCommand.Parameters.Add("@umpire3", SqlDbType.BigInt).Value = g.Umpire3;
-                    myCommand.Parameters.Add("@umpire4", SqlDbType.BigInt).Value = g.Umpire4;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                FieldId = g.FieldId,
+                Comment = String.Empty,
+                GameDate = g.GameDate,
+                HTeamId = g.HomeTeamId,
+                VTeamId = g.AwayTeamId,
+                HScore = g.HomeScore,
+                VScore = g.AwayScore,
+                LeagueId = g.LeagueId,
+                GameStatus = g.GameStatus,
+                Umpire1 = g.Umpire1,
+                Umpire2 = g.Umpire2,
+                Umpire3 = g.Umpire3,
+                Umpire4 = g.Umpire4,
+                GameType = g.GameType
+            };
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.LeagueSchedules.InsertOnSubmit(dbGame);
+            db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            g.Id = dbGame.Id;
+            g.HomeTeamName = DataAccess.Teams.GetTeamName(g.HomeTeamId);
+            g.AwayTeamName = DataAccess.Teams.GetTeamName(g.AwayTeamId);
+            g.FieldName = DataAccess.Fields.GetFieldName(g.FieldId);
 
-            return (rowCount <= 0) ? false : true;
+            return g;
         }
 
-        static public long AddGameGiveId(Game g)
+        static public bool RemoveGame(long gameId)
         {
-            if (g.LeagueId <= 0)
-                g.LeagueId = Leagues.GetCurrentLeague();
+            DB db = DBConnection.GetContext();
 
-            long gameId = 0;
+            var dbGame = (from ls in db.LeagueSchedules
+                          where ls.Id == gameId
+                          select ls).SingleOrDefault();
+            
+            if (dbGame == null)
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateGameGiveId", myConnection);
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = g.GameDate;
-                    myCommand.Parameters.Add("@gameTime", SqlDbType.SmallDateTime).Value = g.GameTime;
-                    myCommand.Parameters.Add("@hTeamId", SqlDbType.BigInt).Value = g.HomeTeamId;
-                    myCommand.Parameters.Add("@vTeamId", SqlDbType.BigInt).Value = g.AwayTeamId;
-                    myCommand.Parameters.Add("@hScore", SqlDbType.Int).Value = g.HomeScore;
-                    myCommand.Parameters.Add("@vScore", SqlDbType.Int).Value = g.AwayScore;
-                    myCommand.Parameters.Add("@comment", SqlDbType.VarChar, 255).Value = g.Comment;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = g.FieldId;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = g.LeagueId;
-                    myCommand.Parameters.Add("@gameStatus", SqlDbType.Int).Value = g.GameStatus;
-                    myCommand.Parameters.Add("@gameType", SqlDbType.BigInt).Value = g.GameType;
-                    myCommand.Parameters.Add("@umpire1", SqlDbType.BigInt).Value = g.Umpire1;
-                    myCommand.Parameters.Add("@umpire2", SqlDbType.BigInt).Value = g.Umpire2;
-                    myCommand.Parameters.Add("@umpire3", SqlDbType.BigInt).Value = g.Umpire3;
-                    myCommand.Parameters.Add("@umpire4", SqlDbType.BigInt).Value = g.Umpire4;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.LeagueSchedules.DeleteOnSubmit(dbGame);
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        gameId = dr.GetInt64(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return gameId;
-        }
-
-        static public bool RemoveGame(Game game)
-        {
-            int rowCount = 0;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteGame", myConnection);
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = game.Id;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount <= 0) ? false : true;
+            return true;
         }
 
         static public List<Game> FindGame(Team homeTeam, Team awayTeam, string gameDateString, string gameTimeString)
@@ -768,91 +682,6 @@ namespace DataAccess
 
             return schedule;
         }
-
-        public static List<ScheduleByDayOfMonth> GetScheduleByDayOfMonth(long leagueId, int month, int year, bool includeEmptyDays)
-        {
-            List<ScheduleByDayOfMonth> schedule = new List<ScheduleByDayOfMonth>();
-
-            SortedList<DateTime, List<object>> schedByDate = new SortedList<DateTime, List<object>>();
-
-            int maxDays = DateTime.DaysInMonth(year, month);
-
-            if (includeEmptyDays)
-            {
-                for (int i = 1; i <= maxDays; ++i)
-                {
-                    schedByDate.Add(new DateTime(year, month, i), new List<object>());
-                }
-            }
-
-            List<ModelObjects.LeagueEvent> events = DataAccess.LeagueEvents.GetEvents(leagueId, month);
-            foreach (ModelObjects.LeagueEvent e in events)
-            {
-                List<object> l = null;
-
-                if (schedByDate.ContainsKey(e.EventDate))
-                {
-                    l = schedByDate[e.EventDate];
-                }
-                else
-                {
-                    l = new List<object>();
-                    schedByDate.Add(e.EventDate, l);
-                }
-
-                l.Add(e);
-            }
-
-
-            List<ModelObjects.Game> games = DataAccess.Schedule.GetSchedule(leagueId, month);
-            foreach (ModelObjects.Game g in games)
-            {
-                List<object> l = null;
-
-                if (schedByDate.ContainsKey(g.GameDate))
-                {
-                    l = schedByDate[g.GameDate];
-                }
-                else
-                {
-                    l = new List<object>();
-                    schedByDate.Add(g.GameDate, l);
-                }
-
-                l.Add(g);
-            }
-
-            DateTime prevDate = DateTime.MinValue;
-            ScheduleByDayOfMonth curSchedule = new ScheduleByDayOfMonth(DateTime.Now);
-
-            foreach (KeyValuePair<DateTime, List<object>> kvp in schedByDate)
-            {
-                DateTime d = kvp.Key;
-
-                if (prevDate != d)
-                {
-                    curSchedule = new ScheduleByDayOfMonth(d);
-                    schedule.Add(curSchedule);
-
-                    prevDate = d;
-                }
-
-                foreach (object o in kvp.Value)
-                {
-                    if (o is LeagueEvent)
-                    {
-                        curSchedule.AddEvent((LeagueEvent)o);
-                    }
-                    else
-                    {
-                        curSchedule.AddGame((Game)o);
-                    }
-                }
-            }
-
-            return schedule;
-        }
-
 
         public static List<Player> GetPlayersFromGame(long gameId)
         {

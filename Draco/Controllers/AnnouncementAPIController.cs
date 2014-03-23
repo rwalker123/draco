@@ -21,7 +21,7 @@ namespace SportsManager.Controllers
                     Content = new StringContent(newsItem.Text)
                 };
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", id = newsItem.id, accountId = accountId }));
+                    new Uri(Url.Link("ActionApi", new { action = "Announcement", id = newsItem.Id, accountId = accountId }));
                 return response;
             }
             else

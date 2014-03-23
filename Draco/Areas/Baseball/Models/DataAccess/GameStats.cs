@@ -397,8 +397,8 @@ namespace DataAccess
             if (historicalStats)
             {
                 return (from bss in db.batstatsums
-                        join rs in db.RosterSeasons on bss.PlayerId equals rs.id
-                        join ts in db.TeamsSeasons on bss.TeamId equals ts.id
+                        join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
+                        join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
                         where ts.TeamId == teamId
                         group bss by rs.PlayerId into g
                         select new GameCareerBatStats
@@ -545,9 +545,9 @@ namespace DataAccess
             if (historicalStats)
             {
                 var batstats = (from bss in db.batstatsums
-                                join rs in db.RosterSeasons on bss.PlayerId equals rs.id
-                                join leagueSchedule in db.LeagueSchedules on bss.GameId equals leagueSchedule.id
-                                join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.id
+                                join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
+                                join leagueSchedule in db.LeagueSchedules on bss.GameId equals leagueSchedule.Id
+                                join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
                                 where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
                                 group bss by rs.PlayerId into g
                                 select new GameCareerBatStats
@@ -585,7 +585,7 @@ namespace DataAccess
             else
             {
                 var batstats = (from bss in db.batstatsums
-                                join ls in db.LeagueSchedules on bss.GameId equals ls.id
+                                join ls in db.LeagueSchedules on bss.GameId equals ls.Id
                                 where ls.GameStatus == 1 && ls.LeagueId == leagueId
                                 group bss by bss.PlayerId into g
                                 select new GameBatStats
@@ -661,8 +661,8 @@ namespace DataAccess
             if (historicalStats)
             {
                 return (from bss in db.pitchstatsums
-                        join rs in db.RosterSeasons on bss.PlayerId equals rs.id
-                        join ts in db.TeamsSeasons on bss.TeamId equals ts.id
+                        join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
+                        join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
                         where ts.TeamId == teamId
                         group bss by rs.PlayerId into g
                         select new GameCareerPitchStats
@@ -814,9 +814,9 @@ namespace DataAccess
             if (historicalStats)
             {
                 var pitchstats = (from pss in db.pitchstatsums
-                                  join rs in db.RosterSeasons on pss.PlayerId equals rs.id
-                                  join leagueSchedule in db.LeagueSchedules on pss.GameId equals leagueSchedule.id
-                                  join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.id
+                                  join rs in db.RosterSeasons on pss.PlayerId equals rs.Id
+                                  join leagueSchedule in db.LeagueSchedules on pss.GameId equals leagueSchedule.Id
+                                  join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
                                   where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
                                   group pss by rs.PlayerId into g
                                   select new GameCareerPitchStats
@@ -858,7 +858,7 @@ namespace DataAccess
             else
             {
                 var pitchstats = (from pss in db.pitchstatsums
-                                  join ls in db.LeagueSchedules on pss.GameId equals ls.id
+                                  join ls in db.LeagueSchedules on pss.GameId equals ls.Id
                                   where ls.GameStatus == 1 && ls.LeagueId == leagueId
                                   group pss by pss.PlayerId into g
                                   select new GamePitchStats

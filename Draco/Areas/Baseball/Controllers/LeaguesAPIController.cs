@@ -56,6 +56,16 @@ namespace SportsManager.Baseball.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("Teams")]
+        public HttpResponseMessage GetLeagueTeams(long accountId, long id)
+        {
+
+            var leagueTeams = DataAccess.Teams.GetTeams(id);
+            return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, leagueTeams);
+        }
+
+
+        [AcceptVerbs("GET"), HttpGet]
         [ActionName("UnassignedTeams")]
         public HttpResponseMessage UnassignedTeams(long accountId, long id)
         {

@@ -29,7 +29,7 @@ namespace DataAccess
                     where h.AccountId == accountId
                     select new HOFMember()
                     {
-                        Id = h.id,
+                        Id = h.Id,
                         AccountId = accountId,
                         Biography = h.Bio,
                         YearInducted = h.YearInducted

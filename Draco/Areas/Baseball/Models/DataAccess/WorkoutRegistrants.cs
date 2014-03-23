@@ -20,7 +20,7 @@ namespace DataAccess
                     where wr.WorkoutId == workoutId
                     select new WorkoutRegistrant()
                     {
-                        Id = wr.id,
+                        Id = wr.Id,
                         Name = wr.Name,
                         Email = wr.EMail,
                         DateRegistered = wr.DateRegistered,
@@ -42,7 +42,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbRegistrant = (from w in db.WorkoutRegistrations
-                                where w.id == wr.Id
+                                where w.Id == wr.Id
                                 select w).SingleOrDefault();
 
             if (dbRegistrant != null)
@@ -103,7 +103,7 @@ namespace DataAccess
             db.WorkoutRegistrations.InsertOnSubmit(dbRegister);
             db.SubmitChanges();
 
-            wr.Id = dbRegister.id;
+            wr.Id = dbRegister.Id;
 
             return true;
 		}
@@ -113,7 +113,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var dbWr = (from w in db.WorkoutRegistrations
-                        where w.id == wr.Id
+                        where w.Id == wr.Id
                         select w).SingleOrDefault();
 
             if (dbWr != null)

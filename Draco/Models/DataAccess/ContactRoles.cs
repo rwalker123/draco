@@ -171,10 +171,10 @@ namespace DataAccess
                         RoleId = cr.RoleId,
                         RoleDataText = cr.RoleId == GetLeagueAdminId() ?
                                         (from ls in db.LeagueSeasons
-                                         where ls.id == cr.RoleData
+                                         where ls.Id == cr.RoleData
                                          select ls.League.Name).SingleOrDefault() :
                                         (from ts in db.TeamsSeasons
-                                         where ts.id == cr.RoleData
+                                         where ts.Id == cr.RoleData
                                          select ts.LeagueSeason.League.Name + " " + ts.Name).SingleOrDefault()
                     });
         }
@@ -198,7 +198,7 @@ namespace DataAccess
             {
                 var leagueIds = (from l in db.Leagues
                                  where l.AccountId == accountId
-                                 select l.id);
+                                 select l.Id);
 
                 return (from cr in db.ContactRoles
                         where cr.RoleId == roleId && cr.AccountId == accountId &&
@@ -209,7 +209,7 @@ namespace DataAccess
             {
                 var teamIds = (from t in db.Teams
                                where t.AccountId == accountId
-                               select t.id);
+                               select t.Id);
 
                 return (from cr in db.ContactRoles
                         where cr.RoleId == roleId && cr.AccountId == accountId &&
@@ -220,7 +220,7 @@ namespace DataAccess
             {
                 var teamIds = (from t in db.Teams
                                where t.AccountId == accountId
-                               select t.id);
+                               select t.Id);
 
                 return (from cr in db.ContactRoles
                         where cr.RoleId == roleId && cr.AccountId == accountId &&
