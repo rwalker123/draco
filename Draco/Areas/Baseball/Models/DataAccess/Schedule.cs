@@ -157,9 +157,8 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from sched in db.LeagueSchedules
-                    join seas in db.LeagueSeasons on sched.LeagueId equals seas.Id
-                    where seas.Id == leagueSeasonId && sched.GameDate >= startDate &&
-                    sched.GameDate <= endDate
+                    where sched.LeagueId == leagueSeasonId && 
+                    sched.GameDate >= startDate && sched.GameDate <= endDate
                     orderby sched.GameDate
                     select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
                         sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4)
@@ -171,68 +170,21 @@ namespace DataAccess
         }
 
 
-        static public List<Game> GetTeamSchedule(long leagueId, long teamId)
+        static public IQueryable<Game> GetTeamSchedule(long teamSeasonId, DateTime startDate, DateTime endDate)
         {
-            List<Game> schedule = new List<Game>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamSchedule", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from sched in db.LeagueSchedules
+                    where (sched.HTeamId == teamSeasonId || sched.VTeamId == teamSeasonId) &&
+                    sched.GameDate >= startDate && sched.GameDate <= endDate
+                    orderby sched.GameDate
+                    select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
+                        sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4)
                     {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
-        }
-
-        static public List<Game> GetTeamSchedule(long teamId, int month)
-        {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamScheduleMonth", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@month", SqlDbType.Int).Value = month;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
+                        HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
+                        FieldName = DataAccess.Fields.GetFieldName(sched.FieldId)
+                    });
         }
 
         static public List<Game> GetCompletedGames(long leagueId)

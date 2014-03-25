@@ -232,7 +232,9 @@
                     var options = selectPickerOptions.optionsArray,
                         isDisabled = selectPickerOptions.disabledCondition || false,
                         resetOnDisabled = selectPickerOptions.resetOnDisabled || false;
-                    if (options !== undefined && ko.utils.unwrapObservable(options).length > 0) {
+                    if (options !== undefined) 
+                        // why only if length() > 0
+                        /*&& ko.utils.unwrapObservable(options).length > 0)*/ {
                         // call the default Knockout options binding
                         ko.bindingHandlers.options.update(element, options, allBindingsAccessor);
                     }

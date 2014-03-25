@@ -50,7 +50,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse<ModelObjects.Player>(HttpStatusCode.OK, players);
         }
 
-        [AcceptVerbs("PUT"), HttpPost]
+        [AcceptVerbs("PUT"), HttpPut]
         [ActionName("roster")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage ModifyPlayer(long accountId, long teamSeasonId, long id, Player p)

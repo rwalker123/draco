@@ -204,7 +204,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamId + '/roster/' + self.selectedPlayer().id,
             success: function (item) {
                 var player = new PlayerViewModel(self.accountId, item.Contact.Id);
                 player.id = item.Id;

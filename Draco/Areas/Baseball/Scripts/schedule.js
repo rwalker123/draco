@@ -27,6 +27,69 @@ var GameDayViewModel = function (theDate) {
     });
 }
 
+var GameResultsViewModel = function (data) {
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.GameDate.TimeText = ko.observable(moment(self.GameDate() || new Date()).format("h:mm a"));
+    self.GameDate.DateText = ko.observable(self.GameDate());
+
+    self.HomeTeamId.roster = ko.observableArray();
+    self.AwayTeamId.roster = ko.observableArray();
+
+    self.AwayTeamId.playersPresent = ko.observableArray();
+    self.HomeTeamId.playersPresent = ko.observableArray();
+
+    self.HomeScore.extend({
+        number: true,
+        required: {
+            onlyIf: function () {
+                return self.GameStatus() == "1";
+            }
+        }
+    });
+
+    self.AwayScore.extend({
+        number: true,
+        required: {
+            onlyIf: function () {
+                return self.GameStatus() == "1";
+            }
+        }
+    });
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+        self.GameDate.TimeText(moment(self.GameDate()).format("h:mm a"));
+        self.GameDate.DateText(self.GameDate());
+
+        self.HomeTeamId.roster.removeAll();
+        self.AwayTeamId.roster.removeAll();
+
+        self.AwayTeamId.playersPresent.removeAll();
+        self.HomeTeamId.playersPresent.removeAll();
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
 var GameViewModel = function (data) {
     var self = this;
 
@@ -45,12 +108,17 @@ var GameViewModel = function (data) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.GameDate.extend({ required: true });
+    self.GameDate.extend({
+        required: true,
+        date: true
+    })
     self.GameDate.TimeText = ko.observable(moment(self.GameDate() || new Date()).format("h:mm a"));
     self.GameDate.DateText = ko.observable(self.GameDate());
 
     self.HomeTeamId.extend({ required: true });
+
     self.AwayTeamId.extend({ required: true }).extend({ mustNotEqual: self.HomeTeamId });
+
     self.GameType.extend({ required: true });
 
     self.GameStatus.isFinal = ko.computed(function () {
@@ -114,8 +182,6 @@ var GameViewModel = function (data) {
 
         return js;
     }
-
-
 }
 
 var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
@@ -127,24 +193,32 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     self.viewMode = ko.observable(false);
     self.loadingSchedule = ko.observable(true);
     self.addGameMode = ko.observable(false);
+    self.resultsGameMode = ko.observable(false);
     self.leagueTeams = ko.observableArray([]);
     self.selectedTeam = ko.observable();
+    self.selectedTeam.subscribe(function () {
+        if (self.viewMode() && !self.loadingSchedule()) {
+            self.setupMonthData(self.currentDate());
+        }
+    });
+
     self.selectedLeague = ko.observable();
     self.selectedLeague.subscribe(function () {
+        self.loadingSchedule(true);
         self.populateTeams();
-        self.setupMonthData(new Date());
+        self.selectedTeam(null);
+        self.setupMonthData(self.currentDate());
     });
 
     self.allUmpires = ko.observableArray(allUmps);
 
-    self.currentDate = ko.observable();
+    self.currentDate = ko.observable(new Date());
 
     self.currentMonth = ko.computed(function () {
         return moment(self.currentDate()).format("MMMM");
     });
 
     self.gameMonth = ko.observableArray();
-
 
     // template for new game form.
     self.newGame = new GameViewModel({
@@ -180,6 +254,20 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         Umpire4: 0
     }));
 
+    self.editingGameResults = ko.validatedObservable(new GameResultsViewModel({
+        HomeTeamName: '',
+        AwayTeamName: '',
+        GameDate: '',
+        HomeTeamId: 0,
+        AwayTeamId: 0,
+        GameType: 0,
+        GameStatus: 0,
+        FieldId: 0,
+        FieldName: '',
+        HomeScore: null,
+        AwayScore: null
+    }));
+
     self.isEditMode = ko.observable(false);
     self.gameEditorTitle = ko.computed(function () {
         if (self.isEditMode())
@@ -188,8 +276,51 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
             return "Create Game";
     });
 
+    self.leagueTeamSelectDisabled = ko.computed(function () {
+        if (!self.loadingSchedule() && self.viewMode()) {
+            return undefined;
+        }
+
+        return 'disabled';
+    });
+
     // cache the teams we have retrieved.
     self.teamsCache = {};
+
+    // cache team rosters
+    self.rostersCache = {};
+
+    self.goPreviousMonth = function () {
+        var currentMonth = self.currentDate().getMonth();
+
+        if (currentMonth == 0) {
+            currentMonth = 11;
+        } 
+        else {
+            currentMonth--;
+        }
+
+        var date = new Date(self.currentDate());
+        date.setMonth(currentMonth);
+
+        self.setupMonthData(date);
+    }
+
+    self.goNextMonth = function () {
+        var currentMonth = self.currentDate().getMonth();
+
+        if (currentMonth == 11) {
+            currentMonth = 0;
+        }
+        else {
+            currentMonth++;
+        }
+
+        var date = new Date(self.currentDate());
+        date.setMonth(currentMonth);
+
+        self.setupMonthData(date);
+    }
 
     self.enterAddGameMode = function (viewModel) {
         self.viewMode(false);
@@ -294,11 +425,55 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         });
     }
 
-    self.enterGameResults = function (game) {
+    self.homeTeamRoster = ko.observableArray();
+    self.awayTeamRoster = ko.observableArray();
 
+    self.enterGameResults = function (game) {
+        self.viewMode(false);
+        var data = game.toJS();
+        self.editingGameResults().update(data);
+
+        self.homeTeamRoster([]); //.removeAll();
+        self.awayTeamRoster([]); //.removeAll();
+
+        self.getRoster(self.editingGameResults().HomeTeamId(), function (players) {
+            //$.each(players, function (index, player) {
+            //    self.homeTeamRoster.push(player);
+            //});
+            self.homeTeamRoster(players);
+            //self.editingGameResults().HomeTeamId.roster(players);
+        });
+        self.getRoster(self.editingGameResults().AwayTeamId(), function (players) {
+            //$.each(players, function (index, player) {
+            //    self.awayTeamRoster.push(player);
+            //});
+            self.awayTeamRoster(players);
+            //self.editingGameResults().AwayTeamId.roster(players);
+        });
+
+        self.resultsGameMode(true);
+    }
+
+    self.updateGameResult = function (game) {
+        if (!self.editingGameResults.isValid())
+            return;
+
+        alert('updating game...');
+    }
+
+    self.cancelUpdateGameResult = function (game) {
+        self.resultsGameMode(false);
+        self.viewMode(true);
     }
 
     self.setupMonthData = function (theDate) {
+
+        if (!theDate || !theDate.valueOf()) {
+            return;
+        }
+
+        self.loadingSchedule(true);
+
         theDate.setDate(1);
 
         self.currentDate(new Date(theDate));
@@ -311,17 +486,25 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         theDate.setDate(theDate.getDate() - dayOfWeek);
         var startDate = moment(theDate).format("MM-DD-YYYY");
 
-        // now go for 4 weeks.
-        while (theDate.getMonth() <= startMonth) {
-            theDate.setDate(theDate.getDate() + 7);
+        theDate = self.getEndDate(theDate, startMonth);
+        var endDate = moment(theDate).format("MM-DD-YYYY");
+
+        var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId;
+        if (self.selectedTeam()) {
+            url += '/team/' + self.selectedTeam();
+        }
+        else {
+            url += '/league/' + self.selectedLeague();
         }
 
-        var endDate = moment(theDate).format("MM-DD-YYYY");
+        url += '/week?startDay=' + startDate + '&endDay=' + endDate;
 
         $.ajax({
                 type: "GET",
-                url: window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.selectedLeague() + '/week?startDay=' + startDate + '&endDay=' + endDate,
+                url: url,
                 success: function (games) {
+
+                    self.gameMonth.removeAll();
 
                     var curDate = new Date(startDate);
                     var stopDate = new Date(endDate);
@@ -368,6 +551,12 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
     self.addGameToCalendar = function (game) {
 
+        if (self.selectedTeam()) {
+            if (game.HomeTeamId != self.selectedTeam() &&
+                game.AwayTeamId != self.selectedTeam())
+                return;
+        }
+
         // find the range of game dates shown, determine if the
         // given game is in that range.
         var startDate = new Date(self.currentDate());
@@ -378,12 +567,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         var dayOfWeek = startDate.getDay();
         startDate.setDate(startDate.getDate() - dayOfWeek);
 
-        var endDate = new Date(startDate);
-
-        // now go for 4 weeks.
-        while (endDate.getMonth() <= startMonth) {
-            endDate.setDate(endDate.getDate() + 7);
-        }
+        var theDate = self.getEndDate(new Date(startDate), startMonth);
+        var endDate = new Date(theDate);
 
         var gameDate = new Date(game.GameDate);
         gameDate.setHours(0, 0, 0, 0);
@@ -444,6 +629,31 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         return hours1 == hours2 ? 0 : hours1 < hours2 ? -1 : 1;
     }
 
+    self.getEndDate = function (theDate, startMonth) {
+        // get each week for the given month.
+        var doneGettingWeeks = false;
+        var inCurrentMonth = false;
+        while (!doneGettingWeeks) {
+            // many times the start date is before the current
+            // month. Track when we have entered the current
+            // month.
+            if (!inCurrentMonth && theDate.getMonth() == startMonth) {
+                inCurrentMonth = true;
+            }
+
+            // move ahead one week.
+            theDate.setDate(theDate.getDate() + 7);
+
+            // if we are no longer in the current month and we 
+            // were in the current month, we are done.
+            if (inCurrentMonth && theDate.getMonth() != startMonth) {
+                doneGettingWeeks = true;
+            }
+        }
+
+        return theDate;
+    }
+
     self.populateTeams = function () {
         if (self.selectedLeague() in self.teamsCache)
             self.leagueTeams(self.teamsCache[self.selectedLeague()]);
@@ -469,8 +679,47 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         }
     }
 
+    self.getRoster = function (teamId, callback) {
+        if (teamId in self.rostersCache)
+            callback(self.rostersCache[teamId]);
+        else {
+
+            $.ajax({
+                type: "GET",
+                url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + teamId + '/players',
+                success: function (players) {
+                    self.rostersCache[teamId] = $.map(players, function (player) {
+                        return { Name: player.Contact.FullName, Id: player.Id };
+                    });
+
+                    callback(self.rostersCache[teamId]);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            });
+        }
+    }
+
     $("#leagueSelect").selectpicker();
     $("#newGameType").selectpicker();
     $("#newGameField").selectpicker();
     $("#newGameUmpires").selectpicker();
+    $("#newGameStatus").selectpicker();
+
+    $(".currentDate").datepicker({
+        viewMode: 1,
+        minViewMode: 1,
+        autoclose: true
+    }).on('changeDate', function (ev) {
+        if (!self.loadingSchedule() && self.viewMode()) {
+            var theDate = new Date(ev.date);
+            var date = new Date(self.currentDate());
+            if (theDate.getMonth() != date.getMonth()) {
+                date.setMonth(theDate.getMonth());
+
+                self.setupMonthData(date);
+            }
+        }
+    });
 }

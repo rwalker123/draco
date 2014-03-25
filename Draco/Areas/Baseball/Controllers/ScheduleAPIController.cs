@@ -84,5 +84,23 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("Week")]
+        public HttpResponseMessage GetTeamWeekGames(long accountId, long teamSeasonId)
+        {
+            var queryValues = Request.RequestUri.ParseQueryString();
+            String strStartDate = queryValues["startDay"];
+            String strEndDate = queryValues["endDay"];
+            if (!String.IsNullOrEmpty(strStartDate) &&
+                !String.IsNullOrEmpty(strEndDate))
+            {
+                DateTime startDate = DateTime.Parse(strStartDate);
+                DateTime endDate = DateTime.Parse(strEndDate);
+                var games = DataAccess.Schedule.GetTeamSchedule(teamSeasonId, startDate, endDate);
+                return Request.CreateResponse<IQueryable<ModelObjects.Game>>(HttpStatusCode.OK, games);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
     }
 }

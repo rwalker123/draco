@@ -1,6 +1,6 @@
 using SportsManager.Models.Utils;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 
 namespace ModelObjects
 {
@@ -108,58 +108,6 @@ namespace ModelObjects
 			}
 		}
 
-		public int GetWins()
-		{
-			if (m_wins == -1)
-				GetTeamRecord();
-
-			return m_wins;
-		}
-
-		public int GetLosses()
-		{
-			if (m_losses == -1)
-				GetTeamRecord();
-
-			return m_losses;
-		}
-
-		public int GetTies()
-		{
-			if (m_ties == -1)
-				GetTeamRecord();
-
-			return m_ties;
-		}
-
-		private void GetTeamRecord()
-		{
-			m_wins = 0;
-			m_losses = 0;
-			m_ties = 0;
-
-			List<Game> l = DataAccess.Schedule.GetTeamSchedule(LeagueId, Id);
-
-			foreach (Game g in l)
-			{
-				if (g.GameStatus == 1 || g.GameStatus == 4)
-				{
-					int ourScore = (g.HomeTeamId == Id) ? g.HomeScore : g.AwayScore;
-					int oppScore = (g.HomeTeamId == Id) ? g.AwayScore : g.HomeScore;
-
-					if (ourScore > oppScore)
-						m_wins++;
-					else if (ourScore < oppScore)
-						m_losses++;
-					else
-						m_ties++;
-				}
-				else if (g.GameStatus == 5)
-				{
-					m_losses++;
-				}
-			}
-		}
 
 		#region IComparable<Team> Members
 

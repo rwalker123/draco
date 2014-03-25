@@ -22,19 +22,23 @@
 <div id="datepicker"></div>
 
 <div id="schedule" class="container-fluid">
-    <div class="row" data-bind="visible: viewMode">
-        <select class="col-sm-6" data-bind="value: selectedLeague" data-container="body" id="leagueSelect">
+    <div class="row">
+        <select data-bind="value: selectedLeague, attr: {'disabled': leagueTeamSelectDisabled }" data-container="body" id="leagueSelect">
             @foreach (ModelObjects.League l in Model.Leagues)
             {
                 <option value="@l.Id">@l.Name</option>
             }
         </select>
-        <select class="col-sm-6" data-container="body" data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
+        <select data-container="body" data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
 
     </div>
-    <div class="row">
-        <h1 class="col-sm-12" data-bind="html: currentMonth, visible: viewMode"></h1>
-    </div>
+    <ul class="pager">
+        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'previous disabled' : 'previous' }"><a data-bind="click: goPreviousMonth" href="#">&larr; Previous</a></li>
+        <li>
+            <span class="currentDate h1" style="margin: 0px; cursor: pointer" data-bind="html: currentMonth"></span>
+        </li>
+        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'next disabled' : 'next' }"><a data-bind="click: goNextMonth" href="#">Next &rarr;</a></li>
+    </ul>
     <div class="row">
         @if (Model.IsAdmin)
         {
@@ -102,13 +106,81 @@
                     </div>
                 </div>
             </form>
+
+            <form class="form-horizontal" role="form" style="display:none" data-bind="with: editingGameResults, visible: $root.resultsGameMode">
+                <h4 class="col-md-offset-3">Enter Game Results</h4>
+                <small>
+                    <span class="col-md-offset-3" data-bind="html: GameDate.DateText() + ' ' + GameDate.TimeText() + ' ' + FieldName()" />
+                </small>
+                <div class="form-group">
+                    <label class="col-md-3 control-label" for="newGameStatus">Game Status:</label>
+                    <div class="col-md-9">
+                        <select id="newGameStatus" data-container="body" data-bind="value: GameStatus">
+                            <option value="0">Incomplete</option>
+                            <option value="1">Final</option>
+                            <option value="2">Rainout</option>
+                            <option value="5">Did not report</option>
+                            <option value="4">Forfeit</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-3 control-label" for="newGameAwayTeamScore" data-bind="html: AwayTeamName">Away score:</label>
+                    <div class="col-md-1">
+                        <input class="form-control" type="number" id="newGameAwayTeamScore" data-bind="value: AwayScore" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-3 control-label" for="newGameHomeScore" data-bind="html: HomeTeamName"></label>
+                    <div class="col-md-1">
+                        <input class="form-control" type="number" id="newGameHomeTeamScore" data-bind="value: HomeScore" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-3 col-md-9">
+                        <label class="control-label">
+                            <input type="checkbox" />
+                            Email players result
+                        </label>
+                    </div>
+                    <div class="col-md-offset-3 col-md-9">
+                        <label class="control-label">
+                            <input class="form-control-static" type="checkbox" />
+                            Tweet result
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <span data-bind="html: AwayTeamName"></span> Roster
+                    </div>
+                    <div class="col-md-6">
+                        <span data-bind="html: HomeTeamName"></span> Roster
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <select data-container="body" data-bind="selectPicker: AwayTeamId.playersPresent, selectPickerOptions: { optionsArray: $root.awayTeamRoster }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select players present..." data-selected-text-format="count"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <select data-container="body" data-bind="selectPicker: HomeTeamId.playersPresent, selectPickerOptions: { optionsArray: $root.homeTeamRoster }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select players present..." data-selected-text-format="count"></select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-md-offset-3 col-md-9">
+                        <button class="btn btn-success" data-bind="click: $root.updateGameResult"><span class="glyphicon glyphicon-check"></span></button>
+                        <button class="btn btn-danger" data-bind="click: $root.cancelUpdateGameResult"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+            </form>
         }
 
         <div data-bind="visible: loadingSchedule">
             <i class="fa fa-spinner fa-spin fa-2x"></i> Loading schedule...
         </div>
 
-        <div class="table-responsive" data-bind="visible: viewMode">
+        <div class="table-responsive" data-bind="visible: viewMode() && !loadingSchedule()">
             <table class="table table-bordered col-lg-7">
                 <thead>
                     <tr>
