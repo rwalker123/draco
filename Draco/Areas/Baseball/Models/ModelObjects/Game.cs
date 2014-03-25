@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -25,6 +26,8 @@ namespace ModelObjects
 
 		public Game()
 		{
+            AwayPlayersPresent = new List<long>();
+            HomePlayersPresent = new List<long>();
 		}
 
 		public Game(long leagueId, long gameId, DateTime gameDate, 
@@ -32,7 +35,10 @@ namespace ModelObjects
 			long fieldId, int gameStatus, long gameType,
 			long umpire1, long umpire2, long umpire3, long umpire4)
 		{
-			Id = gameId;
+            AwayPlayersPresent = new List<long>();
+            HomePlayersPresent = new List<long>();
+            
+            Id = gameId;
 			LeagueId = leagueId;
 			GameDate = gameDate; // .ToString("d");
 			HomeTeamId = hTeamId;
@@ -71,6 +77,8 @@ namespace ModelObjects
         public string AwayTeamName { get; set; }
         public string FieldName { get; set; }
         public string LeagueName { get; set; }
+        public List<long> HomePlayersPresent { get; private set; }
+        public List<long> AwayPlayersPresent { get; private set; }
 
 		public string GameStatusText
 		{

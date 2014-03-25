@@ -9,10 +9,6 @@ namespace ModelObjects
 	/// </summary>
 	public class Team : IComparable<Team>
 	{
-		private int m_wins = -1;
-		private int m_losses = -1;
-		private int m_ties = -1;
-
 		private readonly string m_teamPhotoName = "TeamPhoto.jpg";
 		private readonly string m_submittedPhotoName = "SubmittedTeamPhoto.jpg";
 		private readonly string m_teamLogoName = "TeamLogo.png";

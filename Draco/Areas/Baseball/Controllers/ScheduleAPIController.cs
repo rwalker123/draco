@@ -51,6 +51,26 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("GameResult")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage UpdateGameResults(long accountId, long leagueSeasonId, ModelObjects.Game game)
+        {
+            game.LeagueId = leagueSeasonId;
+            if (ModelState.IsValid && game != null)
+            {
+                bool found = DataAccess.Schedule.UpdateGameScore(game);
+                if (found)
+                {
+                    return Request.CreateResponse<ModelObjects.Game>(HttpStatusCode.OK, game);
+                }
+                else
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Game")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

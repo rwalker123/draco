@@ -5,12 +5,11 @@
     if (scheduleElem) {
         ko.validation.rules['mustNotEqual'] = {
             validator: function (val, otherVal) {
-                return val !== otherVal;
+                return val !== otherVal();
             },
             message: 'The home team and away team must be different'
         };
         ko.validation.registerExtenders();
-
 
         var scheduleVM = new ScheduleViewModel(accountId, isAdmin, allUmpires);
         ko.applyBindings(scheduleVM, scheduleElem);
@@ -51,14 +50,12 @@ var GameResultsViewModel = function (data) {
     self.HomeTeamId.roster = ko.observableArray();
     self.AwayTeamId.roster = ko.observableArray();
 
-    self.AwayTeamId.playersPresent = ko.observableArray();
-    self.HomeTeamId.playersPresent = ko.observableArray();
-
+    // score required if game is final or forfeit
     self.HomeScore.extend({
         number: true,
         required: {
             onlyIf: function () {
-                return self.GameStatus() == "1";
+                return self.GameStatus() == "1" || self.GameStatus() == "4";
             }
         }
     });
@@ -67,8 +64,20 @@ var GameResultsViewModel = function (data) {
         number: true,
         required: {
             onlyIf: function () {
-                return self.GameStatus() == "1";
+                return self.GameStatus() == "1" || self.GameStatus() == "4";
             }
+        }
+    }).extend({
+        validation: {
+            validator: function (val, someOtherVal) {
+                // forfiet game cannot have different score.
+                if (self.GameStatus() == "4")
+                    return val != someOtherVal();
+                else
+                    return true;
+            },
+            message: 'Score cannot be equal.',
+            params: self.HomeScore
         }
     });
 
@@ -77,11 +86,8 @@ var GameResultsViewModel = function (data) {
         self.GameDate.TimeText(moment(self.GameDate()).format("h:mm a"));
         self.GameDate.DateText(self.GameDate());
 
-        self.HomeTeamId.roster.removeAll();
-        self.AwayTeamId.roster.removeAll();
-
-        self.AwayTeamId.playersPresent.removeAll();
-        self.HomeTeamId.playersPresent.removeAll();
+        self.HomeTeamId.roster([]);
+        self.AwayTeamId.roster([]);
     }
 
     self.toJS = function () {
@@ -265,7 +271,9 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         FieldId: 0,
         FieldName: '',
         HomeScore: null,
-        AwayScore: null
+        AwayScore: null,
+        AwayPlayersPresent: [],
+        HomePlayersPresent: []
     }));
 
     self.isEditMode = ko.observable(false);
@@ -425,40 +433,58 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         });
     }
 
-    self.homeTeamRoster = ko.observableArray();
-    self.awayTeamRoster = ko.observableArray();
-
     self.enterGameResults = function (game) {
         self.viewMode(false);
         var data = game.toJS();
         self.editingGameResults().update(data);
 
-        self.homeTeamRoster([]); //.removeAll();
-        self.awayTeamRoster([]); //.removeAll();
-
         self.getRoster(self.editingGameResults().HomeTeamId(), function (players) {
-            //$.each(players, function (index, player) {
-            //    self.homeTeamRoster.push(player);
-            //});
-            self.homeTeamRoster(players);
-            //self.editingGameResults().HomeTeamId.roster(players);
+            self.editingGameResults().HomeTeamId.roster(players);
         });
         self.getRoster(self.editingGameResults().AwayTeamId(), function (players) {
-            //$.each(players, function (index, player) {
-            //    self.awayTeamRoster.push(player);
-            //});
-            self.awayTeamRoster(players);
-            //self.editingGameResults().AwayTeamId.roster(players);
+            self.editingGameResults().AwayTeamId.roster(players);
         });
 
         self.resultsGameMode(true);
     }
 
-    self.updateGameResult = function (game) {
+    self.updateGameResult = function (editGame) {
         if (!self.editingGameResults.isValid())
             return;
 
-        alert('updating game...');
+        var data = self.editingGameResults().toJS();
+
+        $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.selectedLeague() + '/gameresult',
+            data: data,
+            success: function (game) {
+                self.cancelUpdateGameResult();
+
+                var wasFound = false;
+                // find item in calendar so we can update it.
+                $.each(self.gameMonth(), function (index, gameWeek) {
+                    $.each(gameWeek(), function (index, gameDay) {
+                        var foundItems = $.grep(gameDay.games(), function (e) {
+                            return e.Id() == editGame.Id();
+                        });
+
+                        if (foundItems.length > 0) {
+                            var foundItem = foundItems[0];
+                            foundItem.update(game);
+                            wasFound = true;
+                            return false;
+                        }
+                    });
+
+                    return !wasFound;
+                });
+
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
     }
 
     self.cancelUpdateGameResult = function (game) {

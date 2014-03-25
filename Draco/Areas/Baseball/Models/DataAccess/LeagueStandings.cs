@@ -25,7 +25,7 @@ namespace DataAccess
 				    teams.Add(t.Id, new TeamStanding(t.Id, t.DivisionId, t.Name));
 			}
 
-            List<Game> completedGames = DataAccess.Schedule.GetCompletedGames(leagueId);
+            var completedGames = DataAccess.Schedule.GetCompletedGames(leagueId);
 
 			foreach (Game g in completedGames)
 			{

@@ -187,129 +187,28 @@ namespace DataAccess
                     });
         }
 
-        static public List<Game> GetCompletedGames(long leagueId)
+        static public IQueryable<Game> GetCompletedGames(long leagueId)
         {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetCompletedGames", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
+            DB db = DBConnection.GetContext();
+            return (from ls in db.LeagueSchedules
+                    where ls.LeagueId == leagueId &&
+                    (ls.GameStatus == 1 || ls.GameStatus == 4 || ls.GameStatus == 5)
+                    orderby ls.GameDate
+                    select new Game(ls.LeagueId, ls.Id, ls.GameDate, ls.HTeamId, ls.VTeamId, ls.HScore, ls.VScore,
+                        ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4));
         }
 
-        static public List<Game> GetTeamCompletedGames(long leagueId, long teamId)
+        static public IQueryable<Game> GetTeamCompletedGames(long leagueId, long teamId)
         {
-            List<Game> schedule = new List<Game>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamCompletedGames", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
-        }
-
-        static public List<Game> GetTeamRecentGames(long teamId)
-        {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamRecentGames", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
-        }
-
-        static public List<Game> GetTeamUpcomingGames(long teamId)
-        {
-            List<Game> schedule = new List<Game>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamUpcomingGames", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
+            return (from ls in db.LeagueSchedules
+                    where ls.LeagueId == leagueId &&
+                    (ls.HTeamId == teamId || ls.VTeamId == teamId) &&
+                    (ls.GameStatus == 1 || ls.GameStatus == 4 || ls.GameStatus == 5)
+                    orderby ls.GameDate
+                    select new Game(ls.LeagueId, ls.Id, ls.GameDate, ls.HTeamId, ls.VTeamId, ls.HScore, ls.VScore,
+                        ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4));
         }
 
         static public IQueryable<Game> GetScoreboard(long accountId, DateTime when)
@@ -417,83 +316,62 @@ namespace DataAccess
             return playerRecap;
         }
 
-        static public bool UpdateGameScore(Game game, long[] homePlayersPlayed, long[] awayPlayersPlayed)
+        static public bool UpdateGameScore(Game game)
         {
-            long gameId = game.Id;
-            int hScore = game.HomeScore;
-            int vScore = game.AwayScore;
-            string comment = game.Comment;
-            int gameStatus = game.GameStatus;
+            DB db = DBConnection.GetContext();
 
-            int rowCount = 0;
-
-            try
+            // forfeit requires different scores.
+            if (game.GameStatus == 4)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateGameScore", myConnection);
-                    myCommand.Parameters.Add("@hScore", SqlDbType.Int).Value = hScore;
-                    myCommand.Parameters.Add("@vScore", SqlDbType.Int).Value = vScore;
-                    myCommand.Parameters.Add("@comment", SqlDbType.VarChar, 255).Value = comment;
-                    myCommand.Parameters.Add("@gameStatus", SqlDbType.Int).Value = gameStatus;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                if (game.HomeScore == game.AwayScore)
+                    return false;
+            }
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbGame = (from ls in db.LeagueSchedules
+                          where ls.Id == game.Id
+                          select ls).SingleOrDefault();
+            if (dbGame == null)
+                return false;
 
-                    rowCount = myCommand.ExecuteNonQuery();
+            dbGame.GameStatus = game.GameStatus;
+            dbGame.HScore = game.HomeScore;
+            dbGame.VScore = game.AwayScore;
+            dbGame.Comment = game.Comment ?? String.Empty;
+            db.SubmitChanges();
 
-                    if (rowCount > 0)
+            var playerRecapGame = (from p in db.PlayerRecaps
+                                   where p.GameId == game.Id
+                                   select p);
+            db.PlayerRecaps.DeleteAllOnSubmit(playerRecapGame);
+
+            List<SportsManager.Model.PlayerRecap> playersPresent = new List<SportsManager.Model.PlayerRecap>();
+            
+            foreach(var playerId in game.HomePlayersPresent)
+            {
+                playersPresent.Add(new SportsManager.Model.PlayerRecap()
                     {
-                        // update players played.
-                        // first remove all players played, then add new ones.
-                        myCommand = new SqlCommand("dbo.DeletePlayerRecapGame", myConnection);
-                        myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                        myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                        GameId = game.Id,
+                        PlayerId = playerId,
+                        TeamId = game.HomeTeamId,
 
-                        myCommand.Prepare();
-
-                        myCommand.ExecuteNonQuery();
-
-                        myCommand = new SqlCommand("dbo.CreatePlayerRecap", myConnection);
-                        myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                        myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                        SqlParameter teamParam = myCommand.Parameters.Add("@teamId", SqlDbType.BigInt);
-                        SqlParameter playerParam = myCommand.Parameters.Add("@playerId", SqlDbType.BigInt);
-
-                        if (homePlayersPlayed != null)
-                        {
-                            teamParam.Value = game.HomeTeamId;
-
-                            foreach (long playerId in homePlayersPlayed)
-                            {
-                                playerParam.Value = playerId;
-                                myCommand.Prepare();
-                                myCommand.ExecuteNonQuery();
-                            }
-                        }
-
-                        if (awayPlayersPlayed != null)
-                        {
-                            teamParam.Value = game.AwayTeamId;
-
-                            foreach (long playerId in awayPlayersPlayed)
-                            {
-                                playerParam.Value = playerId;
-                                myCommand.Prepare();
-                                myCommand.ExecuteNonQuery();
-                            }
-                        }
-                    }
-                }
+                    });
             }
-            catch (SqlException ex)
+
+            foreach (var playerId in game.AwayPlayersPresent)
             {
-                Globals.LogException(ex);
+                playersPresent.Add(new SportsManager.Model.PlayerRecap()
+                {
+                    GameId = game.Id,
+                    PlayerId = playerId,
+                    TeamId = game.AwayTeamId,
+
+                });
             }
 
-            return (rowCount <= 0) ? false : true;
+            db.PlayerRecaps.InsertAllOnSubmit(playersPresent);
+            db.SubmitChanges();
+
+            return true;
         }
 
         static public bool ModifyGame(Game g)
