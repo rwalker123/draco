@@ -218,11 +218,11 @@
                                 <div class="list-group-item">
                                     <div class="row">
                                         <a class="col-md-8" data-bind="trimText: AwayTeamName, trimTextLength: 7, attr: {title: AwayTeamName}"></a>
-                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinal, html: AwayScore"></span>
+                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
                                     </div>
                                     <div class="row">
                                         <a class="col-md-8" data-bind="trimText: HomeTeamName, trimTextLength: 7, attr: {title: HomeTeamName}"></a>
-                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinal, html: HomeScore"></span>
+                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
                                     </div>
                                     <div class="row">
                                         <a class="col-md-8" data-bind="trimText: FieldName, trimTextLength: 7, visible: !GameStatus.isFinal() && FieldName()"></a>

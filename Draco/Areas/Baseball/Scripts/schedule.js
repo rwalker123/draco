@@ -128,8 +128,13 @@ var GameViewModel = function (data) {
     self.GameType.extend({ required: true });
 
     self.GameStatus.isFinal = ko.computed(function () {
-        return self.GameStatus() > 0;
+        return self.GameStatus() != 0;
     });
+
+    self.GameStatus.isFinalScore = ko.computed(function () {
+        return self.GameStatus() == 1 || self.GameStatus() == 4 ||
+            self.GameStatus() == 3;
+    })
 
     self.GameStatus.Text = ko.computed(function () {
         if (self.GameStatus() == 1)
