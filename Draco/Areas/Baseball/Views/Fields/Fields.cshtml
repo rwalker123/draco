@@ -6,7 +6,35 @@
 
 @section head {
 
+<script charset="UTF-8" type="text/javascript" src="http://ecn.dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=7.0">
+</script>
 
+<style type="text/css">
+    .map {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: #555555 2px solid;
+    }
+
+    .Flexible-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        padding-top: 30px;
+        height: 0;
+        overflow: hidden;
+    }
+
+        .Flexible-container iframe,
+        .Flexible-container object,
+        .Flexible-container embed {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+</style>
 }
 
 <div class="jumbotron">
@@ -14,66 +42,44 @@
 </div>
 
 
-	<div id="searchBox">
-		Enter your location: @Html.TextBox("Location")
-		<input id="search" type="button" onclick="javascript:onFindLocation();" value="Search" />
-		<input id="recenter" type="button" onclick="javascript:onRecenterMap();" value="Recenter" />
-	</div>
-
-<div id="colmask">
-	<div id="colmid">
-		<div id="colright">
-			<div id="col1wrap">
-				<div id="col1pad">
-					<div id="col1">
-						<!-- Column 1 start -->
-						<div id='theMap'></div>
-						<!-- Column 1 end -->
-					</div>
-				</div>
-			</div>
-			<div id="col2">
-				<!-- Column 2 start -->
-				<div id='fieldList'></div>
-
-				<div id='divNewField'>
-					<p><button id='btnNewField' class='ui-button ui-state-default ui-corner-all'>New Field</button></p>
-				</div>
-				<!-- Column 2 end -->
-			</div>
-			<div id="col3">
-				<!-- Column 3 start -->
-				<h3><label id='lblFieldName'></label></h3>
-				
-				<div id='divRainoutNumber'>
-					<p><label>Rainout Number:</label> <label id='lblRainoutNumber'></label></p>
-				</div>
-				
-				<p><label id='lblDirections'></label></p>
-				<p><label id='lblComments'></label></p>
-			   
-				<div id='divContactInfo'>
-					<button id='btnViewContacts' class='ui-button ui-state-default ui-corner-all'>Field Contacts</button>
-				</div>
-				
-				<div id='divEditDelField'>
-					<p>
-					<button id='btnEditField' class='ui-button ui-state-default ui-corner-all'>Edit</button>
-					<button id='btnDeleteField' class='ui-button ui-state-default ui-corner-all'>Delete</button>
-					<button id='btnMapField' class='ui-button ui-state-default ui-corner-all'>Map</button>
-					</p>
-				</div>
-			   
-				<!-- Column 3 end -->
-			</div>
-		</div>
-	</div>
+<div id="searchBox">
+	Enter your location: <input id="txtQuery" type="text" value="Portland" /><br />
+    Enter you destination: <input id="txtEnd" type="text" value="Seattle" /> <br />
+    Clicked lat/long: <input id="textBox" type="text" value="" /> <br />
+	<input type="button" value="Search" onclick="onFindLocation();" />
+    <input type="button" value="Calculate Route" onclick="onClickRoute()" />
+	<input id="recenter" type="button" onclick="onRecenterMap();" value="Recenter" />
 </div>
 
-<div style="clear:both;"></div>
+
+<div class="Flexible-container">
+    <div id="theMap" class="map"></div>
+</div>
+
+<div id='fieldList'></div>
+
+<div id='divNewField'>
+	<p><button id='btnNewField' class='ui-button ui-state-default ui-corner-all'>New Field</button></p>
+</div>
+<h3><label id='lblFieldName'></label></h3>
+				
+<div id='divRainoutNumber'>
+	<p><label>Rainout Number:</label> <label id='lblRainoutNumber'></label></p>
+</div>
+				
+<p><label id='lblDirections'></label></p>
+<p><label id='lblComments'></label></p>
+			   
+	<button id='btnViewContacts' class='ui-button ui-state-default ui-corner-all'>Field Contacts</button>
+				
+<p>
+<button id='btnEditField' class='ui-button ui-state-default ui-corner-all'>Edit</button>
+<button id='btnDeleteField' class='ui-button ui-state-default ui-corner-all'>Delete</button>
+<button id='btnMapField' class='ui-button ui-state-default ui-corner-all'>Map</button>
+</p>
+			   
 
 @section Scripts {
-<script src="http://dev.virtualearth.net/mapcontrol/mapcontrol.ashx?v=6.2" type="text/javascript"></script>
 <script src="@Url.Content("~/Scripts/Map.js")" type="text/javascript"></script>
 
 
@@ -83,9 +89,79 @@
     var selectedField = -1;
 
     function onFindLocation() {
-        var loc = $("#Location")[0].value;
+        map.getCredentials(MakeGeocodeRequest);
+    }
 
-        FindAddressOnMap(loc);
+    function MakeGeocodeRequest(credentials) {
+        var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations?query=" + encodeURI(document.getElementById('txtQuery').value) + "&output=json&jsonp=GeocodeCallback&key=" + credentials;
+        CallRestService(geocodeRequest);
+    }
+
+    function onClickRoute() {
+        map.getCredentials(MakeRouteRequest);
+    }
+
+    function MakeRouteRequest(credentials) {
+        var routeRequest = "http://dev.virtualearth.net/REST/v1/Routes?wp.0=" + document.getElementById('txtQuery').value + "&wp.1=" + document.getElementById('txtEnd').value + "&routePathOutput=Points&output=json&jsonp=RouteCallback&key=" + credentials;
+        CallRestService(routeRequest);
+    }
+
+    function RouteCallback(result) {
+
+
+        if (result &&
+              result.resourceSets &&
+              result.resourceSets.length > 0 &&
+              result.resourceSets[0].resources &&
+              result.resourceSets[0].resources.length > 0) {
+
+            // Set the map view
+            var bbox = result.resourceSets[0].resources[0].bbox;
+            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
+            map.setView({ bounds: viewBoundaries });
+
+
+            // Draw the route
+            var routeline = result.resourceSets[0].resources[0].routePath.line;
+            var routepoints = new Array();
+
+            for (var i = 0; i < routeline.coordinates.length; i++) {
+
+                routepoints[i] = new Microsoft.Maps.Location(routeline.coordinates[i][0], routeline.coordinates[i][1]);
+            }
+
+
+            // Draw the route on the map
+            var routeshape = new Microsoft.Maps.Polyline(routepoints, { strokeColor: new Microsoft.Maps.Color(200, 0, 0, 200) });
+            map.entities.push(routeshape);
+
+        }
+    }
+    function CallRestService(request) {
+        var script = document.createElement("script");
+        script.setAttribute("type", "text/javascript");
+        script.setAttribute("src", request);
+        document.body.appendChild(script);
+    }
+
+    function GeocodeCallback(result) {
+        alert("Found location: " + result.resourceSets[0].resources[0].name);
+
+        if (result &&
+               result.resourceSets &&
+               result.resourceSets.length > 0 &&
+               result.resourceSets[0].resources &&
+               result.resourceSets[0].resources.length > 0) {
+            // Set the map view using the returned bounding box
+            var bbox = result.resourceSets[0].resources[0].bbox;
+            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
+            map.setView({ bounds: viewBoundaries });
+
+            // Add a pushpin at the found location
+            var location = new Microsoft.Maps.Location(result.resourceSets[0].resources[0].point.coordinates[0], result.resourceSets[0].resources[0].point.coordinates[1]);
+            var pushpin = new Microsoft.Maps.Pushpin(location);
+            map.entities.push(pushpin);
+        }
     }
 
     function onRecenterMap() {
@@ -138,29 +214,18 @@
         showAdminBtns();
     }
 
-    function ResizeMap() {
-        var w = $('#col1').width();
-        var h = parseInt($(window).height() - 300);
-
-        map.Resize(w, h);
-    }
-
-    $(window).resize(function () {
-        ResizeMap();
-    });
-
     $(document).ready(function () {
         LoadMap();
 
-        map.AttachEvent("onclick", mouseClickHandler);
+        //map.AttachEvent("onclick", mouseClickHandler);
 
-        ResizeMap();
+        //ResizeMap();
 
-        hideAdminBtns();
+        //hideAdminBtns();
 
-        $('#divRainoutNumber').hide();
+        //$('#divRainoutNumber').hide();
 
-        refreshFields();
+        //refreshFields();
     });
 
     function mouseClickHandler(e) {
@@ -236,71 +301,6 @@
     }
 
 
-    $(function () {
-
-        $('#btnEditField').click(function () {
-
-            url = '@Url.Action("Edit", "Fields")';
-
-            $.get(url, { id: fieldData[selectedField].Id });
-        })
-			.hover(function () {
-			    $(this).addClass("ui-state-hover");
-			},
-			function () {
-			    $(this).removeClass("ui-state-hover");
-			})
-			.mousedown(function () {
-			    $(this).addClass("ui-state-active");
-			})
-			.mouseup(function () {
-			    $(this).removeClass("ui-state-active");
-			});
-
-        $('#btnNewField').hover(function () {
-            $(this).addClass("ui-state-hover");
-        },
-			function () {
-			    $(this).removeClass("ui-state-hover");
-			})
-			.mousedown(function () {
-			    $(this).addClass("ui-state-active");
-			})
-			.mouseup(function () {
-			    $(this).removeClass("ui-state-active");
-			});
-
-
-        $('#btnDeleteField').click(function () {
-
-            url = '@Url.Action("Delete", "Fields")';
-
-            $.post(url,
-				{
-				    id: fieldData[selectedField].Id
-				},
-				onDeleteComplete
-				);
-        })
-			.hover(function () {
-			    $(this).addClass("ui-state-hover");
-			},
-			function () {
-			    $(this).removeClass("ui-state-hover");
-			})
-			.mousedown(function () {
-			    $(this).addClass("ui-state-active");
-			})
-			.mouseup(function () {
-			    $(this).removeClass("ui-state-active");
-			});
-
-        function onDeleteComplete(result) {
-            if (result == 'true') {
-                refreshFields();
-            }
-        }
-    });
 
 </script>
 
