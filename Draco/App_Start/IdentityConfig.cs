@@ -17,7 +17,7 @@ namespace SportsManager
             var RoleManager = new RoleManager<IdentityRole>(new RoleStore<IdentityRole>(context));
 
             string adminUserName = "Admin";
-            string adminPassword = "abc#def";
+            string adminPassword = "abc#def$ghi%jkl^mno&pqr";
 
             string[] roles = new string[] { "Administrator", "AccountAdmin", "AccountPhotoAdmin",
                 "LeagueAdmin", "TeamAdmin", "TeamPhotoAdmin" };
@@ -31,9 +31,10 @@ namespace SportsManager
                     RoleManager.Create(new IdentityRole(role));
             }
             // create admin user.
-            if (UserManager.FindByName(adminUserName) != null)
+            ApplicationUser adminUser = UserManager.FindByName(adminUserName);
+            if (adminUser == null || String.IsNullOrEmpty(adminUser.UserName))
             {
-                var adminUser = new ApplicationUser() { UserName = adminUserName };
+                adminUser = new ApplicationUser() { UserName = adminUserName };
                 var adminresult = UserManager.Create(adminUser, adminPassword);
 
                 //Add User Admin to Role Admin

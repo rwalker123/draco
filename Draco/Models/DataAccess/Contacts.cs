@@ -262,9 +262,13 @@ namespace DataAccess
             string userId = Globals.GetCurrentUserId();
 
             DB db = DBConnection.GetContext();
-            return (from c in db.Contacts
-                    where c.UserId == userId
-                    select c.FirstName).SingleOrDefault();
+            String firstName = (from c in db.Contacts
+                                where c.UserId == userId
+                                select c.FirstName).SingleOrDefault();
+            if (String.IsNullOrEmpty(firstName))
+                return userName;
+
+            return firstName;
         }
 
         static public Contact GetContactFromName(long accountId, string firstName, string lastName, string middleName)

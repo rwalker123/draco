@@ -1,5 +1,8 @@
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 using ModelObjects;
 using SportsManager;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -161,20 +164,27 @@ namespace DataAccess
 
             if (!String.IsNullOrEmpty(userId))
             {
-                // first check to see if this user is an owner of the account.
-                rc = IsAccountOwner(accountId);
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                rc = userManager.IsInRole(userId, "Administrator");
 
-                // if not the owner, see if user was given the account admin role.
                 if (!rc)
                 {
-                    DB db = DBConnection.GetContext();
+                    // first check to see if this user is an owner of the account.
+                    rc = IsAccountOwner(accountId);
 
-                    var roleId = DataAccess.ContactRoles.GetAdminAccountId();
-                    var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
-                    if (roles != null)
-                        rc = (from r in roles
-                              where r.RoleId == roleId && r.AccountId == accountId
-                              select r).Any();
+                    // if not the owner, see if user was given the account admin role.
+                    if (!rc)
+                    {
+                        DB db = DBConnection.GetContext();
+
+                        var roleId = DataAccess.ContactRoles.GetAdminAccountId();
+                        var roles = DataAccess.ContactRoles.GetContactRoles(accountId, userId);
+                        if (roles != null)
+                            rc = (from r in roles
+                                  where r.RoleId == roleId && r.AccountId == accountId
+                                  select r).Any();
+                    }
                 }
             }
 
