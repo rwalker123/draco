@@ -1,4 +1,5 @@
-﻿@model SportsManager.Baseball.ViewModels.LeagueFieldsViewModel
+﻿@using System.Web.Optimization
+@model SportsManager.Baseball.ViewModels.LeagueFieldsViewModel
 
 @{
 	ViewBag.Title = Model.AccountName + " Fields";
@@ -14,7 +15,6 @@
         position: absolute;
         width: 100%;
         height: 100%;
-        border: #555555 2px solid;
     }
 
     .Flexible-container {
@@ -41,266 +41,138 @@
     <h1>@ViewBag.Title.</h1>
 </div>
 
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div id="fields" class="panel panel-primary">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="float: left;">Fields</h3>
 
-<div id="searchBox">
-	Enter your location: <input id="txtQuery" type="text" value="Portland" /><br />
-    Enter you destination: <input id="txtEnd" type="text" value="Seattle" /> <br />
-    Clicked lat/long: <input id="textBox" type="text" value="" /> <br />
-	<input type="button" value="Search" onclick="onFindLocation();" />
-    <input type="button" value="Calculate Route" onclick="onClickRoute()" />
-	<input id="recenter" type="button" onclick="onRecenterMap();" value="Recenter" />
+                    @if (Model.IsAdmin)
+                    {
+                        <button type="button" class="btn btn-default" style="float: right" data-bind="click: startFieldAdd"><span class="glyphicon glyphicon-plus"></span></button>
+                    }
+
+                    <div style="clear:both"></div>
+                </div>
+
+                <div class="panel-body">
+
+                    @if (Model.IsAdmin)
+                    {
+                        <form style="display:none" data-bind="visible: !viewMode(), with: editingField">
+                            <div class="form-group">
+                                <label for="_editFieldName" class="control-label">Field Name</label>
+                                <input id="_editFieldName" type="text" class="form-control" data-bind="value: Name" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldShortName" class="control-label">Short Name (4 characters)</label>
+                                <input id="_editFieldShortName" type="text" class="form-control" data-bind="value: ShortName" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldLocation" class="control-label">Find address or click on map to set field location</label>
+                                <button type="button" class="btn btn-primary" data-bind="click: onFindLocation"><span class="glyphicon glyphicon-search"></span></button>
+                                <div class="list-group" data-bind="foreach: $root.foundLocations">
+                                    <a href="#" data-bind="click: $root.pinEditLocation" class="list-group-item"><span data-bind="html: name"></span></a>
+                                </div>
+                                @*<input id="recenter" type="button" class="form-control" onclick="onRecenterMap();" value="Recenter" />*@
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldAddress" class="control-label">Address</label>
+                                <input id="_editFieldAddress" type="text" class="form-control" data-bind="value: Address" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldCity" class="control-label">City</label>
+                                <input id="_editFieldCity" type="text" class="form-control" data-bind="value: City" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldState" class="control-label">State</label>
+                                <input id="_editFieldState" type="text" class="form-control" data-bind="value: State" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldZip" class="control-label">Zip</label>
+                                <input id="_editFieldZip" type="text" class="form-control" data-bind="value: ZipCode" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldRainoutNumber" class="control-label">Rainout Number</label>
+                                <input id="_editFieldRainoutNumber" type="text" class="form-control" data-bind="value: RainoutNumber" />
+                            </div>
+
+
+                            <div class="form-group">
+                                <label for="_editFieldDirections" class="control-label">Directions</label>
+                                <input id="_editFieldDirections" type="text" class="form-control" data-bind="value: Directions" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="_editFieldComments" class="control-label">Comments</label>
+                                <input id="_editFieldComments" type="text" class="form-control" data-bind="value: Comment" />
+                            </div>
+
+                            <div class="form-group">
+                                <button class='btn btn-primary'><span class="glyphicon glyphicon-check"></span></button>
+                                <button class='btn btn-danger'><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        </form>
+                    }
+
+                    <ul class="list-group" style="max-height:1000px; overflow: auto" data-bind="foreach: fields, visible: viewMode">
+                        <li class="list-group-item">
+                            <h3><span data-bind="html: Name"></span> <small>(<span data-bind="html: ShortName"></span>)</small></h3>
+                            <address data-bind="html: Address, visible: Address"></address>
+                            <address data-bind="html: City, visible: City"></address>
+
+                            <div data-bind="html: RainoutNumber, visible: RainoutNumber"></div>
+
+                            <p data-bind="html: Directions, visible: Directions"></p>
+                            <p data-bind="html: Comment, visible: Comment"></p>
+
+                            <button data-bind="visible: Latitude() && Longitude()" class="btn btn-default"><span class="glyphicon glyphicon-map-marker"></span></button> 
+                            @*<input type="button" value="Calculate Route" class="form-control" onclick="onClickRoute()" />
+                            Enter you destination: <input id="txtEnd" class="form-control" type="text" value="Seattle" /> <br />
+                            Clicked lat/long: <input id="textBox" class="form-control" type="text" value="" /> <br />*@
+
+                            @if (Model.IsAdmin)
+                            {
+                                @*<ul>Field Contacts</ul>*@
+
+                                <button class='btn btn-default'><span class="glyphicon glyphicon-edit"></span></button>
+                                <button class='btn btn-danger'><span class="glyphicon glyphicon-remove"></span></button>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+                
+        <div class="col-md-8">
+            <div class="Flexible-container">
+                <div id="theMap" class="map"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
+@section scripts {
 
-<div class="Flexible-container">
-    <div id="theMap" class="map"></div>
-</div>
+@Scripts.Render("~/bundles/knockout")
 
-<div id='fieldList'></div>
-
-<div id='divNewField'>
-	<p><button id='btnNewField' class='ui-button ui-state-default ui-corner-all'>New Field</button></p>
-</div>
-<h3><label id='lblFieldName'></label></h3>
-				
-<div id='divRainoutNumber'>
-	<p><label>Rainout Number:</label> <label id='lblRainoutNumber'></label></p>
-</div>
-				
-<p><label id='lblDirections'></label></p>
-<p><label id='lblComments'></label></p>
-			   
-	<button id='btnViewContacts' class='ui-button ui-state-default ui-corner-all'>Field Contacts</button>
-				
-<p>
-<button id='btnEditField' class='ui-button ui-state-default ui-corner-all'>Edit</button>
-<button id='btnDeleteField' class='ui-button ui-state-default ui-corner-all'>Delete</button>
-<button id='btnMapField' class='ui-button ui-state-default ui-corner-all'>Map</button>
-</p>
-			   
-
-@section Scripts {
 <script src="@Url.Content("~/Scripts/Map.js")" type="text/javascript"></script>
-
+<script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
 
 <script type="text/javascript">
 
-    var fieldData = new Array();
-    var selectedField = -1;
-
-    function onFindLocation() {
-        map.getCredentials(MakeGeocodeRequest);
-    }
-
-    function MakeGeocodeRequest(credentials) {
-        var geocodeRequest = "http://dev.virtualearth.net/REST/v1/Locations?query=" + encodeURI(document.getElementById('txtQuery').value) + "&output=json&jsonp=GeocodeCallback&key=" + credentials;
-        CallRestService(geocodeRequest);
-    }
-
-    function onClickRoute() {
-        map.getCredentials(MakeRouteRequest);
-    }
-
-    function MakeRouteRequest(credentials) {
-        var routeRequest = "http://dev.virtualearth.net/REST/v1/Routes?wp.0=" + document.getElementById('txtQuery').value + "&wp.1=" + document.getElementById('txtEnd').value + "&routePathOutput=Points&output=json&jsonp=RouteCallback&key=" + credentials;
-        CallRestService(routeRequest);
-    }
-
-    function RouteCallback(result) {
-
-
-        if (result &&
-              result.resourceSets &&
-              result.resourceSets.length > 0 &&
-              result.resourceSets[0].resources &&
-              result.resourceSets[0].resources.length > 0) {
-
-            // Set the map view
-            var bbox = result.resourceSets[0].resources[0].bbox;
-            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
-            map.setView({ bounds: viewBoundaries });
-
-
-            // Draw the route
-            var routeline = result.resourceSets[0].resources[0].routePath.line;
-            var routepoints = new Array();
-
-            for (var i = 0; i < routeline.coordinates.length; i++) {
-
-                routepoints[i] = new Microsoft.Maps.Location(routeline.coordinates[i][0], routeline.coordinates[i][1]);
-            }
-
-
-            // Draw the route on the map
-            var routeshape = new Microsoft.Maps.Polyline(routepoints, { strokeColor: new Microsoft.Maps.Color(200, 0, 0, 200) });
-            map.entities.push(routeshape);
-
-        }
-    }
-    function CallRestService(request) {
-        var script = document.createElement("script");
-        script.setAttribute("type", "text/javascript");
-        script.setAttribute("src", request);
-        document.body.appendChild(script);
-    }
-
-    function GeocodeCallback(result) {
-        alert("Found location: " + result.resourceSets[0].resources[0].name);
-
-        if (result &&
-               result.resourceSets &&
-               result.resourceSets.length > 0 &&
-               result.resourceSets[0].resources &&
-               result.resourceSets[0].resources.length > 0) {
-            // Set the map view using the returned bounding box
-            var bbox = result.resourceSets[0].resources[0].bbox;
-            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(new Microsoft.Maps.Location(bbox[0], bbox[1]), new Microsoft.Maps.Location(bbox[2], bbox[3]));
-            map.setView({ bounds: viewBoundaries });
-
-            // Add a pushpin at the found location
-            var location = new Microsoft.Maps.Location(result.resourceSets[0].resources[0].point.coordinates[0], result.resourceSets[0].resources[0].point.coordinates[1]);
-            var pushpin = new Microsoft.Maps.Pushpin(location);
-            map.entities.push(pushpin);
-        }
-    }
-
-    function onRecenterMap() {
-        //Make sure all pushpins are visible
-        if (points.length > 1) {
-            map.SetMapView(points);
-        }
-    }
-
-    function clearFieldData() {
-        $('#lblFieldName').text('');
-        $('#divRainoutNumber').hide();
-        $('#lblDirections').text('');
-        $('#lblComments').text('');
-        hideAdminBtns();
-    }
-
-    function onFieldSelected(fieldIndex) {
-        selectedField = fieldIndex;
-
-        if (shapes[fieldIndex]) {
-            map.SetCenterAndZoom(shapes[fieldIndex].GetIconAnchor(), 14);
-            map.ShowInfoBox(shapes[fieldIndex]);
-        }
-        else {
-            //Make sure all pushpins are visible
-            if (points.length > 1) {
-                map.SetMapView(points);
-            }
-        }
-
-        if (fieldData[fieldIndex]) {
-
-            var fd = fieldData[fieldIndex];
-
-            $('#lblFieldName').text(fd.Name);
-
-            if (fd.RainoutNumber.length) {
-                $('#divRainoutNumber').show('fast');
-                $('#lblRainoutNumber').text(fd.RainoutNumber);
-            }
-            else {
-                $('#divRainoutNumber').hide();
-            }
-
-            $('#lblDirections').text(fd.Directions);
-            $('#lblComments').text(fd.Comment);
-        }
-
-        showAdminBtns();
-    }
-
     $(document).ready(function () {
-        LoadMap();
+        initFieldsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
 
-        //map.AttachEvent("onclick", mouseClickHandler);
-
-        //ResizeMap();
-
-        //hideAdminBtns();
-
-        //$('#divRainoutNumber').hide();
-
-        //refreshFields();
     });
-
-    function mouseClickHandler(e) {
-
-        if (e.elementID) {
-            var shape = map.GetShapeByID(e.elementID);
-            for (var i = 0; i < shapes.length; i++) {
-                if (shapes[i] == shape) {
-                    onFieldSelected(i);
-                    break;
-                }
-            }
-        }
-    }
-
-    function refreshFields() {
-        var url = '@Url.Action("Index", "Fields")';
-        $.getJSON(url, loadPins);
-    }
-
-    function hideAdminBtns() {
-        $('#divNewField').hide();
-        $('#divEditDelField').hide();
-        $('#divContactInfo').hide();
-    }
-
-    function showAdminBtns() {
-        $('#divNewField').show('slow');
-        $('#divEditDelField').show('slow');
-        $('#divContactInfo').show('slow');
-    }
-
-    function loadPins(fields) {
-        $("#fieldList").empty();
-        clearMap();
-        clearFieldData();
-        var center = map.GetCenter();
-        selectedField = -1;
-        fieldData = [];
-
-        $.each(fields, function (i, field) {
-            var description = "";
-            if (field.Directions !== undefined) {
-                description = field.Directions;
-            }
-
-            if (field.Latitude != '' && field.Longitude != '') {
-                var LL = new VELatLong(field.Latitude, field.Longitude);
-
-                LoadPin(LL, field.Name, description);
-            }
-            else {
-                shapes.push(null);
-            }
-
-            // save off to display data when selected.
-            fieldData[i] = field;
-
-            //Add a field to the <ul> dinnerList on the right
-            $('#fieldList').append($('<li/>')
-							.attr("class", "fieldItem")
-							.append($('<a/>').attr("href",
-									  "javascript:onFieldSelected(" + i + ")")
-							.html(field.Name)));
-
-        });
-
-        //Make sure all pushpins are visible
-        if (points.length > 1) {
-            map.SetMapView(points);
-        }
-
-    }
-
-
 
 </script>
 
