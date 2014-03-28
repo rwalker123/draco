@@ -60,7 +60,7 @@
 
                     @if (Model.IsAdmin)
                     {
-                        <form style="display:none" data-bind="visible: !viewMode(), with: editingField">
+                        <form onsubmit="return false;" style="display:none" data-bind="visible: !viewMode(), with: editingField">
                             <div class="form-group">
                                 <label for="_editFieldName" class="control-label">Field Name</label>
                                 <input id="_editFieldName" type="text" class="form-control" data-bind="value: Name" />
@@ -74,8 +74,13 @@
                             <div class="form-group">
                                 <label for="_editFieldLocation" class="control-label">Find address or click on map to set field location</label>
                                 <button type="button" class="btn btn-primary" data-bind="click: onFindLocation"><span class="glyphicon glyphicon-search"></span></button>
-                                <div class="list-group" data-bind="foreach: $root.foundLocations">
-                                    <a href="#" data-bind="click: $root.pinEditLocation" class="list-group-item"><span data-bind="html: name"></span></a>
+                                <div data-bind="visible: $root.foundLocations().length">
+                                    <div class="list-group" data-bind="foreach: $root.foundLocations">
+                                        <a href="#" data-bind="click: $root.pinEditLocation" class="list-group-item"><span data-bind="html: name"></span></a>
+                                    </div>
+
+                                    <button class='btn btn-default' data-bind="click: $root.clearLocations"><span class="glyphicon glyphicon-chevron-up"></span></button>
+
                                 </div>
                                 @*<input id="recenter" type="button" class="form-control" onclick="onRecenterMap();" value="Recenter" />*@
                             </div>
@@ -108,47 +113,57 @@
 
                             <div class="form-group">
                                 <label for="_editFieldDirections" class="control-label">Directions</label>
-                                <input id="_editFieldDirections" type="text" class="form-control" data-bind="value: Directions" />
+                                <textarea id="_editFieldDirections" rows="6" class="form-control" data-bind="value: Directions"></textarea>
                             </div>
 
                             <div class="form-group">
                                 <label for="_editFieldComments" class="control-label">Comments</label>
-                                <input id="_editFieldComments" type="text" class="form-control" data-bind="value: Comment" />
+                                <textarea rows="3" id="_editFieldComments" class="form-control" data-bind="value: Comment"></textarea>
                             </div>
 
                             <div class="form-group">
-                                <button class='btn btn-primary'><span class="glyphicon glyphicon-check"></span></button>
-                                <button class='btn btn-danger'><span class="glyphicon glyphicon-remove"></span></button>
+                                <button class='btn btn-primary' data-bind="click: $root.saveEdit"><span class="glyphicon glyphicon-ok"></span></button>
+                                <button class='btn btn-danger' data-bind="click: $root.cancelEditMode"><span class="glyphicon glyphicon-remove"></span></button>
                             </div>
                         </form>
                     }
 
-                    <ul class="list-group" style="max-height:1000px; overflow: auto" data-bind="foreach: fields, visible: viewMode">
+                    <ul class="list-group" style="max-height:500px; overflow: auto" data-bind="foreach: fields, visible: viewMode">
                         <li class="list-group-item">
                             <h3><span data-bind="html: Name"></span> <small>(<span data-bind="html: ShortName"></span>)</small></h3>
-                            <address data-bind="html: Address, visible: Address"></address>
-                            <address data-bind="html: City, visible: City"></address>
+                            <address> 
+                                <span data-bind="html: Address, visible: Address"></span><br />
+                                <span data-bind="html: City, visible: City"></span>
+                                <span data-bind="visible: City() && State()">, </span>
+                                <span data-bind="html: State, visible: State"></span>&nbsp;
+                                <span data-bind="html: ZipCode, visible: ZipCode"></span>
+                                <br />
+                                <div data-bind="visible: RainoutNumber">
+                                    <abbr title="Rainout Number">R:</abbr>
+                                    <span data-bind="html: RainoutNumber"></span>
+                                </div>
+                            </address>
 
-                            <div data-bind="html: RainoutNumber, visible: RainoutNumber"></div>
 
                             <p data-bind="html: Directions, visible: Directions"></p>
                             <p data-bind="html: Comment, visible: Comment"></p>
 
-                            <button data-bind="visible: Latitude() && Longitude()" class="btn btn-default"><span class="glyphicon glyphicon-map-marker"></span></button> 
+                            <button data-bind="click: $root.centerOnMap, visible: Latitude() && Longitude()" class="btn btn-default"><span class="glyphicon glyphicon-map-marker"></span></button>
                             @*<input type="button" value="Calculate Route" class="form-control" onclick="onClickRoute()" />
                             Enter you destination: <input id="txtEnd" class="form-control" type="text" value="Seattle" /> <br />
                             Clicked lat/long: <input id="textBox" class="form-control" type="text" value="" /> <br />*@
 
                             @if (Model.IsAdmin)
                             {
-                                @*<ul>Field Contacts</ul>*@
+                            @*<ul>Field Contacts</ul>*@
 
-                                <button class='btn btn-default'><span class="glyphicon glyphicon-edit"></span></button>
-                                <button class='btn btn-danger'><span class="glyphicon glyphicon-remove"></span></button>
+                            <button class='btn btn-default' data-bind="click: $root.startEditField"><span class="glyphicon glyphicon-edit"></span></button>
+                            <button class='btn btn-danger' data-bind="click: $root.deleteField"><span class="glyphicon glyphicon-remove"></span></button>
                             }
                         </li>
                     </ul>
                 </div>
+
             </div>
         </div>
                 

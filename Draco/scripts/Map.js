@@ -51,11 +51,27 @@ var FieldsViewModel = function (accountId, isAdmin) {
     self.accountId = accountId;
     self.isAdmin = isAdmin;
     self.map = null;
-    self.noPins = true;
 
     self.viewMode = ko.observable(true);
+    self.addMode = ko.observable(true); // true for new field, false for edit existing.
     self.fields = ko.observableArray();
     self.foundLocations = ko.observableArray();
+
+    self.newFieldViewModel = new FieldViewModel({
+        Id: 0,
+        Address: '',
+        City: '',
+        State: '',
+        ZipCode: '',
+        Comment: '',
+        Contacts: [],
+        Directions: '',
+        Latitude: '',
+        Longitude: '',
+        Name: '',
+        RainoutNumber: '',
+        ShortName: ''
+    });
 
     // data for game currently being edit.
     self.editingField = ko.validatedObservable(new FieldViewModel({
@@ -65,7 +81,7 @@ var FieldsViewModel = function (accountId, isAdmin) {
         State: '',
         ZipCode: '',
         Comment: '',
-        Contacts: ko.observableArray(),
+        Contacts: [],
         Directions: '',
         Latitude: '',
         Longitude: '',
@@ -107,9 +123,86 @@ var FieldsViewModel = function (accountId, isAdmin) {
     self.editPin;
 
     self.startFieldAdd = function () {
+        self.editingField().update(self.newFieldViewModel.toJS());
+
         self.viewMode(!self.viewMode());
         if (self.editPin && self.viewMode())
-            map.entities.remove(self.editPin);
+            self.removeEditPin();
+
+        self.addMode(true);
+    }
+
+    self.startEditField = function (field) {
+        self.editingField().update(field.toJS());
+
+        self.viewMode(false);
+        self.addMode(false);
+    }
+
+    self.cancelEditMode = function () {
+        self.viewMode(true);
+    }
+
+    self.saveEdit = function (theField) {
+        if (!self.editingField.isValid())
+            return;
+
+        var newData = self.editingField().toJS();
+
+        $.ajax({
+            type: (self.addMode()) ? "POST" : "PUT",
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
+            data: newData,
+            success: function (field) {
+                if (self.addMode()) {
+                    var fieldVM = new FieldViewModel(field);
+                    self.fields.push(fieldVM);
+                    self.addFieldPin(fieldVM);
+                }
+                else {
+                    self.removeFieldPin(theField);
+                    theField.update(field);
+                    self.addFieldPin(theField);
+                }
+                self.cancelEditMode();
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.deleteField = function (field) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/field/' + field.Id(),
+            success: function () {
+                self.removeFieldPin(field);
+                self.fields.remove(field);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
+
+    self.removeFieldPin = function (field) {
+        if (field.pin) {
+            map.entities.remove(field.pin);
+            field.pin = null;
+            field.location = null;
+        }
+    }
+
+    self.addFieldPin = function (field) {
+        if (field.Latitude() && field.Longitude()) {
+            var latVal = parseFloat(field.Latitude());
+            var longVal = parseFloat(field.Longitude());
+
+            field.location = new Microsoft.Maps.Location(latVal, longVal);
+            field.pin = self.loadPin(field.location, field.ShortName(), field.Name(), field.Directions());
+        }
     }
 
     self.loadFields = function () {
@@ -118,11 +211,24 @@ var FieldsViewModel = function (accountId, isAdmin) {
             type: "GET",
             url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
             success: function (fields) {
+                var locations = [];
+
                 var fieldsVM = $.map(fields, function (field) {
-                    return new FieldViewModel(field);
+                    var fieldVM = new FieldViewModel(field);
+                    self.addFieldPin(fieldVM);
+                    if (fieldVM.location) {
+                        locations.push(fieldVM.location);
+                    }
+                    return fieldVM;
                 });
 
                 self.fields(fieldsVM);
+
+                // get all fields in view.
+                if (locations.length > 0) {
+                    var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(locations);
+                    map.setView({ bounds: viewBoundaries });
+                }
 
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -148,78 +254,65 @@ var FieldsViewModel = function (accountId, isAdmin) {
 
         //Add handler for the map click event.
         Microsoft.Maps.Events.addHandler(map, 'click', self.addPin);
-
-        //try {
-        //    // Create the tile layer source
-        //    var tileSource = new Microsoft.Maps.TileSource({ uriConstructor: 'http://www.microsoft.com/maps/isdk/ajax/layers/lidar/{quadkey}.png' });
-
-        //    // Construct the layer using the tile source
-        //    var tilelayer = new Microsoft.Maps.TileLayer({ mercator: tileSource, opacity: .7 });
-
-        //    // Push the tile layer to the map
-        //    map.entities.push(tilelayer);
-
-        //}
-        //catch (err) {
-        //    alert('Error Message:' + err.message);
-        //}
-
-        //var center = map.getCenter();
-        //self.loadPin(center, "CP", "Capitol Park");
-
-        // Define the pushpin location
-        //var loc = new Microsoft.Maps.Location(latitude, longitude);
-        //map.setView({ center: loc, zoom: 10 });
-
     }
 
-    self.loadPin = function (loc, name, description) {
+    self.activeInfobox = null;
+
+    self.loadPin = function (loc, name, longName, description) {
         var pin = new Microsoft.Maps.Pushpin(loc, { text: name });
 
         // Create the infobox for the pushpin
-        pinInfobox = new Microsoft.Maps.Infobox(pin.getLocation(),
+        var pinInfobox = new Microsoft.Maps.Infobox(pin.getLocation(),
             {
-                title: name,
+                title: longName,
                 description: description,
                 visible: false,
                 offset: new Microsoft.Maps.Point(0, 15)
             });
 
         // Add handler for the pushpin click event.
-        Microsoft.Maps.Events.addHandler(pin, 'click', self.displayInfobox);
+        Microsoft.Maps.Events.addHandler(pin, 'click', function (e) {
+            if (self.activeInfobox)
+                self.activeInfobox.setOptions({ visible: false });
 
-        // Add a handler to function that will grey out 
-        //    other pins in the collection when a new one is added
-        Microsoft.Maps.Events.addHandler(map.entities, 'entityadded', self.shadePins);
+            pinInfobox.setOptions({ visible: true });
+            self.activeInfobox = pinInfobox;
+        });
 
         // Hide the infobox when the map is moved.
-        Microsoft.Maps.Events.addHandler(map, 'viewchange', self.hideInfobox);
+        Microsoft.Maps.Events.addHandler(map, 'viewchange', function (e) {
+            pinInfobox.setOptions({ visible: false });
+            self.activeInfobox = null;
+        });
 
         // Add the pushpin and infobox to the map
         map.entities.push(pin);
         map.entities.push(pinInfobox);
 
+        return pin;
+    }
+
+    self.centerOnMap = function (field) {
+        var latVal = parseFloat(field.Latitude());
+        var longVal = parseFloat(field.Longitude());
+
         // Center the map on the location
-        map.setView({ center: loc, zoom: 10 });
+        map.setView({ center: new Microsoft.Maps.Location(latVal, longVal), zoom: 17 });
     }
 
-    self.displayInfobox = function (e) {
-        pinInfobox.setOptions({ visible: true });
+    self.removeEditPin = function () {
+        map.entities.remove(self.editPin);
+        self.editingField().Latitude(0);
+        self.editingField().Longitude(0);
     }
 
-    self.hideInfobox = function (e) {
-        pinInfobox.setOptions({ visible: false });
+    self.addEditPin = function (loc) {
+        self.editPin = new Microsoft.Maps.Pushpin(loc);
+        map.entities.push(self.editPin);
+
+        self.editingField().Latitude(loc.latitude);
+        self.editingField().Longitude(loc.longitude);
     }
-
-    //self.displayLatLong = function (e) {
-    //    self.addPin(e);
-
-    //    if (e.targetType == "map") {
-    //        var point = new Microsoft.Maps.Point(e.getX(), e.getY());
-    //        var loc = e.target.tryPixelToLocation(point);
-    //        //document.getElementById("textBox").value = loc.latitude + ", " + loc.longitude;
-    //    }
-    //}
 
     self.addPin = function (e) {
         if (self.viewMode())
@@ -229,31 +322,13 @@ var FieldsViewModel = function (accountId, isAdmin) {
             var point = new Microsoft.Maps.Point(e.getX(), e.getY());
             var loc = e.target.tryPixelToLocation(point);
             if (self.editPin)
-                map.entities.remove(self.editPin);
+                self.removeEditPin();
 
-            self.editPin = new Microsoft.Maps.Pushpin(loc);
-            map.entities.push(self.editPin);
+            self.addEditPin(loc)
         }
-    }
-
-    self.shadePins = function (e) {
-
-        if (self.noPins) {
-            
-            // If there aren't yet any pins on the map, do not grey the pin out.   
-            self.noPins = false;
-
-        }
-        else {
-            var pin = null;
-
-            // Loop through the collection of pushpins on the map and grey out 
-            //    all but the last one added (which is at the end of the array). 
-            var i = 0;
-            for (i = 0; i < e.collection.getLength() - 1; i++) {
-                pin = e.collection.get(i);
-                pin.setOptions({ icon: "GreyPin.png" });
-            }
+        else if (e.targetType == "pushpin") {
+            if (e.target == self.editPin) 
+                self.removeEditPin();
         }
     }
 
@@ -304,6 +379,10 @@ var FieldsViewModel = function (accountId, isAdmin) {
     //    }
     //}
 
+    self.clearLocations = function () {
+        self.foundLocations.removeAll();
+    }
+
     self.pinEditLocation = function (location) {
         // Set the map view using the returned bounding box
         var bbox = location.bbox;
@@ -313,14 +392,12 @@ var FieldsViewModel = function (accountId, isAdmin) {
         // Add a pushpin at the found location
         var location = new Microsoft.Maps.Location(location.point.coordinates[0], location.point.coordinates[1]);
         if (self.editPin)
-            map.entities.remove(self.editPin);
+            self.removeEditPin();
 
-        self.editPin = new Microsoft.Maps.Pushpin(location);
-        map.entities.push(self.editPin);
+        self.addEditPin(location);
     }
 
     self.geocodeCallback = function (result) {
-        //alert("Found location: " + result.resourceSets[0].resources[0].name);
         if (self.viewMode())
             return;
 

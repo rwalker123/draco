@@ -107,105 +107,77 @@ namespace DataAccess
                     });
         }
 
-        static public bool ModifyField(Field field)
+        static public bool ModifyField(Field f)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.ModifyField", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@fieldName", SqlDbType.VarChar, 25).Value = field.Name;
-                    myCommand.Parameters.Add("@shortName", SqlDbType.VarChar, 5).Value = field.ShortName;
-                    myCommand.Parameters.Add("@fieldComment", SqlDbType.VarChar, 255).Value = field.Comment ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldCity", SqlDbType.VarChar, 25).Value = field.City ?? String.Empty;
-                    myCommand.Parameters.Add("@rainoutNumber", SqlDbType.VarChar, 14).Value = field.RainoutNumber ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldZip", SqlDbType.VarChar, 10).Value = field.ZipCode ?? String.Empty;
-                    myCommand.Parameters.Add("@dir", SqlDbType.VarChar, 255).Value = field.Directions ?? String.Empty;
-                    myCommand.Parameters.Add("@address", SqlDbType.VarChar, 255).Value = field.Address ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldState", SqlDbType.VarChar, 25).Value = field.State ?? String.Empty;
-                    myCommand.Parameters.Add("@longitude", SqlDbType.VarChar, 25).Value = field.Longitude ?? String.Empty;
-                    myCommand.Parameters.Add("@latitude", SqlDbType.VarChar, 25).Value = field.Latitude ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = field.Id;
+            var dbField = (from fld in db.AvailableFields
+                           where fld.Id == f.Id
+                           select fld).SingleOrDefault();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount > 0);
-        }
-
-        static public bool AddField(Field field)
-        {
-            int rowCount = 0;
-
-            if (field.AccountId <= 0)
+            if (dbField == null)
                 return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateField", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@fieldName", SqlDbType.VarChar, 25).Value = field.Name;
-                    myCommand.Parameters.Add("@fieldComment", SqlDbType.VarChar, 255).Value = field.Comment ?? String.Empty;
-                    myCommand.Parameters.Add("@shortName", SqlDbType.VarChar, 5).Value = field.ShortName;
-                    myCommand.Parameters.Add("@fieldCity", SqlDbType.VarChar, 25).Value = field.City ?? String.Empty;
-                    myCommand.Parameters.Add("@rainoutNumber", SqlDbType.VarChar, 15).Value = field.RainoutNumber ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldZip", SqlDbType.VarChar, 10).Value = field.ZipCode ?? String.Empty;
-                    myCommand.Parameters.Add("@dir", SqlDbType.VarChar, 255).Value = field.Directions ?? String.Empty;
-                    myCommand.Parameters.Add("@address", SqlDbType.VarChar, 100).Value = field.Address ?? String.Empty;
-                    myCommand.Parameters.Add("@fieldState", SqlDbType.VarChar, 25).Value = field.State ?? String.Empty;
-                    myCommand.Parameters.Add("@longitude", SqlDbType.VarChar, 25).Value = field.Longitude ?? String.Empty;
-                    myCommand.Parameters.Add("@latitude", SqlDbType.VarChar, 25).Value = field.Latitude ?? String.Empty;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = field.AccountId;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbField.Address = f.Address ?? String.Empty;
+            dbField.City = f.City ?? String.Empty;
+            dbField.Comment = f.Comment ?? String.Empty;
+            dbField.Directions = f.Directions ?? String.Empty;
+            dbField.Latitude = f.Latitude ?? String.Empty;
+            dbField.Longitude = f.Longitude ?? String.Empty;
+            dbField.Name = f.Name;
+            dbField.RainoutNumber = f.RainoutNumber ?? String.Empty;
+            dbField.ShortName = f.ShortName;
+            dbField.State = f.State ?? String.Empty;
+            dbField.ZipCode = f.ZipCode ?? String.Empty;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            db.SubmitChanges();
 
-            return (rowCount > 0);
+            return true;
+        }
+
+        static public long AddField(Field field)
+        {
+            DB db = DBConnection.GetContext();
+
+            var dbField = new SportsManager.Model.AvailableField()
+            {
+                Name = field.Name,
+                ShortName = field.ShortName,
+                AccountId = field.AccountId,
+                Address = field.Address ?? String.Empty,
+                City = field.City ?? String.Empty,
+                State = field.State ?? String.Empty,
+                ZipCode = field.ZipCode ?? String.Empty,
+                Directions = field.Directions ?? String.Empty,
+                Comment = field.Comment ?? String.Empty,
+                Latitude = field.Latitude ?? String.Empty,
+                Longitude = field.Longitude ?? String.Empty,
+                RainoutNumber = field.RainoutNumber ?? String.Empty
+            };
+
+            db.AvailableFields.InsertOnSubmit(dbField);
+            db.SubmitChanges();
+
+            field.Id = dbField.Id;
+
+            return field.Id;
         }
 
         static public bool RemoveField(long id)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteField", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbField = (from f in db.AvailableFields
+                           where f.Id == id
+                           select f).SingleOrDefault();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            if (dbField == null)
+                return false;
 
-            return (rowCount > 0);
+            db.AvailableFields.DeleteOnSubmit(dbField);
+            db.SubmitChanges();
+
+            return true;
         }
 
         static public List<FieldContact> GetFieldContacts(long accountId)
