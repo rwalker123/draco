@@ -55,6 +55,13 @@ var FieldsViewModel = function (accountId, isAdmin) {
     self.viewMode = ko.observable(true);
     self.addMode = ko.observable(true); // true for new field, false for edit existing.
     self.fields = ko.observableArray();
+    self.selectedFieldId = ko.observable();
+    self.selectedField = ko.computed(function () {
+        return ko.utils.arrayFirst(self.fields(), function (item) {
+            if (item.Id() === self.selectedFieldId())
+                return item;
+        });
+    });
     self.foundLocations = ko.observableArray();
 
     self.newFieldViewModel = new FieldViewModel({
@@ -89,6 +96,7 @@ var FieldsViewModel = function (accountId, isAdmin) {
         RainoutNumber: '',
         ShortName: ''
     }));
+
 
     self.searchField = '';
 
@@ -140,6 +148,7 @@ var FieldsViewModel = function (accountId, isAdmin) {
     }
 
     self.cancelEditMode = function () {
+        self.removeEditPin();
         self.viewMode(true);
     }
 
@@ -158,11 +167,19 @@ var FieldsViewModel = function (accountId, isAdmin) {
                     var fieldVM = new FieldViewModel(field);
                     self.fields.push(fieldVM);
                     self.addFieldPin(fieldVM);
+                    self.fields.sort(function(left, right) {
+                        return left.Name() == right.Name() ? 0 : (left.Name() < right.Name() ? -1 : 1);
+                    });
                 }
                 else {
-                    self.removeFieldPin(theField);
-                    theField.update(field);
-                    self.addFieldPin(theField);
+                    ko.utils.arrayFirst(self.fields(), function (item) {
+                        if (item.Id() === field.Id) {
+                            self.removeFieldPin(item);
+                            item.update(field);
+                            self.addFieldPin(item);
+                            return;
+                        }
+                    });
                 }
                 self.cancelEditMode();
             },
@@ -205,31 +222,33 @@ var FieldsViewModel = function (accountId, isAdmin) {
         }
     }
 
+    self.viewAllFields = function () {
+        var locations = $.map(self.fields(), function (field) {
+            return field.location ? field.location : null;
+        });
+
+        // get all fields in view.
+        if (locations.length > 0) {
+            var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(locations);
+            map.setView({ bounds: viewBoundaries });
+        }
+    }
+
     self.loadFields = function () {
 
         $.ajax({
             type: "GET",
             url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
             success: function (fields) {
-                var locations = [];
-
                 var fieldsVM = $.map(fields, function (field) {
                     var fieldVM = new FieldViewModel(field);
                     self.addFieldPin(fieldVM);
-                    if (fieldVM.location) {
-                        locations.push(fieldVM.location);
-                    }
                     return fieldVM;
                 });
 
                 self.fields(fieldsVM);
 
-                // get all fields in view.
-                if (locations.length > 0) {
-                    var viewBoundaries = Microsoft.Maps.LocationRect.fromLocations(locations);
-                    map.setView({ bounds: viewBoundaries });
-                }
-
+                self.viewAllFields();
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
