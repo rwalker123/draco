@@ -19,7 +19,7 @@ namespace SportsManager.ViewModels
         {
             AccountId = accountId;
             Controller = c;
-
+            UserId = Globals.GetCurrentUserId();
             m_account = DataAccess.Accounts.GetAccount(accountId);
             AccountName = m_account.AccountName;
             AccountLogoUrl = m_account.LargeLogoURL;
@@ -71,9 +71,15 @@ namespace SportsManager.ViewModels
             private set;
         }
 
-        // allow "team" view models to override.
         [ScaffoldColumn(false)]
         public bool IsAdmin
+        {
+            get;
+            protected set;
+        }
+
+        [ScaffoldColumn(false)]
+        public String UserId
         {
             get;
             protected set;

@@ -14,6 +14,18 @@ namespace SportsManager
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
+                name: "TopicsApi",
+                routeTemplate: "api/{controller}/{accountId}/Topics/{topicId}/{action}/{id}",
+                defaults: new { id = RouteParameter.Optional }
+            );
+
+            config.Routes.MapHttpRoute(
+                name: "CategoriesApi",
+                routeTemplate: "api/{controller}/{accountId}/Categories/{categoryId}/{action}/{id}",
+                defaults: new { id = RouteParameter.Optional }
+            );
+
+            config.Routes.MapHttpRoute(
                 name: "LeagueApi",
                 routeTemplate: "api/{controller}/{accountId}/League/{leagueSeasonId}/{action}/{id}",
                 defaults: new { id = RouteParameter.Optional }

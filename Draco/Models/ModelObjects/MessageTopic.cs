@@ -7,84 +7,73 @@ namespace ModelObjects
     /// </summary>
     public class MessageTopic
     {
-        private long m_id;
-        private long m_categoryId;
-        private long m_creatorContactId;
-        private DateTime m_createDate;
-        private string m_topicTitle;
-        private bool m_stickyTopic;
-        private long m_numberOfViews;
-
-        private MessagePost m_lastPost;
-        private int m_numberOfReplies;
-
         public MessageTopic()
         {
         }
 
         public MessageTopic(long id, long categoryId, long creatorContactId, DateTime createDate, string topicTitle, bool stickyTopic, long numberOfViews)
         {
-            m_id = id;
-            m_categoryId = categoryId;
-            m_creatorContactId = creatorContactId;
-            m_createDate = createDate;
-            m_topicTitle = topicTitle;
-            m_stickyTopic = stickyTopic;
-            m_numberOfViews = numberOfViews;
+            Id = id;
+            CategoryId = categoryId;
+            CreatorContactId = creatorContactId;
+            CreateDate = createDate;
+            TopicTitle = topicTitle;
+            StickyTopic = stickyTopic;
+            NumberOfViews = numberOfViews;
         }
 
         public long Id
         {
-            get { return m_id; }
-            set { m_id = value; }
+            get;
+            set;
         }
 
         public long CategoryId
         {
-            get { return m_categoryId; }
-            set { m_categoryId = value; }
+            get;
+            set;
         }
 
         public long CreatorContactId
         {
-            get { return m_creatorContactId; }
-            set { m_creatorContactId = value; }
+            get;
+            set;
         }
 
         public DateTime CreateDate
         {
-            get { return m_createDate; }
-            set { m_createDate = value; }
+            get;
+            set;
         }
 
         public bool StickyTopic
         {
-            get { return m_stickyTopic; }
-            set { m_stickyTopic = value; }
+            get;
+            set;
         }
 
         public string TopicTitle
         {
-            get { return m_topicTitle; }
-            set { m_topicTitle = value; }
+            get;
+            set;
         }
 
         public long NumberOfViews
         {
-            get { return m_numberOfViews; }
-            set { m_numberOfViews = value; }
+            get;
+            set;
         }
 
         public MessagePost LastPost
         {
-            get { return m_lastPost; }
-            set { m_lastPost = value; }
+            get;
+            set;
         }
 
         public int NumberOfReplies
         {
-            get { return m_numberOfReplies; }
-            set { m_numberOfReplies = value; }
+            get;
+            set;
         }
 
         public static int CompareMessageTopicByLastPostDate(MessageTopic topic1, MessageTopic topic2)

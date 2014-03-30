@@ -7,16 +7,6 @@ namespace ModelObjects
     /// </summary>
     public class MessagePost
     {
-        private long m_id;
-        private long m_topicId;
-        private int m_postOrder;
-        private long m_creatorContactId;
-        private DateTime m_postDate;
-        private string m_text;
-        private DateTime m_editDate;
-        private string m_subject;
-        private long m_categoryId;
-
         public MessagePost()
         {
         }
@@ -25,69 +15,69 @@ namespace ModelObjects
                             DateTime postDate, string postText, DateTime editDate,
                             string subject, long catId)
         {
-            m_id = id;
-            m_topicId = topicId;
-            m_postOrder = postOrder;
-            m_creatorContactId = creatorContactId;
-            m_postDate = postDate;
-            m_text = postText;
-            m_editDate = editDate;
-            m_subject = subject;
-            m_categoryId = catId;
+            Id = id;
+            TopicId = topicId;
+            Order = postOrder;
+            CreatorContactId = creatorContactId;
+            CreateDate = postDate;
+            Text = postText;
+            EditDate = editDate;
+            Subject = subject;
+            CategoryId = catId;
         }
 
         public long Id
         {
-            get { return m_id; }
-            set { m_id = value; }
+            get;
+            set;
         }
 
         public long TopicId
         {
-            get { return m_topicId; }
-            set { m_topicId = value; }
+            get;
+            set;
         }
 
         public int Order
         {
-            get { return m_postOrder; }
-            set { m_postOrder = value; }
+            get;
+            set;
         }
 
         public long CreatorContactId
         {
-            get { return m_creatorContactId; }
-            set { m_creatorContactId = value; }
+            get;
+            set;
         }
 
         public DateTime CreateDate
         {
-            get { return m_postDate; }
-            set { m_postDate = value; }
+            get;
+            set;
         }
 
         public string Text
         {
-            get { return m_text; }
-            set { m_text = value; }
+            get;
+            set;
         }
 
         public DateTime EditDate
         {
-            get { return m_editDate; }
-            set { m_editDate = value; }
+            get;
+            set;
         }
 
         public string Subject
         {
-            get { return m_subject; }
-            set { m_subject = value; }
+            get;
+            set;
         }
 
         public long CategoryId
         {
-            get { return m_categoryId; }
-            set { m_categoryId = value; }
+            get;
+            set;
         }
     }
 }

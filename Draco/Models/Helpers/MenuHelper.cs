@@ -92,12 +92,12 @@ namespace SportsManager.Models.Helpers
                                     new RouteValueDictionary(new { area = "baseball", controller = "Fields", action = "Index", accountId = accountId })).VirtualPath;
 
                 string discussionsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                    new RouteValueDictionary(new { area = "baseball", controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
+                                    new RouteValueDictionary(new { controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
 
                 string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "MemberBusiness", action = "Index", accountId = accountId })).VirtualPath;
 
-                var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Forums", "Forums");
+                var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
                 forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page"));
 
                 var scheduleMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(scheduleurl, "Schedule", "Schedule");

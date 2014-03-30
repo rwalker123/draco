@@ -1,14 +1,9 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
-using System.Configuration;
-using System.Web.SessionState;
-using System.IO;
-using System.Collections.Generic;
-using System.Web.Profile;
-
 using ModelObjects;
+using SportsManager;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 
 namespace DataAccess
@@ -18,780 +13,562 @@ namespace DataAccess
     /// </summary>
     static public class MessageBoard
     {
-        static private MessageCategory CreateCategory(SqlDataReader dr)
+        static public IQueryable<MessageCategory> GetCategories(long accountId)
         {
-            return new MessageCategory(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt32(2), dr.GetString(3), dr.GetString(4),
-                                       dr.GetBoolean(5), dr.GetBoolean(6), dr.GetBoolean(7), dr.GetBoolean(8));
-        }
+            DB db = DBConnection.GetContext();
 
-        static private MessageTopic CreateTopic(SqlDataReader dr)
-        {
-            return new MessageTopic(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetDateTime(3), dr.GetString(4),
-                                       dr.GetBoolean(5), dr.GetInt64(6));
-        }
-
-        static private MessagePost CreatePost(SqlDataReader dr)
-        {
-            return new MessagePost(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt32(2), dr.GetInt64(3), dr.GetDateTime(4),
-                                       dr.GetString(5), dr.GetDateTime(6), dr.GetString(7), dr.GetInt64(8));
-        }
-
-        static public List<MessageCategory> GetCategories(long accountId)
-        {
-            List<MessageCategory> cats = new List<MessageCategory>();
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageCategories", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mc in db.MessageCategories
+                    where mc.AccountId == accountId && !mc.isTeam
+                    orderby mc.CategoryOrder
+                    select new MessageCategory()
                     {
-                        cats.Add(CreateCategory(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return cats;
+                        Id = mc.Id,
+                        AccountId = mc.AccountId,
+                        AllowAnonymousPost = mc.AllowAnonymousPost,
+                        AllowAnonymousTopic = mc.AllowAnonymousTopic,
+                        Name = mc.CategoryName,
+                        IsModerated = mc.isModerated,
+                        IsTeam = mc.isTeam,
+                        Description = mc.CategoryDescription,
+                        Order = mc.CategoryOrder
+                    });
         }
 
-        static public List<MessageCategory> GetContactGlobalCategoriesWithDetails(long accountId, Contact contact)
+        static public IQueryable<MessageCategory> GetContactGlobalCategoriesWithDetails(long accountId, Contact contact)
         {
-            List<MessageCategory> cats = new List<MessageCategory>();
-
-            long contactId = contact.Id;
-
-            if (string.Compare(contact.UserName, "administrator", true) == 0 || DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
+            if (DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
             {
-                try
-                {
-                    using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                    {
-                        SqlCommand myCommand = new SqlCommand("dbo.GetGlobalMessageCategory", myConnection);
-                        myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                        myConnection.Open();
-                        myCommand.Prepare();
-
-                        SqlDataReader dr = myCommand.ExecuteReader();
-
-                        while (dr.Read())
+                DB db = DBConnection.GetContext();
+                return (from mc in db.MessageCategories
+                        where mc.AccountId == 0
+                        select new MessageCategory()
                         {
-                            MessageCategory cat = CreateCategory(dr);
-                            cat.LastPost = GetLastPostForCategory(cat.Id);
-                            cat.NumberOfThreads = GetNumberOfThreadsForCategory(cat.Id);
-
-                            cats.Add(cat);
-                        }
-                    }
-                }
-                catch (SqlException ex)
-                {
-                    Globals.LogException(ex);
-                }
-
+                            Id = mc.Id,
+                            AccountId = mc.AccountId,
+                            AllowAnonymousPost = mc.AllowAnonymousPost,
+                            AllowAnonymousTopic = mc.AllowAnonymousTopic,
+                            Name = mc.CategoryName,
+                            IsModerated = mc.isModerated,
+                            IsTeam = mc.isTeam,
+                            Description = mc.CategoryDescription,
+                            Order = mc.CategoryOrder,
+                            LastPost = GetLastPostForCategory(mc.Id),
+                            NumberOfThreads = GetNumberOfThreadsForCategory(mc.Id)
+                        });
             }
 
-            return cats;
+            return null;
         }
 
-        static public List<MessageCategory> GetContactTeamCategoriesWithDetails(long accountId, Contact contact)
+        static public IEnumerable<MessageCategory> GetContactTeamCategoriesWithDetails(long accountId, Contact contact)
         {
-            System.Diagnostics.Debug.Assert(false, "NOT IMPLEMENTED");
-            List<MessageCategory> cats = new List<MessageCategory>();
+            DB db = DBConnection.GetContext();
 
-            long contactId = contact.Id;
+            IQueryable<long> teamIds;
 
-            if (string.Compare(contact.UserName, "administrator", true) == 0) // || DataAccess.Accounts.IsAccountAdmin(contact.UserId))
+            if (DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
             {
-                contactId = -1;
+                // admin can see all teams.
+                teamIds = (from cs in db.CurrentSeasons
+                           join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                           join l in db.Leagues on ls.LeagueId equals l.Id
+                           join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                           where cs.AccountId == accountId
+                           select ts.TeamId).Distinct();
+            }
+            else
+            {
+                // non-admin can see teams they are on Roster, a manager, or a "TeamAdmin" or "TeamPhotoAdmin"
+                teamIds = (from cs in db.CurrentSeasons
+                           join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                           join l in db.Leagues on ls.LeagueId equals l.Id
+                           join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                           join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                           join r in db.Rosters on rs.PlayerId equals r.Id
+                           where cs.AccountId == accountId && r.ContactId == contact.Id && !rs.Inactive
+                           select ts.TeamId).Union(
+                               (from cs in db.CurrentSeasons
+                                join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                                join l in db.Leagues on ls.LeagueId equals l.Id
+                                join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                join tsm in db.TeamSeasonManagers on ts.Id equals tsm.TeamSeasonId
+                                where cs.AccountId == accountId && tsm.ContactId == contact.Id
+                                select ts.TeamId)
+                               ).Union(
+                               (from cr in db.ContactRoles
+                                join c in db.Contacts on cr.ContactId equals c.Id
+                                join ur in db.AspNetRoles on cr.RoleId equals ur.Id
+                                where c.CreatorAccountId == accountId && cr.ContactId == contact.Id &&
+                                (ur.Name == "TeamAdmin" || ur.Name == "TeamPhotoAdmin")
+                                select cr.RoleData)
+                               ).Distinct();
             }
 
-            if (contactId == 0)
+            List<MessageCategory> cats = new List<MessageCategory>();
+
+            if (!teamIds.Any())
                 return cats;
 
-//CREATE PROCEDURE [dbo].[GetContactTeams]( @accountId bigint, @contactId bigint)
-//AS
-
-//    IF @contactId = -1
-//    BEGIN
-//        SELECT Distinct TeamsSeason.TeamId
-//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
-//                       LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
-//                       LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
-//        WHERE CurrentSeason.AccountId = @accountId 
-//    END
-//    ELSE
-//    BEGIN	
-//        SELECT Distinct TeamsSeason.TeamId
-//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
-//                           LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
-//                           LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
-//                           LEFT JOIN RosterSeason ON TeamsSeason.Id = RosterSeason.TeamSeasonId
-//                           LEFT JOIN Roster ON RosterSeason.PlayerId = Roster.Id
-//        WHERE CurrentSeason.AccountId = @accountId 
-//                AND Roster.ContactId = @contactId 
-//                AND RosterSeason.Inactive = 0
-
-//        UNION 
-//        SELECT Distinct TeamsSeason.TeamId
-//        FROM CurrentSeason LEFT JOIN LeagueSeason ON CurrentSeason.SeasonId = LeagueSeason.SeasonId
-//                           LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
-//                           LEFT JOIN TeamsSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId
-//                           LEFT JOIN TeamSeasonManager ON TeamsSeason.Id = TeamSeasonManager.TeamSeasonId
-//        WHERE CurrentSeason.AccountId = @accountId
-//              AND TeamSeasonManager.ContactId = @contactId
-			  
-//        UNION
-//        SELECT Distinct RoleData 
-//        FROM ContactRoles LEFT JOIN Contacts ON ContactRoles.ContactId = Contacts.Id
-//        WHERE CreatorAccountId = @accountId AND ContactId = @contactId AND (RoleName = 'TeamAdmin' OR RoleName = 'TeamPhotoAdmin')
-		
-//    END
-            try
+            foreach (var teamId in teamIds)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
+                SportsManager.Model.MessageCategory dbMessageCategory = (from mc in db.MessageCategories
+                                                                         where mc.isTeam && mc.AccountId == teamId
+                                                                         select mc).SingleOrDefault();
+
+                if (dbMessageCategory == null)
                 {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetContactTeams", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = contactId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    SqlCommand myCommand2 = new SqlCommand("dbo.[GetContactTeamMessageCategory]", myConnection);
-                    myCommand2.CommandType = System.Data.CommandType.StoredProcedure;
-                    SqlParameter teamParam = myCommand2.Parameters.Add("@teamId", SqlDbType.BigInt);
-
-                    List<long> teamData = new List<long>();
-
-                    while (dr.Read())
+                    dbMessageCategory = new SportsManager.Model.MessageCategory()
                     {
-                        if (!teamData.Contains(dr.GetInt64(0)))
-                            teamData.Add(dr.GetInt64(0));
-                    }
+                        AccountId = teamId,
+                        CategoryOrder = 0,
+                        CategoryName = "{0} Chat",
+                        CategoryDescription = "Discussion forum available only to logged in team members",
+                        AllowAnonymousPost = false,
+                        AllowAnonymousTopic = false,
+                        isTeam = true,
+                        isModerated = false
+                    };
 
-                    dr.Close();
-
-                    foreach (long teamId in teamData)
-                    {
-                        teamParam.Value = teamId;
-
-                        myCommand2.Prepare();
-                        SqlDataReader dr2 = myCommand2.ExecuteReader();
-
-                        if (dr2.Read())
-                        {
-                            MessageCategory cat = CreateCategory(dr2);
-                            cat.Name = String.Format(cat.Name, DataAccess.Teams.GetTeamNameFromTeamId(cat.AccountId, true));
-                            
-                            cat.LastPost = GetLastPostForCategory(cat.Id);
-                            cat.NumberOfThreads = GetNumberOfThreadsForCategory(cat.Id);
-
-                            cats.Add(cat);
-                        }
-
-                        dr2.Close();
-                    }
+                    db.MessageCategories.InsertOnSubmit(dbMessageCategory);
+                    db.SubmitChanges();
                 }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
+
+                ModelObjects.MessageCategory messageCategory = new MessageCategory()
+                {
+                    Id = dbMessageCategory.Id,
+                    AccountId = dbMessageCategory.AccountId,
+                    AllowAnonymousPost = dbMessageCategory.AllowAnonymousPost,
+                    AllowAnonymousTopic = dbMessageCategory.AllowAnonymousTopic,
+                    Name = String.Format(dbMessageCategory.CategoryName, DataAccess.Teams.GetTeamNameFromTeamId(dbMessageCategory.AccountId, true)),
+                    IsModerated = dbMessageCategory.isModerated,
+                    IsTeam = dbMessageCategory.isTeam,
+                    Description = dbMessageCategory.CategoryDescription,
+                    Order = dbMessageCategory.CategoryOrder,
+                    LastPost = GetLastPostForCategory(dbMessageCategory.Id),
+                    NumberOfThreads = GetNumberOfThreadsForCategory(dbMessageCategory.Id)
+                };
+
+                cats.Add(messageCategory);
+
             }
 
             return cats;
         }
 
 
-        static public List<MessageCategory> GetCategoriesWithDetails(long accountId)
+        static public IQueryable<MessageCategory> GetCategoriesWithDetails(long accountId)
         {
-            List<MessageCategory> cats = new List<MessageCategory>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageCategories", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mc in db.MessageCategories
+                    where mc.AccountId == accountId && !mc.isTeam
+                    select new MessageCategory()
                     {
-                        MessageCategory cat = CreateCategory(dr);
-
-                        cat.LastPost = GetLastPostForCategory(cat.Id);
-                        cat.NumberOfThreads = GetNumberOfThreadsForCategory(cat.Id);
-
-                        cats.Add(cat);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return cats;
+                        Id = mc.Id,
+                        AccountId = mc.AccountId,
+                        AllowAnonymousPost = mc.AllowAnonymousPost,
+                        AllowAnonymousTopic = mc.AllowAnonymousTopic,
+                        Name = mc.CategoryName,
+                        IsModerated = mc.isModerated,
+                        IsTeam = mc.isTeam,
+                        Description = mc.CategoryDescription,
+                        Order = mc.CategoryOrder,
+                        LastPost = GetLastPostForCategory(mc.Id),
+                        NumberOfThreads = GetNumberOfThreadsForCategory(mc.Id)
+                    });
         }
 
         static public MessageCategory GetCategory(long id)
         {
-            MessageCategory cat = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+            return (from mc in db.MessageCategories
+                    where mc.Id == id
+                    orderby mc.CategoryOrder
+                    select new MessageCategory()
                     {
-                        cat = CreateCategory(dr);
-                        if (cat.IsTeam)
-                        {
-                            cat.Name = String.Format(cat.Name, DataAccess.Teams.GetTeamNameFromTeamId(cat.AccountId, true));
-                        }
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+                        Id = mc.Id,
+                        AccountId = mc.AccountId,
+                        AllowAnonymousPost = mc.AllowAnonymousPost,
+                        AllowAnonymousTopic = mc.AllowAnonymousTopic,
+                        Name = mc.isTeam ? String.Format(mc.CategoryName, DataAccess.Teams.GetTeamNameFromTeamId(mc.AccountId, true)) : mc.CategoryName,
+                        IsModerated = mc.isModerated,
+                        IsTeam = mc.isTeam,
+                        Description = mc.CategoryDescription,
+                        Order = mc.CategoryOrder,
+                        LastPost = GetLastPostForCategory(mc.Id),
+                        NumberOfThreads = GetNumberOfThreadsForCategory(mc.Id)
 
-            return cat;
+                    }).SingleOrDefault();
+
         }
 
         static public bool RemoveCategory(MessageCategory cat)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteMessageCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = cat.Id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbCat = (from mc in db.MessageCategories
+                         where mc.Id == cat.Id
+                         select mc).SingleOrDefault();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            if (dbCat == null)
+                return false;
 
-            return rowCount > 0;
+            db.MessageCategories.DeleteOnSubmit(dbCat);
+            db.SubmitChanges();
+
+            return true;
         }
 
         static public bool UpdateCategory(MessageCategory cat)
         {
-            int rowCount = 0;
-
             if (cat.Name.Length == 0)
                 return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateMessageCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = cat.Id;
-                    myCommand.Parameters.Add("@order", SqlDbType.Int).Value = cat.Order;
-                    myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = cat.Name;
-                    myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = cat.Description;
-                    myCommand.Parameters.Add("@anonPost", SqlDbType.Bit).Value = cat.AllowAnonymousPost;
-                    myCommand.Parameters.Add("@anonTopic", SqlDbType.Bit).Value = cat.AllowAnonymousTopic;
-                    myCommand.Parameters.Add("@moderated", SqlDbType.Bit).Value = cat.IsModerated;
-                    myCommand.Parameters.Add("@isTeam", SqlDbType.Bit).Value = cat.IsTeam;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            var dbCat = (from mc in db.MessageCategories
+                         where mc.Id == cat.Id
+                         select mc).SingleOrDefault();
 
-            return rowCount > 0;
+            if (dbCat == null)
+                return false;
+
+            dbCat.CategoryOrder = cat.Order;
+            dbCat.CategoryName = cat.Name;
+            dbCat.CategoryDescription = cat.Description;
+            dbCat.AllowAnonymousPost = cat.AllowAnonymousPost;
+            dbCat.AllowAnonymousTopic = cat.AllowAnonymousTopic;
+            dbCat.isTeam = cat.IsTeam;
+            dbCat.isModerated = cat.IsModerated;
+
+            db.SubmitChanges();
+
+            return true;
         }
 
-        static public bool AddCategory(MessageCategory cat)
+        static public long AddCategory(MessageCategory cat)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
             if (cat.AccountId <= 0)
-                return false;
+                return 0;
 
             if (cat.Name.Length == 0)
-                return false;
+                return 0;
 
-            try
+            var dbCat = new SportsManager.Model.MessageCategory()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateMessageCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = cat.AccountId;
-                    myCommand.Parameters.Add("@order", SqlDbType.Int).Value = cat.Order;
-                    myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = cat.Name;
-                    myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = cat.Description;
-                    myCommand.Parameters.Add("@anonPost", SqlDbType.Bit).Value = cat.AllowAnonymousPost;
-                    myCommand.Parameters.Add("@anonTopic", SqlDbType.Bit).Value = cat.AllowAnonymousTopic;
-                    myCommand.Parameters.Add("@moderated", SqlDbType.Bit).Value = cat.IsModerated;
-                    myCommand.Parameters.Add("@isTeam", SqlDbType.Bit).Value = cat.IsTeam;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                AccountId = cat.AccountId,
+                CategoryOrder = cat.Order,
+                CategoryName = cat.Name,
+                CategoryDescription = cat.Description ?? String.Empty,
+                AllowAnonymousPost = cat.AllowAnonymousPost,
+                AllowAnonymousTopic = cat.AllowAnonymousTopic,
+                isModerated = cat.IsModerated,
+                isTeam = cat.IsTeam
+            };
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            db.MessageCategories.InsertOnSubmit(dbCat);
+            db.SubmitChanges();
 
-            return rowCount > 0;
+            cat.Id = dbCat.Id;
+
+            return cat.Id;
         }
+
 
         static public long AddTopic(MessageTopic topic)
         {
-            long newTopicId = 0;
-
             if (topic.TopicTitle.Length == 0)
                 return 0;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateMessageTopic", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = topic.CategoryId;
-                    myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = topic.CreatorContactId;
-                    myCommand.Parameters.Add("@createDate", SqlDbType.DateTime).Value = topic.CreateDate;
-                    myCommand.Parameters.Add("@topicTitle", SqlDbType.VarChar, 100).Value = topic.TopicTitle;
-                    myCommand.Parameters.Add("@stickyTopic", SqlDbType.Bit).Value = topic.StickyTopic;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                    {
-                        newTopicId = dr.GetInt64(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
+            if (topic.CreatorContactId <= 0)
             {
-                Globals.LogException(ex);
+                bool allowAnon = (from mc in db.MessageCategories
+                                  where mc.Id == topic.CategoryId
+                                  select mc.AllowAnonymousTopic).SingleOrDefault();
+                if (!allowAnon)
+                    return 0;
             }
 
-            return newTopicId;
+            var dbTopic = new SportsManager.Model.MessageTopic()
+            {
+                CategoryId = topic.CategoryId,
+                ContactCreatorId = topic.CreatorContactId,
+                TopicCreateDate = topic.CreateDate,
+                Topic = topic.TopicTitle,
+                StickyTopic = topic.StickyTopic,
+                NumberOfViews = 0
+            };
+
+            db.MessageTopics.InsertOnSubmit(dbTopic);
+            db.SubmitChanges();
+
+            topic.Id = dbTopic.Id;
+
+            return topic.Id;
         }
 
         static public long AddPost(MessagePost post)
         {
-            long newPostId = 0;
-
             if (post.Subject.Length == 0)
                 return 0;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateMessagePost", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@topicId", SqlDbType.BigInt).Value = post.TopicId;
-                    myCommand.Parameters.Add("@postOrder", SqlDbType.Int).Value = post.Order;
-                    myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = post.CreatorContactId;
-                    myCommand.Parameters.Add("@postDate", SqlDbType.DateTime).Value = post.CreateDate;
-                    myCommand.Parameters.Add("@postText", SqlDbType.Text, post.Text.Length).Value = post.Text;
-                    myCommand.Parameters.Add("@editDate", SqlDbType.DateTime).Value = post.EditDate;
-                    myCommand.Parameters.Add("@subject", SqlDbType.VarChar, 255).Value = post.Subject;
-                    myCommand.Parameters.Add("@categoryId", SqlDbType.BigInt).Value = post.CategoryId;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                    {
-                        newPostId = dr.GetInt64(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
+            if (post.CreatorContactId <= 0)
             {
-                Globals.LogException(ex);
+                bool allowAnon = (from mc in db.MessageCategories
+                                  where mc.Id == post.CategoryId
+                                  select mc.AllowAnonymousTopic).SingleOrDefault();
+                if (!allowAnon)
+                    return 0;
             }
 
-            return newPostId;
+            var dbPost = new SportsManager.Model.MessagePost()
+            {
+                TopicId = post.TopicId,
+                PostOrder = post.Order,
+                ContactCreatorId = post.CreatorContactId,
+                PostDate = post.CreateDate,
+                PostText = post.Text,
+                EditDate = post.EditDate,
+                PostSubject = post.Subject,
+                CategoryId = post.CategoryId
+            };
+
+            db.MessagePosts.InsertOnSubmit(dbPost);
+            db.SubmitChanges();
+
+            post.Id = dbPost.Id;
+
+            return post.Id;
         }
 
         static public bool ModifyPost(MessagePost post)
         {
-            int rowCount = 0;
-
             if (post.Subject.Length == 0)
                 return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.ModifyMessagePost", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = post.Id;
-                    myCommand.Parameters.Add("@postText", SqlDbType.Text, post.Text.Length).Value = post.Text;
-                    myCommand.Parameters.Add("@editDate", SqlDbType.DateTime).Value = post.EditDate;
-                    myCommand.Parameters.Add("@subject", SqlDbType.VarChar, 255).Value = post.Subject;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            DB db = DBConnection.GetContext();
+            var dbPost = (from mp in db.MessagePosts
+                          where mp.Id == post.Id
+                          select mp).SingleOrDefault();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            if (dbPost == null)
+                return false;
 
-            return rowCount > 0;
+            dbPost.PostText = post.Text;
+            dbPost.EditDate = post.EditDate;
+            dbPost.PostSubject = post.Subject;
+
+            db.SubmitChanges();
+
+            return true;
         }
 
-        static public List<MessageTopic> GetTopics(long catId)
+        static public IQueryable<MessageTopic> GetTopics(long catId)
         {
-            List<MessageTopic> topics = new List<MessageTopic>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageTopics", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = catId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mt in db.MessageTopics
+                    where mt.CategoryId == catId
+                    orderby mt.TopicCreateDate
+                    select new MessageTopic()
                     {
-                        topics.Add(CreateTopic(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return topics;
+                        Id = mt.Id,
+                        CategoryId = mt.CategoryId,
+                        CreatorContactId = mt.ContactCreatorId,
+                        CreateDate = mt.TopicCreateDate,
+                        TopicTitle = mt.Topic,
+                        StickyTopic = mt.StickyTopic,
+                        NumberOfViews = mt.NumberOfViews
+                    });
         }
 
-        static public List<MessageTopic> GetTopicsWithDetails(long catId)
+        static public IQueryable<MessageTopic> GetTopicsWithDetails(long catId)
         {
-            List<MessageTopic> topics = new List<MessageTopic>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageTopics", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = catId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mt in db.MessageTopics
+                    where mt.CategoryId == catId
+                    select new MessageTopic()
                     {
-                        MessageTopic topic = CreateTopic(dr);
-
-                        topic.LastPost = GetLastPostForTopic(topic.Id);
-                        topic.NumberOfReplies = GetTopicReplies(topic.Id);
-
-                        topics.Add(topic);
-                    }
-
-                    topics.Sort(MessageTopic.CompareMessageTopicByLastPostDate);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return topics;
+                        Id = mt.Id,
+                        CategoryId = mt.CategoryId,
+                        CreatorContactId = mt.ContactCreatorId,
+                        CreateDate = mt.TopicCreateDate,
+                        TopicTitle = mt.Topic,
+                        StickyTopic = mt.StickyTopic,
+                        NumberOfViews = mt.NumberOfViews,
+                        LastPost = GetLastPostForTopic(mt.Id),
+                        NumberOfReplies = GetTopicReplies(mt.Id)
+                    }); // .OrderByDescending(x => x.LastPost == null ? DateTime.MinValue : x.LastPost.CreateDate);
         }
 
         static public MessageTopic GetTopic(long topicId)
         {
-            MessageTopic topic = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessageTopic", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@topicId", SqlDbType.BigInt).Value = topicId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mt in db.MessageTopics
+                    where mt.Id == topicId
+                    select new MessageTopic()
                     {
-                        topic = CreateTopic(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return topic;
+                        Id = mt.Id,
+                        CategoryId = mt.CategoryId,
+                        CreatorContactId = mt.ContactCreatorId,
+                        CreateDate = mt.TopicCreateDate,
+                        TopicTitle = mt.Topic,
+                        StickyTopic = mt.StickyTopic,
+                        NumberOfViews = mt.NumberOfViews
+                    }).SingleOrDefault();
         }
 
-        static public List<MessagePost> GetPosts(long topicId)
+        static public IQueryable<MessagePost> GetPosts(long topicId)
         {
-            List<MessagePost> posts = new List<MessagePost>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessagePosts", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@topicId", SqlDbType.BigInt).Value = topicId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mp in db.MessagePosts
+                    where mp.TopicId == topicId
+                    select new MessagePost()
                     {
-                        posts.Add(CreatePost(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return posts;
+                        Id = mp.Id,
+                        TopicId = mp.TopicId,
+                        Order = mp.PostOrder,
+                        CreatorContactId = mp.ContactCreatorId,
+                        CreateDate = mp.PostDate,
+                        EditDate = mp.EditDate,
+                        Subject = mp.PostSubject,
+                        CategoryId = mp.CategoryId,
+                        Text = mp.PostText
+                    });
         }
 
         static public MessagePost GetPost(long postId)
         {
-            MessagePost post = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetMessagePost", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@postId", SqlDbType.BigInt).Value = postId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
+            return (from mp in db.MessagePosts
+                    where mp.Id == postId
+                    select new MessagePost()
                     {
-                        post = CreatePost(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return post;
+                        Id = mp.Id,
+                        TopicId = mp.TopicId,
+                        Order = mp.PostOrder,
+                        CreatorContactId = mp.ContactCreatorId,
+                        CreateDate = mp.PostDate,
+                        EditDate = mp.EditDate,
+                        Subject = mp.PostSubject,
+                        CategoryId = mp.CategoryId,
+                        Text = mp.PostText
+                    }).SingleOrDefault();
         }
 
         static public MessagePost GetLastPostForCategory(long catId)
         {
-            MessagePost post = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLastPostForCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = catId;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var maxDate = (from mp in db.MessagePosts
+                           where mp.CategoryId == catId
+                           orderby mp.PostDate descending
+                           select mp.PostDate).FirstOrDefault();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+            if (maxDate == DateTime.MinValue)
+                return null;
 
-                    while (dr.Read())
+            return (from mp in db.MessagePosts
+                    where mp.CategoryId == catId && mp.PostDate == maxDate
+                    select new MessagePost()
                     {
-                        post = CreatePost(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return post;
+                        Id = mp.Id,
+                        TopicId = mp.TopicId,
+                        Order = mp.PostOrder,
+                        CreatorContactId = mp.ContactCreatorId,
+                        CreateDate = mp.PostDate,
+                        EditDate = mp.EditDate,
+                        Subject = mp.PostSubject,
+                        CategoryId = mp.CategoryId,
+                        Text = mp.PostText
+                    }).FirstOrDefault();
         }
 
         static public MessagePost GetLastPostForTopic(long topicId)
         {
-            MessagePost post = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLastPostForTopic", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@topicId", SqlDbType.BigInt).Value = topicId;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var maxDate = (from mp in db.MessagePosts
+                           where mp.TopicId == topicId
+                           orderby mp.PostDate descending
+                           select mp.PostDate).FirstOrDefault();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+            if (maxDate == DateTime.MinValue)
+                return null;
 
-                    while (dr.Read())
+            return (from mp in db.MessagePosts
+                    where mp.TopicId == topicId && mp.PostDate == maxDate
+                    select new MessagePost()
                     {
-                        post = CreatePost(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return post;
+                        Id = mp.Id,
+                        TopicId = mp.TopicId,
+                        Order = mp.PostOrder,
+                        CreatorContactId = mp.ContactCreatorId,
+                        CreateDate = mp.PostDate,
+                        EditDate = mp.EditDate,
+                        Subject = mp.PostSubject,
+                        CategoryId = mp.CategoryId,
+                        Text = mp.PostText
+                    }).FirstOrDefault();
         }
 
         static public long GetNumberOfThreadsForCategory(long catId)
         {
-            long numThreads = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetNumberOfThreadsForCategory", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = catId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        numThreads = dr.GetInt64(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return numThreads;
+            return (from mp in db.MessagePosts
+                    where mp.CategoryId == catId
+                    select mp.Id).LongCount();
         }
 
         static public int GetTopicReplies(long topicId)
         {
-            int numReplies = 0;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetNumberOfTopicReplies", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@topicId", SqlDbType.BigInt).Value = topicId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        numReplies = dr.GetInt32(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return numReplies;
+            DB db = DBConnection.GetContext();
+            return (from mp in db.MessagePosts
+                    where mp.TopicId == topicId
+                    select mp.Id).Count();
         }
 
         static public bool RemoveMessagePost(long id)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
+            var dbPost = (from mp in db.MessagePosts
+                          where mp.Id == id
+                          select mp).SingleOrDefault();
+            if (dbPost != null)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteMessagePost", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                db.MessagePosts.DeleteOnSubmit(dbPost);
+                db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
+                bool anyTopics = (from mp in db.MessagePosts
+                                  where mp.TopicId == dbPost.TopicId
+                                  select mp).Any();
+                if (!anyTopics)
+                {
+                    var dbTopic = (from mt in db.MessageTopics
+                                   where mt.Id == dbPost.TopicId
+                                   select mt).SingleOrDefault();
+                    if (dbTopic != null)
+                    {
+                        db.MessageTopics.DeleteOnSubmit(dbTopic);
+                        db.SubmitChanges();
+                    }
                 }
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
 
-            return rowCount > 0;
+            return true;
         }
 
         public static void CleanupMessageBoard()
@@ -806,27 +583,49 @@ namespace DataAccess
 
         public static int CleanupMessageBoard(long accountId)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CleanupMessageBoard", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbNumDaysToKeep = (from s in db.AccountSettings
+                                   where s.SettingKey == "MessageBoardCleanup" && s.AccountId == accountId
+                                   select s.SettingValue).SingleOrDefault();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
+            int numDaysToKeep = 90;
+            if (!String.IsNullOrEmpty(dbNumDaysToKeep))
             {
-                Globals.LogException(ex);
+                Int32.TryParse(dbNumDaysToKeep, out numDaysToKeep);
             }
 
-            return rowCount;
+            var minPostDate = new DateTime();
+            minPostDate.AddDays(numDaysToKeep * -1);
+
+            //--- Delete all non-team expired messages
+            var expiredPosts = (from mc in db.MessageCategories
+                                join mp in db.MessagePosts on mc.Id equals mp.CategoryId
+                                where mc.AccountId == accountId &&
+                                mp.EditDate < minPostDate &&
+                                mp.Id != 0 &&
+                                !mc.isTeam
+                                select mp);
+            foreach (var ep in expiredPosts)
+            {
+                RemoveMessagePost(ep.Id);
+            }
+
+            //--- Delete all team expired messages
+            var teamExpiredPosts = (from mc in db.MessageCategories
+                                    join mp in db.MessagePosts on mc.Id equals mp.CategoryId
+                                    join t in db.Teams on mc.AccountId equals t.Id
+                                    where t.AccountId == accountId &&
+                                    mp.EditDate < minPostDate &&
+                                    mp.Id != 0 &&
+                                    mc.isTeam
+                                    select mp);
+            foreach (var ep in teamExpiredPosts)
+            {
+                RemoveMessagePost(ep.Id);
+            }
+
+            return 1;
         }
     }
 }
