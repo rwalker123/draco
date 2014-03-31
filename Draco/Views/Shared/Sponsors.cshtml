@@ -1,0 +1,18 @@
+﻿@model SportsManager.ViewModels.SponsorsViewModel
+@using System.Collections.Generic;
+
+<div class="panel panel-info" id="sponsors">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Sponsors</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right"><span class="glyphicon glyphicon-plus"></span></button>
+        }
+
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+    </div>
+</div>
