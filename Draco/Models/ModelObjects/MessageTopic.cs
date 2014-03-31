@@ -40,6 +40,12 @@ namespace ModelObjects
             set;
         }
 
+        public String CreatorName
+        {
+            get;
+            set;
+        }
+
         public DateTime CreateDate
         {
             get;

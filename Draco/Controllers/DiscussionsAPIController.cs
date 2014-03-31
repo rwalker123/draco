@@ -29,7 +29,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("categories")]
-        [SportsManagerAuthorize(Roles="Administrator")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage PostCategories(long accountId, ModelObjects.MessageCategory cat)
         {
             if (ModelState.IsValid)
@@ -42,6 +42,34 @@ namespace SportsManager.Controllers
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
+
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("categories")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage PutCategories(long accountId, ModelObjects.MessageCategory cat)
+        {
+            if (ModelState.IsValid)
+            {
+                cat.AccountId = accountId;
+
+                if (DataAccess.MessageBoard.UpdateCategory(cat))
+                    return Request.CreateResponse<ModelObjects.MessageCategory>(HttpStatusCode.OK, cat);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("categories")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteCategories(long accountId, long id)
+        {
+            if (DataAccess.MessageBoard.RemoveCategory(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("topics")]
@@ -65,8 +93,22 @@ namespace SportsManager.Controllers
                     topic.CreatorContactId = contact.Id;
 
                 if (DataAccess.MessageBoard.AddTopic(topic) > 0)
+                {
+                    topic.CreatorName = DataAccess.Contacts.GetContactName(topic.CreatorContactId);
                     return Request.CreateResponse<ModelObjects.MessageTopic>(HttpStatusCode.OK, topic);
+                }
             }
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("topics")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteTopic(long accountId, long id)
+        {
+            if (DataAccess.MessageBoard.RemoveTopic(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 

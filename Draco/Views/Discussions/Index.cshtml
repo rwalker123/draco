@@ -15,7 +15,7 @@
 <div class="container-fluid" id="discussions">
 
     <ol class="breadcrumb" data-bind="foreach: breadcrumbs">
-        <li><a data-bind="html: Title, click: Callback, attr: { 'href': '#' }"></a></li>
+        <li class="h4"><a data-bind="html: Title, click: Callback, attr: { 'href': '#' }"></a></li>
     </ol>
     <!-- Forum View -->
     @if (Model.IsAdmin)
@@ -42,7 +42,7 @@
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10">
                     <label for="_mbAddCatAllowAnonTopic">
-                        <input type="checkbox" id="_mbAddCatAllowAnonTopic" data-bind="value: AllowAnonymousTopic" />
+                        <input type="checkbox" id="_mbAddCatAllowAnonTopic" data-bind="checked: AllowAnonymousTopic" />
                         Allow anonymous discussion groups
                     </label>
                 </div>
@@ -50,7 +50,7 @@
             <div class="form-group">
                 <div class="col-sm-offset-2 col-sm-10">
                     <label for="_mbAddCatAllowAnon">
-                        <input type="checkbox" id="_mbAddCatAllowAnon" data-bind="value: AllowAnonymousPost" />
+                        <input type="checkbox" id="_mbAddCatAllowAnon" data-bind="checked: AllowAnonymousPost" />
                         Allow anonymous posts
                     </label>
                 </div>
@@ -93,9 +93,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h4 class="modal-title" id="confirmModalLabel">Confirm Post</h4>
+                    <h4 class="modal-title">Confirm Post</h4>
                 </div>
-                <div class="modal-body" id="deleteModalBody">
+                <div class="modal-body">
                     Click Continue to post your message, Cancel to return.
                 </div>
                 <div class="modal-footer">
@@ -117,6 +117,10 @@
         <table class="table">
             <thead>
                 <tr>
+                    @if (Model.IsAdmin)
+                    {
+                        <th></th>
+                    }
                     <th>Discussion Topics</th>
                     <th>Last Post</th>
                     <th>Threads</th>
@@ -124,13 +128,22 @@
             </thead>
             <tbody data-bind="foreach: categories">
                 <tr>
+                    @if (Model.IsAdmin)
+                    {
+                        <td data-bind="if: !IsTeam()">
+                            <button class="btn btn-default btn-sm" data-bind="click: $root.startEditCategory"><span class="glyphicon glyphicon-edit"></span></button>
+                            <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteCategory"><span class="glyphicon glyphicon-remove"></span></button>
+                        </td>                        
+                    }
                     <td>
                         <a data-bind="html: Name, click: $root.loadTopics, attr: { href: '#' }"></a><br /><div data-bind="html: Description"></div>
                     </td>
                     <td>
                         <div data-bind="if: LastPost">
-                            <a data-bind="html: LastPost.Subject, attr: { 'href': LastPost.TopicId() + '#' + LastPost.Id() }"></a><br />
-                            by <span data-bind="html: LastPost.CreatorContactId"></span><br />
+                            <a data-bind="html: LastPost.Subject, click: $root.loadTopics, attr: { 'href': '#' }"></a><br />
+                            <div data-bind="if: LastPost.CreatorName">
+                                by <span data-bind="html: LastPost.CreatorName"></span><br />
+                            </div>
                             <span data-bind="html: moment(LastPost.EditDate()).format('MM/DD/YYYY h:mm a')"></span>
                         </div>
                         <div data-bind="ifnot: LastPost">
@@ -144,13 +157,31 @@
     </div>
     <!-- end Forum View -->
     <!-- Topic View -->
+    <div class="modal fade" id="confirmTopicDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Confirm Delete Topic</h4>
+                </div>
+                <div class="modal-body">
+                    Deleting the thread will delete all messages in the thread. This operation is not reversable. Are you sure you want to continue?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmTopicDeleteBtn">Continue</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div data-bind="with: currentCategory, visible: $root.topicView">
         <h3 data-bind="html: Name"></h3>
 
         <div data-bind="with: editTopic, visible: $root.editTopicMode">
             <form class="form-horizontal">
                 <div class="form-group">
-                    <label for="_mbNewTopicSubject" class="col-md-2 control-label">Topic:</label>
+                    <label for="_mbNewTopicSubject" class="col-md-2 control-label">Subject:</label>
                     <div class="col-md-10">
                         <input id="_mbNewTopicSubject" type="text" class="form-control" data-bind="value: TopicTitle" />
                     </div>
@@ -168,22 +199,26 @@
         </div>
 
         <div data-bind="visible: !$root.editTopicMode()">
-            <div data-bind="if: canPost">
+            <div data-bind="if: canCreateTopic">
                 <button type="button" class="btn btn-default" data-bind="click: $root.startEditTopic">start discussion</button>
             </div>
-            <div data-bind="ifnot: canPost">
+            <div data-bind="ifnot: canCreateTopic">
                 <div class="alert alert-info">Login to start a discussion group.</div>
             </div>
 
             <div class="alert alert-info" data-bind="visible: topics().length == 0 && topics.loaded()">
                 No discussions found.
-                <span data-bind="visible: canPost">Use the start discussion button to start a new message thread.</span>
+                <span data-bind="visible: canCreateTopic">Use the start discussion button to start a new message thread.</span>
             </div>
 
             <div class="table-responsive" data-bind="visible: topics().length > 0" >
                 <table class="table">
                     <thead>
                         <tr>
+                            @if (Model.IsAdmin)
+                            {
+                                <th></th>
+                            }
                             <th>Thread</th>
                             <th>Last Post</th>
                             <th>Replies</th>
@@ -191,12 +226,20 @@
                     </thead>
                     <tbody data-bind="foreach: topics">
                         <tr>
+                            @if (Model.IsAdmin)
+                            {
+                                <td>
+                                    <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteTopic"><span class="glyphicon glyphicon-remove"></span></button>
+                                </td>
+                            }
                             <td>
                                 <a data-bind="html: TopicTitle, click: $root.loadPosts, attr: { 'href': '#' }"></a>
                             </td>
                             <td data-bind="if: LastPost">
                                 <a data-bind="html: LastPost.Subject, click: $root.loadLastPost, attr: { 'href': '#' }"></a><br />
-                                by <span data-bind="html: LastPost.CreatorContactId"></span><br />
+                                <div data-bind="if: LastPost.CreatorName">
+                                    by <span data-bind="html: LastPost.CreatorName"></span><br />
+                                </div>
                                 <span data-bind="html: moment(LastPost.CreateDate()).format('MM/DD/YYYY h:mm a')"></span>
                             </td>
                             <td data-bind="html: NumberOfReplies() > 0 ? NumberOfReplies()-1 : '-'"></td>
@@ -210,12 +253,34 @@
 
     <!-- Post View -->
     <div data-bind="with: currentCategory().currentTopic, visible: $root.postView">
-        <h3 data-bind="html: TopicTitle"></h3>
-        <small>started by <span data-bind="html: CreatorContactId"></span></small>
+        <h3 >
+            <span data-bind="html: TopicTitle"></span>
+            <span data-bind="if: CreatorName">
+                <small>started by <span data-bind="html: CreatorName"></span></small>
+            </span>
+        </h3>
         <ul class="list-group" data-bind="foreach: posts">
             <li class="list-group-item">
-                <span data-bind="html: Subject"></span>
-                <span data-bind="html: Text"></span>
+                <div style="float: left" class="left">
+                    <h4>
+                        <span data-bind="html: Subject"></span>
+                        <small>
+                            <span data-bind="if: CreatorName">
+                                by <span data-bind="html: CreatorName"></span> on
+                            </span>
+                            <span data-bind="html: moment(CreateDate()).format('MM/DD/YYYY h:mm a')"></span>
+                        </small>
+                    </h4>
+                </div>
+                <div style="float: right" class="right" data-bind="visible: $root.currentCategory().canPost">
+                    <button class="btn btn-default" type="button"><span class="fa fa-reply"></span></button>
+                </div>                
+                <div class="clearfix"></div>
+                <p style="margin:20px" data-bind="html: Text"></p>
+                <div data-bind="if: canEdit">
+                    <button class="btn btn-default" type="button"><span class="glyphicon glyphicon-edit"></span></button>
+                    <button class="btn btn-danger" type="button"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
             </li>
         </ul>
     </div>
@@ -240,7 +305,7 @@ else
 <script type="text/javascript">
 
     $(document).ready(function () {
-        initDiscussionsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.UserId');
+        initDiscussionsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
     });
 
 </script>

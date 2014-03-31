@@ -80,7 +80,7 @@ namespace SportsManager.Models
             }
 
             if (!isAuthorized)
-                actionContext.Response = new HttpResponseMessage(System.Net.HttpStatusCode.Unauthorized);
+                actionContext.Response = new HttpResponseMessage(System.Net.HttpStatusCode.Forbidden);
         }
 	}
 

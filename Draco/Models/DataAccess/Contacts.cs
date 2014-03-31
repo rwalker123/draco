@@ -112,6 +112,24 @@ namespace DataAccess
                         c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
         }
 
+        static public long GetContactId(String aspNetUserId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from c in db.Contacts
+                    where c.UserId == aspNetUserId
+                    select c.Id).SingleOrDefault();
+        }
+
+        static public String GetContactName(long contactId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from c in db.Contacts
+                    where c.Id == contactId
+                    select c.FirstName + ' ' + c.LastName).SingleOrDefault();
+        }
+
         static public Contact GetContact(String aspNetUserId)
         {
             if (String.IsNullOrEmpty(aspNetUserId))

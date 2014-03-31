@@ -19,7 +19,7 @@ namespace DataAccess
 
             return (from mc in db.MessageCategories
                     where mc.AccountId == accountId && !mc.isTeam
-                    orderby mc.CategoryOrder
+                    orderby mc.CategoryOrder, mc.CategoryName
                     select new MessageCategory()
                     {
                         Id = mc.Id,
@@ -203,12 +203,12 @@ namespace DataAccess
 
         }
 
-        static public bool RemoveCategory(MessageCategory cat)
+        static public bool RemoveCategory(long catId)
         {
             DB db = DBConnection.GetContext();
 
             var dbCat = (from mc in db.MessageCategories
-                         where mc.Id == cat.Id
+                         where mc.Id == catId
                          select mc).SingleOrDefault();
 
             if (dbCat == null)
@@ -312,6 +312,23 @@ namespace DataAccess
             return topic.Id;
         }
 
+        static public bool RemoveTopic(long topicId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var dbTopic = (from mc in db.MessageTopics
+                         where mc.Id == topicId
+                         select mc).SingleOrDefault();
+
+            if (dbTopic == null)
+                return false;
+
+            db.MessageTopics.DeleteOnSubmit(dbTopic);
+            db.SubmitChanges();
+
+            return true;
+        }
+
         static public long AddPost(MessagePost post)
         {
             if (post.Subject.Length == 0)
@@ -334,7 +351,7 @@ namespace DataAccess
                 PostOrder = post.Order,
                 ContactCreatorId = post.CreatorContactId,
                 PostDate = post.CreateDate,
-                PostText = post.Text,
+                PostText = post.Text ?? String.Empty,
                 EditDate = post.EditDate,
                 PostSubject = post.Subject,
                 CategoryId = post.CategoryId
@@ -400,13 +417,14 @@ namespace DataAccess
                         Id = mt.Id,
                         CategoryId = mt.CategoryId,
                         CreatorContactId = mt.ContactCreatorId,
+                        CreatorName = DataAccess.Contacts.GetContactName(mt.ContactCreatorId),
                         CreateDate = mt.TopicCreateDate,
                         TopicTitle = mt.Topic,
                         StickyTopic = mt.StickyTopic,
                         NumberOfViews = mt.NumberOfViews,
                         LastPost = GetLastPostForTopic(mt.Id),
                         NumberOfReplies = GetTopicReplies(mt.Id)
-                    }); // .OrderByDescending(x => x.LastPost == null ? DateTime.MinValue : x.LastPost.CreateDate);
+                    });
         }
 
         static public MessageTopic GetTopic(long topicId)
@@ -439,6 +457,7 @@ namespace DataAccess
                         TopicId = mp.TopicId,
                         Order = mp.PostOrder,
                         CreatorContactId = mp.ContactCreatorId,
+                        CreatorName = DataAccess.Contacts.GetContactName(mp.ContactCreatorId),
                         CreateDate = mp.PostDate,
                         EditDate = mp.EditDate,
                         Subject = mp.PostSubject,
@@ -487,6 +506,7 @@ namespace DataAccess
                         TopicId = mp.TopicId,
                         Order = mp.PostOrder,
                         CreatorContactId = mp.ContactCreatorId,
+                        CreatorName = DataAccess.Contacts.GetContactName(mp.ContactCreatorId),
                         CreateDate = mp.PostDate,
                         EditDate = mp.EditDate,
                         Subject = mp.PostSubject,
@@ -515,6 +535,7 @@ namespace DataAccess
                         TopicId = mp.TopicId,
                         Order = mp.PostOrder,
                         CreatorContactId = mp.ContactCreatorId,
+                        CreatorName = DataAccess.Contacts.GetContactName(mp.ContactCreatorId),
                         CreateDate = mp.PostDate,
                         EditDate = mp.EditDate,
                         Subject = mp.PostSubject,

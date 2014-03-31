@@ -19,7 +19,7 @@ namespace SportsManager.ViewModels
         {
             AccountId = accountId;
             Controller = c;
-            UserId = Globals.GetCurrentUserId();
+            ContactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
             m_account = DataAccess.Accounts.GetAccount(accountId);
             AccountName = m_account.AccountName;
             AccountLogoUrl = m_account.LargeLogoURL;
@@ -79,7 +79,7 @@ namespace SportsManager.ViewModels
         }
 
         [ScaffoldColumn(false)]
-        public String UserId
+        public long ContactId
         {
             get;
             protected set;
