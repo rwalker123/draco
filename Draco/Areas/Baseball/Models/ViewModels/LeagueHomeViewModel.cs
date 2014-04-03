@@ -13,7 +13,7 @@ namespace SportsManager.Baseball.ViewModels
             SeasonName = DataAccess.Seasons.GetCurrentSeasonName(AccountId);
             FirstYear = (Account.FirstYear == 0) ? String.Empty : Account.FirstYear.ToString();
             YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
-            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
+            ShowVideos = false; // !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
 
             ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();

@@ -1,3 +1,4 @@
+using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager;
 using SportsManager.Models.Utils;
@@ -138,6 +139,19 @@ namespace DataAccess
 					select new Team(ts.Id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
 		}
 
+        static public IQueryable<Team> GetUnassignedTeams(long leagueId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from ts in db.TeamsSeasons
+                    join t in db.Teams on ts.TeamId equals t.Id
+                    where ts.LeagueSeasonId == leagueId && ts.DivisionSeasonId == 0
+                    orderby ts.DivisionSeasonId
+                    select new Team(ts.Id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
+        }
+
+
+
 		static public IQueryable<Team> GetAccountTeams(long accountId)
 		{
             DB db = DBConnection.GetContext();
@@ -175,7 +189,7 @@ namespace DataAccess
                         Id = t.Id,
                         LeagueId = t.LeagueSeasonId,
                         Name = t.Name,
-                        DivisionId = t.DivisionSeasonId,
+                        DivisionId = divisionSeasonId,
                         TeamId = t.TeamId,
                         AccountId = t.Team.AccountId
                     });
@@ -530,6 +544,8 @@ namespace DataAccess
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
                 var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+                if (contact == null)
+                    return false;
                 isTeamMember = DataAccess.TeamRoster.IsTeamMember(contact.Id, teamSeasonId);
 
             }
@@ -548,26 +564,33 @@ namespace DataAccess
 
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
-                var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                isTeamAdmin = userManager.IsInRole(aspNetUserId, "Administrator");
 
-                // first check to see if this user the manager, they get admin rights to the team.
-                var managers = GetTeamManagers(teamSeasonId);
-                isTeamAdmin = (from m in managers
-                               where m.Id == contact.Id
-                               select m).Any();
-
-
-                // if not a manager, see if user was given the team admin role.
                 if (!isTeamAdmin)
                 {
-                    DB db = DBConnection.GetContext();
+                    var contact = DataAccess.Contacts.GetContact(aspNetUserId);
 
-                    var roleId = DataAccess.ContactRoles.GetTeamAdminId();
-                    var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
-                    if (roles != null)
-                        isTeamAdmin = (from r in roles
-                                       where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
-                                       select r).Any();
+                    // first check to see if this user the manager, they get admin rights to the team.
+                    var managers = GetTeamManagers(teamSeasonId);
+                    isTeamAdmin = (from m in managers
+                                   where m.Id == contact.Id
+                                   select m).Any();
+
+
+                    // if not a manager, see if user was given the team admin role.
+                    if (!isTeamAdmin)
+                    {
+                        DB db = DBConnection.GetContext();
+
+                        var roleId = DataAccess.ContactRoles.GetTeamAdminId();
+                        var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
+                        if (roles != null)
+                            isTeamAdmin = (from r in roles
+                                           where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
+                                           select r).Any();
+                    }
                 }
             }
 
@@ -586,6 +609,8 @@ namespace DataAccess
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
                 var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+                if (contact == null)
+                    return false;
 
                 // see if user was given the team photo admin role. Note this only checks for 
                 // photo admin, if team admin was desired, that role should have been added

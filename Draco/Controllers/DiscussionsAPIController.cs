@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNet.Identity;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -17,8 +18,18 @@ namespace SportsManager.Controllers
 
             categories.AddRange(DataAccess.MessageBoard.GetCategoriesWithDetails(accountId));
 
-            ModelObjects.Contact contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
-            if (contact != null)
+            String userId = Globals.GetCurrentUserId();
+            ModelObjects.Contact contact = DataAccess.Contacts.GetContact(userId);
+
+            bool isAdmin = false;
+
+            if (contact == null && !String.IsNullOrEmpty(userId))
+            {
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                isAdmin = userManager.IsInRole(userId, "Administrator");
+            }
+            if (contact != null || isAdmin)
             {
                 categories.AddRange(DataAccess.MessageBoard.GetContactTeamCategoriesWithDetails(accountId, contact));
                 categories.AddRange(DataAccess.MessageBoard.GetContactGlobalCategoriesWithDetails(accountId, contact));

@@ -1,3 +1,4 @@
+using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager;
 using System;
@@ -36,7 +37,17 @@ namespace DataAccess
 
         static public IQueryable<MessageCategory> GetContactGlobalCategoriesWithDetails(long accountId, Contact contact)
         {
-            if (DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
+            bool isAdmin = false;
+
+            if (contact == null)
+            {
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+            }
+
+
+            if (isAdmin || DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
             {
                 DB db = DBConnection.GetContext();
                 return (from mc in db.MessageCategories
@@ -66,7 +77,16 @@ namespace DataAccess
 
             IQueryable<long> teamIds;
 
-            if (DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
+            bool isAdmin = false;
+
+            if (contact == null)
+            {
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+            }
+
+            if (isAdmin)
             {
                 // admin can see all teams.
                 teamIds = (from cs in db.CurrentSeasons

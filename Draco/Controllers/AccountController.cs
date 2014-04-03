@@ -196,8 +196,15 @@ namespace SportsManager.Controllers
 
         //
         // GET: /Account/Manage
-        public ActionResult Manage(ManageMessageId? message)
+        public ActionResult Manage(long? accountId, ManageMessageId? message)
         {
+            if (accountId.HasValue)
+            {
+                ViewData["AccountId"] = accountId.Value;
+                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+            }
+
+
             ViewBag.StatusMessage =
                 message == ManageMessageId.ChangePasswordSuccess ? "Your password has been changed."
                 : message == ManageMessageId.SetPasswordSuccess ? "Your password has been set."

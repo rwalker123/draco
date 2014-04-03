@@ -510,7 +510,7 @@ namespace DataAccess
             return await RemoveContact(c);
         }
 
-        public static async Task<bool> ResetPassword(ModelObjects.Contact contact)
+        public static async Task<bool> ResetPassword(long accountId, ModelObjects.Contact contact)
         {
             if (!String.IsNullOrEmpty(contact.UserId))
             {
@@ -520,7 +520,7 @@ namespace DataAccess
                 if (user != null)
                 {
                     String newPassword = CreateNewPassword(userManager, user);
-                    NotifyUserPasswordChange(contact, newPassword);
+                    NotifyUserPasswordChange(accountId, contact, newPassword);
                     return true;
                 }
             }
@@ -547,22 +547,39 @@ namespace DataAccess
             return newPassword;
         }
 
-        static private void NotifyUserPasswordChange(ModelObjects.Contact contact, string newPassword)
+        static private void NotifyUserPasswordChange(long accountId, ModelObjects.Contact contact, string newPassword)
         {
             String currentUser = Globals.GetCurrentUserName();
             if (String.IsNullOrEmpty(currentUser))
                 return;
 
+            string senderFullName = String.Empty;
+            string accountName = String.Empty;
+            string fromEmail = String.Empty;
+
             var sender = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
             if (sender == null)
-                return;
+            {
+                accountName = DataAccess.Accounts.GetAccountName(accountId);
+                fromEmail = "webmaster@ezrecsports.com";
 
-            string senderFullName = sender.FullNameFirst;
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                if (userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator"))
+                    senderFullName = " Administrator";
+                else
+                    return;
+            }
+            else
+            {
+                senderFullName = sender.FullNameFirst;
+                accountName = DataAccess.Accounts.GetAccountName(contact.CreatorAccountId);
+                fromEmail = sender.Email;
+            }
 
-            string accountName = DataAccess.Accounts.GetAccountName(contact.CreatorAccountId);
             string subject = String.Format(AccountPasswordSubject, accountName);
             string body = String.Format(AccountPasswordBody, accountName, currentUser, newPassword, senderFullName);
-            Globals.MailMessage(currentUser, contact.Email, subject, body);
+            Globals.MailMessage(fromEmail, contact.Email, subject, body);
         }
 
         static private void NotifyUserOfNewEmail(long accountId, string oldEmail, string newEmail)
@@ -571,11 +588,22 @@ namespace DataAccess
             if (String.IsNullOrEmpty(currentUser))
                 return;
 
+            string senderFullName = String.Empty;
+
             var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
             if (contact == null)
-                return;
-
-            string senderFullName = contact.FullNameFirst;
+            {
+                // check to see if in AspNetUserRoles as Administrator
+                var userManager = Globals.GetUserManager();
+                if (userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator"))
+                    senderFullName = DataAccess.Accounts.GetAccountName(accountId) + " Administrator";
+                else
+                    return;
+            }
+            else
+            {
+                senderFullName = contact.FullNameFirst;
+            }
 
             string accountName = DataAccess.Accounts.GetAccountName(accountId);
             string subject = String.Format(AccountModifiedSubject, accountName);

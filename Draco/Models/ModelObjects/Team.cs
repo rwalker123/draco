@@ -68,7 +68,7 @@ namespace ModelObjects
 		{
 			get
 			{
-				return (Globals.UploadDirRoot + "Teams/" + TeamId + @"/Logo/");
+				return (Globals.UploadDirRoot + "Teams/" + TeamId + "/");
 			}
 		}
 

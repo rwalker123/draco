@@ -200,7 +200,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
         if (self.teamId)
             url = url + '/team/' + self.teamId;
 
-        url = url + '/photos';
+        url = url + '/photos?random=10';
 
         $.ajax({
             type: "GET",

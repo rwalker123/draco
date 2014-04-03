@@ -101,7 +101,7 @@ namespace SportsManager.Controllers
             ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
             if (c != null)
             {
-                await DataAccess.Contacts.ResetPassword(c);
+                await DataAccess.Contacts.ResetPassword(accountId, c);
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
             else

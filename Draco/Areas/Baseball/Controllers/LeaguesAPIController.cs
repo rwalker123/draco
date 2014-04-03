@@ -69,15 +69,10 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("UnassignedTeams")]
         public HttpResponseMessage UnassignedTeams(long accountId, long id)
         {
-            var teams = DataAccess.Teams.GetTeams(id);
-            if (teams != null)
+            var unassignedTeams = DataAccess.Teams.GetUnassignedTeams(id);
+            if (unassignedTeams != null)
             {
-                var unassignedTeams = (from t in teams
-                                       where t.DivisionId == 0
-                                       orderby t.Name ascending
-                                       select t);
-
-                return Request.CreateResponse<IEnumerable<ModelObjects.Team>>(HttpStatusCode.OK, unassignedTeams);
+                return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, unassignedTeams);
             }
             else
             {

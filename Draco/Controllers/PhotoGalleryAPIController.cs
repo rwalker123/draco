@@ -19,6 +19,17 @@ namespace SportsManager.Controllers
             var photos = DataAccess.PhotoGallery.GetPhotos(accountId);
             if (photos!= null)
             {
+                var queryValues = Request.RequestUri.ParseQueryString();
+                String numRandomPhotos = queryValues["random"];
+                if (!String.IsNullOrEmpty(numRandomPhotos))
+                {
+                    int numPhotos;
+                    if (Int32.TryParse(numRandomPhotos, out numPhotos))
+                    {
+                        return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos.Take(numPhotos));
+                    }
+                }
+
                 return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos);
             }
             else
