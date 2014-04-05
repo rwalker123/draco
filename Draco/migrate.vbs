@@ -111,3 +111,5 @@ For Each objFile in colFiles
     end if
 Next
 
+WScript.echo 'TODO: Rename handouts!'
+WScript.echo 'Re-add team logos, gif changed to jpg'

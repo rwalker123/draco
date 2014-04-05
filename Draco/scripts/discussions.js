@@ -514,6 +514,14 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
         if (right.IsTeam())
             return -1;
 
+        if (left.AccountId() == 0 && right.AccountId() != 0) {
+            return 1;
+        }
+
+        if (left.AccountId() != 0 && right.AccountId() == 0) {
+            return -1;
+        }
+
         if (left.Order() == right.Order())
             return left.Name() == right.Name() ? 0 : left.Name() > right.Name() ? 1 : -1;
 

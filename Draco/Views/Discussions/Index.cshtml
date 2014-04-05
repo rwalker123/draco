@@ -114,7 +114,7 @@
         }
     </div>
     <div class="table-responsive" data-bind="if: categories().length && forumView()">
-        <table class="table">
+        <table class="table table-striped">
             <thead>
                 <tr>
                     @if (Model.IsAdmin)
@@ -130,7 +130,7 @@
                 <tr>
                     @if (Model.IsAdmin)
                     {
-                        <td data-bind="if: !IsTeam()">
+                        <td data-bind="if: !IsTeam() && AccountId() != 0">
                             <button class="btn btn-default btn-sm" data-bind="click: $root.startEditCategory"><span class="glyphicon glyphicon-edit"></span></button>
                             <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteCategory"><span class="glyphicon glyphicon-remove"></span></button>
                         </td>                        

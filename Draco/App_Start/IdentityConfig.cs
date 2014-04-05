@@ -3,6 +3,7 @@ using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using SportsManager.Models;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -14,7 +15,17 @@ namespace SportsManager
 {
     // Configure the application user manager used in this application. UserManager is defined in ASP.NET Identity and is used by the application.
 
-    public class ApplicationUserManager : UserManager<ApplicationUser>
+    public class UserManager : UserManager<ApplicationUser>
+    {
+        public UserManager(IUserStore<ApplicationUser> store)
+            : base(store)
+        {
+            // pre-Asp.net Identity password support.
+            this.PasswordHasher = new SQLPasswordHasher();
+        }
+    }
+
+    public class ApplicationUserManager : UserManager
     {
         public ApplicationUserManager(IUserStore<ApplicationUser> store)
             : base(store)
@@ -151,7 +162,7 @@ namespace SportsManager
             var UserManager = Globals.GetUserManager();
             var RoleManager = HttpContext.Current.GetOwinContext().Get<ApplicationRoleManager>();
 
-            string adminUserName = "Admin";
+            string adminUserName = "admin@ezrecsports.com";
             string adminPassword = "abc#def$ghi%jkl^mno&pqr";
 
             string[] roles = new string[] { "Administrator", "AccountAdmin", "AccountPhotoAdmin",

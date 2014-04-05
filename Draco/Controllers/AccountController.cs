@@ -87,7 +87,10 @@ namespace SportsManager.Controllers
                 if (user != null)
                 {
                     await SignInAsync(user, model.RememberMe);
-                    return Redirect(returnUrl);
+                    if (String.IsNullOrEmpty(returnUrl))
+                        return RedirectToAction("Index", "Home");
+                    else
+                        return Redirect(returnUrl);
                 }
                 else
                 {

@@ -440,6 +440,7 @@
     <Compile Include="Models\Utils\IStorage.cs" />
     <Compile Include="Models\Utils\MapUrl.cs" />
     <Compile Include="Models\Utils\PhoneUtils.cs" />
+    <Compile Include="Models\Utils\SQLPasswordHasher.cs" />
     <Compile Include="Models\Utils\YearListData.cs" />
     <Compile Include="Models\ValidationAttributes.cs" />
     <Compile Include="Models\ViewEngine\MobileAwareViewEngine.cs" />

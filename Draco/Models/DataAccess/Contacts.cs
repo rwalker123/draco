@@ -28,6 +28,7 @@ namespace DataAccess
             <h3>Login information</h3>
             <p>User Name: {2}</p>
             <p>Password: {3}</p>
+            <p>After you login you can change your password by clicking your Name in the upper right corner of the web site.</p>
             <p>If you have any questions, please reply to this email.</p>
             Thank you,<br />
             <br />
