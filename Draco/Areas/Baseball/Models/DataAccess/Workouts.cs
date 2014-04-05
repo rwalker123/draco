@@ -3,8 +3,6 @@ using SportsManager;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -81,30 +79,11 @@ namespace DataAccess
         
 		static public string GetWorkoutName(long workoutId)
 		{
-			string name = String.Empty;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetWorkoutName", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = workoutId;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-						name = dr.GetString(0);
-				}
-			} 
-			catch (SqlException ex) 
-			{
-				Globals.LogException(ex);
-			}
-
-			return name;
+            return (from wa in db.WorkoutAnnouncements
+                    where wa.Id == workoutId
+                    select wa.WorkoutDesc).SingleOrDefault();
 		}
 
         static public IQueryable<WorkoutAnnouncement> GetActiveWorkoutAnnouncements(long accountId)
@@ -114,6 +93,7 @@ namespace DataAccess
             
             return (from wa in db.WorkoutAnnouncements
                     where wa.AccountId == accountId && wa.WorkoutDate >= now
+                    orderby wa.WorkoutDate, wa.WorkoutTime
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -132,6 +112,7 @@ namespace DataAccess
 
             return (from wa in db.WorkoutAnnouncements
                  join wr in db.WorkoutRegistrations on wa.Id equals wr.WorkoutId into regsInWorkout
+                 orderby wa.WorkoutDate, wa.WorkoutTime
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -151,6 +132,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from wa in db.WorkoutAnnouncements
                     where wa.AccountId == accountId
+                    orderby wa.WorkoutDate, wa.WorkoutTime
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -163,35 +145,23 @@ namespace DataAccess
                     });
 		}
 
-		static public WorkoutAnnouncement GetWorkoutAnnouncement(long workoutId)
-		{
-			WorkoutAnnouncement workoutAnnouncement = new WorkoutAnnouncement();
+        static public WorkoutAnnouncement GetWorkoutAnnouncement(long workoutId)
+        {
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetWorkoutAnnouncement", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@workoutId", SqlDbType.BigInt).Value = workoutId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						workoutAnnouncement = new WorkoutAnnouncement(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2), dr.GetDateTime(3), dr.GetDateTime(4), dr.GetInt64(5), dr.GetString(6));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return workoutAnnouncement;
-		}
+            return (from wa in db.WorkoutAnnouncements
+                    where wa.Id == workoutId
+                    select new WorkoutAnnouncement()
+                    {
+                        Id = wa.Id,
+                        AccountId = wa.AccountId,
+                        Comments = wa.Comments,
+                        Description = wa.WorkoutDesc,
+                        WorkoutDate = wa.WorkoutDate,
+                        WorkoutLocation = wa.FieldId,
+                        WorkoutTime = wa.WorkoutTime
+                    }).SingleOrDefault();
+        }
 
 		static public bool ModifyWorkoutAnnouncement(WorkoutAnnouncement w)
 		{

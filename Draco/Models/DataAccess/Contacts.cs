@@ -10,6 +10,8 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using System.Web.Routing;
 using System.Web.Security;
 
 namespace DataAccess
@@ -43,12 +45,12 @@ namespace DataAccess
             <br />
             {0}";
 
+
         private const String AccountPasswordSubject = "{0} Account Password Reset";
-        private const String AccountPasswordBody = 
+        private const String AccountPasswordBody =
             @"<h4>{0} Account Password Reset Notice</h4>
-              <p>Your password on {0} has been reset by <a href='mailto:{1}'>{3}</a>. Please use this new password the next time you log in.</p>
-              <h3>New Password</h3>
-              <p>{2}</p>
+              <p>Your password on {0} has been reset by <a href='mailto:{1}'>{3}</a>.</p>
+              <p><a href='{2}'>Click here</a> to continue with resetting your password.</p>
               <p>If you have any questions, please reply to this email.</p>
               Thank you,<br />
               <br />
@@ -377,7 +379,7 @@ namespace DataAccess
 
                 // if user id does not equal contact.UserId something is wrong. The email in the Users
                 // table is the same as this contact, but it is a different user id.
-                if (user != null && String.Compare(user.Id, contact.UserId) != 0)
+                if (user != null && String.Compare(user.Id, dbContact.UserId) != 0)
                     throw new Exception(String.Format("Internal Error: contact id = {0}, userId = {1}, doesn't match users table user id = {2}", contact.Id, contact.UserId, user.Id));
 
                 if (user == null)
@@ -418,16 +420,24 @@ namespace DataAccess
                         }
 
                         // update the user name with new email.
-                        if (UpdateUserName(user, newEmail))
+                        user.UserName = newEmail;
+                        IdentityResult idRes = userManager.Update(user);
+                        if (!idRes.Errors.Any())
                             NotifyUserOfNewEmail(dbContact.CreatorAccountId, origEmail, newEmail);
+                        else
+                            throw new Exception(idRes.Errors.First());
                     }
                     else
                     {
                         // removed the email, remove the account.
-                        //var userManager = Globals.GetUserManager();
-                        //await userManager.DeleteAsync(user);   
-                        //contact.UserId = null;
-                        //updateUserId = true;
+                        IdentityResult idRes = await userManager.DeleteAsync(user);
+                        if (!idRes.Errors.Any())
+                        {
+                            contact.UserId = null;
+                            updateUserId = true;
+                        }
+                        else
+                            throw new Exception(idRes.Errors.First());
                     }
                 }
             }
@@ -519,8 +529,21 @@ namespace DataAccess
 
                 if (user != null)
                 {
-                    String newPassword = CreateNewPassword(userManager, user);
-                    NotifyUserPasswordChange(accountId, contact, newPassword);
+                    string confirmationToken = await userManager.GeneratePasswordResetTokenAsync(user.Id);
+                    RouteValueDictionary parameters = new RouteValueDictionary
+                    { 
+                        {"controller", "Account" }, 
+                        { "action", "ResetPassword" }, 
+                        { "accountId", accountId }, 
+                        { "token", confirmationToken },
+
+                    };
+
+                    VirtualPathData vpd = RouteTable.Routes.GetVirtualPath(null, "Default", parameters);
+                    string absPath = VirtualPathUtility.ToAbsolute(vpd.VirtualPath);
+                    var url = new Uri(HttpContext.Current.Request.Url, absPath).AbsoluteUri;
+
+                    NotifyUserPasswordReset(accountId, contact, url.ToString());
                     return true;
                 }
             }
@@ -528,26 +551,7 @@ namespace DataAccess
             return false;
         }
 
-        private static String CreateNewPassword(UserManager<ApplicationUser> userManager, ApplicationUser user)
-        {
-            String newPassword = Membership.GeneratePassword(8, 2);
-            String hashedPassword = userManager.PasswordHasher.HashPassword(newPassword);
-            DB db = DBConnection.GetContext();
-            var dbUser = (from u in db.AspNetUsers
-                          where u.Id == user.Id
-                          select u).SingleOrDefault();
-            if (dbUser == null)
-                throw new Exception("User not found.");
-
-            dbUser.PasswordHash = hashedPassword;
-            db.SubmitChanges();
-            //var userStore = new UserStore<ApplicationUser>(new ApplicationDbContext());
-            //await userStore.SetPasswordHashAsync(user, hashedPassword);
-            //await userStore.UpdateAsync(user);
-            return newPassword;
-        }
-
-        static private void NotifyUserPasswordChange(long accountId, ModelObjects.Contact contact, string newPassword)
+        static private void NotifyUserPasswordReset(long accountId, ModelObjects.Contact contact, String url)
         {
             String currentUser = Globals.GetCurrentUserName();
             if (String.IsNullOrEmpty(currentUser))
@@ -578,7 +582,9 @@ namespace DataAccess
             }
 
             string subject = String.Format(AccountPasswordSubject, accountName);
-            string body = String.Format(AccountPasswordBody, accountName, currentUser, newPassword, senderFullName);
+
+            string body = String.Format(AccountPasswordBody, accountName, currentUser, url, senderFullName);
+
             Globals.MailMessage(fromEmail, contact.Email, subject, body);
         }
 
@@ -658,22 +664,6 @@ namespace DataAccess
             }
 
             return String.Empty;
-        }
-
-        private static bool UpdateUserName(ApplicationUser user, string userName)
-        {
-            DB db = DBConnection.GetContext();
-            var dbUser = (from users in db.AspNetUsers
-                          where users.Id == user.Id
-                          select users).SingleOrDefault();
-            if (dbUser != null)
-            {
-                dbUser.UserName = userName;
-                db.SubmitChanges();
-                return true;
-            }
-
-            return false;
         }
     }
 }

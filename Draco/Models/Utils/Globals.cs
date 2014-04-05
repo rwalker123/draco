@@ -1,5 +1,6 @@
 using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
+using Microsoft.AspNet.Identity.Owin;
+using SportsManager;
 using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
@@ -10,6 +11,7 @@ using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 using System.Web.UI.WebControls;
 
@@ -210,21 +212,18 @@ static public class Globals
         return System.Web.HttpContext.Current.User.Identity.GetUserName();
     }
 
-    public static UserManager<ApplicationUser> GetUserManager()
+    public static ApplicationUserManager GetUserManager()
     {
-        var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(new ApplicationDbContext()));
-        userManager.UserValidator = new EmailUserValidator(userManager);
-
-        return userManager;
+        return HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>();
     }
 }
 
 public class EmailUserValidator : IIdentityValidator<ApplicationUser>
 {
     private static readonly Regex EmailRegex = new Regex(@"^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-    UserManager<ApplicationUser> _manager;
+    ApplicationUserManager _manager;
 
-    public EmailUserValidator(UserManager<ApplicationUser> manager)
+    public EmailUserValidator(ApplicationUserManager manager)
     {
         _manager = manager;
     }

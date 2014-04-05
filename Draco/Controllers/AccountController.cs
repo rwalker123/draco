@@ -21,7 +21,7 @@ namespace SportsManager.Controllers
         {
         }
 
-        public AccountController(UserManager<ApplicationUser> userManager)
+        public AccountController(ApplicationUserManager userManager)
         {
             UserManager = userManager;
         }
@@ -51,7 +51,7 @@ namespace SportsManager.Controllers
         }
 
 
-        public UserManager<ApplicationUser> UserManager { get; private set; }
+        public ApplicationUserManager UserManager { get; private set; }
 
         //
         // GET: /Account/Login
@@ -64,7 +64,7 @@ namespace SportsManager.Controllers
                 ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
             }
 
-            ViewBag.ReturnUrl = returnUrl;
+            ViewBag.ReturnUrl = returnUrl != null ? returnUrl : Request.UrlReferrer != null ? Request.UrlReferrer.ToString() : "";
             return View();
         }
 
@@ -87,7 +87,7 @@ namespace SportsManager.Controllers
                 if (user != null)
                 {
                     await SignInAsync(user, model.RememberMe);
-                    return RedirectToLocal(returnUrl);
+                    return Redirect(returnUrl);
                 }
                 else
                 {
@@ -267,6 +267,92 @@ namespace SportsManager.Controllers
             return View(model);
         }
 
+        [AllowAnonymous]
+        [HttpGet]
+        public ActionResult ResetPassword(long? accountId, string token)
+        {
+            if (accountId.HasValue)
+            {
+                ViewData["AccountId"] = accountId.Value;
+                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+            }
+            else if (Request.UrlReferrer != null)
+                return Redirect(Request.UrlReferrer.ToString());
+            else
+                return RedirectToAction("Login");
+
+            return View(new ResetPasswordViewModel(token));
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<ActionResult> ResetPassword(long accountId, ResetPasswordViewModel vm)
+        {
+            ViewData["AccountId"] = accountId;
+            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+
+            if (ModelState.IsValid)
+            {
+                var userManager = Globals.GetUserManager();
+
+                var user = await userManager.FindByNameAsync(vm.UserName);
+                if (user != null)
+                {
+                    if (String.IsNullOrEmpty(vm.Token))
+                    {
+                        string confirmationToken = await userManager.GeneratePasswordResetTokenAsync(user.Id);
+                        var url = Url.Action("ResetPassword", "Account", new { token = confirmationToken }, Request.Url.Scheme);
+
+                        String passwordResetMessage = String.Format("<p>A request has been made to reset your password at {1}.</p><p>If you made this request, <a href='{0}'>click here</a> to reset your password.</p><p>If you did not make this request, please ignore this message.</p>", url, DataAccess.Accounts.GetAccountName(accountId));
+
+                        IdentityMessage im = new IdentityMessage()
+                        {
+                            Body = passwordResetMessage,
+                            Subject = "Password Reset",
+                            Destination = vm.UserName
+                        };
+                        await userManager.EmailService.SendAsync(im);
+
+                        return RedirectToAction("ResetPwStepTwo", new { accountId = accountId} );
+                    }
+                    else
+                    {
+                        var identityResult = await userManager.ResetPasswordAsync(user.Id, vm.Token, vm.Password);
+                        if (identityResult.Errors.Any())
+                        {
+                            var errors = identityResult.Errors;
+                            foreach(var error in errors)
+                            ModelState.AddModelError("UserName", error);
+                        }
+                        else
+                            return RedirectToAction("PasswordReset", new { accountId = accountId });
+                    }
+                }
+
+                ModelState.AddModelError("UserName", "Email is not registered. Please try a different Email address.");
+            }
+
+            return View(vm);
+        }
+
+        [AllowAnonymous]
+        public ActionResult ResetPwStepTwo(long accountId)
+        {
+            ViewData["AccountId"] = accountId;
+            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+
+            return View();
+        }
+
+        [AllowAnonymous]
+        public ActionResult PasswordReset(long accountId)
+        {
+            ViewData["AccountId"] = accountId;
+            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+
+            return View();
+        }
+
         //
         // POST: /Account/ExternalLogin
         [HttpPost]
@@ -374,10 +460,17 @@ namespace SportsManager.Controllers
         // POST: /Account/LogOff
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult LogOff()
+        public ActionResult LogOff(long? accountId)
         {
+            if (accountId.HasValue)
+            {
+                ViewData["AccountId"] = accountId.Value;
+                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+            }
+
             AuthenticationManager.SignOut();
-            return RedirectToAction("Index", "Home");
+            return Redirect(Request.UrlReferrer.ToString());
+            //return RedirectToAction("Index", "Home");
         }
 
         //

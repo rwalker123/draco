@@ -46,6 +46,30 @@ namespace SportsManager.Models
         public bool RememberMe { get; set; }
     }
 
+    public class ResetPasswordViewModel
+    {
+        public ResetPasswordViewModel()
+        {
+        }
+
+        public ResetPasswordViewModel(String token)
+        {
+            Token = token;
+        }
+
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email address")]
+        public string UserName { get; set; }
+
+        public string Token { get; set; }
+
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New Password")]
+        public string Password { get; set; }
+    }
+
     public class RegisterViewModel : AccountViewModel
     {
         public RegisterViewModel()

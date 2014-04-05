@@ -1051,6 +1051,9 @@
     <Content Include="Scripts\tinymce\langs\readme.md" />
     <Content Include="Scripts\wysiwyg.min.map" />
     <Content Include="Views\Shared\Sponsors.cshtml" />
+    <Content Include="Views\Account\ResetPassword.cshtml" />
+    <Content Include="Views\Account\ResetPwStepTwo.cshtml" />
+    <Content Include="Views\Account\PasswordReset.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

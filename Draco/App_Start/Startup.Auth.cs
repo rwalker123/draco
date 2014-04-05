@@ -2,7 +2,7 @@
 using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Owin;
-using System.Configuration;
+using SportsManager.Models;
 
 namespace SportsManager
 {
@@ -11,6 +11,10 @@ namespace SportsManager
         // For more information on configuring authentication, please visit http://go.microsoft.com/fwlink/?LinkId=301864
         public void ConfigureAuth(IAppBuilder app)
         {
+            app.CreatePerOwinContext(ApplicationDbContext.Create);
+            app.CreatePerOwinContext<ApplicationUserManager>(ApplicationUserManager.Create);
+            app.CreatePerOwinContext<ApplicationRoleManager>(ApplicationRoleManager.Create);
+
             // Enable the application to use a cookie to store information for the signed in user
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
@@ -25,15 +29,15 @@ namespace SportsManager
             //    clientId: "",
             //    clientSecret: "");
 
-            app.UseTwitterAuthentication(
-                consumerKey: ConfigurationManager.AppSettings["TwitterConsumerKey"],
-                consumerSecret: ConfigurationManager.AppSettings["TwitterConsumerSecret"]);
+            //app.UseTwitterAuthentication(
+            //    consumerKey: ConfigurationManager.AppSettings["TwitterConsumerKey"],
+            //    consumerSecret: ConfigurationManager.AppSettings["TwitterConsumerSecret"]);
 
-            app.UseFacebookAuthentication(
-                appId: ConfigurationManager.AppSettings["FacebookAppId"],
-                appSecret: ConfigurationManager.AppSettings["FacebookAppSecret"]);
+            //app.UseFacebookAuthentication(
+            //    appId: ConfigurationManager.AppSettings["FacebookAppId"],
+            //    appSecret: ConfigurationManager.AppSettings["FacebookAppSecret"]);
 
-            app.UseGoogleAuthentication();
+            //app.UseGoogleAuthentication();
         }
     }
 }
