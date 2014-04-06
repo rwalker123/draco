@@ -156,5 +156,47 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("messages")]
+        public HttpResponseMessage PutMessage(long accountId, long topicId, long id, ModelObjects.MessagePost post)
+        {
+            if (ModelState.IsValid)
+            {
+                post.EditDate = DateTime.Now;
+                if (DataAccess.MessageBoard.ModifyPost(accountId, post))
+                    return Request.CreateResponse<ModelObjects.MessagePost>(HttpStatusCode.OK, post);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("expirationdays")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage GetExpirationDays(long accountId)
+        {
+            var expirationDays = DataAccess.MessageBoard.GetExpirationDays(accountId);
+
+            return Request.CreateResponse<int>(HttpStatusCode.OK, expirationDays);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("expirationdays")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage PostExpirationDays(long accountId, string days)
+        {
+            int numDays = 0;
+            if (Int32.TryParse(days, out numDays))
+            {
+                if (numDays > 0)
+                {
+                    DataAccess.MessageBoard.SetExpirationDays(accountId, numDays);
+
+                    return Request.CreateResponse<int>(HttpStatusCode.OK, numDays);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
     }
 }

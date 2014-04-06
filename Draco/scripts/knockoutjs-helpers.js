@@ -1,5 +1,17 @@
 ﻿function initKOHelpers() {
 
+    ko.bindingHandlers.hiddenImg = {
+        update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
+            element.onerror = function () {
+                element.style.display = "none";
+            };
+            element.onload = function () {
+                element.style.display = "";
+            };
+            element.src = ko.unwrap(valueAccessor());
+        }
+    };
+
     ko.bindingHandlers.uniqueId = {
         init: function(element, valueAccessor) {
             var value = valueAccessor();

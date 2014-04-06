@@ -144,7 +144,7 @@
                             <div data-bind="if: LastPost.CreatorName">
                                 by <span data-bind="html: LastPost.CreatorName"></span><br />
                             </div>
-                            <span data-bind="html: moment(LastPost.EditDate()).format('MM/DD/YYYY h:mm a')"></span>
+                            <span data-bind="html: formattedDate"></span>
                         </div>
                         <div data-bind="ifnot: LastPost">
                             No Posts
@@ -188,7 +188,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
-                        <textarea id="workoutEditor" style="height: 250px" data-bind="wysiwyg: editPost().Text"></textarea>
+                        <textarea style="height: 250px" id="topicEditor" data-bind="wysiwyg: editPost().Text"></textarea>
                     </div>
                 </div>
                 <div class="col-sm-offset-2 col-sm-10">
@@ -240,7 +240,7 @@
                                 <div data-bind="if: LastPost.CreatorName">
                                     by <span data-bind="html: LastPost.CreatorName"></span><br />
                                 </div>
-                                <span data-bind="html: moment(LastPost.CreateDate()).format('MM/DD/YYYY h:mm a')"></span>
+                                <span data-bind="html: LastPost.formattedDate"></span>
                             </td>
                             <td data-bind="html: NumberOfReplies() > 0 ? NumberOfReplies()-1 : '-'"></td>
                         </tr>
@@ -254,36 +254,61 @@
     <!-- Post View -->
     <div data-bind="with: currentCategory().currentTopic, visible: $root.postView">
         <h3 >
+            <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
             <span data-bind="html: TopicTitle"></span>
             <span data-bind="if: CreatorName">
                 <small>started by <span data-bind="html: CreatorName"></span></small>
             </span>
         </h3>
-        <ul class="list-group" data-bind="foreach: posts">
+
+        <form class="form-horizontal" style="display: none" data-bind="with: editPost, visible: $root.editPostMode">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="postSubject">Subject</label>
+                <div class="col-md-10">
+                    <input type="text" class="form-control" id="postSubject" data-bind="value: Subject" />
+                </div>
+                <div class="col-md-offset-2 col-md-10">
+                    <textarea style="height: 250px" id="postEditor" data-bind="wysiwyg: Text"></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-offset-2 col-md-10">
+                    <button class="btn btn-success" type="button" data-bind="click: $root.saveEditPost"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button class="btn btn-danger" type="button" data-bind="click: $root.cancelEditPost"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </div>
+        </form>
+
+        <ul class="list-group" data-bind="foreach: posts, visible: !$root.editPostMode()">
             <li class="list-group-item">
                 <div style="float: left" class="left">
                     <h4>
+                        <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
                         <span data-bind="html: Subject"></span>
                         <small>
                             <span data-bind="if: CreatorName">
                                 by <span data-bind="html: CreatorName"></span> on
                             </span>
-                            <span data-bind="html: moment(CreateDate()).format('MM/DD/YYYY h:mm a')"></span>
+                            <span data-bind="html: CreateDate.formattedDate"></span>
                         </small>
                     </h4>
                 </div>
                 <div style="float: right" class="right" data-bind="visible: $root.currentCategory().canPost">
                     <button class="btn btn-default" type="button"><span class="fa fa-reply"></span></button>
-                </div>                
+                </div>
                 <div class="clearfix"></div>
                 <p style="margin:20px" data-bind="html: Text"></p>
+                <div data-bind="if: wasEditted">
+                    <small>edit: <span data-bind="html: EditDate.formattedDate"></span></small>
+                </div>
                 <div data-bind="if: canEdit">
-                    <button class="btn btn-default" type="button"><span class="glyphicon glyphicon-edit"></span></button>
-                    <button class="btn btn-danger" type="button"><span class="glyphicon glyphicon-remove"></span></button>
+                    <button class="btn btn-default" type="button" data-bind="click: $root.startEditPost"><span class="glyphicon glyphicon-edit"></span></button>
+                    <button class="btn btn-danger" type="button" data-bind="click: $root.deletePost"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
             </li>
         </ul>
-    </div>
+</div>
     <!-- end Post View -->
 </div>
 

@@ -385,7 +385,7 @@ namespace DataAccess
             return post.Id;
         }
 
-        static public bool ModifyPost(MessagePost post)
+        static public bool ModifyPost(long accountId, MessagePost post)
         {
             if (post.Subject.Length == 0)
                 return false;
@@ -397,6 +397,17 @@ namespace DataAccess
 
             if (dbPost == null)
                 return false;
+
+            // only the admin or original author can modify the post.
+            var userId = Globals.GetCurrentUserId();
+            if (!DataAccess.Accounts.IsAccountAdmin(accountId, userId))
+            {
+                var contactId = DataAccess.Contacts.GetContactId(userId);
+                if (dbPost.ContactCreatorId != contactId)
+                {
+                    return false;
+                }
+            }
 
             dbPost.PostText = post.Text;
             dbPost.EditDate = post.EditDate;
@@ -667,6 +678,22 @@ namespace DataAccess
             }
 
             return 1;
+        }
+
+        public static int GetExpirationDays(long accountId)
+        {
+            string cleanupDays = DataAccess.Accounts.GetAccountSetting(accountId, "MessageBoardCleanup");
+            int days = 30;
+            Int32.TryParse(cleanupDays, out days);
+            if (days <= 0)
+                days = 30;
+
+            return days;
+        }
+
+        public static void SetExpirationDays(long accountId, int days)
+        {
+            DataAccess.Accounts.SetAccountSetting(accountId, "MessageBoardCleanup", days.ToString());
         }
     }
 }

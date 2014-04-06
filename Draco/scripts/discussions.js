@@ -8,6 +8,21 @@
     }
 }
 
+function formatMessageBoardDate(theDate) {
+    var editDate = new Date(theDate);
+    var today = new Date();
+    if (editDate.getDay() == today.getDay()) {
+        if (editDate.getMonth() == today.getMonth()) {
+            if (editDate.getYear() == today.getYear()) {
+                return 'Today at ' + moment(theDate).format('h:mm a');
+            }
+        }
+    }
+
+    return moment(theDate).format('MM/DD/YYYY h:mm a');
+
+}
+
 function MessageCategoryViewModel(data, userId, isAdmin) {
     var self = this;
 
@@ -32,11 +47,22 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
     self.Name.extend({ required: true });
     self.Order.extend({ min: 0, max: 100 });
 
+    self.formattedDate = ko.computed(function () {
+        if (self.LastPost) {
+            if (self.LastPost.CreateDate)
+                return formatMessageBoardDate(self.LastPost.CreateDate());
+        }
+
+        return '';
+    });
+
+
     self.addTopicModel = {
         Id: 0,
         CategoryId: 0,
         CreatorContactId: 0,
         CreatorName: '',
+        PhotoUrl: '',
         CreateDate: new Date(),
         TopicTitle: '',
         StickTopic: false,
@@ -126,15 +152,24 @@ function MessageTopicViewModel(data, accountId, userId, isAdmin)
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.LastPost.formattedDate = ko.computed(function () {
+        if (self.LastPost.CreateDate) {
+            return formatMessageBoardDate(self.LastPost.CreateDate());
+        }
+
+        return '';
+    });
+
     self.newPostModel = {
         Id: 0,
         TopicId: self.Id(),
         Order: 0,
         CreatorContactId: 0,
         CreatorName: '',
+        PhotoUrl: '',
         CreateDate: new Date(),
         Text: '',
-        EditDate: new Date(),
+        EditDate: null,
         Subject: '',
         CategoryId: 0
     }
@@ -195,6 +230,33 @@ function MessagePostViewModel(data, userId, isAdmin) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.wasEditted = ko.computed(function () {
+        if (self.CreateDate && self.EditDate) {
+            var cd = new Date(self.CreateDate());
+            var ed = new Date(self.EditDate());
+
+            return (ed.getTime() > cd.getTime());
+        }
+
+        return false;
+    });
+
+    self.CreateDate.formattedDate = ko.computed(function () {
+        if (self.CreateDate) {
+            return formatMessageBoardDate(self.CreateDate());
+        }
+
+        return '';
+    });
+
+    self.EditDate.formattedDate = ko.computed(function () {
+        if (self.EditDate) {
+            return formatMessageBoardDate(self.EditDate());
+        }
+
+        return '';
+    });
+
     self.canEdit = ko.computed(function () {
         return self.isAdmin || (userId > 0 && self.CreatorContactId() == userId);
     });
@@ -219,6 +281,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
     self.viewMode = ko.observable(true);
     self.addCategoryMode = ko.observable(false);
     self.editTopicMode = ko.observable(false);
+    self.editPostMode = ko.observable(false);
     self.categories = ko.observableArray();
     self.deletePostsAfter = ko.observable();
     self.breadcrumbs = ko.observableArray();
@@ -265,6 +328,10 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
         self.editTopicMode(true);
 
         topic.editTopic().update(topic.addTopicModel);
+
+        // tinyMCE editor will not bind two-ways, have to manually set the control
+        // when changing the data model.
+        tinymce.get('topicEditor').setContent('');
     }
 
     self.endEditTopic = function () {
@@ -325,9 +392,8 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             type: (newData.Id <= 0) ? "POST" : "PUT",
             url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/categories/' + self.currentCategory().Id() + '/topics',
             data: newData,
-            success: function (topic) {
 
-                var topicVM = new MessageTopicViewModel(topic, self.accountId, self.userId, self.isAdmin);
+            success: function (topic) {
 
                 // first topic/post is made at the same time. Topic has been created, make the post now.
                 var messageData = {
@@ -340,24 +406,22 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                     Subject: newData.TopicTitle
                 };
 
-                // topic is created, now add the post.
-                $.ajax({
-                    type: "POST",
-                    url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/topics/' + topic.Id + '/messages',
-                    data: messageData,
-                    success: function (message) {
-                        message.CreatorName = topic.CreatorName;
-                        // fully created, add topic to list.
-                        var postVM = new MessagePostViewModel(message, self.userId, self.isAdmin);
-                        topicVM.posts.unshift(postVM);
-                        topicVM.LastPost = postVM;
-                        self.currentCategory().topics.unshift(topicVM);
+                self.createMessagePost(messageData, function (message) {
 
-                        self.endEditTopic();
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
-                    }
+                    message.CreatorName = topic.CreatorName;
+                    message.NumberOfReplies = 1;
+
+                    // fully created, add topic to list.
+                    var postVM = new MessagePostViewModel(message, self.userId, self.isAdmin);
+
+                    topic.LastPost = postVM;
+
+                    var topicVM = new MessageTopicViewModel(topic, self.accountId, self.userId, self.isAdmin);
+                    topicVM.posts.unshift(postVM);
+
+                    self.currentCategory().topics.unshift(topicVM);
+
+                    self.endEditTopic();
                 });
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -365,6 +429,57 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             }
         });
 
+    }
+
+    self.startEditPost = function (post) {
+        self.editPostMode(true);
+
+        var data = post.toJS();
+        self.currentCategory().currentTopic().editPost().update(data);
+
+        // tinyMCE editor will not bind two-ways, have to manually set the control
+        // when changing the data model.
+        tinymce.get('postEditor').setContent(data.Text);
+    }
+
+    self.cancelEditPost = function () {
+        self.editPostMode(false);
+    }
+
+    self.saveEditPost = function () {
+
+        var data = self.currentCategory().currentTopic().editPost().toJS();
+        self.createMessagePost(data, function (message) {
+
+            // find post and update with data.
+            ko.utils.arrayFirst(self.currentCategory().currentTopic().posts(), function (post) {
+                if (post.Id() === data.Id) {
+
+                    post.update(message);
+                    return true;
+                }
+            });
+            
+            self.cancelEditPost();
+        });
+    }
+
+    self.createMessagePost = function (data, callback) {
+        var url = window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/topics/' + data.TopicId + '/messages'; 
+        if (data.Id)
+            url = url + '/' + data.Id;
+
+        $.ajax({
+            type: data.Id ? "PUT" : "POST",
+            url: url,
+            data: data,
+            success: function (message) {
+                callback(message);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
     }
 
     self.loadTopics = function (forum) {
@@ -528,6 +643,38 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
         return left.Order() > right.Order() ? 1 : -1;
     }
 
+    self.getMessageExpiration = function () {
+        $.ajax({
+            type: "GET",
+            url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/expirationdays',
+            success: function (expirationDays) {
+                self.deletePostsAfter(expirationDays);
+
+                self.deletePostsAfter.subscribe(function (newValue) {
+                    self.updateMessageExpiration(newValue);
+                });
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.updateMessageExpiration = function (days) {
+        $.ajax({
+            type: "POST",
+            url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/expirationdays?days=' + days,
+            success: function (expirationDays) {
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
     $("#_mbDeletePostsAfter").selectpicker();
     self.getMessageCategories();
+    if (self.isAdmin) {
+        self.getMessageExpiration();
+    }
 }

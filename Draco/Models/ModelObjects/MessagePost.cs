@@ -56,6 +56,14 @@ namespace ModelObjects
             set;
         }
 
+        public String PhotoUrl
+        {
+            get
+            {
+                return ModelObjects.Contact.GetPhotoURL(CreatorContactId);
+            }
+        }
+
         public DateTime CreateDate
         {
             get;
