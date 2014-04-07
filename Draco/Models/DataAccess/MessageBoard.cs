@@ -256,7 +256,7 @@ namespace DataAccess
 
             dbCat.CategoryOrder = cat.Order;
             dbCat.CategoryName = cat.Name;
-            dbCat.CategoryDescription = cat.Description;
+            dbCat.CategoryDescription = cat.Description ?? String.Empty;
             dbCat.AllowAnonymousPost = cat.AllowAnonymousPost;
             dbCat.AllowAnonymousTopic = cat.AllowAnonymousTopic;
             dbCat.isTeam = cat.IsTeam;

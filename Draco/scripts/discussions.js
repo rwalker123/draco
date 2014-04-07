@@ -379,14 +379,21 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                 ko.utils.arrayFirst(self.currentCategory().topics(), function (item) {
                     if (item.Id() === topic.Id()) {
                         self.currentCategory().topics.remove(item);
-                        self.currentCategory().NumberOfThreads(self.currentCategory().NumberOfThreads() - 1);
-                        if (self.currentCategory().LastPost && item.Id() == self.currentCategory().LastPost.Id()) {
-                            if (self.currentCategory().topics().length > 0)
-                                self.currentCategory().LastPost = self.currentCategory().topics()[0];
-                            else
-                                self.currentCategory().LastPost = undefined;
 
-                        }
+                        ko.utils.arrayFirst(self.categories(), function (cat) {
+                            if (cat.Id() == self.currentCategory().Id()) {
+                                cat.NumberOfThreads(cat.NumberOfThreads() - 1);
+                                if (cat.LastPost && item.LastPost.Id() == cat.LastPost.Id()) {
+                                    if (cat.topics().length > 0)
+                                        cat.LastPost = cat.topics()[0];
+                                    else
+                                        cat.LastPost = undefined;
+
+                                    return true;
+                                }
+                            }
+                        });
+
                         return true;
                     }
                 });
@@ -431,6 +438,15 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                     var topicVM = new MessageTopicViewModel(topic, self.accountId, self.userId, self.isAdmin);
 
                     self.addNewPost(postVM, topicVM);
+
+                    ko.utils.arrayFirst(self.categories(), function (cat) {
+                        if (cat.Id() == self.currentCategory().Id()) {
+                            cat.NumberOfThreads(cat.NumberOfThreads() + 1);
+                            cat.LastPost = postVM;
+                            return true;
+                        }
+                    });
+
                     topicVM.NumberOfReplies(topicVM.NumberOfReplies() + 1);
                     self.currentCategory().topics.unshift(topicVM);
 
