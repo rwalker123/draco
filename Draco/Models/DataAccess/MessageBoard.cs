@@ -579,7 +579,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
 
-            return (from mp in db.MessagePosts
+            return (from mp in db.MessageTopics
                     where mp.CategoryId == catId
                     select mp.Id).LongCount();
         }
@@ -592,15 +592,37 @@ namespace DataAccess
                     select mp.Id).Count();
         }
 
-        static public bool RemoveMessagePost(long id)
+        static private bool RemoveMessagePost(long id)
+        {
+            bool junk;
+            return RemoveMessagePost(-1, id, out junk);
+        }
+
+        static public bool RemoveMessagePost(long accountId, long id, out bool topicRemoved)
         {
             DB db = DBConnection.GetContext();
+
+            topicRemoved = false;
 
             var dbPost = (from mp in db.MessagePosts
                           where mp.Id == id
                           select mp).SingleOrDefault();
             if (dbPost != null)
             {
+                if (accountId != -1)
+                {
+                    // only the admin or original author can modify the post.
+                    var userId = Globals.GetCurrentUserId();
+                    if (!DataAccess.Accounts.IsAccountAdmin(accountId, userId))
+                    {
+                        var contactId = DataAccess.Contacts.GetContactId(userId);
+                        if (dbPost.ContactCreatorId != contactId)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
                 db.MessagePosts.DeleteOnSubmit(dbPost);
                 db.SubmitChanges();
 
@@ -616,6 +638,7 @@ namespace DataAccess
                     {
                         db.MessageTopics.DeleteOnSubmit(dbTopic);
                         db.SubmitChanges();
+                        topicRemoved = true;
                     }
                 }
             }

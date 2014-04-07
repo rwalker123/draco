@@ -170,6 +170,17 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("messages")]
+        public HttpResponseMessage DeleteMessage(long accountId, long topicId, long id)
+        {
+            bool topicRemoved;
+            if (DataAccess.MessageBoard.RemoveMessagePost(accountId, id, out topicRemoved))
+                return Request.CreateResponse<bool>(HttpStatusCode.OK, topicRemoved);
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("expirationdays")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

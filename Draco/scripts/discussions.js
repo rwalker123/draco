@@ -59,7 +59,7 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
 
     self.addTopicModel = {
         Id: 0,
-        CategoryId: 0,
+        CategoryId: data.Id,
         CreatorContactId: 0,
         CreatorName: '',
         PhotoUrl: '',
@@ -230,7 +230,7 @@ function MessagePostViewModel(data, userId, isAdmin) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.wasEditted = ko.computed(function () {
+    self.CreateDate.wasEditted = ko.computed(function () {
         if (self.CreateDate && self.EditDate) {
             var cd = new Date(self.CreateDate());
             var ed = new Date(self.EditDate());
@@ -257,7 +257,7 @@ function MessagePostViewModel(data, userId, isAdmin) {
         return '';
     });
 
-    self.canEdit = ko.computed(function () {
+    self.Id.canEdit = ko.computed(function () {
         return self.isAdmin || (userId > 0 && self.CreatorContactId() == userId);
     });
 
@@ -282,6 +282,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
     self.addCategoryMode = ko.observable(false);
     self.editTopicMode = ko.observable(false);
     self.editPostMode = ko.observable(false);
+    self.replyToTopicMode = ko.observable(false);
     self.categories = ko.observableArray();
     self.deletePostsAfter = ko.observable();
     self.breadcrumbs = ko.observableArray();
@@ -289,6 +290,18 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
     self.forumView = ko.observable(true);
     self.topicView = ko.observable(false);
     self.postView = ko.observable(false);
+
+    self.removePostOptions = ko.observableArray([
+        { Id: "3", Name: "3 days" },
+        { Id: "7", Name: "7 days" },
+        { Id: "14", Name: "14 days" },
+        { Id: "30", Name: "30 days" },
+        { Id: "60", Name: "60 days" },
+        { Id: "90", Name: "90 days" },
+        { Id: "120", Name: "120 days" },
+        { Id: "150", Name: "150 days" },
+        { Id: "180", Name: "180 days" }
+    ]);
 
     self.addCategoryModel = {
         Id: 0,
@@ -336,6 +349,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
 
     self.endEditTopic = function () {
         self.editTopicMode(false);
+        $("#confirmBtn").unbind('click');
     }
 
     self.saveEditTopic = function () {
@@ -367,10 +381,10 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                         self.currentCategory().topics.remove(item);
                         self.currentCategory().NumberOfThreads(self.currentCategory().NumberOfThreads() - 1);
                         if (self.currentCategory().LastPost && item.Id() == self.currentCategory().LastPost.Id()) {
-                            if (self.currentCategory().topics.length > 0)
-                                self.currentCategory().LastPost = self.currentCategory().topics[0];
+                            if (self.currentCategory().topics().length > 0)
+                                self.currentCategory().LastPost = self.currentCategory().topics()[0];
                             else
-                                self.currentCategory().LastPost(undefined);
+                                self.currentCategory().LastPost = undefined;
 
                         }
                         return true;
@@ -409,16 +423,15 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                 self.createMessagePost(messageData, function (message) {
 
                     message.CreatorName = topic.CreatorName;
-                    message.NumberOfReplies = 1;
 
                     // fully created, add topic to list.
                     var postVM = new MessagePostViewModel(message, self.userId, self.isAdmin);
-
                     topic.LastPost = postVM;
 
                     var topicVM = new MessageTopicViewModel(topic, self.accountId, self.userId, self.isAdmin);
-                    topicVM.posts.unshift(postVM);
 
+                    self.addNewPost(postVM, topicVM);
+                    topicVM.NumberOfReplies(topicVM.NumberOfReplies() + 1);
                     self.currentCategory().topics.unshift(topicVM);
 
                     self.endEditTopic();
@@ -429,6 +442,16 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             }
         });
 
+    }
+
+    self.addNewPost = function (postVM, topicVM, append) {
+
+        if (append) {
+            topicVM.posts.push(postVM);
+        }
+        else {
+            topicVM.posts.unshift(postVM);
+        }
     }
 
     self.startEditPost = function (post) {
@@ -444,22 +467,50 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
 
     self.cancelEditPost = function () {
         self.editPostMode(false);
+        self.replyToTopicMode(false);
+
+        $('#confirmBtn').unbind('click');
     }
 
     self.saveEditPost = function () {
+        $("#confirmModal").modal("show");
 
+        $("#confirmBtn").one("click", function () {
+            self.confirmedSaveEditPost();
+        });
+    }
+
+    self.confirmedSaveEditPost = function() {
         var data = self.currentCategory().currentTopic().editPost().toJS();
         self.createMessagePost(data, function (message) {
 
-            // find post and update with data.
-            ko.utils.arrayFirst(self.currentCategory().currentTopic().posts(), function (post) {
-                if (post.Id() === data.Id) {
+            if (self.replyToTopicMode()) {
+                var postVM = new MessagePostViewModel(message, self.userId, self.isAdmin);
+                self.addNewPost(postVM, self.currentCategory().currentTopic(), true);
 
-                    post.update(message);
-                    return true;
-                }
-            });
-            
+                // update the number of replies on the topic.
+                var topicId = self.currentCategory().currentTopic().Id();
+
+                ko.utils.arrayFirst(self.currentCategory().topics(), function (topic) {
+                    if (topic.Id() === topicId) {
+                        var numReplies = self.currentCategory().currentTopic().NumberOfReplies() + 1;
+                        topic.NumberOfReplies(numReplies);
+                        topic.LastPost = postVM;
+
+                        return true;
+                    }
+                });
+            }
+            else {
+                // find post and update with data.
+                ko.utils.arrayFirst(self.currentCategory().currentTopic().posts(), function (post) {
+                    if (post.Id() === data.Id) {
+
+                        post.update(message);
+                        return true;
+                    }
+                });
+            }
             self.cancelEditPost();
         });
     }
@@ -468,6 +519,9 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
         var url = window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/topics/' + data.TopicId + '/messages'; 
         if (data.Id)
             url = url + '/' + data.Id;
+
+        data.CreateDate = moment(new Date()).format("MM DD, YYYY h:mm a");
+        data.EditDate = data.CreateDate;
 
         $.ajax({
             type: data.Id ? "PUT" : "POST",
@@ -480,6 +534,24 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
+    }
+
+    self.startReplyToTopic = function (post) {
+        self.replyToTopicMode(true);
+
+        self.currentCategory().currentTopic().editPost().update(self.currentCategory().currentTopic().newPostModel, self.userId, self.isAdmin);
+
+        var subject = post.Subject();
+        if (subject.lastIndexOf("re:", 0) !== 0)
+            subject = "re: " + subject;
+
+        self.currentCategory().currentTopic().editPost().Subject(subject);
+        self.currentCategory().currentTopic().editPost().CategoryId(self.currentCategory().Id());
+        self.currentCategory().currentTopic().editPost().TopicId(self.currentCategory().currentTopic().Id());
+
+        // tinyMCE editor will not bind two-ways, have to manually set the control
+        // when changing the data model.
+        tinymce.get('postEditor').setContent('');
     }
 
     self.loadTopics = function (forum) {
@@ -522,10 +594,12 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             topic.posts.load(function () {
                 self.currentCategory().currentTopic().posts(topic.posts());
                 self.currentCategory().currentTopic().posts.loaded(true);
+                self.postView(true);
             });
         }
         else {
             self.currentCategory().currentTopic().posts(topic.posts());
+            self.postView(true);
         }
 
         self.currentCategory().currentTopic().update(newData);
@@ -540,7 +614,6 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             }
         })
 
-        self.postView(true);
     }
 
     self.loadLastPost = function (topic) {
@@ -577,6 +650,58 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
             }
         });
     }
+
+    self.deletePost = function (post) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/topics/' + post.TopicId() + '/messages/' + post.Id(),
+            success: function (topicRemoved) {
+                var theCat;
+
+                ko.utils.arrayFirst(self.categories(), function (cat) {
+                    if (cat.Id() === post.CategoryId()) {
+                        theCat = cat;
+                        return true;
+                    }
+                });
+                if (!theCat)
+                    return;
+
+                var theTopic;
+                ko.utils.arrayFirst(theCat.topics(), function (topic) {
+                    if (topic.Id() === post.TopicId()) {
+                        theTopic = topic;
+                        return true;
+                    }
+                });
+
+                ko.utils.arrayFirst(theTopic.posts(), function (thePost) {
+                    if (thePost.Id() === post.Id()) {
+                        // remove from the currentTopic as well.
+                        ko.utils.arrayFirst(self.currentCategory().currentTopic().posts(), function(currentPost) {
+                            if (currentPost.Id() == post.Id()) {
+                                self.currentCategory().currentTopic().posts.remove(currentPost);
+                                return true;
+                            }
+                        });
+                        theTopic.posts.remove(thePost);
+                        theTopic.NumberOfReplies(theTopic.NumberOfReplies() - 1);
+                        return true;
+                    }
+                });
+
+                if (topicRemoved) {
+                    theCat.topics.remove(theTopic);
+                    self.breadcrumbs.removeAll();
+                    self.loadTopics(theCat);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
 
     self.deleteCategory = function (category) {
         $.ajax({
@@ -672,7 +797,6 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
         });
     }
 
-    $("#_mbDeletePostsAfter").selectpicker();
     self.getMessageCategories();
     if (self.isAdmin) {
         self.getMessageExpiration();
