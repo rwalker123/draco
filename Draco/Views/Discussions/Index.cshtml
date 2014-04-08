@@ -226,10 +226,10 @@
                             <td>
                                 <a data-bind="html: TopicTitle, click: $root.loadPosts, attr: { 'href': '#' }"></a>
                             </td>
-                            <td data-bind="if: LastPost">
-                                <a data-bind="html: LastPost.Subject, click: $root.loadLastPost, attr: { 'href': '#' }"></a><br />
-                                <div data-bind="if: LastPost.CreatorName">
-                                    by <span data-bind="html: LastPost.CreatorName"></span><br />
+                            <td data-bind="if: LastPost()">
+                                <a data-bind="html: LastPost().Subject, click: $root.loadLastPost, attr: { 'href': '#' }"></a><br />
+                                <div data-bind="if: LastPost().CreatorName">
+                                    by <span data-bind="html: LastPost().CreatorName"></span><br />
                                 </div>
                                 <span data-bind="html: LastPost.formattedDate"></span>
                             </td>

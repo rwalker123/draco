@@ -31,15 +31,17 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
 
     // mappings to handle special cases in parsing the object.
     self.mapping = {
-        // example:
-        //'HomeTeamId': {
-        //    create: function (options) {
-        //        return ko.observable(options.data);
-        //    },
+        'LastPost': {
+            create: function (options) {
+                if (options.data)
+                    return ko.observable(new MessagePostViewModel(options.data, self.userId, self.isAdmin));
+                else
+                    return ko.observable();
+            }
         //    update: function (options) {
         //        return options.data;
         //    }
-        //}
+        }
     }
 
     ko.mapping.fromJS(data, self.mapping, self);
@@ -48,12 +50,12 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
     self.Order.extend({ min: 0, max: 100 });
 
     self.formattedDate = ko.computed(function () {
-        if (self.LastPost) {
-            if (self.LastPost.CreateDate)
-                return formatMessageBoardDate(self.LastPost.CreateDate());
+        if (self.LastPost && self.LastPost() && self.LastPost().CreateDate) {
+            return formatMessageBoardDate(self.LastPost().CreateDate());
         }
 
         return '';
+
     });
 
 
@@ -67,7 +69,7 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
         TopicTitle: '',
         StickTopic: false,
         NumberOfViews: 0,
-        LastPost: {}
+        LastPost: null
     }
 
     self.editTopic = ko.validatedObservable(new MessageTopicViewModel(self.addTopicModel, self.AccountId(), self.userId, self.isAdmin));
@@ -139,22 +141,24 @@ function MessageTopicViewModel(data, accountId, userId, isAdmin)
 
     // mappings to handle special cases in parsing the object.
     self.mapping = {
-        //'LastPost': {
-        //    create: function (options) {
-        //        if (options.data && options.data.Id)
-        //            return new MessagePostViewModel(options.data, self.userId, self.isAdmin);
-        //    }
+        'LastPost': {
+            create: function (options) {
+                if (options.data)
+                    return ko.observable(new MessagePostViewModel(options.data, self.userId, self.isAdmin));
+                else
+                    return ko.observable();
+            }
         //    update: function (options) {
         //        return options.data;
         //    }
-        //}
+        }
     }
 
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.LastPost.formattedDate = ko.computed(function () {
-        if (self.LastPost.CreateDate) {
-            return formatMessageBoardDate(self.LastPost.CreateDate());
+        if (self.LastPost() && self.LastPost().CreateDate) {
+            return formatMessageBoardDate(self.LastPost().CreateDate());
         }
 
         return '';
@@ -511,7 +515,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                     if (topic.Id() === topicId) {
                         var numReplies = self.currentCategory().currentTopic().NumberOfReplies() + 1;
                         topic.NumberOfReplies(numReplies);
-                        topic.LastPost = postVM;
+                        topic.LastPost(postVM);
 
                         return true;
                     }

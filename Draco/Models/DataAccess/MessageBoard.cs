@@ -381,6 +381,7 @@ namespace DataAccess
             db.SubmitChanges();
 
             post.Id = dbPost.Id;
+            post.CreatorName = DataAccess.Contacts.GetContactName(post.CreatorContactId);
 
             return post.Id;
         }
