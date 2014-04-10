@@ -9,7 +9,7 @@
 }
 <div class="jumbotron">
     <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name</h1><br />
-    [Team Record] <br />
+    @Model.TeamStanding.Wins - @Model.TeamStanding.Losses - @Model.TeamStanding.Ties <br />
     @if (Model.FromLeagueAccount)
     {
         <small>@Model.AccountName @Model.SeasonName season</small>

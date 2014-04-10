@@ -629,6 +629,21 @@ namespace DataAccess
 
         }
 
+        public static TeamStanding GetTeamStanding(long teamSeasonId)
+        {
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            
+            var teamStanding = new TeamStanding(teamSeasonId, team.DivisionId, team.Name);
 
+            var completedGames = DataAccess.Schedule.GetTeamCompletedGames(team.LeagueId, teamSeasonId);
+
+			foreach (Game g in completedGames)
+			{
+                var isHomeTeam = (g.HomeTeamId == teamSeasonId);
+				teamStanding.AddGameResult(isHomeTeam, null, g.HomeScore, g.AwayScore, g.GameStatus);
+			}
+
+            return teamStanding;
+        }
 	}
 }

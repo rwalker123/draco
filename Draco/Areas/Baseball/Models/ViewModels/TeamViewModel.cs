@@ -16,6 +16,8 @@ namespace SportsManager.Baseball.ViewModels
 
             SeasonName = DataAccess.Seasons.GetSeasonName(CurrentSeasonId);
 
+            TeamStanding = DataAccess.Teams.GetTeamStanding(id);
+
             IsTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, id);
             IsTeamPhotoAdmin = DataAccess.Teams.IsTeamPhotoAdmin(accountId, id);
 
@@ -65,5 +67,6 @@ namespace SportsManager.Baseball.ViewModels
 
         public String SeasonName { get; private set; }
 
+        public TeamStanding TeamStanding { get; private set; }
     }
 }

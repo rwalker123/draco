@@ -149,7 +149,7 @@ namespace ModelObjects
             else
 				m_ties++;
 
-			if (opponent.DivisionId == m_divisionId)
+			if (opponent != null && opponent.DivisionId == m_divisionId)
 			{
 				m_totalDivGames++;
 
