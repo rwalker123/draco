@@ -90,17 +90,17 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
 
                 self.topics(topicsVM);
                 self.topics.sort(function (left, right) {
-                    if (!left.LastPost && !right.LastPost)
+                    if (!left.LastPost() && !right.LastPost())
                         return 0;
-                    if (!left.LastPost)
+                    if (!left.LastPost())
                         return 1;
-                    if (!right.LastPost)
+                    if (!right.LastPost())
                         return -1;
 
-                    if (left.LastPost.CreateDate == right.LastPost.CreateDate)
+                    if (left.LastPost().CreateDate() == right.LastPost().CreateDate())
                         return 0;
 
-                    return left.LastPost.CreateDate > right.LastPost.CreateDate ? 1 : -1;
+                    return left.LastPost().CreateDate() > right.LastPost().CreateDate() ? -1 : 1;
 
                 });
                 self.topics.loaded(true);
@@ -387,11 +387,11 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                         ko.utils.arrayFirst(self.categories(), function (cat) {
                             if (cat.Id() == self.currentCategory().Id()) {
                                 cat.NumberOfThreads(cat.NumberOfThreads() - 1);
-                                if (cat.LastPost && item.LastPost.Id() == cat.LastPost.Id()) {
+                                if (cat.LastPost && cat.LastPost() && item.LastPost.Id() == cat.LastPost.Id()) {
                                     if (cat.topics().length > 0)
-                                        cat.LastPost = cat.topics()[0];
+                                        cat.LastPost(cat.topics()[0]);
                                     else
-                                        cat.LastPost = undefined;
+                                        cat.LastPost(undefined);
 
                                     return true;
                                 }
@@ -446,7 +446,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                     ko.utils.arrayFirst(self.categories(), function (cat) {
                         if (cat.Id() == self.currentCategory().Id()) {
                             cat.NumberOfThreads(cat.NumberOfThreads() + 1);
-                            cat.LastPost = postVM;
+                            cat.LastPost(postVM);
                             return true;
                         }
                     });
@@ -511,15 +511,24 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                 // update the number of replies on the topic.
                 var topicId = self.currentCategory().currentTopic().Id();
 
+                // update topic data.
                 ko.utils.arrayFirst(self.currentCategory().topics(), function (topic) {
                     if (topic.Id() === topicId) {
                         var numReplies = self.currentCategory().currentTopic().NumberOfReplies() + 1;
                         topic.NumberOfReplies(numReplies);
                         topic.LastPost(postVM);
-
                         return true;
                     }
                 });
+
+                // update last post for category
+                ko.utils.arrayFirst(self.categories(), function (cat) {
+                    if (cat.Id() == self.currentCategory().Id()) {
+                        cat.LastPost(postVM);
+                        return true;
+                    }
+                });
+
             }
             else {
                 // find post and update with data.
