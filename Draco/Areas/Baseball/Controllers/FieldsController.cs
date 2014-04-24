@@ -13,12 +13,17 @@ namespace SportsManager.Areas.Baseball.Controllers
 
 		// disable cache so that ajax call can be made.
 		[OutputCache(Duration = 0, VaryByParam = "None")]
-		public ActionResult Index(long? accountId)
+		public ActionResult Index(long? accountId, long? id = null)
 		{
 			if (accountId.GetValueOrDefault(0) == 0)
 			{
 				return RedirectToAction("Index", "League");
 			}
+
+            if (id.HasValue)
+                ViewBag.SelectedField = id.Value;
+            else
+                ViewBag.SelectedField = 0;
 
 			return View("Fields", new LeagueFieldsViewModel(this, accountId.Value));
 		}

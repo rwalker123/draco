@@ -185,7 +185,7 @@
 <script type="text/javascript">
 
     $(document).ready(function () {
-        initFieldsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        initFieldsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @ViewBag.SelectedField);
 
     });
 

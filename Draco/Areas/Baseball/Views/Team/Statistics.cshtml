@@ -40,80 +40,97 @@
                 </select>
             </div>
         </form>
-        <div class="table-responsive">
-            <table id="statsTable" class="table table-striped">
-                <thead>
-                    <tr>
-                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
+            <li><a href="#pitching" data-toggle="tab">Pitching</a></li>
+            <li><a href="#gamesummary" data-toggle="tab">Game Summary</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade in active" id="batting">
+                <div class="table-responsive">
+                    <table id="statsTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                @if (Model.IsAdmin || Model.IsTeamAdmin)
                         {
-                            <th data-bind="if: selectedGame() > 0"></th>
+                                    <th data-bind="if: selectedGame() > 0"></th>
                         }
-                        <th>Name</th>
-                        <th>AB</th>
-                        <th>H</th>
-                        <th>R</th>
-                        <th>2B</th>
-                        <th>3B</th>
-                        <th>HR</th>
-                        <th>RBI</th>
-                        <th>SO</th>
-                        <th>BB</th>                        
-                        <th>HB</th>
-                        <th>SB</th>
-                        <th>CS</th>
-                        <th>RE</th>
-                        <th>INTR</th>
-                        <th>TB</th>
-                        <th>PA</th>
-                        <th>OBP</th>
-                        <th>SLG</th>
-                        <th>OPS</th>
-                        <th>AVG</th>
-                    </tr>
-                </thead>
-                <tbody data-bind="foreach: playerBatStats, validationOptions: { insertMessages: false }">
-                    <tr>
-                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+                                <th>Name</th>
+                                <th>AB</th>
+                                <th>H</th>
+                                <th>R</th>
+                                <th>2B</th>
+                                <th>3B</th>
+                                <th>HR</th>
+                                <th>RBI</th>
+                                <th>SO</th>
+                                <th>BB</th>
+                                <th>HB</th>
+                                <th>SB</th>
+                                <th>CS</th>
+                                <th>RE</th>
+                                <th>INTR</th>
+                                <th>TB</th>
+                                <th>PA</th>
+                                <th>OBP</th>
+                                <th>SLG</th>
+                                <th>OPS</th>
+                                <th>AVG</th>
+                            </tr>
+                        </thead>
+                        <tbody data-bind="foreach: playerBatStats, validationOptions: { insertMessages: false }">
+                            <tr>
+                                @if (Model.IsAdmin || Model.IsTeamAdmin)
                         {
-                            <td data-bind="if: $root.selectedGame() > 0">
-                                <button class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-remove"></span></button>
-                            </td>
+                                    <td data-bind="if: $root.selectedGame() > 0">
+                                        <button class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-remove"></span></button>
+                                    </td>
                         }
-                        <td data-readonly="true" data-bind="html: PlayerName"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: H"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: R"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: D"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: T"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: HR"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: RBI"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: SO"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: BB"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: SB"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: CS"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: RE"></td>
-                        <td class="statField" data-type='number' data-bind="editablefield: INTR"></td>
-                        <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
-                        <td data-readonly="true" data-bind="html: PA.dynamicVal"></td>
-                        <td data-readonly="true" data-bind="html: OBA.dynamicVal"></td>
-                        <td data-readonly="true" data-bind="html: SLG.dynamicVal"></td>
-                        <td data-readonly="true" data-bind="html: OPS.dynamicVal"></td>
-                        <td data-readonly="true" data-bind="html: AVG.dynamicVal"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                                <td data-readonly="true" data-bind="html: PlayerName"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: H"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: R"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: D"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: T"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: HR"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: RBI"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: SO"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: BB"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: SB"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: CS"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: RE"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: INTR"></td>
+                                <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
+                                <td data-readonly="true" data-bind="html: PA.dynamicVal"></td>
+                                <td data-readonly="true" data-bind="html: OBA.dynamicVal"></td>
+                                <td data-readonly="true" data-bind="html: SLG.dynamicVal"></td>
+                                <td data-readonly="true" data-bind="html: OPS.dynamicVal"></td>
+                                <td data-readonly="true" data-bind="html: AVG.dynamicVal"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-        @if (Model.IsAdmin || Model.IsTeamAdmin)
-        {
-            <div data-bind="if: selectedGame() > 0">
-                <h4 class="alert alert-info">Select player below to add stats:</h4>
-                <ul data-bind="foreach: availablePlayers" class="list-group">
-                    <li class="list-group-item"><button class="btn btn-default" data-bind="click: $root.addPlayerToBatStats"><span class="glyphicon glyphicon-plus"></span></button><img data-bind="hiddenImg: PhotoUrl" class="img-rounded" /> <span data-bind="html: Name"></span></li>
-                </ul>
+                @if (Model.IsAdmin || Model.IsTeamAdmin)
+                {
+                    <div data-bind="if: selectedGame() > 0">
+                        <h4 class="alert alert-info">Select player below to add stats:</h4>
+                        <ul data-bind="foreach: availablePlayers" class="list-group">
+                            <li class="list-group-item"><button class="btn btn-default" data-bind="click: $root.addPlayerToBatStats"><span class="glyphicon glyphicon-plus"></span></button><img data-bind="hiddenImg: PhotoUrl" class="img-rounded" /> <span data-bind="html: Name"></span></li>
+                        </ul>
+                    </div>
+                }
             </div>
-        }
+
+            <div id="pitching" class="tab-pane fade">
+                Pitching
+            </div>
+
+            <div id="gamesummary" class="tab-pane fade">
+                Game Summary
+            </div>
+        </div>
     </div>
 </div>
 

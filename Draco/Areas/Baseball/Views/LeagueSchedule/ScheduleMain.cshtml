@@ -104,7 +104,7 @@
 
                 <div class="form-group">
                     <div class="col-md-offset-3 col-md-9">
-                        <button class="btn btn-success" data-bind="click: $root.addGame"><span class="glyphicon glyphicon-check"></span></button>
+                        <button class="btn btn-success" data-bind="click: $root.addGame"><span class="glyphicon glyphicon-ok"></span></button>
                         <button class="btn btn-danger" data-bind="click: $root.cancelAddGame"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
 
                 <div class="form-group">
                     <div class="col-md-offset-3 col-md-9">
-                        <button class="btn btn-success" data-bind="click: $root.updateGameResult"><span class="glyphicon glyphicon-check"></span></button>
+                        <button class="btn btn-success" data-bind="click: $root.updateGameResult"><span class="glyphicon glyphicon-ok"></span></button>
                         <button class="btn btn-danger" data-bind="click: $root.cancelUpdateGameResult"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </div>
@@ -217,15 +217,15 @@
                             <div class="list-group" data-bind="foreach: games">
                                 <div class="list-group-item">
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: AwayTeamName, trimTextLength: 7, attr: {title: AwayTeamName}"></a>
+                                        <a class="col-md-8" data-bind="trimText: AwayTeamName, trimTextLength: 7, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a>
                                         <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
                                     </div>
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: HomeTeamName, trimTextLength: 7, attr: {title: HomeTeamName}"></a>
+                                        <a class="col-md-8" data-bind="trimText: HomeTeamName, trimTextLength: 7, attr: {title: HomeTeamName, href: HomeTeamId.href}"></a>
                                         <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
                                     </div>
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: FieldName, trimTextLength: 7, visible: !GameStatus.isFinal() && FieldName()"></a>
+                                        <a class="col-md-8" data-bind="trimText: FieldName, trimTextLength: 7, visible: !GameStatus.isFinal() && FieldName(), attr: {title: FieldName, href: FieldId.href}"></a>
                                     </div>
                                     <div class="row">
                                         <span class="col-md-9" data-bind="html: GameDate.TimeText, visible: !GameStatus.isFinal()"></span>

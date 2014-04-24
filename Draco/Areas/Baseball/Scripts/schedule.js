@@ -5,7 +5,7 @@
     if (scheduleElem) {
         ko.validation.rules['mustNotEqual'] = {
             validator: function (val, otherVal) {
-                return val !== otherVal();
+                return val !== otherVal;
             },
             message: 'The home team and away team must be different'
         };
@@ -96,8 +96,9 @@ var GameResultsViewModel = function (data) {
     }
 }
 
-var GameViewModel = function (data) {
+var GameViewModel = function (data, accountId) {
     var self = this;
+    self.accountId = accountId;
 
     // mappings to handle special cases in parsing the object.
     self.mapping = {
@@ -122,8 +123,18 @@ var GameViewModel = function (data) {
     self.GameDate.DateText = ko.observable(self.GameDate());
 
     self.HomeTeamId.extend({ required: true });
+    self.HomeTeamId.href = ko.computed(function () {
+        return window.config.rootUri + '/baseball/team/index/' + self.accountId + '/' + self.HomeTeamId();
+    });
 
     self.AwayTeamId.extend({ required: true }).extend({ mustNotEqual: self.HomeTeamId });
+    self.AwayTeamId.href = ko.computed(function () {
+        return window.config.rootUri + '/baseball/team/index/' + self.accountId + '/' + self.AwayTeamId();
+    });
+
+    self.FieldId.href = ko.computed(function () {
+        return window.config.rootUri + '/baseball/fields/index/' + self.accountId + '/' + self.FieldId();
+    });
 
     self.GameType.extend({ required: true });
 
@@ -246,7 +257,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         Umpire2: 0,
         Umpire3: 0,
         Umpire4: 0
-    });
+    }, self.accountId);
 
     // data for game currently being edit.
     self.editingGame = ko.validatedObservable(new GameViewModel({
@@ -263,7 +274,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         Umpire2: 0,
         Umpire3: 0,
         Umpire4: 0
-    }));
+    }, self.accountId));
 
     self.editingGameResults = ko.validatedObservable(new GameResultsViewModel({
         HomeTeamName: '',
@@ -554,7 +565,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                                 gameDate.setHours(0, 0, 0, 0);
                                 if (gameDate <= curDate) {
                                     var curGame = games[curGameIndex];
-                                    var gameViewModel = new GameViewModel(curGame);
+                                    var gameViewModel = new GameViewModel(curGame, self.accountId);
                                     viewModel.games.push(gameViewModel);
                                     ++curGameIndex;
                                 }
@@ -627,11 +638,11 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
                 if (gameDay) {
                     if (gameDay.games().length == 0) {
-                        var newGame = new GameViewModel(game);
+                        var newGame = new GameViewModel(game, self.accountId);
                         gameDay.games.push(newGame);
                     }
                     else {
-                        var newGame = new GameViewModel(game);
+                        var newGame = new GameViewModel(game, self.accountId);
                         gameDay.games.push(newGame);
                         gameDay.games.sort(self.sortGamesByTime);
                     }

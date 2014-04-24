@@ -1,9 +1,9 @@
-﻿function initFieldsViewModel(accountId, isAdmin) {
+﻿function initFieldsViewModel(accountId, isAdmin, selectedField) {
     initKOHelpers();
 
     var fieldsElem = document.getElementById("fields");
     if (fieldsElem) {
-        var fieldsVM = new FieldsViewModel(accountId, isAdmin);
+        var fieldsVM = new FieldsViewModel(accountId, isAdmin, selectedField);
         ko.applyBindings(fieldsVM, fieldsElem);
     }
 }
@@ -45,7 +45,7 @@ var FieldViewModel = function (data) {
 
 }
 
-var FieldsViewModel = function (accountId, isAdmin) {
+var FieldsViewModel = function (accountId, isAdmin, selectedField) {
     var self = this;
 
     self.accountId = accountId;
@@ -247,8 +247,13 @@ var FieldsViewModel = function (accountId, isAdmin) {
                 });
 
                 self.fields(fieldsVM);
-
-                self.viewAllFields();
+                self.selectedFieldId(selectedField);
+                if (selectedField > 0) {
+                    self.centerOnMap(self.selectedField());
+                }
+                else {
+                    self.viewAllFields();
+                }
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
