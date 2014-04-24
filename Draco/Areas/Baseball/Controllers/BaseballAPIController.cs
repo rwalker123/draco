@@ -14,7 +14,6 @@ namespace SportsManager.Baseball.Controllers
 {
     public class BaseballAPIController : ApiController
     {
-        //[OutputCache(Duration = 3600, VaryByParam = "accountId;seasonId;id")]
         public HttpResponseMessage GetPlayerName(long accountId, long seasonId, long id)
         {
             var name = DataAccess.TeamRoster.GetPlayerName(id, seasonId == 0);
@@ -24,7 +23,6 @@ namespace SportsManager.Baseball.Controllers
             return Request.CreateResponse<ModelObjects.ContactName>(HttpStatusCode.OK, name);
         }
 
-        //[OutputCache(Duration = 0, VaryByParam = "None")]
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage SearchPlayerName(long accountId, string term)
         {
@@ -35,7 +33,6 @@ namespace SportsManager.Baseball.Controllers
             return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, name);
         }
 
-        //[OutputCache(Duration = 0, VaryByParam = "None")]
         public HttpResponseMessage SearchPlayerNameExtended(long accountId, string term)
         {
             var name = DataAccess.TeamRoster.FindPlayers(accountId, term);

@@ -70,7 +70,7 @@
                 </thead>
                 <tbody data-bind="foreach: players">
                     <tr>
-                        <td class="col-sm-1"><img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" /></td>
+                        <td class="col-sm-1"><img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" class="img-rounded" /></td>
                         <td class="col-sm-1">
                             <span style="float:left;width:19px" data-bind="visible: viewMode() && !editPlayerNumber(), html: PlayerNumber"></span>
                             @if (Model.IsAdmin || Model.IsTeamAdmin)

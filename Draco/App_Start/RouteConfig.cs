@@ -22,6 +22,12 @@ namespace SportsManager
             //);
 
             routes.MapRoute(
+                "Team",                                              // Route name
+                "{controller}/{accountId}/{action}/{Id}",     // URL with parameters
+                new { controller = "Home", action = "Index" }  // Parameter defaults
+            );
+
+            routes.MapRoute(
                 "Default",                                              // Route name
                 "{controller}/{action}/{accountId}",                    // URL with parameters
                 new { controller = "Home", action = "Index", accountId = UrlParameter.Optional }  // Parameter defaults

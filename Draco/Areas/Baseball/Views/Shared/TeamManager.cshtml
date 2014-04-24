@@ -36,15 +36,15 @@
 
         <div data-bind="foreach: managers">
             <div class="row" style="margin-bottom: 10px">
-                <div class="col-sm-3">
-                    <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: fileUploaderUrl, attr: { src: photoUrl }" />
+                <div class="col-sm-4">
+                    <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: fileUploaderUrl, attr: { src: photoUrl }" class="img-rounded" />
                 </div>
-                <div class="col-sm-7">
+                <div class="col-sm-5">
                     <span data-bind="html: name"></span>
                 </div>
                 @if (Model.IsAdmin)
                 {
-                    <div class="col-sm-2">
+                    <div class="col-sm-3">
                         <button class="btn btn-warning" data-bind="click: $parent.removeManager"><span class="glyphicon glyphicon-minus"></span></button>
                     </div>
                 }
@@ -53,7 +53,8 @@
 
         @if (Model.IsAdmin || Model.isTeamAdmin)
         { 
-            <a href="javascript:onLoadPrintableRosterCard()" class="btn btn-info">Printable Roster Card</a>
+            <button type="button" data-bind="click: loadPrintableRosterCard" class="btn btn-info">Printable Roster Card</button>
+            <a href='@Url.Action("statistics", "team", new { accountId = Model.AccountId, Id = Model.TeamSeasonId })' class="btn btn-primary">Enter Game Stats</a>
         }
     </div>
 </div>

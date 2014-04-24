@@ -198,17 +198,20 @@ namespace DataAccess
                         ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4));
         }
 
-        static public IQueryable<Game> GetTeamCompletedGames(long leagueId, long teamId)
+        static public IQueryable<Game> GetTeamCompletedGames(long teamSeasonId)
         {
             DB db = DBConnection.GetContext();
 
             return (from ls in db.LeagueSchedules
-                    where ls.LeagueId == leagueId &&
-                    (ls.HTeamId == teamId || ls.VTeamId == teamId) &&
+                    where (ls.HTeamId == teamSeasonId || ls.VTeamId == teamSeasonId) &&
                     (ls.GameStatus == 1 || ls.GameStatus == 4 || ls.GameStatus == 5)
                     orderby ls.GameDate
                     select new Game(ls.LeagueId, ls.Id, ls.GameDate, ls.HTeamId, ls.VTeamId, ls.HScore, ls.VScore,
-                        ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4));
+                        ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4) 
+                        {
+                            HomeTeamName = DataAccess.Teams.GetTeamName(ls.HTeamId),
+                            AwayTeamName = DataAccess.Teams.GetTeamName(ls.VTeamId)
+                        });
         }
 
         static public IQueryable<Game> GetScoreboard(long accountId, DateTime when)

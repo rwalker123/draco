@@ -1,0 +1,137 @@
+﻿@using System.Web.Optimization
+@model SportsManager.Baseball.ViewModels.TeamStatisticsViewModel
+
+@{
+    ViewBag.Title = @Model.Team.Name + " Statistics";
+}
+
+@section head {
+    <style>
+        td.statField {
+            width: 47px;
+        }
+    </style>
+}
+
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
+<div class="container-fluid" id="teamstats">
+
+    <div class="row-fluid">
+        <form class="form-horizontal">
+            <label class="col-sm-2 control-label">Games:</label>
+            <div class="col-sm-10">
+                <select id="selectGame" data-container="body" data-bind="selectPicker: selectedGame">
+                    <option value="0">All games</option>
+                    @foreach (var game in Model.CompletedGames)
+                    {
+                        if (game.HomeTeamId != Model.Team.Id)
+                        {
+                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @@ @game.HomeTeamName</option>
+                        }
+                        else
+                        {
+                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @game.AwayTeamName</option>
+                        }
+                    }
+
+                </select>
+            </div>
+        </form>
+        <div class="table-responsive">
+            <table id="statsTable" class="table table-striped">
+                <thead>
+                    <tr>
+                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+                        {
+                            <th data-bind="if: selectedGame() > 0"></th>
+                        }
+                        <th>Name</th>
+                        <th>AB</th>
+                        <th>H</th>
+                        <th>R</th>
+                        <th>2B</th>
+                        <th>3B</th>
+                        <th>HR</th>
+                        <th>RBI</th>
+                        <th>SO</th>
+                        <th>BB</th>                        
+                        <th>HB</th>
+                        <th>SB</th>
+                        <th>CS</th>
+                        <th>RE</th>
+                        <th>INTR</th>
+                        <th>TB</th>
+                        <th>PA</th>
+                        <th>OBP</th>
+                        <th>SLG</th>
+                        <th>OPS</th>
+                        <th>AVG</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="foreach: playerBatStats, validationOptions: { insertMessages: false }">
+                    <tr>
+                        @if (Model.IsAdmin || Model.IsTeamAdmin)
+                        {
+                            <td data-bind="if: $root.selectedGame() > 0">
+                                <button class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-remove"></span></button>
+                            </td>
+                        }
+                        <td data-readonly="true" data-bind="html: PlayerName"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: H"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: R"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: D"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: T"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: HR"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: RBI"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: SO"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: BB"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: SB"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: CS"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: RE"></td>
+                        <td class="statField" data-type='number' data-bind="editablefield: INTR"></td>
+                        <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
+                        <td data-readonly="true" data-bind="html: PA.dynamicVal"></td>
+                        <td data-readonly="true" data-bind="html: OBA.dynamicVal"></td>
+                        <td data-readonly="true" data-bind="html: SLG.dynamicVal"></td>
+                        <td data-readonly="true" data-bind="html: OPS.dynamicVal"></td>
+                        <td data-readonly="true" data-bind="html: AVG.dynamicVal"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.IsAdmin || Model.IsTeamAdmin)
+        {
+            <div data-bind="if: selectedGame() > 0">
+                <h4 class="alert alert-info">Select player below to add stats:</h4>
+                <ul data-bind="foreach: availablePlayers" class="list-group">
+                    <li class="list-group-item"><button class="btn btn-default" data-bind="click: $root.addPlayerToBatStats"><span class="glyphicon glyphicon-plus"></span></button><img data-bind="hiddenImg: PhotoUrl" class="img-rounded" /> <span data-bind="html: Name"></span></li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+
+@section scripts {
+
+@Scripts.Render("~/bundles/knockout")
+<script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
+<script type="text/javascript" src="~/Areas/Baseball/Scripts/teamstats.js"></script>
+
+@if (Model.IsTeamAdmin || Model.IsTeamAdmin)
+{
+    <script type="text/javascript" src="~/Scripts/mindmup-editabletable.js"></script>
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        initViewModel(@Model.AccountId, @Model.Team.Id, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower());
+    });
+</script>
+}

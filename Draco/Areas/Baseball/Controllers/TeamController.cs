@@ -10,6 +10,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         // GET: /Baseball/Team/
         // accountId = accountId or teamId
         // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
         public ActionResult Index(long? accountId, long? id)
         {
             long aId = accountId.GetValueOrDefault(0);
@@ -22,17 +23,15 @@ namespace SportsManager.Areas.Baseball.Controllers
             return View(new SportsManager.Baseball.ViewModels.TeamViewModel(this, aId, teamSeasonId));
         }
 
-        [HttpPost]
-        public ActionResult CreateAnnouncement(ModelObjects.LeagueNewsItem a)
+        //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("statistics")]
+        public ActionResult GetStatistics(long accountId, long id)
         {
-            if (!ModelState.IsValid)
-            {
-                return View("CreateAnnouncement", a);
-            }
-
-            // people.Add(p);
-
-            return RedirectToAction("Index");
+            return View(new SportsManager.Baseball.ViewModels.TeamStatisticsViewModel(this, accountId, id /*teamSeasonId*/));
         }
 
     }

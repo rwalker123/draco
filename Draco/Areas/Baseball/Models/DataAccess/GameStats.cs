@@ -1,3 +1,5 @@
+using ModelObjects;
+using SportsManager;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,8 +7,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Dynamic;
-using ModelObjects;
-using SportsManager;
 
 
 namespace DataAccess
@@ -16,38 +16,50 @@ namespace DataAccess
     /// </summary>
     static public class GameStats
     {
-        static public Player[] GetPlayersWithNoGameBatStats(long gameId, long teamSeasonId)
+        static public IQueryable<ContactName> GetPlayersWithNoGameBatStats(long gameId, long teamSeasonId)
         {
-            ArrayList players = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayersWithNoGameBatStats", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
+            var x = (from bs in db.batstatsums
+                         where bs.GameId == gameId && bs.TeamId == teamSeasonId
+                         select bs.PlayerId);
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            return (from rs in db.RosterSeasons
+                    join r in db.Rosters on rs.PlayerId equals r.Id
+                    where rs.TeamSeasonId == teamSeasonId && !rs.Inactive
+                    && !x.Contains(rs.Id)
+                    orderby r.Contact.LastName, r.Contact.FirstName
+                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id)));
+        }
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+        static public GameBatStats GetPlayerGameBatStats(long gameId, long playerId)
+        {
+            DB db = DBConnection.GetContext();
 
-                    while (dr.Read())
+            return (from bs in db.batstatsums
+                    where bs.GameId == gameId && bs.PlayerId == playerId
+                    select new GameBatStats()
                     {
-                        Contact contactInfo = Contacts.GetContact(dr.GetInt64(6));
-                        players.Add(new Player(dr.GetInt64(0), dr.GetInt64(2), dr.GetInt32(3), contactInfo, dr.GetBoolean(5),
-                            dr.GetBoolean(7), dr.GetInt64(8), DateTime.Now, string.Empty));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (Player[])players.ToArray(typeof(Player));
+                        PlayerId = playerId,
+                        GameId = gameId,
+                        TeamId = bs.TeamId,
+                        AB = bs.AB,
+                        H = bs.H,
+                        R = bs.R,
+                        D = bs._2B,
+                        T = bs._3B,
+                        HR = bs.HR,
+                        RBI = bs.RBI,
+                        SO = bs.SO,
+                        BB = bs.BB,
+                        HBP = bs.HBP,
+                        INTR = bs.INTR,
+                        SF = bs.SF,
+                        SH = bs.SH,
+                        SB = bs.SB,
+                        CS = bs.CS,
+                        LOB = bs.LOB
+                    }).SingleOrDefault();
         }
 
         static public Player[] GetPlayersWithNoGamePitchStats(long gameId, long teamSeasonId)
@@ -372,7 +384,7 @@ namespace DataAccess
         /// <param name="sortOrder"></param>
         /// <param name="historicalStats"></param>
         /// <returns></returns>
-        static public IEnumerable<GameBatStats> GetBatTeamPlayerTotals(long teamId, string sortField, string sortOrder, bool historicalStats)
+        static public IQueryable<GameBatStats> GetBatTeamPlayerTotals(long teamId, string sortField, string sortOrder, bool historicalStats)
         {
             // begin to move to Linq...only for no filter for now.
             DB db = DBConnection.GetContext();
@@ -404,6 +416,7 @@ namespace DataAccess
                         select new GameCareerBatStats
                         {
                             PlayerId = g.Key,
+                            TeamId = teamId,
                             AB = g.Sum(b => b.AB),
                             H = g.Sum(b => b.H),
                             R = g.Sum(b => b.R),
@@ -438,6 +451,7 @@ namespace DataAccess
                         select new GameBatStats
                         {
                             PlayerId = g.Key,
+                            TeamId = teamId,
                             AB = g.Sum(b => b.AB),
                             H = g.Sum(b => b.H),
                             R = g.Sum(b => b.R),
@@ -1048,194 +1062,94 @@ namespace DataAccess
             return stats;
         }
 
-        static public GameBatStats[] GetBatGameStats(long gameId, long teamId)
+        static public IQueryable<GameBatStats> GetBatGameStats(long gameId, long teamId)
         {
-            ArrayList stats = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatGameStats", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameBatStats(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetInt64(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17), dr.GetInt32(18), dr.GetInt32(19), dr.GetInt32(20)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (GameBatStats[])stats.ToArray(typeof(GameBatStats));
+            return (from bs in db.batstatsums
+                    where bs.GameId == gameId && bs.TeamId == teamId
+                    select new GameBatStats(bs.Id, bs.PlayerId, bs.GameId, bs.TeamId, bs.AB, bs.H, bs.R, bs._2B, bs._3B, bs.HR, bs.RBI, bs.SO, bs.BB,
+                        bs.RE, bs.HBP, bs.INTR, bs.SF, bs.SH, bs.SB, bs.CS, bs.LOB));
         }
 
-        static public GamePitchStats[] GetPitchGameStats(long gameId, long teamId)
+        static public IQueryable<GamePitchStats> GetPitchGameStats(long gameId, long teamId)
         {
-            ArrayList stats = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchGameStats", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GamePitchStats(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetInt64(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17), dr.GetInt32(18), dr.GetInt32(18), dr.GetInt32(19)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (GamePitchStats[])stats.ToArray(typeof(GamePitchStats));
+            return (from ps in db.pitchstatsums
+                    where ps.GameId == gameId && ps.TeamId == teamId
+                    select new GamePitchStats(ps.Id, ps.PlayerId, ps.GameId, ps.TeamId, ps.IP, ps.IP2, ps.BF, ps.W, ps.L, ps.S, ps.H, ps.R, ps.ER, ps._2B, ps._3B,
+                        ps.HR, ps.SO, ps.BB, ps.WP, ps.HBP, ps.BK, ps.SC));
         }
 
-        static public GameFieldStats[] GetFieldGameStats(long gameId, long teamId)
+        static public IQueryable<GameFieldStats> GetFieldGameStats(long gameId, long teamId)
         {
-            ArrayList stats = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetFieldGameStats", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameFieldStats(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetInt64(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (GameFieldStats[])stats.ToArray(typeof(GameFieldStats));
+            return (from ps in db.fieldstatsums
+                    where ps.GameId == gameId && ps.TeamId == teamId
+                    select new GameFieldStats(ps.Id, ps.PlayerId, ps.GameId, ps.TeamId, ps.POS, ps.IP, ps.IP2, ps.PO, ps.A, ps.E, ps.PB, ps.SB, ps.CS));
         }
 
-        static public int UpdateBattingGameStats(GameBatStats g)
+        static public bool UpdateBattingGameStats(GameBatStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
 
             if (!g.IsValid())
-                return 0;
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateBattingGameStats", myConnection);
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = g.Id;
-                    myCommand.Parameters.Add("@ab", SqlDbType.Int).Value = g.AB;
-                    myCommand.Parameters.Add("@h", SqlDbType.Int).Value = g.H;
-                    myCommand.Parameters.Add("@r", SqlDbType.Int).Value = g.R;
-                    myCommand.Parameters.Add("@d", SqlDbType.Int).Value = g.D;
-                    myCommand.Parameters.Add("@t", SqlDbType.Int).Value = g.T;
-                    myCommand.Parameters.Add("@hr", SqlDbType.Int).Value = g.HR;
-                    myCommand.Parameters.Add("@rbi", SqlDbType.Int).Value = g.RBI;
-                    myCommand.Parameters.Add("@so", SqlDbType.Int).Value = g.SO;
-                    myCommand.Parameters.Add("@bb", SqlDbType.Int).Value = g.BB;
-                    myCommand.Parameters.Add("@sb", SqlDbType.Int).Value = g.SB;
-                    myCommand.Parameters.Add("@cs", SqlDbType.Int).Value = g.CS;
-                    myCommand.Parameters.Add("@re", SqlDbType.Int).Value = g.RE;
-                    myCommand.Parameters.Add("@hb", SqlDbType.Int).Value = g.HBP;
-                    myCommand.Parameters.Add("@intr", SqlDbType.Int).Value = g.INTR;
-                    myCommand.Parameters.Add("@sf", SqlDbType.Int).Value = g.SF;
-                    myCommand.Parameters.Add("@sh", SqlDbType.Int).Value = g.SH;
-                    myCommand.Parameters.Add("@lob", SqlDbType.Int).Value = g.LOB;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbStats = (from bs in db.batstatsums
+                           where bs.Id == g.Id
+                           select bs).SingleOrDefault();
+            if (dbStats == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbStats.AB = g.AB;
+            dbStats.H = g.H;
+            dbStats._2B = g.D;
+            dbStats._3B = g.T;
+            dbStats.HR = g.HR;
+            dbStats.RBI = g.RBI;
+            dbStats.SO = g.SO;
+            dbStats.BB = g.BB;
+            dbStats.SB = g.SB;
+            dbStats.CS = g.CS;
+            dbStats.RE = g.RE;
+            dbStats.HBP = g.HBP;
+            dbStats.INTR = g.INTR;
+            dbStats.SF = g.SF;
+            dbStats.SH = g.SH;
+            dbStats.LOB = g.LOB;
 
-                    rc = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rc);
+            db.SubmitChanges();
+            return true;
         }
 
         static public long AddBattingGameStats(GameBatStats g)
         {
-            long rc = 0;
-
             if (!g.IsValid())
                 return 0;
 
-            try
+            DB db = DBConnection.GetContext();
+            var dbStats = (from bs in db.batstatsums
+                           where bs.PlayerId == g.PlayerId && bs.GameId == g.GameId && bs.TeamId == g.TeamId
+                           select bs).SingleOrDefault();
+
+            // stat already exists, can't add it.
+            if (dbStats != null)
+                return 0;
+
+            dbStats = new SportsManager.Model.batstatsum()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.InsertBattingGameStats", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = g.GameId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = g.TeamId;
-                    myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = g.PlayerId;
-                    myCommand.Parameters.Add("@ab", SqlDbType.Int).Value = g.AB;
-                    myCommand.Parameters.Add("@h", SqlDbType.Int).Value = g.H;
-                    myCommand.Parameters.Add("@r", SqlDbType.Int).Value = g.R;
-                    myCommand.Parameters.Add("@d", SqlDbType.Int).Value = g.D;
-                    myCommand.Parameters.Add("@t", SqlDbType.Int).Value = g.T;
-                    myCommand.Parameters.Add("@hr", SqlDbType.Int).Value = g.HR;
-                    myCommand.Parameters.Add("@rbi", SqlDbType.Int).Value = g.RBI;
-                    myCommand.Parameters.Add("@so", SqlDbType.Int).Value = g.SO;
-                    myCommand.Parameters.Add("@bb", SqlDbType.Int).Value = g.BB;
-                    myCommand.Parameters.Add("@sb", SqlDbType.Int).Value = g.SB;
-                    myCommand.Parameters.Add("@cs", SqlDbType.Int).Value = g.CS;
-                    myCommand.Parameters.Add("@re", SqlDbType.Int).Value = g.RE;
-                    myCommand.Parameters.Add("@hb", SqlDbType.Int).Value = g.HBP;
-                    myCommand.Parameters.Add("@intr", SqlDbType.Int).Value = g.INTR;
-                    myCommand.Parameters.Add("@sf", SqlDbType.Int).Value = g.SF;
-                    myCommand.Parameters.Add("@sh", SqlDbType.Int).Value = g.SH;
-                    myCommand.Parameters.Add("@lob", SqlDbType.Int).Value = g.LOB;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                PlayerId = g.PlayerId,
+                GameId = g.GameId,
+                TeamId = g.TeamId
+            };
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.batstatsums.InsertOnSubmit(dbStats);
+            db.SubmitChanges();
 
-                    rc = (long)myCommand.ExecuteScalar();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rc);
+            return dbStats.Id;
         }
 
         static public int UpdatePitchingGameStats(GamePitchStats g)

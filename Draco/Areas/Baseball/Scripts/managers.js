@@ -70,6 +70,10 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
         self.viewMode(!self.viewMode());
     }
 
+    self.loadPrintableRosterCard = function () {
+
+    }
+
     self.addManager = function () {
         $.ajax({
             type: "POST",

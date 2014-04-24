@@ -635,7 +635,7 @@ namespace DataAccess
             
             var teamStanding = new TeamStanding(teamSeasonId, team.DivisionId, team.Name);
 
-            var completedGames = DataAccess.Schedule.GetTeamCompletedGames(team.LeagueId, teamSeasonId);
+            var completedGames = DataAccess.Schedule.GetTeamCompletedGames(teamSeasonId);
 
 			foreach (Game g in completedGames)
 			{

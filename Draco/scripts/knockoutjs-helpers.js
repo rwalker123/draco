@@ -316,6 +316,33 @@
         }
     };
 
+    // NOTE: to use validation with this call
+    //      ko.validation.makeBindingHandlerValidatable('editablefield');
+    ko.bindingHandlers.editablefield = {
+        init: function (element, valueAccessor) {
+
+            //handle the field changing
+            ko.utils.registerEventHandler(element, "change", function (evt, newVal) {
+                var observable = valueAccessor();
+                observable(newVal);
+            });
+
+            //handle disposal (if KO removes by the template binding)
+            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
+            });
+
+        },
+        update: function (element, valueAccessor) {
+            // First get the latest data that we're bound to
+            var value = valueAccessor();
+
+            // Next, whether or not the supplied model property is observable, get its current value
+            var valueUnwrapped = ko.utils.unwrapObservable(value);
+
+            $(element).text(valueUnwrapped); // Make the element visible
+        }
+    };
+
     //wrapper to an observable that requires accept/cancel
     ko.protectedObservable = function (initialValue) {
         //private variables
