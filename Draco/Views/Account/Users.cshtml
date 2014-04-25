@@ -82,8 +82,8 @@
     @*<div style="clear: both"></div>*@
     <div data-bind="foreach: users">
         <h3 class="userHeader">
-            <img src='/images/busy.gif'
-                style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
+            <img src='@Url.Content("~/images/busy.gif")'
+                 style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
             <img class='fileupload' 
             style="width: 80px; height: 60px; position: relative;vertical-align:middle;" 
             data-bind="imageUploader: fileUploaderUrl, attr : { src: photoUrl }"
@@ -229,7 +229,7 @@
     </div>
 
     <div class="contactErrorLocation"></div>
-    <div data-bind="visible: validatingName" class="alert alert-info"><img src="/Images/busy.gif" /> validating name...</div>
+    <div data-bind="visible: validatingName" class="alert alert-info"><i class="fa fa-spinner fa-spin fa-2x"></i> validating name...</div>
 
 </script>
 

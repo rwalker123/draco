@@ -47,7 +47,7 @@
     }
 
     span.toText {
-        color: blue;
+        font-size: 1.5em;
     }
 
 </style>
@@ -58,67 +58,71 @@
     <p class="help-block">Email website users.</p>
 </div> <!-- content-wrapper -->
 
-<div style="margin-top:40px">
-<div class="toArea">
-    @if (!String.IsNullOrEmpty(Model.PhotoUrl))
-    {
-        <img class="photo" src="@Model.PhotoUrl" />
-    }
-    <span style="margin-left:10px">@Model.UserName<br /></span><span style="margin-left: 10px">@Model.Email</span>
-    <div style="clear:both"></div>
-    <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button><br />
-    <br /><br /><span class="toText">To</span><br />
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="col-md-5">
+            <span class="toText">From</span><br />
+            <img onerror="this.style.display = 'none';" class="photo" src="@Model.PhotoUrl" />
+            <span style="margin-left:10px">@Model.UserName<br /></span><span style="margin-left: 10px">@Model.Email</span>
+            <div style="clear:both; margin-bottom: 20px"></div>
+            <br /><span class="toText">To</span><br />
 
-    <select class="selectpicker" data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
-    <div data-bind="fadeVisible: toOptionsAvailable">
-        <div data-bind="visible: toField() == 5">
-            <small>(type last name to begin search)</small><br />
-            <input type="text" class="form-control" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }"/>
+            <select class="selectpicker" data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
+            <div data-bind="fadeVisible: toOptionsAvailable">
+                <div data-bind="visible: toField() == 5">
+                    <small>(type last name to begin search)</small><br />
+                    <input type="text" class="form-control" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+                </div>
+                <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
+                <div data-bind="visible: availableToData().length > 0">
+                    <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
+                        <li class="list-group-item">
+                            <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img onerror="this.style.display = 'none';" style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
-        <div data-bind="visible: availableToData().length > 0">
-                <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
-                    <li class="list-group-item">
-                        <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
-                    </li>
-                </ul>
+
+        <div class="col-md-7">
+
+            <div class="row">
+                <div class="col-md-7">
+                    <input type="text" class="form-control" data-bind="value: subject" placeholder="add a subject" />
+                </div>
+                <div class="col-md-4">
+                    <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button>
+                </div>
+            </div>
+            <hr />
+            <div style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: selectedData">
+                <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
+                    <img onerror="this.style.display = 'none';" style="margin-left:3px;width:20px;height:15px;vertical-align:middle" data-bind="attr: { src: logo }, visible: hasLogo" />
+                    <span style="margin-left:5px;vertical-align:middle;" data-bind="text: text"></span>
+                    <a style="vertical-align:middle" data-bind="click: $parent.removeTo"><span class="glyphicon glyphicon-remove-circle" style="cursor: pointer"></span></a>
+                </div>
+            </div>
+            <div style="clear:both"></div>
+            <hr />
+            <div id="attachments" style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: attachments">
+                <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
+                    <span data-bind="text: fileName"></span>
+                    <a data-bind="visible: !isUploading(), click: $parent.removeAttachment" style="vertical-align:middle"><span class="glyphicon glyphicon-remove-circle" style="cursor: pointer"></span></a>
+                    <div data-bind="visible: isUploading, style: { width: width }" class="bar" style="height:12px"></div>
+                </div>
+            </div>
+            <div style="clear:both"></div>
+            <div style="display: block; width: 200px; height: 30px; overflow: hidden;">
+                <span class="glyphicon glyphicon-paperclip"></span><span style="vertical-align:middle"> Attach Files</span>
+                <input type="file" id="fileupload" data-maxfilesize="1" style="cursor:pointer;font-size: 50px; width: 130px; opacity: 0; filter:alpha(opacity: 0);  position: relative; top: -40px; left: -20px" />
+            </div>
+
+            <hr />
+
+            <textarea style="height: 300px" id="emailEditor" data-bind="wysiwyg: emailText"></textarea>
+
         </div>
     </div>
-</div>
-
-<div class="messageArea">
-    
-    <input type="text" class="form-control" data-bind="value: subject" placeholder="add a subject" />
-    <hr />
-    <div style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: selectedData">
-        <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
-            <img style="margin-left:3px;width:20px;height:15px;vertical-align:middle" data-bind="attr: { src: logo }, visible: hasLogo" />
-            <span style="margin-left:5px;vertical-align:middle;" data-bind="text: text"></span>
-            <a style="vertical-align:middle" data-bind="click: $parent.removeTo"><img style="vertical-align:middle;border:none;margin-bottom:2px" src="/Images/x.png" /></a>
-        </div>
-    </div>
-    <div style="clear:both"></div>
-    <hr />
-    <div id="attachments" style="max-width:600px;max-height:50px;padding:5px;overflow-y:auto;overflow-x:auto" data-bind="foreach: attachments" >
-        <div style="float:left;background-color:aliceblue;padding:5px;margin-bottom:5px;margin-left:5px">
-            <span data-bind="text: fileName"></span>
-            <a data-bind="visible: !isUploading(), click: $parent.removeAttachment" style="vertical-align:middle"><img style="vertical-align:middle;border:none;margin-left:2px;margin-bottom:5px" src="/Images/x.png"/></a>
-            <div data-bind="visible: isUploading, style: { width: width }" class="bar" style="height:12px"></div>
-        </div>
-    </div>
-    <div style="clear:both"></div>
-    <div style="display: block; width: 200px; height: 30px; overflow: hidden;">
-        <img style="border:none;vertical-align:middle;margin-left:5px" src="~/Images/attach.png" /><span style="vertical-align:middle"> Attach Files</span>
-        <input type="file" id="fileupload"  data-maxFileSize="1" style="cursor:pointer;font-size: 50px; width: 130px; opacity: 0; filter:alpha(opacity: 0);  position: relative; top: -40px; left: -20px" />
-    </div>
-
-    <hr />
-
-    <textarea style="height: 300px" id="emailEditor" data-bind="wysiwyg: emailText"></textarea>
-
-</div>
-
-<div style="clear:both"></div>
 </div>
 
 
@@ -420,8 +424,8 @@ else
         $.ui.autocomplete.prototype._renderItem = function (ul, item) {
             var li = $("<li>");
             li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
-            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+            var photoURL = item.PhotoURL;
+            li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
             li.appendTo(ul);
 
             return li;

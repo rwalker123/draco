@@ -135,3 +135,69 @@ div[data-role="editor-toolbar"] {
   }
 }
 
+.jumbotron {
+  padding: 20px;
+  margin-bottom: 25px;
+  color: whitesmoke;
+  background-image: -webkit-linear-gradient(#54b4eb, #2fa4e7 60%, #1d9ce5);
+  background-image: linear-gradient(#54b4eb, #2fa4e7 60%, #1d9ce5);
+  background-repeat: no-repeat;
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff54b4eb', endColorstr='#ff1d9ce5', GradientType=0);
+  filter: none;
+}
+.jumbotron h1,
+.jumbotron .h1,
+.jumbotron h2,
+.jumbotron .h2,
+.jumbotron h3,
+.jumbotron .h3 {
+  color: inherit;
+}
+.jumbotron p {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 200;
+  color: inherit;
+}
+.container .jumbotron {
+  border-radius: 6px;
+}
+.jumbotron .container {
+  max-width: 100%;
+}
+@media screen and (min-width: 768px) {
+  .jumbotron {
+    padding-top: 24px;
+    padding-bottom: 36px;
+  }
+  .container .jumbotron {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .jumbotron h1,
+  .jumbotron .h1 {
+    font-size: 48px;
+  }
+  .jumbotron h2,
+  .jumbotron .h2 {
+    font-size: 36px;
+  }
+}
+@media screen and (max-width: 512px) {
+  .jumbotron {
+    padding-top: 8px;
+    padding-bottom: 12px;
+  }
+  .container .jumbotron {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .jumbotron h1,
+  .jumbotron .h1 {
+    font-size: 26px;
+  }
+  .jumbotron h2,
+  .jumbotron .h2 {
+    font-size: 20px;
+  }
+}
