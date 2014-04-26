@@ -1,14 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using SportsManager;
 using SportsManager.Model;
-using SportsManager;
+using System.Linq;
 
 namespace DataAccess.Baseball
 {
     static public class BaseballLeagues
     {
-        static public IEnumerable<Account> GetBaseballLeagues()
+        static public IQueryable<Account> GetBaseballLeagues()
         {
             DB db = DBConnection.GetContext();
 

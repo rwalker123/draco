@@ -18,7 +18,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             long aId = accountId.GetValueOrDefault(0);
             if (aId != 0)
             {
-                return RedirectToAction("Home");
+                return RedirectToAction("Home", new { accountId = aId });
             }
 
             return View(new SportsManager.Baseball.ViewModels.LeagueIndexViewModel());

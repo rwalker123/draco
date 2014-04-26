@@ -8,13 +8,31 @@
     <p>Select a league.</p>
 </div>
 
-@using (Html.BeginForm()) 
-{
-	@Html.DropDownList("accountId", Model.GetBaseballLeagues())
-	<input type="submit" value="Goto Account" name="Goto Account" />
-	 
-	<p>Note: to create an account you must log in.</p>
-	<p>@Html.ActionLink("Create Account", "CreateAccount", "League", new { area = "baseball" }, null)</p>
-}
+<p>Note: to create an account you must log in.</p>
+<p>@Html.ActionLink("Create Account", "CreateAccount", "League", new { area = "baseball" }, new { @class = "btn btn-primary" })</p>
 
+<div class="list-group">
+    <h4>Select a league to visit:</h4>
+    @foreach (var l in Model.GetBaseballLeagues())
+    {
+        int accountId;
+        if (int.TryParse(l.Value, out accountId))
+        {
+            <a href="javascript:visitLeague(@accountId)" class="list-group-item">@l.Text</a>
+        }
+        else
+        { 
+            <a href="@l.Value" class="list-group-item">@l.Text</a>
+        }
+    }
+</div>
+
+@section scripts
+{
+<script type="text/javascript">
+    function visitLeague(leagueId) {
+        window.location = '/baseball/league/index/' + leagueId;
+    }
+</script>
+}
 

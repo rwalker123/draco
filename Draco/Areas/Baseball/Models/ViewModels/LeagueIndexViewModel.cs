@@ -1,5 +1,6 @@
 ﻿using DataAccess.Baseball;
 using SportsManager.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
@@ -15,10 +16,26 @@ namespace SportsManager.Baseball.ViewModels
         {
             List<SelectListItem> items = new List<SelectListItem>();
 
-            IEnumerable<Account> baseballLeagues = BaseballLeagues.GetBaseballLeagues();
+            IQueryable<Account> baseballLeagues = BaseballLeagues.GetBaseballLeagues();
 
-            return (from a in baseballLeagues
-                    select new SelectListItem() { Text = a.Name, Value = a.Id.ToString() });
+            foreach (var l in baseballLeagues)
+            {
+                if (!String.IsNullOrEmpty(l.URL))
+                {
+                    string[] urls = l.URL.Split(new char[] { ';' });
+                    if (urls.Length > 0)
+                        items.Add(new SelectListItem() { Text = l.Name, Value = urls[0] });
+                    else
+                        items.Add(new SelectListItem() { Text = l.Name, Value = l.Id.ToString() });
+                }
+                else
+                {
+                    items.Add(new SelectListItem() { Text = l.Name, Value = l.Id.ToString() });
+                }
+
+            }
+
+            return items;
         }
     }
 }
