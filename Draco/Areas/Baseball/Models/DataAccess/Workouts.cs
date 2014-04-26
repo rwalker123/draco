@@ -89,7 +89,7 @@ namespace DataAccess
         static public IQueryable<WorkoutAnnouncement> GetActiveWorkoutAnnouncements(long accountId)
         {
             DB db = DBConnection.GetContext();
-            var now = DateTime.Now.AddDays(1);
+            var now = DateTime.Now.AddDays(-1);
             
             return (from wa in db.WorkoutAnnouncements
                     where wa.AccountId == accountId && wa.WorkoutDate >= now

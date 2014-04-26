@@ -156,11 +156,8 @@ namespace SportsManager
     {
         public void InitializeDatabase(ApplicationDbContext context)
         {
-            if (HttpContext.Current == null)
-                return;
-
-            var UserManager = Globals.GetUserManager();
-            var RoleManager = HttpContext.Current.GetOwinContext().Get<ApplicationRoleManager>();
+            var UserManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
+            var RoleManager = new ApplicationRoleManager(new RoleStore<IdentityRole>(context));
 
             string adminUserName = "admin@ezrecsports.com";
             string adminPassword = "abc#def$ghi%jkl^mno&pqr";
