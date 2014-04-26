@@ -221,6 +221,13 @@
     <Compile Include="Areas\Baseball\Controllers\BaseballController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
+    <Compile Include="CleanMessageBoard.aspx.cs">
+      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="CleanMessageBoard.aspx.designer.cs">
+      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Controllers\DiscussionsAPIController.cs" />
     <Compile Include="Controllers\DiscussionsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\FieldsController.cs" />
@@ -477,6 +484,7 @@
     <Content Include="Areas\Baseball\Scripts\teamstats.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />
+    <Content Include="CleanMessageBoard.aspx" />
     <Content Include="Content\bootstrap-datepicker.css" />
     <Content Include="Content\bootstrap-datepicker3.css" />
     <Content Include="Content\bootstrap-select.css" />

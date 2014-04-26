@@ -165,8 +165,15 @@ namespace DataAccess
             if (!String.IsNullOrEmpty(userId))
             {
                 // check to see if in AspNetUserRoles as Administrator
-                var userManager = Globals.GetUserManager();
-                rc = userManager.IsInRole(userId, "Administrator");
+                try
+                {
+                    var userManager = Globals.GetUserManager();
+                    rc = userManager.IsInRole(userId, "Administrator");
+                }
+                catch (Exception)
+                {
+                    rc = false;
+                }
 
                 if (!rc)
                 {

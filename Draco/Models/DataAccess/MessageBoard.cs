@@ -671,8 +671,8 @@ namespace DataAccess
                 Int32.TryParse(dbNumDaysToKeep, out numDaysToKeep);
             }
 
-            var minPostDate = new DateTime();
-            minPostDate.AddDays(numDaysToKeep * -1);
+            var minPostDate = DateTime.Now;
+            minPostDate = minPostDate.AddDays(numDaysToKeep * -1);
 
             //--- Delete all non-team expired messages
             var expiredPosts = (from mc in db.MessageCategories
