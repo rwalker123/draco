@@ -86,7 +86,11 @@
 
                     self.isUploading(false);
                     self.readyToUpload(false);
-                    self.handoutDescription('');
+                    //self.handoutDescription('');
+                    // tinyMCE editor will not bind two-ways, have to manually set the control
+                    // when changing the data model.
+                    tinymce.get('newHandoutEditor').setContent('');
+
                     self.selectedFileName('');
                 }
             })
@@ -138,7 +142,7 @@
 
     self.startHandoutEdit = function (handout) {
         self.currentHandout(handout);
-        self.handoutEdit_Description('');
+        //self.handoutEdit_Description('');
         self.handoutEdit_Description(handout.Description());
         self.handoutEdit_FileName(handout.FileName());
         self.handoutEdit_Id = handout.Id;
@@ -161,7 +165,7 @@
 
         self.editHandoutMode(false);
 
-        self.handoutEdit_Description('');
+        //self.handoutEdit_Description('');
         self.handoutEdit_FileName('');
     }
 
@@ -194,7 +198,7 @@
                 });
 
                 self.handoutEdit_Id = 0;
-                self.handoutEdit_Description('');
+                //self.handoutEdit_Description('');
                 self.handoutEdit_FileName('');
 
                 self.editHandoutMode(false);

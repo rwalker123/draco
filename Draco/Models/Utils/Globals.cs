@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
+using System.Net.Mime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -94,7 +95,7 @@ static public class Globals
 		return sentMsg;
 	}
 
-	public static IEnumerable<MailAddress> MailMessage(string fromEmail, IEnumerable<MailAddress> bccList, string subject, string body)
+	public static IEnumerable<MailAddress> MailMessage(string fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
 	{
 		List<MailAddress> failedSends = new List<MailAddress>();
 
@@ -102,8 +103,8 @@ static public class Globals
 
 		// Specify the message content.
 		MailMessage msg = new MailMessage();
-		msg.Subject = subject;
-		msg.Body = body;
+		msg.Subject = data.Subject;
+		msg.Body = data.Message;
         msg.IsBodyHtml = true;
 		msg.From = from;
 
@@ -111,18 +112,35 @@ static public class Globals
 
 		foreach (MailAddress ma in bccList)
 		{
-			//msg.Bcc.Add(ma);
-			msg.To.Clear();
-			msg.To.Add(ma);
-			try
-			{
-				mailClient.Send(msg);
-			}
-			catch (Exception ex)
-			{
-				failedSends.Add(ma);
-				LogException(ex);
-			}
+			msg.Bcc.Add(ma);
+        }
+
+        if (data.Attachments != null)
+        {
+            foreach (var attachment in data.Attachments)
+            {
+                string fileName = HttpContext.Current.Server.MapPath(attachment.fileUri);
+
+                // Create  the file attachment for this e-mail message.
+                Attachment attachmentData = new Attachment(fileName, MediaTypeNames.Application.Octet);
+                attachmentData.Name = attachment.fileName;
+                // Add time stamp information for the file.
+                ContentDisposition disposition = attachmentData.ContentDisposition;
+                disposition.CreationDate = System.IO.File.GetCreationTime(fileName);
+                disposition.ModificationDate = System.IO.File.GetLastWriteTime(fileName);
+                disposition.ReadDate = System.IO.File.GetLastAccessTime(fileName);
+                // Add the file attachment to this e-mail message.
+                msg.Attachments.Add(attachmentData);
+            }
+        }
+
+		try
+		{
+			mailClient.Send(msg);
+		}
+		catch (Exception ex)
+		{
+			LogException(ex);
 		}
 
 		return failedSends;

@@ -15,7 +15,16 @@ $.extend(WelcomeClass.prototype, {
         this.isAdmin = isAdmin;
         this.teamId = teamId;
 
-        $('#welcomeMessageControl').tinymce({ selector: "textarea.welcomeTextArea" });
+        $('#welcomeMessageControl').tinymce(
+            {
+                toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link',
+                toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', 
+                menu : {}, 
+                plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], 
+                tools: 'inserttable',
+                content_css: window.config.rootUri +  '/Content/tinymce.css',
+                selector: "textarea.welcomeTextArea"
+            });
     },
 
     cancelWelcomeEdit: function () {

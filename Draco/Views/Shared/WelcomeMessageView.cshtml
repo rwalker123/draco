@@ -38,7 +38,7 @@
                 bool firstTime = true;
             }
 
-            <div id="WelcomeMessageMenuSection">
+            <div id="WelcomeMessageMenuSection" style="margin-bottom:15px">
                 @foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
                 {
                     string url = "javascript:welcomeData.ShowWelcomeMenu(" + aw.Id.ToString() + ")";

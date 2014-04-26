@@ -1,5 +1,6 @@
 using ModelObjects;
 using SportsManager;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -161,7 +162,13 @@ namespace DataAccess
 
             if (bccList.Any())
             {
-                var failedSends = Globals.MailMessage(sender, bccList, subject, message);
+                EmailUsersData data = new EmailUsersData()
+                {
+                    Message = message,
+                    Subject = subject
+                };
+
+                var failedSends = Globals.MailMessage(sender, bccList, data);
                 foreach(var failedSend in failedSends)
                 {
                     result.Append(failedSend.Address);

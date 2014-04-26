@@ -9,6 +9,7 @@ using System.Text;
 using System.Web;
 using System.Web.Http;
 using SportsManager.Models;
+using SportsManager.Models.Utils;
 
 namespace SportsManager.Baseball.Controllers
 {
@@ -42,15 +43,6 @@ namespace SportsManager.Baseball.Controllers
             return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, name);
         }
 
-        public class EmailUsersData
-        {
-            public string Subject { get; set; }
-            public string Message { get; set; }
-            public int ToType { get; set; }
-            public IEnumerable<long> To { get; set; }
-            public IEnumerable<string> Attachments { get; set; }
-        }
-
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage EmailContacts(long accountId, EmailUsersData data)
@@ -81,7 +73,7 @@ namespace SportsManager.Baseball.Controllers
                 var toList = (from c in contactList
                               where !String.IsNullOrEmpty(c.Email)
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
-                failedSends = Globals.MailMessage(HttpContext.Current.User.Identity.Name, toList, data.Subject, data.Message);
+                failedSends = Globals.MailMessage(HttpContext.Current.User.Identity.Name, toList, data);
                 SendSummaryMessage(toList.Except(failedSends), failedSends, HttpContext.Current.User.Identity.Name, data.Subject, data.Message);
             }
 
@@ -90,10 +82,17 @@ namespace SportsManager.Baseball.Controllers
             {
                 foreach (var a in data.Attachments)
                 {
-                    string fileName = HttpContext.Current.Server.MapPath(a);
+                    string fileName = HttpContext.Current.Server.MapPath(a.fileUri);
 
-                    if (File.Exists(fileName))
-                        File.Delete(fileName);
+                    try
+                    {
+                        if (File.Exists(fileName))
+                            File.Delete(fileName);
+                    }
+                    catch(Exception)
+                    {
+
+                    }
                 }
             }
 

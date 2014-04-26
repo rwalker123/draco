@@ -440,6 +440,7 @@
     <Compile Include="Models\Utils\FileSystemStorage.cs" />
     <Compile Include="Models\Utils\Globals.cs" />
     <Compile Include="Models\Utils\IStorage.cs" />
+    <Compile Include="Models\Utils\MailAttachmentData.cs" />
     <Compile Include="Models\Utils\MapUrl.cs" />
     <Compile Include="Models\Utils\PhoneUtils.cs" />
     <Compile Include="Models\Utils\SQLPasswordHasher.cs" />
@@ -557,6 +558,7 @@
     <Content Include="Content\themes\base\minified\jquery.ui.tabs.min.css" />
     <Content Include="Content\themes\base\minified\jquery.ui.theme.min.css" />
     <Content Include="Content\themes\base\minified\jquery.ui.tooltip.min.css" />
+    <Content Include="Content\tinymce.css" />
     <Content Include="Content\ui-lightness\jquery-ui-1.7.2.custom.css" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\fontawesome-webfont.svg" />
@@ -576,6 +578,10 @@
     <Content Include="Scripts\moment-with-langs.min.js" />
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
+    <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
+    <Content Include="Scripts\tinymce\plugins\example\dialog.html" />
+    <Content Include="Scripts\wysiwyg.min.js" />
     <Content Include="Views\Discussions\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
@@ -836,7 +842,6 @@
     <Content Include="Scripts\respond.matchmedia.addListener.min.js" />
     <Content Include="Scripts\respond.min.js" />
     <Content Include="Scripts\seasonsetup.js" />
-    <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
     <Content Include="Scripts\tinymce\license.txt" />
     <Content Include="Scripts\tinymce\plugins\advlist\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\advlist\plugin.min.js" />
@@ -1000,7 +1005,6 @@
     <Content Include="Scripts\userroles.js" />
     <Content Include="Scripts\welcome.js" />
     <Content Include="Scripts\wysiwyg.js" />
-    <Content Include="Scripts\wysiwyg.min.js" />
     <Content Include="Scripts\_references.js" />
     <Content Include="Web.config">
       <SubType>Designer</SubType>
@@ -1056,11 +1060,13 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
     <Content Include="Scripts\tinymce\langs\readme.md" />
-    <Content Include="Scripts\wysiwyg.min.map" />
     <Content Include="Views\Shared\Sponsors.cshtml" />
     <Content Include="Views\Account\ResetPassword.cshtml" />
     <Content Include="Views\Account\ResetPwStepTwo.cshtml" />
     <Content Include="Views\Account\PasswordReset.cshtml" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.json" />
+    <Content Include="Scripts\wysiwyg.min.map" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

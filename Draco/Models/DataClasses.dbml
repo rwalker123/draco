@@ -1129,20 +1129,6 @@
       <Association Name="Account_VoteQuestion" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.WorkoutAnnouncement" Member="WorkoutAnnouncements">
-    <Type Name="WorkoutAnnouncement">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="WorkoutDesc" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="WorkoutDate" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
-      <Column Name="WorkoutTime" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
-      <Column Name="FieldId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Comments" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
-      <Association Name="WorkoutAnnouncement_WorkoutRegistration" Member="WorkoutRegistrations" ThisKey="Id" OtherKey="WorkoutId" Type="WorkoutRegistration" />
-      <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="AvailableField_WorkoutAnnouncement" Member="AvailableField" ThisKey="FieldId" OtherKey="Id" Type="AvailableField" IsForeignKey="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.AspNetUsers" Member="AspNetUsers">
     <Type Name="AspNetUser">
       <Column Name="Id" Type="System.String" DbType="NVarChar(128) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
@@ -1161,6 +1147,20 @@
       <Association Name="AspNetUser_AspNetUserLogin" Member="AspNetUserLogins" ThisKey="Id" OtherKey="UserId" Type="AspNetUserLogin" />
       <Association Name="AspNetUser_AspNetUserRole" Member="AspNetUserRoles" ThisKey="Id" OtherKey="UserId" Type="AspNetUserRole" />
       <Association Name="AspNetUser_Contact" Member="Contacts" ThisKey="Id" OtherKey="UserId" Type="Contact" />
+    </Type>
+  </Table>
+  <Table Name="dbo.WorkoutAnnouncement" Member="WorkoutAnnouncements">
+    <Type Name="WorkoutAnnouncement">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="WorkoutDesc" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="WorkoutDate" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
+      <Column Name="WorkoutTime" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
+      <Column Name="FieldId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Comments" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Association Name="WorkoutAnnouncement_WorkoutRegistration" Member="WorkoutRegistrations" ThisKey="Id" OtherKey="WorkoutId" Type="WorkoutRegistration" />
+      <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="AvailableField_WorkoutAnnouncement" Member="AvailableField" ThisKey="FieldId" OtherKey="Id" Type="AvailableField" IsForeignKey="true" />
     </Type>
   </Table>
 </Database>

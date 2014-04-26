@@ -90,8 +90,7 @@
                 <div class="form-group">
                     <label for="WorkoutDescription" class="control-label col-sm-2">description</label>
                     <div class="col-sm-10">
-                        <textarea id="workoutEditor" data-bind="wysiwyg: Comments">
-                        </textarea>
+                        <textarea id="workoutEditor" data-bind="wysiwyg: Comments, wysiwygConfig: { toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' } "></textarea>
                     </div>
                 </div>
                 <div class="form-group">
@@ -125,7 +124,7 @@
                     <div class="form-group">
                         <label for="" class="control-label col-sm-2">message</label>
                         <div class="col-sm-10">
-                            <textarea data-bind="attr: { id: Id() + '_workoutEmailEditor' }, wysiwyg: emailText"></textarea>
+                            <textarea data-bind="attr: { id: Id() + '_workoutEmailEditor' }, wysiwyg: emailText, wysiwygConfig: { toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
                         </div>
                     </div>
                     <div class="form-group">

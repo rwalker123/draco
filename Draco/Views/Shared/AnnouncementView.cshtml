@@ -73,7 +73,7 @@
 
                 <h5 id="olderNewsHeader" style="display:none">Older News:</h5>
 
-                <div id="olderNewsMenuSection">
+                <div id="olderNewsMenuSection" style="margin-bottom: 15px">
                     @foreach (var aw in Model.OlderNews)
                     {
                         string url = "javascript:announcementData.ShowNewsMenu(" + aw.Id.ToString() + ")";
