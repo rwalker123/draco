@@ -410,6 +410,8 @@ namespace SportsManager.Controllers
                     scaledImage.Save(imgFile, encoder, myEncoderParameters);
                     scaledImage.Dispose();
                     imageUri = await SportsManager.Models.Utils.Storage.Provider.Save(imgFile, imageUri);
+
+                    File.Delete(imgFile);
                 }
 
                 if (File.Exists(file.LocalFileName))

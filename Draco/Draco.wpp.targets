@@ -1,0 +1,22 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!--<UseMsDeployExe>true</UseMsDeployExe>-->
+    <AfterAddIisSettingAndFileContentsToSourceManifest>AddCustomSkipRules</AfterAddIisSettingAndFileContentsToSourceManifest>
+  </PropertyGroup>
+  
+    <Target Name="AddCustomSkipRules">
+    <Message Text="Adding Custom Skip Rules" />
+    <ItemGroup>
+      <MsDeploySkipRules Include="SkipUploadsPath">
+        <ObjectName>dirPath</ObjectName>
+        <AbsolutePath>Uploads$</AbsolutePath>
+        <!--<Apply>Destination</Apply>-->
+      </MsDeploySkipRules>
+      <MsDeploySkipRules Include="SkipLogsPath">
+        <ObjectName>dirPath</ObjectName>
+        <AbsolutePath>Logs$</AbsolutePath>
+        <!--<Apply>Destination</Apply>-->
+      </MsDeploySkipRules>
+    </ItemGroup>
+  </Target>
+</Project>
