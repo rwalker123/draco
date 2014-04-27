@@ -170,11 +170,15 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             lastPlayerModified = undefined;
         }
 
+        if (self.selectedGame() == 0)
+        {
+            $('#statsTab a:first').tab('show');
+        }
         self.getAvailableBatPlayers();
         self.getPlayersBatStats();
     });
 
-    self.availablePlayers = ko.observableArray();
+    self.availableBatPlayers = ko.observableArray();
     self.playerBatStats = ko.observableArray();
 
     self.addPlayerToBatStats = function (player) {
@@ -187,7 +191,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 var playerBatStats = new PlayerBatStatsVM(stats, self.accountId);
 
                 self.playerBatStats.push(playerBatStats);
-                self.availablePlayers.remove(player);
+                self.availableBatPlayers.remove(player);
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -197,7 +201,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
     self.getAvailableBatPlayers = function () {
 
-        self.availablePlayers.removeAll();
+        self.availableBatPlayers.removeAll();
 
         if (self.selectedGame() <= 0)
             return;
@@ -217,7 +221,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                         };
                     });
 
-                    self.availablePlayers(mapPlayers);
+                    self.availableBatPlayers(mapPlayers);
                 },
                 error: function (xhr, ajaxOptions, thrownError) {
                     alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -250,6 +254,13 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
         });
 
     }
+
+    self.availablePitchPlayers = ko.observableArray();
+    self.playerPitchStats = ko.observableArray();
+
+    self.addPlayerToPitchStats = function (player) {
+    }
+
 
     if (self.isAdmin || self.isTeamAdmin) {
         $('#statsTable').editableTableWidget();
