@@ -43,7 +43,14 @@ namespace DataAccess
             {
                 // check to see if in AspNetUserRoles as Administrator
                 var userManager = Globals.GetUserManager();
-                isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+                try
+                {
+                    isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+                }
+                catch(Exception)
+                {
+                    isAdmin = false;
+                }
             }
 
 
@@ -83,7 +90,14 @@ namespace DataAccess
             {
                 // check to see if in AspNetUserRoles as Administrator
                 var userManager = Globals.GetUserManager();
-                isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+                try
+                {
+                    isAdmin = userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator");
+                }
+                catch(Exception)
+                {
+                    isAdmin = false;
+                }
             }
 
             if (isAdmin)

@@ -150,76 +150,151 @@ namespace ModelObjects
             HBP = hbp;
             BK = bk;
             SC = sc;
-
-            TB = (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
-            AB = BF - BB - HBP - SC;
-            OBA = AB > 0 ? (double)H / (double)AB : 0.00;
-            SLG = AB > 0 ? (double)TB / (double)AB : 0.00;
-
-            IPDecimal = (double)IP + (IP2 / 3) + (IP2 % 3) / 10.0;
-
-            double totalIP = IPDecimal;
-            if (totalIP > 0.0)
-            {
-                ERA = (double)ER * 9.0 / totalIP;
-                WHIP = ((double)H + (double)BB) / totalIP;
-                K9 = (double)SO / totalIP * 9.0;
-                BB9 = (double)BB / totalIP * 9.0;
-            }
         }
 
         public int TB
         {
-            get;
-            set;
+            get
+            {
+                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public int AB
         {
-            get;
-            set;
+            get
+            {
+                return BF - BB - HBP - SC;
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double OBA
         {
-            get;
-            set;
+            get
+            {
+                return AB > 0 ? (double)H / (double)AB : 0.00;
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double SLG
         {
-            get;
-            set;
+            get
+            {
+                return AB > 0 ? (double)TB / (double)AB : 0.00;
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double IPDecimal
         {
-            get;
-            set;
+            get
+            {
+                return (double)IP + (IP2 / 3) + (IP2 % 3) / 10.0;
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double ERA
         {
-            get;
-            set;
+            get
+            {
+                if (IPDecimal > 0.0)
+                {
+                    return (double)ER * 9.0 / IPDecimal;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double WHIP
         {
-            get;
-            set;
+            get
+            {
+                if (IPDecimal > 0.0)
+                {
+                    return ((double)H + (double)BB) / IPDecimal;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double K9
         {
-            get;
-            set;
+            get
+            {
+                if (IPDecimal > 0.0)
+                {
+                    return (double)SO / IPDecimal * 9.0;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         public double BB9
         {
-            get;
-            set;
+            get
+            {
+                if (IPDecimal > 0.0)
+                {
+                    return (double)BB / IPDecimal * 9.0;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+
+            set
+            {
+                // to may linq happy.
+            }
         }
 
         protected virtual ContactName PlayerNameQuery()

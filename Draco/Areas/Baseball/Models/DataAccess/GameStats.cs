@@ -40,6 +40,7 @@ namespace DataAccess
                     where bs.GameId == gameId && bs.PlayerId == playerId
                     select new GameBatStats()
                     {
+                        Id = bs.Id,
                         PlayerId = playerId,
                         GameId = gameId,
                         TeamId = bs.TeamId,
@@ -58,42 +59,72 @@ namespace DataAccess
                         SH = bs.SH,
                         SB = bs.SB,
                         CS = bs.CS,
-                        LOB = bs.LOB
+                        LOB = bs.LOB,
+                        AVG = 0,
+                        OBA = 0,
+                        OPS = 0,
+                        PA = 0,
+                        SLG = 0,
+                        TB = 0
                     }).SingleOrDefault();
         }
 
-        static public Player[] GetPlayersWithNoGamePitchStats(long gameId, long teamSeasonId)
+        static public IQueryable<ContactName> GetPlayersWithNoGamePitchStats(long gameId, long teamSeasonId)
         {
-            ArrayList players = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayersWithNoGamePitchStats", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
+            var x = (from bs in db.pitchstatsums
+                     where bs.GameId == gameId && bs.TeamId == teamSeasonId
+                     select bs.PlayerId);
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            return (from rs in db.RosterSeasons
+                    join r in db.Rosters on rs.PlayerId equals r.Id
+                    where rs.TeamSeasonId == teamSeasonId && !rs.Inactive
+                    && !x.Contains(rs.Id)
+                    orderby r.Contact.LastName, r.Contact.FirstName
+                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id)));
+        }
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+        static public GamePitchStats GetPlayerGamePitchStats(long gameId, long playerId)
+        {
+            DB db = DBConnection.GetContext();
 
-                    while (dr.Read())
+            return (from bs in db.pitchstatsums
+                    where bs.GameId == gameId && bs.PlayerId == playerId
+                    select new GamePitchStats()
                     {
-                        Contact contactInfo = Contacts.GetContact(dr.GetInt64(6));
-                        players.Add(new Player(dr.GetInt64(0), dr.GetInt64(2), dr.GetInt32(3), contactInfo, dr.GetBoolean(5),
-                            dr.GetBoolean(7), dr.GetInt64(8), DateTime.Now, string.Empty));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (Player[])players.ToArray(typeof(Player));
+                        Id = bs.Id,
+                        PlayerId = playerId,
+                        GameId = gameId,
+                        TeamId = bs.TeamId,
+                        IP = bs.IP,
+                        IP2 = bs.IP2,
+                        BF = bs.BF,
+                        W = bs.W,
+                        L = bs.L,
+                        S = bs.S,
+                        H = bs.H,
+                        R = bs.R,
+                        ER = bs.ER,
+                        D = bs._2B,
+                        T = bs._3B,
+                        HR = bs.HR,
+                        SO = bs.SO,
+                        BB = bs.BB,
+                        WP = bs.WP,
+                        HBP = bs.HBP,
+                        BK = bs.BK,
+                        SC = bs.SC,
+                        ERA = 0,
+                        AB = 0,
+                        BB9 = 0,
+                        IPDecimal = 0,
+                        WHIP = 0,
+                        TB = 0,
+                        K9 = 0,
+                        OBA = 0,
+                        SLG = 0
+                    }).SingleOrDefault();
         }
 
         static public GameBatStats GetBatTeamTotals(long teamId, int filter, long filterData)
@@ -434,13 +465,12 @@ namespace DataAccess
                             SB = g.Sum(b => b.SB),
                             CS = g.Sum(b => b.CS),
                             LOB = g.Sum(b => b.LOB),
-                            TB = g.Sum(b => b.TB).Value,
-                            PA = g.Sum(b => b.PA).Value,
-                            AVG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB) : 0.000,
-                            SLG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000,
-                            OBA = g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00,
-                            OPS = (g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000) +
-                                  (g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00)
+                            AVG = 0,
+                            OBA = 0,
+                            OPS = 0,
+                            PA = 0,
+                            SLG = 0,
+                            TB = 0
                         }).OrderBy(sortField + " " + sortOrder);
             }
             else
@@ -469,13 +499,12 @@ namespace DataAccess
                             SB = g.Sum(b => b.SB),
                             CS = g.Sum(b => b.CS),
                             LOB = g.Sum(b => b.LOB),
-                            TB = g.Sum(b => b.TB).Value,
-                            PA = g.Sum(b => b.PA).Value,
-                            AVG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB) : 0.000,
-                            SLG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000,
-                            OBA = g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00,
-                            OPS = (g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000) +
-                                  (g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00)
+                            AVG = 0,
+                            OBA = 0,
+                            OPS = 0,
+                            PA = 0,
+                            SLG = 0,
+                            TB = 0
                         }).OrderBy(sortField + " " + sortOrder);
 
             }
@@ -483,34 +512,83 @@ namespace DataAccess
 
         static public GameBatStats GetBatTeamSeasonTotals(long teamSeasonId, long seasonId)
         {
-            GameBatStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            var teamId = (from ts in db.TeamsSeasons
+                          where ts.Id == teamSeasonId
+                          select ts.TeamId).SingleOrDefault();
+
+            if (seasonId == 0)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatTeamSeasonTotals", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-                    myCommand.Parameters.Add("@seasonId", SqlDbType.BigInt).Value = seasonId;
-
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        stats = new GameBatStats(0, 0, 0, teamSeasonId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16));
-                    }
-                }
+                return (from bs in db.batstatsums
+                        join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        where t.Id == teamId
+                        group bs by t.Id into g
+                        select new GameBatStats()
+                        {
+                            TeamId = teamId,
+                            AB = g.Sum(s => s.AB),
+                            H = g.Sum(s => s.H),
+                            R = g.Sum(s => s.R),
+                            D = g.Sum(s => s._2B),
+                            T = g.Sum(s => s._3B),
+                            HR = g.Sum(s => s.HR),
+                            RBI = g.Sum(s => s.RBI),
+                            SO = g.Sum(s => s.SO),
+                            BB = g.Sum(s => s.BB),
+                            RE = g.Sum(s => s.RE),
+                            HBP = g.Sum(s => s.HBP),
+                            INTR = g.Sum(s => s.INTR),
+                            SF = g.Sum(s => s.SF),
+                            SH = g.Sum(s => s.SH),
+                            SB = g.Sum(s => s.SB),
+                            CS = g.Sum(s => s.CS),
+                            LOB = g.Sum(s => s.LOB),
+                            AVG = 0,
+                            OBA = 0,
+                            OPS = 0,
+                            PA = 0,
+                            SLG = 0,
+                            TB = 0
+                        }).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                return (from bs in db.batstatsums
+                        join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                        where t.Id == teamId && ls.SeasonId == seasonId
+                        group bs by new { t.Id, ls.SeasonId } into g
+                        select new GameBatStats()
+                        {
+                            TeamId = teamId,
+                            AB = g.Sum(s => s.AB),
+                            H = g.Sum(s => s.H),
+                            R = g.Sum(s => s.R),
+                            D = g.Sum(s => s._2B),
+                            T = g.Sum(s => s._3B),
+                            HR = g.Sum(s => s.HR),
+                            RBI = g.Sum(s => s.RBI),
+                            SO = g.Sum(s => s.SO),
+                            BB = g.Sum(s => s.BB),
+                            RE = g.Sum(s => s.RE),
+                            HBP = g.Sum(s => s.HBP),
+                            INTR = g.Sum(s => s.INTR),
+                            SF = g.Sum(s => s.SF),
+                            SH = g.Sum(s => s.SH),
+                            SB = g.Sum(s => s.SB),
+                            CS = g.Sum(s => s.CS),
+                            LOB = g.Sum(s => s.LOB),
+                            AVG = 0,
+                            OBA = 0,
+                            OPS = 0,
+                            PA = 0,
+                            SLG = 0,
+                            TB = 0
+                        }).SingleOrDefault();
             }
-
-            return stats;
         }
 
 
@@ -583,13 +661,12 @@ namespace DataAccess
                                     SB = g.Sum(b => b.SB),
                                     CS = g.Sum(b => b.CS),
                                     LOB = g.Sum(b => b.LOB),
-                                    TB = g.Sum(b => b.TB).Value,
-                                    PA = g.Sum(b => b.PA).Value,
-                                    AVG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB) : 0.000,
-                                    SLG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000,
-                                    OBA = g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00,
-                                    OPS = (g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000) +
-                                          (g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00)
+                                    AVG = 0,
+                                    OBA = 0,
+                                    OPS = 0,
+                                    PA = 0,
+                                    SLG = 0,
+                                    TB = 0
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = batstats.Count();
@@ -621,13 +698,12 @@ namespace DataAccess
                                     SB = g.Sum(b => b.SB),
                                     CS = g.Sum(b => b.CS),
                                     LOB = g.Sum(b => b.LOB),
-                                    TB = g.Sum(b => b.TB).Value,
-                                    PA = g.Sum(b => b.PA).Value,
-                                    AVG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB) : 0.000,
-                                    SLG = g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000,
-                                    OBA = g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00,
-                                    OPS = (g.Sum(b => b.AB) > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB) : 0.000) +
-                                          (g.Sum(b => b.OBADenominator).Value > 0 ? (double)g.Sum(b => b.OBANumerator).Value / (double)g.Sum(b => b.OBADenominator).Value : 0.00)
+                                    AVG = 0,
+                                    OBA = 0,
+                                    OPS = 0,
+                                    PA = 0,
+                                    SLG = 0,
+                                    TB = 0
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = batstats.Count();
@@ -636,7 +712,7 @@ namespace DataAccess
             }
         }
 
-        static public IEnumerable<GamePitchStats> GetPitchTeamPlayerTotals(long teamId, string sortField, string sortOrder, bool historicalStats)
+        static public IQueryable<GamePitchStats> GetPitchTeamPlayerTotals(long teamId, string sortField, string sortOrder, bool historicalStats)
         {
             // begin to move to Linq...only for no filter for now.
             DB db = DBConnection.GetContext();
@@ -684,7 +760,6 @@ namespace DataAccess
                             PlayerId = g.Key,
                             IP = g.Sum(b => b.IP),
                             IP2 = g.Sum(b => b.IP2),
-                            IPDecimal = (double)g.Sum(b => b.IP) + ((int)(g.Sum(b => b.IP2) / 3)) + ((g.Sum(b => b.IP2) % 3) / 10.0),
                             BF = g.Sum(b => b.BF),
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
@@ -701,14 +776,15 @@ namespace DataAccess
                             HBP = g.Sum(b => b.HBP),
                             BK = g.Sum(b => b.BK),
                             SC = g.Sum(b => b.SC),
-                            TB = g.Sum(b => b.TB).Value,
-                            AB = g.Sum(b => b.AB).Value,
-                            OBA = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB).Value : 0.00,
-                            SLG = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB).Value : 0.00,
-                            ERA = g.Sum(b => b.IPNumerator).Value > 0 ? (g.Sum(b => b.ER) * 9.0) / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                            WHIP = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.WHIPNumerator).Value / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                            K9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.SO) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0,
-                            BB9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.BB) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0
+                            ERA = 0,
+                            AB = 0,
+                            BB9 = 0,
+                            IPDecimal = 0,
+                            WHIP = 0,
+                            TB = 0,
+                            K9 = 0,
+                            OBA = 0,
+                            SLG = 0
                         }).OrderBy(sortField + " " + sortOrder);
             }
             else
@@ -721,7 +797,6 @@ namespace DataAccess
                             PlayerId = g.Key,
                             IP = g.Sum(b => b.IP),
                             IP2 = g.Sum(b => b.IP2),
-                            IPDecimal = (double)g.Sum(b => b.IP) + ((int)(g.Sum(b => b.IP2) / 3)) + ((g.Sum(b => b.IP2) % 3) / 10.0),
                             BF = g.Sum(b => b.BF),
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
@@ -738,14 +813,15 @@ namespace DataAccess
                             HBP = g.Sum(b => b.HBP),
                             BK = g.Sum(b => b.BK),
                             SC = g.Sum(b => b.SC),
-                            TB = g.Sum(b => b.TB).Value,
-                            AB = g.Sum(b => b.AB).Value,
-                            OBA = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB).Value : 0.00,
-                            SLG = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB).Value : 0.00,
-                            ERA = g.Sum(b => b.IPNumerator).Value > 0 ? (g.Sum(b => b.ER) * 9.0) / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                            WHIP = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.WHIPNumerator).Value / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                            K9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.SO) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0,
-                            BB9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.BB) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0
+                            ERA = 0,
+                            AB = 0,
+                            BB9 = 0,
+                            IPDecimal = 0,
+                            WHIP = 0,
+                            TB = 0,
+                            K9 = 0,
+                            OBA = 0,
+                            SLG = 0
                         }).OrderBy(sortField + " " + sortOrder);
             }
 
@@ -789,36 +865,93 @@ namespace DataAccess
             return stats;
         }
 
-        static public GamePitchStats GetPitchTeamSeasonTotals(long teamId, long seasonId)
+        static public GamePitchStats GetPitchTeamSeasonTotals(long teamSeasonId, long seasonId)
         {
-            GamePitchStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            var teamId = (from ts in db.TeamsSeasons
+                          where ts.Id == teamSeasonId
+                          select ts.TeamId).SingleOrDefault();
+
+            if (seasonId == 0)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchTeamSeasonTotals", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@seasonId", SqlDbType.BigInt).Value = seasonId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        stats = new GamePitchStats(0, 0, 0, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17));
-                    }
-                }
+                return (from bs in db.pitchstatsums
+                        join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        where t.Id == teamId
+                        group bs by t.Id into g
+                        select new GamePitchStats() 
+                        {
+                            TeamId = teamId,
+                            W = g.Sum(s => s.W),
+                            L = g.Sum(s => s.L),
+                            S = g.Sum(s => s.S),
+                            H = g.Sum(s => s.H),
+                            D = g.Sum(s => s._2B),
+                            T = g.Sum(s => s._3B),
+                            HR = g.Sum(s => s.HR),
+                            SO = g.Sum(s => s.SO),
+                            BB = g.Sum(s => s.BB),
+                            HBP = g.Sum(s => s.HBP),
+                            BF = g.Sum(s => s.BF),
+                            BK = g.Sum(s => s.BK),
+                            IP = g.Sum(s => s.IP),
+                            IP2 = g.Sum(s => s.IP2),
+                            R = g.Sum(s => s.R),
+                            ER = g.Sum(s => s.ER),
+                            SC = g.Sum(s => s.SC),
+                            ERA = 0,
+                            AB = 0,
+                            BB9 = 0,
+                            IPDecimal = 0,
+                            WHIP = 0,
+                            TB = 0,
+                            K9 = 0,
+                            OBA = 0,
+                            SLG = 0
+                        }).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                return (from bs in db.pitchstatsums
+                        join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                        where t.Id == teamId && ls.SeasonId == seasonId
+                        group bs by new { t.Id, ls.SeasonId } into g
+                        select new GamePitchStats()
+                        {
+                            TeamId = teamId,
+                            W = g.Sum(s => s.W),
+                            L = g.Sum(s => s.L),
+                            S = g.Sum(s => s.S),
+                            H = g.Sum(s => s.H),
+                            D = g.Sum(s => s._2B),
+                            T = g.Sum(s => s._3B),
+                            HR = g.Sum(s => s.HR),
+                            SO = g.Sum(s => s.SO),
+                            BB = g.Sum(s => s.BB),
+                            HBP = g.Sum(s => s.HBP),
+                            BF = g.Sum(s => s.BF),
+                            BK = g.Sum(s => s.BK),
+                            IP = g.Sum(s => s.IP),
+                            IP2 = g.Sum(s => s.IP2),
+                            R = g.Sum(s => s.R),
+                            ER = g.Sum(s => s.ER),
+                            SC = g.Sum(s => s.SC),
+                            ERA = 0,
+                            AB = 0,
+                            BB9 = 0,
+                            IPDecimal = 0,
+                            WHIP = 0,
+                            TB = 0,
+                            K9 = 0,
+                            OBA = 0,
+                            SLG = 0
+                        }).SingleOrDefault();
             }
 
-            return stats;
+
         }
 
         static public IEnumerable<GamePitchStats> GetPitchLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats, out int totalRecords)
@@ -838,7 +971,6 @@ namespace DataAccess
                                       PlayerId = g.Key,
                                       IP = g.Sum(b => b.IP),
                                       IP2 = g.Sum(b => b.IP2),
-                                      IPDecimal = (double)g.Sum(b => b.IP) + ((int)(g.Sum(b => b.IP2) / 3)) + ((g.Sum(b => b.IP2) % 3) / 10.0),
                                       BF = g.Sum(b => b.BF),
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
@@ -855,14 +987,15 @@ namespace DataAccess
                                       HBP = g.Sum(b => b.HBP),
                                       BK = g.Sum(b => b.BK),
                                       SC = g.Sum(b => b.SC),
-                                      TB = g.Sum(b => b.TB).Value,
-                                      AB = g.Sum(b => b.AB).Value,
-                                      OBA = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB).Value : 0.00,
-                                      SLG = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB).Value : 0.00,
-                                      ERA = g.Sum(b => b.IPNumerator).Value > 0 ? (g.Sum(b => b.ER) * 9.0) / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                                      WHIP = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.WHIPNumerator).Value / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                                      K9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.SO) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0,
-                                      BB9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.BB) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0
+                                      ERA = 0,
+                                      AB = 0,
+                                      BB9 = 0,
+                                      IPDecimal = 0,
+                                      WHIP = 0,
+                                      TB = 0,
+                                      K9 = 0,
+                                      OBA = 0,
+                                      SLG = 0
                                   }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = pitchstats.Count();
@@ -880,7 +1013,6 @@ namespace DataAccess
                                       PlayerId = g.Key,
                                       IP = g.Sum(b => b.IP),
                                       IP2 = g.Sum(b => b.IP2),
-                                      IPDecimal = (double)g.Sum(b => b.IP) + ((int)g.Sum(b => b.IP2) / 3) + ((g.Sum(b => b.IP2) % 3) / 10.0),
                                       BF = g.Sum(b => b.BF),
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
@@ -897,14 +1029,15 @@ namespace DataAccess
                                       HBP = g.Sum(b => b.HBP),
                                       BK = g.Sum(b => b.BK),
                                       SC = g.Sum(b => b.SC),
-                                      TB = g.Sum(b => b.TB).Value,
-                                      AB = g.Sum(b => b.AB).Value,
-                                      OBA = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.H) / (double)g.Sum(b => b.AB).Value : 0.00,
-                                      SLG = g.Sum(b => b.AB).Value > 0 ? (double)g.Sum(b => b.TB).Value / (double)g.Sum(b => b.AB).Value : 0.00,
-                                      ERA = g.Sum(b => b.IPNumerator).Value > 0 ? (g.Sum(b => b.ER) * 9.0) / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                                      WHIP = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.WHIPNumerator).Value / (g.Sum(b => b.IPNumerator).Value / 3.0) : 0.000,
-                                      K9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.SO) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0,
-                                      BB9 = g.Sum(b => b.IPNumerator).Value > 0 ? g.Sum(b => b.BB) / (g.Sum(b => b.IPNumerator).Value / 3.0) * 9.0 : 0.0
+                                      ERA = 0,
+                                      AB = 0,
+                                      BB9 = 0,
+                                      IPDecimal = 0,
+                                      WHIP = 0,
+                                      TB = 0,
+                                      K9 = 0,
+                                      OBA = 0,
+                                      SLG = 0
                                   }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = pitchstats.Count();
@@ -968,66 +1101,81 @@ namespace DataAccess
 
         static public GameBatStats GetBatGameTotals(long gameId, long teamId)
         {
-            GameBatStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatGameTotals", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+            return (from bs in db.batstatsums
+                    where bs.GameId == gameId && bs.TeamId == teamId
+                    group bs by new { bs.GameId, bs.TeamId } into g
+                    select new GameBatStats()
                     {
-                        stats = new GameBatStats(0, 0, gameId, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+                        GameId = gameId,
+                        TeamId = teamId,
+                        AB = g.Sum(s => s.AB),
+                        H = g.Sum(s => s.H),
+                        R = g.Sum(s => s.R),
+                        D = g.Sum(s => s._2B),
+                        T = g.Sum(s => s._3B),
+                        HR = g.Sum(s => s.HR),
+                        RBI = g.Sum(s => s.RBI),
+                        SO = g.Sum(s => s.SO),
+                        BB = g.Sum(s => s.BB),
+                        RE = g.Sum(s => s.RE),
+                        HBP = g.Sum(s => s.HBP),
+                        INTR = g.Sum(s => s.INTR),
+                        SF = g.Sum(s => s.SF),
+                        SH = g.Sum(s => s.SH),
+                        SB = g.Sum(s => s.SB),
+                        CS = g.Sum(s => s.CS),
+                        LOB = g.Sum(s => s.LOB),
+                        AVG = 0,
+                        OBA = 0,
+                        OPS = 0,
+                        PA = 0,
+                        SLG = 0,
+                        TB = 0
+                    }).SingleOrDefault();
 
-            return stats;
         }
 
         static public GamePitchStats GetPitchGameTotals(long gameId, long teamId)
         {
-            GamePitchStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchGameTotals", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+            return (from bs in db.pitchstatsums
+                    where bs.GameId == gameId && bs.TeamId == teamId
+                    group bs by new { bs.GameId, bs.TeamId } into g
+                    select new GamePitchStats()
                     {
-                        stats = new GamePitchStats(0, 0, gameId, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+                        GameId = gameId,
+                        TeamId = teamId,
+                        W = g.Sum(s => s.W),
+                        L = g.Sum(s => s.L),
+                        S = g.Sum(s => s.S),
+                        H = g.Sum(s => s.H),
+                        D = g.Sum(s => s._2B),
+                        T = g.Sum(s => s._3B),
+                        HR = g.Sum(s => s.HR),
+                        SO = g.Sum(s => s.SO),
+                        BB = g.Sum(s => s.BB),
+                        HBP = g.Sum(s => s.HBP),
+                        BF = g.Sum(s => s.BF),
+                        BK = g.Sum(s => s.BK),
+                        IP = g.Sum(s => s.IP),
+                        IP2 = g.Sum(s => s.IP2),
+                        R = g.Sum(s => s.R),
+                        ER = g.Sum(s => s.ER),
+                        SC = g.Sum(s => s.SC),
+                        ERA = 0,
+                        AB = 0,
+                        BB9 = 0,
+                        IPDecimal = 0,
+                        WHIP = 0,
+                        TB = 0,
+                        K9 = 0,
+                        OBA = 0,
+                        SLG = 0
+                    }).SingleOrDefault();
 
-            return stats;
         }
 
         static public GameFieldStats GetFieldGameTotals(long gameId, long teamId)
@@ -1152,101 +1300,67 @@ namespace DataAccess
             return dbStats.Id;
         }
 
-        static public int UpdatePitchingGameStats(GamePitchStats g)
+        static public bool UpdatePitchingGameStats(GamePitchStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
 
             if (!g.IsValid())
-                return 0;
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdatePitchingGameStats", myConnection);
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = g.Id;
-                    myCommand.Parameters.Add("@ip", SqlDbType.Int).Value = g.IP;
-                    myCommand.Parameters.Add("@ip2", SqlDbType.Int).Value = g.IP2;
-                    myCommand.Parameters.Add("@bf", SqlDbType.Int).Value = g.BF;
-                    myCommand.Parameters.Add("@w", SqlDbType.Int).Value = g.W;
-                    myCommand.Parameters.Add("@l", SqlDbType.Int).Value = g.L;
-                    myCommand.Parameters.Add("@s", SqlDbType.Int).Value = g.S;
-                    myCommand.Parameters.Add("@h", SqlDbType.Int).Value = g.H;
-                    myCommand.Parameters.Add("@r", SqlDbType.Int).Value = g.R;
-                    myCommand.Parameters.Add("@er", SqlDbType.Int).Value = g.ER;
-                    myCommand.Parameters.Add("@d", SqlDbType.Int).Value = g.D;
-                    myCommand.Parameters.Add("@t", SqlDbType.Int).Value = g.T;
-                    myCommand.Parameters.Add("@hr", SqlDbType.Int).Value = g.HR;
-                    myCommand.Parameters.Add("@so", SqlDbType.Int).Value = g.SO;
-                    myCommand.Parameters.Add("@bb", SqlDbType.Int).Value = g.BB;
-                    myCommand.Parameters.Add("@wp", SqlDbType.Int).Value = g.WP;
-                    myCommand.Parameters.Add("@hb", SqlDbType.Int).Value = g.HBP;
-                    myCommand.Parameters.Add("@bk", SqlDbType.Int).Value = g.BK;
-                    myCommand.Parameters.Add("@sc", SqlDbType.Int).Value = g.SC;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbStats = (from bs in db.pitchstatsums
+                           where bs.Id == g.Id
+                           select bs).SingleOrDefault();
+            if (dbStats == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbStats.IP = g.IP;
+            dbStats.IP2 = g.IP2;
+            dbStats.BF = g.BF;
+            dbStats.W = g.W;
+            dbStats.L = g.L;
+            dbStats.S = g.S;
+            dbStats.H = g.H;
+            dbStats.R = g.R;
+            dbStats.ER = g.ER;
+            dbStats._2B = g.D;
+            dbStats._3B = g.T;
+            dbStats.HR = g.HR;
+            dbStats.SO = g.SO;
+            dbStats.BB = g.BB;
+            dbStats.WP = g.WP;
+            dbStats.HBP = g.HBP;
+            dbStats.BK = g.BK;
+            dbStats.SC = g.SC;
 
-                    rc = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rc);
+            db.SubmitChanges();
+            return true;
         }
 
         static public long AddPitchingGameStats(GamePitchStats g)
         {
-            long rc = 0;
-
             if (!g.IsValid())
                 return 0;
 
-            try
+            DB db = DBConnection.GetContext();
+            var dbStats = (from bs in db.pitchstatsums
+                           where bs.PlayerId == g.PlayerId && bs.GameId == g.GameId && bs.TeamId == g.TeamId
+                           select bs).SingleOrDefault();
+
+            // stat already exists, can't add it.
+            if (dbStats != null)
+                return 0;
+
+            dbStats = new SportsManager.Model.pitchstatsum()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.InsertPitchingGameStats", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = g.GameId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = g.TeamId;
-                    myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = g.PlayerId;
-                    myCommand.Parameters.Add("@ip", SqlDbType.Int).Value = g.IP;
-                    myCommand.Parameters.Add("@ip2", SqlDbType.Int).Value = g.IP2;
-                    myCommand.Parameters.Add("@bf", SqlDbType.Int).Value = g.BF;
-                    myCommand.Parameters.Add("@w", SqlDbType.Int).Value = g.W;
-                    myCommand.Parameters.Add("@l", SqlDbType.Int).Value = g.L;
-                    myCommand.Parameters.Add("@s", SqlDbType.Int).Value = g.S;
-                    myCommand.Parameters.Add("@h", SqlDbType.Int).Value = g.H;
-                    myCommand.Parameters.Add("@r", SqlDbType.Int).Value = g.R;
-                    myCommand.Parameters.Add("@er", SqlDbType.Int).Value = g.ER;
-                    myCommand.Parameters.Add("@d", SqlDbType.Int).Value = g.D;
-                    myCommand.Parameters.Add("@t", SqlDbType.Int).Value = g.T;
-                    myCommand.Parameters.Add("@hr", SqlDbType.Int).Value = g.HR;
-                    myCommand.Parameters.Add("@so", SqlDbType.Int).Value = g.SO;
-                    myCommand.Parameters.Add("@bb", SqlDbType.Int).Value = g.BB;
-                    myCommand.Parameters.Add("@wp", SqlDbType.Int).Value = g.WP;
-                    myCommand.Parameters.Add("@hb", SqlDbType.Int).Value = g.HBP;
-                    myCommand.Parameters.Add("@bk", SqlDbType.Int).Value = g.BK;
-                    myCommand.Parameters.Add("@sc", SqlDbType.Int).Value = g.SC;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                PlayerId = g.PlayerId,
+                GameId = g.GameId,
+                TeamId = g.TeamId
+            };
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.pitchstatsums.InsertOnSubmit(dbStats);
+            db.SubmitChanges();
 
-                    rc = (long)myCommand.ExecuteScalar();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rc = 0;
-            }
-
-            return (rc);
+            return dbStats.Id;
         }
 
         static public int UpdateFieldingGameStats(GameFieldStats g)
@@ -1565,67 +1679,43 @@ namespace DataAccess
 
         static public GameRecap GetGameRecap(long gameId, long teamId)
         {
-            GameRecap recap = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetGameRecap", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+            return (from gr in db.GameRecaps
+                    where gr.TeamId == teamId && gr.GameId == gameId
+                    select new GameRecap()
                     {
-                        recap = new GameRecap(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2));
-                    }
-                    else
-                    {
-                        recap = new GameRecap(gameId, teamId, string.Empty);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return recap;
+                        GameId = gr.GameId,
+                        Recap = gr.Recap,
+                        TeamId = gr.TeamId
+                    }).SingleOrDefault();
         }
 
-        static public int UpdateGameRecap(GameRecap recap)
+        static public bool UpdateGameRecap(GameRecap recap)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
+            
+            bool update = true;
 
-            try
+            var dbGameRecap = (from gr in db.GameRecaps
+                               where gr.GameId == recap.GameId && gr.TeamId == recap.TeamId
+                               select gr).SingleOrDefault();
+            if (dbGameRecap == null)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateGameRecap", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = recap.TeamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = recap.GameId;
-                    myCommand.Parameters.Add("@recap", SqlDbType.Text, recap.Recap.Length).Value = recap.Recap;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rc = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rc = 0;
+                update = false;    
+                dbGameRecap = new SportsManager.Model.GameRecap();
             }
 
-            return rc;
+            dbGameRecap.GameId = recap.GameId;
+            dbGameRecap.TeamId = recap.TeamId;
+            dbGameRecap.Recap = recap.Recap ?? String.Empty;
+
+            if (!update)
+                db.GameRecaps.InsertOnSubmit(dbGameRecap);
+
+            db.SubmitChanges();
+
+            return true;
         }
 
 

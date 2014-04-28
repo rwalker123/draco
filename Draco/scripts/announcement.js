@@ -14,6 +14,7 @@ $.extend(AnnouncementClass.prototype, {
 
         $('#newsEditControl').tinymce(
             {
+                height: 400,
                 toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link',
                 toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', 
                 menu : {}, 

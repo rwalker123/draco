@@ -566,7 +566,14 @@ namespace DataAccess
             {
                 // check to see if in AspNetUserRoles as Administrator
                 var userManager = Globals.GetUserManager();
-                isTeamAdmin = userManager.IsInRole(aspNetUserId, "Administrator");
+                try
+                {
+                    isTeamAdmin = userManager.IsInRole(aspNetUserId, "Administrator");
+                }
+                catch (Exception)
+                {
+                    isTeamAdmin = false;
+                }
 
                 if (!isTeamAdmin)
                 {

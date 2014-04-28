@@ -13981,8 +13981,12 @@ define("tinymce/dom/Selection", [
 				// Convert bookmark to range IE 11 fix
 				if (bookmark.startContainer) {
 					rng = doc.createRange();
-					rng.setStart(bookmark.startContainer, bookmark.startOffset);
-					rng.setEnd(bookmark.endContainer, bookmark.endOffset);
+				    try {
+				        rng.setStart(bookmark.startContainer, bookmark.startOffset);
+    					rng.setEnd(bookmark.endContainer, bookmark.endOffset);
+				    }
+				    catch (ex) {
+				    }
 				} else {
 					rng = bookmark;
 				}
@@ -28726,9 +28730,14 @@ define("tinymce/FocusManager", [
 			var rng;
 
 			if (bookmark.startContainer) {
-				rng = editor.getDoc().createRange();
-				rng.setStart(bookmark.startContainer, bookmark.startOffset);
-				rng.setEnd(bookmark.endContainer, bookmark.endOffset);
+			    rng = editor.getDoc().createRange();
+			    try {
+			        rng.setStart(bookmark.startContainer, bookmark.startOffset);
+			        rng.setEnd(bookmark.endContainer, bookmark.endOffset);
+			    }
+			    catch (ex) {
+
+			    }
 			} else {
 				rng = bookmark;
 			}

@@ -26,8 +26,15 @@ namespace SportsManager.Controllers
             if (contact == null && !String.IsNullOrEmpty(userId))
             {
                 // check to see if in AspNetUserRoles as Administrator
-                var userManager = Globals.GetUserManager();
-                isAdmin = userManager.IsInRole(userId, "Administrator");
+                try
+                {
+                    var userManager = Globals.GetUserManager();
+                    isAdmin = userManager.IsInRole(userId, "Administrator");
+                }
+                catch(Exception)
+                {
+                    // could fail if logged in with wrong account.
+                }
             }
             if (contact != null || isAdmin)
             {

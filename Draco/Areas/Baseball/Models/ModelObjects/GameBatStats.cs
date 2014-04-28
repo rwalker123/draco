@@ -149,49 +149,85 @@ namespace ModelObjects
 			SB = sb;
 			CS = cs;
 			LOB = lob;
-
-			TB = (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
-			AVG = AB > 0 ? (double)H / (double)AB : 0.000;
-			SLG = AB > 0 ? (double)TB / (double)AB : 0.000;
-			OBA = (AB + BB + HBP) > 0 ? (double)(H + BB + HBP) / (double)(AB + BB + HBP) : 0.00;
-			PA = AB + BB + HBP + SH + SF + INTR;
-			OPS = SLG + OBA;
 		}
 
 		public int TB
 		{
-			get;
-			set;
-		}
+			get
+            {
+                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
+
+            }
+
+            set
+            {
+                // make linq happy
+            }
+        }
 
 		public double AVG
 		{
-			get;
-			set;
-		}
+			get
+            {
+                return AB > 0 ? (double)H / (double)AB : 0.000;
+            }
+
+            set
+            {
+                // make linq happy
+            }
+        }
 
 		public double SLG
 		{
-			get;
-			set;
-		}
+			get
+            {
+                return AB > 0 ? (double)TB / (double)AB : 0.000;
+            }
+
+            set
+            {
+                // make linq happy
+            }
+        }
 
 		public double OBA
 		{
-			get;
-			set;
-		}
+			get
+            {
+                return (AB + BB + HBP) > 0 ? (double)(H + BB + HBP) / (double)(AB + BB + HBP) : 0.00;
+            }
+
+            set
+            {
+                // make linq happy
+            }
+        }
 
 		public double OPS
 		{
-			get;
-			set;
-		}
+			get
+            {
+                return SLG + OBA;
+            }
+
+            set
+            {
+                // make linq happy
+            }
+        }
 
 		public int PA
 		{
-			get;
-			set;
+			get
+            {
+                return AB + BB + HBP + SH + SF + INTR;
+            }
+
+            set
+            {
+                // make linq happy
+            }
 		}
 
 		protected virtual ContactName PlayerNameQuery()

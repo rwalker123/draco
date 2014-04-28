@@ -387,7 +387,7 @@ function DiscussionsViewModel(accountId, isAdmin, userId) {
                         ko.utils.arrayFirst(self.categories(), function (cat) {
                             if (cat.Id() == self.currentCategory().Id()) {
                                 cat.NumberOfThreads(cat.NumberOfThreads() - 1);
-                                if (cat.LastPost && cat.LastPost() && item.LastPost.Id() == cat.LastPost.Id()) {
+                                if (cat.LastPost && cat.LastPost() && item.LastPost().Id() == cat.LastPost().Id()) {
                                     if (cat.topics().length > 0)
                                         cat.LastPost(cat.topics()[0]);
                                     else

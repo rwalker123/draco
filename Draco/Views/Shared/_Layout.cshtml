@@ -6,6 +6,9 @@
     <meta name="description" content="Create Baseball League, Teams. Track Golf Leagues and Handicaps." />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
+
+    <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+
     <script type="text/javascript">
         window.config = {
             rootUri : '@System.Web.VirtualPathUtility.ToAbsolute("~/")'.slice(0, -1)
@@ -16,6 +19,7 @@
     @Styles.Render("~/Content/bootstrap")
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+
     @RenderSection("head", required: false)
 </head>
 <body>
@@ -75,6 +79,19 @@
     </div>
 }
     <div class="container body-content">
+        <div class="center-block">
+            @*<div class="col-sm-6 center-block">*@
+                <!-- Responsive Ad -->
+                <ins class="adsbygoogle adslot_1"
+                     style="display:block"
+                     data-ad-client="ca-pub-0207497877026395"
+                     data-ad-slot="2033919729"
+                     data-ad-format="horizontal"></ins>
+                <script>
+                    (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+            @*</div>*@
+        </div>
         @RenderBody()
         <hr />
         <footer>
