@@ -360,7 +360,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
     self.selectedGame = ko.observable();
     self.selectedGame.subscribe(function () {
-        self.saveEditChanges(true);
 
         if (self.selectedGame() == 0)
         {
