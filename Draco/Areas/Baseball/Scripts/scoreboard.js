@@ -50,9 +50,10 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.getTodayGames = function () {
 
         var today = moment(new Date()).format('YYYY-MM-DD');
+        var tommorow = moment(new Date()).add('days', 1).format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
-        url += "&$filter=GameDate eq datetime'" + today + "'";
+        url += "&$filter=GameDate ge datetime'" + today + "' and GameDate lt datetime'" + tommorow + "'";
         if (self.teamId) {
             url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
         }
@@ -81,13 +82,12 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     };
 
     self.getYesterdaysGames = function () {
-        var yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
 
-        yesterday = moment(yesterday).format('YYYY-MM-DD');
+        var today = moment(new Date()).format('YYYY-MM-DD');
+        var yesterday = moment(new Date()).add('d', -1).format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
-        url += "&$filter=GameDate eq datetime'" + yesterday + "'";
+        url += "&$filter=GameDate ge datetime'" + yesterday + "' and GameDate lt datetime'" + today + "'";
         if (self.teamId) {
             url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
         }
@@ -118,13 +118,8 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
 
     self.getGameSummaries = function () {
 
-        var startDate = new Date();
-        startDate.setDate(startDate.getDate() - 2);
-        startDate = moment(startDate).format('YYYY-MM-DD');
-
-        var endDate = new Date();
-        endDate.setDate(endDate.getDate() - 5);
-        endDate = moment(endDate).format('YYYY-MM-DD');
+        var endDate = moment(new Date()).add('d', -1).format('YYYY-MM-DD');
+        var startDate = moment(new Date()).add('d', -8).format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate ge datetime'" + startDate + "' and GameDate le datetime'" + endDate + "'";

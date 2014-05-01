@@ -191,7 +191,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gamesummary")]
-        public HttpResponseMessage GetGameGameSummary(long accountId, long teamSeasonId, long id)
+        public HttpResponseMessage GetGameSummary(long accountId, long teamSeasonId, long id)
         {
             var gameStats = DataAccess.GameStats.GetGameRecap(id, teamSeasonId);
             string gameSummary = String.Empty;
@@ -204,7 +204,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gamesummary")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostGameGameSummary(long accountId, long teamSeasonId, long id, ModelObjects.GameRecap recap)
+        public HttpResponseMessage PostGameSummary(long accountId, long teamSeasonId, long id, ModelObjects.GameRecap recap)
         {
             var gameStats = DataAccess.GameStats.UpdateGameRecap(recap);
             string gameSummary = String.Empty;
