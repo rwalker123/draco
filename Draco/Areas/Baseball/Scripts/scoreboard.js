@@ -149,57 +149,42 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
+    };
 
-        // go back three days for game summaries
-//        DateTime curDay = yesterday.AddDays(-1.0);
-//        var prevGames = new System.Collections.Generic.List<ModelObjects.Game>[3];
-//        for (int i = 0; i < 3; i++)
-//        {
-//            var games = new System.Collections.Generic.List<ModelObjects.Game>();
+    self.homeGameSummary = ko.observable();
+    self.awayGameSummary = ko.observable();
+    self.homeTeamName = ko.observable();
+    self.awayTeamName = ko.observable();
 
-//            games.AddRange(DataAccess.Schedule.GetScoreboard(Model.AccountId, curDay));
-//            prevGames[i] = games;
+    self.popupGameRecap = function (item) {
+        self.getGameSummary(item.AwayTeamId(), item.Id(), self.awayGameSummary);
+        self.getGameSummary(item.HomeTeamId(), item.Id(), self.homeGameSummary);
 
-//            curDay = curDay.AddDays(-1.0);
-//        }
+        self.homeTeamName(item.HomeTeamName());
+        self.awayTeamName(item.AwayTeamName());
 
-//        // parse out ones without game summaries
-//        foreach (var games in prevGames)
-//        {
-//            var gameSummaries = new System.Collections.Generic.List<ModelObjects.Game>();
-//            foreach (ModelObjects.Game g in games)
-//        {
-//                if (DataAccess.GameStats.HasGameRecap(g.Id))
-//        {
-//                    gameSummaries.Add(g);
-//        }
-//    }
+        $("#gameRecapModal").modal("show");
+    };
 
-//    games.Clear();
-//    games.AddRange(gameSummaries);
-//}
-//    }
+    self.getGameSummary = function (teamId, gameId, observableSummary) {
 
-//                            @{
-//                                bool hasSummaries = false;
-//                                foreach (var games in prevGames)
-//                                {
-//                                    if (games.Any())
-//                                    {
-//                                        hasSummaries = true;
-//                                        break;
-//                                    }
-//                                }
-//                            }
+        var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + teamId + '/gamesummary/' + gameId;
 
-//                            @if (hasSummaries)
-//                            {
-//                                curDay = yesterday.AddDays(-1.0);
-
-//                                foreach (var games in prevGames)
-//                                {
-//                                    if (games.Count > 0)
-//                                    {
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (gameSummary) {
+                if (gameSummary) {
+                    observableSummary(gameSummary);
+                }
+                else {
+                    observableSummary("No Game Summary");
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
 
     };
 
