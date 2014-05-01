@@ -1,6 +1,5 @@
 ﻿/*
 TODO: 
-    Errors currently just return bad request, add error handling.
     sorting by clicking on field header.
     totals don't update when editing.
     implement delete.
@@ -19,16 +18,16 @@ function initViewModel(accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     }
 }
 
-// track the last player modified, save occurs when you go to new
-// player, change selected game, or leave page.
-var lastPlayerModified = undefined;
-var lastPitchPlayerModified = undefined;
-
-var PlayerBatStatsVM = function (data, accountId) {
+var PlayerBatStatsVM = function (data, parent, accountId) {
 
     var self = this;
 
     self.accountId = accountId;
+    // make a function to prevent object thinking it changed when
+    // the parent changes.
+    self.parent = function () {
+        return parent;
+    };
 
     // mappings to handle special cases in parsing the object.
     self.mapping = {
@@ -108,15 +107,13 @@ var PlayerBatStatsVM = function (data, accountId) {
             return;
         }
 
-        if (self !== lastPlayerModified) {
-            if (lastPlayerModified)
-                lastPlayerModified.saveChanges();
-
-            lastPlayerModified = self;
-        }
+        self.saveChanges();
     });
 
     self.saveChanges = function (asSync) {
+
+        if (self.TeamId() == 0 || self.GameId() == 0 || self.PlayerId() == 0)
+            return;
 
         if (+self.AB() < (+self.H() + +self.SO() + +self.RE())) {
             alert(self.PlayerName() + ": At bats must be greater than or equal to hits + strikeouts + safe of error");
@@ -140,6 +137,8 @@ var PlayerBatStatsVM = function (data, accountId) {
             data: data,
             async: asyncCall,
             success: function (stats) {
+                self.parent().getBatStatsTotals();
+
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -158,11 +157,16 @@ var PlayerBatStatsVM = function (data, accountId) {
     }
 }
 
-var PlayerPitchStatsVM = function (data, accountId) {
+var PlayerPitchStatsVM = function (data, parent, accountId) {
 
     var self = this;
 
     self.accountId = accountId;
+    // make a function to prevent object thinking it changed when
+    // the parent changes.
+    self.parent = function () {
+        return parent;
+    };
 
     // mappings to handle special cases in parsing the object.
     self.mapping = {
@@ -243,15 +247,23 @@ var PlayerPitchStatsVM = function (data, accountId) {
             return;
         }
 
-        if (self !== lastPitchPlayerModified) {
-            if (lastPitchPlayerModified)
-                lastPitchPlayerModified.saveChanges();
+        self.saveChanges();
 
-            lastPitchPlayerModified = self;
-        }
+        //if (self !== lastPitchPlayerModified) {
+        //    if (self.TeamId() == 0 || self.GameId() == 0 || self.PlayerId() == 0)
+        //        return;
+
+        //    if (lastPitchPlayerModified)
+        //        lastPitchPlayerModified.saveChanges();
+
+        //    lastPitchPlayerModified = self;
+        //}
     });
 
     self.saveChanges = function (asSync) {
+
+        if (self.TeamId() == 0 || self.GameId() == 0 || self.PlayerId() == 0)
+            return;
 
         if (+self.BF() < (+self.H() + +self.BB() + +self.HBP() + +self.SO())) {
             alert(self.PlayerName() + ": Batters faced must be greater than or equal to hits + walks + hit by pitch + strikeouts");
@@ -285,6 +297,7 @@ var PlayerPitchStatsVM = function (data, accountId) {
             data: data,
             async: asyncCall,
             success: function (stats) {
+                self.parent().getPitchStatsTotals();
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
@@ -309,22 +322,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     self.isAdmin = isAdmin;
     self.isTeamAdmin = isTeamAdmin;
     self.teamSeasonId = teamSeasonId;
-
-    self.saveEditChanges = function (asSync) {
-        if (lastPlayerModified) {
-            lastPlayerModified.saveChanges(asSync);
-            lastPlayerModified = undefined;
-        }
-
-        if (lastPitchPlayerModified) {
-            lastPitchPlayerModified.saveChanges(asSync);
-            lastPitchPlayerModified = undefined;
-        }
-    }
-
-    window.onbeforeunload = function (e) {
-        self.saveEditChanges(true);
-    };
 
     self.gameSummary = ko.observable();
     self.initialGameSummary = '';
@@ -389,7 +386,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             type: "POST",
             url: url,
             success: function (stats) {
-                var playerBatStats = new PlayerBatStatsVM(stats, self.accountId);
+                var playerBatStats = new PlayerBatStatsVM(stats, self, self.accountId);
 
                 self.playerBatStats.push(playerBatStats);
                 self.availableBatPlayers.remove(player);
@@ -444,7 +441,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             success: function (stats) {
 
                 var playerStats = $.map(stats, function (stat) {
-                    return new PlayerBatStatsVM(stat, self.accountId);
+                    return new PlayerBatStatsVM(stat, self, self.accountId);
                 });
 
                 self.playerBatStats(playerStats);
@@ -469,7 +466,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url: url,
             success: function (stat) {
                 if (stat)
-                    self.batStatsTotals(new PlayerBatStatsVM(stat, self.accountId));
+                    self.batStatsTotals(new PlayerBatStatsVM(stat, self, self.accountId));
                 else
                     self.batStatsTotals(null);
             },
@@ -479,6 +476,50 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
         });
 
     }
+
+    self.deleteBatStat = function (stat) {
+        var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/game/' + self.selectedGame() + '/gameplayerbatstats/' + stat.PlayerId();
+
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function () {
+                self.playerBatStats.remove(stat);
+                self.getBatStatsTotals();
+                self.readdAvailableBatStatPlayer(stat.PlayerId());
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    };
+
+    self.readdAvailableBatStatPlayer = function (playerId) {
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/players/' + playerId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (player) {
+                self.availableBatPlayers.push({
+                    Id: player.Id,
+                    PhotoUrl: player.Contact.PhotoURL,
+                    Name: player.Contact.FullName
+                });
+
+                self.availableBatPlayers.sort(function (left, right) {
+                    var lName = left.Name.toUpperCase();
+                    var rName = right.Name.toUpperCase();
+                    return lName == rName ? 0 : (lName < rName ? -1 : 1);
+
+                });
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    };
 
     self.availablePitchPlayers = ko.observableArray();
     self.playerPitchStats = ko.observableArray();
@@ -491,7 +532,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             type: "POST",
             url: url,
             success: function (stats) {
-                var playerStats = new PlayerPitchStatsVM(stats, self.accountId);
+                var playerStats = new PlayerPitchStatsVM(stats, self, self.accountId);
 
                 self.playerPitchStats.push(playerStats);
                 self.availablePitchPlayers.remove(player);
@@ -546,7 +587,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             success: function (stats) {
 
                 var playerStats = $.map(stats, function (stat) {
-                    return new PlayerPitchStatsVM(stat, self.accountId);
+                    return new PlayerPitchStatsVM(stat, self, self.accountId);
                 });
 
                 self.playerPitchStats(playerStats);
@@ -571,7 +612,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url: url,
             success: function (stat) {
                 if (stat)
-                    self.pitchStatsTotals(new PlayerPitchStatsVM(stat, self.accountId));
+                    self.pitchStatsTotals(new PlayerPitchStatsVM(stat, self, self.accountId));
                 else
                     self.pitchStatsTotals(null);
             },
@@ -607,6 +648,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
         // if showing all games, don't allow edit.
         $('.statsTable').on('beforeEdit', function () {
             return self.selectedGame() != 0;
+        }).on('change', function (evt, text) {
         });
     }
 }

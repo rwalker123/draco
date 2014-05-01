@@ -42,7 +42,7 @@
         </form>
     </div>
     <div class="row-fluid">
-        <ul id="statsTab" class="nav nav-tabs">
+        <ul class="nav nav-tabs">
             <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
             <li><a href="#pitching" data-toggle="tab">Pitching</a></li>
             <li><a href="#gamesummary" data-toggle="tab" data-bind="if: selectedGame() > 0">Game Summary</a></li>
@@ -50,7 +50,7 @@
         <div class="tab-content">
             <div class="tab-pane fade in active" id="batting">
                 <div class="table-responsive">
-                    <table class="table table-striped statsTable">
+                    <table id="batStatsTable" class="table table-striped statsTable">
                         <thead>
                             <tr>
                                 @if (Model.IsAdmin || Model.IsTeamAdmin)
@@ -85,7 +85,7 @@
                                 @if (Model.IsAdmin || Model.IsTeamAdmin)
                                 {
                                     <td data-bind="if: $root.selectedGame() > 0">
-                                        <button class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-remove"></span></button>
+                                        <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteBatStat"><span class="glyphicon glyphicon-remove"></span></button>
                                     </td>
                                 }
                                 <td data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>
@@ -160,7 +160,7 @@
             <div id="pitching" class="tab-pane fade">
                 <div class="tab-pane fade in active" id="batting">
                     <div class="table-responsive">
-                        <table class="table table-striped statsTable">
+                        <table id="pitchStatsTable" class="table table-striped statsTable">
                             <thead>
                                 <tr>
                                     @if (Model.IsAdmin || Model.IsTeamAdmin)
@@ -196,7 +196,7 @@
                                     @if (Model.IsAdmin || Model.IsTeamAdmin)
                                     {
                                         <td data-bind="if: $root.selectedGame() > 0">
-                                            <button class="btn btn-danger btn-sm"><span class="glyphicon glyphicon-remove"></span></button>
+                                            <button class="btn btn-danger btn-sm" data-bind="click: $root.deletePitchStat"><span class="glyphicon glyphicon-remove"></span></button>
                                         </td>
                                     }
                                     <td data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>

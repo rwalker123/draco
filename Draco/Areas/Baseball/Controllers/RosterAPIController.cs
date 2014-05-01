@@ -14,10 +14,18 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("players")]
-        public HttpResponseMessage GetPlayers(long accountId, long teamSeasonId)
+        public HttpResponseMessage GetPlayers(long accountId, long teamSeasonId, long? id = null)
         {
-            var players = DataAccess.TeamRoster.GetPlayers(teamSeasonId);
-            return Request.CreateResponse<IQueryable<ModelObjects.Player>>(HttpStatusCode.OK, players);
+            if (id.HasValue)
+            {
+                var player = DataAccess.TeamRoster.GetPlayer(id.Value);
+                return Request.CreateResponse<ModelObjects.Player>(HttpStatusCode.OK, player);
+            }
+            else
+            {
+                var players = DataAccess.TeamRoster.GetPlayers(teamSeasonId);
+                return Request.CreateResponse<IQueryable<ModelObjects.Player>>(HttpStatusCode.OK, players);
+            }
         }
 
         [AcceptVerbs("GET"), HttpGet]

@@ -1435,88 +1435,55 @@ namespace DataAccess
             return (rc);
         }
 
-        static public int RemoveGameBatStats(GameBatStats g)
+        static public bool RemoveGameBatStats(GameBatStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
+            var dbStat = (from bs in db.batstatsums
+                          where bs.GameId == g.GameId &&
+                           bs.TeamId == g.TeamId &&
+                          bs.PlayerId == g.PlayerId
+                          select bs).SingleOrDefault();
+            if (dbStat == null)
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteBatStats", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@statId", SqlDbType.BigInt).Value = g.Id;
+            db.batstatsums.DeleteOnSubmit(dbStat);
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rc = myCommand.ExecuteNonQuery();
-
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rc = 0;
-            }
-
-            return rc;
+            return true;
         }
 
-        static public int RemoveGamePitchStats(GamePitchStats g)
+        static public bool RemoveGamePitchStats(GamePitchStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
+            var dbStat = (from bs in db.pitchstatsums
+                          where bs.GameId == g.GameId &&
+                           bs.TeamId == g.TeamId &&
+                          bs.PlayerId == g.PlayerId
+                          select bs).SingleOrDefault();
+            if (dbStat == null)
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeletePitchStats", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@statId", SqlDbType.BigInt).Value = g.Id;
+            db.pitchstatsums.DeleteOnSubmit(dbStat);
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rc = myCommand.ExecuteNonQuery();
-
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rc = 0;
-            }
-
-            return rc;
+            return true;
         }
 
-        static public int RemoveGameFieldStats(GameFieldStats g)
+        static public bool RemoveGameFieldStats(GameFieldStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
+            var dbStat = (from bs in db.fieldstatsums
+                          where bs.GameId == g.GameId &&
+                           bs.TeamId == g.TeamId &&
+                          bs.PlayerId == g.PlayerId
+                          select bs).SingleOrDefault();
+            if (dbStat == null)
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteFieldStats", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@statId", SqlDbType.BigInt).Value = g.Id;
+            db.fieldstatsums.DeleteOnSubmit(dbStat);
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rc = myCommand.ExecuteNonQuery();
-
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rc = 0;
-            }
-
-            return rc;
+            return true;
         }
 
         static public bool RemovePlayerStats(long id)

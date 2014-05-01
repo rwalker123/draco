@@ -85,6 +85,27 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("gameplayerbatstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        public HttpResponseMessage DeletePlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        {
+            var batStats = new ModelObjects.GameBatStats()
+            {
+                GameId = gameId,
+                PlayerId = playerId,
+                TeamId = teamSeasonId
+            };
+
+            var gameStatId = DataAccess.GameStats.RemoveGameBatStats(batStats);
+            if (gameStatId)
+            {
+                return Request.CreateResponse(HttpStatusCode.OK);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
@@ -152,6 +173,28 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, gameStats);
         }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("gameplayerpitchstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        public HttpResponseMessage DeletePlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        {
+            var pitchStats = new ModelObjects.GamePitchStats()
+            {
+                GameId = gameId,
+                PlayerId = playerId,
+                TeamId = teamSeasonId
+            };
+
+            var gameStatId = DataAccess.GameStats.RemoveGamePitchStats(pitchStats);
+            if (gameStatId)
+            {
+                return Request.CreateResponse(HttpStatusCode.OK);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerpitchstats")]
