@@ -65,6 +65,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerbatstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var batStats = new ModelObjects.GameBatStats()
@@ -86,6 +87,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerbatstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId, ModelObjects.GameBatStats batStats)
         {
             var updated = DataAccess.GameStats.UpdateBattingGameStats(batStats);
@@ -153,6 +155,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerpitchstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public HttpResponseMessage PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var batStats = new ModelObjects.GamePitchStats()
@@ -174,6 +177,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerpitchstats")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public HttpResponseMessage PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId, ModelObjects.GamePitchStats pitchStats)
         {
             var updated = DataAccess.GameStats.UpdatePitchingGameStats(pitchStats);
@@ -199,6 +203,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gamesummary")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public HttpResponseMessage PostGameGameSummary(long accountId, long teamSeasonId, long id, ModelObjects.GameRecap recap)
         {
             var gameStats = DataAccess.GameStats.UpdateGameRecap(recap);

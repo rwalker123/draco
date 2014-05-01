@@ -17,6 +17,9 @@ $.fn.editableTableWidget = function (options) {
 				if (active.length) {
 				    if (active[0].getAttribute('data-readonly') === 'true')
 				        return;
+				    var continueEdit = element.triggerHandler('beforeEdit');
+				    if (continueEdit === false)
+				        return;
 					editor.val(active.text())
 						.removeClass('error')
 						.show()

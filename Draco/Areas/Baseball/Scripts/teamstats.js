@@ -1,9 +1,8 @@
 ﻿/*
 TODO: 
-    Don't allow edit when all games selected.
     Errors currently just return bad request, add error handling.
     sorting by clicking on field header.
-    add totals for all game stats.
+    totals don't update when editing.
     implement delete.
 */
 
@@ -47,6 +46,15 @@ var PlayerBatStatsVM = function (data, accountId) {
     }
 
     ko.mapping.fromJS(data, self.mapping, self);
+
+    //self.AB.extend({
+    //    validation: {
+    //        validator: function (val) {
+    //            return false;
+    //        },
+    //        message: 'AB must be something.'
+    //    }
+    //});
 
     self.TB.dynamicVal = ko.computed(function () {
         var numSingles = Math.max(0, +self.H() - (+self.D() + +self.T() + +self.HR()));
@@ -334,13 +342,15 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     self.saveGameSummary = function (gameText) {
         var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/gamesummary/' + self.selectedGame();
 
+        var gameId = self.selectedGame();
+
         $.ajax({
             type: "POST",
             url: url,
             data: {
-                GameId: self.selectedGame(),
+                GameId: gameId,
                 TeamId: self.teamSeasonId,
-                Recap: gameText
+                Recap: self.gameSummary()
             },
             success: function (stats) {
                 self.editGameSummaryMode(false);
@@ -575,6 +585,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
         if (self.selectedGame() <= 0) {
             self.gameSummary('');
+            return;
         }
 
         var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/gamesummary' + '/' + self.selectedGame();
@@ -593,6 +604,10 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
     if (self.isAdmin || self.isTeamAdmin) {
         $('.statsTable').editableTableWidget();
+        // if showing all games, don't allow edit.
+        $('.statsTable').on('beforeEdit', function () {
+            return self.selectedGame() != 0;
+        });
     }
 }
 
