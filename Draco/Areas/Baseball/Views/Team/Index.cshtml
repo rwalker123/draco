@@ -12,8 +12,9 @@
     @Model.TeamStanding.Wins - @Model.TeamStanding.Losses - @Model.TeamStanding.Ties <br />
     @if (Model.FromLeagueAccount)
     {
-        <small>@Model.AccountName @Model.SeasonName season</small>
+        <small>@Model.AccountName @Model.SeasonName season</small><br />
     }
+    <a href='@Url.Content("~/")baseball/team/statistics/@Model.AccountId/@Model.Team.Id' class="btn btn-info"><small>statistics page</small></a>
 </div>
 
 <div class="container-fluid">
