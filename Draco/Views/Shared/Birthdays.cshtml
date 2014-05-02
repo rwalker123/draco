@@ -6,21 +6,17 @@
     </div>
 
     <div class="panel-body">
-        <ul style="margin-top: 10px;list-style-type: none">
-            @{
-                var birthdayBoys = DataAccess.TeamRoster.GetAllBirthdayBoys(Model.AccountId);
-            }
-
-            @if (birthdayBoys.Any())
+        <ul class="list-group">
+            @if (Model.Birthdays.Any())
             {
-                foreach (var bp in birthdayBoys)
+                foreach (var bp in Model.Birthdays)
                 {
-                    <li><a href="javascript:ShowPlayer(@bp.Id, 1)">@bp.Contact.FirstName @bp.Contact.LastName</a></li>
+                    <li class='list-group-item'><img onerror="this.style.display = 'none';" class="img-rounded" src="@Url.Content(bp.PhotoURL)" /><span class="h3"> @bp.FirstName @bp.LastName</span></li>
                 }
             }
             else
             {
-                <li><i>No birthdays today</i></li>
+                <li class="list-group-item"><i>No birthdays today</i></li>
             }
         </ul>
 

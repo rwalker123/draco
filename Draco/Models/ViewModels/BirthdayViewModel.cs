@@ -11,6 +11,9 @@ namespace SportsManager.ViewModels
         public BirthdayViewModel(Controller c, long accountId)
             : base(c, accountId)
         {
+            Birthdays = TeamRoster.GetAllBirthdayBoys(accountId);
         }
+
+        public IQueryable<ContactName> Birthdays { get; private set; }
     }
 }

@@ -599,9 +599,9 @@ namespace DataAccess
 			return rc;
 		}
 
-		static public IQueryable<SportsManager.Model.Roster> GetAllBirthdayBoys(long accountId)
-		{
-			DateTime c = DateTime.Today;
+        static public IQueryable<ContactName> GetAllBirthdayBoys(long accountId)
+        {
+            DateTime c = DateTime.Today;
 
             DB db = DBConnection.GetContext();
 
@@ -612,12 +612,19 @@ namespace DataAccess
                     join r in db.Rosters on rs.PlayerId equals r.Id
                     join co in db.Contacts on r.ContactId equals co.Id
                     where cs.AccountId == accountId &&
-                        !rs.Inactive && 
+                        !rs.Inactive &&
                         co.DateOfBirth.Day == c.Day &&
                         co.DateOfBirth.Month == c.Month
                     orderby co.LastName, co.FirstName, co.MiddleName
-                    select r).Distinct();
-		}
+                    select new ContactName()
+                    {
+                        Id = co.Id,
+                        FirstName = co.FirstName,
+                        MiddleName = co.MiddleName,
+                        LastName = co.LastName,
+                        PhotoURL = Contact.GetPhotoURL(co.Id)
+                    }).Distinct();
+        }
 
         // get all the active players in the current season.
 		static public IEnumerable<Contact> GetAllActivePlayers(long accountId)

@@ -444,33 +444,46 @@ namespace DataAccess
                         join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
                         where ts.TeamId == teamId
                         group bss by rs.PlayerId into g
+                        let ab = g.Sum(b => b.AB)
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sh = g.Sum(b => b.SH)
+                        let sf = g.Sum(b => b.SF)
+                        let intr = g.Sum(b => b.INTR)
+                        let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
                         select new GameCareerBatStats
                         {
                             PlayerId = g.Key,
                             TeamId = teamId,
-                            AB = g.Sum(b => b.AB),
-                            H = g.Sum(b => b.H),
+                            AB = ab,
+                            H = h,
                             R = g.Sum(b => b.R),
-                            D = g.Sum(b => b._2B),
-                            T = g.Sum(b => b._3B),
-                            HR = g.Sum(b => b.HR),
+                            D = d,
+                            T = t,
+                            HR = hr,
                             RBI = g.Sum(b => b.RBI),
                             SO = g.Sum(b => b.SO),
-                            BB = g.Sum(b => b.BB),
+                            BB = bb,
                             RE = g.Sum(b => b.RE),
-                            HBP = g.Sum(b => b.HBP),
-                            INTR = g.Sum(b => b.INTR),
-                            SF = g.Sum(b => b.SF),
-                            SH = g.Sum(b => b.SH),
+                            HBP = hbp,
+                            INTR = intr,
+                            SF = sf,
+                            SH = sh,
                             SB = g.Sum(b => b.SB),
                             CS = g.Sum(b => b.CS),
                             LOB = g.Sum(b => b.LOB),
-                            AVG = 0,
-                            OBA = 0,
-                            OPS = 0,
-                            PA = 0,
-                            SLG = 0,
-                            TB = 0
+                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                            OBA = oba,
+                            OPS = slg + oba,
+                            PA = ab + bb + hbp + sh + sf + intr,
+                            SLG = slg,
+                            TB = tb
                         }).OrderBy(sortField + " " + sortOrder);
             }
             else
@@ -478,33 +491,46 @@ namespace DataAccess
                 return (from bss in db.batstatsums
                         where bss.TeamId == teamId
                         group bss by bss.PlayerId into g
+                        let ab = g.Sum(b => b.AB)
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sh = g.Sum(b => b.SH)
+                        let sf = g.Sum(b => b.SF)
+                        let intr = g.Sum(b => b.INTR)
+                        let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
                         select new GameBatStats
                         {
                             PlayerId = g.Key,
                             TeamId = teamId,
-                            AB = g.Sum(b => b.AB),
-                            H = g.Sum(b => b.H),
+                            AB = ab,
+                            H = h,
                             R = g.Sum(b => b.R),
-                            D = g.Sum(b => b._2B),
-                            T = g.Sum(b => b._3B),
-                            HR = g.Sum(b => b.HR),
+                            D = d,
+                            T = t,
+                            HR = hr,
                             RBI = g.Sum(b => b.RBI),
                             SO = g.Sum(b => b.SO),
-                            BB = g.Sum(b => b.BB),
+                            BB = bb,
                             RE = g.Sum(b => b.RE),
-                            HBP = g.Sum(b => b.HBP),
-                            INTR = g.Sum(b => b.INTR),
-                            SF = g.Sum(b => b.SF),
-                            SH = g.Sum(b => b.SH),
+                            HBP = hbp,
+                            INTR = intr,
+                            SF = sf,
+                            SH = sh,
                             SB = g.Sum(b => b.SB),
                             CS = g.Sum(b => b.CS),
                             LOB = g.Sum(b => b.LOB),
-                            AVG = 0,
-                            OBA = 0,
-                            OPS = 0,
-                            PA = 0,
-                            SLG = 0,
-                            TB = 0
+                            AVG =  ab > 0 ? (double)h / (double)ab : 0.000,
+                            OBA = oba,
+                            OPS = slg + oba,
+                            PA = ab + bb + hbp + sh + sf + intr,
+                            SLG = slg,
+                            TB = tb
                         }).OrderBy(sortField + " " + sortOrder);
 
             }
@@ -642,31 +668,45 @@ namespace DataAccess
                                 join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
                                 where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
                                 group bss by rs.PlayerId into g
+                                let ab = g.Sum(b => b.AB)
+                                let h = g.Sum(b => b.H)
+                                let bb = g.Sum(b => b.BB)
+                                let hbp = g.Sum(b => b.HBP)
+                                let d = g.Sum(b => b._2B)
+                                let t = g.Sum(b => b._3B)
+                                let hr = g.Sum(b => b.HR)
+                                let sh = g.Sum(b => b.SH)
+                                let sf = g.Sum(b => b.SF)
+                                let intr = g.Sum(b => b.INTR)
+                                let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                                let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                                let slg = ab > 0 ? (double)tb / (double)ab : 0.000
                                 select new GameCareerBatStats
                                 {
                                     PlayerId = g.Key,
-                                    AB = g.Sum(b => b.AB),
-                                    H = g.Sum(b => b.H),
+                                    AB = ab,
+                                    H = h,
                                     R = g.Sum(b => b.R),
-                                    D = g.Sum(b => b._2B),
-                                    T = g.Sum(b => b._3B),
-                                    HR = g.Sum(b => b.HR),
+                                    D = d,
+                                    T = t,
+                                    HR = hr,
                                     RBI = g.Sum(b => b.RBI),
                                     SO = g.Sum(b => b.SO),
-                                    BB = g.Sum(b => b.BB),
-                                    HBP = g.Sum(b => b.HBP),
-                                    INTR = g.Sum(b => b.INTR),
-                                    SF = g.Sum(b => b.SF),
-                                    SH = g.Sum(b => b.SH),
+                                    BB = bb,
+                                    RE = g.Sum(b => b.RE),
+                                    HBP = hbp,
+                                    INTR = intr,
+                                    SF = sf,
+                                    SH = sh,
                                     SB = g.Sum(b => b.SB),
                                     CS = g.Sum(b => b.CS),
                                     LOB = g.Sum(b => b.LOB),
-                                    AVG = 0,
-                                    OBA = 0,
-                                    OPS = 0,
-                                    PA = 0,
-                                    SLG = 0,
-                                    TB = 0
+                                    AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                    OBA = oba,
+                                    OPS = slg + oba,
+                                    PA = ab + bb + hbp + sh + sf + intr,
+                                    SLG = slg,
+                                    TB = tb
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = batstats.Count();
@@ -679,31 +719,45 @@ namespace DataAccess
                                 join ls in db.LeagueSchedules on bss.GameId equals ls.Id
                                 where ls.GameStatus == 1 && ls.LeagueId == leagueId
                                 group bss by bss.PlayerId into g
+                                let ab = g.Sum(b => b.AB)
+                                let h = g.Sum(b => b.H)
+                                let bb = g.Sum(b => b.BB)
+                                let hbp = g.Sum(b => b.HBP)
+                                let d = g.Sum(b => b._2B)
+                                let t = g.Sum(b => b._3B)
+                                let hr = g.Sum(b => b.HR)
+                                let sh = g.Sum(b => b.SH)
+                                let sf = g.Sum(b => b.SF)
+                                let intr = g.Sum(b => b.INTR)
+                                let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                                let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                                let slg = ab > 0 ? (double)tb / (double)ab : 0.000
                                 select new GameBatStats
                                 {
                                     PlayerId = g.Key,
-                                    AB = g.Sum(b => b.AB),
-                                    H = g.Sum(b => b.H),
+                                    AB = ab,
+                                    H = h,
                                     R = g.Sum(b => b.R),
-                                    D = g.Sum(b => b._2B),
-                                    T = g.Sum(b => b._3B),
-                                    HR = g.Sum(b => b.HR),
+                                    D = d,
+                                    T = t,
+                                    HR = hr,
                                     RBI = g.Sum(b => b.RBI),
                                     SO = g.Sum(b => b.SO),
-                                    BB = g.Sum(b => b.BB),
-                                    HBP = g.Sum(b => b.HBP),
-                                    INTR = g.Sum(b => b.INTR),
-                                    SF = g.Sum(b => b.SF),
-                                    SH = g.Sum(b => b.SH),
+                                    BB = bb,
+                                    RE = g.Sum(b => b.RE),
+                                    HBP = hbp,
+                                    INTR = intr,
+                                    SF = sf,
+                                    SH = sh,
                                     SB = g.Sum(b => b.SB),
                                     CS = g.Sum(b => b.CS),
                                     LOB = g.Sum(b => b.LOB),
-                                    AVG = 0,
-                                    OBA = 0,
-                                    OPS = 0,
-                                    PA = 0,
-                                    SLG = 0,
-                                    TB = 0
+                                    AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                    OBA = oba,
+                                    OPS = slg + oba,
+                                    PA = ab + bb + hbp + sh + sf + intr,
+                                    SLG = slg,
+                                    TB = tb
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = batstats.Count();
@@ -755,36 +809,55 @@ namespace DataAccess
                         join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
                         where ts.TeamId == teamId
                         group bss by rs.PlayerId into g
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sc = g.Sum(b => b.SC)
+                        let bf = g.Sum(b => b.BF)
+                        let ip = g.Sum(b => b.IP)
+                        let ip2 = g.Sum(b => b.IP2)
+                        let er = g.Sum(b => b.ER)
+                        let so = g.Sum(b => b.SO)
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let ab = bf - bb - hbp - sc
+                        let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                        let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
                         select new GameCareerPitchStats
                         {
                             PlayerId = g.Key,
-                            IP = g.Sum(b => b.IP),
-                            IP2 = g.Sum(b => b.IP2),
-                            BF = g.Sum(b => b.BF),
+                            TeamId = teamId,
+                            IP = ip,
+                            IP2 = ip2,
+                            BF = bf,
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
                             S = g.Sum(b => b.S),
-                            H = g.Sum(b => b.H),
+                            H = bb,
                             R = g.Sum(b => b.R),
-                            ER = g.Sum(b => b.ER),
-                            D = g.Sum(b => b._2B),
-                            T = g.Sum(b => b._3B),
-                            HR = g.Sum(b => b.HR),
-                            SO = g.Sum(b => b.SO),
-                            BB = g.Sum(b => b.BB),
+                            ER = er,
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            SO = so,
+                            BB = bb,
                             WP = g.Sum(b => b.WP),
-                            HBP = g.Sum(b => b.HBP),
+                            HBP = hbp,
                             BK = g.Sum(b => b.BK),
-                            SC = g.Sum(b => b.SC),
-                            ERA = 0,
-                            AB = 0,
-                            BB9 = 0,
-                            IPDecimal = 0,
-                            WHIP = 0,
-                            TB = 0,
-                            K9 = 0,
-                            OBA = 0,
-                            SLG = 0
+                            SC = sc,
+                            ERA = era,
+                            AB = ab,
+                            BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                            IPDecimal = ipdecimal,
+                            WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                            TB = tb,
+                            K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                            OBA = oba,
+                            SLG = slg
                         }).OrderBy(sortField + " " + sortOrder);
             }
             else
@@ -792,36 +865,55 @@ namespace DataAccess
                 return (from bss in db.pitchstatsums
                         where bss.TeamId == teamId
                         group bss by bss.PlayerId into g
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sc = g.Sum(b => b.SC)
+                        let bf = g.Sum(b => b.BF)
+                        let ip = g.Sum(b => b.IP)
+                        let ip2 = g.Sum(b => b.IP2)
+                        let er = g.Sum(b => b.ER)
+                        let so = g.Sum(b => b.SO)
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let ab = bf - bb - hbp - sc
+                        let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                        let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
                         select new GamePitchStats
                         {
                             PlayerId = g.Key,
-                            IP = g.Sum(b => b.IP),
-                            IP2 = g.Sum(b => b.IP2),
-                            BF = g.Sum(b => b.BF),
+                            TeamId = teamId,
+                            IP = ip,
+                            IP2 = ip2,
+                            BF = bf,
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
                             S = g.Sum(b => b.S),
-                            H = g.Sum(b => b.H),
+                            H = bb,
                             R = g.Sum(b => b.R),
-                            ER = g.Sum(b => b.ER),
-                            D = g.Sum(b => b._2B),
-                            T = g.Sum(b => b._3B),
-                            HR = g.Sum(b => b.HR),
-                            SO = g.Sum(b => b.SO),
-                            BB = g.Sum(b => b.BB),
+                            ER = er,
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            SO = so,
+                            BB = bb,
                             WP = g.Sum(b => b.WP),
-                            HBP = g.Sum(b => b.HBP),
+                            HBP = hbp,
                             BK = g.Sum(b => b.BK),
-                            SC = g.Sum(b => b.SC),
-                            ERA = 0,
-                            AB = 0,
-                            BB9 = 0,
-                            IPDecimal = 0,
-                            WHIP = 0,
-                            TB = 0,
-                            K9 = 0,
-                            OBA = 0,
-                            SLG = 0
+                            SC = sc,
+                            ERA = era,
+                            AB = ab,
+                            BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                            IPDecimal = ipdecimal,
+                            WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                            TB = tb,
+                            K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                            OBA = oba,
+                            SLG = slg
                         }).OrderBy(sortField + " " + sortOrder);
             }
 
@@ -966,36 +1058,54 @@ namespace DataAccess
                                   join leagueSeason in db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
                                   where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
                                   group pss by rs.PlayerId into g
+                                  let h = g.Sum(b => b.H)
+                                  let bb = g.Sum(b => b.BB)
+                                  let hbp = g.Sum(b => b.HBP)
+                                  let d = g.Sum(b => b._2B)
+                                  let t = g.Sum(b => b._3B)
+                                  let hr = g.Sum(b => b.HR)
+                                  let sc = g.Sum(b => b.SC)
+                                  let bf = g.Sum(b => b.BF)
+                                  let ip = g.Sum(b => b.IP)
+                                  let ip2 = g.Sum(b => b.IP2)
+                                  let er = g.Sum(b => b.ER)
+                                  let so = g.Sum(b => b.SO)
+                                  let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                                  let ab = bf - bb - hbp - sc
+                                  let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                                  let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                                  let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                                  let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
                                   select new GameCareerPitchStats
                                   {
                                       PlayerId = g.Key,
-                                      IP = g.Sum(b => b.IP),
-                                      IP2 = g.Sum(b => b.IP2),
-                                      BF = g.Sum(b => b.BF),
+                                      IP = ip,
+                                      IP2 = ip2,
+                                      BF = bf,
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
                                       S = g.Sum(b => b.S),
-                                      H = g.Sum(b => b.H),
+                                      H = bb,
                                       R = g.Sum(b => b.R),
-                                      ER = g.Sum(b => b.ER),
-                                      D = g.Sum(b => b._2B),
-                                      T = g.Sum(b => b._3B),
-                                      HR = g.Sum(b => b.HR),
-                                      SO = g.Sum(b => b.SO),
-                                      BB = g.Sum(b => b.BB),
+                                      ER = er,
+                                      D = d,
+                                      T = t,
+                                      HR = hr,
+                                      SO = so,
+                                      BB = bb,
                                       WP = g.Sum(b => b.WP),
-                                      HBP = g.Sum(b => b.HBP),
+                                      HBP = hbp,
                                       BK = g.Sum(b => b.BK),
-                                      SC = g.Sum(b => b.SC),
-                                      ERA = 0,
-                                      AB = 0,
-                                      BB9 = 0,
-                                      IPDecimal = 0,
-                                      WHIP = 0,
-                                      TB = 0,
-                                      K9 = 0,
-                                      OBA = 0,
-                                      SLG = 0
+                                      SC = sc,
+                                      ERA = era,
+                                      AB = ab,
+                                      BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                      IPDecimal = ipdecimal,
+                                      WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                      TB = tb,
+                                      K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                      OBA = oba,
+                                      SLG = slg
                                   }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = pitchstats.Count();
@@ -1008,36 +1118,54 @@ namespace DataAccess
                                   join ls in db.LeagueSchedules on pss.GameId equals ls.Id
                                   where ls.GameStatus == 1 && ls.LeagueId == leagueId
                                   group pss by pss.PlayerId into g
+                                  let h = g.Sum(b => b.H)
+                                  let bb = g.Sum(b => b.BB)
+                                  let hbp = g.Sum(b => b.HBP)
+                                  let d = g.Sum(b => b._2B)
+                                  let t = g.Sum(b => b._3B)
+                                  let hr = g.Sum(b => b.HR)
+                                  let sc = g.Sum(b => b.SC)
+                                  let bf = g.Sum(b => b.BF)
+                                  let ip = g.Sum(b => b.IP)
+                                  let ip2 = g.Sum(b => b.IP2)
+                                  let er = g.Sum(b => b.ER)
+                                  let so = g.Sum(b => b.SO)
+                                  let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                                  let ab = bf - bb - hbp - sc
+                                  let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                                  let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                                  let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                                  let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
                                   select new GamePitchStats
                                   {
                                       PlayerId = g.Key,
-                                      IP = g.Sum(b => b.IP),
-                                      IP2 = g.Sum(b => b.IP2),
-                                      BF = g.Sum(b => b.BF),
+                                      IP = ip,
+                                      IP2 = ip2,
+                                      BF = bf,
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
                                       S = g.Sum(b => b.S),
-                                      H = g.Sum(b => b.H),
+                                      H = bb,
                                       R = g.Sum(b => b.R),
-                                      ER = g.Sum(b => b.ER),
-                                      D = g.Sum(b => b._2B),
-                                      T = g.Sum(b => b._3B),
-                                      HR = g.Sum(b => b.HR),
-                                      SO = g.Sum(b => b.SO),
-                                      BB = g.Sum(b => b.BB),
+                                      ER = er,
+                                      D = d,
+                                      T = t,
+                                      HR = hr,
+                                      SO = so,
+                                      BB = bb,
                                       WP = g.Sum(b => b.WP),
-                                      HBP = g.Sum(b => b.HBP),
+                                      HBP = hbp,
                                       BK = g.Sum(b => b.BK),
-                                      SC = g.Sum(b => b.SC),
-                                      ERA = 0,
-                                      AB = 0,
-                                      BB9 = 0,
-                                      IPDecimal = 0,
-                                      WHIP = 0,
-                                      TB = 0,
-                                      K9 = 0,
-                                      OBA = 0,
-                                      SLG = 0
+                                      SC = sc,
+                                      ERA = era,
+                                      AB = ab,
+                                      BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                      IPDecimal = ipdecimal,
+                                      WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                      TB = tb,
+                                      K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                      OBA = oba,
+                                      SLG = slg
                                   }).OrderBy(sortField + " " + sortOrder);
 
                 totalRecords = pitchstats.Count();

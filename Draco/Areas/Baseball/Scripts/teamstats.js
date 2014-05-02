@@ -1,11 +1,4 @@
-﻿/*
-TODO: 
-    sorting by clicking on field header.
-    totals don't update when editing.
-    implement delete.
-*/
-
-function initViewModel(accountId, teamSeasonId, isAdmin, isTeamAdmin) {
+﻿function initViewModel(accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     initKOHelpers();
 
     var statsElem = document.getElementById("teamstats");
@@ -598,6 +591,51 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
         self.getPitchStatsTotals();
     }
+
+    self.deletePitchStat = function (stat) {
+        var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/game/' + self.selectedGame() + '/gameplayerpitchstats/' + stat.PlayerId();
+
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function () {
+                self.playerPitchStats.remove(stat);
+                self.getPitchStatsTotals();
+                self.readdAvailablePitchStatPlayer(stat.PlayerId());
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    };
+
+    self.readdAvailablePitchStatPlayer = function (playerId) {
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/players/' + playerId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (player) {
+                self.availablePitchPlayers.push({
+                    Id: player.Id,
+                    PhotoUrl: player.Contact.PhotoURL,
+                    Name: player.Contact.FullName
+                });
+
+                self.availablePitchPlayers.sort(function (left, right) {
+                    var lName = left.Name.toUpperCase();
+                    var rName = right.Name.toUpperCase();
+                    return lName == rName ? 0 : (lName < rName ? -1 : 1);
+
+                });
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    };
+
 
     self.getPitchStatsTotals = function () {
         var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/gamepitchstatstotals';
