@@ -2014,8 +2014,8 @@ namespace DataAccess
         {
             public long PlayerId = 0;
             public long TeamId = 0;
-            public Decimal FieldTotal = Decimal.MinValue;
-            public Decimal CheckField = Decimal.MinValue;
+            public Decimal? FieldTotal = Decimal.MinValue;
+            public Decimal? CheckField = Decimal.MinValue;
         };
 
         static public List<LeagueLeaderStat> GetBatTeamLeaders(long teamSeasonId, string fieldName, int limitRecords, int minAB, bool allTimeLeaders)
