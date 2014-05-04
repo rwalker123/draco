@@ -150,8 +150,6 @@ namespace DataAccess
                     select new Team(ts.Id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
         }
 
-
-
 		static public IQueryable<Team> GetAccountTeams(long accountId)
 		{
             DB db = DBConnection.GetContext();
@@ -194,7 +192,6 @@ namespace DataAccess
                         AccountId = t.Team.AccountId
                     });
         }
-
 
 		static public bool ModifyTeam(Team team)
 		{
@@ -322,28 +319,20 @@ namespace DataAccess
 
 		static public bool RemoveManager(TeamManager tm)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteTeamManager", myConnection);
-					myCommand.Parameters.Add("@managerSeasonId", SqlDbType.BigInt).Value = tm.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbManager = (from t in db.TeamSeasonManagers
+                             where tm.Id == t.Id
+                             select t).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbManager != null)
+            {
+                db.TeamSeasonManagers.DeleteOnSubmit(dbManager);
+                db.SubmitChanges();
+                return true;
+            }
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return false;
 		}
 
         static public IQueryable<TeamManager> GetTeamManagers(long teamId)
@@ -651,6 +640,45 @@ namespace DataAccess
 			}
 
             return teamStanding;
+        }
+
+        public static IQueryable<Team> GetCurrentUserTeams(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            String aspNetUserId = Globals.GetCurrentUserId();
+            if (String.IsNullOrEmpty(aspNetUserId))
+                return null;
+
+            var contact = DataAccess.Contacts.GetContact(aspNetUserId);
+
+            if (contact == null)
+                return null;
+
+            var rosterId = (from r in db.Rosters
+                            where r.ContactId == contact.Id
+                            select r.Id).SingleOrDefault();
+
+            if (rosterId == 0)
+                return null;
+
+            var seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+            if (seasonId == 0)
+                return null;
+
+            return (from rs in db.RosterSeasons
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    where ls.SeasonId == seasonId && rs.PlayerId == rosterId
+                    select new Team()
+                    {
+                        Id = ts.Id,
+                        AccountId = accountId,
+                        DivisionId = ts.DivisionSeasonId,
+                        LeagueId = ts.LeagueSeasonId,
+                        Name = ts.Name,
+                        TeamId = ts.TeamId
+                    });
         }
 	}
 }

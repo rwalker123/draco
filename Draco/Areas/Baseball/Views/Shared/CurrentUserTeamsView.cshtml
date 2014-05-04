@@ -1,0 +1,19 @@
+﻿@model IQueryable<ModelObjects.Team>
+
+
+<div class="panel panel-success">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Your Teams</h3>
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        <div class="list-group">
+            @foreach(var team in Model)
+            {
+                <a href='@Url.Content("~/baseball/team/index/")@team.AccountId/@team.Id' class="list-group-item"><img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" /> @team.Name</a>
+            }
+        </div>
+    </div>
+</div>
+

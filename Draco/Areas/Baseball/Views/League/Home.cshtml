@@ -195,19 +195,10 @@
 
     <div class="col-md-4"> <!-- second column -->
 
-    @if (Model.HasTeams)
+    @if (Model.UserTeams != null && Model.UserTeams.Any())
     {
         <div class="col-md-12">
-            <div class="panel panel-success">
-                <div class="panel-heading">
-                    <h3 class="panel-title" style="float: left;">Your Teams</h3>
-                    <div style="clear:both"></div>
-                </div>
-
-                <div class="panel-body">
-                    Quick links to your teams
-                </div>
-            </div>
+            @{Html.RenderPartial("CurrentUserTeamsView", Model.UserTeams);}
         </div>
     }
 

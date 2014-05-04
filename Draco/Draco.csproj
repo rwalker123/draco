@@ -582,6 +582,7 @@
     </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="Scripts\discussions.js" />
+    <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />

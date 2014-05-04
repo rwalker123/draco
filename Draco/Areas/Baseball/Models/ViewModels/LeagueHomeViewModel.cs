@@ -28,14 +28,14 @@ namespace SportsManager.Baseball.ViewModels
             ShowWelcomeMessages = true;
             ShowScoreboard = true;
 
-            HasTeams = true;
+            UserTeams = DataAccess.Teams.GetCurrentUserTeams(accountId);
 
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = false;
         }
 
-        public bool HasTeams
+        public IQueryable<ModelObjects.Team> UserTeams
         {
             get;
             private set;
