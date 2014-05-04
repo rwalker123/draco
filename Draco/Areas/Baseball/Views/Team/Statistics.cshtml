@@ -65,26 +65,28 @@
                                     <th data-bind="if: selectedGame() > 0"></th>
                                 }
                                 <th>Name</th>
-                                <th title="at bats">AB</th>
-                                <th title="hits">H</th>
-                                <th title="runs scored">R</th>
-                                <th title="doubles">2B</th>
-                                <th title="triples">3B</th>
-                                <th title="home runs">HR</th>
-                                <th title="runs batted in">RBI</th>
-                                <th title="strike outs">SO</th>
-                                <th title="walks">BB</th>
-                                <th title="hit by pitch">HBP</th>
-                                <th title="stolen base">SB</th>
-                                <th title="caught stealing">CS</th>
-                                <th title="reached base on error">RE</th>
-                                <th title="reached base on interference">INTR</th>
-                                <th title="total bases">TB</th>
-                                <th title="plate appearances">PA</th>
-                                <th title="on base percentage">OBP</th>
-                                <th title="slugging percentage">SLG</th>
-                                <th title="on base percentage + slugging percentage">OPS</th>
-                                <th title="batting average">AVG</th>
+                                <th data-toggle="tooltip" title="at bats">AB</th>
+                                <th data-toggle="tooltip" title="hits">H</th>
+                                <th data-toggle="tooltip" title="runs scored">R</th>
+                                <th data-toggle="tooltip" title="doubles">2B</th>
+                                <th data-toggle="tooltip" title="triples">3B</th>
+                                <th data-toggle="tooltip" title="home runs">HR</th>
+                                <th data-toggle="tooltip" title="runs batted in">RBI</th>
+                                <th data-toggle="tooltip" title="strike outs">SO</th>
+                                <th data-toggle="tooltip" title="walks">BB</th>
+                                <th data-toggle="tooltip" title="hit by pitch">HBP</th>
+                                <th data-toggle="tooltip" title="stolen base">SB</th>
+                                <th data-toggle="tooltip" title="caught stealing">CS</th>
+                                <th data-toggle="tooltip" title="sacrifice bunts">SH</th>
+                                <th data-toggle="tooltip" title="sacrifice flies">SF</th>
+                                <th data-toggle="tooltip" title="reached base on error">RE</th>
+                                <th data-toggle="tooltip" title="reached base on interference">INTR</th>
+                                <th data-toggle="tooltip" title="total bases">TB</th>
+                                <th data-toggle="tooltip" title="plate appearances">PA</th>
+                                <th data-toggle="tooltip" title="on base percentage">OBP</th>
+                                <th data-toggle="tooltip" title="slugging percentage">SLG</th>
+                                <th data-toggle="tooltip" title="on base percentage + slugging percentage">OPS</th>
+                                <th data-toggle="tooltip" title="batting average">AVG</th>
                             </tr>
                         </thead>
                         <tbody data-bind="foreach: playerBatStats, validationOptions: { insertMessages: false }">
@@ -108,6 +110,8 @@
                                 <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: SB"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: CS"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: SH"></td>
+                                <td class="statField" data-type='number' data-bind="editablefield: SF"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: RE"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: INTR"></td>
                                 <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
@@ -138,6 +142,8 @@
                                 <td data-readonly="true" data-bind="editablefield: HBP"></td>
                                 <td data-readonly="true" data-bind="editablefield: SB"></td>
                                 <td data-readonly="true" data-bind="editablefield: CS"></td>
+                                <td data-readonly="true" data-bind="editablefield: SH"></td>
+                                <td data-readonly="true" data-bind="editablefield: SF"></td>
                                 <td data-readonly="true" data-bind="editablefield: RE"></td>
                                 <td data-readonly="true" data-bind="editablefield: INTR"></td>
                                 <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
@@ -174,27 +180,27 @@
                                         <th data-bind="if: selectedGame() > 0"></th>
                                     }
                                     <th>Name</th>
-                                    <th title="wins">W</th>
-                                    <th title="losses">L</th>
-                                    <th title="saves">S</th>
-                                    <th title="innings pitched">IP</th>
-                                    <th title="batters faced">BF</th>
-                                    <th title="hits given up">H</th>
-                                    <th title="runs scored">R</th>
-                                    <th title="earned runs scored">ER</th>
-                                    <th title="doubles">2B</th>
-                                    <th title="triples">3B</th>
-                                    <th title="home runs">HR</th>
-                                    <th title="strike outs">SO</th>
-                                    <th title="walks">BB</th>
-                                    <th title="hit batters">HB</th>
-                                    <th title="sacrifice flies or bunts">SAC</th>
-                                    <th title="strikouts per 9 innings">K/9</th>
-                                    <th title="walks per 9 innings">BB/9</th>
-                                    <th title="opponents batting average">OBP</th>
-                                    <th title="opponents slugging percentage">SLG</th>
-                                    <th title="walks + hits / innings pitched">WHIP</th>
-                                    <th title="earned run average">ERA</th>
+                                    <th data-toggle="tooltip" title="wins">W</th>
+                                    <th data-toggle="tooltip" title="losses">L</th>
+                                    <th data-toggle="tooltip" title="saves">S</th>
+                                    <th data-toggle="tooltip" title="innings pitched">IP</th>
+                                    <th data-toggle="tooltip" title="batters faced">BF</th>
+                                    <th data-toggle="tooltip" title="hits given up">H</th>
+                                    <th data-toggle="tooltip" title="runs scored">R</th>
+                                    <th data-toggle="tooltip" title="earned runs scored">ER</th>
+                                    <th data-toggle="tooltip" title="doubles">2B</th>
+                                    <th data-toggle="tooltip" title="triples">3B</th>
+                                    <th data-toggle="tooltip" title="home runs">HR</th>
+                                    <th data-toggle="tooltip" title="strike outs">SO</th>
+                                    <th data-toggle="tooltip" title="walks">BB</th>
+                                    <th data-toggle="tooltip" title="hit batters">HB</th>
+                                    <th data-toggle="tooltip" title="sacrifice flies or bunts">SAC</th>
+                                    <th data-toggle="tooltip" title="strikouts per 9 innings">K/9</th>
+                                    <th data-toggle="tooltip" title="walks per 9 innings">BB/9</th>
+                                    <th data-toggle="tooltip" title="opponents batting average">OBP</th>
+                                    <th data-toggle="tooltip" title="opponents slugging percentage">SLG</th>
+                                    <th data-toggle="tooltip" title="walks + hits / innings pitched">WHIP</th>
+                                    <th data-toggle="tooltip" title="earned run average">ERA</th>
                                 </tr>
                             </thead>
                             <tbody data-bind="foreach: playerPitchStats, validationOptions: { insertMessages: false }">

@@ -26,15 +26,21 @@
                 <div class="col-md-4">
                     <h3>@division.Name</h3>
 
-                    <div class="list-group">
+                    <ul class="list-group">
                         @foreach (var team in Model.GetDivisionTeams(division.Id))
                         {
-                            <a class="list-group-item" href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
-                                <img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" />
-                                <h4 style="display:inline-block">@team.Name</h4>
-                            </a>
+                            <li class="list-group-item">
+                                <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
+                                    <img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" />
+                                    <h4 style="display:inline-block">@team.Name</h4>
+                                </a>
+                                @if (Model.IsAdmin)
+                                {
+                                    <button class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button>
+                                }
+                            </li>
                         }
-                    </div>
+                    </ul>
                 </div>
             }
         </div>

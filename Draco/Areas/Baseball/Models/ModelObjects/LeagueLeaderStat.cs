@@ -63,5 +63,23 @@ namespace ModelObjects
 			get { return m_tieCount; }
 			set { m_tieCount = value; }
 		}
+
+        public ContactName PlayerName
+        {
+            get;
+            set;
+        }
+
+        public String TeamName
+        {
+            get;
+            set;
+        }
+
+        public double CheckField
+        {
+            get;
+            set;
+        }
 	}
 }

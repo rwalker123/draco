@@ -476,6 +476,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
+    <Content Include="Areas\Baseball\Scripts\leaders.js" />
     <Content Include="Areas\Baseball\Scripts\leagueHome.js" />
     <Content Include="Areas\Baseball\Scripts\leaguesetup.js" />
     <Content Include="Areas\Baseball\Scripts\managers.js" />

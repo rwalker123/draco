@@ -154,6 +154,11 @@ else
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/roster.js"></script>   
 }
 
+@if (Model.ShowLeaders)
+{
+    <script type="text/javascript" src="~/Areas/Baseball/Scripts/leaders.js"></script>   
+}
+
 @Scripts.Render("~/bundles/jquery-file-upload")
 @if (Model.ShowScoreboard)
 {
@@ -177,67 +182,74 @@ else
 
         @if (Model.ShowWelcome)
         {
-            <text> 
-                welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-            </text>
+            <text>
+        welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        </text>
         }
-        
+
         @if (Model.ShowAnnouncements)
-        { 
-            <text> 
-                announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-            </text>
+        {
+            <text>
+        announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        </text>
         }
-        
+
         @if (Model.ShowHandouts)
-        { 
-            <text> 
-            var handoutElem = document.getElementById("handouts");
-            if (handoutElem) {
-                var handoutData = new HandoutViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-                ko.applyBindings(handoutData, handoutElem);
-            }
-            </text>
+        {
+            <text>
+        var handoutElem = document.getElementById("handouts");
+        if (handoutElem) {
+            var handoutData = new HandoutViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+            ko.applyBindings(handoutData, handoutElem);
+        }
+        </text>
         }
 
         @if (Model.ShowPhotoGallery)
         {
             <text>
-                InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
-            </text>
+        InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
+        </text>
         }
 
         @if (Model.ShowRoster)
         {
             <text>
-                InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id );
-            </text>
+        InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id );
+        </text>
         }
 
         @if (Model.ShowScoreboard)
-        { 
+        {
             <text>
-            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+        initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+        </text>
+        }
+
+        @if (Model.ShowLeaders)
+        {
+            <text>
+            initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
             </text>
         }
-        
+
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
 
         @if (Model.ShowWelcome)
-        { 
-            <text> 
-            // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
-            welcomeData.ShowFirstMenu();
-            </text>
+        {
+            <text>
+        // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
+        welcomeData.ShowFirstMenu();
+        </text>
         }
 
         @if (Model.ShowAnnouncements)
-        { 
-            <text> 
-            announcementData.AdjustNewsMenuHeaders();
-            </text>
+        {
+            <text>
+        announcementData.AdjustNewsMenuHeaders();
+        </text>
         }
-        
+
     });
 </script>
 }

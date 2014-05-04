@@ -1,4 +1,6 @@
-﻿using SportsManager.ViewModels;
+﻿using ModelObjects;
+using SportsManager.ViewModels;
+using System.Linq;
 using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
@@ -14,8 +16,11 @@ namespace SportsManager.Baseball.ViewModels
         public LeadersViewModel(Controller c, long accountId)
             : base(c, accountId)
         {
+            var seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+            Leagues = DataAccess.Leagues.GetLeagues(seasonId);
         }
 
         public long TeamSeasonId { get; private set; }
+        public IQueryable<League> Leagues { get; private set;}
     }
 }

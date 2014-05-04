@@ -227,7 +227,7 @@ namespace DataAccess
 				LeagueSeasonId = t.LeagueId,
 				TeamId = dbTeam.Id,
 				DivisionSeasonId = t.DivisionId,
-				Name = t.Name
+				Name = t.Name.Substring(0, 25)
 			};
 
 			db.TeamsSeasons.InsertOnSubmit(dbTeamSeason);

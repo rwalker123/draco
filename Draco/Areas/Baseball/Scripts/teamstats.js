@@ -8,6 +8,7 @@
 
         var teamstatsVM = new TeamStatsVM(accountId, teamSeasonId, isAdmin, isTeamAdmin);
         ko.applyBindings(teamstatsVM, statsElem);
+        $("th").tooltip({ container: 'body' });
     }
 }
 

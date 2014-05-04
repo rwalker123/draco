@@ -5,11 +5,128 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Web.Http.OData;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
     public class StatisticsAPIController : ApiController
     {
+        private const int m_allTimeMinAB = 150;
+        private const int m_minABPerSeason = 30;
+        private const int m_allTimeMinIP = 100;
+        private const int m_minIPPerSeason = 20;
+        private const int m_numLeaders = 5;
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("batleaders")]
+        public HttpResponseMessage GetBatLeaders(long accountId, long leagueSeasonId)
+        {
+            var queryValues = Request.RequestUri.ParseQueryString();
+
+            int minAB = -1;
+            String strMinAB = queryValues["calcMinAB"];
+            
+            if (!String.IsNullOrEmpty(strMinAB))
+            {
+                minAB = DataAccess.GameStats.CalculateMinAB(leagueSeasonId);
+            }
+
+            int numLeaders = m_numLeaders;
+            String strNumLeaders = queryValues["numLeaders"];
+
+            if (!String.IsNullOrEmpty(strNumLeaders))
+            {
+                Int32.TryParse(strNumLeaders, out numLeaders);
+            }
+
+            String statCategory = queryValues["category"] ?? "AVG";
+            var leaders = DataAccess.GameStats.GetBatLeagueLeaders(leagueSeasonId, 0, statCategory, numLeaders, minAB, false);
+            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("pitchleaders")]
+        public HttpResponseMessage GetPitchLeaders(long accountId, long leagueSeasonId)
+        {
+            var queryValues = Request.RequestUri.ParseQueryString();
+
+            int minIP = -1;
+            String strMinIP = queryValues["calcMinIP"];
+
+            if (!String.IsNullOrEmpty(strMinIP))
+            {
+                minIP = DataAccess.GameStats.CalculateMinIP(leagueSeasonId);
+            }
+
+            int numLeaders = m_numLeaders;
+            String strNumLeaders = queryValues["numLeaders"];
+
+            if (!String.IsNullOrEmpty(strNumLeaders))
+            {
+                Int32.TryParse(strNumLeaders, out numLeaders);
+            }
+
+            String statCategory = queryValues["category"] ?? "ERA";
+            var leaders = DataAccess.GameStats.GetPitchLeagueLeaders(leagueSeasonId, 0, statCategory, numLeaders, minIP, false);
+            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("teambatleaders")]
+        public HttpResponseMessage GetTeamBatLeaders(long accountId, long teamSeasonId)
+        {
+            var queryValues = Request.RequestUri.ParseQueryString();
+
+            int minAB = -1;
+            String strMinAB = queryValues["calcMinAB"];
+
+            if (!String.IsNullOrEmpty(strMinAB))
+            {
+                minAB = DataAccess.GameStats.CalculateTeamMinAB(teamSeasonId);
+            }
+
+            int numLeaders = m_numLeaders;
+            String strNumLeaders = queryValues["numLeaders"];
+
+            if (!String.IsNullOrEmpty(strNumLeaders))
+            {
+                Int32.TryParse(strNumLeaders, out numLeaders);
+            }
+
+            String statCategory = queryValues["category"] ?? "AVG";
+            var leaders = DataAccess.GameStats.GetBatTeamLeaders(teamSeasonId, statCategory, numLeaders, minAB, false);
+            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("teampitchleaders")]
+        public HttpResponseMessage GetTeamPitchLeaders(long accountId, long teamSeasonId)
+        {
+            var queryValues = Request.RequestUri.ParseQueryString();
+
+            int minIP = -1;
+            String strMinIP = queryValues["calcMinIP"];
+
+            if (!String.IsNullOrEmpty(strMinIP))
+            {
+                minIP = DataAccess.GameStats.CalculateTeamMinIP(teamSeasonId);
+            }
+
+            int numLeaders = m_numLeaders;
+            String strNumLeaders = queryValues["numLeaders"];
+
+            if (!String.IsNullOrEmpty(strNumLeaders))
+            {
+                Int32.TryParse(strNumLeaders, out numLeaders);
+            }
+
+            String statCategory = queryValues["category"] ?? "ERA";
+            var leaders = DataAccess.GameStats.GetPitchTeamLeaders(teamSeasonId, statCategory, numLeaders, minIP, false);
+            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+        }
+
+
+
         /// <summary>
         /// Json method to get a paged index worth of data.
         /// </summary>

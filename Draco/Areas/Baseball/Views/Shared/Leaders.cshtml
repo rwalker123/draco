@@ -6,13 +6,213 @@
 
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float: right" ><span class="glyphicon glyphicon-plus"></span></button>
+            @*<button type="button" class="btn btn-default" style="float: right" ><span class="glyphicon glyphicon-plus"></span></button>*@
         }
 
         <div style="clear:both"></div>
     </div>
 
-    <div class="panel-body">
-        @Html.ActionLink("Statistics", "TeamStatistics", "Index", new { id = Model.TeamSeasonId }, new { @class = "btn btn-info" })
+    <div class="panel-body" id="leadersView">
+
+        @if (Model.TeamSeasonId == 0)
+        {
+            <select data-container="body" data-bind="selectPicker: selectedLeagueId">
+                @if (!Model.Leagues.Any())
+                {
+                    <option value="0">No Leagues Found</option>
+                }
+                else
+                {
+                    foreach (var l in Model.Leagues)
+                    {
+                        <option value="@l.Id">@l.Name</option>
+                    }
+                }
+            </select>
+        }
+        
+        <ul class="nav nav-pills">
+            <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
+            <li><a href="#pitching" data-toggle="tab">Pitching</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade in active" id="batting">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#batting_avg" data-toggle="tab"><small>AVG</small></a></li>
+                    <li><a href="#batting_rbi" data-toggle="tab"><small>RBI</small></a></li>
+                    <li><a href="#batting_hr" data-toggle="tab"><small>HR</small></a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade in active" id="batting_avg">
+                        <div data-bind="if: batLeagueLeadersCat1().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div class="table-responsive">
+                            <table data-bind="if: batLeagueLeadersCat1().length > 0" class="table table-striped">
+                                <tbody data-bind="foreach: batLeagueLeadersCat1">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="batting_rbi">
+                        <div data-bind="if: batLeagueLeadersCat2().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div data-bind="if: batLeagueLeadersCat2().length > 0" class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach: batLeagueLeadersCat2">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="batting_hr">
+                        <div data-bind="if: batLeagueLeadersCat3().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div data-bind="if: batLeagueLeadersCat3().length > 0" class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach: batLeagueLeadersCat3">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pitching">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a href="#pitching_era" data-toggle="tab"><small>ERA</small></a></li>
+                    <li><a href="#pitching_w" data-toggle="tab"><small>WINS</small></a></li>
+                    <li><a href="#pitching_so" data-toggle="tab"><small>SO</small></a></li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade in active" id="pitching_era">
+                        <div data-bind="if: pitchLeagueLeadersCat1().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div data-bind="if: pitchLeagueLeadersCat1().length > 0" class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach: pitchLeagueLeadersCat1">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="pitching_w">
+                        <div data-bind="if: pitchLeagueLeadersCat2().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div data-bind="if: pitchLeagueLeadersCat2().length > 0" class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach: pitchLeagueLeadersCat2">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="tab-pane fade" id="pitching_so">
+                        <div data-bind="if: pitchLeagueLeadersCat3().length == 0">
+                            <div class="alert alert-warning">no leaders found</div>
+                        </div>
+                        <div data-bind="if: pitchLeagueLeadersCat3().length > 0" class="table-responsive">
+                            <table class="table table-striped">
+                                <tbody data-bind="foreach: pitchLeagueLeadersCat3">
+                                    <tr>
+                                        <!-- ko if: FieldName == "TIE" -->
+                                        <td></td>
+                                        <td data-bind="html: FieldName"></td>
+                                        <td><span data-bind="html: TieCount"></span> Players</td>
+                                        <!-- /ko -->
+                                        <!-- ko if: FieldName != "TIE" -->
+                                        <td><img width="40" height="30" onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
+                                        <td><span data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName }"></span></td>
+                                        <td data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName }"></td>
+                                        <!-- /ko -->
+                                        <td data-bind="html: FieldTotal"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.TeamSeasonId > 0)
+        {
+            @Html.ActionLink("statistics page", "statistics", "team", new { accountId = Model.AccountId, id = Model.TeamSeasonId }, new { @class = "btn btn-info" })
+        }        
+        else
+        {
+            @Html.ActionLink("Statistics", "Statistics", "Index", new { id = Model.AccountId }, new { @class = "btn btn-info" })
+        }
     </div>
 </div>

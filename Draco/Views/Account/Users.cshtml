@@ -171,13 +171,13 @@
 
         <div class="form-group" style="margin-top:10px">
             <small>phone numbers</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Cell Phone">c</abbr></label>
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Cell Phone">c</abbr></label>
             <input type="tel" data-bind="phoneNumber: phone1, uniqueId: $parent.id" class="form-control" placeholder="cell phone" />
 
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Home Phone">h</abbr></label>
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Home Phone">h</abbr></label>
             <input type="tel" data-bind="phoneNumber: phone2, uniqueId: $parent.id" class="form-control" placeholder="home phone" />
 
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr title="Work Phone">w</abbr></label>
+            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Work Phone">w</abbr></label>
             <input type="tel" data-bind="phoneNumber: phone3, uniqueId: $parent.id" class="form-control" placeholder="work phone" />
         </div>
 
