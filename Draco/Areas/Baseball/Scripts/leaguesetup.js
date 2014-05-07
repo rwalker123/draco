@@ -703,7 +703,7 @@ $.extend(LeagueSetupClass.prototype, {
         $("#deleteModal").modal("show");
 
         $("#confirmDeleteBtn").one("click", function () {
-            target.makeLeagueDeleteCall(target, leagueId)
+            target.makeLeagueDeleteCall(target, leagueId);
         });
     },
 

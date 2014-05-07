@@ -364,6 +364,7 @@
     <Compile Include="Controllers\PhotoGalleryAPIController.cs" />
     <Compile Include="Controllers\SeasonController.cs" />
     <Compile Include="Controllers\SeasonsApiController.cs" />
+    <Compile Include="Controllers\SponsorsAPIController.cs" />
     <Compile Include="Controllers\UserRolesAPIController.cs" />
     <Compile Include="Controllers\ViewSwitcherController.cs" />
     <Compile Include="Controllers\WelcomeAPIController.cs" />
@@ -594,6 +595,7 @@
     <Content Include="Scripts\moment-with-langs.min.js" />
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
+    <Content Include="Scripts\sponsors.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
     <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
     <Content Include="Scripts\tinymce\plugins\example\dialog.html" />

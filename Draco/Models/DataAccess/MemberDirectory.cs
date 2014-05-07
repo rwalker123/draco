@@ -1,9 +1,12 @@
+using ModelObjects;
+using SportsManager;
+using SportsManager.Models.Utils;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
-using ModelObjects;
-using SportsManager;
+using System.Threading.Tasks;
+using System.Web;
 
 namespace DataAccess
 {
@@ -203,7 +206,7 @@ namespace DataAccess
 			return id;
 		}
 
-		static public bool RemoveMemberBusiness(Sponsor s)
+		static public async Task<bool> RemoveMemberBusiness(Sponsor s)
 		{
 			int rowCount = 0;
 
@@ -219,8 +222,10 @@ namespace DataAccess
 
 					rowCount = myCommand.ExecuteNonQuery();
 
-					if (s.LogoFile != null)
-						System.IO.File.Delete(s.LogoFile);
+					if (s.LogoURL != null)
+                    {
+                        await Storage.Provider.DeleteFile(HttpContext.Current.Server.MapPath(s.LogoURL));
+                    }
 				}
 			}
 			catch (SqlException ex)

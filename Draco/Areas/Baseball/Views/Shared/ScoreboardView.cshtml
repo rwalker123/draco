@@ -35,6 +35,10 @@
             </div>
         </div>
 
+        <!-- ko if: !haveScores() -->
+        <div class="alert alert-warning">No scheduled games.</div>
+        <!-- /ko -->
+        <!-- ko if: haveScores -->
         <div class="table-responsive">
             <table class="table" data-bind="foreach: scheduledGames">
                 <thead>
@@ -78,6 +82,7 @@
                 </tbody>
             </table>
         </div>
+        <!-- /ko -->
     </div>
 </div>
 

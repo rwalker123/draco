@@ -324,6 +324,11 @@ else
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/leaders.js"></script>
 }
 
+@if (Model.ShowSponsors)
+{
+    <script type="text/javascript" src="~/Scripts/sponsors.js"></script>
+}
+
 <!-- main javascript -->
 <script type="text/javascript">
 
@@ -373,6 +378,14 @@ else
             initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             </text>
         }
+        
+        @if (Model.ShowSponsors)
+        {
+            <text>
+            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>            
+        }
+
                 
         @if (Model.ShowHandouts)
         { 

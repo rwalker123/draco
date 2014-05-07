@@ -1,19 +1,16 @@
 using System;
-using System.Configuration;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
-
-using System.Collections.Generic;
 using SportsManager;
 using System.Linq;
+using SportsManager.Models.Utils;
+using System.Web;
+using System.Threading.Tasks;
 
 namespace DataAccess
 {
-/// <summary>
-/// Summary description for Sponsors
-/// </summary>
+    /// <summary>
+    /// Summary description for Sponsors
+    /// </summary>
 	static public class Sponsors
 	{
 		static public IQueryable<Sponsor> GetSponsors( long accountId )
@@ -37,191 +34,151 @@ namespace DataAccess
                     });
 		}
 
-		static public Sponsor GetSponsorOfDay( long accountId )
-		{
-			Sponsor sponsor = null;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetSponsorOfDay", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						sponsor = new Sponsor(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9), dr.GetInt64(10), dr.GetInt64(1));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return sponsor;
-		}
-
 		static public Sponsor GetSponsor(long id)
 		{
-			Sponsor sponsor = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetSponsor", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						sponsor = new Sponsor(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9), dr.GetInt64(10), dr.GetInt64(1));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return sponsor;
+            return (from s in db.Sponsors
+                    where s.Id == id
+                    select new Sponsor()
+                    {
+                        Id = s.Id,
+                        AccountId = s.AccountId,
+                        CityStateZip = s.CityStateZip,
+                        Description = s.Description,
+                        EMail = s.EMail,
+                        Fax = s.Fax,
+                        Phone = s.Phone,
+                        StreetAddress = s.StreetAddress,
+                        Name = s.Name,
+                        Website = s.WebSite,
+                        TeamId = s.TeamId
+                    }).SingleOrDefault();
 		}
 
 		static public bool ModifySponsor(Sponsor s)
 		{
-			int rowCount = 0;
+            if (String.IsNullOrEmpty(s.Name))
+                return false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateSponsor", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = s.Name;
-					myCommand.Parameters.Add("@streetAddress", SqlDbType.VarChar, 100).Value = s.StreetAddress;
-					myCommand.Parameters.Add("@cityStateZip", SqlDbType.VarChar, 100).Value = s.CityStateZip;
-					myCommand.Parameters.Add("@description", SqlDbType.Text).Value = s.Description;
-					myCommand.Parameters.Add("@eMail", SqlDbType.VarChar, 100).Value = s.EMail;
-					myCommand.Parameters.Add("@phone", SqlDbType.VarChar, 14).Value = s.Phone;
-					myCommand.Parameters.Add("@fax", SqlDbType.VarChar, 14).Value = s.Fax;
-					myCommand.Parameters.Add("@webSite", SqlDbType.VarChar, 100).Value = s.Website;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = s.TeamId;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = s.Id;
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            SportsManager.Model.Sponsor dbSponsor = (from sp in db.Sponsors
+                                                     where sp.Id == s.Id
+                                                     select sp).SingleOrDefault();
+            if (dbSponsor == null)
+                return false;
 
-			return (rowCount <= 0) ? false : true;
-		}
+            dbSponsor.AccountId = s.AccountId;
+            dbSponsor.Description = s.Description ?? String.Empty;
+            dbSponsor.Name = s.Name;
+            dbSponsor.EMail = s.EMail ?? String.Empty;
+            dbSponsor.Fax = s.Fax ?? String.Empty;
+            dbSponsor.CityStateZip = s.CityStateZip ?? String.Empty;
+            dbSponsor.Phone = s.Phone ?? String.Empty;
+            dbSponsor.StreetAddress = s.StreetAddress ?? String.Empty;
+            dbSponsor.TeamId = s.TeamId;
+            dbSponsor.WebSite = s.Website ?? String.Empty;
+
+            db.SubmitChanges();
+            return true;
+
+        }
 
 		static public long AddSponsor(Sponsor s)
 		{
-			long id = 0;
+            if (String.IsNullOrEmpty(s.Name))
+                return 0;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateSponsor", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = s.Name;
-					myCommand.Parameters.Add("@streetAddress", SqlDbType.VarChar, 100).Value = s.StreetAddress;
-					myCommand.Parameters.Add("@cityStateZip", SqlDbType.VarChar, 100).Value = s.CityStateZip;
-					myCommand.Parameters.Add("@description", SqlDbType.Text).Value = s.Description;
-					myCommand.Parameters.Add("@eMail", SqlDbType.VarChar, 100).Value = s.EMail;
-					myCommand.Parameters.Add("@phone", SqlDbType.VarChar, 14).Value = s.Phone;
-					myCommand.Parameters.Add("@fax", SqlDbType.VarChar, 14).Value = s.Fax;
-					myCommand.Parameters.Add("@webSite", SqlDbType.VarChar, 100).Value = s.Website;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = s.TeamId;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = s.AccountId;
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						id = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            SportsManager.Model.Sponsor dbSponsor = new SportsManager.Model.Sponsor()
+            {
+                AccountId = s.AccountId,
+                Description = s.Description ?? String.Empty,
+                Name = s.Name,
+                EMail = s.EMail ?? String.Empty,
+                Fax = s.Fax ?? String.Empty,
+                CityStateZip = s.CityStateZip ?? String.Empty,
+                Phone = s.Phone ?? String.Empty,
+                StreetAddress = s.StreetAddress ?? String.Empty,
+                TeamId = s.TeamId,
+                WebSite = s.Website ?? String.Empty
+            };
 
-			return id;
+            db.Sponsors.InsertOnSubmit(dbSponsor);
+            db.SubmitChanges();
+
+            s.Id = dbSponsor.Id;
+            s.AccountId = dbSponsor.AccountId;
+            s.Description = dbSponsor.Description;
+            s.Name = dbSponsor.Name;
+            s.EMail = dbSponsor.EMail;
+            s.Fax = dbSponsor.Fax;
+            s.CityStateZip = dbSponsor.CityStateZip;
+            s.Phone = dbSponsor.Phone;
+            s.StreetAddress = dbSponsor.StreetAddress;
+            s.TeamId = dbSponsor.TeamId;
+            s.Website = dbSponsor.WebSite;
+
+            return s.Id;
 		}
 
-		static public bool RemoveSponsor(Sponsor s)
+		static public async Task<bool> RemoveSponsor(long id)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteSponsor", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = s.Id;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbSponsor = (from s in db.Sponsors
+                             where s.Id == id
+                             select s).SingleOrDefault();
 
-					rowCount = myCommand.ExecuteNonQuery();
+            if (dbSponsor != null)
+            {
+                db.Sponsors.DeleteOnSubmit(dbSponsor);
+                db.SubmitChanges();
 
-					if (s.LogoFile != null)
-						System.IO.File.Delete(s.LogoFile);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+                var sponsor = new Sponsor()
+                {
+                    Id = dbSponsor.Id,
+                    AccountId = dbSponsor.AccountId,
+                    TeamId = dbSponsor.TeamId
+                };
 
-			return (rowCount <= 0) ? false : true;
+                if (sponsor.LogoURL != null)
+                {
+                    await Storage.Provider.DeleteDirectory(sponsor.SponsorsDir);
+                }
+
+                return true;
+            }
+
+            return false;
 		}
 
-        static public List<Sponsor> GetTeamSponsors(long teamId, bool fromTeamSeason)
+        static public IQueryable<Sponsor> GetTeamSponsors(long teamSeasonId)
         {
-            List<Sponsor> sponsors = new List<Sponsor>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetTeamSponsors", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@fromTeamSeason", SqlDbType.Bit).Value = fromTeamSeason;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var teamId = (from ts in db.TeamsSeasons
+                          where ts.Id == teamSeasonId
+                          select ts.TeamId).SingleOrDefault();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    while (dr.Read())
+            return (from s in db.Sponsors
+                    where s.TeamId == teamId
+                    select new Sponsor()
                     {
-                        sponsors.Add(new Sponsor(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9), dr.GetInt64(10), dr.GetInt64(1)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-
-            return sponsors;
+                        Id = s.Id,
+                        AccountId = s.AccountId,
+                        CityStateZip = s.CityStateZip,
+                        Description = s.Description,
+                        EMail = s.EMail,
+                        Fax = s.Fax,
+                        Phone = s.Phone,
+                        StreetAddress = s.StreetAddress,
+                        Name = s.Name,
+                        Website = s.WebSite,
+                        TeamId = s.TeamId
+                    });
         }
 
     }

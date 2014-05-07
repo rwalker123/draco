@@ -193,6 +193,11 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage PostPhotoAlbum(long accountId, SportsManager.Controllers.AccountAPIController.IdData name)
         {
+            if (name == null)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Must specify Photo Album name.");
+            }
+
             PhotoGalleryAlbum album = new PhotoGalleryAlbum()
             {
                 Title = name.Id,

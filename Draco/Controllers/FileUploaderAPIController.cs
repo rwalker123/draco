@@ -25,6 +25,7 @@ namespace SportsManager.Controllers
         private readonly Size smallImageSize = new Size(80, 45); // 5 units
         private readonly Size mediumImageSize = new Size(640, 360); // 40 units 
         private readonly Size wideImageSize = new Size(512, 288); // 32 units
+        private readonly Size sponsorImageSize = new Size(170, 130);
 
         enum eSizeType
         {
@@ -298,6 +299,27 @@ namespace SportsManager.Controllers
             MultipartFileData file = multipartData.FileData[0];
 
             return await ProcessUploadRequest(file, accountId, a.LargeLogoURL, ImageFormat.Png, wideImageSize, eSizeType.Maximum);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public async Task<HttpResponseMessage> SponsorLogo(long accountId, long id)
+        {
+            ModelObjects.Sponsor s = DataAccess.Sponsors.GetSponsor(id);
+            if (s == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var multipartData = await prep();
+            MultipartFileData file = multipartData.FileData[0];
+
+            return await ProcessUploadRequest(file, accountId, s.LogoURL, ImageFormat.Png, sponsorImageSize, eSizeType.Maximum);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        public async Task<HttpResponseMessage> TeamSponsorLogo(long accountId, long teamSeasonId, long id)
+        {
+            return await SponsorLogo(accountId, id);
         }
 
         private async Task<MultipartFormDataStreamProvider> prep()

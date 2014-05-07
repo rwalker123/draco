@@ -82,7 +82,7 @@
                 </ol>
                 <div class="carousel-inner" data-bind="foreach: photoGalleryItems">
                     <div class="item" data-bind="css: {'active': $index()==0}">
-                        <img style="height:450px" data-bind="attr: {src: photoUrl, alt: photoHeading }">
+                        <img class="img-responsive" data-bind="attr: {src: photoUrl, alt: photoHeading }">
                         <div class="carousel-caption">
                             <div data-bind="visible: viewMode">
                                 <h3 data-bind="text: photoHeading"></h3>

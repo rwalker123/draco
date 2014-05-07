@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 using System.Configuration;
 
@@ -41,59 +42,22 @@ namespace ModelObjects
         public long ContactId { get; set; }
 		public long TeamId { get; set; }
 
-        public string NavigateUrl
+        public string SponsorsDir
         {
             get
             {
-                return "http://" + Website;
-            }
-        }
-
-        public string AlternateText
-        {
-            get
-            {
-                return Name;
-            }
-        }
-
-        public string ImageUrl
-        {
-            get
-            {
-                return LogoURL;
+                if (TeamId == 0)
+                    return (Globals.UploadDirRoot + "Accounts/" + AccountId + "/Sponsors/" + Id + "/");
+                else
+                    return (Globals.UploadDirRoot + "Teams/" + TeamId + "/Sponsors/" + Id + "/");
             }
         }
 
 		public string LogoURL
 		{
-			get 
-			{
-				if (LogoFile != null)
-					return Globals.UploadDir + Id + m_logoName;
-				else
-					return null;
-			}
-		}
-
-		public string LogoURLName
-		{
 			get
 			{
-				return Globals.UploadDir + Id + m_logoName;
-			}
-		}
-
-		public string LogoFile
-		{
-			get
-			{
-				string logoPath = System.Web.HttpContext.Current.Server.MapPath(Globals.UploadDir + Id + m_logoName);
-				System.IO.FileInfo fileInfo = new System.IO.FileInfo(logoPath);
-				if (fileInfo.Exists)
-					return fileInfo.FullName;
-				else
-					return null;
+                return Storage.Provider.GetUrl(SponsorsDir + m_logoName);
 			}
 		}
 	}
