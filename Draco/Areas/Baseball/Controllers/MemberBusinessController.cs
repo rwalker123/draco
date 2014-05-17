@@ -1,5 +1,5 @@
-﻿using System.Web.Mvc;
-using SportsManager.Baseball.ViewModels;
+﻿using SportsManager.ViewModels;
+using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
@@ -16,7 +16,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 			}
 
 
-			return View(new MemberBusinessViewModel(accountId.Value));
+			return View(new MemberBusinessViewModel(this, accountId.Value));
 		}
 
 	}

@@ -26,9 +26,9 @@ namespace SportsManager.Baseball.ViewModels
             ShowHandouts = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowWelcome = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowAnnouncements = IsTeamMember || IsAdmin || IsTeamAdmin;
-            ShowPhotoGallery = true;
+            ShowPhotoGallery = IsAdmin || IsTeamAdmin || IsTeamPhotoAdmin || DataAccess.PhotoGallery.GetTeamPhotos(id).Any();
             ShowLeaders = true;
-            ShowSponsors = true;
+            ShowSponsors = IsAdmin || IsTeamAdmin || DataAccess.Sponsors.GetTeamSponsors(id).Any();
             ShowRoster = true;
             ShowScoreboard = true;
         }

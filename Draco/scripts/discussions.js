@@ -23,7 +23,7 @@ function formatMessageBoardDate(theDate) {
 
 }
 
-function MessageCategoryViewModel(data, userId, isAdmin) {
+var MessageCategoryViewModel = function(data, userId, isAdmin) {
     var self = this;
 
     self.isAdmin = isAdmin;
@@ -131,7 +131,7 @@ function MessageCategoryViewModel(data, userId, isAdmin) {
     }
 }
 
-function MessageTopicViewModel(data, accountId, userId, isAdmin)
+var MessageTopicViewModel = function(data, accountId, userId, isAdmin)
 {
     var self = this;
 
@@ -213,7 +213,7 @@ function MessageTopicViewModel(data, accountId, userId, isAdmin)
     }
 }
 
-function MessagePostViewModel(data, userId, isAdmin) {
+var MessagePostViewModel = function(data, userId, isAdmin) {
     var self = this;
 
     self.isAdmin = isAdmin;
@@ -275,7 +275,7 @@ function MessagePostViewModel(data, userId, isAdmin) {
     }
 }
 
-function DiscussionsViewModel(accountId, isAdmin, userId) {
+var DiscussionsViewModel = function(accountId, isAdmin, userId) {
     var self = this;
 
     self.accountId = accountId;

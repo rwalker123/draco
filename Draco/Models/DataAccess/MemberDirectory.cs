@@ -15,12 +15,7 @@ namespace DataAccess
 	/// </summary>
 	static public class MemberDirectory
 	{
-		static private Sponsor CreateSponsor(SqlDataReader dr)
-		{
-			return new Sponsor(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetString(4), dr.GetString(5), dr.GetString(6), dr.GetString(7), dr.GetString(8), dr.GetString(9), dr.GetInt64(1), 0);
-		}
-
-		static public IEnumerable<Sponsor> GetAccountMemberBusiness(long accountId)
+		static public IQueryable<Sponsor> GetAccountMemberBusiness(long accountId)
 		{
             DB db = DBConnection.GetContext();
 
@@ -50,92 +45,68 @@ namespace DataAccess
 						accountId) { ContactId = c.Id }).Distinct();
 		}
 
-		static public Sponsor GetMemberBusinessOfDay(long accountId)
-		{
+        static public bool CanCreateMemberBusiness(long accountId, long contactId)
+        {
+            DB db = DBConnection.GetContext();
 
-			Sponsor sponsor = null;
+            long seasonId = (from cs in db.CurrentSeasons
+                             where cs.AccountId == accountId
+                             select cs.SeasonId).SingleOrDefault();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetMemberBusinessOfDay", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						sponsor = CreateSponsor(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return sponsor;
-		}
+            // if contact is on any roster in the current season, they can have a directory.
+            return (from c in db.Contacts 
+                    join r in db.Rosters on c.Id equals r.ContactId
+                    join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    where ls.SeasonId == seasonId && c.Id == contactId
+                    select rs).Any();
+        }
 
 		static public Sponsor GetMemberBusinessFromContact(long contactId)
 		{
-			Sponsor sponsor = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetMemberBusinessFromContact", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = contactId;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						sponsor = CreateSponsor(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return sponsor;
-		}
+            return (from mb in db.MemberBusinesses
+                        where mb.ContactId == contactId
+                    select new Sponsor(
+                        mb.Id,
+                        mb.Name,
+                        mb.StreetAddress,
+                        mb.CityStateZip,
+                        mb.Description,
+                        mb.EMail,
+                        mb.Phone,
+                        mb.Fax,
+                        mb.WebSite,
+                        0,
+                        0)
+                        {
+                            ContactId = mb.ContactId
+                        }).SingleOrDefault();
+        }
 
 		static public Sponsor GetMemberBusiness(long id)
 		{
-			Sponsor sponsor = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetMemberBusiness", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-					myConnection.Open();
-					myCommand.Prepare();
+            return (from mb in db.MemberBusinesses
+                    where mb.Id == id
+					select new Sponsor(
+						mb.Id,
+						mb.Name,
+						mb.StreetAddress,
+						mb.CityStateZip,
+						mb.Description,
+						mb.EMail,
+						mb.Phone,
+						mb.Fax,
+						mb.WebSite,
+						0,
+					    0) { 
+                        ContactId = mb.ContactId 
+                    }).SingleOrDefault();
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						sponsor = CreateSponsor(dr);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return sponsor;
 		}
 
 		static public bool ModifyMemberBusiness(Sponsor s)

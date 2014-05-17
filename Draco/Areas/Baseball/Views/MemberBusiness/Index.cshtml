@@ -1,98 +1,127 @@
-﻿@model SportsManager.Baseball.ViewModels.MemberBusinessViewModel
-
+﻿@using System.Web.Optimization
+@model SportsManager.ViewModels.MemberBusinessViewModel
 
 @{
-	ViewBag.Title = Model.AccountName + " Businesses";
+    ViewBag.Title = "Member Business";
 }
 
-@section menu {
-	@Html.Partial("_LeagueMenu")
-}
 
 @section head {
+}
 
- <style type="text/css"> 
- 
- 	table.sc {
-		width:300px; 
-		height:150px;
-		margin-top:1px;
-		margin-bottom:1px;
-		margin-left:1px;
-		margin-right:1px;
-		padding:0px;
-		text-align:center;
-		display:inline-table;
-		border-collapse:collapse;
-		vertical-align:top;
-	}
-	td.sc{
-		width:100%;
-		text-align:left;
-		vertical-align:top;
-	}
-	
-    .readyTest  
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
+<div class="container-fluid" id="memberBusinessView">
+    @if (Model.CanCreateBusiness)
     {
-        margin: 0.1in 0.1in;
-        padding: 5px;
-        text-align: left;
-        border:3px solid Gray;
-        background: #000 url(../../../images/buscardfiberwhite.gif) repeat top left;
+        <div class="row" data-bind="with: userBusiness">
+            <form class="form-horizontal" data-bind="visible: $root.editMode">
+                <div class="form-group">
+                    <label class="control-label col-md-2">Business Name:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: Name" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">Description:</label>
+                    <div class="col-md-10">
+                        <textarea rows="4" class="form-control" data-bind="value: Description"></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">Website:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: Website" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">Email:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: EMail" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">Phone:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: Phone" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">Address:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: StreetAddress" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-md-2">City, State Zip:</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" data-bind="value: CityStateZip" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-offset-2">
+                        <button type="button" class="btn btn-success" data-bind="click: $root.saveEditBusiness"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+            </form>
+            <div data-bind="visible: !$root.editMode()">
+                <!-- ko if: Id() > 0 -->
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Your Business</h3>
+
+                        <button type="button" class="btn btn-default" style="float: right"><span class="glyphicon glyphicon-plus"></span></button>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        <button type="button" class="btn btn-default" data-bind="click: $root.startEditBusiness"><span class="glyphicon glyphicon-edit"></span></button>
+                        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+                <!-- /ko -->
+                <!-- ko if: Id() == 0 -->
+                <div class="alert alert-info col-md-6">
+                    <p>If you would like to advertise a business in the Business Directory, click the button below. Each user is allowed to add one business and your name will display with the business name on the site.</p>
+                    <br /><button class="btn btn-info" type="button" data-bind="click: $root.startEditBusiness">Add Your Business</button>
+                </div>
+                <!-- /ko -->
+            </div>
+        </div>
     }
 
-  ul { margin-left:20px; color:blue; }
-  li { cursor:default; }
-  span { color:red; }
-</style>
+    <div data-bind="foreach: memberBusinesses">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title" data-bind="html: Name"></h3>
+            </div>
 
+            <div class="panel-body">
+                @if (Model.IsAdmin) 
+                { 
+                    <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-destroy"></span></button>
+                }
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
+@section scripts {
+
+    @Scripts.Render("~/bundles/knockout")
+    <script src="@Url.Content("~/Scripts/memberbusiness.js")" type="text/javascript"></script>
+    <script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
+
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            initMemberBusinessViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || Model.CanCreateBusiness.ToString().ToLower(), @Model.ContactId);
+        });
+
+    </script>
 }
-
-	<h1>@Model.AccountName Member Business</h1>
-
-    @foreach (ModelObjects.Sponsor s in Model.MemberBusinesses)
-    { 
-        <table class="sc readyTest"><tr><td class="sc" style="height:100%">
-            @if (!String.IsNullOrWhiteSpace(DataAccess.Contacts.GetContact(s.ContactId).PhotoURL)) { 
-                <img tooltip="@s.Description" style="float:left;vertical-align:bottom;padding:0px 3px 3px 3px"  alt=""  width="50" src="@Url.Content(DataAccess.Contacts.GetContact(s.ContactId).PhotoURL)" />
-            }
-            else {
-                <img tooltip="@s.Description" style="float:left;vertical-align:bottom;padding:0px 3px 3px 3px"  alt=""  width="50" src="@Url.Content("~/Images/moreinfo.jpg")" />
-            }
-            <div style="font-weight:bold">@s.Name</div>
-            <div>@DataAccess.Contacts.GetContact(s.ContactId).FullNameFirst</div>
-            @if (!String.IsNullOrWhiteSpace(s.StreetAddress)) { 
-                <div style="text-align:center;padding-top:12px">@s.StreetAddress</div>
-            }
-            @if (!String.IsNullOrWhiteSpace(s.CityStateZip)) { 
-                <div style="text-align:center">@s.CityStateZip</div>
-            }
-            <div style="clear:both;"/>
-            @if (!String.IsNullOrWhiteSpace(s.EMail))
-            {             
-                <a style="float:left;padding-top:10px" href="mailto:@s.EMail">Email</a>
-            }
-            @if (!String.IsNullOrWhiteSpace(s.Website))
-            {             
-                <a style="float:right;padding-top:10px" href="@s.Website">Website</a>
-            }
-            <div style="clear:both;"/>
-            @if (!String.IsNullOrWhiteSpace(s.Phone))
-            { 
-                <div style="float:left;padding-top:10px"><b>(P)</b> @s.Phone</div>
-            }
-            @if (!String.IsNullOrWhiteSpace(s.Fax))
-            { 
-                <div style="float:right;padding-top:10px"><b>(F)</b> @s.Fax</div>
-            }
-            <div style="clear:both;"/>
-        </td></tr></table>
-    }
-
-@section Scripts  {
-
-<script src="@Url.Content("~/Scripts/jquery-qtip-1.0.0-rc3171452/jquery.qtip-1.0.0-rc3.min.js")"  type="text/javascript"></script>
-<script src="@Url.Content("~/Scripts/imagetooltip.js")"  type="text/javascript"></script>
-
-}
-

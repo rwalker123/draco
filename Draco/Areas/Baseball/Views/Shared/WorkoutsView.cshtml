@@ -8,8 +8,9 @@
 
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float: right" data-bind="click: startWorkoutWhereHeardEdit"><span class="glyphicon glyphicon-headphones"></span></button>
-            <button type="button" class="btn btn-default" style="float: right" data-bind="click: startWorkoutAdd"><span class="glyphicon glyphicon-plus"></span></button>
+            <button type="button" class="btn btn-default" style="float: right" data-bind="click: showPreviousWorkouts" title="toggle show past workouts"><span class="glyphicon glyphicon-expand"></span></button>
+            <button type="button" class="btn btn-default" style="float: right; margin-right: 4px" data-bind="click: startWorkoutWhereHeardEdit" title="where heard options"><span class="glyphicon glyphicon-headphones"></span></button>
+            <button type="button" class="btn btn-default" style="float: right; margin-right: 4px" data-bind="click: startWorkoutAdd" title="add new workout"><span class="glyphicon glyphicon-plus"></span></button>
         }
 
         <div style="clear:both"></div>

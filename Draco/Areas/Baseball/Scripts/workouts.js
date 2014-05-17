@@ -255,6 +255,19 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
         self.editWhereHeard(false);
     }
 
+    var showingPastWorkouts = false;
+
+    self.showPreviousWorkouts = function () {
+        if (showingPastWorkouts) {
+            self.loadWorkoutAnnouncements();
+            showingPastWorkouts = false;
+        }
+        else {
+            self.loadWorkoutAnnouncements(true);
+            showingPastWorkouts = true;
+        }
+    }
+
     self.getAvailableFields = function () {
         $.ajax({
             type: "GET",
@@ -464,9 +477,9 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
 
     }
 
-    self.loadWorkoutAnnouncements = function () {
+    self.loadWorkoutAnnouncements = function (showOld) {
         var url = window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/';
-        if (self.isAdmin)
+        if (self.isAdmin && showOld == true)
             url += 'workouts';
         else
             url += 'activeworkouts';
@@ -492,8 +505,11 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
                 });
 
                 self.workouts(mappedFields);
-                self.getWhereHeardOptions();
-            },
+
+                if (showOld != true) {
+                    self.getWhereHeardOptions();
+                }
+    },
             error: function (xhr, ajaxOptions, thrownError) {
                 alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }

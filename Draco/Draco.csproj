@@ -296,7 +296,6 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonIndexViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\LeagueTeamsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\MemberBusinessViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerSearchViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\ScheduleViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\ScoreboardViewModel.cs" />
@@ -361,6 +360,7 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LeagueAPIController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
+    <Compile Include="Controllers\MemberBusinessAPIController.cs" />
     <Compile Include="Controllers\PhotoGalleryAPIController.cs" />
     <Compile Include="Controllers\SeasonController.cs" />
     <Compile Include="Controllers\SeasonsApiController.cs" />
@@ -464,6 +464,7 @@
     <Compile Include="Models\ViewModels\EMailUsersViewModel.cs" />
     <Compile Include="Models\ViewModels\LeagueCreateAccountViewModel.cs" />
     <Compile Include="Models\ViewModels\LeagueSeasonsViewModel.cs" />
+    <Compile Include="Models\ViewModels\MemberBusinessViewModel.cs" />
     <Compile Include="Models\ViewModels\PhotoGalleryViewModel.cs" />
     <Compile Include="Models\ViewModels\RolesViewModel.cs" />
     <Compile Include="Models\ViewModels\SponsorsViewModel.cs" />
@@ -585,11 +586,16 @@
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="Scripts\discussions.js" />
     <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
+    <Content Include="fonts\fontawesome-webfont.woff" />
+    <Content Include="fonts\fontawesome-webfont.ttf" />
+    <Content Include="fonts\fontawesome-webfont.eot" />
+    <Content Include="fonts\FontAwesome.otf" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="Scripts\memberbusiness.js" />
     <Content Include="Scripts\mindmup-editabletable.js" />
     <Content Include="Scripts\moment-with-langs.js" />
     <Content Include="Scripts\moment-with-langs.min.js" />
@@ -684,10 +690,6 @@
     <Content Include="Areas\Golf\Views\Web.config" />
     <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
-    <Content Include="fonts\fontawesome-webfont.woff" />
-    <Content Include="fonts\fontawesome-webfont.ttf" />
-    <Content Include="fonts\fontawesome-webfont.eot" />
-    <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
