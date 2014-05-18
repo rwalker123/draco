@@ -63,51 +63,88 @@
                 <div class="form-group">
                     <div class="col-md-offset-2">
                         <button type="button" class="btn btn-success" data-bind="click: $root.saveEditBusiness"><span class="glyphicon glyphicon-ok"></span></button>
-                        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                        <button type="button" class="btn btn-danger" data-bind="click: $root.cancelEditBusiness"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </div>
             </form>
             <div data-bind="visible: !$root.editMode()">
-                <!-- ko if: Id() > 0 -->
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h3 class="panel-title" style="float: left;">Your Business</h3>
+                <div class="col-sm-4 col-md-4 col-lg-4">
+                    <!-- ko if: Id() > 0 -->
+                    <div class="panel panel-info">
+                        <div class="panel-heading">
+                            <h3 class="panel-title" style="float: left;"><span data-bind="html: Name"></span> (your business)</h3>
 
-                        <button type="button" class="btn btn-default" style="float: right"><span class="glyphicon glyphicon-plus"></span></button>
-                        <div style="clear:both"></div>
-                    </div>
+                            <div style="clear:both"></div>
+                        </div>
 
-                    <div class="panel-body">
-                        <button type="button" class="btn btn-default" data-bind="click: $root.startEditBusiness"><span class="glyphicon glyphicon-edit"></span></button>
-                        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                        <div class="panel-body">
+                            <address class="">
+                                <div data-bind="if: EMail"><a data-bind="html: EMail, attr: { href: 'mailto:' + EMail() }"></a></div>
+                                <div data-bind="if: Website"><a target="_blank" data-bind="html: Website, attr: { href: Website }"></a></div>
+                                <div data-bind="if: Phone"><span data-bind="html: Phone"></span></div>
+                            </address>
+
+                            <address>
+                                <div data-bind="if: StreetAddress"><span data-bind="html: StreetAddress"></span></div>
+                                <div data-bind="if: CityStateZip"><span data-bind="html: CityStateZip"></span></div>
+                            </address>
+
+                            <div data-bind="if: Description">
+                                <p class="well" data-bind="html: Description"></p>
+                            </div>
+
+                            <button type="button" class="btn btn-default" data-bind="click: $root.startEditBusiness"><span class="glyphicon glyphicon-edit"></span></button>
+                            <button type="button" class="btn btn-danger" data-bind="click: $root.deleteBusiness"><span class="glyphicon glyphicon-remove"></span></button>
+                        </div>
                     </div>
+                    <!-- /ko -->
+                    <!-- ko if: Id() == 0 -->
+                    <div class="alert alert-info">
+                        <p>If you would like to advertise a business in the Business Directory, click the button below. Each user is allowed to add one business and your name will display with the business name on the site.</p>
+                        <br /><button class="btn btn-info" type="button" data-bind="click: $root.startEditBusiness">Add Your Business</button>
+                    </div>
+                    <!-- /ko -->
                 </div>
-                <!-- /ko -->
-                <!-- ko if: Id() == 0 -->
-                <div class="alert alert-info col-md-6">
-                    <p>If you would like to advertise a business in the Business Directory, click the button below. Each user is allowed to add one business and your name will display with the business name on the site.</p>
-                    <br /><button class="btn btn-info" type="button" data-bind="click: $root.startEditBusiness">Add Your Business</button>
-                </div>
-                <!-- /ko -->
             </div>
         </div>
     }
 
-    <div data-bind="foreach: memberBusinesses">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title" data-bind="html: Name"></h3>
+        <div data-bind="foreach: memberBusinesses">
+            <div data-bind="css: { row: $root.newBusinessRowClass($index) }"></div>
+            <div class="col-sm-4 col-md-4 col-lg-4">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;"><span data-bind="html: Name"></span></h3>
+
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        <img class="img-rounded" onerror="this.style.display = 'none';" data-bind="attr: { src: ContactPhotoUrl }" style="float: left" /><h4 style="float: left; margin-left: 5px" data-bind="html: ContactName"></h4>
+                        <div style="clear:both"></div>
+                        <address class="">
+                            <div data-bind="if: EMail"><a data-bind="html: EMail, attr: { href: 'mailto:' + EMail() }"></a></div>
+                            <div data-bind="if: Website"><a target="_blank" data-bind="html: Website, attr: { href: Website }"></a></div>
+                            <div data-bind="if: Phone"><span data-bind="html: Phone"></span></div>
+                        </address>
+
+                        <address>
+                            <div data-bind="if: StreetAddress"><span data-bind="html: StreetAddress"></span></div>
+                            <div data-bind="if: CityStateZip"><span data-bind="html: CityStateZip"></span></div>
+                        </address>
+
+                        <div data-bind="if: Description">
+                            <p class="well" data-bind="html: Description"></p>
+                        </div>
+
+
+                        @if (Model.IsAdmin)
+                        {
+                            <button type="button" class="btn btn-danger" data-bind="click: $root.adminDeleteBusiness"><span class="glyphicon glyphicon-remove"></span></button>
+                        }
+                    </div>
+                </div>
             </div>
-
-            <div class="panel-body">
-                @if (Model.IsAdmin) 
-                { 
-                    <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-destroy"></span></button>
-                }
-            </div>
-        </div>
-
-
     </div>
 </div>
 
@@ -120,7 +157,7 @@
     <script type="text/javascript">
 
         $(document).ready(function () {
-            initMemberBusinessViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || Model.CanCreateBusiness.ToString().ToLower(), @Model.ContactId);
+            initMemberBusinessViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.CanCreateBusiness.ToString().ToLower(), @Model.ContactId);
         });
 
     </script>

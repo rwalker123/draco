@@ -42,6 +42,9 @@ namespace ModelObjects
         public long ContactId { get; set; }
 		public long TeamId { get; set; }
 
+        public String ContactName { get; set; }
+        public String ContactPhotoUrl { get; set; }
+
         public string SponsorsDir
         {
             get

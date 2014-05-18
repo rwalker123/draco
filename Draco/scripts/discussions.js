@@ -295,6 +295,8 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
     self.topicView = ko.observable(false);
     self.postView = ko.observable(false);
 
+    self.memberBusiness = ko.observable(null);
+
     self.removePostOptions = ko.observableArray([
         { Id: "3", Name: "3 days" },
         { Id: "7", Name: "7 days" },
@@ -830,4 +832,21 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
     if (self.isAdmin) {
         self.getMessageExpiration();
     }
+
+    self.getMemberBusiness = function () {
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/randomuserbusiness";
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (sponsor) {
+                self.memberBusiness(sponsor);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+    }
+
+    self.getMemberBusiness();
 }

@@ -62,13 +62,12 @@
                 </div>
             </div>
         </form>
-        
+
         <div data-bind="visible: !(addCategoryMode() || !forumView())">
             <form class="form-horizontal">
                 <div class="form-group">
                     <label for="_mbDeletePostsAfter" class="col-sm-2 control-label">Delete posts after:</label>
-                    <select data-container="body" id="_mbDeletePostsAfter" data-bind="selectPicker: deletePostsAfter, selectPickerOptions: { optionsArray: removePostOptions }, optionsText: 'Name', optionsValue: 'Id'">
-                    </select>
+                    <select data-container="body" id="_mbDeletePostsAfter" data-bind="selectPicker: deletePostsAfter, selectPickerOptions: { optionsArray: removePostOptions }, optionsText: 'Name', optionsValue: 'Id'"></select>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2">
@@ -124,7 +123,7 @@
                         <td data-bind="if: !IsTeam() && AccountId() != 0">
                             <button class="btn btn-default btn-sm" data-bind="click: $root.startEditCategory"><span class="glyphicon glyphicon-edit"></span></button>
                             <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteCategory"><span class="glyphicon glyphicon-remove"></span></button>
-                        </td>                        
+                        </td>
                     }
                     <td>
                         <a data-bind="html: Name, click: $root.loadTopics, attr: { href: '#' }"></a><br /><div data-bind="html: Description"></div>
@@ -202,7 +201,7 @@
                 <span data-bind="visible: canCreateTopic">Use the start discussion button to start a new message thread.</span>
             </div>
 
-            <div class="table-responsive" data-bind="visible: topics().length > 0" >
+            <div class="table-responsive" data-bind="visible: topics().length > 0">
                 <table class="table">
                     <thead>
                         <tr>
@@ -241,10 +240,9 @@
         </div>
     </div>
     <!-- end Topic View -->
-
     <!-- Post View -->
     <div data-bind="with: currentCategory().currentTopic, visible: $root.postView">
-        <h3 >
+        <h3>
             <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
             <span data-bind="html: TopicTitle"></span>
             <span data-bind="if: CreatorName">
@@ -259,7 +257,7 @@
                     <input type="text" class="form-control" id="postSubject" data-bind="value: Subject" />
                 </div>
                 <div class="col-md-offset-2 col-md-10">
-                    <textarea style="height: 250px" id="postEditor"  data-bind="wysiwyg: Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
+                    <textarea style="height: 250px" id="postEditor" data-bind="wysiwyg: Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
                 </div>
             </div>
 
@@ -299,30 +297,67 @@
                 </div>
             </li>
         </ul>
-</div>
+    </div>
     <!-- end Post View -->
+    <div data-bind="if: $root.memberBusiness">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title" style="float: left;"><span data-bind="html: memberBusiness().Name"></span></h3>
+
+                <div style="clear:both"></div>
+            </div>
+
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-2">
+                        <img class="img-rounded" onerror="this.style.display = 'none';" data-bind="attr: { src: memberBusiness().ContactPhotoUrl }" style="float: left" />
+                        <h5 style="float: left; margin-left: 5px" data-bind="html: memberBusiness().ContactName"></h5>
+                        <div style="clear:both"></div>
+                    </div>
+                    <div class="col-md-3">
+                        <address class="">
+                            <div data-bind="if: memberBusiness().EMail"><a data-bind="html: memberBusiness().EMail, attr: { href: 'mailto:' + memberBusiness().EMail }"></a></div>
+                            <div data-bind="if: memberBusiness().Website"><a target="_blank" data-bind="html: memberBusiness().Website, attr: { href: memberBusiness().Website }"></a></div>
+                            <div data-bind="if: memberBusiness().Phone"><span data-bind="html: memberBusiness().Phone"></span></div>
+                        </address>
+
+                        <address>
+                            <div data-bind="if: memberBusiness().StreetAddress"><span data-bind="html: memberBusiness().StreetAddress"></span></div>
+                            <div data-bind="if: memberBusiness().CityStateZip"><span data-bind="html: memberBusiness().CityStateZip"></span></div>
+                        </address>
+
+                    </div>
+                    <div class="col-md-4">
+                        <div data-bind="if: memberBusiness().Description">
+                            <p class="well" data-bind="html: memberBusiness().Description"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-@section scripts {
+    @section scripts {
 
-@Scripts.Render("~/bundles/knockout")
-@if (BundleTable.EnableOptimizations)
-{
-    <script type="text/javascript" src="~/scripts/tinymce/tinymce.min.js"></script>
-}
-else
-{
-    <script type="text/javascript" src="~/scripts/tinymce/tinymce.js"></script>
-}
-@Scripts.Render("~/bundles/bootstrap-wysiwyg")
-<script src="@Url.Content("~/Scripts/discussions.js")" type="text/javascript"></script>
-<script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
+        @Scripts.Render("~/bundles/knockout")
+        @if (BundleTable.EnableOptimizations)
+        {
+            <script type="text/javascript" src="~/scripts/tinymce/tinymce.min.js"></script>
+        }
+        else
+        {
+            <script type="text/javascript" src="~/scripts/tinymce/tinymce.js"></script>
+        }
+        @Scripts.Render("~/bundles/bootstrap-wysiwyg")
+        <script src="@Url.Content("~/Scripts/discussions.js")" type="text/javascript"></script>
+        <script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
 
-<script type="text/javascript">
+        <script type="text/javascript">
 
-    $(document).ready(function () {
-        initDiscussionsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
-    });
+            $(document).ready(function () {
+                initDiscussionsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
+            });
 
-</script>
-}
+        </script>
+    }

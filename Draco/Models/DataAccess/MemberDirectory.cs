@@ -1,6 +1,7 @@
 using ModelObjects;
 using SportsManager;
 using SportsManager.Models.Utils;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
@@ -42,7 +43,12 @@ namespace DataAccess
 						mb.Fax,
 						mb.WebSite,
 						0,
-						accountId) { ContactId = c.Id }).Distinct();
+						accountId) 
+                        { 
+                            ContactId = c.Id,
+                            ContactName = c.FirstName + " " + c.LastName,
+                            ContactPhotoUrl = Contact.GetPhotoURL(c.Id)
+                        }).Distinct();
 		}
 
         static public bool CanCreateMemberBusiness(long accountId, long contactId)
@@ -82,7 +88,9 @@ namespace DataAccess
                         0,
                         0)
                         {
-                            ContactId = mb.ContactId
+                            ContactId = mb.ContactId,
+                            ContactName = mb.Contact.FirstName + " " + mb.Contact.LastName,
+                            ContactPhotoUrl = Contact.GetPhotoURL(mb.ContactId)
                         }).SingleOrDefault();
         }
 
@@ -92,120 +100,162 @@ namespace DataAccess
 
             return (from mb in db.MemberBusinesses
                     where mb.Id == id
-					select new Sponsor(
-						mb.Id,
-						mb.Name,
-						mb.StreetAddress,
-						mb.CityStateZip,
-						mb.Description,
-						mb.EMail,
-						mb.Phone,
-						mb.Fax,
-						mb.WebSite,
-						0,
-					    0) { 
-                        ContactId = mb.ContactId 
-                    }).SingleOrDefault();
+                    select new Sponsor(
+                        mb.Id,
+                        mb.Name,
+                        mb.StreetAddress,
+                        mb.CityStateZip,
+                        mb.Description,
+                        mb.EMail,
+                        mb.Phone,
+                        mb.Fax,
+                        mb.WebSite,
+                        0,
+                        0)
+                        {
+                            ContactId = mb.ContactId,
+                            ContactName = mb.Contact.FirstName + " " + mb.Contact.LastName,
+                            ContactPhotoUrl = Contact.GetPhotoURL(mb.ContactId)
+                        }).SingleOrDefault();
 
 		}
 
-		static public bool ModifyMemberBusiness(Sponsor s)
+        static public Sponsor GetRandomMemberBusiness(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var qry = (from cs in db.CurrentSeasons
+                           join ls in db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                           join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                           join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                           join r in db.Rosters on rs.PlayerId equals r.Id
+                           join c in db.Contacts on r.ContactId equals c.Id
+                           join mbu in db.MemberBusinesses on c.Id equals mbu.ContactId
+                           where cs.AccountId == accountId && !rs.Inactive && mbu.Id != null &&
+                           c.CreatorAccountId == accountId
+                           select mbu);
+
+            int count = qry.Count();
+            int index = new Random().Next(count);
+
+            var mb = qry.Skip(index).FirstOrDefault();
+
+            if (mb != null)
+                return new Sponsor(
+                            mb.Id,
+                            mb.Name,
+                            mb.StreetAddress,
+                            mb.CityStateZip,
+                            mb.Description,
+                            mb.EMail,
+                            mb.Phone,
+                            mb.Fax,
+                            mb.WebSite,
+                            0,
+                            0)
+                        {
+                            ContactId = mb.ContactId,
+                            ContactName = mb.Contact.FirstName + " " + mb.Contact.LastName,
+                            ContactPhotoUrl = Contact.GetPhotoURL(mb.ContactId)
+                        };
+
+            return null;
+        }
+        
+        static public bool ModifyMemberBusiness(Sponsor s)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateMemberBusiness", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = s.Name;
-					myCommand.Parameters.Add("@streetAddress", SqlDbType.VarChar, 100).Value = s.StreetAddress;
-					myCommand.Parameters.Add("@cityStateZip", SqlDbType.VarChar, 100).Value = s.CityStateZip;
-					myCommand.Parameters.Add("@description", SqlDbType.Text).Value = s.Description;
-					myCommand.Parameters.Add("@eMail", SqlDbType.VarChar, 100).Value = s.EMail;
-					myCommand.Parameters.Add("@phone", SqlDbType.VarChar, 14).Value = s.Phone;
-					myCommand.Parameters.Add("@fax", SqlDbType.VarChar, 14).Value = s.Fax;
-					myCommand.Parameters.Add("@webSite", SqlDbType.VarChar, 100).Value = s.Website;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = s.Id;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbSponsor = (from mb in db.MemberBusinesses
+                             where mb.Id == s.Id && mb.ContactId == s.ContactId
+                             select mb).SingleOrDefault();
+            if (dbSponsor == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            dbSponsor.Name = s.Name;
+            dbSponsor.CityStateZip = s.CityStateZip ?? string.Empty;
+            dbSponsor.Description = s.Description ?? string.Empty;
+            dbSponsor.EMail = s.EMail ?? string.Empty;
+            dbSponsor.Fax = s.Fax ?? string.Empty;
+            dbSponsor.Phone = s.Phone ?? string.Empty;
+            dbSponsor.StreetAddress = s.StreetAddress ?? string.Empty;
+            dbSponsor.WebSite = s.Website ?? string.Empty;
 
-			return (rowCount <= 0) ? false : true;
-		}
+            db.SubmitChanges();
+
+            return true;
+        }
 
 		static public long AddMemberBusiness(Sponsor s)
 		{
-			long id = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateMemberBusiness", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = s.Name;
-					myCommand.Parameters.Add("@streetAddress", SqlDbType.VarChar, 100).Value = s.StreetAddress;
-					myCommand.Parameters.Add("@cityStateZip", SqlDbType.VarChar, 100).Value = s.CityStateZip;
-					myCommand.Parameters.Add("@description", SqlDbType.Text).Value = s.Description;
-					myCommand.Parameters.Add("@eMail", SqlDbType.VarChar, 100).Value = s.EMail;
-					myCommand.Parameters.Add("@phone", SqlDbType.VarChar, 14).Value = s.Phone;
-					myCommand.Parameters.Add("@fax", SqlDbType.VarChar, 14).Value = s.Fax;
-					myCommand.Parameters.Add("@webSite", SqlDbType.VarChar, 100).Value = s.Website;
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = s.ContactId;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbSponsor = (from mb in db.MemberBusinesses
+                             where mb.ContactId == s.ContactId
+                             select mb).SingleOrDefault();
+            if (dbSponsor != null)
+                return 0;
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-						id = dr.GetInt64(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            dbSponsor = new SportsManager.Model.MemberBusiness();
+            dbSponsor.ContactId = s.ContactId;
+            dbSponsor.Name = s.Name;
+            dbSponsor.CityStateZip = s.CityStateZip ?? string.Empty;
+            dbSponsor.Description = s.Description ?? string.Empty;
+            dbSponsor.EMail = s.EMail ?? string.Empty;
+            dbSponsor.Fax = s.Fax ?? string.Empty;
+            dbSponsor.Phone = s.Phone ?? string.Empty;
+            dbSponsor.StreetAddress = s.StreetAddress ?? string.Empty;
+            dbSponsor.WebSite = s.Website ?? string.Empty;
 
-			return id;
+            db.MemberBusinesses.InsertOnSubmit(dbSponsor);
+            db.SubmitChanges();
+
+            s.Id = dbSponsor.Id;
+
+            return s.Id;
 		}
 
-		static public async Task<bool> RemoveMemberBusiness(Sponsor s)
+		static public async Task<bool> RemoveMemberBusiness(long accountId, long id)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteMemberBusiness", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = s.Id;
-					myConnection.Open();
-					myCommand.Prepare();
+            string userId = Globals.GetCurrentUserId();
 
-					rowCount = myCommand.ExecuteNonQuery();
+            SportsManager.Model.MemberBusiness dbSponsor;
 
-					if (s.LogoURL != null)
-                    {
-                        await Storage.Provider.DeleteFile(HttpContext.Current.Server.MapPath(s.LogoURL));
-                    }
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            if (DataAccess.Accounts.IsAccountAdmin(accountId, userId))
+            {
+                dbSponsor = (from mb in db.MemberBusinesses
+                             where mb.Id == id
+                             select mb).SingleOrDefault();
+            }
+            else
+            {
+                long contactId = DataAccess.Contacts.GetContactId(userId);
 
-			return (rowCount <= 0) ? false : true;
+                dbSponsor = (from mb in db.MemberBusinesses
+                             where mb.Id == id && mb.ContactId == contactId
+                             select mb).SingleOrDefault();
+            }
+
+            if (dbSponsor != null)
+            {
+                db.MemberBusinesses.DeleteOnSubmit(dbSponsor);
+                db.SubmitChanges();
+
+                ModelObjects.Sponsor s = new Sponsor()
+                {
+                    Id = id,
+                    AccountId = accountId
+                };
+                await Storage.Provider.DeleteFile(s.LogoURL);
+
+                return true;
+            }
+
+            return false;
 		}
+
 
 	}
 }

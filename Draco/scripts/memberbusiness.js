@@ -50,8 +50,7 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
         self.editMode(true);
     }
 
-    self.memberBusinesses = ko.observableArray();
-    self.userBusiness = ko.observable(new MemberBusinessViewModel({
+    var emptyBusiness = {
         Id: 0,
         AccountId: self.accountId,
         Name: '',
@@ -62,23 +61,90 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
         Website: '',
         Description: '',
         ContactId: self.contactId
-    }, self.accountId));
+    };
+
+    self.memberBusinesses = ko.observableArray();
+    self.userBusiness = ko.observable(new MemberBusinessViewModel(emptyBusiness, self.accountId));
 
     self.saveEditBusiness = function (data) {
         
-        var url = '';
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId;
+
+        if (data.Id() > 0)
+            url = url + "/business/" + data.Id();
+
+        $.ajax({
+            type: data.Id() > 0 ? "PUT" : "POST",
+            url: url,
+            data: data.toJS(),
+            success: function (sponsor) {
+                self.userBusiness().update(sponsor);
+
+                self.editMode(false);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
+    
+    self.cancelEditBusiness = function () {
+        self.editMode(false);
+    }
+
+    self.deleteBusiness = function (data) {
+
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/business/" + data.Id();
+
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function () {
+                self.userBusiness().update(emptyBusiness);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
+
+    self.adminDeleteBusiness = function (data) {
+
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/business/" + data.Id();
+
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function () {
+                self.memberBusinesses.remove(data);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+            }
+        });
+
+    }
+
+    self.newBusinessRowClass = function (index) {
+        var i = index();
+        return (i % 3 == 0);
     }
 
     self.getMemberBusinesses = function () {
 
-        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId;
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + '/memberbusinesses';
 
         $.ajax({
             type: "GET",
             url: url,
             success: function (sponsors) {
                 var mappedSponsors = $.map(sponsors, function (sponsor) {
-                    return new MemberBusinessViewModel(sponsor, self.accountId);
+                    if (sponsor.Id != self.userBusiness().Id()) {
+                        sponsor.AccountId = self.accountId;
+                        return new MemberBusinessViewModel(sponsor, self.accountId);
+                    }
                 });
 
                 self.memberBusinesses(mappedSponsors);
@@ -90,6 +156,29 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
 
     }
 
-    self.getMemberBusinesses();
+    self.getUserBusiness = function () {
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + '/userbusiness/' + self.contactId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (sponsor) {
+                sponsor.AccountId = self.accountId;
+
+                self.userBusiness().update(sponsor);
+                self.getMemberBusinesses();
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                if (xhr.status == 404) {
+                    self.getMemberBusinesses();
+                }
+                else {
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                }
+            }
+        });
+    }
+
+    self.getUserBusiness();
 
 }
