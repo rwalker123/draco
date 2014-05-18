@@ -11,7 +11,7 @@
             {
                 foreach (var bp in Model.Birthdays)
                 {
-                    <li class='list-group-item'><img onerror="this.style.display = 'none';" class="img-rounded" src="@Url.Content(bp.PhotoURL)" /><span class="h3"> @bp.FirstName @bp.LastName</span></li>
+                    <li class='list-group-item'><img onerror="this.style.display = 'none';" class="img-rounded" src="@Url.Content(bp.PhotoURL)" /><span class="h4"> @bp.FirstName @bp.LastName</span></li>
                 }
             }
             else
