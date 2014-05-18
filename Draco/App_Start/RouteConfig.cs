@@ -53,8 +53,11 @@ namespace SportsManager
 
             String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(new char[] { '/' });
 
+            // must add "common" pages here, otherwise code below will set defaults to specific league type.
             if (httpContext.Request.FilePath.StartsWith(virtualPath + "/Account", System.StringComparison.InvariantCultureIgnoreCase) ||
-                httpContext.Request.FilePath.StartsWith(virtualPath + "/Season", System.StringComparison.InvariantCultureIgnoreCase))
+                httpContext.Request.FilePath.StartsWith(virtualPath + "/Season", System.StringComparison.InvariantCultureIgnoreCase) ||
+                httpContext.Request.FilePath.StartsWith(virtualPath + "/Discussions", System.StringComparison.InvariantCultureIgnoreCase) ||
+                httpContext.Request.FilePath.StartsWith(virtualPath + "/HallOfFame", System.StringComparison.InvariantCultureIgnoreCase))
             {
                 return null;
             }

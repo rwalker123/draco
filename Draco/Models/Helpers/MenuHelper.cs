@@ -83,7 +83,7 @@ namespace SportsManager.Models.Helpers
                                     new RouteValueDictionary(new { area = "baseball", controller = "Statistics", action = "Index", accountId = accountId })).VirtualPath;
 
                 string hofurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                   new RouteValueDictionary(new { area = "baseball", controller = "HallOfFame", action = "Index", accountId = accountId })).VirtualPath;
+                                   new RouteValueDictionary(new { area = "", controller = "HallOfFame", action = "Index", accountId = accountId })).VirtualPath;
 
                 string scheduleurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "LeagueSchedule", action = "Index", accountId = accountId })).VirtualPath;
@@ -92,7 +92,7 @@ namespace SportsManager.Models.Helpers
                                     new RouteValueDictionary(new { area = "baseball", controller = "Fields", action = "Index", accountId = accountId })).VirtualPath;
 
                 string discussionsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                    new RouteValueDictionary(new { controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
+                                    new RouteValueDictionary(new { area = "", controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
 
                 string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "MemberBusiness", action = "Index", accountId = accountId })).VirtualPath;
@@ -111,7 +111,7 @@ namespace SportsManager.Models.Helpers
 
                 var leagueMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "League");
                 leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
-                leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Hall of Fame", "Hall of Fame Page"));
+                leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
 
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
 	            {

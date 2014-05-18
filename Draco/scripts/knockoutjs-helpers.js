@@ -343,6 +343,24 @@
         }
     };
 
+    ko.bindingHandlers.jqAccordion = {
+        init: function (element, valueAccessor, allBindingsAccessor) {
+            var options = valueAccessor();
+            $(element).accordion(options);
+            $(element).bind("valueChanged", function () {
+                ko.bindingHandlers.jqAccordion.update(element, valueAccessor, allBindingsAccessor);
+            });
+        },
+        update: function (element, valueAccessor, allBindingsAccessor) {
+            if ($(element).hasClass("ui-accordion")) {
+                $(element).accordion("destroy");
+            }
+
+            var options = valueAccessor();
+            $(element).accordion(options);
+        }
+    };
+
     //wrapper to an observable that requires accept/cancel
     ko.protectedObservable = function (initialValue) {
         //private variables

@@ -23,6 +23,7 @@ namespace SportsManager.Controllers
         private readonly Size largeImageSize = new Size(800, 450); // "50" units 16 x 50 = 800
         private readonly Size largeImageThumbSize = new Size(160, 90); // "10" units 
         private readonly Size smallImageSize = new Size(80, 45); // 5 units
+        private readonly Size mediumPhotoImageSize = new Size(120, 90); // 5 units
         private readonly Size mediumImageSize = new Size(640, 360); // 40 units 
         private readonly Size wideImageSize = new Size(512, 288); // 32 units
         private readonly Size sponsorImageSize = new Size(170, 130);
@@ -262,6 +263,20 @@ namespace SportsManager.Controllers
             MultipartFileData file = multipartData.FileData[0];
 
             return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
+        public async Task<HttpResponseMessage> ContactLargePhoto(long accountId, long id)
+        {
+            ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
+            if (c == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var multipartData = await prep();
+            MultipartFileData file = multipartData.FileData[0];
+
+            return await ProcessUploadRequest(file, accountId, c.LargePhotoURL, ImageFormat.Png, mediumPhotoImageSize, eSizeType.Maximum);
         }
 
 

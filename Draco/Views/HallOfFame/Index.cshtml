@@ -1,0 +1,66 @@
+﻿@using System.Web.Optimization
+@model SportsManager.ViewModels.HallOfFameViewModel
+
+@{
+    ViewBag.Title = "Hall Of Fame";
+}
+
+@section head {
+@Styles.Render("~/Content/themes/base/css")
+}
+
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
+
+<div class="container-fluid" id="hallOfFameView">
+
+    <div data-bind="if: hallOfFameClasses().length == 0">
+        <div class="alert alert-info">
+            No HOF Members found.
+        </div>
+    </div>
+    <div id="accordion" data-bind="foreach: hallOfFameClasses">
+        <h3><span data-bind="html: 'Class of ' + Year()"></span><span style="margin-left: 10px" class="badge pull-right" data-bind="html: MemberCount() + ' Members'"></span></h3>
+
+        <div data-bind="foreach: Members">
+            <div data-bind="css: { row: $parent.newHOFRowClass($index) }"></div>
+            <div class="col-sm-4 col-md-4 col-lg-4">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><span data-bind="html: Name"></span></h3>
+                    </div>
+
+                    <div class="panel-body">
+                        <img class="img-rounded" style="margin: 5px" @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '120px'; this.style.height='90px';" </text> } data-bind="attr: { src: PhotoURL }" />
+                        <div data-bind="if: Biography">
+                            <div class="well" data-bind="html: Biography"></div>
+                        </div>
+                        @if (Model.IsAdmin)
+                        {
+                            <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button>
+                            <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+
+@Scripts.Render("~/bundles/knockout")
+<script src="@Url.Content("~/Scripts/halloffame.js")" type="text/javascript"></script>
+<script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        initHallOfFameViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+    });
+
+</script>
+
+}

@@ -141,6 +141,13 @@ namespace ModelObjects
             return c.PhotoURL;
         }
 
+        static public string GetLargePhotoURL(long id)
+        {
+            Contact c = new Contact();
+            c.Id = id;
+            return c.LargePhotoURL;
+        }
+
         public string PhotoURL
         {
             get

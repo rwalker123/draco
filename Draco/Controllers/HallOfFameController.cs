@@ -2,11 +2,9 @@
 
 namespace SportsManager.Controllers
 {
-    public class DiscussionsController : Controller
+    public class HallOfFameController : Controller
     {
-        //
-        // GET: /Baseball/Discussions/
-
+        // GET: HallOfFame
         public ActionResult Index(long? accountId)
         {
             if (accountId.GetValueOrDefault(0) == 0)
@@ -14,8 +12,7 @@ namespace SportsManager.Controllers
                 return RedirectToAction("Index", "League");
             }
 
-            return View(new SportsManager.ViewModels.DiscussionsViewModel(this, accountId.Value));
+            return View(new SportsManager.ViewModels.HallOfFameViewModel(this, accountId.Value));
         }
-
     }
 }

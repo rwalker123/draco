@@ -357,6 +357,8 @@
     <Compile Include="Controllers\ContactsAPIController.cs" />
     <Compile Include="Controllers\FileUploaderAPIController.cs" />
     <Compile Include="Controllers\GoogleSearchController.cs" />
+    <Compile Include="Controllers\HallOfFameAPIController.cs" />
+    <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LeagueAPIController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
@@ -420,6 +422,7 @@
     <Compile Include="Models\ModelObjects\Division.cs" />
     <Compile Include="Models\ModelObjects\DivisionTeams.cs" />
     <Compile Include="Models\ModelObjects\Handout.cs" />
+    <Compile Include="Models\ModelObjects\HOFClass.cs" />
     <Compile Include="Models\ModelObjects\League.cs" />
     <Compile Include="Models\ModelObjects\LeagueEvent.cs" />
     <Compile Include="Models\ModelObjects\LeagueFAQItem.cs" />
@@ -462,6 +465,7 @@
     <Compile Include="Models\ViewModels\DiscussionsViewModel.cs" />
     <Compile Include="Models\ViewModels\DomainsViewModel.cs" />
     <Compile Include="Models\ViewModels\EMailUsersViewModel.cs" />
+    <Compile Include="Models\ViewModels\HallOfFameViewModel.cs" />
     <Compile Include="Models\ViewModels\LeagueCreateAccountViewModel.cs" />
     <Compile Include="Models\ViewModels\LeagueSeasonsViewModel.cs" />
     <Compile Include="Models\ViewModels\MemberBusinessViewModel.cs" />
@@ -595,6 +599,7 @@
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
+    <Content Include="Scripts\halloffame.js" />
     <Content Include="Scripts\memberbusiness.js" />
     <Content Include="Scripts\mindmup-editabletable.js" />
     <Content Include="Scripts\moment-with-langs.js" />
@@ -1082,6 +1087,7 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.json" />
     <Content Include="Scripts\wysiwyg.min.map" />
+    <Content Include="Views\HallOfFame\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

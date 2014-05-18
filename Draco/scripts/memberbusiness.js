@@ -1,5 +1,7 @@
 ﻿function initMemberBusinessViewModel(accountId, isAdmin, contactId) {
 
+    initKOHelpers();
+
     var memberBusinessElem = document.getElementById("memberBusinessView");
     if (memberBusinessElem) {
         var memberBusinessVM = new MemberBusinessesViewModel(accountId, isAdmin, contactId);
@@ -127,6 +129,7 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
 
     }
 
+    // 3 columns of member business cards.
     self.newBusinessRowClass = function (index) {
         var i = index();
         return (i % 3 == 0);

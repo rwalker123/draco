@@ -18,7 +18,6 @@ namespace SportsManager.Baseball.ViewModels
 
             ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();
             ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
-            ShowHallOfFame = IsAdmin || DataAccess.HOFMembers.GetMembers(accountId).Any();
             ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
 
             ShowPlayerInterview = true;
@@ -72,11 +71,6 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowWorkouts
-        {
-            get;
-            private set;
-        }
-        public bool ShowHallOfFame
         {
             get;
             private set;
