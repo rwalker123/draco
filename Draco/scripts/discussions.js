@@ -843,7 +843,8 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                 self.memberBusiness(sponsor);
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                if (xhr.status != 404)
+                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
