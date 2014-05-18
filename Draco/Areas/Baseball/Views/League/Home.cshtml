@@ -116,6 +116,15 @@
                 </div>
             }
 
+            @if (Model.ContactId == 0 && Model.ShowWelcomeMessages)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("WelcomeMessageView", new SportsManager.ViewModels.WelcomeMessageViewModel(Model.Controller, Model.AccountId));}
+                    </div>
+                </div>
+            }
+
         @if (Model.ShowAnnouncements)
         { 
             <div class="row">
@@ -134,7 +143,7 @@
             </div>
         }
         
-        @if (Model.ShowWelcomeMessages)
+        @if (Model.ContactId > 0 && Model.ShowWelcomeMessages)
         { 
             <div class="row">
                 <div class="col-md-12">
