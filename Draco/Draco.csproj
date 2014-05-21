@@ -489,6 +489,7 @@
     <Content Include="Areas\Baseball\Scripts\roster.js" />
     <Content Include="Areas\Baseball\Scripts\schedule.js" />
     <Content Include="Areas\Baseball\Scripts\scoreboard.js" />
+    <Content Include="Areas\Baseball\Scripts\statistics.js" />
     <Content Include="Areas\Baseball\Scripts\teamstats.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />

@@ -13,9 +13,11 @@ namespace SportsManager.Baseball.Controllers
     {
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Leagues")]
-        public HttpResponseMessage GetLeagues(long accountId)
+        public HttpResponseMessage GetLeagues(long accountId, long? id = 0)
         {
-            var leagues = DataAccess.Leagues.GetLeagues(DataAccess.Seasons.GetCurrentSeason(accountId));
+            long seasonId = (id.HasValue && id.GetValueOrDefault() != 0) ? id.Value : DataAccess.Seasons.GetCurrentSeason(accountId);
+
+            var leagues = DataAccess.Leagues.GetLeagues(seasonId);
             if (leagues != null)
             {
                 return Request.CreateResponse<IEnumerable<ModelObjects.League>>(HttpStatusCode.OK, leagues);
@@ -197,6 +199,15 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
         }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("Divisions")]
+        public HttpResponseMessage GetDivisions(long accountId, long id)
+        {
+            var divisions = DataAccess.Divisions.GetDivisions(id);
+            return Request.CreateResponse<IQueryable<ModelObjects.Division>>(HttpStatusCode.OK, divisions);
+        }
+        
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("DivisionSetup")]

@@ -1,4 +1,5 @@
-﻿@using SportsManager.Baseball.ViewModels;
+﻿@using System.Web.Optimization
+@using SportsManager.Baseball.ViewModels;
 @model SeasonStatisticsViewModel
 
 @{
@@ -6,135 +7,127 @@
 }
 
 @section head {
-	<link href="@Url.Content("~/Content/jquery.jqGrid/ui.jqgrid.css")" rel="stylesheet" type="text/css" media="screen" />
 }
 
 <div class="jumbotron">
     <h1>@ViewBag.Title.</h1>
 </div>
 
+<div class="container-fluid" id="statisticsView">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="input-group">
+                <input class="form-control pull-right" type="text" placeholder="find player" />
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button"><span class="glyphicon glyphicon-search"></span></button>
+                </span>
+            </div>            @*@Html.ActionLink("Player Search", "PlayerSearch", "Statistics", new { accountId = Model.AccountId }, null)<br />*@
+        </div>
+    </div>
+    <div style="margin-top: 10px" class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12 text-center">
+            <label class="control-label">Season:</label>
+            <select data-container="body" data-bind="selectPicker: selectedSeasonId">
+                @foreach(var season in Model.GetSeasons())
+                {
+                    <option value="@season.Value" >@season.Text</option>
+                }
+            </select>
+            @*@Html.DropDownList("seasonId", Model.GetSeasons(), new { @class = "selectpicker", onchange =  })*@
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-12 col-md-12 col-sm-12">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#seasonstats" data-toggle="tab">League Stats</a></li>
+                <li><a href="#teamstats" data-toggle="tab">Team Stats</a></li>
+                <li><a href="#seasonstandings" data-toggle="tab">Standings</a></li>
+            </ul>
 
-	@Html.ActionLink("Player Search", "PlayerSearch", "Statistics", new { accountId = Model.AccountId }, null)<br />
-	@Html.ActionLink("Player Stats by Team", "PlayerStatsByTeam", "Statistics", new { accountId = Model.AccountId, seasonId = 0, id = 0 }, null)<br />
-	@Html.ActionLink("Season Standings", "HistoricalSeasonStandings", "Statistics", new { accountId = Model.AccountId, id = Model.SeasonId }, null)
+            <div class="tab-content">
+                <div class="tab-pane fade in active" id="seasonstats">
+                    <form class="form-horizontal" style="margin-top: 20px">
+                        <div class="form-group">
+                            <label class="col-lg-1 col-sm-2 control-label">League: </label>
+                            <div class="col-lg-4 col-sm-4">
+                                <select data-container="body" data-bind="selectPicker: selectedLeagueId, selectPickerOptions: { optionsArray: leagues }, optionsText: 'Name', optionsValue: 'Id'"></select>
+                            </div>
+                            <label class="col-lg-1 col-sm-2 control-label">Division:</label>
+                            <div class="col-lg-4 col-sm-4">
+                                <select data-container="body" data-bind="selectPicker: selectedDivisionId, selectPickerOptions: { optionsArray: divisions }, optionsText: 'Name', optionsValue: 'Id'"></select>
+                            </div>
+                        </div>
+                    </form>
+                    <ul class="nav nav-pills">
+                        <li class="active"><a href="#leaders" data-toggle="tab">Leaders</a></li>
+                        <li><a href="#batsortablestats" data-toggle="tab">Batting Sortable Stats</a></li>
+                        <li><a href="#pitchsortablestats" data-toggle="tab">Pitching Sortable Stats</a></li>
+                        @*@Html.ActionLink("sortable stats", "BattingSortableStatistics", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.LeagueId }, null)*@
+                        @*@Html.ActionLink("sortable stats", "PitchingSortableStatistics", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.LeagueId }, null)*@
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade in active" id="leaders">
+                            <h3>@Model.SeasonName @Model.LeagueName @Model.DivisionName Leaders</h3>
+                            <h4>Hitting Leaders</h4>
 
+                            <div class="row">
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "AVG", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "#.000"))
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "HR", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: false, fieldFormat: "0"))
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "RBI", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: false, fieldFormat: "0"))
+                                </div>
+                            </div>
+                            <h4>Pitching Leaders</h4>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "W", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0"))
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "SO", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0"))
+                                </div>
+                                <div class="col-md-4">
+                                    @Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "WHIP", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0.00"))
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="batsortablestats">
+                            sortable stats.
+                        </div>
+                        <div class="tab-pane fade" id="pitchsortablestats">
+                            sortable stats.
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="teamstats">
+                    @Html.ActionLink("Player Stats by Team", "PlayerStatsByTeam", "Statistics", new { accountId = Model.AccountId, seasonId = 0, id = 0 }, null)<br />
 
-@using (Html.BeginForm()) {
-
-	@Html.DropDownList("seasonId", Model.GetSeasons())
-	@Html.DropDownList("leagueId", new SelectList(new[]{""}))
-	@Html.DropDownList("divisionId", new SelectList(new[]{""}))
-	<input type="submit" id="showstatsbtn" value="ShowStats" name="Show Stats" />
-	<br />
-
-
-	<!-- Method to get data: GetBatTeamPlayerSeasonTotals -->
-
-
-	<h3>@Model.SeasonName @Model.LeagueName @Model.DivisionName Leaders</h3>
-	<h4>Hitting @Html.ActionLink("sortable stats", "BattingSortableStatistics", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.LeagueId }, null)</h4>
-	<table cellspacing="0" cellpadding="0" border="0">
-		<tr valign="top">
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "AVG", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "#.000") )
-		</td>
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "HR", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: false, fieldFormat: "0") )
-		</td>
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "RBI", isBatStats: true, allTimeLeaders: Model.UseHistorical, calculateMin: false, fieldFormat: "0") )
-		</tr>
-	</table>
-
-	<h4>Pitching @Html.ActionLink("sortable stats", "PitchingSortableStatistics", "Statistics", new { accountId = Model.AccountId, seasonId = Model.SeasonId, id = Model.LeagueId }, null)</h4>
-	<table cellspacing="0" cellpadding="0" border="0">
-		<tr valign="top">
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "W", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0") )
-		</td>
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "SO", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0") )
-		</td>
-		<td>
-			@Html.Partial("LeagueLeaders", new LeagueLeadersViewModel(Model.AccountId, Model.LeagueId, Model.DivisionId, category: "WHIP", isBatStats: false, allTimeLeaders: Model.UseHistorical, calculateMin: true, fieldFormat: "0.00") )
-		</td>
-		</tr>
-	</table>
-}
+                </div>
+                <div class="tab-pane fade" id="seasonstandings">
+                    @Html.ActionLink("Season Standings", "HistoricalSeasonStandings", "Statistics", new { accountId = Model.AccountId, id = Model.SeasonId }, null)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 
 @section Scripts {
 
-<script src="@Url.Content("~/Scripts/jquery.jqGrid/grid.locale-en.js")" type="text/javascript"></script>
-<script src="@Url.Content("~/Scripts/jquery.jqGrid/jquery.jqGrid.min.js")" type="text/javascript"></script>
+@Scripts.Render("~/bundles/knockout")
+<script src="@Url.Content("~/Areas/Baseball/Scripts/statistics.js")" type="text/javascript"></script>
+<script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
 
 <script type="text/javascript">
 
     $(document).ready(function () {
-	    loadLeagues();
+        initStatisticsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
     });
-
-    $(function() {
-	    $("#seasonId").change(loadLeagues);
-	    $("#leagueId").change(loadDivisions);
-    });
-
-    function loadLeagues() {
-		var selectedSeason = $("#seasonId").val();
-
-		 $("#showstatsbtn").attr('disabled', 'disabled');
-
-		var url;
-		if (selectedSeason == 0)
-			url = '@Url.Action("GetHistoricalLeagues", "Statistics")';
-		else
-			url = '@Url.Action("GetLeagues", "Statistics")';
-		url = url + "/" + @Model.AccountId + "/" + selectedSeason
-		$("#leagueId").empty(); 
-		$.getJSON(url, function(leagues) {
-			$.each(leagues, function() {
-				$("#leagueId").append($("<option></option>").val(this['Id']).html(this['Name']));
-			});
-
-			$("#leagueId").val(@Model.LeagueId);
-
-			if (selectedSeason == 0)
-			{
-				$("#divisionId").empty(); 
-				$("#divisionId").append($("<option></option>").val('0').html('No Filter'));
-				$("#divisionId").hide();
-				$("#showstatsbtn").removeAttr('disabled');
-			}
-			else
-			{
-				$("#divisionId").show();
-				loadDivisions();
-			}
-	   });
-	}
-
-    function loadDivisions() {
-		 $("#showstatsbtn").attr('disabled', 'disabled');
-
-		var selectedLeague = $("#leagueId").val();
-		var url = '@Url.Action("GetDivisions", "Statistics")';
-		url = url + "/" + @Model.AccountId + "/" + selectedLeague
-		$("#divisionId").empty(); 
-		$.getJSON(url, function(divisions) {
-			$("#divisionId").append($("<option></option>").val('0').html('No Filter'));
-
-			$.each(divisions, function() {
-				$("#divisionId").append($("<option></option>").val(this['Id']).html(this['Name']));
-			});
-
-			$("#divisionId").val(@Model.DivisionId);
-			$("#showstatsbtn").removeAttr('disabled');
-	   });
-	}
 
 </script>
-
-@Html.Partial("_DisplayPlayer")
 
 }
 

@@ -526,10 +526,10 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         // get back to "Sunday"
         var dayOfWeek = theDate.getDay();
         theDate.setDate(theDate.getDate() - dayOfWeek);
-        var startDate = moment(theDate).format("MM-DD-YYYY");
+        var startDate = moment(theDate).format("YYYY-MM-DD");
 
         theDate = self.getEndDate(theDate, startMonth);
-        var endDate = moment(theDate).format("MM-DD-YYYY");
+        var endDate = moment(theDate).format("YYYY-MM-DD");
 
         var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId;
         if (self.selectedTeam()) {
@@ -757,8 +757,10 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         if (!self.loadingSchedule() && self.viewMode()) {
             var theDate = new Date(ev.date);
             var date = new Date(self.currentDate());
-            if (theDate.getMonth() != date.getMonth()) {
+            if (theDate.getMonth() != date.getMonth() ||
+                theDate.getYear() != date.getYear()) {
                 date.setMonth(theDate.getMonth());
+                date.setFullYear(theDate.getFullYear());
 
                 self.setupMonthData(date);
             }

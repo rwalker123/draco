@@ -401,16 +401,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse(HttpStatusCode.NotImplemented);
         }
 
-        public HttpResponseMessage GetHistoricalLeagues(long? accountId, long? id)
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("historicalleagues")]
+        public HttpResponseMessage GetHistoricalLeagues(long accountId)
         {
-            IEnumerable<League> leagues;
-
-            if (accountId.HasValue)
-                leagues = DataAccess.Leagues.GetLeaguesFromSeason(accountId.Value, true);
-            else
-                leagues = new List<League>();
-
-            return Request.CreateResponse(HttpStatusCode.NotImplemented);
+            var leagues = DataAccess.Leagues.GetLeaguesFromSeason(accountId, true);
+            return Request.CreateResponse<IQueryable<ModelObjects.League>>(HttpStatusCode.OK, leagues);
         }
     }
 }

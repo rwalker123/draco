@@ -12,21 +12,17 @@ namespace SportsManager.Baseball.ViewModels
         private int m_minIPPerSeason = 20;
 
         private List<LeaderLine> m_leaderLines = new List<LeaderLine>();
-        private TitleLeaderLine m_titleLeader;
         private List<LeagueLeaderStat> m_leaders;
 
         public class LeaderLine
         {
             public String LeaderNum;
-            public String Name;
+            public String FirstName;
+            public String LastName;
             public long PlayerId;
             public String Team;
             public String Value;
             public bool IsTie;
-        }
-
-        public class TitleLeaderLine : LeaderLine
-        {
             public String PhotoURL;
         }
 
@@ -77,7 +73,6 @@ namespace SportsManager.Baseball.ViewModels
 
         public ICollection<LeagueLeaderStat> Leaders { get { return m_leaders; } }
         public ICollection<LeaderLine> LeaderLines { get { return m_leaderLines; } }
-        public TitleLeaderLine TitleLeader { get { return m_titleLeader; } }
 
         public int Min
         {
@@ -114,27 +109,25 @@ namespace SportsManager.Baseball.ViewModels
 
         private void ProcessLeaders(List<LeagueLeaderStat> leaders)
         {
-            int i = 0;
-            int leaderTie = 0;
-
-            String playerName;
-            String playerTeam;
-            String playerPhoto;
+            bool firstTime = true;
 
             foreach (LeagueLeaderStat lls in m_leaders)
             {
-                ++i;
+                if (firstTime)
+                {
+                    firstTime = false;
+                    if (lls.FieldName == "TIE")
+                        continue;
+                }
 
-                playerName = String.Empty;
-                playerTeam = String.Empty;
-                playerPhoto = String.Empty;
+                LeaderLine ll = new LeaderLine();
 
                 ModelObjects.Player leaderPlayer = null;
                 bool isTie = false;
 
                 if (lls.FieldName == "TIE")
                 {
-                    playerName = lls.TieCount + " tied with ";
+                    ll.FirstName = lls.TieCount + " tied with ";
                     isTie = true;
                 }
                 else
@@ -146,59 +139,18 @@ namespace SportsManager.Baseball.ViewModels
 
                     if (leaderPlayer != null)
                     {
-                        playerName = leaderPlayer.Contact.LastName;
-                        playerTeam = DataAccess.Teams.GetTeamName(leaderPlayer.TeamId);
+                        ll.PlayerId = leaderPlayer.Id;
+                        ll.LastName = leaderPlayer.Contact.LastName;
+                        ll.FirstName = leaderPlayer.Contact.FirstName;
+                        ll.Team = DataAccess.Teams.GetTeamName(leaderPlayer.TeamId);
+                        ll.PhotoURL = leaderPlayer.Contact.PhotoURL;
                     }
                 }
 
-                if (i == 1)
-                {
-                    if (lls.FieldName == "TIE")
-                    {
-                        playerPhoto = "~/Images/" + TieImage;
-                    }
-                    else
-                    {
-						playerPhoto = leaderPlayer != null ? leaderPlayer.Contact.PhotoURL : String.Empty;
+                ll.Value = lls.FieldTotal.ToString(FieldFormat);
+                ll.IsTie = isTie;
 
-                        if (IsBatStats)
-                        {
-                            playerPhoto = (playerPhoto == null || playerPhoto.Length == 0) ? "~/Images/batter.gif" : playerPhoto;
-                        }
-                        else
-                        {
-                            playerPhoto = (playerPhoto == null || playerPhoto.Length == 0) ? "~/Images/pitcher.gif" : playerPhoto;
-                        }
-                    }
-
-                    m_titleLeader = new TitleLeaderLine();
-
-                    m_titleLeader.PlayerId = (leaderPlayer == null) ? 0 : leaderPlayer.Id;
-                    m_titleLeader.LeaderNum = "1";
-                    m_titleLeader.Name = playerName;
-                    m_titleLeader.Team = playerTeam;
-                    m_titleLeader.Value = lls.FieldTotal.ToString(FieldFormat);
-                    m_titleLeader.PhotoURL = playerPhoto;
-                    m_titleLeader.IsTie = isTie;
-                }
-                else
-                {
-                    LeaderLine ll = new LeaderLine();
-
-                    ll.Name = playerName;
-                    ll.Team = playerTeam;
-                    ll.Value = lls.FieldTotal.ToString(FieldFormat);
-                    ll.IsTie = isTie;
-                    ll.PlayerId = (leaderPlayer == null) ? 0 : leaderPlayer.Id;
-
-                    if (leaderPlayer != null)
-                        ll.LeaderNum = (i <= leaderTie) ? "1" : i.ToString();
-                    else
-                        ll.LeaderNum = i.ToString();
-
-                    m_leaderLines.Add(ll);
-
-                }
+                m_leaderLines.Add(ll);
             }
         }
     }

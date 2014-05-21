@@ -100,7 +100,9 @@ namespace DataAccess
                     {
                         Id = r.Id,
                         AccountId = r.AccountId,
-                        Contact = new Contact() { Id = r.ContactId },
+                        Contact = new Contact(r.Contact.Id, r.Contact.Email, r.Contact.LastName, r.Contact.FirstName, r.Contact.MiddleName,
+                            r.Contact.Phone1, r.Contact.Phone2, r.Contact.Phone3, r.Contact.CreatorAccountId, r.Contact.StreetAddress,
+                            r.Contact.City, r.Contact.State, r.Contact.Zip, r.Contact.FirstYear.GetValueOrDefault(), r.Contact.DateOfBirth, r.Contact.UserId),
                         SubmittedDriversLicense = r.SubmittedDriversLicense
                     }).SingleOrDefault();
         }

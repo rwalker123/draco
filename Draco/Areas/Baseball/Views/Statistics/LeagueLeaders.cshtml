@@ -1,86 +1,54 @@
 ﻿@using SportsManager.Baseball.ViewModels;
 @model LeagueLeadersViewModel
 
-@if (Model.TitleLeader != null) {
+@if (Model.LeaderLines.Any())
+{
+    <div class="table-responsive" style="margin: 5px">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr class="bg-primary">
+                    <th colspan="2">@Model.Title</th>
+                    <th>@Model.Category</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model.LeaderLines)
+                {
+                    <tr>
+                        @if (l.IsTie)
+                        {
+                            <td colspan="2">@l.FirstName</td>
+                        }
+                        else
+                        {
+                            <td class="h5" title='@l.FirstName @l.LastName'>
+                                <img onerror="this.style.display = 'none';" src="@l.PhotoURL" class="img-rounded" />
+                                @if (l.LastName.Length > 10)
+                                {
+                                    <text>@l.LastName.Substring(0, 10)...</text>
+                                }
+                                else
+                                {
+                                    <text>@l.LastName</text>
+                                }
+                            </td>
+                            <td title="@l.Team">
+                                @if (l.Team.Length > 10)
+                                {
+                                    <text>@l.Team.Substring(0, 10)...</text>
+                                }
+                                else
+                                {
+                                    <text>@l.Team</text>
+                                }
 
-<table>
-	<tr>
-		<td>
-		<!-- Leader part -->
-			<table  cellspacing="1" cellpadding="1" border="0" width="100%">
-				<tr>
-					<td nowrap="nowrap">
-						@if (!Model.TitleLeader.IsTie) {
-							<a class="stats" href="javascript:displayPlayerFromId(@Model.TitleLeader.PlayerId)">
-							<img src="@Url.Content(Model.TitleLeader.PhotoURL)" border="0" alt="@Model.TitleLeader.Name"/>
-							</a>
-						}
-						else {
-							<img src="@Url.Content(Model.TitleLeader.PhotoURL)" border="0" alt="@Model.TitleLeader.Name"/>
-						}
-							
-					</td>
-					<td width="100%">
-						<table  cellspacing="0" cellpadding="0" border="0" width="100%">
-							<tr>
-								<td align="center" class="@Model.StatCssHeaderStyle">
-									&nbsp;@Model.Category&nbsp;
-								</td>
-							</tr>
-							<tr>
-								<td nowrap="nowrap" align="center" bgcolor="#666666" class="statComponent">
-									<!-- Name/leader value -->
-									&nbsp;
-									@if (!Model.TitleLeader.IsTie) {
-										<a class="stats" href="javascript:displayPlayerFromId(@Model.TitleLeader.PlayerId)">
-										<span class="playerName">@Model.TitleLeader.Name</span>
-										</a>
-									} 
-									else {								
-										<span class="playerName">@Model.TitleLeader.Name</span>
-									}
 
-									&nbsp;
-									<br />
-									&nbsp;<span class="stat">@Model.TitleLeader.Value</span>&nbsp;<br />&nbsp;
-								</td>
-							</tr>
-						</table>
-					</td>
-				</tr>
-			</table>
-		</td> 
-	</tr>
-	<tr>
-		<td>
-		<div class="mar3">
-			<table cellspacing="0" cellpadding="0" border="0" width="100%">
-			   @foreach(var l in Model.LeaderLines) {
-				   <tr>
-				   <td>@l.LeaderNum&nbsp;</td>
-				   <td colspan="@l.IsTie ? '2' : '1'" nowrap="nowrap">
-					@if (!l.IsTie) {
-						<a class="stats" href="javascript:displayPlayerFromId(@l.PlayerId)">
-						<b>@l.Name&nbsp;</b>
-						</a>
-					}
-					else { 
-						<div style="font-size:8pt">
-						@l.Name&nbsp;
-						</div>
-					}
-					
-				   </td>
-				   @if (!l.IsTie) {
-						<td style="font-size:8pt" nowrap="nowrap">@l.Team &nbsp;</td>
-				   }
-				   <td nowrap="nowrap">@l.Value</td>
-				   </tr>
-			   }
-			</table>
-		</div>
-		</td>
-	</tr>
-
-</table>
+                            </td>
+                        }
+                        <td>@l.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
