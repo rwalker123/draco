@@ -39,8 +39,24 @@ namespace SportsManager.Areas.Baseball.Controllers
                 Int32.TryParse(strNumLeaders, out numLeaders);
             }
 
+            bool allTimeLeaders = false;
+            String strAllTimeLeaders = queryValues["allTimeLeaders"];
+
+            if (!String.IsNullOrEmpty(strAllTimeLeaders))
+            {
+                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
+            }
+
+            int divisionId = 0;
+            String strDivisionId = queryValues["divisionId"];
+
+            if (!String.IsNullOrEmpty(strDivisionId))
+            {
+                int.TryParse(strDivisionId, out divisionId);
+            }
+
             String statCategory = queryValues["category"] ?? "AVG";
-            var leaders = DataAccess.GameStats.GetBatLeagueLeaders(leagueSeasonId, 0, statCategory, numLeaders, minAB, false);
+            var leaders = DataAccess.GameStats.GetBatLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minAB, allTimeLeaders);
             return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
         }
 
@@ -66,8 +82,24 @@ namespace SportsManager.Areas.Baseball.Controllers
                 Int32.TryParse(strNumLeaders, out numLeaders);
             }
 
+            bool allTimeLeaders = false;
+            String strAllTimeLeaders = queryValues["allTimeLeaders"];
+
+            if (!String.IsNullOrEmpty(strAllTimeLeaders))
+            {
+                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
+            }
+
+            int divisionId = 0;
+            String strDivisionId = queryValues["divisionId"];
+
+            if (!String.IsNullOrEmpty(strDivisionId))
+            {
+                int.TryParse(strDivisionId, out divisionId);
+            }
+
             String statCategory = queryValues["category"] ?? "ERA";
-            var leaders = DataAccess.GameStats.GetPitchLeagueLeaders(leagueSeasonId, 0, statCategory, numLeaders, minIP, false);
+            var leaders = DataAccess.GameStats.GetPitchLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minIP, allTimeLeaders);
             return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
         }
 

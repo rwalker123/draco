@@ -19,6 +19,12 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
         self.updateLeaders();
     });
 
+    self.selectedDivisionId = ko.observable();
+    self.selectedDivisionId.subscribe(function () {
+    });
+
+    self.allTimeLeaders = ko.observable(false);
+
     self.updateLeaders = function () {
         self.getBattingLeaders1();
         self.getBattingLeaders2();
@@ -29,6 +35,7 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
         self.getPitchingLeaders3();
     }
 
+
     self.batLeagueLeadersCat1 = ko.observableArray();
     self.batLeagueLeadersCat2 = ko.observableArray();
     self.batLeagueLeadersCat3 = ko.observableArray();
@@ -37,7 +44,25 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     self.pitchLeagueLeadersCat2 = ko.observableArray();
     self.pitchLeagueLeadersCat3 = ko.observableArray();
 
+    self.clearLeaders = function () {
+        self.batLeagueLeadersCat1.removeAll();
+        self.batLeagueLeadersCat2.removeAll();
+        self.batLeagueLeadersCat3.removeAll();
+
+        self.pitchLeagueLeadersCat1.removeAll();
+        self.pitchLeagueLeadersCat2.removeAll();
+        self.pitchLeagueLeadersCat3.removeAll();
+    }
+
     self.getLeaders = function (url, obsArray, fixedDecimal, trimLeadingZero) {
+
+        if (self.selectedDivisionId()) {
+            url = url + "&divisionId=" + self.selectedDivisionId();
+        }
+
+        if (self.allTimeLeaders()) {
+            url = url + "&allTimeLeaders=" + self.allTimeLeaders();
+        }
 
         $.ajax({
             type: "GET",

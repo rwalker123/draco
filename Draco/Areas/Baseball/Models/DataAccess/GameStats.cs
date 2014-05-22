@@ -2299,7 +2299,7 @@ namespace DataAccess
                 if (fieldName == "AVG")
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
                           FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
                                           LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                           LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
@@ -2311,7 +2311,7 @@ namespace DataAccess
                 else if (fieldName == "SLG")
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
                           FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
                                           LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                           LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
@@ -2322,7 +2322,7 @@ namespace DataAccess
                 else
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM([{0}]) + 0.0 AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM([{0}]) + 0.0 AS FieldTotal
                           FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id
                                           LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                           LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
@@ -2410,7 +2410,7 @@ namespace DataAccess
                           FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
                                           LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
                           WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY TotalFoeld DESC", leagueId, divisionId);
+                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", leagueId, divisionId);
                 }
                 else if (fieldName == "SLG")
                 {
@@ -2464,7 +2464,7 @@ namespace DataAccess
                 if (fieldName == "ERA")
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
                           FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
                                           LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                           LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
@@ -2475,7 +2475,7 @@ namespace DataAccess
                 else if (fieldName == "WHIP")
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB) + SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB) + SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
                           FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
                                             LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                             LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
@@ -2486,13 +2486,13 @@ namespace DataAccess
                 else
                 {
                     return String.Format(
-                        @"SELECT Roster.Id, 0, SUM([{0}]) + 0.0 AS FieldTotal
+                        @"SELECT Roster.Id AS PlayerId, 0, SUM([{0}]) + 0.0 AS FieldTotal
                             FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
                                               LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                               LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
                                               LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
                             WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {1}
-                            GROUP BY Roster.Id ORDER BY [' + @fieldName + '] DESC", fieldName, leagueId);
+                            GROUP BY Roster.Id ORDER BY FieldTotal DESC", fieldName, leagueId);
                 }
             }
             else
@@ -2594,7 +2594,7 @@ namespace DataAccess
                         @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM([{0}]) + 0.0 AS FieldTotal
                      FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id
                      WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {1} AND TeamsSeason.DivisionSeasonId = {2} 
-                     GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY [' + @fieldName + '] DESC", fieldName, leagueId, divisionId);
+                     GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal DESC", fieldName, leagueId, divisionId);
                 }
             }
         }
