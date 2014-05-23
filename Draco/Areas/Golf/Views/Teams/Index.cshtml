@@ -41,9 +41,6 @@
 	        url: url,
 	        success: function (msg) {
 	            $("#teams_grid").html(msg);
-	        },
-	        error: function (xhr, ajaxOptions, thrownError) {
-	            alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
 	        } 
 	    });
 

@@ -181,7 +181,9 @@ static public class Globals
 		{
 			StringBuilder sb = new StringBuilder();
 
-			sb.AppendLine(String.Format("{0} User: {1}", DateTime.Now, context.User.Identity.Name));
+            String userName = System.Web.HttpContext.Current.User != null ? Globals.GetCurrentUserName() : "";
+
+            sb.AppendLine(String.Format("{0} User: {1}", DateTime.Now, userName));
 			sb.AppendLine(ex.ToString());
 
 			Globals.LastException = sb.ToString();

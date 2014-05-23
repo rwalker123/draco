@@ -46,6 +46,18 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="Common.Logging">
+      <HintPath>..\packages\Common.Logging.2.1.2\lib\net40\Common.Logging.dll</HintPath>
+    </Reference>
+    <Reference Include="Common.Logging.Elmah">
+      <HintPath>..\packages\Common.Logging.Elmah.1.2.1\lib\net40\Common.Logging.Elmah.dll</HintPath>
+    </Reference>
+    <Reference Include="Elmah">
+      <HintPath>..\packages\elmah.1.2\lib\Elmah.dll</HintPath>
+    </Reference>
+    <Reference Include="Elmah.Mvc">
+      <HintPath>..\packages\Elmah.MVC.2.1.1\lib\net40\Elmah.Mvc.dll</HintPath>
+    </Reference>
     <Reference Include="EntityFramework">
       <HintPath>..\packages\EntityFramework.6.1.0\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
@@ -55,6 +67,9 @@
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Bin\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="JSNLog">
+      <HintPath>..\packages\JSNLog.2.7.0.0\lib\net40\JSNLog.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -214,6 +229,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\FontAwesomeBundleConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
+    <Compile Include="App_Start\JSNLogConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
@@ -589,6 +605,7 @@
       <SubType>Designer</SubType>
     </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
+    <Content Include="NuGet\readme.txt" />
     <Content Include="Scripts\discussions.js" />
     <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
     <Content Include="fonts\fontawesome-webfont.woff" />
@@ -601,6 +618,8 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\halloffame.js" />
+    <Content Include="Scripts\jsnlog.js" />
+    <Content Include="Scripts\jsnlog.min.js" />
     <Content Include="Scripts\memberbusiness.js" />
     <Content Include="Scripts\mindmup-editabletable.js" />
     <Content Include="Scripts\moment-with-langs.js" />

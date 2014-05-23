@@ -41,10 +41,7 @@ function loadSchedule(flightSeasonId) {
         url: url,
         success: function (msg) {
             $("#schedule_grid").html(msg);
-        },
-	    error: function (xhr, ajaxOptions, thrownError) {
-	        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". url =" + url);
-	    } 
+        } 
     });    
 }
 

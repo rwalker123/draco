@@ -110,9 +110,6 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
                 hofClass.Members(mappedHofMembers);
                 hofClass.Year.filledMembers = true;
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -141,9 +138,6 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                     self.getHOFClassMembers(self.hallOfFameClasses()[0]);
 
                 self.makeAccordion();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

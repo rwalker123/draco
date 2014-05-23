@@ -104,9 +104,6 @@
                 var id = generateIdFromUrl(accountUrl);
                 $('#urlList').append($('#mappedUrlTemplate').render({ Id: id, Url: accountUrl }));
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -124,9 +121,6 @@
                 var id = generateIdFromUrl(accountUrl);
                 $('#urlList').append($('#mappedUrlTemplate').render({ Id: id, Url: accountUrl }));
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -191,9 +185,6 @@
                         $('#noDomainsText').show();
                     }
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }

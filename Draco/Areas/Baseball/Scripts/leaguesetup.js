@@ -177,9 +177,10 @@ $.extend(LeagueSetupClass.prototype, {
             return;
         }
 
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueSeasonId;
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueSeasonId,
+            url: url,
             success: function (divisionData) {
                 window.location.hash = 'update';
                 elem.data('hasdata', 'True');
@@ -199,9 +200,6 @@ $.extend(LeagueSetupClass.prototype, {
                 // doesn't add them to that division. Comment out functionality
                 // until it can be fixed.
                 //target.makeTeamsDraggable();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -209,9 +207,10 @@ $.extend(LeagueSetupClass.prototype, {
     fillTeamList: function (leagueId) {
         var selectList = $('#divisionTeamSelect_' + leagueId);
         var target = this;
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + leagueId;
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + leagueId,
+            url: url,
             success: function (teams) {
                 window.location.hash = 'update';
 
@@ -219,9 +218,6 @@ $.extend(LeagueSetupClass.prototype, {
                 target.selectFirstTeam(leagueId);
                 selectList.selectpicker("refresh");
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -283,9 +279,10 @@ $.extend(LeagueSetupClass.prototype, {
             if (name.length == 0)
                 return;
 
+            var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + leagueId;
             $.ajax({
                 type: "POST",
-                url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + leagueId,
+                url: url,
                 data: {
                     AccountId: this.accountId,
                     LeagueId: leagueId,
@@ -299,9 +296,6 @@ $.extend(LeagueSetupClass.prototype, {
                     var jsonObj = []; //declare array
                     jsonObj.push({ Id: team.Id, TeamId: team.TeamId, LeagueId: leagueId, Name: name, DivisionId: divisionId });
                     target.updateTeamList(target, jsonObj, true);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
                 }
             });
 
@@ -309,9 +303,10 @@ $.extend(LeagueSetupClass.prototype, {
         else {
             var selectedTeamName = $('#divisionTeamSelect_' + leagueId + ' option:selected').text();
 
+            var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + divisionId;
             $.ajax({
                 type: "PUT",
-                url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + divisionId,
+                url: url,
                 data: {
                     Id: selectedValue
                 },
@@ -321,9 +316,6 @@ $.extend(LeagueSetupClass.prototype, {
                     var jsonObj = []; //declare array
                     jsonObj.push({ Id: team.Id, TeamId: team.TeamId, LeagueId: leagueId, Name: selectedTeamName, DivisionId: divisionId });
                     target.updateTeamList(target, jsonObj, false);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -431,9 +423,10 @@ $.extend(LeagueSetupClass.prototype, {
     removeTeamFromDivision: function (leagueId, divisionId, teamId) {
         var target = this;
 
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionTeams/' + teamId;
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionTeams/' + teamId,
+            url: url,
             success: function (divisionId) {
                 window.location.hash = 'update';
 
@@ -453,9 +446,6 @@ $.extend(LeagueSetupClass.prototype, {
                 var jsonObj = []; //declare array
                 jsonObj.push({ Id: teamId, LeagueId: leagueId, DivisionId: divisionId, Name: teamName });
                 target.addTeamToSelectList(jsonObj[0]);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -499,9 +489,10 @@ $.extend(LeagueSetupClass.prototype, {
 
         var target = this;
 
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueId;
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueId,
+            url: url,
             data: {
                 LeagueId: leagueId,
                 Name: name,
@@ -525,9 +516,6 @@ $.extend(LeagueSetupClass.prototype, {
                 // reset the data fields.
                 $('#NewDivisionName_' + leagueId).val('');
                 $('#NewDivisionPriority_' + leagueId).val('1');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -568,9 +556,10 @@ $.extend(LeagueSetupClass.prototype, {
 
         var target = this;
 
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId;
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
+            url: url,
             data: {
                 Id: divisionId,
                 LeagueId: leagueId,
@@ -588,9 +577,6 @@ $.extend(LeagueSetupClass.prototype, {
                 target.repositionDivisionBySortOrder(leagueId, divisionId);
 
                 target.cancelDivisionEdit(divisionId);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -630,17 +616,15 @@ $.extend(LeagueSetupClass.prototype, {
     },
 
     deleteDivision: function (divisionId) {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId;
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId,
+            url: url,
             success: function (divisionId) {
                 window.location.hash = 'update';
 
                 $('#division_' + divisionId).remove();
                 $("#accordion").accordion("refresh");
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -651,9 +635,11 @@ $.extend(LeagueSetupClass.prototype, {
             return;
 
         var target = this;
+
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + seasonId;
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + seasonId,
+            url: url,
             data: {
                 Name: name
             },
@@ -666,9 +652,6 @@ $.extend(LeagueSetupClass.prototype, {
                 target.createLeagueFromTemplate(target, jsonObj);
 
                 $('#copyFromSeason').accordion({ active: false });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -679,9 +662,12 @@ $.extend(LeagueSetupClass.prototype, {
             return;
 
         var target = this;
+
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId;
+
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
+            url: url,
             data: {
                 Name: name
             },
@@ -689,9 +675,6 @@ $.extend(LeagueSetupClass.prototype, {
                 window.location.hash = 'update';
 
                 $('#leagueHeaderLink_' + leagueId).html(name);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -707,10 +690,11 @@ $.extend(LeagueSetupClass.prototype, {
         });
     },
 
-    makeLeagueDeleteCall: function(target, leagueId) {
+    makeLeagueDeleteCall: function (target, leagueId) {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId;
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId,
+            url: url,
             success: function (deletedLeagueId) {
                 window.location.hash = 'update';
 
@@ -727,9 +711,6 @@ $.extend(LeagueSetupClass.prototype, {
                 if ($(".leagueHeader").length == 0) {
                     $('#copyFromSeason').accordion({ active: 0 });
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -744,9 +725,10 @@ $.extend(LeagueSetupClass.prototype, {
         var copyFromSeasonId = $('#seasonList option:selected').val();
         var target = this;
 
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/CopyLeagueSetup/' + seasonId;
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/CopyLeagueSetup/' + seasonId,
+            url: url,
             data: {
                 AccountId: this.accountId,
                 Id: copyFromSeasonId
@@ -760,9 +742,6 @@ $.extend(LeagueSetupClass.prototype, {
 
                 // restore...
                 target.fillLeagues();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     },

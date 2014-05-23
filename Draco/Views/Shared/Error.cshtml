@@ -1,9 +1,13 @@
 ﻿@model System.Web.Mvc.HandleErrorInfo
 
 @{
-    ViewBag.Title = "Error";
+    ViewBag.Title = "Unexpected Error";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
+<h2 class="text-danger"><span class="glyphicon glyphicon-exclamation-sign glyphicon-th-large"></span> We are sorry for the inconvenience.</h2>
+<div class="alert alert-danger">An unexpected error has occurred while processing your request. Fear not, your error has been logged and we will resolve your issue. You may try to refresh the page, if the error persists you should try a different page.</div>
 

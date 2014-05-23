@@ -58,9 +58,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                     return item.id == id;
                 });
                 $('#photoAlbumSelect').selectpicker('refresh');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -88,9 +85,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 self.selectedPhotoAlbum(photoAlbum.Id);
                 self.newPhotoAlbumName("");
                 $('#photoAlbumSelect').selectpicker('refresh');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -140,9 +134,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 photo.photoAlbumId.commit();
                 photo.viewMode(true);
                 $('#photoGalleryCarousel').carousel('cycle');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -185,9 +176,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 //--count;
                 //self.photoGalleryItemsCount(count);
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 
@@ -223,9 +211,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 self.photoGalleryItemsCount(count);
 
                 $('.photoGalleryItemAlbum').selectpicker();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -268,7 +253,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                     self.selectedFileName(data.files[0].name);
                 },
                 fail: function (e, data) {
-                    alert("Caught error: Status: " + data.jqXHR.status + ". Error: " + data.errorThrown + "\n. responseText: " + data.jqXHR.responseText);
+                    reportAjaxError(self.fileUploaderUrl(), data.jqXHR, '', data.jqXHR.responseText);
                     $('#pg').html('');
                     data.context = $('<button/>')
                         .text('Upload')
@@ -319,9 +304,10 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
         if (self.teamId)
             return;
 
+        var url = window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums';
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums',
+            url: url,
             success: function (photoAlbums) {
                 var mappedAlbums = $.map(photoAlbums, function (album) {
                     return {
@@ -343,7 +329,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 if (xhr.status == 404)
                     return;
 
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
+                reportAjaxError(url, xhr, ajaxOptions, thrownError);
             }
         });
     }

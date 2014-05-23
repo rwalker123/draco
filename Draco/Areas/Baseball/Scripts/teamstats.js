@@ -133,9 +133,6 @@ var PlayerBatStatsVM = function (data, parent, accountId) {
             success: function (stats) {
                 self.parent().getBatStatsTotals();
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -292,9 +289,6 @@ var PlayerPitchStatsVM = function (data, parent, accountId) {
             async: asyncCall,
             success: function (stats) {
                 self.parent().getPitchStatsTotals();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -345,9 +339,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             },
             success: function (stats) {
                 self.editGameSummaryMode(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -383,9 +374,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
                 self.playerBatStats.push(playerBatStats);
                 self.availableBatPlayers.remove(player);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -413,9 +401,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     });
 
                     self.availableBatPlayers(mapPlayers);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -438,9 +423,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 });
 
                 self.playerBatStats(playerStats);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -462,9 +444,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     self.batStatsTotals(new PlayerBatStatsVM(stat, self, self.accountId));
                 else
                     self.batStatsTotals(null);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -480,9 +459,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 self.playerBatStats.remove(stat);
                 self.getBatStatsTotals();
                 self.readdAvailableBatStatPlayer(stat.PlayerId());
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     };
@@ -506,9 +482,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     return lName == rName ? 0 : (lName < rName ? -1 : 1);
 
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -529,9 +502,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
 
                 self.playerPitchStats.push(playerStats);
                 self.availablePitchPlayers.remove(player);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -559,9 +529,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     });
 
                     self.availablePitchPlayers(mapPlayers);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -584,9 +551,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 });
 
                 self.playerPitchStats(playerStats);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -603,9 +567,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 self.playerPitchStats.remove(stat);
                 self.getPitchStatsTotals();
                 self.readdAvailablePitchStatPlayer(stat.PlayerId());
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     };
@@ -629,9 +590,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     return lName == rName ? 0 : (lName < rName ? -1 : 1);
 
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -653,9 +611,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                     self.pitchStatsTotals(new PlayerPitchStatsVM(stat, self, self.accountId));
                 else
                     self.pitchStatsTotals(null);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -674,9 +629,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url: url,
             success: function (gameSummary) {
                 self.gameSummary(gameSummary);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

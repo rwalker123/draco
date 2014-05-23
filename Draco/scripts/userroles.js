@@ -118,9 +118,6 @@ $.extend(UserRoleClass.prototype, {
                 }
 
                 $("input#playerSelect").val('');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -145,9 +142,6 @@ $.extend(UserRoleClass.prototype, {
                     $('#noAdminText_' + roleId).show();
                     $('#adminsList_' + roleId).hide();
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + '. Response: ' + xhr.responseText);
             }
         });
     },
@@ -200,7 +194,7 @@ $.extend(UserRoleClass.prototype, {
                         $('#noAdminText_' + roleId).show();
                     }
                     else {
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                        reportAjaxError(url, xhr, ajaxOptions, thrownError);
                     }
                 }
             });
@@ -227,9 +221,6 @@ $.extend(UserRoleClass.prototype, {
                         target.retrievedLeagues = true;
 
                         leagueSelect.selectpicker('refresh');
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". ResponseText: " + xhr.responseText);
                     }
                 });
             }
@@ -250,9 +241,6 @@ $.extend(UserRoleClass.prototype, {
                         target.retrievedTeams = true;
 
                         teamSelect.selectpicker('refresh');
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". ResponseText: " + xhr.responseText);
                     }
                 });
             }
@@ -293,9 +281,6 @@ $.extend(UserRoleClass.prototype, {
                 }
 
                 target.cancelChangeAccountOwner();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

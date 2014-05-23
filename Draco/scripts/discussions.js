@@ -106,9 +106,6 @@ var MessageCategoryViewModel = function(data, userId, isAdmin) {
                 self.topics.loaded(true);
 
                 callback();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -196,9 +193,6 @@ var MessageTopicViewModel = function(data, accountId, userId, isAdmin)
                 self.posts.loaded(true);
 
                 callback();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -404,9 +398,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                     }
                 });
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -458,9 +449,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
 
                     self.endEditTopic();
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -560,9 +548,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
             data: data,
             success: function (message) {
                 callback(message);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -675,9 +660,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                 }
                 self.categories.sort(self.sortCategories);
                 self.endAddCategoryMode();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -726,9 +708,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                     self.breadcrumbs.removeAll();
                     self.loadTopics(theCat);
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -745,9 +724,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                         return true;
                     }
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -765,9 +741,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
 
                 self.categories(catsVM);
                 self.loading(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -809,9 +782,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                 self.deletePostsAfter.subscribe(function (newValue) {
                     self.updateMessageExpiration(newValue);
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -821,9 +791,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
             type: "POST",
             url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/expirationdays?days=' + days,
             success: function (expirationDays) {
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -841,10 +808,6 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
             url: url,
             success: function (sponsor) {
                 self.memberBusiness(sponsor);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                if (xhr.status != 404)
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

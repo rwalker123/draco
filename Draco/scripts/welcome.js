@@ -97,9 +97,6 @@ $.extend(WelcomeClass.prototype, {
                         menuItems.hide();
                     }
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ".");
             }
         });
     },
@@ -146,9 +143,6 @@ $.extend(WelcomeClass.prototype, {
 
                     window.location.hash = 'update';
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -257,9 +251,6 @@ $.extend(WelcomeClass.prototype, {
                 success: function (theText) {
                     welcomeMessageElement.html(theText);
                     welcomeMessageElement.data('hasdata', 'True');
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
 

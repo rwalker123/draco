@@ -46,9 +46,6 @@ $.extend(SeasonSetupClass.prototype, {
                 jsonObj.push({ Id: seasonId, Name: name, AccountId: target.accountId});
                 target.createSeasonFromTemplate(target, jsonObj);
                 target.setCurrentSeasonDisplay();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -74,9 +71,6 @@ $.extend(SeasonSetupClass.prototype, {
                 $('#seasonData_' + deletedSeasonId).remove();
                 target.makeAccordion();
                 target.setCurrentSeasonDisplay();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -99,9 +93,6 @@ $.extend(SeasonSetupClass.prototype, {
                 window.location.hash = 'update';
 
                 $('#seasonHeaderLink_' + seasonId).html(name);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -143,9 +134,6 @@ $.extend(SeasonSetupClass.prototype, {
             success: function (currentSeasonId) {
                 window.location.hash = 'update';
                 target.setCurrentSeasonDisplay();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 

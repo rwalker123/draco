@@ -210,9 +210,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/UnlockUser/' + self.id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -223,9 +220,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/LockUser/' + self.id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -239,9 +233,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
                 var form = $('#' + self.id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
                     "User has been registered. Email sent to user.");
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -254,9 +245,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
                 var form = $('#' + self.id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
                     "Password has been reset. Email sent to user.");
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -307,9 +295,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
                 else {
                     self.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -367,9 +352,10 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
 
     self.updateContact = function (form) {
 
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=1';
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=1',
+            url: url,
             data: {
                 Id: self.id(),
                 Email: self.details.email.uncommitValue(),
@@ -400,7 +386,7 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
                         self.addNameExistsError($(form).find('.contactView > .contactErrorLocation'));
                 }
                 else {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
                 }
             }
         });
@@ -521,9 +507,6 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                 // remove from data model.
                 self.populateUsers();
                 //self.users.remove(user);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -534,9 +517,10 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         if (id == 1 && !userData.details.email.uncommitValue())
             alert("Will not register account, no email specified");
 
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=' + id;
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=' + id,
+            url: url,
             data: {
                 Email: userData.details.email.uncommitValue(),
                 FirstName: userData.firstName.uncommitValue(),
@@ -568,7 +552,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                         userData.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
                 }
                 else {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
                 }
             }
         });
@@ -666,9 +650,6 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                     self.users(mappedUsers);
                     self.refreshUserList();
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -745,9 +726,6 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                     userData.details.loaded = true;
                     userData.commitChanges();
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

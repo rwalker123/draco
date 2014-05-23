@@ -175,9 +175,6 @@ $.extend(AnnouncementClass.prototype, {
                 }
 
                 target.AdjustNewsMenuHeaders();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     },
@@ -214,9 +211,6 @@ $.extend(AnnouncementClass.prototype, {
                     location.reload();
 
                 target.AdjustNewsMenuHeaders();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ".");
             }
         });
     },
@@ -279,9 +273,6 @@ $.extend(AnnouncementClass.prototype, {
                 success: function (theText) {
                     newsItemElement.html(theText);
                     newsItemElement.data('hasdata', 'True');
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }

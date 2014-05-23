@@ -84,9 +84,6 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
                         mapLeaders.splice(0, 1);
                 }
                 obsArray(mapLeaders);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

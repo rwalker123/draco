@@ -536,19 +536,6 @@ else
                         }
                         html.push('</ul><br style="clear: left;"/>');
                         $('#videos2').html(html.join(''));
-                    },
-                    error: function(jqXHR, textStatus, errorThrown ) {
-                        @if (Model.IsAdmin) {
-                    <text>
-                        $('#videos2').html('error occurred: ' + errorThrown);
-                        </text>
-                }
-                else
-                {
-                    <text>
-                        $('#videos2').html('');
-                        </text>
-                }
                     }
                 });
             }

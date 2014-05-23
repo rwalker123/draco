@@ -126,9 +126,6 @@
 
                     $(this).selectmenu('refresh');
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
             }
         });
     }
@@ -149,9 +146,6 @@
                     elem.append($('<option></option>').val(option.value).html(option.name));
 
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
             }
         });
     }

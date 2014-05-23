@@ -1,4 +1,5 @@
-﻿using SportsManager.Models;
+﻿using Elmah;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -13,6 +14,38 @@ namespace SportsManager
 {
     public class MvcApplication : System.Web.HttpApplication
     {
+        public class ElmahHandlerAttribute : HandleErrorAttribute
+        {
+            public override void OnException(ExceptionContext filterContext)
+            {
+                base.OnException(filterContext);
+
+                var controllerName = (string)filterContext.RouteData.Values["controller"];
+                var actionName = (string)filterContext.RouteData.Values["action"];
+
+                var model = new HandleErrorInfo(filterContext.Exception, controllerName, actionName);
+
+                var vr = new ViewResult
+                {
+                    ViewName = View,
+                    MasterName = Master,
+                    ViewData = new ViewDataDictionary<HandleErrorInfo>(model),
+                    TempData = filterContext.Controller.TempData
+                };
+
+                if (filterContext.RouteData.Values.ContainsKey("accountId"))
+                {
+                    long accountId;
+                    if (long.TryParse(filterContext.RouteData.Values["accountId"].ToString(), out accountId))
+                        Globals.SetupAccountViewData(accountId, vr.ViewData);
+                }
+
+                filterContext.Result = vr;
+
+                if (filterContext.ExceptionHandled)
+                    ErrorSignal.FromCurrentContext().Raise(filterContext.Exception);
+            }
+        }
         protected void Application_Start()
         {
             AreaRegistration.RegisterAllAreas();
@@ -21,6 +54,8 @@ namespace SportsManager
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             Database.SetInitializer<ApplicationDbContext>(new MyDbInitializer());
+
+            GlobalFilters.Filters.Add(new ElmahHandlerAttribute());
         }
     }
 }

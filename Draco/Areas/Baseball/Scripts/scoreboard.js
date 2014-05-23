@@ -78,9 +78,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                 }
 
                 self.getYesterdaysGames();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     };
@@ -113,9 +110,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                 }
 
                 self.getGameSummaries();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     };
@@ -148,9 +142,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
 
                     self.scheduledGames.push(vm);
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     };
@@ -184,9 +175,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                 else {
                     observableSummary("No Game Summary");
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 

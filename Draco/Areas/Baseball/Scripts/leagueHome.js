@@ -49,9 +49,10 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
     }
     self.saveAccountName = function () {
 
+        var url = window.config.rootUri + '/api/AccountAPI/' + accountId + '/AccountName';
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/AccountAPI/' + accountId + '/AccountName',
+            url: url,
             data: {
                 Id: self.name.uncommitValue(),
                 Year: self.firstYear.uncommitValue(),
@@ -65,9 +66,6 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
                     self.viewMode(true);
                     window.location.hash = 'update';
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -116,27 +114,28 @@ var TwitterViewModel = function (accountId, isAdmin) {
     }, self);
 
     self.loadTwitterScript = function () {
+
+        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/TwitterScript';
         $.ajax({
             type: "GET",
             dataType: "json",
-            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/TwitterScript',
+            url: url,
             success: function (data) {
                 self.htmlTwitterScript(data);
                 setTimeout(function () {
                     twttr.widgets.load();
                 }, 1000);
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
 
     self.saveTwitterScript = function () {
+        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/SaveTwitterScript';
+
         $.ajax({
             type: "PUT",
             dataType: "json",
-            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/SaveTwitterScript',
+            url: url,
             data: {
                 Script: self.twitterScript()
             },
@@ -144,9 +143,6 @@ var TwitterViewModel = function (accountId, isAdmin) {
                 self.htmlTwitterScript(self.twitterScript());
                 twttr.widgets.load();
                 self.twitterScript('');
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-                alert("Caught error: Status: " + jqXHR.status + ". Error: " + errorThrown);
             }
         });
     }
@@ -205,18 +201,17 @@ var youTubeViewModel = function(accountId, id) {
     }
 
     self.saveUserId = function () {
+        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/YouTubeUserId';
+
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/YouTubeUserId',
+            url: url,
             data: {
                 Id: self.userId()
             },
             success: function (userId) {
                 loadVideos(userId);
                 self.viewMode(true);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

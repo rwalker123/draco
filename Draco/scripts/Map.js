@@ -182,9 +182,6 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
                     });
                 }
                 self.cancelEditMode();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -196,9 +193,6 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
             success: function () {
                 self.removeFieldPin(field);
                 self.fields.remove(field);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -254,9 +248,6 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
                 else {
                     self.viewAllFields();
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

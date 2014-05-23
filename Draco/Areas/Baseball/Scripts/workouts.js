@@ -95,9 +95,6 @@ var WorkoutViewModel = function (accountId, isAdmin) {
 
                 self.workoutRegistrants(mappedRegs);
  
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 
@@ -130,9 +127,6 @@ var WorkoutViewModel = function (accountId, isAdmin) {
                     alert('email sent.');
 
                 self.cancelSendEmail();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -173,9 +167,6 @@ var WorkoutViewModel = function (accountId, isAdmin) {
             success: function (workoutId) {
                 self.registerForWorkout(false);
                 alert('You are now registered for the workout.');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 
@@ -282,9 +273,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
 
                 self.workoutAvailableFields(mappedFields);
             },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
-            },
             complete: function () {
                 // load workouts after fields so field name can be used.
                 self.loadWorkoutAnnouncements();
@@ -299,9 +287,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/whereheard',
             success: function (options) {
                 self.whereHeardOptions(options);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -324,9 +309,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
 
                 self.whereHeardOptions.sort();
                 self.newWhereHeardName('');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -350,9 +332,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
             },
             success: function (whereHeard) {
                 self.whereHeardOptions.remove(o);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -426,9 +405,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
                 }
                 else
                     self.cancelEditMode();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -469,9 +445,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/workouts/' + workout.Id(),
             success: function (workoutId) {
                 self.workouts.remove(workout);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 
@@ -509,9 +482,6 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
                 if (showOld != true) {
                     self.getWhereHeardOptions();
                 }
-    },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 

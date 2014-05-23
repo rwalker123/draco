@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@ViewBag.Title</title>
 
+    @Html.Raw(JSNLog.JavascriptLogging.Configure())
+
     <script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
     <script type="text/javascript">
@@ -102,6 +104,48 @@
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/jqueryui")
 
+    <script>
+        function reportAjaxError(url, xhr, ajaxOptions, thrownError) {
+            JL().fatal({
+                url: url,
+                msg: "AJAX error response",
+                errorThrown: thrownError,
+                jqXHR: xhr,
+                textStatus: ajaxOptions
+            });
+            //alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+        }
+
+        $(document).ready(function () {
+            window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
+
+                // Send object with all data to server side log, using severity fatal, 
+                // from logger "onerrorLogger"
+                JL("onerrorLogger").fatalException({
+                    "msg": "Exception!",
+                    "errorMsg": errorMsg, "url": url,
+                    "line number": lineNumber, "column": column
+                }, errorObj);
+
+                // Tell browser to run its own error handler as well   
+                return false;
+            }
+
+
+            $.ajaxSetup({
+                // put your favorite error function here: 
+                error: function (jqXHR, ajaxOptions, thrownError) {
+                    reportAjaxError(jqXHR.url, jqXHR, ajaxOptions, thrownError);
+                },
+                beforeSend: function (jqXHR, settings) {
+                    jqXHR.url = settings.url;
+                },
+
+            });
+
+        });
+
+    </script>
     @*JQuery must be included before boostrap*@
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)

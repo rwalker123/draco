@@ -62,10 +62,7 @@ function loadTeams(flightSeasonId) {
 
             loadRoster($("#leagues").val(), $("#teams").val());
 
-        },
-	    error: function (xhr, ajaxOptions, thrownError) {
-	        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + ". Url: " + url);
-	    } 
+        } 
     });
 }
 
@@ -81,10 +78,7 @@ function loadRoster(flightSeasonId, teamSeasonId) {
         url: '@Url.Action("GetRosterGrid", "Rosters",  new { accountId = ViewBag.AccountId, id = ViewBag.SeasonId })' + '/' + flightSeasonId + '/' + teamSeasonId,
         success: function (msg) {
             $("#roster_grid").html(msg);
-        },
-	    error: function (xhr, ajaxOptions, thrownError) {
-	        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
-	    } 
+        } 
     });    
 }
 

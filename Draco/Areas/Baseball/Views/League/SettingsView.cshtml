@@ -140,9 +140,6 @@
                         Value: value
                     },
                     success: function (data) {
-                    },
-                    error: function (xhr, ajaxOptions, thrownError) {
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                     }
                 });
             }
@@ -184,9 +181,6 @@
                     $.each(data.KeyValues, function (index, value) {
                         self.setSetting(index, value == 'true');
                     });
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }

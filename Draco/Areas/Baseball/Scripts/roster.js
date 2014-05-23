@@ -123,9 +123,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                 player.commit();
 
                 player.cancelEditPlayerNumber();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -146,9 +143,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
                 player.viewMode(true);
                 player.commit();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -169,9 +163,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.id,
             success: function () {
                 self.players.remove(player);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -190,9 +181,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + player.id,
             success: function () {
                 self.players.remove(player);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -228,9 +216,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                 self.selectedPlayer(null);
                 $("input.autocomplete").val('');
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -258,9 +243,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                 });
 
                 self.players(mappedPlayers);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -292,9 +274,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                     }
                 });
                 response(results);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

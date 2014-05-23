@@ -238,9 +238,6 @@ else
                 dataType: "json",
                 success: function () {
                     self.attachments.remove(attachmentItem);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
 
@@ -307,9 +304,6 @@ else
                             selected: ko.observable(false)
                         });
                     });
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -328,9 +322,6 @@ else
                             selected: ko.observable(false)
                         });
                     });
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -357,9 +348,6 @@ else
                             selected: ko.observable(false)
                         });
                     });
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -378,9 +366,11 @@ else
                 });
             });
 
+            var url = window.config.rootUri + '/api/BaseballAPI/@Model.AccountId/EmailContacts';
+
             $.ajax({
                 type: 'POST',
-                url: window.config.rootUri + '/api/BaseballAPI/@Model.AccountId/EmailContacts',
+                url: url,
                 dataType: "json",
                 data: {
                     Subject: self.subject(),
@@ -408,7 +398,7 @@ else
                     if (xhr.status == 404)
                         alert('No contacts found.');
                     else
-                        alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                        reportAjaxError(url, xhr, ajaxOptions, thrownError);
                 }
             });
         }

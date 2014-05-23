@@ -83,9 +83,6 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
                 self.userBusiness().update(sponsor);
 
                 self.editMode(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -104,9 +101,6 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
             url: url,
             success: function () {
                 self.userBusiness().update(emptyBusiness);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -121,9 +115,6 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
             url: url,
             success: function () {
                 self.memberBusinesses.remove(data);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -151,9 +142,6 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
                 });
 
                 self.memberBusinesses(mappedSponsors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -176,7 +164,7 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
                     self.getMemberBusinesses();
                 }
                 else {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
                 }
             }
         });

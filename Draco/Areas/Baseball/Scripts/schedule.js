@@ -409,9 +409,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                 else {
                     self.addGameToCalendar(game);
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -442,9 +439,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                         gameDay.games.remove(game);
                     });
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -496,9 +490,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                     return !wasFound;
                 });
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -580,9 +571,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
                         self.gameMonth.push(gameWeek);
                     }
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 },
                 complete: function () {
                     self.loadingSchedule(false);
@@ -713,9 +701,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                         self.teamsCache[self.selectedLeague()] = [ { Name: '{no teams in league}', Id: 0 } ];
 
                     self.leagueTeams(self.teamsCache[self.selectedLeague()]);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }
@@ -735,9 +720,6 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                     });
 
                     callback(self.rostersCache[teamId]);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
                 }
             });
         }

@@ -113,9 +113,6 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
                 self.sponsors.push(new SponsorViewModel(sponsor, self.accountId));
                 self.clearEditValues();
                 self.editSponsorMode(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -145,9 +142,6 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
             url: url,
             success: function () {
                 self.sponsors.remove(sponsor);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -179,9 +173,6 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
 
                 self.clearEditValues();
                 self.editSponsorMode(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -203,9 +194,6 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
                 });
 
                 self.sponsors(mappedSponsors);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 

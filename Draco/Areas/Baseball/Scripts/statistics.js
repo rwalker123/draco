@@ -42,9 +42,6 @@ var StatisticsViewModel = function (accountId, isAdmin) {
             url: url,
             success: function (l) {
                 self.leagues(l);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -78,9 +75,6 @@ var StatisticsViewModel = function (accountId, isAdmin) {
                     Name: "All Divisions"
                 });
                 self.divisions(d);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

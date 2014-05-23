@@ -61,7 +61,7 @@
                     self.readyToUpload(true);
                 },
                 fail: function (e, data) {
-                    alert("Caught error: Status: " + data.jqXHR.status + ". Error: " + data.errorThrown + "\n. responseText: " + data.jqXHR.responseText);
+                    eportAjaxError(self.fileUploaderUrl(), data.jqXHR, '', data.errorThrown);
 
                     self.readyToUpload(true);
                     self.isUploading(false);
@@ -126,9 +126,6 @@
 
                 self.handouts(mappedHandouts);
 
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }
@@ -202,9 +199,6 @@
                 self.handoutEdit_FileName('');
 
                 self.editHandoutMode(false);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
 
@@ -234,9 +228,6 @@
                 self.handouts.remove(function (item) {
                     return item.Id == id;
                 });
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError + "\n. responseText: " + xhr.responseText);
             }
         });
     }

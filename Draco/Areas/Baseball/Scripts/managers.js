@@ -51,17 +51,16 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     })
 
     self.removeManager = function (manager) {
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.contactId;
+
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.contactId,
+            url: url,
             success: function (manager) {
                 var fullName = manager.FirstName + " " + manager.LastName;
 
                 var mvm = new ManagerViewModel(self.accountId, manager.Id, fullName, manager.PhotoURL);
                 self.managers.push(mvm);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -75,17 +74,15 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     }
 
     self.addManager = function () {
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + self.selectedPlayer().id;
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + self.selectedPlayer().id,
+            url: url,
             success: function (manager) {
                 var fullName = manager.FirstName + " " + manager.LastName;
 
                 var mvm = new ManagerViewModel(self.accountId, manager.Id, fullName, manager.PhotoURL);
                 self.managers.push(mvm);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -103,9 +100,6 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                 });
 
                 self.managers(results)
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
 
@@ -137,9 +131,6 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                     }
                 });
                 response(results);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }

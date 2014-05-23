@@ -96,9 +96,6 @@ var UmpiresClass = function (accountId) {
                     }
                 });
                 response(results);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -126,9 +123,6 @@ var UmpiresClass = function (accountId) {
             dataType: "json",
             success: function (data) {
                 self.populateUmpires();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -151,9 +145,6 @@ var UmpiresClass = function (accountId) {
 
                 self.umpires(mappedUsers);
                 self.refreshUmpireList();
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -200,9 +191,6 @@ var UmpiresClass = function (accountId) {
             success: function (data) {
                 // remove from data model.
                 self.umpires.remove(umpire);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
@@ -226,9 +214,6 @@ var UmpiresClass = function (accountId) {
 
                     userData.details.loaded = true;
                 }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
             }
         });
     }
