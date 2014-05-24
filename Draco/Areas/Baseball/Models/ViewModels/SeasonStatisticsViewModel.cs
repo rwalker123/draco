@@ -18,28 +18,10 @@ namespace SportsManager.Baseball.ViewModels
             }
 
             SeasonId = seasonId;
-            SeasonName = DataAccess.Seasons.GetSeasonName(seasonId);
 
-            LeagueId = leagueId;
-            if (seasonId == 0) // historical stats will use leagueId, not leagueSeasonId
-                LeagueName = DataAccess.Leagues.GetLeagueNameFromLeagueId(leagueId);
-            else
-                LeagueName = DataAccess.Leagues.GetLeagueName(leagueId);
-
-            DivisionId = divisionId;
-            if (DivisionId != 0)
-                DivisionName = DataAccess.Divisions.GetDivisionName(divisionId);
-
-            UseHistorical = seasonId == 0;
         }
 
-        public long LeagueId { get; private set; }
-        public long DivisionId { get; private set; }
-        public string LeagueName { get; private set; }
-        public string DivisionName { get; private set; }
-        public bool UseHistorical { get; private set; }
         public long SeasonId { get; private set; }
-        public string SeasonName { get; private set; }
 
         public IEnumerable<SelectListItem> GetSeasons()
         {

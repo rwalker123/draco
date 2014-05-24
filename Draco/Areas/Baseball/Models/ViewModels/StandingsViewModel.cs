@@ -6,38 +6,13 @@ using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class StandingsViewModel : AccountViewModel
+    public class BuildStandingsHelper
     {
-        public StandingsViewModel(Controller c, long accountId)
-            : base(c, accountId)
-        {
-            SeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
-            SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
-
-        }
-
-        public StandingsViewModel(Controller c, long accountId, long seasonId)
-            : base(c, accountId)
-        {
-            SeasonId = seasonId;
-            SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
-        }
-
-        public long SeasonId
-        {
-            get;
-            private set;
-        }
-
-        public string SeasonName
-        {
-            get;
-            private set;
-        }
-
         private bool m_firstDivisionTeam;
         private int m_divisionWins;
         private int m_divisionLosses;
+
+        private Dictionary<long, List<TeamStanding>> m_divisionStandings = new Dictionary<long, List<TeamStanding>>();
 
         public double GamesBack
         {
@@ -45,35 +20,16 @@ namespace SportsManager.Baseball.ViewModels
             private set;
         }
 
-        public IEnumerable<SelectListItem> GetSeasons()
+        public IEnumerable<League> Leagues(long seasonId)
         {
-            ICollection<Season> seasons = DataAccess.Seasons.GetSeasons(AccountId);
-            long currentSeason = DataAccess.Seasons.GetCurrentSeason(AccountId);
+            GamesBack = 0.0;
 
-            List<SelectListItem> seasonListItems = new List<SelectListItem>();
-            seasonListItems.Add(new SelectListItem() { Text = "Current Season", Value = currentSeason.ToString(), Selected = currentSeason == SeasonId });
+            m_firstDivisionTeam = true;
+            m_divisionWins = 0;
+            m_divisionLosses = 0;
 
-            seasonListItems.AddRange((from s in seasons
-                                      select new SelectListItem() { Text = s.Name, Value = s.Id.ToString(), Selected = (s.Id == SeasonId && s.Id != currentSeason) }));
-
-            return seasonListItems;
+            return DataAccess.Leagues.GetLeagues(seasonId);
         }
-
-        public IEnumerable<League> Leagues
-        {
-            get
-            {
-                GamesBack = 0.0;
-
-                m_firstDivisionTeam = true;
-                m_divisionWins = 0;
-                m_divisionLosses = 0;
-
-                return DataAccess.Leagues.GetLeagues(SeasonId);
-            }
-        }
-
-        private Dictionary<long, List<TeamStanding>> m_divisionStandings = new Dictionary<long, List<TeamStanding>>();
 
         public IQueryable<Division> GetDivisions(long leagueId)
         {
@@ -118,6 +74,80 @@ namespace SportsManager.Baseball.ViewModels
                     GamesBack *= -1;
                 }
             }
+        }
+    }
+
+    public class StandingsViewModel : AccountViewModel
+    {
+        private BuildStandingsHelper m_standingsHelper = new BuildStandingsHelper();
+ 
+        public StandingsViewModel(Controller c, long accountId)
+            : base(c, accountId)
+        {
+            SeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+            SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
+
+        }
+
+        public StandingsViewModel(Controller c, long accountId, long seasonId)
+            : base(c, accountId)
+        {
+            SeasonId = seasonId;
+            SeasonName = DataAccess.Seasons.GetSeasonName(SeasonId);
+        }
+
+        public long SeasonId
+        {
+            get;
+            private set;
+        }
+
+        public string SeasonName
+        {
+            get;
+            private set;
+        }
+
+        public double GamesBack
+        {
+            get { return m_standingsHelper.GamesBack;  }
+        }
+
+        public IEnumerable<SelectListItem> GetSeasons()
+        {
+            ICollection<Season> seasons = DataAccess.Seasons.GetSeasons(AccountId);
+            long currentSeason = DataAccess.Seasons.GetCurrentSeason(AccountId);
+
+            List<SelectListItem> seasonListItems = new List<SelectListItem>();
+            seasonListItems.Add(new SelectListItem() { Text = "Current Season", Value = currentSeason.ToString(), Selected = currentSeason == SeasonId });
+
+            seasonListItems.AddRange((from s in seasons
+                                      select new SelectListItem() { Text = s.Name, Value = s.Id.ToString(), Selected = (s.Id == SeasonId && s.Id != currentSeason) }));
+
+            return seasonListItems;
+        }
+
+        public IEnumerable<League> Leagues
+        {
+            get
+            {
+                return m_standingsHelper.Leagues(SeasonId);
+            }
+        }
+
+        public IQueryable<Division> GetDivisions(long leagueId)
+        {
+            return m_standingsHelper.GetDivisions(leagueId);
+        }
+
+        public List<TeamStanding> GetDivisionStandings(long divisionId)
+        {
+            return m_standingsHelper.GetDivisionStandings(divisionId);
+        }
+
+        public void ProcessTeamStanding(TeamStanding t)
+        {
+            m_standingsHelper.ProcessTeamStanding(t);
         }
     }
 }

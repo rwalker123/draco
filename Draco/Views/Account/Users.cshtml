@@ -77,9 +77,7 @@
     <ul class="pager">
         <li class="previous"><a data-bind="visible: prevPagesAvailable, click: gotoPrev">&larr; Prev</a></li>
         <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
-        @*<li>Page: <span data-bind="text: currentPageNo"></span>/<span data-bind="text: totalPages"></span></li>*@
     </ul>
-    @*<div style="clear: both"></div>*@
     <div data-bind="foreach: users">
         <h3 class="userHeader">
             <img src='@Url.Content("~/images/busy.gif")'

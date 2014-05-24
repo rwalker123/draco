@@ -1,14 +1,13 @@
-﻿using System;
+﻿using SportsManager.Models;
+using System;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Web.Http;
-using System.Web.Http.OData;
-using ModelObjects;
-using SportsManager.Models;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Http;
+using System.Web.Http.OData;
 
 namespace SportsManager.Controllers
 {

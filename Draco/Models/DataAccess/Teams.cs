@@ -567,25 +567,27 @@ namespace DataAccess
                 if (!isTeamAdmin)
                 {
                     var contact = DataAccess.Contacts.GetContact(aspNetUserId);
-
-                    // first check to see if this user the manager, they get admin rights to the team.
-                    var managers = GetTeamManagers(teamSeasonId);
-                    isTeamAdmin = (from m in managers
-                                   where m.Id == contact.Id
-                                   select m).Any();
-
-
-                    // if not a manager, see if user was given the team admin role.
-                    if (!isTeamAdmin)
+                    if (contact != null)
                     {
-                        DB db = DBConnection.GetContext();
+                        // first check to see if this user the manager, they get admin rights to the team.
+                        var managers = GetTeamManagers(teamSeasonId);
+                        isTeamAdmin = (from m in managers
+                                       where m.Id == contact.Id
+                                       select m).Any();
 
-                        var roleId = DataAccess.ContactRoles.GetTeamAdminId();
-                        var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
-                        if (roles != null)
-                            isTeamAdmin = (from r in roles
-                                           where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
-                                           select r).Any();
+
+                        // if not a manager, see if user was given the team admin role.
+                        if (!isTeamAdmin)
+                        {
+                            DB db = DBConnection.GetContext();
+
+                            var roleId = DataAccess.ContactRoles.GetTeamAdminId();
+                            var roles = DataAccess.ContactRoles.GetContactRoles(accountId, contact.Id);
+                            if (roles != null)
+                                isTeamAdmin = (from r in roles
+                                               where r.RoleId == roleId && r.AccountId == accountId && r.RoleData == teamSeasonId
+                                               select r).Any();
+                        }
                     }
                 }
             }

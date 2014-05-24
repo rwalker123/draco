@@ -24,6 +24,20 @@ namespace ModelObjects
 		{
 		}
 
+        public TeamStanding(TeamStanding copyFrom)
+        {
+		    m_teamId = copyFrom.m_teamId;
+		    m_divisionId = copyFrom.m_divisionId;
+		    m_teamName = copyFrom.m_teamName;
+            m_wins = copyFrom.m_wins;
+		    m_losses = copyFrom.m_losses;
+		    m_ties = copyFrom.m_ties;
+		    m_totalGames = copyFrom.m_totalGames;
+		    m_divWins = copyFrom.m_divWins;
+		    m_divLosses = copyFrom.m_divLosses;
+		    m_divTies = copyFrom.m_divTies;
+		    m_totalDivGames = copyFrom.m_totalDivGames;
+        }
 		public TeamStanding(long teamId, long divisionId, String teamName)
 		{
 			m_teamId = teamId;

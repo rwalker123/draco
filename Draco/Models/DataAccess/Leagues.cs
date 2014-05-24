@@ -85,11 +85,11 @@ namespace DataAccess
                     });
         }
 
-        static public IQueryable<Team> GetLeagueTeamsFromSeason(long accountId)
+        static public IQueryable<Team> GetLeagueTeamsFromSeason(long accountId, long? seasonId = null)
         {
             DB db = DBConnection.GetContext();
 
-            long currentSeason = DataAccess.Seasons.GetCurrentSeason(accountId);
+            long currentSeason = (!seasonId.HasValue || seasonId.Value <= 0) ? DataAccess.Seasons.GetCurrentSeason(accountId) : seasonId.Value;
 
             return (from ls in db.LeagueSeasons
                     join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId

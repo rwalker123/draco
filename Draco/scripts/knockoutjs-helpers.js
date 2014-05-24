@@ -393,4 +393,19 @@
 
         return result;
     };
+
+    ko.bindingHandlers.numericText = {
+        update: function (element, valueAccessor, allBindingsAccessor) {
+            var value = ko.utils.unwrapObservable(valueAccessor()),
+                precision = ko.utils.unwrapObservable(allBindingsAccessor().precision) || ko.bindingHandlers.numericText.defaultPrecision,
+                removeLeadingZero = ko.utils.unwrapObservable(allBindingsAccessor().removeLeadingZero),
+                formattedValue = value.toFixed(precision);
+
+            if (removeLeadingZero)
+                formattedValue = formattedValue.replace(/^0+/, '');
+
+            ko.bindingHandlers.text.update(element, function () { return formattedValue; });
+        },
+        defaultPrecision: 1
+    };
 }

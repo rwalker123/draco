@@ -239,13 +239,17 @@ namespace ModelObjects
 		{
 			get
 			{
-				ContactName playerName = PlayerNameQuery();
-				if (playerName != null)
-					return String.Format("{0}, {1} {2}", playerName.LastName, playerName.FirstName, playerName.MiddleName);
+                ContactName playerName = PlayerNameQuery();
+                if (playerName != null)
+                    return String.Format("{0}, {1} {2}", playerName.LastName, playerName.FirstName, playerName.MiddleName);
 
 				return String.Empty;
 				//    PlayerName = g.First().RosterSeason.Roster.Contact.LastName + ", " + g.First().RosterSeason.Roster.Contact.FirstName,
 			}
+            set
+            {
+
+            }
 		}
 
 		public bool IsValid()

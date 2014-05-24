@@ -236,8 +236,10 @@
     <Compile Include="Areas\Baseball\BaseballAreaRegistration.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\PlayerController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
     <Compile Include="CleanMessageBoard.aspx.cs">
       <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -612,6 +614,7 @@
     <Content Include="fonts\fontawesome-webfont.ttf" />
     <Content Include="fonts\fontawesome-webfont.eot" />
     <Content Include="fonts\FontAwesome.otf" />
+    <Content Include="Areas\Baseball\Views\Player\Index.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
@@ -646,13 +649,9 @@
     <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\_SeasonStandings.cshtml" />
     <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\BattingSortableStatistics.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\HistoricalSeasonStandings.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\LeagueLeaders.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\PitchingSortableStatistics.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\PlayerSearch.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\PlayerStatsByTeam.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
     <Content Include="Areas\Baseball\Views\Web.config" />

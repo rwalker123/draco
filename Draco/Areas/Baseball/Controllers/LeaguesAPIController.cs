@@ -51,9 +51,9 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("LeagueTeams")]
-        public HttpResponseMessage GetLeagueTeams(long accountId)
+        public HttpResponseMessage GetLeagueTeams(long accountId, long? id = null)
         {
-            var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId);
+            var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId, id);
             return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, leagueTeams);
         }
 

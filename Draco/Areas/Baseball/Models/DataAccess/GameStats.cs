@@ -656,7 +656,7 @@ namespace DataAccess
             return stats;
         }
 
-        static public IEnumerable<GameBatStats> GetBatLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats, out int totalRecords)
+        static public IQueryable<GameBatStats> GetBatLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats) //, out int totalRecords)
         {
             DB db = DBConnection.GetContext();
 
@@ -709,7 +709,7 @@ namespace DataAccess
                                     TB = tb
                                 }).OrderBy(sortField + " " + sortOrder);
 
-                totalRecords = batstats.Count();
+                //totalRecords = batstats.Count();
 
                 return batstats;
             }
@@ -760,10 +760,61 @@ namespace DataAccess
                                     TB = tb
                                 }).OrderBy(sortField + " " + sortOrder);
 
-                totalRecords = batstats.Count();
+                //totalRecords = batstats.Count();
 
                 return batstats;
             }
+        }
+
+        static public IQueryable<GameBatStats> GetBatLeaguePlayerTotals(long leagueId, long divisionId, string sortField, string sortOrder)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from bss in db.batstatsums
+                    join ls in db.LeagueSchedules on bss.GameId equals ls.Id
+                    join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
+                    where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
+                    group bss by bss.PlayerId into g
+                    let ab = g.Sum(b => b.AB)
+                    let h = g.Sum(b => b.H)
+                    let bb = g.Sum(b => b.BB)
+                    let hbp = g.Sum(b => b.HBP)
+                    let d = g.Sum(b => b._2B)
+                    let t = g.Sum(b => b._3B)
+                    let hr = g.Sum(b => b.HR)
+                    let sh = g.Sum(b => b.SH)
+                    let sf = g.Sum(b => b.SF)
+                    let intr = g.Sum(b => b.INTR)
+                    let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                    let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                    let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                    select new GameBatStats
+                    {
+                        PlayerId = g.Key,
+                        AB = ab,
+                        H = h,
+                        R = g.Sum(b => b.R),
+                        D = d,
+                        T = t,
+                        HR = hr,
+                        RBI = g.Sum(b => b.RBI),
+                        SO = g.Sum(b => b.SO),
+                        BB = bb,
+                        RE = g.Sum(b => b.RE),
+                        HBP = hbp,
+                        INTR = intr,
+                        SF = sf,
+                        SH = sh,
+                        SB = g.Sum(b => b.SB),
+                        CS = g.Sum(b => b.CS),
+                        LOB = g.Sum(b => b.LOB),
+                        AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                        OBA = oba,
+                        OPS = slg + oba,
+                        PA = ab + bb + hbp + sh + sf + intr,
+                        SLG = slg,
+                        TB = tb
+                    }).OrderBy(sortField + " " + sortOrder);
         }
 
         static public IQueryable<GamePitchStats> GetPitchTeamPlayerTotals(long teamId, string sortField, string sortOrder, bool historicalStats)
@@ -1046,7 +1097,7 @@ namespace DataAccess
 
         }
 
-        static public IEnumerable<GamePitchStats> GetPitchLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats, out int totalRecords)
+        static public IQueryable<GamePitchStats> GetPitchLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats)
         {
             DB db = DBConnection.GetContext();
 
@@ -1108,7 +1159,7 @@ namespace DataAccess
                                       SLG = slg
                                   }).OrderBy(sortField + " " + sortOrder);
 
-                totalRecords = pitchstats.Count();
+                //totalRecords = pitchstats.Count();
 
                 return pitchstats;
             }
@@ -1168,10 +1219,70 @@ namespace DataAccess
                                       SLG = slg
                                   }).OrderBy(sortField + " " + sortOrder);
 
-                totalRecords = pitchstats.Count();
+                //totalRecords = pitchstats.Count();
 
                 return pitchstats;
             }
+        }
+
+        static public IQueryable<GamePitchStats> GetPitchLeaguePlayerTotals(long leagueId, long divisionId, string sortField, string sortOrder)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from pss in db.pitchstatsums
+                    join ls in db.LeagueSchedules on pss.GameId equals ls.Id
+                    join ts in db.TeamsSeasons on pss.TeamId equals ts.Id 
+                    where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
+                    group pss by pss.PlayerId into g
+                    let h = g.Sum(b => b.H)
+                    let bb = g.Sum(b => b.BB)
+                    let hbp = g.Sum(b => b.HBP)
+                    let d = g.Sum(b => b._2B)
+                    let t = g.Sum(b => b._3B)
+                    let hr = g.Sum(b => b.HR)
+                    let sc = g.Sum(b => b.SC)
+                    let bf = g.Sum(b => b.BF)
+                    let ip = g.Sum(b => b.IP)
+                    let ip2 = g.Sum(b => b.IP2)
+                    let er = g.Sum(b => b.ER)
+                    let so = g.Sum(b => b.SO)
+                    let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                    let ab = bf - bb - hbp - sc
+                    let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                    let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                    let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                    let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                    select new GamePitchStats
+                    {
+                        PlayerId = g.Key,
+                        IP = ip,
+                        IP2 = ip2,
+                        BF = bf,
+                        W = g.Sum(b => b.W),
+                        L = g.Sum(b => b.L),
+                        S = g.Sum(b => b.S),
+                        H = bb,
+                        R = g.Sum(b => b.R),
+                        ER = er,
+                        D = d,
+                        T = t,
+                        HR = hr,
+                        SO = so,
+                        BB = bb,
+                        WP = g.Sum(b => b.WP),
+                        HBP = hbp,
+                        BK = g.Sum(b => b.BK),
+                        SC = sc,
+                        ERA = era,
+                        AB = ab,
+                        BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                        IPDecimal = ipdecimal,
+                        WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                        TB = tb,
+                        K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                        OBA = oba,
+                        SLG = slg
+                    }).OrderBy(sortField + " " + sortOrder);
         }
 
         static public GameFieldStats[] GetFieldTeamPlayerTotals(long teamId, int filter, long filterData)
@@ -1813,133 +1924,254 @@ namespace DataAccess
             return true;
         }
 
-
-        static public ICollection<GameCareerBatStats> GetBatPlayerCareer(long playerSeasonId, bool fromRosterId)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="playerId"></param>
+        /// <param name="fromSeason">playerId is either a contactId or rosterSeasonId</param>
+        /// <returns></returns>
+        static public IQueryable<GameCareerBatStats> GetBatPlayerCareer(long playerId, bool fromSeason)
         {
-            List<GameCareerBatStats> stats = new List<GameCareerBatStats>();
+            //SELECT Season.Name as SeasonName, TeamsSeason.Name as TeamName, League.Name as LeagueName, SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, @playerId 
+            //FROM RosterSeason 
+            //     LEFT JOIN TeamsSeason ON RosterSeason.TeamSeasonId = TeamsSeason.Id 
+            //     LEFT JOIN Teams ON Teams.Id = TeamsSeason.TeamId 
+            //     LEFT JOIN LeagueSeason ON LeagueSeason.Id = TeamsSeason.LeagueSeasonId 
+            //     LEFT JOIN Season ON Season.Id = LeagueSeason.SeasonId 
+            //     LEFT JOIN League ON League.Id = LeagueSeason.LeagueId 
+            //     LEFT JOIN batstatsum ON RosterSeason.Id = batstatsum.PlayerId 
+            //WHERE RosterSeason.PlayerId = @playerId AND batstatsum.Id IS NOT NULL 
+            //GROUP BY RosterSeason.Id, Season.Name, League.Name, TeamsSeason.Name ORDER BY Season.Name, League.Name, TeamsSeason.Name
 
-            try
+            DB db = DBConnection.GetContext();
+
+            long playerContactId = 0;
+            if (fromSeason)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatPlayerCareer", myConnection);
-                    myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = playerSeasonId;
-                    myCommand.Parameters.Add("@fromRosterId", SqlDbType.Int).Value = fromRosterId ? 1 : 0;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameCareerBatStats(dr.GetInt64(17), dr.GetString(0), dr.GetString(1), dr.GetString(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16)));
-                    }
-                }
+                playerContactId = (from rs in db.RosterSeasons
+                                   join r in db.Rosters on rs.PlayerId equals r.Id
+                                   where rs.Id == playerId
+                                   select r.Contact.Id).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                playerContactId = playerId;
             }
 
-            return stats;
+            if (playerContactId == 0)
+                return null;
+
+            // get the roster id from contact.
+            long rosterPlayerId = (from r in db.Rosters
+                                   where r.ContactId == playerContactId
+                                   select r.Id).SingleOrDefault();
+
+            if (rosterPlayerId == 0)
+                return null;
+
+            return (from rs in db.RosterSeasons
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join t in db.Teams on ts.TeamId equals t.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    join s in db.Seasons on ls.SeasonId equals s.Id
+                    join l in db.Leagues on ls.LeagueId equals l.Id
+                    join bss in db.batstatsums on rs.Id equals bss.PlayerId
+                    where rs.PlayerId == rosterPlayerId && bss.Id != null
+                    orderby s.Name, l.Name, ts.Name
+                    group new { bss, s, l, ts } by new { bss.PlayerId, seasonName = s.Name, leagueName = l.Name, teamName = ts.Name } into g
+                    select new GameCareerBatStats(g.Key.PlayerId,
+                        g.Key.seasonName,
+                        g.Key.teamName,
+                        g.Key.leagueName,
+                        g.Sum(b => b.bss.AB),
+                        g.Sum(b => b.bss.H),
+                        g.Sum(b => b.bss.R),
+                        g.Sum(b => b.bss._2B),
+                        g.Sum(b => b.bss._3B),
+                        g.Sum(b => b.bss.HR),
+                        g.Sum(b => b.bss.RBI),
+                        g.Sum(b => b.bss.SO),
+                        g.Sum(b => b.bss.BB),
+                        g.Sum(b => b.bss.HBP),
+                        g.Sum(b => b.bss.INTR),
+                        g.Sum(b => b.bss.SF),
+                        g.Sum(b => b.bss.SH),
+                        g.Sum(b => b.bss.SB)));
         }
 
-        static public GameCareerBatStats GetBatPlayerCareerTotal(long playerSeasonId, int fromRosterId)
+        static public GameCareerBatStats GetBatPlayerCareerTotal(long playerId, bool fromSeason)
         {
-            GameCareerBatStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            long playerContactId = 0;
+            if (fromSeason)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatPlayerCareerTotal", myConnection);
-                    myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = playerSeasonId;
-                    myCommand.Parameters.Add("@fromRosterId", SqlDbType.Int).Value = @fromRosterId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats = new GameCareerBatStats(dr.GetInt64(14), String.Empty, String.Empty, String.Empty, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13));
-                    }
-                }
+                playerContactId = (from rs in db.RosterSeasons
+                                   join r in db.Rosters on rs.PlayerId equals r.Id
+                                   where rs.Id == playerId
+                                   select r.Contact.Id).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                playerContactId = playerId;
             }
 
-            return stats;
+            if (playerContactId == 0)
+                return null;
+
+            // get the roster id from contact.
+            long rosterPlayerId = (from r in db.Rosters
+                                   where r.ContactId == playerContactId
+                                   select r.Id).SingleOrDefault();
+
+            if (rosterPlayerId == 0)
+                return null;
+
+            //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, @playerId 
+            //FROM RosterSeason LEFT JOIN batstatsum ON RosterSeason.Id = batstatsum.PlayerId 
+            //WHERE RosterSeason.PlayerId = @playerId
+
+            return (from rs in db.RosterSeasons
+                    join bss in db.batstatsums on rs.Id equals bss.PlayerId
+                    where rs.PlayerId == rosterPlayerId
+                    group new { rs, bss } by rs.PlayerId into g
+                    select new GameCareerBatStats(g.Key,
+                    "",
+                    "",
+                    "",
+                    g.Sum(b => b.bss.AB),
+                    g.Sum(b => b.bss.H),
+                    g.Sum(b => b.bss.R),
+                    g.Sum(b => b.bss._2B),
+                    g.Sum(b => b.bss._3B),
+                    g.Sum(b => b.bss.HR),
+                    g.Sum(b => b.bss.RBI),
+                    g.Sum(b => b.bss.SO),
+                    g.Sum(b => b.bss.BB),
+                    g.Sum(b => b.bss.HBP),
+                    g.Sum(b => b.bss.INTR),
+                    g.Sum(b => b.bss.SF),
+                    g.Sum(b => b.bss.SH),
+                    g.Sum(b => b.bss.SB))).SingleOrDefault();
         }
 
-        static public ICollection<GameCareerPitchStats> GetPitchPlayerCareer(long playerSeasonId, bool fromRosterId)
+        static public IQueryable<GameCareerPitchStats> GetPitchPlayerCareer(long playerId, bool fromSeason)
         {
-            List<GameCareerPitchStats> stats = new List<GameCareerPitchStats>();
+            DB db = DBConnection.GetContext();
 
-            try
+            long playerContactId = 0;
+            if (fromSeason)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchPlayerCareer", myConnection);
-                    myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = playerSeasonId;
-                    myCommand.Parameters.Add("@fromRosterId", SqlDbType.Int).Value = fromRosterId ? 1 : 0;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameCareerPitchStats(dr.GetInt64(21), dr.GetString(0), dr.GetString(1), dr.GetString(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17), dr.GetInt32(18), dr.GetInt32(19), dr.GetInt32(20)));
-                    }
-                }
+                playerContactId = (from rs in db.RosterSeasons
+                                   join r in db.Rosters on rs.PlayerId equals r.Id
+                                   where rs.Id == playerId
+                                   select r.Contact.Id).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                playerContactId = playerId;
             }
 
-            return stats;
+            if (playerContactId == 0)
+                return null;
+
+            // get the roster id from contact.
+            long rosterPlayerId = (from r in db.Rosters
+                                   where r.ContactId == playerContactId
+                                   select r.Id).SingleOrDefault();
+
+            if (rosterPlayerId == 0)
+                return null;
+
+            return (from rs in db.RosterSeasons
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join t in db.Teams on ts.TeamId equals t.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    join s in db.Seasons on ls.SeasonId equals s.Id
+                    join l in db.Leagues on ls.LeagueId equals l.Id
+                    join bss in db.pitchstatsums on rs.Id equals bss.PlayerId
+                    where rs.PlayerId == rosterPlayerId && bss.Id != null
+                    orderby s.Name, l.Name, ts.Name
+                    group new { bss, s, l, ts } by new { bss.PlayerId, seasonName = s.Name, leagueName = l.Name, teamName = ts.Name } into g
+                    select new GameCareerPitchStats(g.Key.PlayerId,
+                        g.Key.seasonName,
+                        g.Key.teamName,
+                        g.Key.leagueName,
+                        g.Sum(b => b.bss.IP),
+                        g.Sum(b => b.bss.IP2),
+                        g.Sum(b => b.bss.BF),
+                        g.Sum(b => b.bss.W),
+                        g.Sum(b => b.bss.L),
+                        g.Sum(b => b.bss.S),
+                        g.Sum(b => b.bss.H),
+                        g.Sum(b => b.bss.R),
+                        g.Sum(b => b.bss.ER),
+                        g.Sum(b => b.bss._2B),
+                        g.Sum(b => b.bss._3B),
+                        g.Sum(b => b.bss.HR),
+                        g.Sum(b => b.bss.SO),
+                        g.Sum(b => b.bss.BB),
+                        g.Sum(b => b.bss.WP),
+                        g.Sum(b => b.bss.HBP),
+                        g.Sum(b => b.bss.BK),
+                        g.Sum(b => b.bss.SC)));
+
         }
 
-        static public GameCareerPitchStats GetPitchPlayerCareerTotal(long playerSeasonId, int fromRosterId)
+        static public GameCareerPitchStats GetPitchPlayerCareerTotal(long playerId, bool fromSeason)
         {
-            GameCareerPitchStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            long playerContactId = 0;
+            if (fromSeason)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchPlayerCareerTotal", myConnection);
-                    myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = playerSeasonId;
-                    myCommand.Parameters.Add("@fromRosterId", SqlDbType.Int).Value = @fromRosterId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        stats = new GameCareerPitchStats(dr.GetInt64(18), String.Empty, String.Empty, String.Empty, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17));
-                    }
-                }
+                playerContactId = (from rs in db.RosterSeasons
+                                   join r in db.Rosters on rs.PlayerId equals r.Id
+                                   where rs.Id == playerId
+                                   select r.Contact.Id).SingleOrDefault();
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                playerContactId = playerId;
             }
 
-            return stats;
+            if (playerContactId == 0)
+                return null;
+
+            // get the roster id from contact.
+            long rosterPlayerId = (from r in db.Rosters
+                                   where r.ContactId == playerContactId
+                                   select r.Id).SingleOrDefault();
+
+            if (rosterPlayerId == 0)
+                return null;
+
+            return (from rs in db.RosterSeasons
+                    join bss in db.pitchstatsums on rs.Id equals bss.PlayerId
+                    where rs.PlayerId == rosterPlayerId
+                    group new { rs, bss } by rs.PlayerId into g
+                    select new GameCareerPitchStats(g.Key,
+                    "",
+                    "",
+                    "",
+                    g.Sum(b => b.bss.IP),
+                    g.Sum(b => b.bss.IP2),
+                    g.Sum(b => b.bss.BF),
+                    g.Sum(b => b.bss.W),
+                    g.Sum(b => b.bss.L),
+                    g.Sum(b => b.bss.S),
+                    g.Sum(b => b.bss.H),
+                    g.Sum(b => b.bss.R),
+                    g.Sum(b => b.bss.ER),
+                    g.Sum(b => b.bss._2B),
+                    g.Sum(b => b.bss._3B),
+                    g.Sum(b => b.bss.HR),
+                    g.Sum(b => b.bss.SO),
+                    g.Sum(b => b.bss.BB),
+                    g.Sum(b => b.bss.WP),
+                    g.Sum(b => b.bss.HBP),
+                    g.Sum(b => b.bss.BK),
+                    g.Sum(b => b.bss.SC))).SingleOrDefault();
         }
 
         static public int CalculateMinAB(long leagueId)
@@ -2226,12 +2458,12 @@ namespace DataAccess
                 bool addedLeaderTie = false;
 
                 // a tie for overall leader.
-                if (stats.Count == 0 && leaderStats.Count > 1)
-                {
-                    // add tie indicator for overall leader
-                    stats.Add(new LeagueLeaderStat(leaderStats.Count, leaderKey));
-                    addedLeaderTie = true;
-                }
+                //if (stats.Count == 0 && leaderStats.Count > 1)
+                //{
+                //    // add tie indicator for overall leader
+                //    stats.Add(new LeagueLeaderStat(leaderStats.Count, leaderKey));
+                //    addedLeaderTie = true;
+                //}
 
                 // if we can display all the leaders, display them, otherwise done.
                 if (leaderStats.Count + stats.Count <= limitRecords)
@@ -2258,7 +2490,7 @@ namespace DataAccess
             foreach (var stat in stats)
             {
                 if (stat.PlayerId > 0)
-                    stat.PlayerName = DataAccess.TeamRoster.GetPlayerName(stat.PlayerId);
+                    stat.PlayerName = DataAccess.TeamRoster.GetPlayerName(stat.PlayerId, allTimeLeaders);
 
                 if (stat.TeamId > 0)
                     stat.TeamName = DataAccess.Teams.GetTeamName(stat.TeamId);

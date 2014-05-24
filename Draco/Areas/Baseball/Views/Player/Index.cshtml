@@ -1,0 +1,219 @@
+﻿@using System.Web.Optimization
+@using SportsManager.Baseball.ViewModels;
+@model PlayerViewModel
+
+@if (@Model.Contact == null)
+{
+    return;
+}
+  
+@{
+    ViewBag.Title = @Model.Contact.FullNameFirst;
+}
+
+@section head {
+}
+
+<div class="jumbotron">
+    <h1><img onerror="this.style.display = 'none';" class="img-rounded" src="@Model.Contact.PhotoURL" />@ViewBag.Title.</h1>
+</div>
+
+<div class="container-fluid">
+
+    <div class="row-fluid">
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
+            <li><a href="#pitching" data-toggle="tab">Pitching</a></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade in active" id="batting">
+                @if (!Model.BatStats.Any())
+                {
+                    <div class="alert alert-info">No batting statistics found.</div>                    
+                }
+                else
+                { 
+                    <div class="table-responsive">
+                    <table id="batStatsTable" class="table table-striped statsTable">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th data-toggle="tooltip" title="at bats">AB</th>
+                                <th data-toggle="tooltip" title="hits">H</th>
+                                <th data-toggle="tooltip" title="runs scored">R</th>
+                                <th data-toggle="tooltip" title="doubles">2B</th>
+                                <th data-toggle="tooltip" title="triples">3B</th>
+                                <th data-toggle="tooltip" title="home runs">HR</th>
+                                <th data-toggle="tooltip" title="runs batted in">RBI</th>
+                                <th data-toggle="tooltip" title="strike outs">SO</th>
+                                <th data-toggle="tooltip" title="walks">BB</th>
+                                <th data-toggle="tooltip" title="hit by pitch">HBP</th>
+                                <th data-toggle="tooltip" title="stolen base">SB</th>
+                                <th data-toggle="tooltip" title="total bases">TB</th>
+                                <th data-toggle="tooltip" title="plate appearances">PA</th>
+                                <th data-toggle="tooltip" title="on base percentage">OBP</th>
+                                <th data-toggle="tooltip" title="slugging percentage">SLG</th>
+                                <th data-toggle="tooltip" title="on base percentage + slugging percentage">OPS</th>
+                                <th data-toggle="tooltip" title="batting average">AVG</th>
+                            </tr>
+                        </thead>
+                        <tbody >
+                            @foreach(var s in Model.BatStats)
+                            {
+                            <tr>
+                                <td>@s.SeasonName</td>
+                                <td>@s.LeagueName @s.TeamName</td>
+                                <td >@s.AB</td>
+                                <td >@s.H</td>
+                                <td >@s.R</td>
+                                <td >@s.D</td>
+                                <td >@s.T</td>
+                                <td >@s.HR</td>
+                                <td >@s.RBI</td>
+                                <td >@s.SO</td>
+                                <td >@s.BB</td>
+                                <td >@s.HBP</td>
+                                <td >@s.SB</td>
+                                <td >@s.TB</td>
+                                <td >@s.PA</td>
+                                <td >@s.OBA.ToString("#.000")</td>
+                                <td >@s.SLG.ToString("0.000")</td>
+                                <td >@s.OPS.ToString("0.000")</td>
+                                <td >@s.AVG.ToString("#.000")</td>
+                            </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="2" data-readonly="true">Totals</th>
+                                <td>@Model.BatStatsTotals.AB</td>
+                                <td>@Model.BatStatsTotals.H</td>
+                                <td>@Model.BatStatsTotals.R</td>
+                                <td>@Model.BatStatsTotals.D</td>
+                                <td>@Model.BatStatsTotals.T</td>
+                                <td>@Model.BatStatsTotals.HR</td>
+                                <td>@Model.BatStatsTotals.RBI</td>
+                                <td>@Model.BatStatsTotals.SO</td>
+                                <td>@Model.BatStatsTotals.BB</td>
+                                <td>@Model.BatStatsTotals.HBP</td>
+                                <td>@Model.BatStatsTotals.SB</td>
+                                <td>@Model.BatStatsTotals.TB</td>
+                                <td>@Model.BatStatsTotals.PA</td>
+                                <td>@Model.BatStatsTotals.OBA.ToString("#.000")</td>
+                                <td>@Model.BatStatsTotals.SLG.ToString("0.000")</td>
+                                <td>@Model.BatStatsTotals.OPS.ToString("0.000")</td>
+                                <td>@Model.BatStatsTotals.AVG.ToString("#.000")</td>
+                            </tr>
+
+                        </tfoot>
+                    </table>
+                </div>
+                }
+            </div>
+
+            <div id="pitching" class="tab-pane fade">
+                @if (!Model.PitchStats.Any())
+                {
+                    <div class="alert alert-info">No pitching statistics found.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table id="pitchStatsTable" class="table table-striped statsTable">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th data-toggle="tooltip" title="wins">W</th>
+                                    <th data-toggle="tooltip" title="losses">L</th>
+                                    <th data-toggle="tooltip" title="saves">S</th>
+                                    <th data-toggle="tooltip" title="innings pitched">IP</th>
+                                    <th data-toggle="tooltip" title="batters faced">BF</th>
+                                    <th data-toggle="tooltip" title="hits given up">H</th>
+                                    <th data-toggle="tooltip" title="runs scored">R</th>
+                                    <th data-toggle="tooltip" title="earned runs scored">ER</th>
+                                    <th data-toggle="tooltip" title="doubles">2B</th>
+                                    <th data-toggle="tooltip" title="triples">3B</th>
+                                    <th data-toggle="tooltip" title="home runs">HR</th>
+                                    <th data-toggle="tooltip" title="strike outs">SO</th>
+                                    <th data-toggle="tooltip" title="walks">BB</th>
+                                    <th data-toggle="tooltip" title="strikouts per 9 innings">K/9</th>
+                                    <th data-toggle="tooltip" title="walks per 9 innings">BB/9</th>
+                                    <th data-toggle="tooltip" title="opponents batting average">OBP</th>
+                                    <th data-toggle="tooltip" title="opponents slugging percentage">SLG</th>
+                                    <th data-toggle="tooltip" title="walks + hits / innings pitched">WHIP</th>
+                                    <th data-toggle="tooltip" title="earned run average">ERA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var p in Model.PitchStats)
+                                {
+                                <tr>
+                                    <td>@p.SeasonName</td>
+                                    <td>@p.LeagueName @p.TeamName</td>
+                                    <td>@p.W</td>
+                                    <td>@p.L</td>
+                                    <td>@p.S</td>
+                                    <td>@p.IPDecimal</td>
+                                    <td>@p.BF</td>
+                                    <td>@p.H</td>
+                                    <td>@p.R</td>
+                                    <td>@p.ER</td>
+                                    <td>@p.D</td>
+                                    <td>@p.T</td>
+                                    <td>@p.HR</td>
+                                    <td>@p.SO</td>
+                                    <td>@p.BB</td>
+                                    <td>@p.K9.ToString("0.0")</td>
+                                    <td>@p.BB9.ToString("0.0")</td>
+                                    <td>@p.OBA.ToString("#.000")</td>
+                                    <td>@p.SLG.ToString("0.000")</td>
+                                    <td>@p.WHIP.ToString("0.00")</td>
+                                    <td>@p.ERA.ToString("0.00")</td>
+                                </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="2">Totals</th>
+                                    <td>@Model.PitchStatsTotals.W</td>
+                                    <td>@Model.PitchStatsTotals.L</td>
+                                    <td>@Model.PitchStatsTotals.S</td>
+                                    <td>@Model.PitchStatsTotals.IPDecimal</td>
+                                    <td>@Model.PitchStatsTotals.BF</td>
+                                    <td>@Model.PitchStatsTotals.H</td>
+                                    <td>@Model.PitchStatsTotals.R</td>
+                                    <td>@Model.PitchStatsTotals.ER</td>
+                                    <td>@Model.PitchStatsTotals.D</td>
+                                    <td>@Model.PitchStatsTotals.T</td>
+                                    <td>@Model.PitchStatsTotals.HR</td>
+                                    <td>@Model.PitchStatsTotals.SO</td>
+                                    <td>@Model.PitchStatsTotals.BB</td>
+                                    <td>@Model.PitchStatsTotals.K9.ToString("0.0")</td>
+                                    <td>@Model.PitchStatsTotals.BB9.ToString("0.0")</td>
+                                    <td>@Model.PitchStatsTotals.OBA.ToString("#.000")</td>
+                                    <td>@Model.PitchStatsTotals.SLG.ToString("0.000")</td>
+                                    <td>@Model.PitchStatsTotals.WHIP.ToString("0.00")</td>
+                                    <td>@Model.PitchStatsTotals.ERA.ToString("0.00")</td>
+                                </tr>
+
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $("th").tooltip({ container: 'body' });
+    });
+
+    </script>
+}

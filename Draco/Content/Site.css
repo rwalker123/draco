@@ -37,6 +37,14 @@ input[type="checkbox"].input-validation-error {
     border: 0 none;
 }
 
+li.previous,
+li.next,
+th.sortableField
+ {
+    cursor: pointer;
+}
+
+/**/
 .validation-summary-errors {
     color: #b94a48;
 }
@@ -201,4 +209,13 @@ div[data-role="editor-toolbar"] {
     font-size: 20px;
   }
 }
+
+.ui-autocomplete {
+    max-height: 300px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+}
+
+
 

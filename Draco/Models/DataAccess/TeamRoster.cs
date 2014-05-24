@@ -71,7 +71,7 @@ namespace DataAccess
 							FirstName = r.Contact.FirstName,
 							LastName = r.Contact.LastName,
 							MiddleName = r.Contact.MiddleName,
-							PhotoURL = Contact.GetPhotoURL(r.Id)
+							PhotoURL = Contact.GetPhotoURL(r.Contact.Id)
 						}).FirstOrDefault();
 			}
 			else
@@ -117,10 +117,6 @@ namespace DataAccess
                              where rs.Id == playerSeasonId
 							 select ls.SeasonId).SingleOrDefault();
 
-
-			long rosterId = (from rs in db.RosterSeasons
-							 where rs.Id == playerSeasonId
-							 select rs.PlayerId).SingleOrDefault();
 
 			return (from rs in db.RosterSeasons
 					join r in db.Rosters on rs.PlayerId equals r.Id

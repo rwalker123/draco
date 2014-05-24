@@ -17,14 +17,39 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (id.HasValue)
             {
                 var gameStats = DataAccess.GameStats.GetBatGameStats(id.Value, teamSeasonId);
-                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
             }
             else
             {
                 var gameStats = DataAccess.GameStats.GetBatTeamPlayerTotals(teamSeasonId, "AVG", "descending", false);
-                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
             }
         }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("historicalbatstats")]
+        public HttpResponseMessage GetHistoricalGameBatStats(long accountId, long teamSeasonId)
+        {
+            var t = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (t == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var gameStats = DataAccess.GameStats.GetBatTeamPlayerTotals(t.TeamId, "AVG", "descending", true);
+            return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("historicalpitchstats")]
+        public HttpResponseMessage GetHistoricalGamePitchStats(long accountId, long teamSeasonId)
+        {
+            var t = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (t == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var gameStats = DataAccess.GameStats.GetPitchTeamPlayerTotals(t.TeamId, "ERA", "ascending", true);
+            return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
+        }
+
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gamebatstatstotals")]
@@ -33,12 +58,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (id.HasValue)
             {
                 var gameStats = DataAccess.GameStats.GetBatGameTotals(id.Value, teamSeasonId);
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
             }
             else
             {
                 var gameStats = DataAccess.GameStats.GetBatTeamSeasonTotals(teamSeasonId, DataAccess.Seasons.GetCurrentSeason(accountId));
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -47,7 +72,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         public HttpResponseMessage GetPlayersWithNoGameBatStats(long accountId, long teamSeasonId, long id)
         {
             var players = DataAccess.GameStats.GetPlayersWithNoGameBatStats(id, teamSeasonId);
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.Created, players);
+            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, players);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -60,7 +85,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
 
-            return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.Created, gameStats);
+            return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -114,7 +139,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             var updated = DataAccess.GameStats.UpdateBattingGameStats(batStats);
             if (updated)
             {
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.Created, batStats);
+                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, batStats);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -127,12 +152,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (id.HasValue)
             {
                 var gameStats = DataAccess.GameStats.GetPitchGameStats(id.Value, teamSeasonId);
-                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
             }
             else
             {
                 var gameStats = DataAccess.GameStats.GetPitchTeamPlayerTotals(teamSeasonId, "ERA", "ascending", false);
-                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -143,12 +168,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (id.HasValue)
             {
                 var gameStats = DataAccess.GameStats.GetPitchGameTotals(id.Value, teamSeasonId);
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
             }
             else
             {
                 var gameStats = DataAccess.GameStats.GetPitchTeamSeasonTotals(teamSeasonId, DataAccess.Seasons.GetCurrentSeason(accountId));
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, gameStats);
+                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -158,7 +183,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         public HttpResponseMessage GetPlayersWithNoGamePitchStats(long accountId, long teamSeasonId, long id)
         {
             var players = DataAccess.GameStats.GetPlayersWithNoGamePitchStats(id, teamSeasonId);
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.Created, players);
+            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, players);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -171,7 +196,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
 
-            return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, gameStats);
+            return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -226,7 +251,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             var updated = DataAccess.GameStats.UpdatePitchingGameStats(pitchStats);
             if (updated)
             {
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, pitchStats);
+                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, pitchStats);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -241,7 +266,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (gameStats != null)
                 gameSummary = gameStats.Recap;
 
-            return Request.CreateResponse<String>(HttpStatusCode.Created, gameSummary);
+            return Request.CreateResponse<String>(HttpStatusCode.OK, gameSummary);
         }
 
         [AcceptVerbs("POST"), HttpPost]
