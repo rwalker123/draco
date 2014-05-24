@@ -187,6 +187,14 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
     }
 
     self.deleteField = function (field) {
+        $("#deleteModal").modal("show");
+
+        $("#deleteModal").one("click", function () {
+            self.doDeleteField(field)
+        });
+    }
+
+    self.doDeleteField = function (field) {
         $.ajax({
             type: "DELETE",
             url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/field/' + field.Id(),
