@@ -32,6 +32,10 @@ $.extend(UserRoleClass.prototype, {
         return (roleId == this.teamAdminId || roleId == this.teamPhotoAdminId);
     },
 
+    isTeamPhotoAdmin: function (roleId) {
+        return (roleId == this.teamPhotoAdminId);
+    },
+
     isLeagueAdmin: function (roleId) {
         return (roleId == this.leagueAdminId);
     },
@@ -92,6 +96,10 @@ $.extend(UserRoleClass.prototype, {
         if (this.isLeagueAdmin(roleId)) {
             roleData = $('#availableLeagues').val();
             roleDataText = $("#availableLeagues option[value='" + roleData + "']").text()
+        }
+        else if (this.isTeamPhotoAdmin(roleId)) {
+            roleData = $('#teamPhotoSelect').val();
+            roleDataText = $("#teamPhotoSelect option[value='" + roleData + "']").text()
         }
         else if (this.isTeamAdmin(roleId)) {
             roleData = $('#teamSelect').val();
@@ -234,13 +242,16 @@ $.extend(UserRoleClass.prototype, {
                     success: function (leagues) {
                         window.location.hash = 'update';
                         var teamSelect = $('#teamSelect');
+                        var teamPhotoSelect = $('#teamPhotoSelect');
                         $.each(leagues, function () {
                             teamSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
+                            teamPhotoSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
                         });
 
                         target.retrievedTeams = true;
 
                         teamSelect.selectpicker('refresh');
+                        teamPhotoSelect.selectpicker('refresh');
                     }
                 });
             }

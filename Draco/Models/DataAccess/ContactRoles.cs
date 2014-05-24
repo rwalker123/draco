@@ -157,26 +157,70 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
 
-            return (from cr in db.ContactRoles
-                    join c in db.Contacts on cr.ContactId equals c.Id
-                    where cr.AccountId == accountId && cr.RoleId == roleId
-                    select new ContactNameRole()
-                    {
-                        Id = c.Id,
-                        FirstName = c.FirstName,
-                        LastName = c.LastName,
-                        MiddleName = c.MiddleName,
-                        PhotoURL = Contact.GetPhotoURL(c.Id),
-                        RoleData = cr.RoleData,
-                        RoleId = cr.RoleId,
-                        RoleDataText = cr.RoleId == GetLeagueAdminId() ?
-                                        (from ls in db.LeagueSeasons
-                                         where ls.Id == cr.RoleData
-                                         select ls.League.Name).SingleOrDefault() :
-                                        (from ts in db.TeamsSeasons
-                                         where ts.Id == cr.RoleData
-                                         select ts.LeagueSeason.League.Name + " " + ts.Name).SingleOrDefault()
-                    });
+            // account admins are not bound by seasons.
+            if (roleId == GetAdminAccountId() || roleId == GetAccountPhotoAdminId())
+            {
+                return (from cr in db.ContactRoles
+                        join c in db.Contacts on cr.ContactId equals c.Id
+                        where cr.AccountId == accountId && cr.RoleId == roleId
+                        select new ContactNameRole()
+                        {
+                            Id = c.Id,
+                            FirstName = c.FirstName,
+                            LastName = c.LastName,
+                            MiddleName = c.MiddleName,
+                            PhotoURL = Contact.GetPhotoURL(c.Id),
+                            RoleData = cr.RoleData,
+                            RoleId = cr.RoleId,
+                            RoleDataText = ""
+                        });
+            }
+            else if (roleId == GetLeagueAdminId())
+            {
+                long currentSeason = DataAccess.Seasons.GetCurrentSeason(accountId);
+
+                return (from cr in db.ContactRoles
+                        join c in db.Contacts on cr.ContactId equals c.Id
+                        join ls in db.LeagueSeasons on cr.RoleData equals ls.Id
+                        where cr.AccountId == accountId && cr.RoleId == roleId && 
+                        ls.Id == cr.RoleData && ls.SeasonId == currentSeason
+                        select new ContactNameRole()
+                        {
+                            Id = c.Id,
+                            FirstName = c.FirstName,
+                            LastName = c.LastName,
+                            MiddleName = c.MiddleName,
+                            PhotoURL = Contact.GetPhotoURL(c.Id),
+                            RoleData = cr.RoleData,
+                            RoleId = cr.RoleId,
+                            RoleDataText = ls.League.Name
+                        });
+            }
+            else if (roleId == GetTeamAdminId() || roleId == GetTeamPhotoAdminId())
+            {
+                long currentSeason = DataAccess.Seasons.GetCurrentSeason(accountId);
+
+                return (from cr in db.ContactRoles
+                        join c in db.Contacts on cr.ContactId equals c.Id
+                        join ts in db.TeamsSeasons on cr.RoleData equals ts.Id
+                        join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                        where cr.AccountId == accountId && cr.RoleId == roleId &&
+                        ts.Id == cr.RoleData && ls.SeasonId == currentSeason
+                        select new ContactNameRole()
+                        {
+                            Id = c.Id,
+                            FirstName = c.FirstName,
+                            LastName = c.LastName,
+                            MiddleName = c.MiddleName,
+                            PhotoURL = Contact.GetPhotoURL(c.Id),
+                            RoleData = cr.RoleData,
+                            RoleId = cr.RoleId,
+                            RoleDataText = ls.League.Name + " " + ts.Name
+                        });
+
+            }
+
+            return null;
         }
 
         static public IQueryable<SportsManager.Model.ContactRole> GetAccountContactsFromRole(long accountId, String roleId)

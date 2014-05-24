@@ -139,6 +139,7 @@
         <form class="form-inline" role="form">
             <div id="div_playerSelect_@Model.TeamPhotoAdminId" class="form-group">
 
+                <select class="selectpicker" id="teamPhotoSelect" data-container="body" title="Choose a team..."></select>
                 <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
             </div>
         </form>
@@ -157,16 +158,20 @@
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'><span class="glyphicon glyphicon-minus"></span></button>
-    {{if PhotoURL}}
-        <img class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}'/>
-    {{else}}
-        <img class='playerPhoto' src='/Images/defaultperson.png' alt='{{:LastName}}'/>            
-    {{/if}}
-    <span style='font-size:x-large;padding-left:10px;padding-right:10px'>
-        {{:FirstName}} {{:LastName}} {{:RoleDataText}}
-    </span>
-
+    <div class="row" style="margin-bottom: 5px">
+        <div class="col-md-1">
+            <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'><span class="glyphicon glyphicon-minus"></span></button>
+        </div>
+        <div class="h4 col-md-3">
+            {{if PhotoURL}}
+            <img onerror="this.style.display = 'none';" class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}' />
+            {{/if}}
+            {{:FirstName}} {{:LastName}}
+        </div>
+        <div class="h5 col-md-3">
+            {{:RoleDataText}}
+        </div>
+    </div>
 </div>
 </script>
 
