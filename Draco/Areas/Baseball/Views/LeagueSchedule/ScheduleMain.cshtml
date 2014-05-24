@@ -225,24 +225,26 @@
                             <div class="list-group" data-bind="foreach: games">
                                 <div class="list-group-item">
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: AwayTeamName, trimTextLength: 7, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a>
-                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
+                                        <a class="col-sm-8" data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a>
+                                        <span class="col-sm-4" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
                                     </div>
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: HomeTeamName, trimTextLength: 7, attr: {title: HomeTeamName, href: HomeTeamId.href}"></a>
-                                        <span class="col-md-1" data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
+                                        <a class="col-sm-8" data-bind="trimText: HomeTeamName, trimTextLength: 10, attr: {title: HomeTeamName, href: HomeTeamId.href}"></a>
+                                        <span class="col-sm-4" data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
                                     </div>
                                     <div class="row">
-                                        <a class="col-md-8" data-bind="trimText: FieldName, trimTextLength: 7, visible: !GameStatus.isFinal() && FieldName(), attr: {title: FieldName, href: FieldId.href}"></a>
+                                        <a class="col-sm-12" data-bind="trimText: FieldName, trimTextLength: 15, visible: !GameStatus.isFinal() && FieldName(), attr: {title: FieldName, href: FieldId.href}"></a>
                                     </div>
                                     <div class="row">
-                                        <span class="col-md-9" data-bind="html: GameDate.TimeText, visible: !GameStatus.isFinal()"></span>
+                                        <span class="col-sm-12" data-bind="html: GameDate.TimeText, visible: !GameStatus.isFinal()"></span>
                                     </div>
                                     <div class="row">
-                                        <span class="col-md-7" data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
+                                        <span class="col-sm-12" data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
+                                    </div>
+                                    <div class="row">
                                         @if (Model.IsAdmin)
                                         {
-                                            <div class="col-md-2 noPrint">
+                                            <div class="col-sm-8 noPrint">
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
                                                         <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>

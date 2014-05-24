@@ -542,10 +542,12 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         // get back to "Sunday"
         var dayOfWeek = theDate.getDay();
         theDate.setDate(theDate.getDate() - dayOfWeek);
-        var startDate = moment(theDate).format("YYYY-MM-DD");
+        theDate.setHours(0, 0, 0, 0);
+        var startDate = new Date(theDate);// moment(theDate).format("YYYY-MM-DD");
 
         theDate = self.getEndDate(theDate, startMonth);
-        var endDate = moment(theDate).format("YYYY-MM-DD");
+        theDate.setHours(0, 0, 0, 0);
+        var endDate = new Date(theDate); //moment(theDate).format("YYYY-MM-DD");
 
         var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId;
         if (self.selectedTeam()) {
@@ -555,7 +557,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
             url += '/league/' + self.selectedLeague();
         }
 
-        url += '/week?startDay=' + startDate + '&endDay=' + endDate;
+        url += '/week?startDay=' + moment(startDate).format("YYYY-MM-DD") + '&endDay=' + moment(endDate).format("YYYY-MM-DD");
 
         $.ajax({
                 type: "GET",
