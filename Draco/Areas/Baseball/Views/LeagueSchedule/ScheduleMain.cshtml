@@ -7,6 +7,8 @@
 }
 
 @section head {
+<link href="~/Content/print.css" rel="stylesheet" type="text/css" media="print" />
+
     <style>
         .notCurrentMonth {
             background-color: rgba(197, 197, 197, .2);
@@ -17,12 +19,13 @@
 
 <div class="jumbotron">
     <h1>@ViewBag.Title.</h1>
+    <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
 </div>
 
 <div id="datepicker"></div>
 
 <div id="schedule" class="container-fluid">
-    <div class="row">
+    <div class="row noPrint">
         <select data-bind="value: selectedLeague, attr: {'disabled': leagueTeamSelectDisabled }" data-container="body" id="leagueSelect">
             @foreach (ModelObjects.League l in Model.Leagues)
             {
@@ -32,13 +35,18 @@
         <select data-container="body" data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
 
     </div>
-    <ul class="pager">
-        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'previous disabled' : 'previous' }"><a data-bind="click: goPreviousMonth" href="#">&larr; Previous</a></li>
+    <ul class="pager noPrint">
+        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'previous disabled noPrint' : 'previous noPrint' }"><a data-bind="click: goPreviousMonth" href="#">&larr; Previous</a></li>
         <li>
             <span class="currentDate h1" style="margin: 0px; cursor: pointer" data-bind="html: currentMonth"></span>
         </li>
-        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'next disabled' : 'next' }"><a data-bind="click: goNextMonth" href="#">Next &rarr;</a></li>
+        <li data-bind="attr: { 'class': loadingSchedule() || !viewMode() ? 'next disabled noPrint' : 'next noPrint' }"><a data-bind="click: goNextMonth" href="#">Next &rarr;</a></li>
     </ul>
+    <div class="printOnly">
+        <h2><span data-bind="html: selectedLeagueName"></span> <span data-bind="html: selectedTeamName"></span></h2>
+        <h3 data-bind="html: currentMonth"></h3>
+
+    </div>
     <div class="row">
         @if (Model.IsAdmin)
         {
@@ -209,7 +217,7 @@
                                 @if (Model.IsAdmin)
                                 { 
                                 <div class="col-sm-4">
-                                    <button class="btn btn-default btn-xs" data-bind="click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
+                                    <button class="btn btn-default btn-xs noPrint" data-bind="click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
                                 </div>
                                 }
                             </div>
@@ -234,7 +242,7 @@
                                         <span class="col-md-7" data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
                                         @if (Model.IsAdmin)
                                         {
-                                            <div class="col-md-2">
+                                            <div class="col-md-2 noPrint">
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
                                                         <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>

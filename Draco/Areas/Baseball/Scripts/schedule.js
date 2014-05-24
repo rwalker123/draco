@@ -219,18 +219,43 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     self.leagueTeams = ko.observableArray([]);
     self.selectedTeam = ko.observable();
     self.selectedTeam.subscribe(function () {
+        if (self.selectedTeam) {
+            var foundItem = ko.utils.arrayFirst(self.leagueTeams(), function (item) {
+                return item.Id == self.selectedTeam();
+            });
+            if (foundItem)
+                self.selectedTeamName(foundItem.Name);
+            else
+                self.selectedTeamName('');
+        }
+        else {
+            self.selectedTeamName('');
+        }
         if (self.viewMode() && !self.loadingSchedule()) {
             self.setupMonthData(self.currentDate());
         }
     });
 
+    self.selectedLeagueName = ko.observable();
+    self.selectedTeamName = ko.observable();
+
     self.selectedLeague = ko.observable();
     self.selectedLeague.subscribe(function () {
+        self.selectedLeagueName(self.getSelectedText('leagueSelect'));
         self.loadingSchedule(true);
         self.populateTeams();
         self.selectedTeam(null);
         self.setupMonthData(self.currentDate());
     });
+
+    self.getSelectedText = function(elementId) {
+        var elt = document.getElementById(elementId);
+
+        if (elt.selectedIndex == -1)
+            return null;
+
+        return elt.options[elt.selectedIndex].text;
+    }
 
     self.allUmpires = ko.observableArray(allUmps);
 

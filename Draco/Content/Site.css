@@ -43,6 +43,9 @@ th.sortableField
  {
     cursor: pointer;
 }
+.printOnly {
+    display: none;
+}
 
 /**/
 .validation-summary-errors {

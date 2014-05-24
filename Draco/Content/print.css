@@ -1,0 +1,18 @@
+﻿body {
+    font-family: Georgia, "Times New Roman", Times, serif;
+    font-size: 14px;
+    color: #000000;
+    background-color: #FFFFFF;
+}
+
+.noPrint {
+    display: none;
+}
+
+.printOnly  {
+    display: block;
+}
+
+a:link:after, a:visited:after {
+    display: none;
+}
