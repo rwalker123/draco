@@ -21,6 +21,12 @@ namespace SportsManager.Models.Utils
            return HttpContext.Current.Server.MapUrl(storageUri);
         }
 
+        public bool Exists(string storageUri)
+        {
+            String localPath = GetLocalPath(storageUri);
+            return File.Exists(localPath);
+        }
+
         public async System.Threading.Tasks.Task<String> Save(string localFileName, string storageUri)
         {
             String localPath = GetLocalPath(storageUri);

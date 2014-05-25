@@ -1,3 +1,4 @@
+using SportsManager.Models.Utils;
 using System;
 
 namespace ModelObjects
@@ -19,77 +20,6 @@ namespace ModelObjects
 
 		private string m_smallLogoName = "SmallLogo.png";
 		private string m_largeLogoName = "LargeLogo.png";
-
-        private string LogoUploadDir
-        {
-            get { return Globals.UploadDirRoot + AccountHomeController + "/" + Id.ToString() + "/Logo/"; }
-        }
-
-		public string AccountConfigurationURL
-		{
-			get
-			{
-				switch (AccountTypeId)
-				{
-					case (long)AccountType.Baseball:
-						return @"~\AccountTypes\Baseball\League\Adult\Configuration\";
-					case (long)AccountType.Bowling:
-						return @"~\AccountTypes\Bowling\League\Configuration\";
-					case (long)AccountType.Golf:
-						return @"~\AccountTypes\Golf\League\Configuration\";
-					case (long)AccountType.FitnessClub:
-						return @"~\AccountTypes\FitnessClub\Configuration\";
-					case (long)AccountType.GolfIndividual:
-						return @"~\AccountTypes\Golf\Individual\Configuration\";
-				}
-
-				return String.Empty;
-			}
-		}
-
-		public string AccountHomeController
-		{
-			get
-			{
-				switch (AccountTypeId)
-				{
-					case (long)AccountType.Baseball:
-						return "League";
-					case (long)AccountType.Bowling:
-						return "League";
-					case (long)AccountType.Golf:
-						return "League";
-					case (long)AccountType.FitnessClub:
-						return "";
-					case (long)AccountType.GolfIndividual:
-						return "Individual";
-				}
-
-				return String.Empty;
-			}
-		}
-
-		public string AccountArea
-		{
-			get
-			{
-				switch (AccountTypeId)
-				{
-					case (long)AccountType.Baseball:
-						return "Baseball";
-					case (long)AccountType.Bowling:
-						return "Bowling";
-					case (long)AccountType.Golf:
-						return "Golf";
-					case (long)AccountType.FitnessClub:
-						return "FitnessClub";
-					case (long)AccountType.GolfIndividual:
-						return "Golf";
-				}
-
-				return String.Empty;
-			}
-		}
 
 		public Account()
 		{
@@ -156,11 +86,18 @@ namespace ModelObjects
 			}
 		}
 
+        public bool HasLargeLogo
+        {
+            get
+            {
+                return Storage.Provider.Exists(Globals.UploadDirRoot + "Accounts/" + Id + "/Logo/" + m_largeLogoName);
+            }
+        }
 		public string LargeLogoURL
 		{
 			get
 			{
-                return LogoUploadDir + m_largeLogoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + Id + "/Logo/" + m_largeLogoName);
 			}
 		}
 
@@ -168,7 +105,7 @@ namespace ModelObjects
 		{
 			get
 			{
-                return LogoUploadDir + m_smallLogoName;
+                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + Id + "/Logo/" + m_smallLogoName);
 			}
 		}
 	}

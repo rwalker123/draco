@@ -40,9 +40,16 @@
         }
 
         <div data-bind="visible: viewMode">
-            <h1 style="margin-bottom:0px;">
-                Home of the <span data-bind="text: name"></span></h1>
-                <span data-bind="visible: hasYear" class="yearEstablished">est. <span data-bind="text: firstYear"></span></span>            
+            @if (String.IsNullOrEmpty(Model.AccountLogoUrl))
+            { 
+                <h1 style="margin-bottom:0px;">Home of the <span data-bind="text: name"></span></h1>
+            }
+            else
+            { 
+                <img class="img-rounded img-responsive" src="@Model.AccountLogoUrl" />
+            }
+
+            <span data-bind="visible: hasYear" class="yearEstablished">est. <span data-bind="text: firstYear"></span></span>            
             
             @if (Model.CurrentSeasonId != 0)
             {

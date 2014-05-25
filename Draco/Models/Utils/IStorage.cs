@@ -27,5 +27,6 @@ namespace SportsManager.Models.Utils
         Task<Stream> GetFileAsText(string storageUri);
         String GetUrl(string storageUri);
         String GetLocalPath(string storageUri);
+        bool Exists(string storageUri);
     }
 }

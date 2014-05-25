@@ -22,7 +22,10 @@ namespace SportsManager.ViewModels
             ContactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
             m_account = DataAccess.Accounts.GetAccount(accountId);
             AccountName = m_account.AccountName;
-            AccountLogoUrl = m_account.LargeLogoURL;
+            
+            if (m_account.HasLargeLogo)
+                AccountLogoUrl = m_account.LargeLogoURL;
+            
             CurrentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
             IsAdmin = DataAccess.Accounts.IsAccountAdmin(AccountId, HttpContext.Current.User.Identity.GetUserId());
             c.ViewData["IsAdmin"] = IsAdmin;
