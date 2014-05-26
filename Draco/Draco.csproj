@@ -238,6 +238,7 @@
     <Compile Include="Areas\Baseball\Controllers\BaseballController.cs" />
     <Compile Include="Areas\Baseball\Controllers\PlayerController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
     <Compile Include="CleanMessageBoard.aspx.cs">
@@ -508,6 +509,7 @@
     <Content Include="Areas\Baseball\Scripts\schedule.js" />
     <Content Include="Areas\Baseball\Scripts\scoreboard.js" />
     <Content Include="Areas\Baseball\Scripts\statistics.js" />
+    <Content Include="Areas\Baseball\Scripts\team.js" />
     <Content Include="Areas\Baseball\Scripts\teamstats.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />

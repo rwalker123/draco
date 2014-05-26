@@ -7,14 +7,41 @@
 @section head {
     @Styles.Render("~/Content/themes/base/css")
 }
-<div class="jumbotron">
-    <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name</h1><br />
+<div class="jumbotron" id="teamInfo">
+    @if (Model.IsAdmin)
+    {
+        <button type="button" class="btn btn-default" style="float:right" data-bind="click: editTeamName, visible: viewMode"><span class="glyphicon glyphicon-edit"></span></button>        
+    }
+
+    <div data-bind="visible: viewMode()">
+        <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" />
+        <h1 style="display: inline-block;">
+            <span data-bind="html: teamName"></span>
+        </h1>
+    </div>
+    @if (Model.IsAdmin)
+    {
+        <form class="form-horizontal" style="display:none" role="form" data-bind="visible: !viewMode()">
+            <div class="form-group">
+                <label for="_teamName" class="sr-only">Team name</label>
+                <div class="col-sm-12">
+                    <input id="_teamName" type="text" class="form-control" style="width:200px" data-bind="value: teamName" />
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-10">
+                    <button type="button" class="btn btn-primary" data-bind="click: saveTeamName"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button type="button" class="btn btn-danger" data-bind="click: cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </div>
+        </form>
+    }
+    <br />
     @Model.TeamStanding.Wins - @Model.TeamStanding.Losses - @Model.TeamStanding.Ties <br />
     @if (Model.FromLeagueAccount)
     {
         <small>@Model.AccountName @Model.SeasonName season</small><br />
     }
-    <a href='@Url.Content("~/")baseball/team/statistics/@Model.AccountId/@Model.Team.Id' class="btn btn-info"><small>statistics page</small></a>
 </div>
 
 <div class="container-fluid">
@@ -57,14 +84,14 @@
                 </div>
             </div>*@
 
-                    @if (Model.ShowSponsors)
-                    {
-                        <div class="row">
-                            <div class="col-md-12">
-                                @{Html.RenderPartial("Sponsors", new SportsManager.ViewModels.SponsorsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
-                            </div>
-                        </div>
-                    }
+            @if (Model.ShowSponsors)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("Sponsors", new SportsManager.ViewModels.SponsorsViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+            }
         </div> <!-- end column 1-->
 
         <div class="col-md-8"> <!-- column 2 -->
@@ -119,7 +146,10 @@
 
 @section scripts
 {
+
 @Scripts.Render("~/bundles/knockout")
+<script type="text/javascript" src="~/areas/baseball/scripts/team.js"></script>
+
 @* tinymce doesn't work with bundles because of the plug directory.*@
 @if (BundleTable.EnableOptimizations)
 {
@@ -186,6 +216,8 @@ else
 
         initKOHelpers();
 
+        initTeamViewModel(@Model.AccountId, @Model.Team.Id, '@Model.Team.Name', @Model.IsAdmin.ToString().ToLower());
+
         @if (Model.ShowWelcome)
         {
             <text>
@@ -242,8 +274,8 @@ else
         @if (Model.ShowSponsors)
         {
             <text>
-            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-            </text>
+        initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        </text>
         }
 
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
