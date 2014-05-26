@@ -9,6 +9,15 @@
     padding-right: 15px;
 }
 
+img.fileupload.over {
+    border: 2px dashed #000;
+}
+
+img.fileupload {
+    border: 2px solid #fff;
+}
+
+
 /* Set width on the form input elements since they're 100% wide by default */
 input,
 select,
@@ -104,7 +113,8 @@ div[data-role="editor-toolbar"] {
 
 .carousel-indicators,
 .carousel-caption {
-    background-color: rgba(128, 128, 128, 0.5);
+    background-color: rgba(128, 128, 128, 0.7);
+    padding:5px;
 }
 
 .dragover {

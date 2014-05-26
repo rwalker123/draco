@@ -77,16 +77,16 @@
         
         <div data-bind="if: photoGalleryItemsCount() > 0">
             <div id="photoGalleryCarousel" class="carousel slide" data-ride="carousel" data-interval="5000">
-                <ol style="max-height:22px;overflow:hidden" class="carousel-indicators" data-bind="foreach: new Array(photoGalleryItemsCount())">
+                @*<ol style="max-height:22px;overflow:hidden" class="carousel-indicators" data-bind="foreach: new Array(photoGalleryItemsCount())">
                     <li data-target="#photoGalleryCarousel" data-bind="attr: { 'data-slide-to': $index() }, css: {'active': $index()==0}" class="active"></li>
-                </ol>
+                </ol>*@
                 <div class="carousel-inner" data-bind="foreach: photoGalleryItems">
                     <div class="item" data-bind="css: {'active': $index()==0}">
                         <img class="img-responsive" data-bind="attr: {src: photoUrl, alt: photoHeading }">
                         <div class="carousel-caption">
                             <div data-bind="visible: viewMode">
-                                <h3 data-bind="text: photoHeading"></h3>
-                                <p data-bind="text: photoCaption"></p>
+                                <h4 style="color: antiquewhite" data-bind="text: photoHeading"></h4>
+                                <span style="color: antiquewhite" data-bind="text: photoCaption"></span>
                                 @if (Model.IsAdmin)
                                 {
                                     <div data-bind="if: photoHeading() != '[deleted]'">

@@ -616,6 +616,7 @@
     <Content Include="fonts\fontawesome-webfont.eot" />
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Areas\Baseball\Views\Player\Index.cshtml" />
+    <Content Include="App_Code\Header.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
@@ -652,7 +653,6 @@
     <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\LeagueLeaders.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\PlayerSearch.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
     <Content Include="Areas\Baseball\Views\Web.config" />

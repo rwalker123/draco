@@ -9,14 +9,6 @@
     @Styles.Render("~/Content/themes/base/css")
 
     <style type="text/css">
-        img.over {
-            border: 2px dashed #000;
-        }
-
-        img {
-            border: 2px solid #fff;
-        }
-
         h3.leagueHeader
         {
             font-size:24px;
@@ -38,7 +30,7 @@
 }
 
 <div class="jumbotron">
-    <h1>@ViewBag.Title.</h1>
+    @Header.DisplayHeader("League Setup", Model.AccountName, Model.AccountLogoUrl)
     <p class="help-block">
         Leagues allow you to run multiple independent groups of teams. You may only schedule games between teams in the same league. Each
         League can be broken up into divisions.

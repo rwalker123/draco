@@ -7,7 +7,7 @@
 }
 
 <div class="jumbotron">
-    <h1>@ViewBag.Title.</h1>
+    @Header.DisplayHeader("Standings", Model.AccountName, Model.AccountLogoUrl)
 </div>
 
 @Html.Partial("_SeasonStandings")

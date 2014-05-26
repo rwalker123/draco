@@ -1,0 +1,17 @@
+﻿
+@helper DisplayHeader(String title, String accountName, String accountLogoUrl)
+{
+
+    if (String.IsNullOrEmpty(accountLogoUrl))
+    {
+        <h1 style="margin-bottom:0px;">@accountName</h1>
+    }
+    else
+    {
+        <img class="img-rounded img-responsive" src="@accountLogoUrl" />
+    }
+
+
+    <h2>@title</h2>
+}
+

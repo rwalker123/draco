@@ -2,14 +2,14 @@
 @model SportsManager.ViewModels.DiscussionsViewModel
 
 @{
-    ViewBag.Title = "Discussion Board";
+    ViewBag.Title = Model.AccountName + " Discussion Board";
 }
 
 @section head {
 }
 
 <div class="jumbotron">
-    <h1>@ViewBag.Title.</h1>
+    @Header.DisplayHeader("Discussion Board", Model.AccountName, Model.AccountLogoUrl)
 </div>
 
 <div class="container-fluid" id="discussions">

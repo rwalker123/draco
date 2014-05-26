@@ -9,14 +9,6 @@
 {
 @Styles.Render("~/Content/themes/base/css")
     <style type="text/css">
-        img.over {
-            border: 2px dashed #000;
-        }
-
-        img {
-            border: 2px solid #fff;
-        }
-
         h3.userHeader
         {
             font-size:24px;
@@ -32,7 +24,7 @@
 
 
 <div class="jumbotron">
-    <h1>@ViewBag.Title.</h1>
+    @Header.DisplayHeader("Users", Model.AccountName, Model.AccountLogoUrl)
     <p class="help-block">
         Manage website users.
 
