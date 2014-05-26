@@ -505,6 +505,7 @@
     <Content Include="Areas\Baseball\Scripts\leagueHome.js" />
     <Content Include="Areas\Baseball\Scripts\leaguesetup.js" />
     <Content Include="Areas\Baseball\Scripts\managers.js" />
+    <Content Include="Areas\Baseball\Scripts\player.js" />
     <Content Include="Areas\Baseball\Scripts\roster.js" />
     <Content Include="Areas\Baseball\Scripts\schedule.js" />
     <Content Include="Areas\Baseball\Scripts\scoreboard.js" />
