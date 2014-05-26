@@ -48,9 +48,3 @@ a.welcomeMenuItemSelected:link, a.welcomeMenuItemSelected:visited
 
 }
 
-span.yearEstablished
-{
-    font-style: italic;
-    font-weight:normal;
-    font-size:small;
-}

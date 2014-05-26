@@ -40,8 +40,27 @@
         }
 
         <div data-bind="visible: viewMode">
-            @Header.DisplayHeader(Model.CurrentSeasonId != 0 ? Model.SeasonName + " Season": "Home", Model.AccountName, Model.AccountLogoUrl)
-            <small data-bind="visible: hasYear" class="yearEstablished">est. <span data-bind="text: firstYear"></span></small>
+            @if (String.IsNullOrEmpty(@Model.AccountLogoUrl))
+            {
+                <h1 style="margin-bottom:0px;">@Model.AccountName</h1>
+            }
+            else
+            {
+                <img class="img-rounded img-responsive" src="@Model.AccountLogoUrl" />
+            }
+
+            <h2>
+            @if (Model.CurrentSeasonId != 0)
+            {
+                <text>@Model.SeasonName Season</text>
+            }
+            else
+            {
+                <text>Home</text>
+            } 
+            <small style="color: white" data-bind="visible: hasYear">est. <span data-bind="text: firstYear"></span></small>
+            </h2>
+
             @if (Model.CurrentSeasonId == 0 && Model.IsAdmin)
             {
                 <p class="help-block">You currently do not have any seasons setup. Click <b>@Html.ActionLink("here", "Index", "Season", new { area = "", accountId = Model.AccountId }, new { @class = "btn btn-primary" })</b> to set or create a new season.</p>
