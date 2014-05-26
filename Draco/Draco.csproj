@@ -387,7 +387,6 @@
     <Compile Include="Controllers\SeasonsApiController.cs" />
     <Compile Include="Controllers\SponsorsAPIController.cs" />
     <Compile Include="Controllers\UserRolesAPIController.cs" />
-    <Compile Include="Controllers\ViewSwitcherController.cs" />
     <Compile Include="Controllers\WelcomeAPIController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -1092,7 +1091,6 @@
     <Content Include="Views\Account\UserRoles.cshtml" />
     <Content Include="Views\Account\Users.cshtml" />
     <Content Include="Views\Shared\Birthdays.cshtml" />
-    <Content Include="Views\Shared\_ViewSwitcher.cshtml" />
     <Content Include="Views\Shared\HandoutsView.cshtml" />
     <Content Include="Views\Shared\_bootstrap-wysiwyg-menu.cshtml" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.woff" />

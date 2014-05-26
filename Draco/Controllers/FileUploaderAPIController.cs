@@ -285,6 +285,8 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> TeamLogo(long accountId, long id)
         {
             Team t = DataAccess.Teams.GetTeamSeason(id);
+            if (t == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
@@ -297,6 +299,8 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> TeamPhoto(long accountId, long id)
         {
             Team t = DataAccess.Teams.GetTeamSeason(id);
+            if (t == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];

@@ -14,7 +14,10 @@
     }
 
     <div data-bind="visible: viewMode()">
-        <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" />
+        <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text> } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text> }
+             @if (Model.IsAdmin) { <text> data-bind="imageUploader: fileUploaderUrl" </text>  }
+             src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" />
+
         <h1 style="display: inline-block;">
             <span data-bind="html: teamName"></span>
         </h1>
@@ -216,7 +219,7 @@ else
 
         initKOHelpers();
 
-        initTeamViewModel(@Model.AccountId, @Model.Team.Id, '@Model.Team.Name', @Model.IsAdmin.ToString().ToLower());
+        initTeamViewModel(@Model.AccountId, @Model.Team.Id, @Model.Team.TeamId, '@Model.Team.Name', @Model.IsAdmin.ToString().ToLower());
 
         @if (Model.ShowWelcome)
         {
