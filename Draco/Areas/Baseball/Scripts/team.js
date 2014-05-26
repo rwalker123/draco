@@ -7,9 +7,6 @@
     }
 }
 
-
-
-
 self.TeamViewModel = function (accountId, teamId, teamName, isAdmin) {
     var self = this;
 

@@ -29,14 +29,32 @@
                     <ul class="list-group">
                         @foreach (var team in Model.GetDivisionTeams(division.Id))
                         {
-                            <li class="list-group-item">
-                                <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
+                            <li class="list-group-item team" id="team_@team.Id">
+                                @if (Model.IsAdmin)
+                                {
+                                    <button class="btn btn-default" data-bind="click: editTeamName, visible: viewMode"><span class="glyphicon glyphicon-edit"></span></button>
+                                }
+                                <a data-bind="visible: viewMode" href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
                                     <img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" />
-                                    <h4 style="display:inline-block">@team.Name</h4>
+                                    <h4 style="display:inline-block" data-bind="html: teamName" class="teamName">@team.Name</h4>
                                 </a>
                                 @if (Model.IsAdmin)
                                 {
-                                    <button class="btn btn-default pull-right"><span class="glyphicon glyphicon-edit"></span></button>
+                                    <form class="form-horizontal" style="display:none" role="form" data-bind="visible: !viewMode()">
+                                        <div class="form-group">
+                                            <label data-bind="uniqueFor: teamId" class="sr-only">Team name</label>
+                                            <div class="col-sm-12">
+                                                <input type="text" class="form-control" data-bind="value: teamName, uniqueId: teamId" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-10">
+                                                <button type="button" class="btn btn-primary" data-bind="click: saveTeamName"><span class="glyphicon glyphicon-ok"></span></button>
+                                                <button type="button" class="btn btn-danger" data-bind="click: cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
+                                            </div>
+                                        </div>
+                                    </form>
+
                                 }
                             </li>
                         }
@@ -47,3 +65,30 @@
     }
 </div>
 
+
+@section scripts
+{
+
+    @if (Model.IsAdmin) { 
+        @Scripts.Render("~/bundles/knockout")
+        <script type="text/javascript" src="~/areas/baseball/scripts/team.js"></script>
+        <script type="text/javascript">
+
+    $(document).ready(function () {
+        initKOHelpers();
+
+        $('.team').each(function(index, elem) {
+            var teamId = elem.id.split('_')[1];
+            var teamElem = $(elem).find('.teamName');
+            if (teamElem.length == 1) {
+                var teamName = teamElem[0].innerHTML;
+
+                var teamVM = new TeamViewModel(@Model.AccountId, teamId, teamName, @Model.IsAdmin.ToString().ToLower());
+                ko.applyBindings(teamVM, elem);
+            }
+        });
+    });
+
+</script>
+    }
+}
