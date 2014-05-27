@@ -23,11 +23,23 @@ namespace SportsManager.Areas.Baseball.Controllers
             return View(new SportsManager.Baseball.ViewModels.TeamViewModel(this, aId, teamSeasonId));
         }
 
+                //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("statistics")]
+        public ActionResult GetStatistics(long accountId, long id)
+        {
+            return View(new SportsManager.Baseball.ViewModels.TeamStatisticsViewModel(this, accountId, id /*teamSeasonId*/));
+        }
+
         //
         // GET: /Baseball/Team/
         // accountId = accountId or teamId
         // id = NULL if not part of league, <> NULL TeamSeasonId for account.
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("rostercard")]
         public ActionResult RosterCard(long accountId, long id)
         {
             return View(new SportsManager.Baseball.ViewModels.RosterCardViewModel(this, accountId, id /*teamSeasonId*/));
