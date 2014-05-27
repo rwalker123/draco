@@ -1,5 +1,9 @@
 ﻿function initTeamViewModel(accountId, teamSeasonId, teamId, teamName, isAdmin) {
 
+    $(document).bind('drop dragover', function (e) {
+        e.preventDefault();
+    });
+
     var teamElem = document.getElementById("teamInfo");
     if (teamElem) {
         var teamVM = new TeamViewModel(accountId, teamSeasonId, teamId, teamName, isAdmin);

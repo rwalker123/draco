@@ -69,10 +69,6 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
         self.viewMode(!self.viewMode());
     }
 
-    self.loadPrintableRosterCard = function () {
-
-    }
-
     self.addManager = function () {
         var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + self.selectedPlayer().id;
         $.ajax({

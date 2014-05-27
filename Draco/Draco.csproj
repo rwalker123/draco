@@ -241,6 +241,7 @@
     <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\RosterCardViewModel.cs" />
     <Compile Include="CleanMessageBoard.aspx.cs">
       <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -619,6 +620,7 @@
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Areas\Baseball\Views\Player\Index.cshtml" />
     <Content Include="App_Code\Header.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\RosterCard.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />

@@ -4,11 +4,11 @@
 
     if (String.IsNullOrEmpty(accountLogoUrl))
     {
-        <h1 style="margin-bottom:0px;">@accountName</h1>
+        <h1 class="noPrint" style="margin-bottom:0px;">@accountName</h1>
     }
     else
     {
-        <img class="img-rounded img-responsive" src="@accountLogoUrl" />
+        <img class="img-rounded img-responsive noPrint" src="@accountLogoUrl" />
     }
 
 

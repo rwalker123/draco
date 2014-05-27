@@ -28,10 +28,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         // accountId = accountId or teamId
         // id = NULL if not part of league, <> NULL TeamSeasonId for account.
         [AcceptVerbs("GET"), HttpGet]
-        [ActionName("statistics")]
-        public ActionResult GetStatistics(long accountId, long id)
+        public ActionResult RosterCard(long accountId, long id)
         {
-            return View(new SportsManager.Baseball.ViewModels.TeamStatisticsViewModel(this, accountId, id /*teamSeasonId*/));
+            return View(new SportsManager.Baseball.ViewModels.RosterCardViewModel(this, accountId, id /*teamSeasonId*/));
         }
 
     }
