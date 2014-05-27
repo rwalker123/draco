@@ -11,9 +11,14 @@ namespace SportsManager.Baseball.ViewModels
             TeamSeasonId = teamSeasonId;
 
             var isTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+
+            var showLineupCard = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowRosterCard"), out showLineupCard);
+            ShowLineupCard = showLineupCard;
         }
 
         public long TeamSeasonId { get; private set; }
         public bool isTeamAdmin { get; private set; }
+        public bool ShowLineupCard { get; private set; }
     }
 }

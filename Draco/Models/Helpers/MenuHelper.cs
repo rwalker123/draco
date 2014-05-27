@@ -94,11 +94,17 @@ namespace SportsManager.Models.Helpers
                 string discussionsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "", controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
 
-                string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                    new RouteValueDictionary(new { area = "baseball", controller = "MemberBusiness", action = "Index", accountId = accountId })).VirtualPath;
-
                 var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
-                forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page"));
+
+                var showMemberBusiness = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
+                if (showMemberBusiness)
+                {
+                    string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                        new RouteValueDictionary(new { area = "baseball", controller = "MemberBusiness", action = "Index", accountId = accountId })).VirtualPath;
+
+                    forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(memberbusinessurl, "Member Business", "Member Business Page"));
+                }
 
                 var scheduleMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(scheduleurl, "Schedule", "Schedule");
                 scheduleMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(fieldsurl, "Fields", "Fields Page"));

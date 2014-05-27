@@ -89,28 +89,41 @@
                             @if (Model.IsAdmin)
                             {
                                 <form class="form-horizontal" role="form">
+                                    @if (Model.ShowWaiverStatus)
+                                    { 
                                     <div class="form-group" style="margin:0px">
                                         <div class="checkbox">
                                             <div class="col-sm-12">
                                                 <label>
+                                                    @if (Model.TrackPlayerWaiver)
+                                                    { 
                                                     <input type="checkbox" data-bind="checked: SubmittedWaiver, uniqueId: id, visible: !viewMode()" />
+                                                    }
                                                     Waiver
                                                     <span style="margin-left:10px" data-bind="visible: viewMode, html: SubmittedWaiver() ? 'yes' : 'no'"></span>
                                                 </label>
                                             </div>
                                         </div>
                                     </div>
+                                    }
+                                    
+                                    @if (Model.ShowIdStatus)
+                                    { 
                                     <div class="form-group" style="margin: 0px">
                                         <div class="checkbox">
                                             <div class="col-sm-12">
                                                 <label>
+                                                    @if (Model.TrackIdSubmitted)
+                                                    { 
                                                     <input type="checkbox" data-bind="checked: SubmittedDriversLicense, uniqueId: id, visible: !viewMode()" />
+                                                    }
                                                     License
                                                     <span style="margin-left:4px" data-bind="visible: viewMode, html: SubmittedDriversLicense() ? 'yes' : 'no'"></span>
                                                 </label>
                                             </div>
                                         </div>
                                     </div>
+                                    }
                                     <div class="form-group">
                                         <label class="col-sm-5" data-bind="uniqueFor: id">Aff. Dues</label>
                                         <div class="col-sm-7">

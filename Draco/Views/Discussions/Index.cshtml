@@ -243,7 +243,10 @@
     <!-- Post View -->
     <div data-bind="with: currentCategory().currentTopic, visible: $root.postView">
         <h3>
+            @if (Model.DisplayPosterPhoto)
+            { 
             <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
+            }
             <span data-bind="html: TopicTitle"></span>
             <span data-bind="if: CreatorName">
                 <small>started by <span data-bind="html: CreatorName"></span></small>
@@ -273,7 +276,10 @@
             <li class="list-group-item">
                 <div style="float: left" class="left">
                     <h4>
+                        @if (Model.DisplayPosterPhoto)
+                        { 
                         <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
+                        }
                         <span data-bind="html: Subject"></span>
                         <small>
                             <span data-bind="if: CreatorName">
@@ -299,6 +305,8 @@
         </ul>
     </div>
     <!-- end Post View -->
+    @if (Model.ShowMemberBusiness)
+    { 
     <div data-bind="if: $root.memberBusiness">
         <div class="panel panel-info">
             <div class="panel-heading">
@@ -336,6 +344,7 @@
             </div>
         </div>
     </div>
+    }
 </div>
 
     @section scripts {

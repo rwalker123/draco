@@ -53,7 +53,10 @@
 
         @if (Model.IsAdmin || Model.isTeamAdmin)
         { 
-            @Html.ActionLink("Printable Lineup Card", "rostercard", "team", new { area = "baseball", accountId = Model.AccountId, id = Model.TeamSeasonId }, new { @class = "btn btn-info" })
+            if (Model.ShowLineupCard)
+            { 
+                @Html.ActionLink("Printable Lineup Card", "rostercard", "team", new { area = "baseball", accountId = Model.AccountId, id = Model.TeamSeasonId }, new { @class = "btn btn-info" })
+            }
             <a href='@Url.Action("statistics", "team", new { accountId = Model.AccountId, Id = Model.TeamSeasonId })' class="btn btn-primary">Enter Game Stats</a>
         }
     </div>

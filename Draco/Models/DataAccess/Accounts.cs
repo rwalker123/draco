@@ -480,62 +480,34 @@ namespace DataAccess
 
         static public AccountSettings GetAccountSettings(long accountId)
         {
+            DB db = DBConnection.GetContext();
+
             AccountSettings accSettings = new AccountSettings(accountId);
 
-            try
+            var dbAccSettings = (from a in db.AccountSettings
+                               where a.AccountId == accountId
+                               select a);
+
+            foreach(var dbAcc in dbAccSettings)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetAccountSettings", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@AccountId", SqlDbType.BigInt).Value = accountId;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        accSettings.AddSetting(dr.GetString(1), dr.GetString(2));
-                    }
-                }
+                accSettings.AddSetting(dbAcc.SettingKey, dbAcc.SettingValue);
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
             return accSettings;
         }
 
         static public string GetAccountSetting(long accountId, string key)
         {
+            DB db = DBConnection.GetContext();
+
             string accSetting = Boolean.TrueString;
 
-            try
+            var dbAccSetting = (from a in db.AccountSettings
+                                where a.AccountId == accountId && a.SettingKey == key
+                                select a).SingleOrDefault();
+            
+            if (dbAccSetting != null)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetAccountSetting", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@AccountId", SqlDbType.BigInt).Value = accountId;
-                    myCommand.Parameters.Add("@SettingKey", SqlDbType.VarChar, 25).Value = key;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        accSetting = dr.GetString(2);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
+                accSetting = dbAccSetting.SettingValue;
             }
 
             return accSetting;
