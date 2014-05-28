@@ -45,5 +45,15 @@ namespace SportsManager.Areas.Baseball.Controllers
             return View(new SportsManager.Baseball.ViewModels.RosterCardViewModel(this, accountId, id /*teamSeasonId*/));
         }
 
+        //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("schedule")]
+        public ActionResult Schedule(long accountId, long id)
+        {
+            return View(new SportsManager.Baseball.ViewModels.TeamScheduleViewModel(this, accountId, id /*teamSeasonId*/));
+        }
     }
 }

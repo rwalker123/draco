@@ -187,6 +187,22 @@ namespace DataAccess
                     });
         }
 
+        static public IQueryable<Game> GetTeamSchedule(long teamSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from sched in db.LeagueSchedules
+                    where (sched.HTeamId == teamSeasonId || sched.VTeamId == teamSeasonId) 
+                    orderby sched.GameDate
+                    select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
+                        sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4)
+                    {
+                        HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
+                        FieldName = DataAccess.Fields.GetFieldName(sched.FieldId)
+                    });
+        }
+
         static public IQueryable<Game> GetCompletedGames(long leagueId)
         {
             DB db = DBConnection.GetContext();
@@ -197,6 +213,24 @@ namespace DataAccess
                     select new Game(ls.LeagueId, ls.Id, ls.GameDate, ls.HTeamId, ls.VTeamId, ls.HScore, ls.VScore,
                         ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4));
         }
+
+        static public IQueryable<Game> GetTeamIncompleteGames(long teamSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from ls in db.LeagueSchedules
+                    where (ls.HTeamId == teamSeasonId || ls.VTeamId == teamSeasonId) &&
+                    ls.GameStatus == 0
+                    orderby ls.GameDate
+                    select new Game(ls.LeagueId, ls.Id, ls.GameDate, ls.HTeamId, ls.VTeamId, ls.HScore, ls.VScore,
+                        ls.Comment, ls.FieldId, ls.GameStatus, ls.GameType, ls.Umpire1, ls.Umpire2, ls.Umpire3, ls.Umpire4)
+                    {
+                        HomeTeamName = DataAccess.Teams.GetTeamName(ls.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(ls.VTeamId),
+                        FieldName = DataAccess.Fields.GetFieldShortName(ls.FieldId)
+                    });
+        }
+
 
         static public IQueryable<Game> GetTeamCompletedGames(long teamSeasonId)
         {
@@ -461,59 +495,6 @@ namespace DataAccess
             db.SubmitChanges();
 
             return true;
-        }
-
-        static public List<Game> FindGame(Team homeTeam, Team awayTeam, string gameDateString, string gameTimeString)
-        {
-            List<Game> schedule = new List<Game>();
-
-            DateTime gameDate;
-            DateTime gameTime;
-
-            try
-            {
-                gameDate = DateTime.Parse(gameDateString);
-                gameTime = DateTime.Parse(gameTimeString);
-            }
-            catch (FormatException)
-            {
-                return schedule;
-            }
-
-            try
-            {
-                TimeSpan ts = new TimeSpan(0, 30, 0);
-
-                DateTime gameBeginTime = gameTime.Subtract(ts);
-                DateTime gameEndTime = gameTime.Add(ts);
-
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.FindGame", myConnection);
-                    myCommand.Parameters.Add("@homeTeamId", SqlDbType.BigInt).Value = homeTeam.Id;
-                    myCommand.Parameters.Add("@awayTeamId", SqlDbType.BigInt).Value = awayTeam.Id;
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = gameDate;
-                    myCommand.Parameters.Add("@gameBeginTime", SqlDbType.SmallDateTime).Value = gameBeginTime;
-                    myCommand.Parameters.Add("@gameEndTime", SqlDbType.SmallDateTime).Value = gameEndTime;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        schedule.Add(CreateGame(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return schedule;
         }
 
         public static List<Player> GetPlayersFromGame(long gameId)

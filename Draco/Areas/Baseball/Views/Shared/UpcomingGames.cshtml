@@ -1,0 +1,45 @@
+﻿@model SportsManager.Baseball.ViewModels.UpcomingGamesViewModel
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <h3 class="panel-title" >Upcoming Games</h3>
+
+    </div>
+
+    <div class="panel-body" >
+        @if (!Model.Games.Any() || Model.Team == null)
+        {
+            <div class="alert alert-info">No upcoming games.</div>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <tbody>
+                    @foreach (var g in Model.Games)
+                    {
+                        <tr>
+                            <td>@g.GameDate.ToString("MMM dd") @g.GameDate.ToString("t")</td>
+                            <td>
+                                @if (g.FieldId > 0)
+                                {
+                                    <a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = @Model.AccountId, id = g.FieldId }, null)'>
+                                        @g.FieldName
+                                    </a>
+                                }
+                            </td>
+                            <td>
+                               
+                                <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HomeTeamId == Model.Team.Id ? g.AwayTeamId : g.HomeTeamId }, null)'>
+                                    @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <a href='@Url.Content("~/")baseball/team/schedule/@Model.AccountId/@Model.Team.Id' class="btn btn-info">schedule page</a>
+
+    </div>
+</div>

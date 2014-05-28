@@ -1,0 +1,58 @@
+﻿@using System.Web.Optimization
+@model SportsManager.Baseball.ViewModels.TeamScheduleViewModel
+
+@{
+    ViewBag.Title = @Model.Team.Name + " Schedule";
+}
+
+@section head {
+<link href="~/Content/print.css" rel="stylesheet" type="text/css" media="print" />
+<style>
+    table {
+        width: auto !important;
+    }
+</style>
+}
+
+<div class="jumbotron">
+    <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name Schedule</h1><br />
+
+    <a href='@Url.Content("~/")baseball/team/index/@Model.AccountId/@Model.Team.Id' class="btn btn-info noPrint"><small>team home page</small></a>
+    <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
+</div>
+
+<div class="container">
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th colspan="5">@Model.Team.Name Schedule</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ int gameNo = 1; }
+            @foreach(var g in Model.Games)
+            {
+                <tr>
+                    <td>@gameNo</td>
+                    <td>@g.GameDate.ToString("ddd MMM dd")</td>
+                    <td>@g.GameDate.ToString("t")</td>
+                    <td>
+                        @if (g.FieldId > 0)
+                        { 
+                        <a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = @Model.AccountId, id = g.FieldId }, null)'>
+                            @g.FieldName
+                        </a>
+                        }
+                    </td>
+                    <td>
+                        <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HomeTeamId == Model.Team.Id ? g.AwayTeamId : g.HomeTeamId }, null)'>
+                            @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
+                        </a>
+                    </td>
+                </tr>
+                
+                gameNo++;
+            }
+        </tbody>
+    </table>
+</div>

@@ -41,6 +41,8 @@
 
 <div class="jumbotron">
     @Header.DisplayHeader(Model.AccountName + " " + Model.LeagueTeamName + " Lineup Card", Model.AccountName, Model.AccountLogoUrl)
+    <a href='@Url.Content("~/")baseball/team/index/@Model.AccountId/@Model.Team.Id' class="btn btn-info noPrint"><small>team home page</small></a>
+
     <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
 </div>
 

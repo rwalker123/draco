@@ -51,6 +51,14 @@
     <div class="row">
         <div class="col-md-4">
             <!-- column 1-->
+        @if (Model.IsTeamMember)
+        { 
+            <div class="row">
+                <div class="col-md-12">
+                    @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                </div>
+            </div>
+        }
             <div class="row">
                 <div class="col-md-12">
                     @{Html.RenderPartial("TeamManager", new SportsManager.Baseball.ViewModels.ManagersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
@@ -62,6 +70,15 @@
                 <div class="row">
                     <div class="col-md-12">
                         @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+            }
+
+            @if (!Model.IsTeamMember)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                     </div>
                 </div>
             }
