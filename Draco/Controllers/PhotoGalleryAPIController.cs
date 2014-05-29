@@ -16,20 +16,31 @@ namespace SportsManager.Controllers
         [ActionName("photos")]
         public HttpResponseMessage Get(long accountId)
         {
-            var photos = DataAccess.PhotoGallery.GetPhotos(accountId);
-            if (photos!= null)
-            {
-                var queryValues = Request.RequestUri.ParseQueryString();
-                String numRandomPhotos = queryValues["random"];
-                if (!String.IsNullOrEmpty(numRandomPhotos))
-                {
-                    int numPhotos;
-                    if (Int32.TryParse(numRandomPhotos, out numPhotos))
-                    {
-                        return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos.Take(numPhotos));
-                    }
-                }
+            IQueryable<PhotoGalleryItem> photos = null;
 
+            var queryValues = Request.RequestUri.ParseQueryString();
+            String numRandomPhotos = queryValues["random"];
+            if (!String.IsNullOrEmpty(numRandomPhotos))
+            {
+                int numPhotos = 10;
+                if (Int32.TryParse(numRandomPhotos, out numPhotos))
+                {
+                    photos = DataAccess.PhotoGallery.GetRandomPhotos(accountId, numPhotos);
+                }
+            }
+            else
+            {
+                int albumId = -1;
+                String album = queryValues["album"];
+                if (!String.IsNullOrEmpty(album))
+                {
+                    Int32.TryParse(album, out albumId);
+                }
+                photos = DataAccess.PhotoGallery.GetPhotos(accountId, albumId);
+            }
+
+            if (photos != null)
+            {
                 return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos);
             }
             else
@@ -151,6 +162,21 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("albums")]
+        public HttpResponseMessage GetPhotoAlbums(long accountId)
+        {
+            var photos = DataAccess.PhotoGallery.GetPhotoAlbums(accountId);
+            if (photos != null)
+            {
+                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryAlbum>>(HttpStatusCode.OK, photos);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("editablealbums")]
         public HttpResponseMessage EditableAlbums(long accountId)
         {
             var photos = DataAccess.PhotoGallery.GetEditablePhotoAlbums(accountId);

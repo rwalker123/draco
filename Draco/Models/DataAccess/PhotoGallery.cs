@@ -6,10 +6,8 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web.Security;
 
 namespace DataAccess
 {
@@ -18,12 +16,6 @@ namespace DataAccess
 	/// </summary>
 	static public class PhotoGallery
 	{
-		private static PhotoGalleryItem CreatePhotoGalleryItem(SqlDataReader dr)
-		{
-			return new PhotoGalleryItem(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetInt64(1), dr.GetInt64(4));
-
-		}
-
 		public static IQueryable<PhotoGalleryAlbum> GetEditablePhotoAlbums(long accountId)
 		{
             var userId = Globals.GetCurrentUserId();
@@ -66,16 +58,32 @@ namespace DataAccess
 		public static IQueryable<PhotoGalleryAlbum> GetPhotoAlbums(long accountId)
 		{
             DB db = DBConnection.GetContext();
-            return (from pga in db.PhotoGalleryAlbums
-                    where pga.AccountId == accountId
-                    select new PhotoGalleryAlbum()
-                    {
-                        Id = pga.Id,
-                        AccountId = accountId,
-                        ParentAlbumId = pga.ParentAlbumId,
-                        TeamId = pga.TeamId,
-                        Title = pga.Title
-                    });
+            var accountAlbums = (from pga in db.PhotoGalleryAlbums
+                                 where pga.AccountId == accountId
+                                 & pga.TeamId == 0
+                                 orderby pga.Title
+                                 select new PhotoGalleryAlbum()
+                                 {
+                                     Id = pga.Id,
+                                     AccountId = accountId,
+                                     ParentAlbumId = pga.ParentAlbumId,
+                                     TeamId = pga.TeamId,
+                                     Title = pga.Title
+                                 }).AsEnumerable();
+
+            var teamAlbums = (from pga in db.PhotoGalleryAlbums
+                              where pga.AccountId == accountId
+                              & pga.TeamId != 0
+                              orderby pga.Title
+                              select new PhotoGalleryAlbum()
+                              {
+                                  Id = pga.Id,
+                                  AccountId = accountId,
+                                  ParentAlbumId = pga.ParentAlbumId,
+                                  TeamId = pga.TeamId,
+                                  Title = pga.Title
+                              });
+            return accountAlbums.Concat(teamAlbums).AsQueryable();
 		}
 
         public static IQueryable<PhotoGalleryItem> GetPhotos(long accountId, long albumId = -1)
@@ -91,6 +99,21 @@ namespace DataAccess
                         Title = pg.Title,
                         Caption = pg.Caption,
                     });
+        }
+
+        static public IQueryable<PhotoGalleryItem> GetRandomPhotos(long accountId, int numRandom, long albumId = -1)
+        {
+            DB db = DBConnection.GetContext();
+
+
+            var qry = GetPhotos(accountId, albumId);
+
+            int count = qry.Count() - numRandom;
+            if (count < 0)
+                count = 0;
+            int index = new Random().Next(count);
+            
+            return qry.Skip(index).Take(numRandom);
         }
 
 		public static IQueryable<PhotoGalleryItem> GetTeamPhotos(long teamId)

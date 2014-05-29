@@ -21,8 +21,13 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     self.photoGalleryCaption = ko.observable("");
     self.photoGalleryItemsCount = ko.observable();
     self.selectedPhotoAlbum = ko.observable();
+    self.selectedPhotoAlbum.subscribe(function () {
+        self.loadPhotos();
+    });
+    self.selectedEditPhotoAlbum = ko.observable();
     self.photoGalleryItems = ko.observableArray();
     self.photoAlbums = ko.observableArray();
+    self.editablePhotoAlbums = ko.observableArray();
     self.newPhotoAlbumName = ko.observable();
 
     self.fileUploaderUrl = ko.computed(function () {
@@ -37,10 +42,14 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     }, self);
 
     self.init = function () {
-        if (self.isAdmin && !self.teamId)
+        if (!self.teamId) {
             self.loadPhotoAlbums();
+            self.loadEditablePhotoAlbums();
+        }
+        else {
+            self.loadPhotos();
+        }
 
-        self.loadPhotos();
         self.initFileUpload();
     }
 
@@ -52,9 +61,12 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
 
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums/' + self.selectedPhotoAlbum(),
+            url: window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/albums/' + self.selectedEditPhotoAlbum(),
             success: function (id) {
                 self.photoAlbums.remove(function (item) {
+                    return item.id == id;
+                });
+                self.editablePhotoAlbums.remove(function (item) {
                     return item.id == id;
                 });
                 $('#photoAlbumSelect').selectpicker('refresh');
@@ -81,8 +93,9 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 };
 
                 self.photoAlbums.push(album);
+                self.editablePhotoAlbums.push(album);
 
-                self.selectedPhotoAlbum(photoAlbum.Id);
+                self.selectedEditPhotoAlbum(photoAlbum.Id);
                 self.newPhotoAlbumName("");
                 $('#photoAlbumSelect').selectpicker('refresh');
             }
@@ -188,7 +201,10 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
         if (self.teamId)
             url = url + '/team/' + self.teamId;
 
-        url = url + '/photos?random=10';
+        url = url + '/photos';
+        
+        if (!self.teamId)
+            url = url + '?album=' + self.selectedPhotoAlbum();
 
         $.ajax({
             type: "GET",
@@ -293,7 +309,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 Id: 0,
                 Title: self.photoGalleryTitle(),
                 Caption: self.photoGalleryCaption(),
-                AlbumId: self.selectedPhotoAlbum()
+                AlbumId: self.selectedEditPhotoAlbum()
             };
         });
     }
@@ -316,13 +332,46 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                     };
                 });
 
+                mappedAlbums.unshift({
+                    name: 'default',
+                    id: 0
+                })
                 self.photoAlbums(mappedAlbums);
-                self.photoAlbums.unshift({
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                if (xhr.status == 404)
+                    return;
+
+                reportAjaxError(url, xhr, ajaxOptions, thrownError);
+            }
+        });
+    }
+
+    self.loadEditablePhotoAlbums = function () {
+
+        // no albums for team.
+        if (self.teamId)
+            return;
+
+        var url = window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId + '/editablealbums';
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (photoAlbums) {
+                var mappedAlbums = $.map(photoAlbums, function (album) {
+                    return {
+                        name: album.Title,
+                        id: album.Id
+                    };
+                });
+
+                self.editablePhotoAlbums(mappedAlbums);
+                self.editablePhotoAlbums.unshift({
                     name: 'default',
                     id: 0
                 });
 
-                self.selectedPhotoAlbum(0);
+                self.selectedEditPhotoAlbum(0);
                 $('#photoAlbumSelect').selectpicker();
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -333,4 +382,5 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
             }
         });
     }
+
 }

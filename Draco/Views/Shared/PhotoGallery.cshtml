@@ -36,8 +36,8 @@
                     <div class="form-group">
                         <label for="photoAlbumSelect" class="col-sm-4 control-label">photo album</label>
                         <div class="col-sm-8">
-                            <select data-bind="options: photoAlbums, optionsText: 'name', optionsValue: 'id', value: selectedPhotoAlbum" data-container="body" id="photoAlbumSelect"></select>
-                            <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedPhotoAlbum() > 0"><span class="glyphicon glyphicon-remove"></span></button>
+                            <select data-bind="options: photoAlbums, optionsText: 'name', optionsValue: 'id', value: selectedEditPhotoAlbum" data-container="body" id="photoAlbumSelect"></select>
+                            <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedEditPhotoAlbum() > 0"><span class="glyphicon glyphicon-remove"></span></button>
                         </div>
                     </div>
                     <div class="form-group">
@@ -74,7 +74,18 @@
                 click the <button type="button" class="btn btn-default" data-bind="click: startEditMode"><span class='glyphicon glyphicon-plus'></span></button> button to add photos.
             </p>
         }
+       
+         
+        @if (!Model.IsTeamEdit)
+        {
+        <h4>Select Album: 
+            <select data-bind="selectPicker: selectedPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'" data-container="body" class="photoGalleryItemAlbum"></select>
+        </h4>
+        }
         
+        <div data-bind="if: photoGalleryItemsCount() == 0">
+            <div class="alert alert-info">No photos found.</div>
+        </div>
         <div data-bind="if: photoGalleryItemsCount() > 0">
             <div id="photoGalleryCarousel" class="carousel slide" data-ride="carousel" data-interval="5000">
                 @*<ol style="max-height:22px;overflow:hidden" class="carousel-indicators" data-bind="foreach: new Array(photoGalleryItemsCount())">
@@ -116,7 +127,7 @@
                                     <div class="form-group">
                                         <label for="photoAlbumSelect" class="col-sm-3 control-label">album</label>
                                         <div class="col-sm-9">
-                                            <select data-bind="options: $root.photoAlbums, optionsText: 'name', optionsValue: 'id', value: photoAlbumId" data-container="body" class="photoGalleryItemAlbum"></select>
+                                            <select data-bind="options: $root.editablePhotoAlbums, optionsText: 'name', optionsValue: 'id', value: photoAlbumId" data-container="body" class="photoGalleryItemAlbum"></select>
                                         </div>
                                     </div>
                                     }
