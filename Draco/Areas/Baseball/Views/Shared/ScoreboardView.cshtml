@@ -35,10 +35,10 @@
             </div>
         </div>
 
-        <!-- ko if: !haveScores() -->
+        <!-- ko if: scheduledGames().length == 0 -->
         <div class="alert alert-warning">No scheduled games.</div>
         <!-- /ko -->
-        <!-- ko if: haveScores -->
+        <!-- ko if: scheduledGames().length > 0 -->
         <div class="table-responsive">
             <table class="table" data-bind="foreach: scheduledGames">
                 <thead>
@@ -52,8 +52,8 @@
                             <span data-bind="html: LeagueName"></span>
                         </td>
                         <td>
-                            <a data-bind="attr: { href:'@Url.Content("~/")baseball/team/index/@Model.AccountId/' + AwayTeamId() }"><span data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName}"></span></a><br />
-                            <a data-bind="attr: {href: '@Url.Content("~/")baseball/team/index/@Model.AccountId/' + HomeTeamId() }"><span data-bind="trimText: HomeTeamName, trimTextLength: 10, attr: {title: HomeTeamName}"></span></a>
+                            <a data-bind="attr: { href:'@Url.Content("~/")baseball/team/index/@Model.AccountId/' + AwayTeamId() }"><span data-bind="trimText: AwayTeamName, trimTextLength: 12, attr: {title: AwayTeamName}"></span></a><br />
+                            <a data-bind="attr: {href: '@Url.Content("~/")baseball/team/index/@Model.AccountId/' + HomeTeamId() }"><span data-bind="trimText: HomeTeamName, trimTextLength: 12, attr: {title: HomeTeamName}"></span></a>
                         </td>
                         <td>
                             <!-- ko if: GameStatus() == 0 -->

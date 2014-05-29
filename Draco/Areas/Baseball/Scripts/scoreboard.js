@@ -47,10 +47,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
 
     self.scheduledGames = ko.observableArray();
 
-    self.haveScores = ko.computed(function () {
-        return self.scheduledGames.length > 0;
-    });
-
     self.getTodayGames = function () {
 
         var today = moment(new Date()).format('YYYY-MM-DD');
