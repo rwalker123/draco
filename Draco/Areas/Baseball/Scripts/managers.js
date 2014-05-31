@@ -17,19 +17,43 @@
     }
 }
 
-var ManagerViewModel = function (accountId, contactId, name, photoUrl) {
+var ManagerViewModel = function (accountId, data) {
     var self = this;
 
-    self.accountId = accountId;
-    self.name = name;
-    self.photoUrl = photoUrl;
-    self.contactId = contactId;
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
 
     self.viewMode = ko.observable(true);
 
-    self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId;
+    self.name = ko.computed(function () {
+        return self.FirstName() + " " + self.LastName();
     });
+
+    self.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.Id();
+    });
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+
 }
 
 var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
@@ -51,16 +75,13 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     })
 
     self.removeManager = function (manager) {
-        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.contactId;
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.MgrSeasonId();
 
         $.ajax({
-            type: "POST",
+            type: "DELETE",
             url: url,
-            success: function (manager) {
-                var fullName = manager.FirstName + " " + manager.LastName;
-
-                var mvm = new ManagerViewModel(self.accountId, manager.Id, fullName, manager.PhotoURL);
-                self.managers.push(mvm);
+            success: function () {
+                self.managers.remove(manager);
             }
         });
     }
@@ -75,9 +96,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             type: "POST",
             url: url,
             success: function (manager) {
-                var fullName = manager.FirstName + " " + manager.LastName;
-
-                var mvm = new ManagerViewModel(self.accountId, manager.Id, fullName, manager.PhotoURL);
+                var mvm = new ManagerViewModel(self.accountId, manager);
                 self.managers.push(mvm);
             }
         });
@@ -90,12 +109,10 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             success: function (managers) {
 
                 var results = $.map(managers, function (manager) {
-                    var fullName = manager.FirstName + " " + manager.LastName;
-
-                    return new ManagerViewModel(self.accountId, manager.Id, fullName, manager.PhotoURL);
+                    return new ManagerViewModel(self.accountId, manager);
                 });
 
-                self.managers(results)
+                self.managers(results);
             }
         });
 

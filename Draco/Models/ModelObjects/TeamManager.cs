@@ -23,5 +23,10 @@ namespace ModelObjects
 		public long MgrSeasonId { get; set; }
 		public long TeamId { get; set; }
 		public long AccountId { get; set; }
-	}
+
+        public String Email { get; set; }
+        public String Phone1 { get; set; }
+        public String Phone2 { get; set; }
+        public String Phone3 { get; set; }
+    }
 }

@@ -135,6 +135,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("managers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage AddTeamManager(long accountId, long teamSeasonId, long id)
         {
             var team = DataAccess.Teams.GetTeam(teamSeasonId);
@@ -150,6 +151,23 @@ namespace SportsManager.Areas.Baseball.Controllers
             var managerId = DataAccess.Teams.AddManager(tm);
             var newManager = DataAccess.Teams.GetManager(managerId);
             return Request.CreateResponse<ModelObjects.TeamManager>(HttpStatusCode.OK, newManager);
+
+        }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("managers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteTeamManager(long accountId, long teamSeasonId, long id)
+        {
+            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var managerRemoved = DataAccess.Teams.RemoveManager(id);
+            if (managerRemoved)
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
         }
 

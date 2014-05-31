@@ -37,21 +37,36 @@
         <div data-bind="foreach: managers">
             <div class="row" style="margin-bottom: 10px">
                 <div class="col-sm-4">
-                    <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: fileUploaderUrl, attr: { src: photoUrl }" class="img-rounded" />
+                    <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoURL }" class="img-rounded" />
                 </div>
-                <div class="col-sm-5">
-                    <span data-bind="html: name"></span>
+                <div class="col-sm-8">
+                    @if (Model.IsAdmin)
+                    {
+                        <button class="btn btn-warning pull-right" data-bind="click: $parent.removeManager"><span class="glyphicon glyphicon-minus"></span></button>
+                    }
+                    <address>
+                        <strong><span data-bind="html: name"></span></strong><br />
+                        @if (Model.IsAdmin || Model.IsTeamAdmin || Model.IsTeamMember)
+                        { 
+                            <!--ko if: Email -->
+                            <a data-bind="attr: { href: 'mailto:' + Email()}">EMail</a><br />
+                            <!--/ko-->
+                            <!--ko if: Phone1 -->
+                            <abbr title="Cell Phone">C:</abbr> <span data-bind="html: Phone1"></span><br />
+                            <!--/ko-->
+                            <!--ko if: Phone2 -->
+                            <abbr title="Home Phone">H:</abbr> <span data-bind="html: Phone2"></span><br />
+                            <!--/ko-->
+                            <!--ko if: Phone3 -->
+                            <abbr title="Work Phone">W:</abbr> <span data-bind="html: Phone3"></span><br />
+                            <!--/ko-->
+                        }
+                    </address>
                 </div>
-                @if (Model.IsAdmin)
-                {
-                    <div class="col-sm-3">
-                        <button class="btn btn-warning" data-bind="click: $parent.removeManager"><span class="glyphicon glyphicon-minus"></span></button>
-                    </div>
-                }
             </div>
         </div>
 
-        @if (Model.IsAdmin || Model.isTeamAdmin)
+        @if (Model.IsAdmin || Model.IsTeamAdmin)
         { 
             if (Model.ShowLineupCard)
             { 

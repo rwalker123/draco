@@ -168,7 +168,7 @@
     <div data-bind="with: currentCategory, visible: $root.topicView">
         <h3 data-bind="html: Name"></h3>
 
-        <div data-bind="with: editTopic, visible: $root.editTopicMode">
+        <div class="row" data-bind="with: editTopic, visible: $root.editTopicMode">
             <form class="form-horizontal">
                 <div class="form-group">
                     <label for="_mbNewTopicSubject" class="col-md-2 control-label">Subject:</label>
@@ -178,7 +178,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-md-offset-2 col-md-10">
-                        <textarea style="height: 250px" id="topicEditor" data-bind="wysiwyg: editPost().Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' "></textarea>
+                        <textarea style="height: 250px" id="topicEditor" data-bind="wysiwyg: editPost().Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
                     </div>
                 </div>
                 <div class="col-sm-offset-2 col-sm-10">
@@ -253,32 +253,35 @@
             </span>
         </h3>
 
-        <form class="form-horizontal" style="display: none" data-bind="with: editPost, visible: $root.editPostMode() || $root.replyToTopicMode()">
-            <div class="form-group">
-                <label class="col-md-2 control-label" for="postSubject">Subject</label>
-                <div class="col-md-10">
-                    <input type="text" class="form-control" id="postSubject" data-bind="value: Subject" />
-                </div>
-                <div class="col-md-offset-2 col-md-10">
-                    <textarea style="height: 250px" id="postEditor" data-bind="wysiwyg: Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
-                </div>
-            </div>
+        <div class="row" style="display: none" data-bind="with: editPost, visible: $root.editPostMode() || $root.replyToTopicMode()">
 
-            <div class="form-group">
-                <div class="col-md-offset-2 col-md-10">
-                    <button class="btn btn-success" type="button" data-bind="click: $root.saveEditPost"><span class="glyphicon glyphicon-ok"></span></button>
-                    <button class="btn btn-danger" type="button" data-bind="click: $root.cancelEditPost"><span class="glyphicon glyphicon-remove"></span></button>
+            <form class="form-horizontal">
+                <div class="form-group">
+                    <label class="col-md-2 control-label" for="postSubject">Subject</label>
+                    <div class="col-md-10">
+                        <input type="text" class="form-control" id="postSubject" data-bind="value: Subject" />
+                    </div>
+                    <div class="col-md-offset-2 col-md-10">
+                        <textarea style="height: 250px" id="postEditor" data-bind="wysiwyg: Text, wysiwygConfig: { height: 400, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
+                    </div>
                 </div>
-            </div>
-        </form>
+
+                <div class="form-group">
+                    <div class="col-md-offset-2 col-md-10">
+                        <button class="btn btn-success" type="button" data-bind="click: $root.saveEditPost"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button class="btn btn-danger" type="button" data-bind="click: $root.cancelEditPost"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+            </form>
+        </div>
 
         <ul class="list-group" data-bind="foreach: posts, visible: !$root.editPostMode() && !$root.replyToTopicMode()">
             <li class="list-group-item">
                 <div style="float: left" class="left">
                     <h4>
                         @if (Model.DisplayPosterPhoto)
-                        { 
-                        <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
+                        {
+                            <img data-bind="hiddenImg: PhotoUrl" class="img-rounded" />
                         }
                         <span data-bind="html: Subject"></span>
                         <small>
@@ -310,9 +313,7 @@
     <div data-bind="if: $root.memberBusiness">
         <div class="panel panel-info">
             <div class="panel-heading">
-                <h3 class="panel-title" style="float: left;"><span data-bind="html: memberBusiness().Name"></span></h3>
-
-                <div style="clear:both"></div>
+                <h3 class="panel-title"><span data-bind="html: memberBusiness().Name"></span></h3>
             </div>
 
             <div class="panel-body">
@@ -323,7 +324,7 @@
                         <div style="clear:both"></div>
                     </div>
                     <div class="col-md-3">
-                        <address class="">
+                        <address>
                             <div data-bind="if: memberBusiness().EMail"><a data-bind="html: memberBusiness().EMail, attr: { href: 'mailto:' + memberBusiness().EMail }"></a></div>
                             <div data-bind="if: memberBusiness().Website"><a target="_blank" data-bind="html: memberBusiness().Website, attr: { href: memberBusiness().Website }"></a></div>
                             <div data-bind="if: memberBusiness().Phone"><span data-bind="html: memberBusiness().Phone"></span></div>

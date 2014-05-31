@@ -257,7 +257,7 @@ namespace DataAccess
 
 			foreach (TeamManager tm in managers)
 			{
-				Teams.RemoveManager(tm);
+				Teams.RemoveManager(tm.MgrSeasonId);
 			}
 
 			var items = DataAccess.PhotoGallery.GetTeamPhotos(t.TeamId);
@@ -317,12 +317,12 @@ namespace DataAccess
 			return true;
 		}
 
-		static public bool RemoveManager(TeamManager tm)
+		static public bool RemoveManager(long mgrId)
 		{
             DB db = DBConnection.GetContext();
 
             var dbManager = (from t in db.TeamSeasonManagers
-                             where tm.Id == t.Id
+                             where mgrId == t.Id
                              select t).SingleOrDefault();
 
             if (dbManager != null)
@@ -352,7 +352,11 @@ namespace DataAccess
                         PhotoURL = Contact.GetPhotoURL(c.Id),                        
                         MgrSeasonId = tsm.Id,
                         TeamId = teamId,
-                        AccountId = t.AccountId
+                        AccountId = t.AccountId,
+                        Email = c.Email,
+                        Phone1 = c.Phone1,
+                        Phone2 = c.Phone2,
+                        Phone3 = c.Phone3
                     });
         }
 
@@ -378,13 +382,27 @@ namespace DataAccess
                         PhotoURL = Contact.GetPhotoURL(c.Id),
                         MgrSeasonId = tsm.Id,
                         TeamId = tsm.TeamSeasonId,
-                        AccountId = t.AccountId
+                        AccountId = t.AccountId,
+                        Email = c.Email,
+                        Phone1 = c.Phone1,
+                        Phone2 = c.Phone2,
+                        Phone3 = c.Phone3
                     }).SingleOrDefault();
 		}
 
 		static public long AddManager(TeamManager m)
 		{
             DB db = DBConnection.GetContext();
+
+            var isManager = (from tsm in db.TeamSeasonManagers
+                             join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
+                             join t in db.Teams on ts.TeamId equals t.Id
+                             join c in db.Contacts on tsm.ContactId equals c.Id
+                             where c.Id == m.Id
+                             select tsm.Id).SingleOrDefault();
+
+            if (isManager > 0)
+                return isManager;
 
             var dbManager = new SportsManager.Model.TeamSeasonManager()
             {
