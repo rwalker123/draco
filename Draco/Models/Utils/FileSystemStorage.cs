@@ -6,6 +6,7 @@ using System.Web;
 
 namespace SportsManager.Models.Utils
 {
+
     public class FileSystemStorage : IStorage
     {
         public String RootPath
@@ -18,7 +19,14 @@ namespace SportsManager.Models.Utils
 
         public String GetUrl(string storageUri)
         {
-           return HttpContext.Current.Server.MapUrl(storageUri);
+            var url = HttpContext.Current.Server.MapUrl(storageUri);
+            if (url.StartsWith("http://"))
+                return url;
+
+            if (url.StartsWith("http:"))
+                url = url.Replace("http:", "http://");
+
+            return url;
         }
 
         public bool Exists(string storageUri)
