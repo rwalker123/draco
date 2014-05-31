@@ -79,9 +79,9 @@
 
                         <div class="panel-body">
                             <address class="">
-                                <div data-bind="if: EMail"><a data-bind="html: EMail, attr: { href: 'mailto:' + EMail() }"></a></div>
-                                <div data-bind="if: Website"><a target="_blank" data-bind="html: Website, attr: { href: Website }"></a></div>
-                                <div data-bind="if: Phone"><span data-bind="html: Phone"></span></div>
+                                <div data-bind="if: EMail"><a data-bind="attr: { href: 'mailto:' + EMail() }">EMail</a></div>
+                                <div data-bind="if: Website"><a target="_blank" data-bind="attr: { href: Website }">Website</a></div>
+                                <div data-bind="if: Phone"><abbr title="Phone">P:</abbr> <span data-bind="html: Phone"></span></div>
                             </address>
 
                             <address>
@@ -123,9 +123,9 @@
                         <img class="img-rounded" onerror="this.style.display = 'none';" data-bind="attr: { src: ContactPhotoUrl }" style="float: left" /><h4 style="float: left; margin-left: 5px" data-bind="html: ContactName"></h4>
                         <div style="clear:both"></div>
                         <address class="">
-                            <div data-bind="if: EMail"><a data-bind="html: EMail, attr: { href: 'mailto:' + EMail() }"></a></div>
-                            <div data-bind="if: Website"><a target="_blank" data-bind="html: Website, attr: { href: Website }"></a></div>
-                            <div data-bind="if: Phone"><span data-bind="html: Phone"></span></div>
+                            <div data-bind="if: EMail"><a data-bind="attr: { href: 'mailto:' + EMail() }">EMail</a></div>
+                            <div data-bind="if: Website"><a target="_blank" data-bind="attr: { href: Website }">Website</a></div>
+                            <div data-bind="if: Phone"><abbr title="Phone">P:</abbr> <span data-bind="html: Phone"></span></div>
                         </address>
 
                         <address>

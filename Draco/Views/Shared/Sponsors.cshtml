@@ -77,9 +77,15 @@
                 <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop logo" onerror="this.style.width = '170px'; this.style.height='130px';" </text> } data-bind='imageUploader: fileUploaderUrl, attr: { src: LogoURL }' class="img-responsive img-rounded" />
                 <h3 data-bind="html: Name"></h3>
                 <address style="margin: 5px">
-                    <a target="_blank" data-bind="attr: { href: Website }"><span data-bind="html: Website"></span></a>
-                    <a data-bind="attr: { href: 'mailto:' + EMail() }"><span data-bind="html: EMail"></span></a>
-                    <div data-bind="html: Phone"></div>
+                    <div data-bind="if: Website">
+                        <a target="_blank" data-bind="attr: { href: Website }">Website</a>
+                    </div>
+                    <div data-bind="if: EMail">
+                        <a data-bind="attr: { href: 'mailto:' + EMail() }">EMail</a>
+                    </div>
+                    <div data-bind="if: Phone">
+                        <abbr title="Phone">P:</abbr> <span data-bind="html: Phone"></span>
+                    </div>
                 </address>
                 <address style="margin: 5px">
                     <div data-bind="html: StreetAddress"></div>
