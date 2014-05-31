@@ -176,11 +176,20 @@ var PlayerPitchStatsVM = function (data, parent, accountId) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.IPDecimal.calculateIP = function () {
+        var ipDecimal = +self.IPDecimal();
+        var wholeIP = Math.floor(ipDecimal);
+        var decimalPart = Math.round(((ipDecimal % 1.0) + .0000001) * 10);
+
+        return wholeIP + (decimalPart / 3.0);
+    };
+
     self.K9.dynamicVal = ko.computed(function () {
         if (+self.IPDecimal() <= 0)
             return "0.0";
 
-        var k9 = +self.SO() / +self.IPDecimal() * 9.0;
+        var ip = self.IPDecimal.calculateIP();
+        var k9 = +self.SO() / ip * 9.0;
         return (Math.floor(10 * k9) / 10).toFixed(1);
     });
 
@@ -188,7 +197,8 @@ var PlayerPitchStatsVM = function (data, parent, accountId) {
         if (+self.IPDecimal() <= 0)
             return "0.0";
 
-        var bb9 = +self.BB() / +self.IPDecimal() * 9.0;
+        var ip = self.IPDecimal.calculateIP();
+        var bb9 = +self.BB() / ip * 9.0;
         return (Math.floor(10 * bb9) / 10).toFixed(1);
     });
 
@@ -211,14 +221,16 @@ var PlayerPitchStatsVM = function (data, parent, accountId) {
         if (+self.IPDecimal() <= 0)
             return "0.00";
 
-        return ((self.H() + self.BB()) / self.IPDecimal()).toFixed(2);
+        var ip = self.IPDecimal.calculateIP();
+        return ((+self.H() + +self.BB()) / ip).toFixed(2);
     });
 
     self.ERA.dynamicVal = ko.computed(function () {
         if (+self.IPDecimal() <= 0)
             return "0.00";
 
-        return ((self.ER() * 9) / self.IPDecimal()).toFixed(2);
+        var ip = self.IPDecimal.calculateIP();
+        return ((+self.ER() * 9) / ip).toFixed(2);
     });
 
     self.PlayerName.LastName = ko.computed(function () {
