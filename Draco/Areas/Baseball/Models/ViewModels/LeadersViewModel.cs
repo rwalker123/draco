@@ -1,5 +1,7 @@
 ﻿using ModelObjects;
 using SportsManager.ViewModels;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 
@@ -21,6 +23,6 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public long TeamSeasonId { get; private set; }
-        public IQueryable<League> Leagues { get; private set;}
+        public IQueryable<League> Leagues { get; private set; }
     }
 }
