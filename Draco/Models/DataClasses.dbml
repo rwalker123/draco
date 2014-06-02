@@ -243,16 +243,6 @@
       <Association Name="Account_CurrentSeason" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
     </Type>
   </Table>
-  <Table Name="dbo.DisplayLeagueLeaders" Member="DisplayLeagueLeaders">
-    <Type Name="DisplayLeagueLeader">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="FieldName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="FieldLimit" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
-      <Column Name="LeagueSeasonId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="DisplayOnHomePage" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Association Name="LeagueSeason_DisplayLeagueLeader" Member="LeagueSeason" ThisKey="LeagueSeasonId" OtherKey="Id" Type="LeagueSeason" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.DivisionDefs" Member="DivisionDefs">
     <Type Name="DivisionDef">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -747,7 +737,6 @@
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
       <Column Name="LeagueId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="SeasonId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="LeagueSeason_DisplayLeagueLeader" Member="DisplayLeagueLeaders" ThisKey="Id" OtherKey="LeagueSeasonId" Type="DisplayLeagueLeader" />
       <Association Name="LeagueSeason_DivisionSeason" Member="DivisionSeasons" ThisKey="Id" OtherKey="LeagueSeasonId" Type="DivisionSeason" />
       <Association Name="LeagueSeason_GameEjection" Member="GameEjections" ThisKey="Id" OtherKey="leagueSeasonId" Type="GameEjection" />
       <Association Name="LeagueSeason_GolfMatch" Member="GolfMatches" ThisKey="Id" OtherKey="LeagueId" Type="GolfMatch" />
@@ -1161,6 +1150,14 @@
       <Association Name="WorkoutAnnouncement_WorkoutRegistration" Member="WorkoutRegistrations" ThisKey="Id" OtherKey="WorkoutId" Type="WorkoutRegistration" />
       <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="AvailableField_WorkoutAnnouncement" Member="AvailableField" ThisKey="FieldId" OtherKey="Id" Type="AvailableField" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.DisplayLeagueLeaders" Member="DisplayLeagueLeaders">
+    <Type Name="DisplayLeagueLeader">
+      <Column Name="FieldName" Type="System.String" DbType="VarChar(50) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="IsBatLeader" Type="System.Boolean" DbType="Bit NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
     </Type>
   </Table>
 </Database>

@@ -21,7 +21,7 @@ namespace SportsManager.Baseball.ViewModels
             ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
 
             ShowPlayerInterview = true;
-            ShowLeagueLeaders = true;
+            ShowLeagueLeaders = IsAdmin || DataAccess.GameStats.HasLeaderCategories(accountId, 0);
             ShowAnnouncements = true;
             ShowBirthdays = true;
             ShowWelcomeMessages = true;

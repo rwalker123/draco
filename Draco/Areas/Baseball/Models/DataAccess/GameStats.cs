@@ -888,7 +888,7 @@ namespace DataAccess
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
                             S = g.Sum(b => b.S),
-                            H = bb,
+                            H = h,
                             R = g.Sum(b => b.R),
                             ER = er,
                             D = d,
@@ -944,7 +944,7 @@ namespace DataAccess
                             W = g.Sum(b => b.W),
                             L = g.Sum(b => b.L),
                             S = g.Sum(b => b.S),
-                            H = bb,
+                            H = h,
                             R = g.Sum(b => b.R),
                             ER = er,
                             D = d,
@@ -1136,7 +1136,7 @@ namespace DataAccess
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
                                       S = g.Sum(b => b.S),
-                                      H = bb,
+                                      H = h,
                                       R = g.Sum(b => b.R),
                                       ER = er,
                                       D = d,
@@ -1196,7 +1196,7 @@ namespace DataAccess
                                       W = g.Sum(b => b.W),
                                       L = g.Sum(b => b.L),
                                       S = g.Sum(b => b.S),
-                                      H = bb,
+                                      H = h,
                                       R = g.Sum(b => b.R),
                                       ER = er,
                                       D = d,
@@ -1261,7 +1261,7 @@ namespace DataAccess
                         W = g.Sum(b => b.W),
                         L = g.Sum(b => b.L),
                         S = g.Sum(b => b.S),
-                        H = bb,
+                        H = h,
                         R = g.Sum(b => b.R),
                         ER = er,
                         D = d,
@@ -1493,6 +1493,7 @@ namespace DataAccess
 
             dbStats.AB = g.AB;
             dbStats.H = g.H;
+            dbStats.R = g.R;
             dbStats._2B = g.D;
             dbStats._3B = g.T;
             dbStats.HR = g.HR;
@@ -2505,164 +2506,103 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             List<LeagueLeaderStat> stats = new List<LeagueLeaderStat>();
 
-            bool abCheck = (fieldName == "AVG" || fieldName == "SLG");
+            bool abCheck = (fieldName == "AVG" || fieldName == "SLG" || fieldName == "OBP" || fieldName == "OPS");
 
             IEnumerable result = new List<LeagueLeaderStat>();
 
             String queryString = String.Empty;
 
-            if (divisionId > 0)
-            {
-                queryString = GetBatLeagueLeadersQueryString(leagueId, divisionId, fieldName, allTimeLeaders);
-            }
-            else
-            {
-                queryString = GetBatLeagueLeadersQueryString(leagueId, fieldName, allTimeLeaders);
-            }
+            queryString = GetBatLeagueLeadersQueryString(leagueId, divisionId, fieldName, allTimeLeaders);
 
             result = db.ExecuteQuery(typeof(LeaderStatRecord), queryString, new object[] { });
             return ProcessLeaders(result, fieldName, allTimeLeaders, limitRecords, abCheck, minAB);
         }
 
-        static private String GetBatLeagueLeadersQueryString(long leagueId, string fieldName, bool allTimeLeaders)
-        {
-            if (allTimeLeaders)
-            {
-                if (fieldName == "AVG")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSeason.LeagueId = {0} AND LeagueSchedule.GameType = 0
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", leagueId);
-
-                }
-                else if (fieldName == "SLG")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSeason.LeagueId = {0} AND LeagueSchedule.GameType = 0 
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", leagueId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM([{0}]) + 0.0 AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {1}
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", fieldName, leagueId);
-                }
-            }
-            else
-            {
-                if (fieldName == "AVG")
-                {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} 
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", leagueId);
-                }
-                else if (fieldName == "SLG")
-                {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM(AB) + 0.00 as ChedkField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0}
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", leagueId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM([{0}]) + 0.0 AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {1}
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", fieldName, leagueId);
-                }
-            }
-        }
-
         static private String GetBatLeagueLeadersQueryString(long leagueId, long divisionId, string fieldName, bool allTimeLeaders)
         {
+            String query = String.Empty;
+
             if (allTimeLeaders)
             {
-                if (fieldName == "AVG")
+                if (divisionId == 0)
                 {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", leagueId, divisionId);
-                }
-                else if (fieldName == "SLG")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", leagueId, divisionId);
+                    query = @" SELECT Roster.Id AS PlayerId, 0, {1}
+                            FROM batstatsum 
+                            LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
+                            LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
+                            LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
+                            LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
+                            WHERE GameStatus = 1 AND LeagueSeason.LeagueId = {0} AND LeagueSchedule.GameType = 0
+                            GROUP BY Roster.Id ORDER BY FieldTotal {2}";
                 }
                 else
                 {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM([{0}]) + 0.0 AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id
-                                          LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                          LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id
-                                          LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
-                                          LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {1} AND TeamsSeason.DivisionSeasonId = {2}
-                          GROUP BY Roster.Id ORDER BY FieldTotal DESC", fieldName, leagueId, divisionId);
+                    query = @" SELECT Roster.Id AS PlayerId, 0, {2}
+                              FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
+                              LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
+                              LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
+                              LEFT JOIN RosterSeason ON batstatsum.PlayerId = RosterSeason.Id
+                              LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
+                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
+                          GROUP BY Roster.Id ORDER BY FieldTotal {3}";
                 }
             }
             else
             {
-                if (fieldName == "AVG")
+                if (divisionId == 0)
                 {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal
+                    query = @"SELECT batstatsum.PlayerId, batstatsum.TeamId, {1}
+                            FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
+                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} 
+                            GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal {2}";
+                }
+                else
+                {
+                    query = @"SELECT batstatsum.PlayerId, batstatsum.TeamId, {2}
                           FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
                                           LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
                           WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", leagueId, divisionId);
-                }
-                else if (fieldName == "SLG")
-                {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal
-                        FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                        LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
-                        WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                        GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", leagueId, divisionId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT batstatsum.PlayerId, batstatsum.TeamId, SUM([{0}]) + 0.0 AS FieldTotal
-                          FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id 
-                                          LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {1} AND TeamsSeason.DivisionSeasonId = {2}
-                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal DESC", fieldName, leagueId, divisionId);
+                          GROUP BY batstatsum.PlayerId, batstatsum.TeamId ORDER BY FieldTotal {3}";
+
                 }
             }
+
+            String orderBy = "DESC";
+
+            String selectStmt = String.Empty;
+            if (fieldName == "AVG")
+            {
+                selectStmt = "SUM(AB) + 0.00 as CheckField, (SUM(H)+0.00)/nullif(SUM(AB),0) AS FieldTotal";
+            }
+            else if (fieldName == "SLG")
+            {
+                selectStmt = "SUM(AB) + 0.00 as CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0) AS FieldTotal";
+            }
+            else if (fieldName == "OPS")
+            {
+                selectStmt = "SUM(AB) + 0.00 as CheckField, (((SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(AB),0)) + ((SUM(H) + SUM(BB) + SUM(HBP) + 0.00)/nullif(SUM(AB) + SUM(BB) + SUM(HBP),0))) AS FieldTotal";
+            }
+            else if (fieldName == "TB")
+            {
+                selectStmt = "(SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) AS FieldTotal";
+            }
+            else if (fieldName == "PA")
+            {
+                selectStmt = "(SUM(AB) + SUM(BB) + SUM(HBP) + SUM(SH) + SUM(SF) + SUM(INTR) + 0.00) AS FieldTotal";
+            }
+            else if (fieldName == "OBP")
+            {
+                selectStmt = "SUM(AB) + 0.00 as CheckField, ((SUM(H) + SUM(BB) + SUM(HBP) + 0.00)/nullif(SUM(AB) + SUM(BB) + SUM(HBP),0)) AS FieldTotal";
+            }
+            else
+            {
+                selectStmt = String.Format("SUM([{0}]) + 0.0 AS FieldTotal", fieldName);
+            }
+
+            if (divisionId != 0)
+                return String.Format(query, leagueId, divisionId, selectStmt, orderBy);
+            else
+                return String.Format(query, leagueId, selectStmt, orderBy);
         }
 
         static public List<LeagueLeaderStat> GetPitchLeagueLeaders(long leagueId, long divisionId, string fieldName, int limitRecords, int minIP, bool allTimeLeaders)
@@ -2670,165 +2610,344 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             List<LeagueLeaderStat> stats = new List<LeagueLeaderStat>();
 
-            bool ipCheck = (fieldName == "ERA" || fieldName == "WHIP");
+            bool ipCheck = (fieldName == "ERA" || fieldName == "WHIP" || fieldName == "K9" || fieldName == "BB9" 
+                || fieldName == "SLG" || fieldName == "OBA" || fieldName == "TB" 
+                || fieldName == "R" || fieldName == "ER");
 
             IEnumerable result = new List<LeagueLeaderStat>();
 
             String queryString = String.Empty;
 
-            if (divisionId > 0)
-            {
-                queryString = GetPitchLeagueLeadersQueryString(leagueId, divisionId, fieldName, allTimeLeaders);
-            }
-            else
-            {
-                queryString = GetPitchLeagueLeadersQueryString(leagueId, fieldName, allTimeLeaders);
-            }
+            queryString = GetPitchLeagueLeadersQueryString(leagueId, divisionId, fieldName, allTimeLeaders);
 
             result = db.ExecuteQuery(typeof(LeaderStatRecord), queryString, new object[] { });
             return ProcessLeaders(result, fieldName, allTimeLeaders, limitRecords, ipCheck, minIP);
         }
 
-        static private String GetPitchLeagueLeadersQueryString(long leagueId, string fieldName, bool allTimeLeaders)
+        static private String GetPitchLeagueLeadersQueryString(long leagueId, long divisionId, string fieldName, bool allTimeLeaders)
         {
+            String query = String.Empty;
+
             if (allTimeLeaders)
             {
-                if (fieldName == "ERA")
+                if (divisionId == 0)
                 {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
+                    query = @"SELECT Roster.Id AS PlayerId, 0, {1}
                           FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
                                           LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
                                           LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
                                           LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
                           WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} 
-                          GROUP BY Roster.Id ORDER BY FieldTotal ASC", leagueId);
-                }
-                else if (fieldName == "WHIP")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB) + SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                          FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                                            LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                            LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
-                                            LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} 
-                            GROUP BY Roster.Id ORDER BY FieldTotal ASC", leagueId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id AS PlayerId, 0, SUM([{0}]) + 0.0 AS FieldTotal
-                            FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                                              LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                              LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
-                                              LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {1}
-                            GROUP BY Roster.Id ORDER BY FieldTotal DESC", fieldName, leagueId);
-                }
-            }
-            else
-            {
-                if (fieldName == "ERA")
-                {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                            FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0}
-                            GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal ASC", leagueId);
-                }
-                else if (fieldName == "WHIP")
-                {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB)+SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                            FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0}
-                            GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal ASC", leagueId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM([{0}]) + 0.0 AS FieldTotal
-                          FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                          WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {1}
-                          GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal DESC", fieldName, leagueId);
-                }
-            }
-        }
+                          GROUP BY Roster.Id ORDER BY FieldTotal {2}";
 
-        static private String GetPitchLeagueLeadersQueryString(long leagueId, long divisionId, string fieldName, bool allTimeLeaders)
-        {
-            if (allTimeLeaders)
-            {
-                if (fieldName == "ERA")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                    FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                                    LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                    LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id 
-                                    LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
-                                    LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                    WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1} 
-                    GROUP BY Roster.Id 
-                    ORDER BY ERA ASC", leagueId, divisionId);
-                    
-                }
-                else if (fieldName == "WHIP")
-                {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB)+SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                    FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                                    LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                                    LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id 
-                                    LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
-                                    LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                    WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1} 
-                    GROUP BY Roster.Id 
-                    ORDER BY FieldTotal ASC", leagueId, divisionId);
                 }
                 else
                 {
-                    return String.Format(
-                        @"SELECT Roster.Id, 0, SUM([{0}]) + 0.0 AS FieldTotal
-                     FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
-                     LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
-                     LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id
-                     LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
-                     LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
-                     WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {1} AND TeamsSeason.DivisionSeasonId = {2}
-                     GROUP BY Roster.Id ORDER BY FieldTotal DESC", fieldName, leagueId, divisionId);
+                    query = @"SELECT Roster.Id, 0, {2}
+                               FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
+                                    LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
+                                    LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id 
+                                    LEFT JOIN RosterSeason ON pitchstatsum.PlayerId = RosterSeason.Id
+                                    LEFT JOIN Roster ON Roster.Id = RosterSeason.PlayerId
+                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueSeason.LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1} 
+                            GROUP BY Roster.Id ORDER BY FieldTotal {3}";
                 }
             }
             else
             {
-                if (fieldName == "ERA")
+                if (divisionId == 0)
                 {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
+                    query = @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, {1}
+                            FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id
+                            WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0}
+                            GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal {2}";
+                }
+                else
+                {
+                    query = @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, {2}
                             FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id 
                                               LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id 
                             WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                            GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal ASC", leagueId, divisionId);
-                }
-                else if (fieldName == "WHIP")
-                {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM(IP)+(SUM(IP2)/3) + 0.0 AS CheckField, (SUM(BB)+SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal
-                    FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id 
-                                    LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id 
-                    WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {0} AND TeamsSeason.DivisionSeasonId = {1}
-                    GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal ASC", leagueId, divisionId);
-                }
-                else
-                {
-                    return String.Format(
-                        @"SELECT pitchstatsum.PlayerId, pitchstatsum.TeamId, SUM([{0}]) + 0.0 AS FieldTotal
-                     FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id
-                     WHERE GameStatus = 1 AND LeagueSchedule.GameType = 0 AND LeagueId = {1} AND TeamsSeason.DivisionSeasonId = {2} 
-                     GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal DESC", fieldName, leagueId, divisionId);
+                            GROUP BY pitchstatsum.PlayerId, pitchstatsum.TeamId ORDER BY FieldTotal {3}";
                 }
             }
+
+            String orderBy = "DESC";
+
+            String selectStmt = String.Empty;
+
+            // default query but different orderby.
+            if (fieldName == "R" || fieldName == "ER")
+                orderBy = "ASC";
+
+            if (fieldName == "ERA")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, (SUM(ER)*9.0)/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "WHIP")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, (SUM(BB) + SUM(H))/nullif(SUM(IP)+SUM(IP2)/3.0, 0) + 0.000 AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "K9")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, SUM(SO)/nullif((SUM(IP)+SUM(IP2)/3.0), 0) * 9.0 AS FieldTotal";
+            }
+            else if (fieldName == "BB9")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, SUM(BB)/nullif((SUM(IP)+SUM(IP2)/3.0), 0) * 9.0 AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "SLG")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, (SUM([2B]) * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) / nullif(SUM(BF) - SUM(BB) - SUM(HBP) - SUM(SC),0) AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "OBA")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, (SUM(H) + 0.00) / nullif(SUM(BF) - SUM(BB) - SUM(HBP) - SUM(SC),0) AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "TB")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, SUM([2B] * 2 + SUM([3B]) * 3 + SUM(HR) * 4 + (SUM(H) - SUM([2B]) - SUM([3B]) - SUM(HR)) + 0.00) AS FieldTotal";
+                orderBy = "ASC";
+            }
+            else if (fieldName == "IP")
+            {
+                selectStmt = "SUM(IP)+(SUM(IP2)/3)+((SUM(IP2)%3)/10.0) + 0.0 AS FieldTotal";
+            }
+            else
+            {
+                selectStmt = String.Format("SUM([{0}]) + 0.0 AS FieldTotal", fieldName);
+            }
+
+            if (divisionId != 0)
+                return String.Format(query, leagueId, divisionId, selectStmt, orderBy);
+            else
+                return String.Format(query, leagueId, selectStmt, orderBy);
+        }
+
+        private static List<LeaderCategory> m_batCats = new List<LeaderCategory>()
+                {
+                    new LeaderCategory() {
+                        Name = "AB",
+                        Id = "AB"
+                    },
+                    new LeaderCategory() {
+                        Name = "H",
+                        Id = "H"
+                    },
+                    new LeaderCategory() {
+                        Name = "R",
+                        Id = "R"
+                    },
+                    new LeaderCategory() {
+                        Name = "2B",
+                        Id = "2B"
+                    },
+                    new LeaderCategory() {
+                        Name = "3B",
+                        Id = "3B"
+                    },
+                    new LeaderCategory() {
+                        Name = "HR",
+                        Id = "HR"
+                    },
+                    new LeaderCategory() {
+                        Name = "RBI",
+                        Id = "RBI"
+                    },
+                    new LeaderCategory() {
+                        Name = "BB",
+                        Id = "BB"
+                    },
+                    new LeaderCategory() {
+                        Name = "HBP",
+                        Id = "HBP"
+                    },
+                    new LeaderCategory() {
+                        Name = "SB",
+                        Id = "SB"
+                    },
+                    new LeaderCategory() {
+                        Name = "TB",
+                        Id = "TB"
+                    },
+                    new LeaderCategory() {
+                        Name = "PA",
+                        Id = "PA"
+                    },
+                    new LeaderCategory() {
+                        Name = "OBP",
+                        Id = "OBP&calcMinAB=1",
+                        NumDecimals = 3
+                    },
+                    new LeaderCategory() {
+                        Name = "SLG",
+                        Id = "SLG&calcMinAB=1",
+                        NumDecimals = 3
+                    },
+                    new LeaderCategory() {
+                        Name = "OPS",
+                        Id = "OPS&calcMinAB=1",
+                        NumDecimals = 3
+                    },
+                    new LeaderCategory() {
+                        Name = "AVG",
+                        Id = "AVG&calcMinAB=1",
+                        NumDecimals = 3,
+                        TrimLeadingZero = true
+                    }
+                };
+
+        public static IEnumerable<LeaderCategory> AvailableBatCategories()
+        {
+            return m_batCats;
+        }
+
+        private static List<LeaderCategory> m_pitchCats = new List<LeaderCategory>()
+                {
+                    new LeaderCategory() {
+                        Name = "W",
+                        Id = "W"
+                    },
+                    new LeaderCategory() {
+                        Name = "S",
+                        Id = "S"
+                    },
+                    new LeaderCategory() {
+                        Name = "IP",
+                        Id = "IP",
+                        NumDecimals = 1
+                    },
+                    new LeaderCategory() {
+                        Name = "BF",
+                        Id = "BF"
+                    },
+                    new LeaderCategory() {
+                        Name = "H",
+                        Id = "H"
+                    },
+                    new LeaderCategory() {
+                        Name = "R",
+                        Id = "R&calcMinIP=1"
+                    },
+                    new LeaderCategory() {
+                        Name = "ER",
+                        Id = "ER&calcMinIP=1"
+                    },
+                    new LeaderCategory() {
+                        Name = "SO",
+                        Id = "SO"
+                    },
+                    new LeaderCategory() {
+                        Name = "K9",
+                        Id = "K9&calcMinIP=1",
+                        NumDecimals = 1
+                    },
+                    new LeaderCategory() {
+                        Name = "BB9",
+                        Id = "BB9&calcMinIP=1",
+                        NumDecimals = 1
+                    },
+                    new LeaderCategory() {
+                        Name = "OBA",
+                        Id = "OBA&calcMinIP=1",
+                        NumDecimals = 3
+                    },
+                    new LeaderCategory() {
+                        Name = "SLG",
+                        Id = "SLG&calcMinIP=1",
+                        NumDecimals = 3
+                    },
+                    new LeaderCategory() {
+                        Name = "WHIP",
+                        Id = "WHIP&calcMinIP=1",
+                        NumDecimals = 2
+                    },
+                    new LeaderCategory() {
+                        Name = "ERA",
+                        Id = "ERA&calcMinIP=1",
+                        NumDecimals = 2
+                    }
+                };
+
+
+        public static IEnumerable<LeaderCategory> AvailablePitchCategories()
+        {
+            return m_pitchCats;
+        }
+
+        private static LeaderCategory GetLeaderCategoryFromName(string name, bool isBatLeader)
+        {
+            if (isBatLeader)
+            {
+                foreach(var lc in m_batCats)
+                {
+                    if (lc.Name == name)
+                        return lc;
+                }
+            }
+            else
+            {
+                foreach (var lc in m_pitchCats)
+                {
+                    if (lc.Name == name)
+                        return lc;
+                }
+            }
+
+            return null;
+        }
+
+        public static IQueryable<LeaderCategory> GetLeaderCategories(long accountId, long teamId, bool isBatLeader)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from ll in db.DisplayLeagueLeaders
+                    where ll.AccountId == accountId && ll.TeamId == teamId && ll.IsBatLeader == isBatLeader
+                    select GetLeaderCategoryFromName(ll.FieldName, isBatLeader));
+        }
+
+        public static bool HasLeaderCategories(long accountId, long teamId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from ll in db.DisplayLeagueLeaders
+                    where ll.AccountId == accountId && ll.TeamId == teamId
+                    select ll).Any();
+        }
+
+        public static bool AddLeaderCategories(long accountId, long teamId, bool isBatLeader, IEnumerable<LeaderCategory> cat)
+        {
+            DB db = DBConnection.GetContext();
+
+            // remove old ones first.
+            var remove = (from ll in db.DisplayLeagueLeaders
+                          where ll.AccountId == accountId && ll.TeamId == teamId && ll.IsBatLeader == isBatLeader
+                          select ll);
+            db.DisplayLeagueLeaders.DeleteAllOnSubmit(remove);
+            db.SubmitChanges();
+
+            if (cat == null)
+                return true;
+
+            foreach(var lc in cat)
+            {
+                db.DisplayLeagueLeaders.InsertOnSubmit(new SportsManager.Model.DisplayLeagueLeader()
+                {
+                    FieldName = lc.Name,
+                    AccountId = accountId,
+                    TeamId = teamId,
+                    IsBatLeader = isBatLeader
+                });
+            }
+
+            db.SubmitChanges();
+
+            return true;
         }
     }
 }

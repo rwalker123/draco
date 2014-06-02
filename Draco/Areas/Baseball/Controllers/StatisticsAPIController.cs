@@ -1,5 +1,6 @@
 ﻿using ModelObjects;
 using SportsManager.Baseball.ViewModels;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,123 +111,67 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, stats);
         }
 
-        public class LeaderCategory
-        {
-            public LeaderCategory()
-            {
-                NumDecimals = 0;
-                TrimLeadingZero = false;
-            }
-
-            public String Name { get; set; }
-            public String Id { get; set; }
-            public int NumDecimals { get; set; }
-            public bool TrimLeadingZero { get; set; }
-        }
-
-
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("batcategories")]
         public HttpResponseMessage GetBatAvailableCategories(long accountId)
         {
-            List<LeaderCategory> batCats = new List<LeaderCategory>()
-                {
-                    new LeaderCategory() {
-                        Name = "AB",
-                        Id = "AB"
-                    },
-                    new LeaderCategory() {
-                        Name = "H",
-                        Id = "H"
-                    },
-                    new LeaderCategory() {
-                        Name = "R",
-                        Id = "R"
-                    },
-                    new LeaderCategory() {
-                        Name = "2B",
-                        Id = "D"
-                    },
-                    new LeaderCategory() {
-                        Name = "3B",
-                        Id = "T"
-                    },
-                    new LeaderCategory() {
-                        Name = "HR",
-                        Id = "HR"
-                    },
-                    new LeaderCategory() {
-                        Name = "RBI",
-                        Id = "RBI"
-                    },
-                    new LeaderCategory() {
-                        Name = "BB",
-                        Id = "BB"
-                    },
-                    new LeaderCategory() {
-                        Name = "HBP",
-                        Id = "HBP"
-                    },
-                    new LeaderCategory() {
-                        Name = "SB",
-                        Id = "SB"
-                    },
-                    new LeaderCategory() {
-                        Name = "TB",
-                        Id = "TB"
-                    },
-                    new LeaderCategory() {
-                        Name = "PA",
-                        Id = "PA"
-                    },
-                    new LeaderCategory() {
-                        Name = "OBP",
-                        Id = "OBP&calcMinAB=1",
-                        NumDecimals = 3
-                    },
-                    new LeaderCategory() {
-                        Name = "SLG",
-                        Id = "SLG&calcMinAB=1",
-                        NumDecimals = 3
-                    },
-                    new LeaderCategory() {
-                        Name = "OPS",
-                        Id = "OPS&calcMinAB=1",
-                        NumDecimals = 3
-                    },
-                    new LeaderCategory() {
-                        Name = "AVG",
-                        Id = "AVG&calcMinAB=1"
-                    }
-                };
-
-            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, batCats);
+            var leaderCats = DataAccess.GameStats.AvailableBatCategories();
+            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("pitchcategories")]
         public HttpResponseMessage GetPitchAvailableCategories(long accountId)
         {
-            List<LeaderCategory> pitchCats = new List<LeaderCategory>()
-                {
-                    new LeaderCategory() {
-                        Name = "ERA",
-                        Id = "ERA&calcMinIP=1"
-                    },
-                    new LeaderCategory() {
-                        Name = "W",
-                        Id = "W"
-                    },
-                    new LeaderCategory() {
-                        Name = "SO",
-                        Id = "SO"
-                    }
-                };
-
-            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, pitchCats);
+            var leaderCats = DataAccess.GameStats.AvailablePitchCategories();
+            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
+        // helper for MVC mapping.
+        public class LeaderCategories
+        {
+            public LeaderCategory[] cats { get; set; }
+        }
 
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("setbatcategories")]
+        [SportsManagerAuthorize(Roles="AccountAdmin")]
+        public HttpResponseMessage PostBatSelectedCategories(long accountId, LeaderCategories categories)
+        {
+            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, true, categories.cats);
+            if (success)
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("setpitchcategories")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage PostPitchSelectedCategories(long accountId, LeaderCategories categories)
+        {
+            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, false, categories.cats);
+            if (success)
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("batselectedcategories")]
+        public HttpResponseMessage GetBatSelectedCategories(long accountId)
+        {
+            var leaderCats = DataAccess.GameStats.GetLeaderCategories(accountId, 0, true);
+            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("pitchselectedcategories")]
+        public HttpResponseMessage GetPitchSelectedCategories(long accountId)
+        {
+            var leaderCats = DataAccess.GameStats.GetLeaderCategories(accountId, 0, false);
+            return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
+        }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("pitchleaders")]

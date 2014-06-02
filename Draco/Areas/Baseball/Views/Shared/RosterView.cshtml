@@ -60,9 +60,9 @@
                         <th></th>
                         <th>No</th>
                         <th>Name</th>
-                        <th>Age</th>
                         @if (Model.IsAdmin)
                         {
+                            <th>Age</th>
                             <th>Signed</th>
                             <th>Actions</th>
                         }
@@ -135,11 +135,11 @@
                             }
                         </td>
 
-                        <td class="col-sm-1" data-bind="html: Age">
-                        </td>
-
                         @if (Model.IsAdmin)
                         {
+                            <td class="col-sm-1" data-bind="html: Age">
+                            </td>
+
                             <td class="col-sm-2">
                                 <span data-bind="html: DateSigned"></span>
                             </td>

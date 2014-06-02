@@ -71,7 +71,7 @@
                 </div>
                 <div class="form-group">
                     <div class="col-sm-offset-2">
-                        <button type="button" class="btn btn-default" data-bind="click: startAddCategory">add discussion</button>
+                        <button type="button" class="btn btn-primary" data-bind="click: startAddCategory">add discussion</button>
                     </div>
                 </div>
             </form>
@@ -190,7 +190,7 @@
 
         <div data-bind="visible: !$root.editTopicMode()">
             <div data-bind="if: canCreateTopic">
-                <button type="button" class="btn btn-default" data-bind="click: $root.startEditTopic">start discussion</button>
+                <button type="button" class="btn btn-primary" data-bind="click: $root.startEditTopic">start discussion</button>
             </div>
             <div data-bind="ifnot: canCreateTopic">
                 <div class="alert alert-info">Login to start a discussion group.</div>

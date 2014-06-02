@@ -10,6 +10,11 @@
         td.statField {
             width: 50px;
         }
+
+        td.nameField {
+            font-size: .9em;
+            width: 110px;
+        }
     </style>
 }
 
@@ -97,7 +102,7 @@
                                     <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteBatStat"><span class="glyphicon glyphicon-remove"></span></button>
                                 </td>
                                 }
-                                <td data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>
+                                <td class="nameField" data-readonly="true" data-bind="html: PlayerName.LastName(), attr: { title: PlayerName }"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: H"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: R"></td>
@@ -211,7 +216,7 @@
                                             <button class="btn btn-danger btn-sm" data-bind="click: $root.deletePitchStat"><span class="glyphicon glyphicon-remove"></span></button>
                                         </td>
                                     }
-                                    <td data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>
+                                    <td class="nameField" data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>
                                     <td class="statField" data-type='number' data-bind="editablefield: W"></td>
                                     <td class="statField" data-type='number' data-bind="editablefield: L"></td>
                                     <td class="statField" data-type='number' data-bind="editablefield: S"></td>

@@ -206,11 +206,6 @@ namespace DataAccess
             // save league definition id so we can delete if no other uses.
             long leagueId = dbLeague.LeagueId;
 
-            var displayLeagueLeaders = (from ll in db.DisplayLeagueLeaders
-                                        where ll.Id == leagueSeasonId
-                                        select ll);
-            db.DisplayLeagueLeaders.DeleteAllOnSubmit(displayLeagueLeaders);
-
             db.LeagueSeasons.DeleteOnSubmit(dbLeague);
             db.SubmitChanges();
 

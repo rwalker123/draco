@@ -240,6 +240,7 @@
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
+    <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamScheduleViewModel.cs" />
@@ -296,7 +297,6 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\HOFMember.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNomination.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNominationSetup.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\LeagueLeaderConfig.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeagueLeaderStat.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Player.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffBracket.cs" />
@@ -382,7 +382,6 @@
     <Compile Include="Controllers\HallOfFameAPIController.cs" />
     <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
-    <Compile Include="Controllers\LeagueAPIController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
     <Compile Include="Controllers\MemberBusinessAPIController.cs" />
     <Compile Include="Controllers\PhotoGalleryAPIController.cs" />
@@ -418,7 +417,6 @@
     <Compile Include="Models\DataAccess\Teams.cs" />
     <Compile Include="Models\DataAccess\VideoAccounts.cs" />
     <Compile Include="Models\DataAccess\Votes.cs" />
-    <Compile Include="Models\DataAccess\WebSiteSettings.cs" />
     <Compile Include="Models\DataClasses.cs">
       <DependentUpon>DataClasses.dbml</DependentUpon>
     </Compile>

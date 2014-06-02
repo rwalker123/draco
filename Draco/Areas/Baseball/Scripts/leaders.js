@@ -7,6 +7,36 @@
     }
 }
 
+var LeaderCategoryViewModel = function(data) {
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Leaders = ko.observableArray();
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
 var LeadersViewModel = function (accountId, isAdmin, teamId) {
     var self = this;
 
@@ -48,8 +78,70 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.saveChanges = function () {
+        if (self.selectedBatCategories().length > 3 ||
+            self.selectedPitchCategories().length > 3)
+            return;
+
         self.editMode(false);
-        //self.updateLeaders();
+
+        var batData = {
+            cats: []
+        };
+
+        self.batCategories.removeAll();
+        $.each(self.selectedBatCategories(), function (index, cat) {
+            var foundCat = ko.utils.arrayFirst(self.availableBatCategories(), function (availableCat) {
+                return (cat == availableCat.Id);
+            });
+
+            if (foundCat) {
+                var batCat = new LeaderCategoryViewModel(foundCat);
+                self.batCategories.push(batCat);
+                batData.cats.push(foundCat);
+            }
+        });
+
+        var pitchData = {
+            cats: []
+        };
+
+        self.pitchCategories.removeAll();
+        $.each(self.selectedPitchCategories(), function (index, cat) {
+            var foundCat = ko.utils.arrayFirst(self.availablePitchCategories(), function (availableCat) {
+                return (cat == availableCat.Id);
+            });
+
+            if (foundCat) {
+                var pitchCat = new LeaderCategoryViewModel(foundCat);
+                self.pitchCategories.push(pitchCat);
+                pitchData.cats.push(foundCat);
+            }
+        });
+
+        self.updateLeaders();
+
+        // update the categories, since we already updated the UI above, if this fails, the
+        // next time the screen is refreshed, the old settings will take over.
+        var url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/setbatcategories';
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: batData,
+            success: function () {
+            }
+        });
+
+        url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/setpitchcategories';
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: pitchData,
+            success: function () {
+            }
+        });
+
     }
 
     self.cancelChanges = function () {
@@ -59,13 +151,29 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.fillBatCategories = function () {
-        self.batCategories.push({ Id: "AVG&calcMinAB=1", Name: "AVG", NumDecimals: 3, TrimLeadingZero: true, Leaders: ko.observableArray() });
-        self.batCategories.push({ Id: "RBI", Name: "RBI", NumDecimals: 0, TrimLeadingZero: false, Leaders: ko.observableArray() });
-        self.batCategories.push({ Id: "HR", Name: "HR", NumDecimals: 0, TrimLeadingZero: false, Leaders: ko.observableArray() });
-
+        self.batCategories.push(new LeaderCategoryViewModel({ Id: "AVG&calcMinAB=1", Name: "AVG", NumDecimals: 3, TrimLeadingZero: true }));
+        self.batCategories.push(new LeaderCategoryViewModel({ Id: "RBI", Name: "RBI", NumDecimals: 0, TrimLeadingZero: false }));
+        self.batCategories.push(new LeaderCategoryViewModel({ Id: "HR", Name: "HR", NumDecimals: 0, TrimLeadingZero: false }));
         self.initBatSelectedCategories();
-
         self.getBattingLeaders();
+        return;
+
+        var url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/batselectedcategories';
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (leaderCats) {
+                self.batCategories.removeAll();
+                $.each(leaderCats, function (index, cat) {
+                    self.batCategories.push(new LeaderCategoryViewModel(cat));
+                });
+
+                self.initBatSelectedCategories();
+                self.getBattingLeaders();
+            }
+        });
+
     }
 
     self.initBatSelectedCategories = function () {
@@ -73,7 +181,7 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
             self.selectedBatCategories.removeAll();
 
             $.each(self.batCategories(), function (index, cat) {
-                self.selectedBatCategories.push(cat.Id);
+                self.selectedBatCategories.push(cat.Id());
             });
         }
     }
@@ -83,19 +191,35 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
             self.selectedPitchCategories.removeAll();
 
             $.each(self.pitchCategories(), function (index, cat) {
-                self.selectedPitchCategories.push(cat.Id);
+                self.selectedPitchCategories.push(cat.Id());
             });
         }
     }
 
-    self.getPitchCategories = function () {
-        self.pitchCategories.push({ Id: "ERA&calcMinIP=1", Name: "ERA", NumDecimals: 2, TrimLeadingZero: false, Leaders: ko.observableArray() });
-        self.pitchCategories.push({ Id: "W", Name: "W", NumDecimals: 0, TrimLeadingZero: false, Leaders: ko.observableArray() });
-        self.pitchCategories.push({ Id: "SO", Name: "SO", NumDecimals: 0, TrimLeadingZero: false, Leaders: ko.observableArray() });
+    self.fillPitchCategories = function () {
+        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "ERA&calcMinIP=1", Name: "ERA", NumDecimals: 2, TrimLeadingZero: false }));
+        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "W", Name: "W", NumDecimals: 0, TrimLeadingZero: false }));
+        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "SO", Name: "SO", NumDecimals: 0, TrimLeadingZero: false })); 
+                self.initPitchSelectedCategories();
+                self.getPitchingLeaders();
+        return;
 
-        self.initPitchSelectedCategories();
+        var url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/pitchselectedcategories';
 
-        self.getPitchingLeaders();
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (leaderCats) {
+                self.pitchCategories.removeAll();
+                $.each(leaderCats, function (index, cat) {
+                    self.pitchCategories.push(new LeaderCategoryViewModel(cat));
+                });
+
+                self.initPitchSelectedCategories();
+                self.getPitchingLeaders();
+            }
+        });
+
     }
 
     self.getLeaders = function (url, obsArray, fixedDecimal, trimLeadingZero) {
@@ -146,9 +270,9 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
             else
                 url = url + '/League/' + self.selectedLeagueId() + '/batleaders';
 
-            url = url + '/?category=' + cat.Id;
+            url = url + '/?category=' + cat.Id();
 
-            self.getLeaders(url, cat.Leaders, cat.NumDecimals, cat.TrimLeadingZero);
+            self.getLeaders(url, cat.Leaders, cat.NumDecimals(), cat.TrimLeadingZero());
         });
     };
 
@@ -163,9 +287,9 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
             else
                 url = url + '/League/' + self.selectedLeagueId() + '/pitchleaders';
 
-            url = url + '/?category=' + cat.Id;
+            url = url + '/?category=' + cat.Id();
 
-            self.getLeaders(url, cat.Leaders, cat.NumDecimals, cat.TrimLeadingZero);
+            self.getLeaders(url, cat.Leaders, cat.NumDecimals(), cat.TrimLeadingZero());
         });
 
     }
@@ -199,7 +323,7 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.fillBatCategories();
-    self.getPitchCategories();
+    self.fillPitchCategories();
 
     if (self.isAdmin && !self.teamId) {
         self.getBatAvailableCategories();

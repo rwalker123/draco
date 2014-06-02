@@ -76,9 +76,6 @@ namespace SportsManager
     partial void InsertCurrentSeason(SportsManager.Model.CurrentSeason instance);
     partial void UpdateCurrentSeason(SportsManager.Model.CurrentSeason instance);
     partial void DeleteCurrentSeason(SportsManager.Model.CurrentSeason instance);
-    partial void InsertDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
-    partial void UpdateDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
-    partial void DeleteDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
     partial void InsertDivisionDef(SportsManager.Model.DivisionDef instance);
     partial void UpdateDivisionDef(SportsManager.Model.DivisionDef instance);
     partial void DeleteDivisionDef(SportsManager.Model.DivisionDef instance);
@@ -253,6 +250,9 @@ namespace SportsManager
     partial void InsertWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     partial void UpdateWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     partial void DeleteWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
+    partial void InsertDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
+    partial void UpdateDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
+    partial void DeleteDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
     #endregion
 		
 		public DB() : 
@@ -410,14 +410,6 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.CurrentSeason>();
-			}
-		}
-		
-		public System.Data.Linq.Table<SportsManager.Model.DisplayLeagueLeader> DisplayLeagueLeaders
-		{
-			get
-			{
-				return this.GetTable<SportsManager.Model.DisplayLeagueLeader>();
 			}
 		}
 		
@@ -882,6 +874,14 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.WorkoutAnnouncement>();
+			}
+		}
+		
+		public System.Data.Linq.Table<SportsManager.Model.DisplayLeagueLeader> DisplayLeagueLeaders
+		{
+			get
+			{
+				return this.GetTable<SportsManager.Model.DisplayLeagueLeader>();
 			}
 		}
 	}
@@ -6296,205 +6296,6 @@ namespace SportsManager.Model
 						this._AccountId = default(long);
 					}
 					this.SendPropertyChanged("Account");
-				}
-			}
-		}
-		
-		public event PropertyChangingEventHandler PropertyChanging;
-		
-		public event PropertyChangedEventHandler PropertyChanged;
-		
-		protected virtual void SendPropertyChanging()
-		{
-			if ((this.PropertyChanging != null))
-			{
-				this.PropertyChanging(this, emptyChangingEventArgs);
-			}
-		}
-		
-		protected virtual void SendPropertyChanged(String propertyName)
-		{
-			if ((this.PropertyChanged != null))
-			{
-				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
-		}
-	}
-	
-	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.DisplayLeagueLeaders")]
-	public partial class DisplayLeagueLeader : INotifyPropertyChanging, INotifyPropertyChanged
-	{
-		
-		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
-		
-		private long _Id;
-		
-		private string _FieldName;
-		
-		private int _FieldLimit;
-		
-		private long _LeagueSeasonId;
-		
-		private bool _DisplayOnHomePage;
-		
-		private EntityRef<LeagueSeason> _LeagueSeason;
-		
-    #region Extensibility Method Definitions
-    partial void OnLoaded();
-    partial void OnValidate(System.Data.Linq.ChangeAction action);
-    partial void OnCreated();
-    partial void OnIdChanging(long value);
-    partial void OnIdChanged();
-    partial void OnFieldNameChanging(string value);
-    partial void OnFieldNameChanged();
-    partial void OnFieldLimitChanging(int value);
-    partial void OnFieldLimitChanged();
-    partial void OnLeagueSeasonIdChanging(long value);
-    partial void OnLeagueSeasonIdChanged();
-    partial void OnDisplayOnHomePageChanging(bool value);
-    partial void OnDisplayOnHomePageChanged();
-    #endregion
-		
-		public DisplayLeagueLeader()
-		{
-			this._LeagueSeason = default(EntityRef<LeagueSeason>);
-			OnCreated();
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
-		public long Id
-		{
-			get
-			{
-				return this._Id;
-			}
-			set
-			{
-				if ((this._Id != value))
-				{
-					this.OnIdChanging(value);
-					this.SendPropertyChanging();
-					this._Id = value;
-					this.SendPropertyChanged("Id");
-					this.OnIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FieldName", DbType="VarChar(50) NOT NULL", CanBeNull=false)]
-		public string FieldName
-		{
-			get
-			{
-				return this._FieldName;
-			}
-			set
-			{
-				if ((this._FieldName != value))
-				{
-					this.OnFieldNameChanging(value);
-					this.SendPropertyChanging();
-					this._FieldName = value;
-					this.SendPropertyChanged("FieldName");
-					this.OnFieldNameChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FieldLimit", DbType="Int NOT NULL")]
-		public int FieldLimit
-		{
-			get
-			{
-				return this._FieldLimit;
-			}
-			set
-			{
-				if ((this._FieldLimit != value))
-				{
-					this.OnFieldLimitChanging(value);
-					this.SendPropertyChanging();
-					this._FieldLimit = value;
-					this.SendPropertyChanged("FieldLimit");
-					this.OnFieldLimitChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_LeagueSeasonId", DbType="BigInt NOT NULL")]
-		public long LeagueSeasonId
-		{
-			get
-			{
-				return this._LeagueSeasonId;
-			}
-			set
-			{
-				if ((this._LeagueSeasonId != value))
-				{
-					if (this._LeagueSeason.HasLoadedOrAssignedValue)
-					{
-						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
-					}
-					this.OnLeagueSeasonIdChanging(value);
-					this.SendPropertyChanging();
-					this._LeagueSeasonId = value;
-					this.SendPropertyChanged("LeagueSeasonId");
-					this.OnLeagueSeasonIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_DisplayOnHomePage", DbType="Bit NOT NULL")]
-		public bool DisplayOnHomePage
-		{
-			get
-			{
-				return this._DisplayOnHomePage;
-			}
-			set
-			{
-				if ((this._DisplayOnHomePage != value))
-				{
-					this.OnDisplayOnHomePageChanging(value);
-					this.SendPropertyChanging();
-					this._DisplayOnHomePage = value;
-					this.SendPropertyChanged("DisplayOnHomePage");
-					this.OnDisplayOnHomePageChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="LeagueSeason_DisplayLeagueLeader", Storage="_LeagueSeason", ThisKey="LeagueSeasonId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public LeagueSeason LeagueSeason
-		{
-			get
-			{
-				return this._LeagueSeason.Entity;
-			}
-			set
-			{
-				LeagueSeason previousValue = this._LeagueSeason.Entity;
-				if (((previousValue != value) 
-							|| (this._LeagueSeason.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._LeagueSeason.Entity = null;
-						previousValue.DisplayLeagueLeaders.Remove(this);
-					}
-					this._LeagueSeason.Entity = value;
-					if ((value != null))
-					{
-						value.DisplayLeagueLeaders.Add(this);
-						this._LeagueSeasonId = value.Id;
-					}
-					else
-					{
-						this._LeagueSeasonId = default(long);
-					}
-					this.SendPropertyChanged("LeagueSeason");
 				}
 			}
 		}
@@ -17669,8 +17470,6 @@ namespace SportsManager.Model
 		
 		private long _SeasonId;
 		
-		private EntitySet<DisplayLeagueLeader> _DisplayLeagueLeaders;
-		
 		private EntitySet<DivisionSeason> _DivisionSeasons;
 		
 		private EntitySet<GameEjection> _GameEjections;
@@ -17703,7 +17502,6 @@ namespace SportsManager.Model
 		
 		public LeagueSeason()
 		{
-			this._DisplayLeagueLeaders = new EntitySet<DisplayLeagueLeader>(new Action<DisplayLeagueLeader>(this.attach_DisplayLeagueLeaders), new Action<DisplayLeagueLeader>(this.detach_DisplayLeagueLeaders));
 			this._DivisionSeasons = new EntitySet<DivisionSeason>(new Action<DivisionSeason>(this.attach_DivisionSeasons), new Action<DivisionSeason>(this.detach_DivisionSeasons));
 			this._GameEjections = new EntitySet<GameEjection>(new Action<GameEjection>(this.attach_GameEjections), new Action<GameEjection>(this.detach_GameEjections));
 			this._GolfMatches = new EntitySet<GolfMatch>(new Action<GolfMatch>(this.attach_GolfMatches), new Action<GolfMatch>(this.detach_GolfMatches));
@@ -17781,19 +17579,6 @@ namespace SportsManager.Model
 					this.SendPropertyChanged("SeasonId");
 					this.OnSeasonIdChanged();
 				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="LeagueSeason_DisplayLeagueLeader", Storage="_DisplayLeagueLeaders", ThisKey="Id", OtherKey="LeagueSeasonId")]
-		public EntitySet<DisplayLeagueLeader> DisplayLeagueLeaders
-		{
-			get
-			{
-				return this._DisplayLeagueLeaders;
-			}
-			set
-			{
-				this._DisplayLeagueLeaders.Assign(value);
 			}
 		}
 		
@@ -17974,18 +17759,6 @@ namespace SportsManager.Model
 			{
 				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 			}
-		}
-		
-		private void attach_DisplayLeagueLeaders(DisplayLeagueLeader entity)
-		{
-			this.SendPropertyChanging();
-			entity.LeagueSeason = this;
-		}
-		
-		private void detach_DisplayLeagueLeaders(DisplayLeagueLeader entity)
-		{
-			this.SendPropertyChanging();
-			entity.LeagueSeason = null;
 		}
 		
 		private void attach_DivisionSeasons(DivisionSeason entity)
@@ -26876,6 +26649,140 @@ namespace SportsManager.Model
 		{
 			this.SendPropertyChanging();
 			entity.WorkoutAnnouncement = null;
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.DisplayLeagueLeaders")]
+	public partial class DisplayLeagueLeader : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private string _FieldName;
+		
+		private long _AccountId;
+		
+		private long _TeamId;
+		
+		private bool _IsBatLeader;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnFieldNameChanging(string value);
+    partial void OnFieldNameChanged();
+    partial void OnAccountIdChanging(long value);
+    partial void OnAccountIdChanged();
+    partial void OnTeamIdChanging(long value);
+    partial void OnTeamIdChanged();
+    partial void OnIsBatLeaderChanging(bool value);
+    partial void OnIsBatLeaderChanged();
+    #endregion
+		
+		public DisplayLeagueLeader()
+		{
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FieldName", DbType="VarChar(50) NOT NULL", CanBeNull=false, IsPrimaryKey=true)]
+		public string FieldName
+		{
+			get
+			{
+				return this._FieldName;
+			}
+			set
+			{
+				if ((this._FieldName != value))
+				{
+					this.OnFieldNameChanging(value);
+					this.SendPropertyChanging();
+					this._FieldName = value;
+					this.SendPropertyChanged("FieldName");
+					this.OnFieldNameChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL", IsPrimaryKey=true)]
+		public long AccountId
+		{
+			get
+			{
+				return this._AccountId;
+			}
+			set
+			{
+				if ((this._AccountId != value))
+				{
+					this.OnAccountIdChanging(value);
+					this.SendPropertyChanging();
+					this._AccountId = value;
+					this.SendPropertyChanged("AccountId");
+					this.OnAccountIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_TeamId", DbType="BigInt NOT NULL", IsPrimaryKey=true)]
+		public long TeamId
+		{
+			get
+			{
+				return this._TeamId;
+			}
+			set
+			{
+				if ((this._TeamId != value))
+				{
+					this.OnTeamIdChanging(value);
+					this.SendPropertyChanging();
+					this._TeamId = value;
+					this.SendPropertyChanged("TeamId");
+					this.OnTeamIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_IsBatLeader", DbType="Bit NOT NULL", IsPrimaryKey=true)]
+		public bool IsBatLeader
+		{
+			get
+			{
+				return this._IsBatLeader;
+			}
+			set
+			{
+				if ((this._IsBatLeader != value))
+				{
+					this.OnIsBatLeaderChanging(value);
+					this.SendPropertyChanging();
+					this._IsBatLeader = value;
+					this.SendPropertyChanged("IsBatLeader");
+					this.OnIsBatLeaderChanged();
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
 		}
 	}
 }

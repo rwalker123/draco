@@ -37,7 +37,7 @@ namespace SportsManager.Baseball.Controllers
             var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId);
             foreach(var lt in leagueTeams)
             {
-                var teamMgrs = DataAccess.Teams.GetTeamManagers(lt.TeamId);
+                var teamMgrs = DataAccess.Teams.GetTeamManagers(lt.Id);
                 foreach(var m in teamMgrs)
                 {
                     m.MiddleName += " (" + lt.Name + ")";

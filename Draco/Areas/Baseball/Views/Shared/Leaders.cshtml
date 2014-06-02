@@ -21,11 +21,17 @@
                     <label for="_leadersBatCats" class="control-label">Select Bat Categories: </label>
                     <select id="_leadersBatCats" data-container="body" data-bind="selectPicker: selectedBatCategories, selectPickerOptions: { optionsArray: availableBatCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
                     </select>
+                    <div data-bind="if: selectedBatCategories().length > 3">
+                        <div class="alert alert-danger">Only 3 categories allowed.</div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="_leadersPitchCats" class="control-label">Select Pitch Categories: </label>
                     <select id="_leadersPitchCats" data-container="body" data-bind="selectPicker: selectedPitchCategories, selectPickerOptions: { optionsArray: availablePitchCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
                     </select>
+                    <div data-bind="if: selectedPitchCategories().length > 3">
+                        <div class="alert alert-danger">Only 3 categories allowed.</div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <button type="button" class="btn btn-success" data-bind="click: saveChanges"><span class="glyphicon glyphicon-ok"></span></button>

@@ -85,8 +85,12 @@ var PlayerBatStatsVM = function (data, parent, accountId) {
     });
 
     self.PlayerName.LastName = ko.computed(function () {
-        var n = self.PlayerName().split(',');
-        return n[0];
+        if (self.PlayerName()) {
+            var n = self.PlayerName().split(',');
+            return n[0] + ', ' + n[1].charAt(1) + '.';
+        }
+
+        return '';
     });
 
     self.firstChange = true;
@@ -234,8 +238,12 @@ var PlayerPitchStatsVM = function (data, parent, accountId) {
     });
 
     self.PlayerName.LastName = ko.computed(function () {
-        var n = self.PlayerName().split(',');
-        return n[0];
+        if (self.PlayerName()) {
+            var n = self.PlayerName().split(',');
+            return n[0] + ', ' + n[1].charAt(1) + '.';
+        }
+
+        return '';
     });
 
     self.firstChange = true;
