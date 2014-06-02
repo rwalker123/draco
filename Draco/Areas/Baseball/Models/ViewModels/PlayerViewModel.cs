@@ -9,18 +9,34 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class PlayerViewModel : AccountViewModel
     {
-        public PlayerViewModel(Controller c, long accountId, long id, bool isIdSeasonId = false)
+        public enum IdType { ContactId, RosterSeasonId, RosterId };
+
+        public PlayerViewModel(Controller c, long accountId, long id, IdType idType)
             : base(c, accountId)
         {
-            if (isIdSeasonId)
+            bool isIdSeasonId = false;
+
+            if (idType == IdType.RosterSeasonId)
             {
                 var player = DataAccess.TeamRoster.GetPlayer(id);
                 if (player != null)
                     Contact = player.Contact;
-            }
-            else
-                Contact = DataAccess.Contacts.GetContact(id);
 
+                isIdSeasonId = true;
+            }
+            else if (idType == IdType.ContactId)
+            {
+                Contact = DataAccess.Contacts.GetContact(id);
+            }
+            else if (idType == IdType.RosterId)
+            {
+                var player = DataAccess.TeamRoster.GetPlayerFromId(id);
+                if (player != null)
+                {
+                    Contact = player.Contact;
+                    id = Contact.Id;
+                }
+            }
             BatStats = DataAccess.GameStats.GetBatPlayerCareer(id, isIdSeasonId);
             BatStatsTotals = DataAccess.GameStats.GetBatPlayerCareerTotal(id, isIdSeasonId);
 

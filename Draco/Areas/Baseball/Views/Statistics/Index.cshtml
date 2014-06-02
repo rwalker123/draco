@@ -89,7 +89,7 @@
                                                         <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a>
                                                         <!-- /ko -->
                                                         <!-- ko if: $root.selectedSeasonId() == 0 -->
-                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a>
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/roster/@Model.AccountId/' + PlayerId }"></a>
                                                         <!-- /ko -->
                                                     </td>
                                                     <td><a data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName, href: window.config.rootUri + '/Baseball/Team/Index/@Model.AccountId/' + TeamId }"></a></td>
@@ -126,7 +126,7 @@
                                                         <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a>
                                                         <!-- /ko -->
                                                         <!-- ko if: $root.selectedSeasonId() == 0 -->
-                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a>
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/roster/@Model.AccountId/' + PlayerId }"></a>
                                                         <!-- /ko -->
                                                     </td>
                                                     <td><a data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName, href: window.config.rootUri + '/Baseball/Team/Index/@Model.AccountId/' + TeamId }"></a></td>
@@ -175,7 +175,7 @@
                                             <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
                                             <!-- /ko -->
                                             <!-- ko if: $root.selectedSeasonId() == 0 -->
-                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/roster/@Model.AccountId/' + PlayerId }"></a></td>
                                             <!-- /ko -->
                                             <td data-bind="html: AB"></td>
                                             <td data-bind="html: H"></td>
@@ -238,7 +238,7 @@
                                             <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
                                             <!-- /ko -->
                                             <!-- ko if: $root.selectedSeasonId() == 0 -->
-                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/roster/@Model.AccountId/' + PlayerId }"></a></td>
                                             <!-- /ko -->
                                             <td data-bind="html: W"></td>
                                             <td data-bind="html: L"></td>

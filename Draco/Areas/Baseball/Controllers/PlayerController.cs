@@ -1,4 +1,5 @@
-﻿using System.Web.Mvc;
+﻿using SportsManager.Baseball.ViewModels;
+using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
@@ -8,14 +9,21 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("contact")]
         public ActionResult GetFromContact(long accountId, long id)
         {
-            return View("Index", new SportsManager.Baseball.ViewModels.PlayerViewModel(this, accountId, id));
+            return View("Index", new PlayerViewModel(this, accountId, id, PlayerViewModel.IdType.ContactId));
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("season")]
         public ActionResult GetFromSeason(long accountId, long id)
         {
-            return View("Index", new SportsManager.Baseball.ViewModels.PlayerViewModel(this, accountId, id, true));
+            return View("Index", new PlayerViewModel(this, accountId, id, PlayerViewModel.IdType.RosterSeasonId));
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("roster")]
+        public ActionResult GetFromRoster(long accountId, long id)
+        {
+            return View("Index", new PlayerViewModel(this, accountId, id, PlayerViewModel.IdType.RosterId));
         }
     }
 }

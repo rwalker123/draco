@@ -27,12 +27,23 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             var queryValues = Request.RequestUri.ParseQueryString();
 
+            bool allTimeLeaders = false;
+            String strAllTimeLeaders = queryValues["allTimeLeaders"];
+
+            if (!String.IsNullOrEmpty(strAllTimeLeaders))
+            {
+                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
+            }
+
             int minAB = -1;
             String strMinAB = queryValues["calcMinAB"];
             
             if (!String.IsNullOrEmpty(strMinAB))
             {
-                minAB = DataAccess.GameStats.CalculateMinAB(leagueSeasonId);
+                if (allTimeLeaders)
+                    minAB = m_allTimeMinAB;
+                else
+                    minAB = DataAccess.GameStats.CalculateMinAB(leagueSeasonId);
             }
 
             int numLeaders = m_numLeaders;
@@ -41,14 +52,6 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (!String.IsNullOrEmpty(strNumLeaders))
             {
                 Int32.TryParse(strNumLeaders, out numLeaders);
-            }
-
-            bool allTimeLeaders = false;
-            String strAllTimeLeaders = queryValues["allTimeLeaders"];
-
-            if (!String.IsNullOrEmpty(strAllTimeLeaders))
-            {
-                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
             }
 
             int divisionId = 0;
@@ -179,12 +182,23 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             var queryValues = Request.RequestUri.ParseQueryString();
 
+            bool allTimeLeaders = false;
+            String strAllTimeLeaders = queryValues["allTimeLeaders"];
+
+            if (!String.IsNullOrEmpty(strAllTimeLeaders))
+            {
+                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
+            }
+
             int minIP = -1;
             String strMinIP = queryValues["calcMinIP"];
 
             if (!String.IsNullOrEmpty(strMinIP))
             {
-                minIP = DataAccess.GameStats.CalculateMinIP(leagueSeasonId);
+                if (allTimeLeaders)
+                    minIP = m_allTimeMinIP;
+                else
+                    minIP = DataAccess.GameStats.CalculateMinIP(leagueSeasonId);
             }
 
             int numLeaders = m_numLeaders;
@@ -193,14 +207,6 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (!String.IsNullOrEmpty(strNumLeaders))
             {
                 Int32.TryParse(strNumLeaders, out numLeaders);
-            }
-
-            bool allTimeLeaders = false;
-            String strAllTimeLeaders = queryValues["allTimeLeaders"];
-
-            if (!String.IsNullOrEmpty(strAllTimeLeaders))
-            {
-                bool.TryParse(strAllTimeLeaders, out allTimeLeaders);
             }
 
             int divisionId = 0;
