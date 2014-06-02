@@ -138,7 +138,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [SportsManagerAuthorize(Roles="AccountAdmin")]
         public HttpResponseMessage PostBatSelectedCategories(long accountId, LeaderCategories categories)
         {
-            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, true, categories.cats);
+            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, true, categories == null ? null : categories.cats);
             if (success)
                 return Request.CreateResponse(HttpStatusCode.OK);
             else
@@ -150,7 +150,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage PostPitchSelectedCategories(long accountId, LeaderCategories categories)
         {
-            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, false, categories.cats);
+            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, false, categories == null ? null : categories.cats);
             if (success)
                 return Request.CreateResponse(HttpStatusCode.OK);
             else
@@ -239,7 +239,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "AVG";
-            var leaders = DataAccess.GameStats.GetBatTeamLeaders(teamSeasonId, statCategory, numLeaders, minAB, false);
+            var leaders = DataAccess.GameStats.GetBatTeamLeaders(teamSeasonId, statCategory, numLeaders, minAB);
             return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
         }
 
@@ -266,7 +266,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "ERA";
-            var leaders = DataAccess.GameStats.GetPitchTeamLeaders(teamSeasonId, statCategory, numLeaders, minIP, false);
+            var leaders = DataAccess.GameStats.GetPitchTeamLeaders(teamSeasonId, statCategory, numLeaders, minIP);
             return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
         }
 

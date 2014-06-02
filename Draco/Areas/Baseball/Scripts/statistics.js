@@ -96,7 +96,7 @@ var StatisticsViewModel = function (accountId, isAdmin) {
         });
     }
 
-    self.leaders = new LeadersViewModel(accountId, isAdmin, 0);
+    self.leaders = new LeadersViewModel(accountId, isAdmin, 0, true);
 
     self.loadLeaders = function () {
 

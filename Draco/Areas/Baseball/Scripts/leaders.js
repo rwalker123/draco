@@ -1,8 +1,8 @@
-﻿function initLeadersViewModel(accountId, isAdmin, teamId) {
+﻿function initLeadersViewModel(accountId, isAdmin, teamId, useDefaultCats) {
 
     var leadersElem = document.getElementById("leadersView");
     if (leadersElem) {
-        var leadersVM = new LeadersViewModel(accountId, isAdmin, teamId);
+        var leadersVM = new LeadersViewModel(accountId, isAdmin, teamId, useDefaultCats);
         ko.applyBindings(leadersVM, leadersElem);
     }
 }
@@ -37,14 +37,15 @@ var LeaderCategoryViewModel = function(data) {
     }
 }
 
-var LeadersViewModel = function (accountId, isAdmin, teamId) {
+var LeadersViewModel = function (accountId, isAdmin, teamId, useDefaultCats) {
     var self = this;
 
     self.accountId = accountId;
     self.isAdmin = isAdmin;
     self.teamId = teamId;
 
-    self.x = ko.observableArray();
+    // if no categories configured, set to true to use a default set.
+    self.useDefaultCats = useDefaultCats;
 
     // categories to display. Leaders field has leaders.
     self.batCategories = ko.observableArray();
@@ -151,13 +152,6 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.fillBatCategories = function () {
-        self.batCategories.push(new LeaderCategoryViewModel({ Id: "AVG&calcMinAB=1", Name: "AVG", NumDecimals: 3, TrimLeadingZero: true }));
-        self.batCategories.push(new LeaderCategoryViewModel({ Id: "RBI", Name: "RBI", NumDecimals: 0, TrimLeadingZero: false }));
-        self.batCategories.push(new LeaderCategoryViewModel({ Id: "HR", Name: "HR", NumDecimals: 0, TrimLeadingZero: false }));
-        self.initBatSelectedCategories();
-        self.getBattingLeaders();
-        return;
-
         var url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/batselectedcategories';
 
         $.ajax({
@@ -169,8 +163,15 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
                     self.batCategories.push(new LeaderCategoryViewModel(cat));
                 });
 
+                if (self.batCategories().length == 0 && self.useDefaultCats) {
+                    self.batCategories.push(new LeaderCategoryViewModel({ Id: "AVG&calcMinAB=1", Name: "AVG", NumDecimals: 3, TrimLeadingZero: true }));
+                    self.batCategories.push(new LeaderCategoryViewModel({ Id: "RBI", Name: "RBI", NumDecimals: 0, TrimLeadingZero: false }));
+                    self.batCategories.push(new LeaderCategoryViewModel({ Id: "HR", Name: "HR", NumDecimals: 0, TrimLeadingZero: false }));
+                }
+
                 self.initBatSelectedCategories();
                 self.getBattingLeaders();
+
             }
         });
 
@@ -197,13 +198,6 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.fillPitchCategories = function () {
-        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "ERA&calcMinIP=1", Name: "ERA", NumDecimals: 2, TrimLeadingZero: false }));
-        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "W", Name: "W", NumDecimals: 0, TrimLeadingZero: false }));
-        self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "SO", Name: "SO", NumDecimals: 0, TrimLeadingZero: false })); 
-                self.initPitchSelectedCategories();
-                self.getPitchingLeaders();
-        return;
-
         var url = window.config.rootUri + '/api/StatisticsAPI/' + self.accountId + '/pitchselectedcategories';
 
         $.ajax({
@@ -214,6 +208,12 @@ var LeadersViewModel = function (accountId, isAdmin, teamId) {
                 $.each(leaderCats, function (index, cat) {
                     self.pitchCategories.push(new LeaderCategoryViewModel(cat));
                 });
+
+                if (self.pitchCategories().length == 0 && self.useDefaultCats) {
+                    self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "ERA&calcMinIP=1", Name: "ERA", NumDecimals: 2, TrimLeadingZero: false }));
+                    self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "W", Name: "W", NumDecimals: 0, TrimLeadingZero: false }));
+                    self.pitchCategories.push(new LeaderCategoryViewModel({ Id: "SO", Name: "SO", NumDecimals: 0, TrimLeadingZero: false })); 
+                }
 
                 self.initPitchSelectedCategories();
                 self.getPitchingLeaders();
