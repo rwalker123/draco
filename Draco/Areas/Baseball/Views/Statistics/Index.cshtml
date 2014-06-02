@@ -84,7 +84,14 @@
                                                     <!-- /ko -->
                                                     <!-- ko if: FieldName != "TIE" -->
                                                     <td><img onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
-                                                    <td><a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
+                                                    <td>
+                                                        <!-- ko if: $root.selectedSeasonId() > 0 -->
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a>
+                                                        <!-- /ko -->
+                                                        <!-- ko if: $root.selectedSeasonId() == 0 -->
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a>
+                                                        <!-- /ko -->
+                                                    </td>
                                                     <td><a data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName, href: window.config.rootUri + '/Baseball/Team/Index/@Model.AccountId/' + TeamId }"></a></td>
                                                     <!-- /ko -->
                                                     <td data-bind="html: FieldTotal"></td>
@@ -114,7 +121,14 @@
                                                     <!-- /ko -->
                                                     <!-- ko if: FieldName != "TIE" -->
                                                     <td><img onerror="this.style.display = 'none';" data-bind='attr: { src: PlayerName.PhotoURL }' class="img-rounded" /></td>
-                                                    <td><a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
+                                                    <td>
+                                                        <!-- ko if: $root.selectedSeasonId() > 0 -->
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a>
+                                                        <!-- /ko -->
+                                                        <!-- ko if: $root.selectedSeasonId() == 0 -->
+                                                        <a data-bind="trimText: PlayerName.LastName, trimTextLength: 10, attr: { title: PlayerName.FirstName + ' ' + PlayerName.LastName, href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a>
+                                                        <!-- /ko -->
+                                                    </td>
                                                     <td><a data-bind="trimText: TeamName, trimTextLength: 10, attr: { title: TeamName, href: window.config.rootUri + '/Baseball/Team/Index/@Model.AccountId/' + TeamId }"></a></td>
                                                     <!-- /ko -->
                                                     <td data-bind="html: FieldTotal"></td>
@@ -157,7 +171,12 @@
                                     </thead>
                                     <tbody data-bind="foreach: leagueSortableBatStats">
                                         <tr>
+                                            <!-- ko if: $root.selectedSeasonId() > 0 -->
                                             <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <!-- /ko -->
+                                            <!-- ko if: $root.selectedSeasonId() == 0 -->
+                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <!-- /ko -->
                                             <td data-bind="html: AB"></td>
                                             <td data-bind="html: H"></td>
                                             <td data-bind="html: R"></td>
@@ -215,7 +234,12 @@
                                     </thead>
                                     <tbody data-bind="foreach: leagueSortablePitchStats">
                                         <tr>
+                                            <!-- ko if: $root.selectedSeasonId() > 0 -->
                                             <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <!-- /ko -->
+                                            <!-- ko if: $root.selectedSeasonId() == 0 -->
+                                            <td><a data-bind="html: PlayerName, attr: { href: window.config.rootUri + '/baseball/player/contact/@Model.AccountId/' + PlayerId }"></a></td>
+                                            <!-- /ko -->
                                             <td data-bind="html: W"></td>
                                             <td data-bind="html: L"></td>
                                             <td data-bind="html: S"></td>

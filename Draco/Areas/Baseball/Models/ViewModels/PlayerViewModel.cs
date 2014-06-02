@@ -13,7 +13,11 @@ namespace SportsManager.Baseball.ViewModels
             : base(c, accountId)
         {
             if (isIdSeasonId)
-                Contact = DataAccess.TeamRoster.GetPlayer(id).Contact;
+            {
+                var player = DataAccess.TeamRoster.GetPlayer(id);
+                if (player != null)
+                    Contact = player.Contact;
+            }
             else
                 Contact = DataAccess.Contacts.GetContact(id);
 
