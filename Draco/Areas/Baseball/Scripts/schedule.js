@@ -388,6 +388,9 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         if (!self.editingGame.isValid())
             return;
 
+        if (self.selectedLeague() == 0)
+            return;
+
         var newData = self.editingGame().toJS();
 
         $.ajax({

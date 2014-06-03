@@ -97,7 +97,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 DateTime startDate = DateTime.Parse(strStartDate);
                 DateTime endDate = DateTime.Parse(strEndDate);
-                var games = DataAccess.Schedule.GetSchedule(leagueSeasonId, startDate, endDate);
+                IQueryable<ModelObjects.Game> games;
+                if (leagueSeasonId == 0)
+                    games = DataAccess.Schedule.GetCurrentSeasonSchedule(accountId, startDate, endDate);
+                else
+                    games = DataAccess.Schedule.GetSchedule(leagueSeasonId, startDate, endDate);
+
                 return Request.CreateResponse<IQueryable<ModelObjects.Game>>(HttpStatusCode.OK, games);
             }
 

@@ -31,6 +31,7 @@
             {
                 <option value="@l.Id">@l.Name</option>
             }
+            <option value="0">All Leagues</option>
         </select>
         <select data-container="body" data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
 
@@ -217,13 +218,18 @@
                                 @if (Model.IsAdmin)
                                 { 
                                 <div class="col-sm-4">
-                                    <button class="btn btn-default btn-xs noPrint" data-bind="click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
+                                    <button class="btn btn-default btn-xs noPrint" data-bind="visible: $root.selectedLeague() > 0, click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
                                 </div>
                                 }
                             </div>
 
                             <div class="list-group" data-bind="foreach: games">
                                 <div class="list-group-item">
+                                    <!-- ko if: $root.selectedLeague() == 0 -->
+                                    <div class="row">
+                                        <span data-bind="html: LeagueName"></span>
+                                    </div>
+                                    <!-- /ko -->
                                     <div class="row">
                                         <a class="col-sm-8" data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a>
                                         <span class="col-sm-4" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>

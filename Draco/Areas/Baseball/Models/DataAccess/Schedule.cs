@@ -16,14 +16,6 @@ namespace DataAccess
     /// </summary>
     static public class Schedule
     {
-        static Game CreateGame(SqlDataReader dr)
-        {
-            return new Game(dr.GetInt64(9), dr.GetInt64(0), dr.GetDateTime(1),
-                dr.GetInt64(3), dr.GetInt64(4), dr.GetInt32(5), dr.GetInt32(6),
-                dr.GetString(7), dr.GetInt64(8), dr.GetInt32(10), dr.GetInt64(11),
-                dr.GetInt64(12), dr.GetInt64(13), dr.GetInt64(14), dr.GetInt64(15));
-        }
-
         static public IEnumerable<ListItem> GetGameTypes()
         {
             List<ListItem> li = new List<ListItem>();
@@ -167,6 +159,36 @@ namespace DataAccess
                             AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
                             FieldName = DataAccess.Fields.GetFieldName(sched.FieldId)
                         });
+        }
+
+        static public IQueryable<Game> GetCurrentSeasonSchedule(long accountId, DateTime startDate, DateTime endDate)
+        {
+            //SELECT LeagueSchedule.* 
+            //FROM LeagueSchedule 
+            //            LEFT JOIN LeagueSeason ON LeagueSchedule.LeagueId = LeagueSeason.Id
+            //            LEFT JOIN League ON League.Id = LeagueSeason.LeagueId
+            //WHERE League.AccountId = @accountId AND GameDate >= @startDate AND GameDate <= @endDate 
+            //Order By GameDate, LeagueSchedule.LeagueId, GameTime
+
+            DB db = DBConnection.GetContext();
+
+            var currentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+            var leaguesInSeason = (from ls in db.LeagueSeasons
+                                   where ls.SeasonId == currentSeasonId
+                                   select ls.Id);
+
+            return (from sched in db.LeagueSchedules
+                    where leaguesInSeason.Contains(sched.LeagueId) &&
+                    sched.GameDate >= startDate && sched.GameDate <= endDate
+                    orderby sched.GameDate
+                    select new Game(sched.LeagueId, sched.Id, sched.GameDate, sched.HTeamId, sched.VTeamId, sched.HScore, sched.VScore,
+                        sched.Comment, sched.FieldId, sched.GameStatus, sched.GameType, sched.Umpire1, sched.Umpire2, sched.Umpire3, sched.Umpire4)
+                    {
+                        HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
+                        AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
+                        FieldName = DataAccess.Fields.GetFieldName(sched.FieldId),
+                        LeagueName = DataAccess.Leagues.GetLeagueName(sched.LeagueId)
+                    });
         }
 
 

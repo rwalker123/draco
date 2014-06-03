@@ -222,12 +222,14 @@ namespace DataAccess
 			db.Teams.InsertOnSubmit(dbTeam);
 			db.SubmitChanges();
 
+            int nameLength = 25;
+
 			SportsManager.Model.TeamsSeason dbTeamSeason = new SportsManager.Model.TeamsSeason()
 			{
 				LeagueSeasonId = t.LeagueId,
 				TeamId = dbTeam.Id,
 				DivisionSeasonId = t.DivisionId,
-				Name = t.Name.Substring(0, 25)
+				Name = t.Name.Length <= nameLength ? t.Name : t.Name.Substring(0, nameLength)
 			};
 
 			db.TeamsSeasons.InsertOnSubmit(dbTeamSeason);
