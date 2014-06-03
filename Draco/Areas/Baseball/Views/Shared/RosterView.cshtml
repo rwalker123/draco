@@ -6,7 +6,10 @@
 
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float: right" data-bind="click: showSignPlayer"><span class="glyphicon glyphicon-pencil"></span></button>
+            <button type="button" class="btn btn-default" style="float: right" data-bind="click: showSignPlayer" title="sign player"><span class="glyphicon glyphicon-pencil"></span></button>
+            <a href='@Url.Action("AddressList", "Team", new { area = "baseball", accountId = Model.AccountId, id = Model.TeamId }, null)' style="float: right" class="btn btn-default" title="address list">
+                <span class="glyphicon glyphicon-list-alt"></span>
+            </a>
         }
 
         <div style="clear:both"></div>

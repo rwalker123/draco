@@ -241,6 +241,7 @@
     <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamScheduleViewModel.cs" />
@@ -623,6 +624,7 @@
     <Content Include="Areas\Baseball\Views\Team\RosterCard.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Schedule.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
