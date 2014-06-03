@@ -50,7 +50,7 @@
 
                     @if (Model.IsAdmin)
                     {
-                        <button type="button" class="btn btn-default" style="float: right" data-bind="click: startFieldAdd"><span class="glyphicon glyphicon-plus"></span></button>
+                        <button type="button" class="btn btn-default" style="float: right" data-bind="click: startFieldAdd" title="add field"><span class="glyphicon glyphicon-plus"></span></button>
                     }
 
                     <div style="clear:both"></div>
@@ -148,7 +148,7 @@
 
                     <div data-bind="visible: viewMode">
                         <select data-container="body" data-bind="selectPicker: selectedFieldId, selectPickerOptions: { optionsArray: fields }, optionsText: 'Name', optionsValue: 'Id'"></select>
-                        <button type="button" class="btn btn-default" style="margin-top:-10px" data-bind="click: viewAllFields"><span class="fa fa-compass"></span></button>
+                        <button type="button" class="btn btn-default" style="margin-top:-10px" data-bind="click: viewAllFields" title="fit all fields on map"><span class="fa fa-compass"></span></button>
                         <div data-bind="if: selectedFieldId() !== undefined">
                             <div data-bind="with: selectedField">
                                 <h3><span data-bind="html: Name"></span> <small>(<span data-bind="html: ShortName"></span>)</small></h3>
@@ -169,7 +169,7 @@
                                 <p data-bind="html: Directions, visible: Directions"></p>
                                 <p data-bind="html: Comment, visible: Comment"></p>
 
-                                <button data-bind="click: $root.centerOnMap, visible: Latitude() && Longitude()" class="btn btn-default"><span class="glyphicon glyphicon-map-marker"></span></button>
+                                <button data-bind="click: $root.centerOnMap, visible: Latitude() && Longitude()" class="btn btn-default" title="zoom field on map"><span class="glyphicon glyphicon-map-marker"></span></button>
 
                                 @if (Model.IsAdmin)
                                 {
