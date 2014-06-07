@@ -85,7 +85,7 @@
                 <tbody data-bind="foreach: players">
                     <tr data-bind="if: Id.viewMode">
                         <td class="col-sm-1">
-                        <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoUrl }" class="img-rounded" /></td>
+                        <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoURL }" class="img-rounded" /></td>
                         <td class="col-sm-2">
                             <span data-bind="html: PlayerNumber"></span>
                             @if (Model.IsTeamAdmin)
@@ -159,7 +159,7 @@
                         <!-- ko if: !Id.viewMode()-->
                         <tr>
                             <td class="col-sm-1">
-                                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>    } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoUrl }" class="img-rounded" />
+                                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>    } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoURL }" class="img-rounded" />
                             </td>
 
                             <td class="col-sm-2">
