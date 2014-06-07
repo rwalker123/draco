@@ -28,7 +28,13 @@ var SponsorViewModel = function (data, accountId) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/SponsorLogo/' + self.Id();
+        var url = window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId;
+        if (self.TeamId)
+            url = url + '/TeamSponsorLogo/' + self.Id();
+        else
+            url = url + '/SponsorLogo/' + self.Id();
+
+        return url;
     });
 
 

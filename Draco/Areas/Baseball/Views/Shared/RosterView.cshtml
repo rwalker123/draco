@@ -74,8 +74,8 @@
                 <tbody data-bind="foreach: players">
                     <tr>
                         <td class="col-sm-1"><img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  } data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoUrl }" class="img-rounded" /></td>
-                        <td class="col-sm-1">
-                            <span style="float:left;width:19px" data-bind="visible: viewMode() && !editPlayerNumber(), html: PlayerNumber"></span>
+                        <td class="col-sm-2">
+                            <span data-bind="visible: viewMode() && !editPlayerNumber(), html: PlayerNumber"></span>
                             @if (Model.IsAdmin || Model.IsTeamAdmin)
                             {
                                 <input class="form-control" data-bind="value: PlayerNumber, visible: !viewMode() || editPlayerNumber()" type="number" />
@@ -146,7 +146,7 @@
                             <td class="col-sm-2">
                                 <span data-bind="html: DateSigned"></span>
                             </td>
-                            <td class ="col-sm-2">
+                            <td class ="col-sm-1">
                                 <button class="btn btn-default btn-sm" data-bind="visible: viewMode, click: $parent.editPlayer"><span class="glyphicon glyphicon-edit"></span></button>
                                 <button class="btn btn-warning btn-sm" data-bind="visible: viewMode, click: $parent.releasePlayer"><span class="glyphicon glyphicon-minus"></span></button>
                                 <button class="btn btn-danger btn-sm" data-bind="visible: viewMode, click: $parent.deletePlayer"><span class="glyphicon glyphicon-remove"></span></button>
