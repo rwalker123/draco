@@ -499,7 +499,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
 
-            string accSetting = Boolean.TrueString;
+            string accSetting = Boolean.FalseString;
 
             var dbAccSetting = (from a in db.AccountSettings
                                 where a.AccountId == accountId && a.SettingKey == key

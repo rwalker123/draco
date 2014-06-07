@@ -273,7 +273,7 @@ else
         @if (Model.ShowRoster)
         {
             <text>
-        InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id );
+        InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id, @Model.FirstYear );
         </text>
         }
 

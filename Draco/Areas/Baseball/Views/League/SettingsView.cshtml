@@ -67,6 +67,7 @@
                 </div>
                 <div class="panel-body">
                     <div><label><input type="checkbox" data-bind="checked: printableRoster" />Show printable Roster Card</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showUserDataOnRoster" />Show user data on Roster</label></div>
                 </div>
             </div>
         </div>
@@ -124,6 +125,10 @@
             self.printableRoster = ko.observable();
             self.printableRoster.subscribe(function (newValue) {
                 self.settingChanged('ShowRosterCard', newValue);
+            });
+            self.showUserDataOnRoster = ko.observable();
+            self.showUserDataOnRoster.subscribe(function (newValue) {
+                self.settingChanged('ShowUserInfoOnRosterPage', newValue);
             });
             self.msgBoardPhoto = ko.observable();
             self.msgBoardPhoto.subscribe(function (newValue) {

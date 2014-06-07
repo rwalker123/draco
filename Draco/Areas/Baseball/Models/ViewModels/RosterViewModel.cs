@@ -27,6 +27,10 @@ namespace SportsManager.Baseball.ViewModels
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "TrackIdentification"), out trackIdSubmitted);
             TrackIdSubmitted = trackIdSubmitted;
 
+            var showUserInfoOnRosterPage = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowUserInfoOnRosterPage"), out showUserInfoOnRosterPage);
+            ShowUserInfoOnRosterPage = showUserInfoOnRosterPage;
+
             TeamId = teamSeasonId;
         }
 
@@ -36,6 +40,7 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowIdStatus { get; private set; }
         public bool TrackPlayerWaiver { get; private set; }
         public bool TrackIdSubmitted { get; private set; }
+        public bool ShowUserInfoOnRosterPage { get; private set; }
         public long TeamId { get; private set; }
     }
 }

@@ -22,7 +22,9 @@ namespace SportsManager.ViewModels
             ContactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
             m_account = DataAccess.Accounts.GetAccount(accountId);
             AccountName = m_account.AccountName;
-            
+
+            FirstYear = m_account.FirstYear;
+
             if (m_account.HasLargeLogo)
                 AccountLogoUrl = m_account.LargeLogoURL;
             
@@ -32,6 +34,9 @@ namespace SportsManager.ViewModels
 
             Globals.SetupAccountViewData(accountId, AccountName, AccountLogoUrl, m_account.AccountTypeId, m_account.AccountURL, c.ViewData);
         }
+
+        [ScaffoldColumn(false)]
+        public int FirstYear { get; private set; }
 
         [ScaffoldColumn(false)]
         protected ModelObjects.Account Account
