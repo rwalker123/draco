@@ -18,51 +18,47 @@
     }
 }
 
-var PlayerViewModel = function (accountId, contactId) {
+var PlayerViewModel = function (accountId, data) {
     var self = this;
 
-    self.id = 0;
-    self.contactId = contactId;
     self.accountId = accountId;
-    self.PhotoUrl = '';
-    self.DateSigned = '';
-    self.Age = '';
 
-    self.PlayerNumber = ko.protectedObservable(0);
-    self.Name = ko.protectedObservable('');
-    self.SubmittedWaiver = ko.protectedObservable(false);
-    self.SubmittedDriversLicense = ko.protectedObservable(false);
-    self.AffiliationDuesPaid = ko.protectedObservable('');
-    self.viewMode = ko.observable(true);
-    self.editPlayerNumber = ko.observable(false);
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-    self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId;
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Contact.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.Contact.Id();
     });
 
+    self.DateAdded.Formatted = ko.computed(function () {
+        return self.DateAdded() ? moment(self.DateAdded()).format("MM DD, YYYY") : '';
+    });
 
-    self.commit = function () {
-        self.PlayerNumber.commit();
-        self.Name.commit();
-        self.SubmittedWaiver.commit();
-        self.SubmittedDriversLicense.commit();
-        self.AffiliationDuesPaid.commit();
+    self.Contact.DateOfBirth.Formatted = ko.computed(function () {
+        return self.Contact.DateOfBirth() ? moment(self.Contact.DateOfBirth()).format("MMM DD, YYYY") : '';
+    });
+
+    self.Id.viewMode = ko.observable(true);
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
     }
 
-    self.reset = function () {
-        self.PlayerNumber.reset();
-        self.Name.reset();
-        self.SubmittedWaiver.reset();
-        self.SubmittedDriversLicense.reset();
-        self.AffiliationDuesPaid.reset();
-    }
-
-    self.editPlayerNumberMode = function () {
-        self.editPlayerNumber(!self.editPlayerNumber());
-    }
-
-    self.cancelEditPlayerNumber = function () {
-        self.editPlayerNumber(false);
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
     }
 }
 
@@ -99,50 +95,47 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
         return self.selectedPlayer();
     })
 
+    // save player data while editing, restore if cancelled.
+    var savedPlayer;
+
     self.editPlayer = function (player) {
-        player.viewMode(!player.viewMode());
+        savedPlayer = player.toJS();
+
+        player.Id.viewMode(!player.Id.viewMode());
     }
 
     self.cancelEditPlayer = function (player) {
-        player.viewMode(true);
-        player.reset();
+        player.update(savedPlayer);
+        player.Id.viewMode(true);
     }
 
     self.editPlayerNumber = function (player) {
 
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/playernumber/' + player.id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/playernumber/' + player.Id(),
             data: {
-                PlayerNumber: player.PlayerNumber.uncommitValue(),
+                PlayerNumber: player.PlayerNumber(),
             },
-            success: function (item) {
-                player.commit();
+            success: function () {
 
-                player.viewMode(true);
-                player.commit();
-
-                player.cancelEditPlayerNumber();
+                player.PlayerNumber();
+                player.Id.viewMode(true);
             }
         });
     }
 
     self.savePlayer = function (player) {
 
+        var data = player.toJS();
+
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.id,
-            data: {
-                SubmittedWaiver: player.SubmittedWaiver.uncommitValue(),
-                SubmittedDriversLicense: player.SubmittedDriversLicense.uncommitValue(),
-                PlayerNumber: player.PlayerNumber.uncommitValue(),
-                AffiliationDuesPaid: player.AffiliationDuesPaid.uncommitValue()
-            },
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.Id(),
+            data: data,
             success: function (item) {
-                player.commit();
-
-                player.viewMode(true);
-                player.commit();
+                player.update(item);
+                player.Id.viewMode(true);
             }
         });
 
@@ -160,7 +153,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     self.releasePlayer = function (player) {
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.Id(),
             success: function () {
                 self.players.remove(player);
             }
@@ -178,7 +171,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     self.makePlayerDeleteCall = function (player) {
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + player.id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players/' + player.Id(),
             success: function () {
                 self.players.remove(player);
             }
@@ -194,22 +187,12 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             type: "POST",
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamId + '/roster/' + self.selectedPlayer().id,
             success: function (item) {
-                var player = new PlayerViewModel(self.accountId, item.Contact.Id);
-                player.id = item.Id;
-                player.Name(item.Contact.FullName);
-                player.PhotoUrl = item.Contact.PhotoURL;
-                player.Age = item.Age;
-                player.PlayerNumber(item.PlayerNumber);
-                player.DateSigned = moment(item.DateAdded).format("MM DD, YYYY");
-                player.SubmittedWaiver(item.SubmittedWaiver);
-                player.SubmittedDriversLicense(item.SubmittedDriversLicense);
-                player.AffiliationDuesPaid(item.AffiliationDuesPaid);
-                player.commit();
+                var player = new PlayerViewModel(self.accountId, item);
 
                 self.players.push(player);
                 self.players.sort(function (left, right) {
-                    var lName = left.Name().toUpperCase();
-                    var rName = right.Name().toUpperCase();
+                    var lName = left.Contact.FullName().toUpperCase();
+                    var rName = right.Contact.FullName().toUpperCase();
                     return lName == rName ? 0 : (lName < rName ? -1 : 1);
                 });
 
@@ -226,20 +209,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/players',
             success: function (data) {
                 var mappedPlayers = $.map(data, function (item) {
-                    var player = new PlayerViewModel(self.accountId, item.Contact.Id);
-                    player.id = item.Id;
-                    player.PhotoUrl = item.Contact.PhotoURL;
-                    player.DateSigned = item.DateAdded ? moment(item.DateAdded).format("MM DD, YYYY") : '';
-                    player.Age = item.Age;
-
-                    player.PlayerNumber(item.PlayerNumber);
-                    player.Name(item.Contact.FullName);
-                    player.SubmittedWaiver(item.SubmittedWaiver);
-                    player.SubmittedDriversLicense(item.SubmittedDriversLicense);
-                    player.AffiliationDuesPaid(item.AffiliationDuesPaid);
-                    player.commit();
-
-                    return player;
+                    return new PlayerViewModel(self.accountId, item);
                 });
 
                 self.players(mappedPlayers);
