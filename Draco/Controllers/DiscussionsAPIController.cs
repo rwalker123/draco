@@ -38,8 +38,13 @@ namespace SportsManager.Controllers
             }
             if (contact != null || isAdmin)
             {
-                categories.AddRange(DataAccess.MessageBoard.GetContactTeamCategoriesWithDetails(accountId, contact));
-                categories.AddRange(DataAccess.MessageBoard.GetContactGlobalCategoriesWithDetails(accountId, contact));
+                var teamCats = DataAccess.MessageBoard.GetContactTeamCategoriesWithDetails(accountId, contact);
+                if (teamCats != null)
+                    categories.AddRange(teamCats);
+
+                var globalCats = DataAccess.MessageBoard.GetContactGlobalCategoriesWithDetails(accountId, contact);
+                if (globalCats != null)
+                    categories.AddRange(globalCats);
             }
 
             return Request.CreateResponse<IEnumerable<ModelObjects.MessageCategory>>(HttpStatusCode.OK, categories);
