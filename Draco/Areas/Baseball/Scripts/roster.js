@@ -39,6 +39,7 @@ var PlayerViewModel = function (accountId, data) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.Contact.Email.extend({ email: true });
+    self.Contact.DateOfBirth.extend({ required: true });
 
     self.Contact.fileUploaderUrl = ko.computed(function () {
         return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.Contact.Id();
@@ -144,27 +145,100 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             type: "PUT",
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/playernumber/' + player.Id(),
             data: {
-                PlayerNumber: player.PlayerNumber(),
+                PlayerNumber: self.currentEditPlayer().PlayerNumber(),
             },
             success: function () {
 
-                player.PlayerNumber();
-                player.viewMode(true);
+                player.PlayerNumber(self.currentEditPlayer().PlayerNumber());
+                self.currentEditPlayer().update(emptyPlayer.toJS());
             }
+        });
+    }
+
+    self.newPlayerFirstName = ko.observable('');
+    self.newPlayerMiddleName = ko.observable('');
+    self.newPlayerLastName = ko.observable('');
+
+    self.createPlayer = function () {
+        self.validateNameIsAvailable();
+    }
+
+    self.validateNameIsAvailable = function () {
+        $.ajax({
+            type: "GET",
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/DoesContactNameExist',
+            data: {
+                Id: 0,
+                FirstName: self.newPlayerFirstName(),
+                LastName: self.newPlayerLastName(),
+                MiddleName: self.newPlayerMiddleName()
+            },
+            success: function (response) {
+                if (!response)
+                    self.createUser();
+                else
+                    alert('player name already exists.');
+            }
+        });
+    }
+
+    self.createUser = function () {
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId;
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                Email: '',
+                FirstName: self.newPlayerFirstName(),
+                LastName: self.newPlayerLastName(),
+                MiddleName: self.newPlayerMiddleName(),
+                StreetAddress: '',
+                City: '',
+                State: '',
+                Zip: '',
+                DateOfBirth: moment(new Date()).format('MMMM D, YYYY'),
+                FirstYear: (new Date()).getFullYear(),
+                Phone1: '',
+                Phone2: '',
+                Phone3: '',
+                IsFemale: false
+            },
+            success: function (data) {
+                self.selectedPlayer({
+                    id: +data,
+                    text: '',
+                    logo: '',
+                    hasLogo: false
+                });
+
+                self.newPlayerFirstName('');
+                self.newPlayerMiddleName('');
+                self.newPlayerLastName('');
+
+                self.signPlayer();
+            },
         });
     }
 
     self.savePlayer = function (player) {
 
-        var data = player.toJS();
+        if (!self.currentEditPlayer().isValid())
+            return;
+
+        var data = self.currentEditPlayer().toJS();
+
+        if (!data.Contact.DateOfBirth) {
+            alert('must enter birthdate');
+            return;
+        }
 
         $.ajax({
             type: "PUT",
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/roster/' + player.Id(),
             data: data,
-            success: function (item) {
-                player.update(item);
-                player.viewMode(true);
+            success: function () {
+                player.update(data);
+                self.currentEditPlayer().update(emptyPlayer.toJS());
             }
         });
 

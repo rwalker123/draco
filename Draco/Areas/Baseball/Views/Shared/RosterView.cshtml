@@ -38,27 +38,33 @@
             </div>
 
             //Sign an existing player
-            <div class="row">
-                <form data-bind="visible: signPlayerVisible">
+            <div class="row" data-bind="visible: signPlayerVisible">
+                <form>
                     <div class="form-group">
-                        <label class="control-label col-sm-12">enter a player name to sign</label>
+                        <h3 class="control-label col-sm-12">sign a player</h3>
                         <div class="col-sm-12">
-                            <input type="text" class="autocomplete form-control pull-left" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
-                            <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button>
+                            <input type="text" class="autocomplete form-control pull-left" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" placeholder="enter player name" />
+                            <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected" title="sign player"><span class="glyphicon glyphicon-ok"></span></button>
                         </div>
                     </div>
-
+                    <div class="form-group">
+                        <h3 class="control-label col-sm-12">create a player</h3>
+                        <div class="col-sm-3">
+                            <input class="form-control" data-bind="value: newPlayerFirstName" placeholder="first name" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control" data-bind="value: newPlayerMiddleName" placeholder="middle" />
+                        </div>
+                        <div class="col-sm-3">
+                            <input class="form-control" data-bind="value: newPlayerLastName" placeholder="last name" />
+                        </div>
+                        <div class="col-sm-2">
+                            <button class="btn btn-primary" title="create player" data-bind="click: createPlayer"><span class="glyphicon glyphicon-plus"></span></button>
+                        </div>
+                    </div>
                 </form>
             </div>
-            <div class="row" data-bind="visible: signPlayerVisible">
-                <div class="help-block">
-                    If you don't find the player in your search:
-                    <ol>
-                        <li>Ensure the player is not already on another team in the league.</li>
-                        <li>Ensure the player exists as a user, you can add new <a class="btn btn-success" href="@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)">Users &raquo;</a>.</li>
-                    </ol>
-                </div>
-            </div>
+            <hr />
         }
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
@@ -163,54 +169,54 @@
                             </td>
 
                             <td class="col-sm-2">
-                                <input class="form-control" data-bind="value: PlayerNumber" type="number" />
+                                <input class="form-control" data-bind="value: $root.currentEditPlayer().PlayerNumber" type="number" />
                                 @if (Model.IsTeamAdmin)
                                 {
                                     <button class="btn btn-success btn-xs" data-bind="click: $parent.editPlayerNumber"><span class="glyphicon glyphicon-ok"></span></button>
                                     <button class="btn btn-danger btn-xs" data-bind="click: $parent.cancelEditPlayer"><span class="glyphicon glyphicon-remove"></span></button>
                                 }
                             </td>
-                            <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>       } else { <text> class="col-sm-6" </text>      } >
+                            <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text> } else { <text> class="col-sm-6" </text> } >
                                 <span data-bind="html: Contact.FullName"></span>
                                 @if (Model.IsAdmin)
                                 {
-                                    <form class="form-horizontal" role="form">
-                                    @if (Model.TrackPlayerWaiver)
-                                    {
-                                    <div class="form-group" style="margin:0px">
-                                        <div class="checkbox">
-                                            <div class="col-sm-12">
-                                                <label for="uniqueFor: Id" class="control-label">
-                                                    <input type="checkbox" data-bind="checked: SubmittedWaiver, uniqueId: Id" />
-                                                    Waiver
-                                                </label>
+                                    <form class="form-horizontal" role="form" data-bind="with: $root.currentEditPlayer()">
+                                        @if (Model.TrackPlayerWaiver)
+                                        {
+                                            <div class="form-group" style="margin:0px">
+                                                <div class="checkbox">
+                                                    <div class="col-sm-12">
+                                                        <label for="uniqueFor: Id" class="control-label">
+                                                            <input type="checkbox" data-bind="checked: SubmittedWaiver, uniqueId: Id" />
+                                                            Waiver
+                                                        </label>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                    }
+                                        }
 
-                                    @if (Model.TrackIdSubmitted)
-                                    {
-                                    <div class="form-group" style="margin: 0px">
-                                        <div class="checkbox">
+                                        @if (Model.TrackIdSubmitted)
+                                        {
+                                            <div class="form-group" style="margin: 0px">
+                                                <div class="checkbox">
+                                                    <div class="col-sm-12">
+                                                        <label for="uniqueFor: Id" class="control-label">
+                                                            <input type="checkbox" data-bind="checked: SubmittedDriversLicense, uniqueId: Id" />
+                                                            License
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+
+                                        <div class="form-group">
+                                            <label class="control-label col-sm-12" data-bind="uniqueFor: Id">Aff. Dues</label>
                                             <div class="col-sm-12">
-                                                <label for="uniqueFor: Id" class="control-label">
-                                                    <input type="checkbox" data-bind="checked: SubmittedDriversLicense, uniqueId: Id" />
-                                                    License
-                                                </label>
+                                                <input type="text" class="form-control" data-bind="value: AffiliationDuesPaid, uniqueId: Id" />
                                             </div>
                                         </div>
-                                    </div>
-                                    }
-                                    
-                                    <div class="form-group">
-                                        <label class="control-label col-sm-12" data-bind="uniqueFor: Id">Aff. Dues</label>
-                                        <div class="col-sm-12">
-                                            <input type="text" class="form-control" data-bind="value: AffiliationDuesPaid, uniqueId: Id" />
-                                        </div>
-                                    </div>
-                                </form>
-                            }
+                                    </form>
+                                }
                         </td>
 
                             <td class="col-sm-1" data-bind="html: Age"></td>

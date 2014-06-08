@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
@@ -61,15 +62,21 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("roster")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage ModifyPlayer(long accountId, long teamSeasonId, long id, Player p)
+        public async Task<HttpResponseMessage> ModifyPlayer(long accountId, long teamSeasonId, long id, Player p)
         {
             p.AccountId = accountId;
             p.TeamId = teamSeasonId;
             p.Id = id;
 
+            // first update the player, then contact.
             bool success = DataAccess.TeamRoster.ModifyPlayer(p);
             if (success)
+            {
+                Contact c = p.Contact;
+                if (c != null)
+                    await DataAccess.Contacts.UpdateContact(c, true);
                 return Request.CreateResponse(HttpStatusCode.NoContent);
+            }
             else
                 return Request.CreateResponse(HttpStatusCode.NotFound);
         }
