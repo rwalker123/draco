@@ -38,6 +38,8 @@ var PlayerViewModel = function (accountId, data) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.Contact.Email.extend({ email: true });
+
     self.Contact.fileUploaderUrl = ko.computed(function () {
         return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.Contact.Id();
     });
@@ -49,8 +51,6 @@ var PlayerViewModel = function (accountId, data) {
     self.Contact.DateOfBirth.Formatted = ko.computed(function () {
         return self.Contact.DateOfBirth() ? moment(self.Contact.DateOfBirth()).format("MMM DD, YYYY") : '';
     });
-
-    self.Id.viewMode = ko.observable(true);
 
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
@@ -98,17 +98,44 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
     })
 
     // save player data while editing, restore if cancelled.
-    var savedPlayer;
+    var emptyPlayer = new PlayerViewModel(accountId, {
+        Id: 0,
+        TeamId: self.teamId,
+        AccountId: self.accountId,
+        PlayerNumber: 0,
+        DateAdded: new Date(),
+        AffiliationDuesPaid: '',
+        SubmittedWaiver: false,
+        SubmittedDriversLicense: false,
+        Contact: {
+            Id: 0,
+            Email: '',
+            LastName: '',
+            FirstName: '',
+            MiddleName: '',
+            Phone1: '',
+            Phone2: '',
+            Phone3: '',
+            CreatorAccountId: 0,
+            StreetAddress: '',
+            City: '',
+            State: '',
+            Zip: '',
+            FirstYear: 0,
+            DateOfBirth: new Date(),
+            IsFemale: false,
+            UserId: ''
+        }
+    });
 
-    self.editPlayer = function (player) {
-        savedPlayer = player.toJS();
+    self.currentEditPlayer = ko.validatedObservable(new PlayerViewModel(self.accountId, emptyPlayer.toJS()));
 
-        player.Id.viewMode(!player.Id.viewMode());
+    self.editPlayer = function (player) {        
+        self.currentEditPlayer().update(player.toJS());
     }
 
     self.cancelEditPlayer = function (player) {
-        player.update(savedPlayer);
-        player.Id.viewMode(true);
+        self.currentEditPlayer().update(emptyPlayer.toJS());
     }
 
     self.editPlayerNumber = function (player) {
@@ -122,7 +149,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             success: function () {
 
                 player.PlayerNumber();
-                player.Id.viewMode(true);
+                player.viewMode(true);
             }
         });
     }
@@ -137,7 +164,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             data: data,
             success: function (item) {
                 player.update(item);
-                player.Id.viewMode(true);
+                player.viewMode(true);
             }
         });
 

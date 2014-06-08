@@ -127,7 +127,7 @@
     };
 
     ko.bindingHandlers.phoneNumber = {
-        init: function (element, valueAccessor) {
+        init: function (element, valueAccessor, allBindingsAccessor) {
             $(element).mask("(999) 999-9999");
 
             //handle the field changing

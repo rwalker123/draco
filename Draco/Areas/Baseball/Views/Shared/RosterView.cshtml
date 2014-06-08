@@ -83,7 +83,7 @@
                     </tr>
                 </thead>
                 <tbody data-bind="foreach: players">
-                    <tr data-bind="if: Id.viewMode">
+                    <tr data-bind="if: $root.currentEditPlayer().Id() != Id()">
                         <td class="col-sm-1">
                         <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>   } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoURL }" class="img-rounded" /></td>
                         <td class="col-sm-2">
@@ -156,7 +156,7 @@
 
                     @if (Model.IsAdmin || Model.IsTeamAdmin)
                     {
-                        <!-- ko if: !Id.viewMode()-->
+                        <!-- ko if: $root.currentEditPlayer().Id() == Id()-->
                         <tr>
                             <td class="col-sm-1">
                                 <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>    } data-bind="imageUploader: Contact.fileUploaderUrl, attr: { src: Contact.PhotoURL }" class="img-rounded" />
@@ -204,8 +204,8 @@
                                     }
                                     
                                     <div class="form-group">
-                                        <label class="control-label col-sm-5" data-bind="uniqueFor: Id">Aff. Dues</label>
-                                        <div class="col-sm-7">
+                                        <label class="control-label col-sm-12" data-bind="uniqueFor: Id">Aff. Dues</label>
+                                        <div class="col-sm-12">
                                             <input type="text" class="form-control" data-bind="value: AffiliationDuesPaid, uniqueId: Id" />
                                         </div>
                                     </div>
@@ -231,7 +231,7 @@
 
                     @if (Model.IsAdmin && Model.ShowUserInfoOnRosterPage)
                     {
-                        <!-- ko if: Id.viewMode()-->
+                        <!-- ko if: $root.currentEditPlayer().Id() != Id() -->
                         
                         <tr>
                             <td colspan="2">
@@ -271,26 +271,26 @@
                         
                         <!-- /ko -->
 
-                        <!-- ko if: !Id.viewMode()-->
+                        <!-- ko if: $root.currentEditPlayer().Id() == Id()-->
 
-                        <tr>
+                        <tr data-bind="with: $root.currentEditPlayer().Contact">
                             <td colspan="2">
-                                    <input class="form-control" type="text" data-bind='value: Contact.StreetAddress' placeholder="address" />
-                                    <input class="form-control" type="text" data-bind='value: Contact.City' placeholder="city"/>
-                                    <select data-container="body" data-size="7" data-bind="selectPicker: Contact.State, selectPickerOptions: {optionsArray: $parent.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
-                                    <input class="form-control" type="text" data-bind='value: Contact.Zip' placeholder="zip code"/>
+                                    <input class="form-control" type="text" data-bind='value: StreetAddress' placeholder="address" />
+                                    <input class="form-control" type="text" data-bind='value: City' placeholder="city"/>
+                                    <select data-container="body" data-size="7" data-bind="selectPicker: State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+                                    <input class="form-control" type="text" data-bind='value: Zip' placeholder="zip code"/>
                             </td>
                             <td colspan="2">
-                                <input class="form-control" type="text" data-bind="value: Contact.Email" placeholder="email address"/>
-                                <abbr title="Cell Phone">C: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Contact.Phone2" placeholder="cell phone" />
-                                <abbr title="Work Phone">W: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Contact.Phone3" placeholder="work phone" />
-                                <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Contact.Phone1" placeholder="home phone" />
+                                <input class="form-control" type="text" data-bind="value: Email" placeholder="email address"/>
+                                <abbr title="Cell Phone">C: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone2" placeholder="cell phone" />
+                                <abbr title="Work Phone">W: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone3" placeholder="work phone" />
+                                <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone1" placeholder="home phone" />
                             </td>
                             <td colspan="2">
-                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: Contact.DateOfBirth"/>
-                                <select data-container="body" data-bind="selectPicker: Contact.FirstYear, selectPickerOptions: { optionsArray: $parent.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth"/>
+                                <select data-container="body" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
 
-                                <select data-container="body" data-bind="selectPicker: Contact.IsFemale, selectPickerOptions: { optionsArray: $parent.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+                                <select data-container="body" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
 
                             </td>
                         </tr>
