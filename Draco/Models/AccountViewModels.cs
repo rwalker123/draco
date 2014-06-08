@@ -131,7 +131,7 @@ namespace SportsManager.Models
 
         [Required]
         [Display(Name = "First year in league")]
-        public int FirstYear { get; set; }
+        public new int FirstYear { get { return base.FirstYear; } set { base.FirstYear = value; } }
 
         [Required]
         [EmailAddress]
