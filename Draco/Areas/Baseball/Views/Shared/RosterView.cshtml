@@ -100,7 +100,7 @@
                             }
                         </td>
                         <td @if (Model.IsAdmin) { <text> class="col-sm-4" </text>     } else if (Model.IsTeamAdmin) { <text> class="col-sm-6" </text>    } else { <text> class="col-sm-8" </text>     }>
-                            <span data-bind="html: Contact.FullName"></span>
+                            <a data-bind="html: Contact.FullName, attr: { href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + Id() }"></a>
                             @if (Model.IsAdmin)
                             {
                                 <form class="form-horizontal" role="form">

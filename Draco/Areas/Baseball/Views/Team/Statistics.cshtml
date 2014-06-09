@@ -102,7 +102,9 @@
                                     <button class="btn btn-danger btn-sm" data-bind="click: $root.deleteBatStat"><span class="glyphicon glyphicon-remove"></span></button>
                                 </td>
                                 }
-                                <td class="nameField" data-readonly="true" data-bind="html: PlayerName.LastName(), attr: { title: PlayerName }"></td>
+                                <td class="nameField" data-readonly="true">
+                                    <a data-bind="html: PlayerName.LastName(), attr: { title: PlayerName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId() }"></a>
+                                </td>
                                 <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: H"></td>
                                 <td class="statField" data-type='number' data-bind="editablefield: R"></td>
@@ -216,7 +218,9 @@
                                             <button class="btn btn-danger btn-sm" data-bind="click: $root.deletePitchStat"><span class="glyphicon glyphicon-remove"></span></button>
                                         </td>
                                     }
-                                    <td class="nameField" data-readonly="true" data-bind="html: PlayerName.LastName, attr: { title: PlayerName }"></td>
+                                    <td class="nameField" data-readonly="true">
+                                        <a data-bind="html: PlayerName.LastName(), attr: { title: PlayerName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId() }"></a>
+                                    </td>
                                     <td class="statField" data-type='number' data-bind="editablefield: W"></td>
                                     <td class="statField" data-type='number' data-bind="editablefield: L"></td>
                                     <td class="statField" data-type='number' data-bind="editablefield: S"></td>
