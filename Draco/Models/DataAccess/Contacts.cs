@@ -638,11 +638,13 @@ namespace DataAccess
             if (String.IsNullOrEmpty(currentUser))
                 return String.Empty;
 
+            string senderFullName;
+
             var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
             if (contact == null)
-                return String.Empty;
-
-            string senderFullName = contact.FullNameFirst;
+                senderFullName = currentUser;
+            else
+                 senderFullName = contact.FullNameFirst;
 
             var userManager = Globals.GetUserManager();
 
