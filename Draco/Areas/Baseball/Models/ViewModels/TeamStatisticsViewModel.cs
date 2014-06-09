@@ -16,10 +16,15 @@ namespace SportsManager.Baseball.ViewModels
         public TeamStatisticsViewModel(Controller c, long accountId, long teamSeasonId, long seasonId)
             : base(c, accountId)
         {
-            Team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (Account == null)
+                return;
+
             SeasonId = seasonId;
             SeasonName = DataAccess.Seasons.GetSeasonName(CurrentSeasonId);
             IsTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+            Team = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (Team == null)
+                return;
             CompletedGames = DataAccess.Schedule.GetTeamCompletedGames(teamSeasonId);
             TeamStanding = DataAccess.Teams.GetTeamStanding(teamSeasonId);
         }

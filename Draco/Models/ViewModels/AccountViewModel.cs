@@ -21,6 +21,9 @@ namespace SportsManager.ViewModels
             Controller = c;
             ContactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
             m_account = DataAccess.Accounts.GetAccount(accountId);
+            if (m_account == null)
+                return;
+
             AccountName = m_account.AccountName;
 
             FirstYear = m_account.FirstYear;
