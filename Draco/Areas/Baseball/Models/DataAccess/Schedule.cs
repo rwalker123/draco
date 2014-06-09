@@ -7,6 +7,8 @@ using System.Linq;
 using System.Web.UI.WebControls;
 using ModelObjects;
 using SportsManager;
+using System.Net.Mail;
+using SportsManager.Models.Utils;
 
 namespace DataAccess
 {
@@ -375,7 +377,7 @@ namespace DataAccess
             return playerRecap;
         }
 
-        static public bool UpdateGameScore(Game game)
+        static public bool UpdateGameScore(Game game, bool emailResult)
         {
             DB db = DBConnection.GetContext();
 
@@ -430,8 +432,87 @@ namespace DataAccess
             db.PlayerRecaps.InsertAllOnSubmit(playersPresent);
             db.SubmitChanges();
 
+            if (emailResult)
+                SendGameResultEmail(game);
+
             return true;
         }
+
+        private static int SendGameResultEmail(ModelObjects.Game g)
+        {
+            int numSent = 0;
+
+            List<ModelObjects.Contact> contacts = new List<ModelObjects.Contact>();
+
+            contacts.AddRange(DataAccess.Teams.GetTeamContacts(g.HomeTeamId));
+            contacts.AddRange(DataAccess.Teams.GetTeamContacts(g.AwayTeamId));
+
+            var umpires = DataAccess.Umpires.GetUmpiresFromGame(g);
+            foreach (var umpire in umpires)
+            {
+                var u = DataAccess.Umpires.GetUmpire(umpire.Id);
+                if (u != null)
+                {
+                    var c = DataAccess.Contacts.GetContact(u.ContactId);
+                    if (c != null)
+                        contacts.Add(c);
+                }
+            }
+
+            IList<MailAddress> bccList = new List<MailAddress>();
+
+            foreach (ModelObjects.Contact c in contacts)
+            {
+                try
+                {
+                    if (c.Email.Length > 0)
+                        bccList.Add(new MailAddress(c.Email));
+                }
+                catch
+                {
+                }
+            }
+
+            if (bccList.Count != 0)
+            {
+                string homeTeam = DataAccess.Teams.GetTeamName(g.HomeTeamId);
+                string awayTeam = DataAccess.Teams.GetTeamName(g.AwayTeamId);
+
+                string from = Globals.GetCurrentUserName();
+                string subject = "Game Status Notification: " + awayTeam + " @ " + homeTeam + ", " + g.GameDate.ToShortDateString() + " " + g.GameDate.ToShortTimeString();
+                string message = "Your game: " + awayTeam + " @ " + homeTeam + ", " + g.GameDate.ToShortDateString() + " " + g.GameDate.ToShortTimeString() + " has been updated. The new status is: " + g.GameStatusLongText + ".";
+                if (g.GameStatus == 1)
+                {
+                    message += Environment.NewLine + Environment.NewLine;
+
+                    if (g.HomeScore > g.AwayScore)
+                    {
+                        message += homeTeam + " won the game " + g.HomeScore + " - " + g.AwayScore + ".";
+                    }
+                    else if (g.AwayScore > g.HomeScore)
+                    {
+                        message += awayTeam + " won the game " + g.AwayScore + " - " + g.HomeScore + ".";
+                    }
+                    else
+                    {
+                        message += " The game ended in a tie " + g.AwayScore + " - " + g.HomeScore + ".";
+                    }
+                }
+
+                EmailUsersData data = new EmailUsersData()
+                {
+                    Message = message,
+                     Subject = subject
+                };
+
+                IEnumerable<MailAddress> failedSends = Globals.MailMessage(from, bccList, data);
+                numSent = bccList.Count - failedSends.Count();
+            }
+
+            return numSent;
+
+        }
+
 
         static public bool ModifyGame(Game g)
         {

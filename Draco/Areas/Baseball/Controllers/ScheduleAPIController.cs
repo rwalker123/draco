@@ -59,7 +59,15 @@ namespace SportsManager.Areas.Baseball.Controllers
             game.LeagueId = leagueSeasonId;
             if (ModelState.IsValid && game != null)
             {
-                bool found = DataAccess.Schedule.UpdateGameScore(game);
+                var queryValues = Request.RequestUri.ParseQueryString();
+                String strEmailResult = queryValues["emailResult"];
+                bool emailResult = false;
+                if (!String.IsNullOrEmpty(strEmailResult))
+                {
+                    bool.TryParse(strEmailResult, out emailResult);
+                }
+
+                bool found = DataAccess.Schedule.UpdateGameScore(game, emailResult);
                 if (found)
                 {
                     return Request.CreateResponse<ModelObjects.Game>(HttpStatusCode.OK, game);

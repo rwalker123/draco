@@ -50,6 +50,9 @@ var GameResultsViewModel = function (data) {
     self.HomeTeamId.roster = ko.observableArray();
     self.AwayTeamId.roster = ko.observableArray();
 
+    self.Id.EmailResult = ko.observable(true);
+    self.Id.TweetResult = ko.observable(true);
+
     // score required if game is final or forfeit
     self.HomeScore.extend({
         number: true,
@@ -302,6 +305,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     }, self.accountId));
 
     self.editingGameResults = ko.validatedObservable(new GameResultsViewModel({
+        Id: 0,
         HomeTeamName: '',
         AwayTeamName: '',
         GameDate: '',
@@ -492,9 +496,14 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
         var data = self.editingGameResults().toJS();
 
+        var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.selectedLeague() + '/gameresult';
+        if (self.editingGameResults().Id.EmailResult()) {
+            url = url + "?emailResult=true";
+        }
+
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.selectedLeague() + '/gameresult',
+            url: url,
             data: data,
             success: function (game) {
                 self.cancelUpdateGameResult();

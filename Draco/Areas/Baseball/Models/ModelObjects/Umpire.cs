@@ -19,5 +19,13 @@ namespace ModelObjects
 
 		public long AccountId { get; set; }
         public long ContactId { get; set; }
+        public String FullName
+        {
+            get
+            {
+                string fullName = LastName + ", " + FirstName + " " + MiddleName;
+                return fullName.Trim();
+            }
+        }
 	}
 }

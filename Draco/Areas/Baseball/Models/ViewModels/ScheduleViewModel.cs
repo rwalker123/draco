@@ -2,6 +2,7 @@
 using ModelObjects;
 using SportsManager.ViewModels;
 using System.Web.Mvc;
+using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -14,17 +15,12 @@ namespace SportsManager.Baseball.ViewModels
 
             Leagues = DataAccess.Leagues.GetLeagues(seasonId);
             Fields = DataAccess.Fields.GetFields(accountId);
-            var umpires = DataAccess.Umpires.GetUmpires(accountId);
-            Umpires = new List<Contact>();
-            foreach(var u in umpires)
-            {
-                ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
-            }
+            Umpires = DataAccess.Umpires.GetUmpires(accountId);
         }
 
         public long SeasonId { get; private set; }
 
-        public IEnumerable<Contact> Umpires
+        public IQueryable<Umpire> Umpires
         {
             get;
             private set;
