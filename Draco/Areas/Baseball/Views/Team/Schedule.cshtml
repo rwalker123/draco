@@ -25,15 +25,23 @@
     <table class="table table-striped table-bordered">
         <thead>
             <tr>
-                <th colspan="5">@Model.Team.Name Schedule</th>
+                <th colspan="8">@Model.Team.Name Schedule</th>
             </tr>
         </thead>
         <tbody>
             @{ int gameNo = 1; }
             @foreach(var g in Model.Games)
             {
+                var recap = Model.GameSummary(g.Id);
+
                 <tr>
-                    <td>@gameNo</td>
+                    <td>
+                        @gameNo
+                        @if (!String.IsNullOrEmpty(recap))
+                        {
+                            <div class="noPrint"><button class="btn btn-success btn-xs" onclick="javascript:toggleGameSummary('recap_@g.Id');">recap</button></div>
+                        }
+                    </td>
                     <td>@g.GameDate.ToString("ddd MMM dd")</td>
                     <td>@g.GameDate.ToString("t")</td>
                     <td>
@@ -49,6 +57,19 @@
                             @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
                         </a>
                     </td>
+                    <td>@Model.WinLoseString(g.GameWinner, g.GameStatus)</td>
+                    <td>@Model.Score1(g.GameWinner, g.HomeScore, g.AwayScore)</td>
+                    <td>@Model.Score2(g.GameWinner, g.HomeScore, g.AwayScore)</td>
+                </tr>
+                <tr>
+                    <td colspan="8">
+                        @if (!String.IsNullOrEmpty(recap))
+                        {
+                            <div style="display: none" id="recap_@g.Id">
+                                @Html.Raw(recap)
+                            </div>
+                        }
+                    </td>
                 </tr>
                 
                 gameNo++;
@@ -56,3 +77,19 @@
         </tbody>
     </table>
 </div>
+
+@section Scripts {
+    <script type="text/javascript">
+        function toggleGameSummary(id) {
+            var elem = document.getElementById(id);
+            if (elem) {
+                if (elem.style.display == 'block')
+                    elem.style.display = 'none';
+                else
+                    elem.style.display = 'block';
+            }
+
+            return false;
+        }
+    </script>
+}
