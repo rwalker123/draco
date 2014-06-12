@@ -400,7 +400,7 @@ namespace DataAccess
                              join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
                              join t in db.Teams on ts.TeamId equals t.Id
                              join c in db.Contacts on tsm.ContactId equals c.Id
-                             where c.Id == m.Id
+                             where c.Id == m.Id && tsm.TeamSeasonId == m.TeamId
                              select tsm.Id).SingleOrDefault();
 
             if (isManager > 0)
