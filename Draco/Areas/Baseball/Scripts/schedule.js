@@ -499,6 +499,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
             success: function (game) {
                 self.cancelUpdateGameResult();
 
+                self.tweetGameResult(game);
+
                 var wasFound = false;
                 // find item in calendar so we can update it.
                 $.each(self.gameMonth(), function (index, gameWeek) {
@@ -518,6 +520,18 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
                     return !wasFound;
                 });
 
+            }
+        });
+    }
+
+    self.tweetGameResult = function (game) {
+
+        $.ajax({
+            type: "POST",
+            url: window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '?referer=' + window.location.href,
+            data: game,
+            success: function () {
+                alert('here');
             }
         });
     }

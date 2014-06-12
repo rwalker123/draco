@@ -66,6 +66,16 @@ static public class Globals
 		get { return ConfigurationManager.AppSettings["LogFile"]; }
 	}
 
+    public static string GetURLFromRequest(HttpRequest request)
+    {
+        string url = (request.ApplicationPath.Length > 0) ? request.Url.Authority + System.Web.HttpContext.Current.Request.ApplicationPath
+                                                          : request.Url.Authority;
+        if (!url.EndsWith("/"))
+            url = url + "/";
+
+        return url;
+    }
+
 	public static bool MailMessage(string fromEmail, string toEmail, string subject, string body)
 	{
 		bool sentMsg = true;

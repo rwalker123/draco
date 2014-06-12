@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using ModelObjects;
+﻿using ModelObjects;
 using SportsManager.ViewModels;
+using System;
+using System.Collections.Generic;
 using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
@@ -20,7 +21,11 @@ namespace SportsManager.Baseball.ViewModels
             {
                 ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
             }
+
+            EnableTweet = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId));
         }
+
+        public bool EnableTweet { get; private set; }
 
         public long SeasonId { get; private set; }
 

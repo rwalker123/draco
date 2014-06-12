@@ -1,3 +1,5 @@
+using ModelObjects;
+using SportsManager;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -5,8 +7,6 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web.UI.WebControls;
-using ModelObjects;
-using SportsManager;
 
 namespace DataAccess
 {
@@ -430,7 +430,15 @@ namespace DataAccess
             db.PlayerRecaps.InsertAllOnSubmit(playersPresent);
             db.SubmitChanges();
 
+            TweetResult();
+
             return true;
+        }
+
+        static private void TweetResult()
+        {
+
+
         }
 
         static public bool ModifyGame(Game g)

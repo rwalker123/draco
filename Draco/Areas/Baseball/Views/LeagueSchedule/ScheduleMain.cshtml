@@ -160,12 +160,15 @@
                             Email players result
                         </label>
                     </div>
+                    @if (Model.EnableTweet)
+                    { 
                     <div class="col-md-offset-3 col-md-9">
                         <label class="control-label">
                             <input class="form-control-static" type="checkbox" />
                             Tweet result
                         </label>
                     </div>
+                    }
                 </div>
                 <div class="form-group">
                     <div class="col-md-6">
