@@ -221,6 +221,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     self.resultsGameMode = ko.observable(false);
     self.leagueTeams = ko.observableArray([]);
     self.selectedTeam = ko.observable();
+    self.tweetResults = ko.observable(true);
     self.selectedTeam.subscribe(function () {
         if (self.selectedTeam) {
             var foundItem = ko.utils.arrayFirst(self.leagueTeams(), function (item) {
@@ -508,6 +509,9 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
             success: function (game) {
                 self.cancelUpdateGameResult();
 
+                if (self.tweetResults())
+                self.tweetGameResult(game);
+
                 var wasFound = false;
                 // find item in calendar so we can update it.
                 $.each(self.gameMonth(), function (index, gameWeek) {
@@ -529,6 +533,10 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
             }
         });
+    }
+
+    self.tweetGameResult = function (game) {
+        window.location.href = window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '/' + game.Id + '?referer=' + window.location.href;
     }
 
     self.cancelUpdateGameResult = function (game) {

@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
-using ModelObjects;
+﻿using ModelObjects;
 using SportsManager.ViewModels;
+using System;
+using System.Collections.Generic;
 using System.Web.Mvc;
 using System.Linq;
 
@@ -15,8 +16,21 @@ namespace SportsManager.Baseball.ViewModels
 
             Leagues = DataAccess.Leagues.GetLeagues(seasonId);
             Fields = DataAccess.Fields.GetFields(accountId);
-            Umpires = DataAccess.Umpires.GetUmpires(accountId);
+            var umpires = DataAccess.Umpires.GetUmpires(accountId);
+            Umpires = new List<Contact>();
+            foreach(var u in umpires)
+            {
+                ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
+            }
+
+            EnableTweet = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId));
+
+            TwitterError = (String)c.Session["twitterError"];
+            c.Session.Remove("twitterError");
         }
+
+        public String TwitterError { get; private set; }
+        public bool EnableTweet { get; private set; }
 
         public long SeasonId { get; private set; }
 

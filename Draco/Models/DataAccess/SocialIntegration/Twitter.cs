@@ -37,158 +37,70 @@ namespace DataAccess.SocialIntegration
             return false;
         }
 
-		public static string GetApiKey(long accountType)
-		{
-			string apiKey = String.Empty;
+        public static string GetApiKey(long accountType)
+        {
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-                DB db = DBConnection.GetContext();
+            return (from f in db.AccountTypes
+                    where f.Id == accountType
+                    select f.TwitterAppId).SingleOrDefault();
+        }
 
-				apiKey = (from f in db.AccountTypes
-						  where f.Id == accountType
-						  select f.TwitterAppId).SingleOrDefault();
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
+        public static string GetSecretKey(long accountType)
+        {
+            DB db = DBConnection.GetContext();
 
-			return apiKey;
-		}
-
-		public static string GetSecretKey(long accountType)
-		{
-			string secretKey = String.Empty;
-
-			try
-			{
-                DB db = DBConnection.GetContext();
-
-				secretKey = (from f in db.AccountTypes
-							 where f.Id == accountType
-							 select f.TwitterSecret).SingleOrDefault();
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return secretKey;
-		}
+            return (from f in db.AccountTypes
+                    where f.Id == accountType
+                    select f.TwitterSecret).SingleOrDefault();
+        }
 
 		public static string TwitterAccountName(long accountId)
 		{
-			string accName = String.Empty;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-                DB db = DBConnection.GetContext();
-
-				accName = (from a in db.Accounts
-						   where a.Id == accountId
-						   select a.TwitterAccountName).SingleOrDefault();
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return accName;
+            return (from a in db.Accounts
+                    where a.Id == accountId
+                    select a.TwitterAccountName).SingleOrDefault();
 		}
 
-		public static void SetTwitterAccountName(long accountId, string twitterAccountName)
+        public static void SetTwitterAccountName(long accountId, string twitterAccountName)
+        {
+            DB db = DBConnection.GetContext();
+
+            Account acc = (from a in db.Accounts
+                           where a.Id == accountId
+                           select a).SingleOrDefault();
+
+            acc.TwitterAccountName = twitterAccountName ?? String.Empty;
+
+            db.SubmitChanges();
+        }
+
+		public static Account GetAccountTwitterData(long accountId)
 		{
-			try
-			{
-                DB db = DBConnection.GetContext();
+            DB db = DBConnection.GetContext();
 
-				Account acc = (from a in db.Accounts
-							   where a.Id == accountId
-							   select a).SingleOrDefault();
-
-				acc.TwitterAccountName = twitterAccountName ?? String.Empty;
-
-				db.SubmitChanges();
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
-		}
-
-		private static Account GetAccountTwiterData(long accountId)
-		{
-			Account acc = null;
-
-			try
-			{
-                DB db = DBConnection.GetContext();
-
-				acc = (from a in db.Accounts
-					   where a.Id == accountId
-					   select a).SingleOrDefault();
-
-			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return acc;
-		}
-
-		public static bool SetupTwitterStatusUpdate(long accountId, string tweetText)
-		{
-			bool isTwitterConfigured = false;
-
-			Account a = GetAccountTwiterData(accountId);
-
-			if (!String.IsNullOrEmpty(a.TwitterAccountName))
-			{
-				HttpSessionState s = System.Web.HttpContext.Current.Session;
-
-				s["TwitterStatus"] = tweetText;
-				s["TwitterAccount"] = a.TwitterAccountName;
-				s["TwitterReqCode"] = "s";
-
-				if (a.TwitterOauthToken.Length > 0)
-					s["TwitterAuthToken"] = a.TwitterOauthToken;
-
-				if (a.TwitterOauthSecretKey.Length > 0)
-					s["TwitterAuthSecretKey"] = a.TwitterOauthSecretKey;
-
-				isTwitterConfigured = true;
-			}
-
-			return isTwitterConfigured;
+            return (from a in db.Accounts
+                    where a.Id == accountId
+                    select a).SingleOrDefault();
 		}
 
 		public static void SaveCurrentAccountAuth(long accountId, string authToken, string authSecretKey)
 		{
-			try
+            DB db = DBConnection.GetContext();
+
+			Account acc = (from a in db.Accounts
+							where a.Id == accountId
+							select a).SingleOrDefault();
+
+			if (acc != null)
 			{
-                DB db = DBConnection.GetContext();
+				acc.TwitterOauthToken = authToken;
+				acc.TwitterOauthSecretKey = authSecretKey;
 
-				Account acc = (from a in db.Accounts
-							   where a.Id == accountId
-							   select a).SingleOrDefault();
-
-				if (acc != null)
-				{
-					acc.TwitterOauthToken = authToken;
-					acc.TwitterOauthSecretKey = authSecretKey;
-
-					db.SubmitChanges();
-				}
-
+				db.SubmitChanges();
 			}
-			catch (Exception ex)
-			{
-				Globals.LogException(ex);
-			}
-
 		}
-
 	}
 }
