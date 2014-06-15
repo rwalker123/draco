@@ -16,14 +16,15 @@ namespace SportsManager.Controllers
         public async Task<ActionResult> BeginAsync(long accountId)
         {
             //var auth = new MvcSignInAuthorizer
-            var auth = new MvcAuthorizer
+            var auth = new MvcSignInAuthorizer
             {
                 CredentialStore = new SessionStateCredentialStore
                 {
                     ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
-                    ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"]
+                    ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"],
                 }
             };
+
             string twitterCallbackUrl = Request.Url.ToString().Replace("Begin", "Complete");
             return await auth.BeginAuthorizationAsync(new Uri(twitterCallbackUrl));
         }
@@ -38,6 +39,11 @@ namespace SportsManager.Controllers
 
             await auth.CompleteAuthorizeAsync(Request.Url);
 
+            return CompleteTwitterOauth(accountId, auth);
+        }
+
+        private ActionResult CompleteTwitterOauth(long accountId, MvcAuthorizer auth)
+        {
             // This is how you access credentials after authorization.
             // The oauthToken and oauthTokenSecret do not expire.
             // You can use the userID to associate the credentials with the user.
@@ -55,37 +61,77 @@ namespace SportsManager.Controllers
             ulong userID = credentials.UserID;
 
             var account = DataAccess.Accounts.GetAccount(accountId);
+            if (account == null)
+            {
+                throw new Exception("Invalid Account");
+            }
 
             if (screenName.Equals(account.TwitterAccountName, StringComparison.InvariantCultureIgnoreCase))
             {
                 DataAccess.SocialIntegration.Twitter.SaveCurrentAccountAuth(accountId, oauthToken, oauthTokenSecret);
+
+                string refererUri = Request.QueryString.Get("twitterAction");
+                if (!String.IsNullOrEmpty(refererUri))
+                {
+                    return Redirect(refererUri);
+                }
             }
+            else
+            {
+                Session["twitterError"] = "Screen name mismatch, expected: " + account.TwitterAccountName + " got: " + screenName;
+                string refererUri = Request.QueryString.Get("referer");
+                if (!String.IsNullOrEmpty(refererUri))
+                {
+                    return Redirect(refererUri);
+                }
+            }
+
 
             return RedirectToAction("Index", "Home");
         }
 
-        public async Task<ActionResult> HomeTimelineAsync()
+        public async Task<ActionResult> SendTweetAsync(long accountId, string tweet)
         {
+            var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
+
+            if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
+            {
+                return RedirectToAction("BeginAsync", "TwitterOauth", new
+                {
+                    area = "",
+                    referer = Request.QueryString.Get("referer") ?? "",
+                    twitterAction = Request.Url.ToString(),
+                    accountId = accountId,
+                    twitterStatus = tweet,
+                    twitterAccount = a.TwitterAccountName,
+                    twitterReqCode = "s"
+                });
+            }
+
             var auth = new MvcAuthorizer
             {
                 CredentialStore = new SessionStateCredentialStore()
+                {
+                    ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
+                    ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"],
+                    OAuthToken = a.TwitterOauthToken,
+                    OAuthTokenSecret = a.TwitterOauthSecretKey
+                }
             };
 
             var ctx = new TwitterContext(auth);
 
-            var tweets =
-                await
-                (from tweet in ctx.Status
-                 where tweet.Type == StatusType.Home
-                 select new  //TweetViewModel
-                 {
-                     ImageUrl = tweet.User.ProfileImageUrl,
-                     ScreenName = tweet.User.ScreenNameResponse,
-                     Text = tweet.Text
-                 })
-                .ToListAsync();
+            var refererUri = Request.QueryString.Get("referer");
+            try
+            {
+                Status responseTweet = await ctx.TweetAsync(tweet);
+            }
+            catch (TwitterQueryException ex)
+            {
+                Session["twitterError"] = ex.ErrorCode + ": " + ex.Message;
+            }
 
-            return View(tweets);
+            return Redirect(refererUri);
         }
 
     }

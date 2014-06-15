@@ -218,6 +218,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     self.resultsGameMode = ko.observable(false);
     self.leagueTeams = ko.observableArray([]);
     self.selectedTeam = ko.observable();
+    self.tweetResults = ko.observable(true);
     self.selectedTeam.subscribe(function () {
         if (self.selectedTeam) {
             var foundItem = ko.utils.arrayFirst(self.leagueTeams(), function (item) {
@@ -499,6 +500,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
             success: function (game) {
                 self.cancelUpdateGameResult();
 
+                if (self.tweetResults())
                 self.tweetGameResult(game);
 
                 var wasFound = false;
@@ -525,15 +527,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     }
 
     self.tweetGameResult = function (game) {
-
-        $.ajax({
-            type: "POST",
-            url: window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '?referer=' + window.location.href,
-            data: game,
-            success: function () {
-                alert('here');
-            }
-        });
+        window.location.href = window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '/' + game.Id + '?referer=' + window.location.href;
     }
 
     self.cancelUpdateGameResult = function (game) {

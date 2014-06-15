@@ -24,6 +24,14 @@
 
 <div id="datepicker"></div>
 
+@if (Model.TwitterError != null)
+{
+    <div class="alert alert-danger alert-dismissable">
+        <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+        <strong>Twitter Posting Error:</strong> @Model.TwitterError
+        <p>After fixing the error, you must update the game result to send out the tweet.</p>
+    </div>
+}
 <div id="schedule" class="container-fluid">
     <div class="row noPrint">
         <select data-bind="value: selectedLeague, attr: {'disabled': leagueTeamSelectDisabled }" data-container="body" id="leagueSelect">
@@ -164,7 +172,7 @@
                     { 
                     <div class="col-md-offset-3 col-md-9">
                         <label class="control-label">
-                            <input class="form-control-static" type="checkbox" />
+                            <input class="form-control-static" type="checkbox" data-bind="checked: $root.tweetResults" />
                             Tweet result
                         </label>
                     </div>

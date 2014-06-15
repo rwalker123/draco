@@ -23,8 +23,12 @@ namespace SportsManager.Baseball.ViewModels
             }
 
             EnableTweet = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId));
+
+            TwitterError = (String)c.Session["twitterError"];
+            c.Session.Remove("twitterError");
         }
 
+        public String TwitterError { get; private set; }
         public bool EnableTweet { get; private set; }
 
         public long SeasonId { get; private set; }

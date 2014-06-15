@@ -30,12 +30,6 @@ namespace DataAccess
             //return aId;
         }
 
-        static public long GetCurrentLeague(HttpSessionState s)
-        {
-            throw new NotImplementedException();
-            //return !String.IsNullOrEmpty((string)s["AdminCurrentLeague"]) ? Int32.Parse((string)s["AdminCurrentLeague"]) : 0;
-        }
-
         static public string GetLeagueNameFromLeagueId(long leagueId)
         {
             DB db = DBConnection.GetContext();

@@ -24,10 +24,15 @@ namespace SportsManager.Areas.Baseball.Controllers
 		}
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        [AcceptVerbs("POST"), HttpPost]
         [ActionName("GameResultTwitter")]
-        public ActionResult GameResultTwitter(long accountId, ModelObjects.Game g)
+        public ActionResult GameResultTwitter(long accountId, long id)
         {
+            var g = DataAccess.Schedule.GetGame(id);
+            if (g == null)
+            {
+                return Redirect(Request.QueryString.Get("referer"));
+            }
+
             string homeTeam = DataAccess.Teams.GetTeamName(g.HomeTeamId);
             string awayTeam = DataAccess.Teams.GetTeamName(g.AwayTeamId);
 
@@ -36,7 +41,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             // 25+ Rainout Jul 5: Tigers @ Redsox 
             // 25+ Postponed Aug 5: Tigers @ Redsox
 
-            string tweet = String.Empty;
+            string tweetText = String.Empty;
 
             string leagueName = DataAccess.Leagues.GetLeagueName(g.LeagueId);
 
@@ -48,42 +53,41 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 if (g.HomeScore > g.AwayScore)
                 {
-                    tweet = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), homeTeam, awayTeam, g.HomeScore, g.AwayScore, "over");
+                    tweetText = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), homeTeam, awayTeam, g.HomeScore, g.AwayScore, "over");
                 }
                 else if (g.AwayScore > g.HomeScore)
                 {
-                    tweet = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam, g.AwayScore, g.HomeScore, "over");
+                    tweetText = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam, g.AwayScore, g.HomeScore, "over");
                 }
                 else
                 {
-                    tweet = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam, g.AwayScore, g.HomeScore, "tied");
+                    tweetText = String.Format(finalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam, g.AwayScore, g.HomeScore, "tied");
                 }
             }
             else if (g.GameStatus != 0)
             {
-                tweet = String.Format(nonFinalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam);
+                tweetText = String.Format(nonFinalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam);
             }
 
             string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request);
 
-            uri = HttpUtility.UrlEncode(String.Format("{0} http://{1}", tweet, uri));
+            uri = HttpUtility.UrlEncode(String.Format("{0} http://{1}", tweetText, uri));
 
 			var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
 
 			if (!String.IsNullOrEmpty(a.TwitterAccountName))
 			{
-                return RedirectToAction("BeginAsync", "TwitterOauth", new
+                return RedirectToAction("SendTweetAsync", "TwitterOauth", new
                 {
                     area = "",
+                    referer = Request.QueryString.Get("referer") ?? "",
                     accountId = accountId,
-                    twitterRefererPage = "",
-                    twitterStatus = tweet,
-                    twitterAccount = a.TwitterAccountName,
-                    twitterReqCode = "s",
-                    twitterAuthToken = a.TwitterOauthToken,
-                    twitterAuthSecretKey = a.TwitterOauthSecretKey
+                    tweet = tweetText
                 });
 			}
+
+            if (!String.IsNullOrEmpty(Request.QueryString.Get("referer")))
+                return Redirect(Request.QueryString.Get("referer"));
 
             return View();
         }
