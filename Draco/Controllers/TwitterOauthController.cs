@@ -1,11 +1,7 @@
 ﻿using LinqToTwitter;
-using SportsManager.Models;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Mvc;
 
 namespace SportsManager.Controllers
@@ -22,6 +18,8 @@ namespace SportsManager.Controllers
                 {
                     ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
                     ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"],
+                    OAuthToken = null,
+                    OAuthTokenSecret = null
                 }
             };
 
@@ -96,6 +94,7 @@ namespace SportsManager.Controllers
 
             if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
             {
+                Session["twitterRetries"] = 1;
                 return RedirectToAction("BeginAsync", "TwitterOauth", new
                 {
                     area = "",
@@ -128,7 +127,25 @@ namespace SportsManager.Controllers
             }
             catch (TwitterQueryException ex)
             {
-                Session["twitterError"] = ex.ErrorCode + ": " + ex.Message;
+                // if we get an authentication error, try to have the user log in.
+                if (ex.ErrorCode == 32 && Session["twitterRetries"] == null)
+                {
+                    Session["twitterRetries"] = 1;
+                    return RedirectToAction("BeginAsync", "TwitterOauth", new
+                    {
+                        area = "",
+                        referer = Request.QueryString.Get("referer") ?? "",
+                        twitterAction = Request.Url.ToString(),
+                        accountId = accountId,
+                        twitterStatus = tweet,
+                        twitterAccount = a.TwitterAccountName,
+                        twitterReqCode = "s"
+                    });
+                }
+                else
+                {
+                    Session["twitterError"] = ex.ErrorCode + ": " + ex.Message;
+                }
             }
 
             return Redirect(refererUri);

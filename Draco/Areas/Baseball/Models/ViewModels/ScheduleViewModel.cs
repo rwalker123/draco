@@ -34,7 +34,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public long SeasonId { get; private set; }
 
-        public IQueryable<Umpire> Umpires
+        public IEnumerable<Contact> Umpires
         {
             get;
             private set;
