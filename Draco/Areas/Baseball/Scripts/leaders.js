@@ -56,6 +56,7 @@ var LeadersViewModel = function (accountId, isAdmin, teamId, useDefaultCats) {
 
     self.selectedLeagueId = ko.observable();
     self.selectedLeagueId.subscribe(function () {
+        $.cookie('leaders_last_selected_league', self.selectedLeagueId(), { expires: 180 });
         self.updateLeaders();
     });
 
@@ -320,6 +321,10 @@ var LeadersViewModel = function (accountId, isAdmin, teamId, useDefaultCats) {
                 self.availablePitchCategories(cats);
             }
         });
+    }
+
+    if (!self.teamId && $.cookie('leaders_last_selected_league')) {
+        self.selectedLeagueId($.cookie('leaders_last_selected_league'));
     }
 
     self.fillBatCategories();
