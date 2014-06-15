@@ -71,7 +71,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request);
 
-            uri = HttpUtility.UrlEncode(String.Format("{0} http://{1}", tweetText, uri));
+            tweetText = String.Format("{0} http://{1}", tweetText, uri);
 
 			var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
 
