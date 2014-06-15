@@ -243,7 +243,9 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     self.selectedTeamName = ko.observable();
 
     self.selectedLeague = ko.observable();
+    
     self.selectedLeague.subscribe(function () {
+        $.cookie('sched_last_selected_league', self.selectedLeague(), { expires: 180 });
         self.selectedLeagueName(self.getSelectedText('leagueSelect'));
         self.loadingSchedule(true);
         self.populateTeams();
@@ -776,6 +778,13 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     $("#newGameField").selectpicker();
     $("#newGameUmpires").selectpicker();
     $("#newGameStatus").selectpicker();
+
+    if ($.cookie('sched_last_selected_league')) {
+        var cv = $.cookie('sched_last_selected_league');
+        $("#leagueSelect").selectpicker('val', cv);
+        self.selectedLeague(cv);
+    }
+
 
     $(".currentDate").datepicker({
         viewMode: 1,

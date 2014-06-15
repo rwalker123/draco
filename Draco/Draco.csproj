@@ -644,6 +644,7 @@
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
+    <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
