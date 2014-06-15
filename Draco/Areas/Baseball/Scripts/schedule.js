@@ -773,15 +773,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         }
     }
 
-    $("#leagueSelect").selectpicker();
-    $("#newGameType").selectpicker();
-    $("#newGameField").selectpicker();
-    $("#newGameUmpires").selectpicker();
-    $("#newGameStatus").selectpicker();
-
     if ($.cookie('sched_last_selected_league')) {
         var cv = $.cookie('sched_last_selected_league');
-        $("#leagueSelect").selectpicker('val', cv);
         self.selectedLeague(cv);
     }
 

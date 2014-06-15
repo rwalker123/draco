@@ -34,14 +34,14 @@
 }
 <div id="schedule" class="container-fluid">
     <div class="row noPrint">
-        <select data-bind="value: selectedLeague, attr: {'disabled': leagueTeamSelectDisabled }" data-container="body" id="leagueSelect">
+        <select data-bind="selectPicker: selectedLeague" data-container="body" id="leagueSelect">
             @foreach (ModelObjects.League l in Model.Leagues)
             {
                 <option value="@l.Id">@l.Name</option>
             }
             <option value="0">All Leagues</option>
         </select>
-        <select data-container="body" data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
+        <select data-container="body" data-bind="selectPicker: selectedTeam, attr: {'disabled': leagueTeamSelectDisabled }, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
 
     </div>
     <ul class="pager noPrint">
@@ -91,7 +91,7 @@
                 <div class="form-group">
                     <label for="newGameType" class="col-md-3 control-label">Game Type:</label>
                     <div class="col-md-9">
-                        <select id="newGameType" data-container="body" data-bind="value: GameType">
+                        <select id="newGameType" data-container="body" data-bind="selectPicker: GameType">
                             <option value="0">Regular</option>
                             <option value="1">Playoff</option>
                         </select>
@@ -101,7 +101,7 @@
                 <div class="form-group">
                     <label for="newGameField" class="col-md-3 control-label">Field:</label>
                     <div class="col-md-9">
-                        <select id="newGameField" data-container="body" data-bind="value: FieldId">
+                        <select id="newGameField" data-container="body" data-bind="selectPicker: FieldId">
                             <option value="0">select field...</option>
                             @foreach (var f in Model.Fields)
                             {
@@ -135,7 +135,7 @@
                 <div class="form-group">
                     <label class="col-md-3 control-label" for="newGameStatus">Game Status:</label>
                     <div class="col-md-9">
-                        <select id="newGameStatus" data-container="body" data-bind="value: GameStatus">
+                        <select id="newGameStatus" data-container="body" data-bind="selectPicker: GameStatus">
                             <option value="0">Incomplete</option>
                             <option value="1">Final</option>
                             <option value="2">Rainout</option>
