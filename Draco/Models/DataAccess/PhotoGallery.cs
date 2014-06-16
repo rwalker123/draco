@@ -68,21 +68,31 @@ namespace DataAccess
                                      AccountId = accountId,
                                      ParentAlbumId = pga.ParentAlbumId,
                                      TeamId = pga.TeamId,
-                                     Title = pga.Title
+                                     Title = pga.Title,
+                                     PhotoCount = pga.PhotoGalleries.Count()
                                  }).AsEnumerable();
 
+            // get team ids for current season
+            var leagueSeasonTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId);
+
+            var teamIds = (from lst in leagueSeasonTeams
+                           select lst.TeamId);
+
+            // get teams with photos
             var teamAlbums = (from pga in db.PhotoGalleryAlbums
                               where pga.AccountId == accountId
-                              & pga.TeamId != 0
-                              orderby pga.Title
+                              & teamIds.Contains(pga.TeamId)
                               select new PhotoGalleryAlbum()
                               {
                                   Id = pga.Id,
                                   AccountId = accountId,
                                   ParentAlbumId = pga.ParentAlbumId,
                                   TeamId = pga.TeamId,
-                                  Title = pga.Title
-                              });
+                                  Title = leagueSeasonTeams.Where(i => i.TeamId == pga.TeamId).Select(i => i.Name).FirstOrDefault(),
+                                  PhotoCount = pga.PhotoGalleries.Count()
+                              }).OrderBy(i => i.Title);
+
+
             return accountAlbums.Concat(teamAlbums).AsQueryable();
 		}
 

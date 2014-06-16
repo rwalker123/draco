@@ -44,7 +44,8 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     self.init = function () {
         if (!self.teamId) {
             self.loadPhotoAlbums();
-            self.loadEditablePhotoAlbums();
+            if (isAdmin)
+                self.loadEditablePhotoAlbums();
         }
         else {
             self.loadPhotos();
@@ -327,7 +328,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
             success: function (photoAlbums) {
                 var mappedAlbums = $.map(photoAlbums, function (album) {
                     return {
-                        name: album.Title,
+                        name: album.Title + ' (' + album.PhotoCount + ')',
                         id: album.Id
                     };
                 });
