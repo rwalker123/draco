@@ -29,6 +29,15 @@ var GameResultViewModel = function (data) {
             return "DNR";
     });
 
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+
 };
 
 var GamesForDayViewModel = function (title) {
@@ -46,6 +55,25 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.teamId = teamId;
 
     self.scheduledGames = ko.observableArray();
+
+    self.editingGameResults = ko.validatedObservable(new GameResultsViewModel(self.accountId, {
+        Id: 0,
+        HomeTeamName: '',
+        AwayTeamName: '',
+        GameDate: '',
+        HomeTeamId: 0,
+        AwayTeamId: 0,
+        GameType: 0,
+        GameStatus: 0,
+        FieldId: 0,
+        FieldName: '',
+        HomeScore: null,
+        AwayScore: null,
+        AwayPlayersPresent: [],
+        HomePlayersPresent: []
+    }));
+
+    self.editingGameResults().Id.showResultsForm(true);
 
     self.getTodayGames = function () {
 
@@ -70,6 +98,7 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                     $.map(results.value, function (game) {
                         vm.games.push(new GameResultViewModel(game));
                     });
+
                     self.scheduledGames.push(vm);
                 }
 
@@ -156,6 +185,75 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
 
         $("#gameRecapModal").modal("show");
     };
+
+    self.popupGameResults = function (game) {
+
+        var data = game.toJS();
+        self.editingGameResults().update(data);
+
+        self.getRoster(self.editingGameResults().HomeTeamId(), function (players) {
+            self.editingGameResults().HomePlayersPresent.removeAll();
+            self.editingGameResults().HomeTeamId.roster(players);
+            data.HomePlayersPresent.forEach(function (value, index, arr) {
+                self.editingGameResults().HomePlayersPresent.push(value);
+            });
+        });
+        self.getRoster(self.editingGameResults().AwayTeamId(), function (players) {
+            self.editingGameResults().AwayPlayersPresent.removeAll();
+            self.editingGameResults().AwayTeamId.roster(players);
+            data.AwayPlayersPresent.forEach(function (value, index, arr) {
+                self.editingGameResults().AwayPlayersPresent.push(value);
+            });
+        });
+
+        $("#gameResultsModal").modal("show");
+    };
+
+    // cache team rosters
+    self.rostersCache = {};
+
+    self.getRoster = function (teamId, callback) {
+        if (teamId in self.rostersCache)
+            callback(self.rostersCache[teamId]);
+        else {
+
+            $.ajax({
+                type: "GET",
+                url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + teamId + '/players',
+                success: function (players) {
+                    self.rostersCache[teamId] = $.map(players, function (player) {
+                        return { Name: player.Contact.FullName, Id: player.Id };
+                    });
+
+                    callback(self.rostersCache[teamId]);
+                }
+            });
+        }
+    }
+
+
+    self.updateGameResult = function (editGame) {
+
+        self.editingGameResults().updateGameResult(function (updatedGame) {
+            self.cancelUpdateGameResult();
+
+            $.map(self.scheduledGames(), function (item) {
+                return $.map(item.games(), function (game) {
+                    if (game.Id() == updatedGame.Id) {
+                        game.update(updatedGame);
+                        return false;
+                    }
+                });
+            });
+        });
+    }
+
+    self.cancelUpdateGameResult = function (game) {
+        $("#gameResultsModal").modal("hide");
+    }
+
+
+
 
     self.getGameSummary = function (teamId, gameId, observableSummary) {
 

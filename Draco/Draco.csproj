@@ -520,6 +520,7 @@
   <ItemGroup>
     <Content Include="App_Readme\Elmah.txt" />
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
+    <Content Include="Areas\Baseball\Scripts\entergameresults.js" />
     <Content Include="Areas\Baseball\Scripts\leaders.js" />
     <Content Include="Areas\Baseball\Scripts\leagueHome.js" />
     <Content Include="Areas\Baseball\Scripts\leaguesetup.js" />
@@ -629,6 +630,7 @@
     <Content Include="Areas\Baseball\Views\Team\Schedule.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\EnterGameResults.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\jquery.validate.js" />

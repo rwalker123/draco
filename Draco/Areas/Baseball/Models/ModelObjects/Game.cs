@@ -77,8 +77,8 @@ namespace ModelObjects
         public string AwayTeamName { get; set; }
         public string FieldName { get; set; }
         public string LeagueName { get; set; }
-        public List<long> HomePlayersPresent { get; private set; }
-        public List<long> AwayPlayersPresent { get; private set; }
+        public IEnumerable<long> HomePlayersPresent { get; set; }
+        public IEnumerable<long> AwayPlayersPresent { get; set; }
 
 		public string GameStatusText
 		{

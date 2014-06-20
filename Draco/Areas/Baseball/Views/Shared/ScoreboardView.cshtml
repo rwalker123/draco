@@ -14,7 +14,7 @@
                         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                         <h4 class="modal-title">Game Recap</h4>
                     </div>
-                    <div class="modal-body" style="max-height: 350px;overflow:auto">
+                    <div class="modal-body" style="max-height: 400px;overflow:auto">
                         <ul id="statsTab" class="nav nav-tabs">
                             <li class="active"><a href="#homeTeam" data-toggle="tab"><span data-bind="html: homeTeamName"></span></a></li>
                             <li><a href="#awayTeam" data-toggle="tab"><span data-bind="html: awayTeamName"></span></a></li>
@@ -35,6 +35,23 @@
             </div>
         </div>
 
+        @if (Model.IsAdmin)
+        {
+            <div class="modal fade" id="gameResultsModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title">Enter Game Results</h4>
+                        </div>
+                        <div class="modal-body" style="max-height: 480px;overflow:auto">
+                            @{Html.RenderPartial("EnterGameResults", true); }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        }
         <!-- ko if: scheduledGames().length == 0 -->
         <div class="alert alert-warning">No scheduled games.</div>
         <!-- /ko -->
@@ -72,6 +89,10 @@
                             <br />
                             <a class="btn btn-success btn-xs" data-bind="click: $root.popupGameRecap">recap</a>
                             <!-- /ko -->
+                            @if (Model.IsAdmin)
+                            {
+                                <a class="btn btn-default btn-xs" title="enter game results" data-bind="click: $root.popupGameResults"><span class="glyphicon glyphicon-bullhorn"></span></a>
+                            }
                         </td>
                         <!-- ko if: GameStatus() == 1 || GameStatus() == 3 || GameStatus() == 4 -->
                         <td>

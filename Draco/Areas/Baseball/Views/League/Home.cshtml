@@ -320,6 +320,11 @@ else
 
 @if (Model.ShowScoreboard)
 {
+    if (Model.IsAdmin)
+    { 
+        <script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
+        <script type="text/javascript" src="~/Areas/Baseball/Scripts/entergameresults.js"></script>
+    }
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/scoreboard.js"></script>
 }
 

@@ -1,14 +1,11 @@
+using ModelObjects;
+using SportsManager;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
-using System.Web.UI.WebControls;
-using ModelObjects;
-using SportsManager;
 using System.Net.Mail;
-using SportsManager.Models.Utils;
 
 namespace DataAccess
 {
@@ -18,30 +15,6 @@ namespace DataAccess
     /// </summary>
     static public class Schedule
     {
-        static public IEnumerable<ListItem> GetGameTypes()
-        {
-            List<ListItem> li = new List<ListItem>();
-
-            li.Add(new ListItem("Regular", "0"));
-            li.Add(new ListItem("Playoff", "1"));
-
-            return li;
-        }
-
-        static public IEnumerable<ListItem> GetGameStatusTypes()
-        {
-            List<ListItem> li = new List<ListItem>();
-
-            li.Add(new ListItem("Incomplete", "0"));
-            li.Add(new ListItem("Final", "1"));
-            li.Add(new ListItem("Rainout", "2"));
-            li.Add(new ListItem("Postponed", "3"));
-            li.Add(new ListItem("Forfeit", "4"));
-            li.Add(new ListItem("Did not report", "5"));
-
-            return li;
-        }
-
         static public string GetGameStatusName(int gameStatus)
         {
             string gameStatusString = String.Empty;
@@ -134,7 +107,9 @@ namespace DataAccess
                         FieldName = DataAccess.Fields.GetFieldShortName(ls.FieldId),
                         HomeTeamName = DataAccess.Teams.GetTeamName(ls.HTeamId),
                         AwayTeamName = DataAccess.Teams.GetTeamName(ls.VTeamId),
-                        LeagueName = DataAccess.Leagues.GetLeagueName(ls.LeagueId)
+                        LeagueName = DataAccess.Leagues.GetLeagueName(ls.LeagueId),
+                        AwayPlayersPresent = DataAccess.Schedule.GetPlayerRecapGame(ls.Id, ls.VTeamId),
+                        HomePlayersPresent = DataAccess.Schedule.GetPlayerRecapGame(ls.Id, ls.HTeamId)
                     });
 
         }
@@ -287,94 +262,35 @@ namespace DataAccess
 
         static public bool PlayerHasRecap(long gameId, long playerId)
         {
-            int rowCount = 0;
+            //SELECT count(PlayerId) FROM PlayerRecap WHERE GameId = @gameId AND PlayerId = @playerId
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.PlayerHasRecap", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                        rowCount = dr.GetInt32(0);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount <= 0) ? false : true;
+            return (from pr in db.PlayerRecaps
+                    where pr.GameId == gameId && pr.PlayerId == playerId
+                    select pr).Any();
         }
 
-        static public Hashtable GetPlayerRecapTeam(long teamId)
+        static public IQueryable<KeyValuePair<long, long>> GetPlayerRecapTeam(long teamId)
         {
-            Hashtable playerRecap = new Hashtable();
+            //SELECT PlayerId, count(*) as GP FROM PlayerRecap WHERE TeamId = @teamId Group By PlayerId
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayerRecapTeam", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        playerRecap.Add(dr.GetInt64(0), dr.GetInt64(1));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playerRecap;
+            return (from pr in db.PlayerRecaps
+                    where pr.TeamId == teamId
+                    group pr by pr.PlayerId into prg
+                    select new KeyValuePair<long, long>(prg.Key, prg.Count()));
         }
 
-        static public Hashtable GetPlayerRecapGame(long gameId, long teamId)
+        static public IQueryable<long> GetPlayerRecapGame(long gameId, long teamId)
         {
-            Hashtable playerRecap = new Hashtable();
+            // SELECT PlayerId, count(*) as GP FROM PlayerRecap WHERE GameId = @gameId AND TeamId = @teamId Group By PlayerId
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayerRecapGame", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        playerRecap.Add(dr.GetInt64(0), dr.GetInt64(1));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playerRecap;
+            return (from pr in db.PlayerRecaps
+                    where pr.GameId == gameId && pr.TeamId == teamId
+                    select pr.PlayerId);
         }
 
         static public bool UpdateGameScore(Game game, bool emailResult)
