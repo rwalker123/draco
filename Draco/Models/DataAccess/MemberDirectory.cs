@@ -180,6 +180,10 @@ namespace DataAccess
             dbSponsor.Phone = s.Phone ?? string.Empty;
             dbSponsor.StreetAddress = s.StreetAddress ?? string.Empty;
             dbSponsor.WebSite = s.Website ?? string.Empty;
+            if (!String.IsNullOrEmpty(dbSponsor.WebSite) && !dbSponsor.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
+            {
+                dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
+            }
 
             db.SubmitChanges();
 
@@ -206,6 +210,10 @@ namespace DataAccess
             dbSponsor.Phone = s.Phone ?? string.Empty;
             dbSponsor.StreetAddress = s.StreetAddress ?? string.Empty;
             dbSponsor.WebSite = s.Website ?? string.Empty;
+            if (!String.IsNullOrEmpty(dbSponsor.WebSite) && !dbSponsor.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
+            {
+                dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
+            }
 
             db.MemberBusinesses.InsertOnSubmit(dbSponsor);
             db.SubmitChanges();
