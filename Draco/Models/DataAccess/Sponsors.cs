@@ -1,9 +1,8 @@
-using System;
 using ModelObjects;
 using SportsManager;
-using System.Linq;
 using SportsManager.Models.Utils;
-using System.Web;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace DataAccess
@@ -79,6 +78,10 @@ namespace DataAccess
             dbSponsor.StreetAddress = s.StreetAddress ?? String.Empty;
             dbSponsor.TeamId = s.TeamId;
             dbSponsor.WebSite = s.Website ?? String.Empty;
+            if (!String.IsNullOrEmpty(dbSponsor.WebSite) && !dbSponsor.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
+            {
+                dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
+            }
 
             db.SubmitChanges();
             return true;
@@ -105,6 +108,11 @@ namespace DataAccess
                 TeamId = s.TeamId,
                 WebSite = s.Website ?? String.Empty
             };
+
+            if (!String.IsNullOrEmpty(dbSponsor.WebSite) && !dbSponsor.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
+            {
+                dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
+            }
 
             db.Sponsors.InsertOnSubmit(dbSponsor);
             db.SubmitChanges();
