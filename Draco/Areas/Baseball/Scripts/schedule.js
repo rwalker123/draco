@@ -50,7 +50,7 @@ var GameViewModel = function (data, accountId) {
         date: true
     })
     self.GameDate.TimeText = ko.observable(moment(self.GameDate() || new Date()).format("h:mm a"));
-    self.GameDate.DateText = ko.observable(self.GameDate());
+    self.GameDate.DateText = ko.observable(moment(self.GameDate() || new Date()).format("MM/DD/YYYY"));
 
     self.HomeTeamId.extend({ required: true });
     self.HomeTeamId.href = ko.computed(function () {
@@ -115,7 +115,7 @@ var GameViewModel = function (data, accountId) {
         self.Umpires.removeAll();
         self.updateUmpires();
         self.GameDate.TimeText(moment(self.GameDate()).format("h:mm a"));
-        self.GameDate.DateText(self.GameDate());
+        self.GameDate.DateText(moment(self.GameDate()).format("MM/DD/YYYY"));
     }
 
     self.toJS = function () {

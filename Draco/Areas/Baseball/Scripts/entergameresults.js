@@ -21,7 +21,7 @@ var GameResultsViewModel = function (accountId, data) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.GameDate.TimeText = ko.observable(moment(self.GameDate() || new Date()).format("h:mm a"));
-    self.GameDate.DateText = ko.observable(self.GameDate());
+    self.GameDate.DateText = ko.observable(moment(self.GameDate() || new Date()).format("MM/DD/YYYY"));
 
     self.HomeTeamId.roster = ko.observableArray();
     self.AwayTeamId.roster = ko.observableArray();
@@ -93,7 +93,7 @@ var GameResultsViewModel = function (accountId, data) {
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
         self.GameDate.TimeText(moment(self.GameDate()).format("h:mm a"));
-        self.GameDate.DateText(self.GameDate());
+        self.GameDate.DateText(moment(self.GameDate()).format("MM/DD/YYYY"));
 
         //self.HomeTeamId.roster([]);
         //self.AwayTeamId.roster([]);
