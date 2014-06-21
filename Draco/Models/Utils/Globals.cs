@@ -120,11 +120,6 @@ static public class Globals
 
 		SmtpClient mailClient = new SmtpClient();
 
-		foreach (MailAddress ma in bccList)
-		{
-			msg.Bcc.Add(ma);
-        }
-
         if (data.Attachments != null)
         {
             foreach (var attachment in data.Attachments)
@@ -146,7 +141,13 @@ static public class Globals
 
 		try
 		{
-			mailClient.Send(msg);
+            foreach (MailAddress ma in bccList)
+            {
+                msg.To.Add(ma);
+                mailClient.Send(msg);
+                msg.To.RemoveAt(0);
+            }
+
 		}
 		catch (Exception ex)
 		{
