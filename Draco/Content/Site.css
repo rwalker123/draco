@@ -17,6 +17,11 @@ img.fileupload {
     border: 2px solid #fff;
 }
 
+.descriptionField {
+    max-height: 250px;
+    overflow-y:auto;
+}
+
 
 /* Set width on the form input elements since they're 100% wide by default */
 input,

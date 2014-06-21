@@ -27,7 +27,7 @@
                 <div class="form-group">
                     <label class="control-label col-md-2">Description:</label>
                     <div class="col-md-10">
-                        <textarea rows="4" class="form-control" data-bind="value: Description"></textarea>
+                        <textarea rows="8" class="form-control" data-bind="value: Description"></textarea>
                     </div>
                 </div>
                 <div class="form-group">
@@ -90,7 +90,7 @@
                             </address>
 
                             <div data-bind="if: Description">
-                                <p class="well" data-bind="html: Description"></p>
+                                <p class="well descriptionField" data-bind="html: Description" ></p>
                             </div>
 
                             <button type="button" class="btn btn-default" data-bind="click: $root.startEditBusiness"><span class="glyphicon glyphicon-edit"></span></button>
@@ -134,7 +134,7 @@
                         </address>
 
                         <div data-bind="if: Description">
-                            <p class="well" data-bind="html: Description"></p>
+                            <p class="well descriptionField" data-bind="html: Description"></p>
                         </div>
 
 
