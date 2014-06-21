@@ -1,8 +1,6 @@
 using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
 using ModelObjects;
 using SportsManager;
-using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -198,36 +196,6 @@ namespace DataAccess
             return rc;
         }
 
-        static public string GetAccountTypeName(long accountTypeId)
-        {
-            string accountTypeName = string.Empty;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetAccountTypeName", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = accountTypeId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        accountTypeName = dr.GetString(0);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return accountTypeName;
-        }
-
         static public AccountType GetAccountType(long aId)
         {
             DB db = DBConnection.GetContext();
@@ -383,31 +351,11 @@ namespace DataAccess
 
         static public AccountWelcome GetWelcomeText(long id)
         {
-            AccountWelcome welcomeText = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetWelcomeText", myConnection);
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = id;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        welcomeText = new AccountWelcome(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt16(2), dr.GetString(3), dr.GetString(4));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return welcomeText;
+            return (from aw in db.AccountWelcomes
+                    where aw.Id == id
+                    select new AccountWelcome(aw.Id, aw.AccountId, aw.OrderNo, aw.CaptionMenu, aw.WelcomeText)).SingleOrDefault();
         }
 
         static public bool ModifyWelcomeText(AccountWelcome accountWelcome)
