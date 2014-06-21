@@ -739,7 +739,6 @@
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Statistics.cshtml" />
-    <None Include="Properties\PublishProfiles\detroitmsbl %282%29.pubxml" />
     <Content Include="Scripts\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap-select.js" />
     <Content Include="Scripts\bootstrap-select.min.js" />
