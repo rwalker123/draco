@@ -570,7 +570,7 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
         tinymce.get('postEditor').setContent('');
     }
 
-    self.loadTopics = function (forum) {
+    self.loadTopics = function (forum, evt, topicsLoadedCallback) {
         self.forumView(false);
         self.postView(false);
 
@@ -580,6 +580,8 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
             forum.topics.load(function () {
                 self.currentCategory().topics(forum.topics());
                 self.currentCategory().topics.loaded(true);
+                if (topicsLoadedCallback)
+                    topicsLoadedCallback();
             });
         }
         else {
@@ -596,8 +598,12 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
                 self.forumView(true);
                 self.breadcrumbs.removeAll();
             }
-        })
+        });
+
         self.topicView(true);
+
+        if (forum.topics.loaded() && topicsLoadedCallback)
+            topicsLoadedCallback();
     }
 
     self.loadPosts = function (topic, post) {
@@ -630,6 +636,17 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
             }
         })
 
+    }
+
+    self.loadLastPostFromCategory = function (category) {
+        var topicId = category.LastPost().TopicId();
+        self.loadTopics(category, null, function () {
+            var topic = ko.utils.arrayFirst(category.topics(), function (aTopic) {
+                return (aTopic.Id() == topicId);
+            });
+
+            self.loadPosts(topic, category.LastPost);
+        });
     }
 
     self.loadLastPost = function (topic) {

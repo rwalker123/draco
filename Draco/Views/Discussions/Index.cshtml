@@ -130,7 +130,7 @@
                     </td>
                     <td>
                         <div data-bind="if: LastPost">
-                            <a data-bind="html: LastPost().Subject, click: $root.loadTopics, attr: { 'href': '#' }"></a><br />
+                            <a data-bind="html: LastPost().Subject, click: $root.loadLastPostFromCategory, attr: { 'href': '#' }"></a><br />
                             <div data-bind="if: LastPost().CreatorName">
                                 by <span data-bind="html: LastPost().CreatorName"></span><br />
                             </div>
