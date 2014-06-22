@@ -171,8 +171,8 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
         });
     };
 
-    self.homeGameSummary = ko.observable();
-    self.awayGameSummary = ko.observable();
+    self.homeGameSummary = ko.observable('');
+    self.awayGameSummary = ko.observable('');
     self.homeTeamName = ko.observable();
     self.awayTeamName = ko.observable();
 
@@ -265,9 +265,13 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
             success: function (gameSummary) {
                 if (gameSummary) {
                     observableSummary(gameSummary);
+                    if (self.homeGameSummary == observableSummary)
+                        $('#statsTab a:first').tab('show') // Select first tab
                 }
                 else {
                     observableSummary("No Game Summary");
+                    if (self.homeGameSummary == observableSummary)
+                        $('#statsTab a:last').tab('show') // Select last tab
                 }
             }
         });
