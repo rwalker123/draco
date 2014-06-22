@@ -38,21 +38,33 @@
                 <tr>
                     <td>@p.Contact.FullName</td>
                     <td>
-                        <address>
                             @if(!String.IsNullOrEmpty(p.Contact.StreetAddress))
                             {
                                 <text>@p.Contact.StreetAddress</text><br />
                             }
-                            @String.Format("{0}, {1} {2}", p.Contact.City, p.Contact.State, p.Contact.Zip)
-                        </address>
+                            
+                            @if (!String.IsNullOrEmpty(p.Contact.City) && !String.IsNullOrEmpty(p.Contact.State))
+                            {
+                                @String.Format("{0}, {1} {2}", p.Contact.City, p.Contact.State, p.Contact.Zip)
+                            }
+                            else if (!String.IsNullOrEmpty(p.Contact.City))
+                            {
+                                @String.Format("{0} {1}", p.Contact.City, p.Contact.Zip)
+                            }
+                            else if (!String.IsNullOrEmpty(p.Contact.State))
+                            {
+                                @String.Format("{0} {1}", p.Contact.State, p.Contact.Zip)
+                            }
+                            else 
+                            {
+                            @String.Format("{0}", p.Contact.Zip)
+                            }
                     </td>
                     <td>
-                        <address>
                             @if(!String.IsNullOrEmpty(p.Contact.Email))
                             { 
                                 <a href='mailto:@p.Contact.Email'>@p.Contact.Email</a>
                             }
-                        </address>
                     </td>
                     <td>
                         @p.AffiliationDuesPaid
