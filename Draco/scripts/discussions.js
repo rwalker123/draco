@@ -552,8 +552,15 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
         });
     }
 
+    self.replyToCreator = ko.observable();
+    self.replyToText = ko.observable();
+
     self.startReplyToTopic = function (post) {
         self.replyToTopicMode(true);
+
+        // set reply to post to show message that is being replied to.
+        self.replyToCreator(post.CreatorName());
+        self.replyToText(post.Text());
 
         self.currentCategory().currentTopic().editPost().update(self.currentCategory().currentTopic().newPostModel, self.userId, self.isAdmin);
 

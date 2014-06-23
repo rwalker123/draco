@@ -256,6 +256,12 @@
         <div class="row" style="display: none" data-bind="with: editPost, visible: $root.editPostMode() || $root.replyToTopicMode()">
 
             <form class="form-horizontal">
+                <div class="well">
+                    <div data-bind="if: $root.replyToCreator">
+                        <small><span data-bind="html: $root.replyToCreator"></span> wrote...</small>
+                    </div>
+                    <p data-bind="html: $root.replyToText"></p>
+                </div>
                 <div class="form-group">
                     <label class="col-md-2 control-label" for="postSubject">Subject</label>
                     <div class="col-md-10">
