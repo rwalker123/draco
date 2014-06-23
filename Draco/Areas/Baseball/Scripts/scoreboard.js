@@ -54,6 +54,8 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.isAdmin = isAdmin;
     self.teamId = teamId;
 
+    self.numPreviousGames = 5;
+
     self.scheduledGames = ko.observableArray();
 
     self.editingGameResults = ko.validatedObservable(new GameResultsViewModel(self.accountId, {
@@ -102,7 +104,10 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                     self.scheduledGames.push(vm);
                 }
 
-                self.getYesterdaysGames();
+                if (teamId)
+                    self.getPreviousGames();
+                else
+                    self.getYesterdaysGames();
             }
         });
     };
@@ -135,6 +140,34 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
                 }
 
                 self.getGameSummaries();
+            }
+        });
+    };
+
+    self.getPreviousGames = function () {
+        var today = moment(new Date()).format('YYYY-MM-DD');
+
+        var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
+        url += "&$filter=GameDate lt datetime'" + today + "'";
+        if (self.teamId) {
+            url += " and (HomeTeamId eq " + self.teamId + " or AwayTeamId eq " + self.teamId + ")";
+        }
+        url += '&$inlinecount=none&$top=' + self.numPreviousGames;
+        url += '&$orderby=GameDate desc';
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (results) {
+                if (results.value.length) {
+                    var vm = new GamesForDayViewModel("previous");
+
+                    $.map(results.value, function (game) {
+                        vm.games.push(new GameResultViewModel(game));
+                    });
+
+                    self.scheduledGames.push(vm);
+                }
             }
         });
     };
