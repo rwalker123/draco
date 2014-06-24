@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModelObjects;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -37,6 +38,22 @@ namespace SportsManager.Controllers
             {
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
+        }
+
+        [AcceptVerbs("POST"), HttpPost]
+        [ActionName("classmembers")]
+        public HttpResponseMessage PostHOFClassMembers(long accountId, HOFMember hofMember)
+        {
+            hofMember.AccountId = accountId;
+
+            if (ModelState.IsValid && hofMember != null)
+            {
+                hofMember.Id = DataAccess.HOFMembers.AddMember(hofMember);
+                if (hofMember.Id > 0)
+                    return Request.CreateResponse<ModelObjects.HOFMember>(HttpStatusCode.OK, hofMember);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
     }

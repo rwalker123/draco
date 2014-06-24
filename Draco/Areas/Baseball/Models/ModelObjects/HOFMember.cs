@@ -32,6 +32,12 @@ namespace ModelObjects
             set;
         }
 
+        public long ContactId
+        {
+            get;
+            set;
+        }
+
 		public string Name
 		{
 			get;

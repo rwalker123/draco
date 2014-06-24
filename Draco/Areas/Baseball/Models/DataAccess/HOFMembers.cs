@@ -39,6 +39,7 @@ namespace DataAccess
                     {
                         Id = h.Id,
                         AccountId = accountId,
+                        ContactId = h.ContactId,
                         Biography = h.Bio,
                         YearInducted = h.YearInducted,
                         Name = c.FirstName + " " + c.LastName,
@@ -59,6 +60,7 @@ namespace DataAccess
                     {
                         Id = h.Id,
                         AccountId = accountId,
+                        ContactId = h.ContactId,
                         Biography = h.Bio,
                         YearInducted = h.YearInducted,
                         Name = c.FirstName + " " + c.LastName,
@@ -78,7 +80,26 @@ namespace DataAccess
 
 		static public long AddMember(HOFMember h)
 		{
-            return 0;
+            DB db = DBConnection.GetContext();
+
+            bool isInHof = (from hof in db.hofs
+                            where hof.AccountId == h.AccountId &&
+                            hof.ContactId == h.ContactId
+                            select hof).Any();
+            // if contact is already in hof, don't add again.
+            if (isInHof)
+                return 0;
+
+            var dbHof = new SportsManager.Model.hof();
+            dbHof.AccountId = h.AccountId;
+            dbHof.ContactId = h.ContactId;
+            dbHof.Bio = h.Biography;
+            dbHof.YearInducted = h.YearInducted;
+
+            db.hofs.InsertOnSubmit(dbHof);
+            db.SubmitChanges();
+
+            return dbHof.Id;
 		}
 	
 		static public bool RemoveMember(HOFMember hofMember)

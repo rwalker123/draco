@@ -85,6 +85,18 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.editMode = ko.observable(false);
 
+    self.emptyHOfMember = {
+        Id: 0,
+        AccountId: self.accountId,
+        ContactId: 0,
+        Name: '',
+        YearInducted: 0,
+        Biography: '',
+        PhotoURL: ''
+    };
+
+    self.currentEditMember = ko.observable(new HallOfFameMemberViewModel(self.emptyHofMember, self.accountId));
+
     self.hallOfFameClasses = ko.observableArray();
 
     self.beforeClassActivate = function (event, ui) {
@@ -96,6 +108,45 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
             //}
         }
     };
+
+    self.editMember = function (hofMember) {
+        var json = hofMember.toJS();
+        self.currentEditMember().update(json);
+
+        self.editMode(true);
+    }
+
+    self.deleteMember = function (hofMember) {
+
+    }
+
+    self.cancelEdit = function () {
+        self.editMode(false);
+    }
+
+    self.saveEdit = function () {
+
+        if (!self.currentEditMember().Name()) {
+            alert('name is required');
+        }
+
+        var url = window.config.rootUrl + '/api/HallOfFameAPI/' + self.accountId + '/classmembers';
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            success: function (hofMember) {
+                var mappedHofMembers = $.map(hofMembers, function (hofMember) {
+                    return new HallOfFameMemberViewModel(hofMember, self.accountId);
+                });
+
+                hofClass.Members(mappedHofMembers);
+                hofClass.Year.filledMembers = true;
+            }
+        });
+
+        self.editMode(false);
+    }
 
     self.getHOFClassMembers = function (hofClass) {
         var url = window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/classmembers/' + hofClass.Year();
