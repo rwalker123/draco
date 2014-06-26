@@ -1,0 +1,33 @@
+﻿@using System.Web.Optimization
+@model SportsManager.ViewModels.PlayerSurveyViewModel
+
+@{
+    ViewBag.Title = Model.AccountName + " Player Survey";
+}
+
+@section head {
+}
+
+<div class="jumbotron">
+    @Header.DisplayHeader("Player Survey", Model.AccountName, Model.AccountLogoUrl)
+</div>
+
+<div class="container-fluid" id="playersurvey">
+    <div data-bind="if: isLoading">
+        <img src="/Images/busy.gif" />Loading...
+    </div>
+</div>
+
+@section scripts {
+
+    @Scripts.Render("~/bundles/knockout")
+    <script src="@Url.Content("~/Scripts/playersurvey.js")" type="text/javascript"></script>
+
+    <script type="text/javascript">
+
+            $(document).ready(function () {
+                initPlayerSurveysViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
+            });
+
+    </script>
+}

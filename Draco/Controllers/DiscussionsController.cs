@@ -7,14 +7,9 @@ namespace SportsManager.Controllers
         //
         // GET: /Baseball/Discussions/
 
-        public ActionResult Index(long? accountId)
+        public ActionResult Index(long accountId)
         {
-            if (accountId.GetValueOrDefault(0) == 0)
-            {
-                return RedirectToAction("Index", "League");
-            }
-
-            return View(new SportsManager.ViewModels.DiscussionsViewModel(this, accountId.Value));
+            return View(new SportsManager.ViewModels.DiscussionsViewModel(this, accountId));
         }
 
     }

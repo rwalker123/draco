@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using ModelObjects;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -250,8 +252,20 @@ namespace DataAccess
 			return (rowCount <= 0) ? false : true;
 		}
 
-		static public List<PlayerProfile> GetPlayersWithProfiles(long accountId)
+		static public IQueryable<PlayerProfile> GetPlayersWithProfiles(long accountId)
 		{
+            DB db = DBConnection.GetContext();
+            // TODO: only get players in current season!
+            return (from pp in db.PlayerProfiles
+                    join c in db.Contacts on pp.PlayerId equals c.Id
+                    join r in db.Rosters on c.Id equals r.ContactId
+                    where r.AccountId == accountId 
+                    select new PlayerProfile()).Distinct().OrderBy(x => x.PlayerName);
+
+    //SELECT DISTINCT PlayerId, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
+    //FROM PlayerProfile LEFT JOIN Contacts ON Contacts.Id = PlayerProfile.PlayerId
+    //                   LEFT JOIN Roster ON Contacts.Id = Roster.ContactId
+    //WHERE Roster.AccountId = @accountId ORDER BY Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
 			List<PlayerProfile> playerProfiles = new List<PlayerProfile>();
 
 			try

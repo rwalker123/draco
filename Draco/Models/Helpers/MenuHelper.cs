@@ -96,6 +96,16 @@ namespace SportsManager.Models.Helpers
 
                 var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
 
+                var showPlayerSurvey = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+                if (showPlayerSurvey)
+                {
+                    string playersurveyurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                        new RouteValueDictionary(new { area = "", controller = "PlayerSurvey", action = "Index", accountId = accountId })).VirtualPath;
+
+                    forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(playersurveyurl, "Player Survey", "Player Survey Page"));
+                }
+
                 var showMemberBusiness = false;
                 bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
                 if (showMemberBusiness)
