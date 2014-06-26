@@ -11,7 +11,7 @@
 function formatMessageBoardDate(theDate) {
     var editDate = new Date(theDate);
     var today = new Date();
-    if (editDate.getDay() == today.getDay()) {
+    if (editDate.getDate() == today.getDate()) {
         if (editDate.getMonth() == today.getMonth()) {
             if (editDate.getYear() == today.getYear()) {
                 return 'Today at ' + moment(theDate).format('h:mm a');
