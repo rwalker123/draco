@@ -493,6 +493,7 @@
     <Compile Include="Models\ModelObjects\VoteQuestion.cs" />
     <Compile Include="Models\ModelObjects\VoteResults.cs" />
     <Compile Include="Models\RandomPassword.cs" />
+    <Compile Include="Models\Utils\ControllerParameterData.cs" />
     <Compile Include="Models\Utils\FileSystemStorage.cs" />
     <Compile Include="Models\Utils\Globals.cs" />
     <Compile Include="Models\Utils\IStorage.cs" />

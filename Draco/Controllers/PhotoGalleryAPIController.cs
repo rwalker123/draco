@@ -217,7 +217,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("albums")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostPhotoAlbum(long accountId, SportsManager.Controllers.AccountAPIController.IdData name)
+        public HttpResponseMessage PostPhotoAlbum(long accountId, IdData name)
         {
             if (name == null)
             {

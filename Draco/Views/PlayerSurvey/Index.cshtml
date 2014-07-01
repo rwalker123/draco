@@ -13,9 +13,180 @@
 </div>
 
 <div class="container-fluid" id="playersurvey">
+
+    @if (Model.IsAdmin)
+    {
+        <div class="modal fade" id="deleteCategoryModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="deleteModalLabel">Confirm Delete Category</h4>
+                    </div>
+                    <div class="modal-body">
+                        You are about to delete a category. All questions and player answers associated with the category will also be deleted.
+                        You cannot undo this operation. Are you sure you want to continue?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmCategoryDeleteBtn">Continue</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal fade" id="deleteQuestionModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="deleteModalLabel">Confirm Delete Question</h4>
+                    </div>
+                    <div class="modal-body">
+                        You are about to delete a question. All player answers associated with the question will also be deleted.
+                        You cannot undo this operation. Are you sure you want to continue?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmQuestionDeleteBtn">Continue</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="panel-group" id="editQuestionsAccordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <a data-toggle="collapse" data-parent="#editQuestionsAccordion" href="#editQuestionsPanel">
+                    <span class="h3">Edit Survey</span>
+                </a>
+            </div>
+            <div id="editQuestionsPanel" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <form role="form" class="form-horizontal">
+                        <div class="form-group">
+                            <div class="col-sm-7">
+                                <label class="sr-only" for="newCategoryName">Category Name</label>
+                                <input type="text" class="form-control" id="newCategoryName" data-bind="value: newCategoryName" placeholder="category name"/>
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="sr-only" for="newCategoryPriority">Category Priority</label>
+                                <input type="number" class="form-control" id="newCategoryPriority" data-bind="value: newCategoryPriority" placeholder="priority" />
+                            </div>
+                            <div class="col-sm-2">
+                                <button type="button" class="btn btn-default" data-bind="click: addCategory"><span class="glyphicon glyphicon-plus"></span> Add Category</button>
+                            </div>
+                        </div>
+                        <div data-bind="foreach: surveyQuestions">
+                            <h4>Category</h4>
+                            <div class="form-group">
+                                <div class="col-sm-7">
+                                    <label class="sr-only" data-bind="uniqueFor: Id">Category Name:</label>
+                                    <input type="text" class="form-control" data-bind="value: CategoryName, uniqueId: Id" />
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="sr-only" data-bind="uniqueFor: Id">Priority:</label>
+                                    <input type="number" class="form-control" data-bind="value: Priority, uniqueId: Id" />
+                                </div>
+                               <div class="col-sm-2">
+                                    <button type="button" class="btn btn-danger" data-bind="click: $root.deleteCategory"><span class="glyphicon glyphicon-remove"></span></button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-offset-1 col-sm-3">
+                                    <label class="sr-only" data-bind="uniqueFor: Id">Question Priority</label>
+                                    <input type="number" class="form-control" placeholder="question #" data-bind="value: Id.newQuestionNum, uniqueId: Id" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="sr-only" data-bind="uniqueFor: Id">Question</label>
+                                    <input type="text" class="form-control" placeholder="enter question" data-bind="value: Id.newQuestion, uniqueId: Id" />
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="button" class="btn btn-default" data-bind="click: $root.addQuestion"><span class="glyphicon glyphicon-plus"></span> Add Question</button>
+                                </div>
+                            </div>
+                            <h4>Category Questions</h4>
+                            <div data-bind="foreach: Questions">
+                                <div class="form-group">
+                                    <div class="col-sm-offset-1 col-sm-3">
+                                        <label class="sr-only" data-bind="uniqueFor: Id">Question Number</label>
+                                        <input type="number" class="form-control" data-bind="value: QuestionNum, uniqueId: Id" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="sr-only" data-bind="uniqueFor: Id">Question</label>
+                                        <input class="form-control" data-bind="value: Question, uniqueId: Id" />
+                                    </div>
+                                    <div class="col-sm-2">
+                                        <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteQuestion"><span class="glyphicon glyphicon-remove"></span></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+    
+    <!-- ko if: currentPlayerSurvey().PlayerId() -->
+    <div class="panel-group" data-bind="with: currentPlayerSurvey" id="accordion1">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <img class="img-rounded img-responsive" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
+                <a data-toggle="collapse" data-parent="#accordion1" data-bind="attr: { href: '#' + PlayerId()}">
+                    <span class="h3">Your Survey</span>
+                </a>
+            </div>
+            <div data-bind="attr: { id: PlayerId }" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <div data-bind="if: isLoading">
+                        <img src="/Images/busy.gif" />Loading...
+                    </div>
+                    <form role="form">
+                        <div data-bind="foreach: Categories">
+                            <h4 data-bind="html: CategoryName"></h4>
+                            <div data-bind="foreach: Questions">
+                                <div style="padding-bottom: 15px" class="form-group">
+                                    <h5 data-bind="html:Question"></h5>
+                                    <textarea rows="4" class="form-control" data-bind="value: Question.PlayerAnswer().Answer"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /ko -->
     <div data-bind="if: isLoading">
         <img src="/Images/busy.gif" />Loading...
     </div>
+    <div class="panel-group" data-bind="foreach: surveys" id="accordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <img class="img-rounded img-responsive" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
+                <a data-toggle="collapse" data-parent="#accordion" data-bind="attr: { href: '#' + PlayerId()}">
+                    <span class="h3" data-bind="html: LastName() + ', ' + FirstName() + ' ' + MiddleName()"></span>
+                </a>
+            </div>
+            <div data-bind="attr: { id: PlayerId }" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <div data-bind="if: isLoading">
+                        <img src="/Images/busy.gif" />Loading...
+                    </div>
+                    <div class="list-group" data-bind="foreach: answers">
+                        <!-- ko if: Answer -->
+                        <h4 class="list-group-item-heading" data-bind="html: $root.questionFromId(QuestionId())"></h4>
+                        <p class="alert alert-info list-group-item-text" style="margin-bottom: 20px" data-bind="html: Answer"></p>
+                        <!-- /ko -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @section scripts {

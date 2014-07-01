@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ModelObjects
 {
@@ -47,5 +49,11 @@ namespace ModelObjects
 			get { return m_priority; }
 			set { m_priority = value; }
 		}
+
+        public IEnumerable<ProfileQuestionItem> Questions
+        {
+            get;
+            set;
+        }
 	}
 }
