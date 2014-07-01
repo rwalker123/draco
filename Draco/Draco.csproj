@@ -627,6 +627,10 @@
     </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="NuGet\readme.txt" />
+    <Content Include="Scripts\bootstrap-select.js" />
+    <Content Include="Scripts\bootstrap-select.min.js" />
+    <Content Include="Scripts\bootstrap.js" />
+    <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\discussions.js" />
     <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
     <Content Include="fonts\fontawesome-webfont.woff" />
@@ -640,6 +644,11 @@
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\EnterGameResults.cshtml" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\jquery.validate.js" />
@@ -742,20 +751,11 @@
     <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap-theme.css.map" />
-    <Content Include="Content\bootstrap.css.map" />
     <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Statistics.cshtml" />
     <Content Include="Scripts\bootstrap-datepicker.js" />
-    <Content Include="Scripts\bootstrap-select.js" />
-    <Content Include="Scripts\bootstrap-select.min.js" />
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.js" />
     <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.min.js" />
-    <Content Include="Scripts\bootstrap.js" />
-    <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\handouts.js" />
     <None Include="Properties\PublishProfiles\Local IIS.pubxml" />
     <None Include="Properties\PublishProfiles\walkerhome.org - FTP.pubxml" />
