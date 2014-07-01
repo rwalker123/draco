@@ -10,7 +10,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         internal const int PageSize = 30;
 
         [AcceptVerbs("GET"), HttpGet]
-        [Queryable(PageSize = PageSize)]
+        [EnableQuery(PageSize = PageSize)]
         public IQueryable<Game> Get(long accountId)
         {
             return DataAccess.Schedule.GetGames(accountId);

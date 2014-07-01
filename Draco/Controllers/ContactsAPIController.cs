@@ -16,7 +16,7 @@ namespace SportsManager.Controllers
         internal const int PageSize = 15;
 
         [AcceptVerbs("GET"), HttpGet]
-        [Queryable(PageSize = PageSize)]
+        [EnableQuery(PageSize = PageSize)]
         public IQueryable<ModelObjects.ContactName> Get(long accountId)
         {
             return DataAccess.Contacts.GetContactNames(accountId);

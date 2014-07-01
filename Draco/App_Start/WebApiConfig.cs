@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Web.Http;
 using System.Web.Http.OData.Builder;
+using System.Web.Http.OData.Extensions;
 
 namespace SportsManager
 {
@@ -64,7 +65,7 @@ namespace SportsManager
             modelBuilder.EntitySet<ModelObjects.Game>("ScheduleOData");
 
             Microsoft.Data.Edm.IEdmModel model = modelBuilder.GetEdmModel();
-            config.Routes.MapODataRoute("ODataRoute", "odata", model);
+            config.Routes.MapODataServiceRoute("ODataRoute", "odata", model);
 
             // make JSON the default return.
             var appXmlType = config.Formatters.XmlFormatter.SupportedMediaTypes.FirstOrDefault(t => t.MediaType == "application/xml");
