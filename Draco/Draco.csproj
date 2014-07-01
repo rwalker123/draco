@@ -665,6 +665,7 @@
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
     <Content Include="Scripts\playersurvey.js" />
+    <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
     <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
@@ -1132,6 +1133,7 @@
     <Content Include="Scripts\wysiwyg.min.map" />
     <Content Include="Views\HallOfFame\Index.cshtml" />
     <Content Include="Views\PlayerSurvey\Index.cshtml" />
+    <Content Include="Views\Shared\PlayerSurveyView.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

@@ -92,6 +92,16 @@ namespace DataAccess
             return true;
 		}
 
+        static public ProfileQuestionItem GetQuestion(long questionId)
+        {
+            DB db = DBConnection.GetContext();
+
+            //SELECT * FROM ProfileQuestion WHERE CategoryId = @catId ORDER BY QuestionNum
+            return (from pq in db.ProfileQuestions
+                    where pq.Id == questionId
+                    select new ProfileQuestionItem(pq.Id, pq.CategoryId, pq.Question, pq.QuestionNum)).SingleOrDefault();
+        }
+
 		static public IQueryable<ProfileQuestionItem> GetQuestions(long catId)
 		{
             DB db = DBConnection.GetContext();
@@ -311,33 +321,14 @@ namespace DataAccess
 
 		static public PlayerProfile GetProfileSpotlight(long accountId)
 		{
-			PlayerProfile p = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayerProfileSpotlight", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
+            var qry = DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId);
 
-					myConnection.Open();
-					myCommand.Prepare();
+            int count = qry.Count();
+            int index = new Random().Next(count);
 
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						p = new PlayerProfile(dr.GetInt64(0));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return p;
+            return qry.Skip(index).FirstOrDefault();
 		}
 	}
 }

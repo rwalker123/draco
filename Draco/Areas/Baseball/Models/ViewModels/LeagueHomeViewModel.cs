@@ -20,7 +20,9 @@ namespace SportsManager.Baseball.ViewModels
             ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
             ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
 
-            ShowPlayerInterview = true;
+            var showPlayerSurvey = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+            ShowPlayerInterview = showPlayerSurvey && DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId).Any();
             ShowLeagueLeaders = IsAdmin || DataAccess.GameStats.HasLeaderCategories(accountId, 0);
             ShowAnnouncements = true;
             ShowBirthdays = true;

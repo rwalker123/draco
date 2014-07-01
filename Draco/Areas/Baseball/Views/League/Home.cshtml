@@ -128,6 +128,15 @@
                 </div>
             }
 
+            @if (Model.ShowPlayerInterview)
+            {
+                <div class="row">
+                    <div class="col-sm-12">
+                        @{Html.RenderPartial("PlayerSurveyView", new SportsManager.ViewModels.PlayerSurveyViewModel(Model.Controller, Model.AccountId));}
+                    </div>
+                </div>
+            }
+
             @if (Model.ContactId == 0 && Model.ShowWelcomeMessages)
             {
                 <div class="row">
@@ -308,6 +317,11 @@ else
 }
     @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
+@if (Model.ShowPlayerInterview)
+{
+    <script type="text/javascript" src="~/Scripts/playersurveyspotlight.js"></script>
+}
+
 @if (Model.ShowWelcomeMessages)
 { 
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
@@ -366,7 +380,14 @@ else
         initKOHelpers();
 
         InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@ViewData["FacebookFanPage"]', @Model.IsAdmin.ToString().ToLower() );
-
+        
+        @if (Model.ShowPlayerInterview)
+        {
+            <text>
+                InitPlayerSurveySpotlightViewModel(@Model.AccountId);
+            </text>
+        }
+        
         @if (Model.ShowPhotoGallery)
         {
             <text>
