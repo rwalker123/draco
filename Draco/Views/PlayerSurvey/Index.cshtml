@@ -130,6 +130,11 @@
     </div>
     }
     
+    <!-- ko if: !currentPlayerSurvey().PlayerId() -->
+    <div class="alert alert-info">
+        Login to take or edit your own survey!
+    </div>
+    <!-- /ko -->
     <!-- ko if: currentPlayerSurvey().PlayerId() -->
     <div class="panel-group" data-bind="with: currentPlayerSurvey" id="accordion1">
         <div class="panel panel-default">
