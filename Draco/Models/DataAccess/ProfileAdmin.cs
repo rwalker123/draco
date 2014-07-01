@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using ModelObjects;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -14,269 +16,173 @@ namespace DataAccess
 	static public class ProfileAdmin
 	{
 
-		static public List<ProfileCategoryItem> GetCategories(long accountId)
-		{
-            List<ProfileCategoryItem> cats = new List<ProfileCategoryItem>();
+		static public IQueryable<ProfileCategoryItem> GetCategories(long accountId)
+		{	
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayerProfileCategories", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						cats.Add(new ProfileCategoryItem(dr.GetInt64(0), dr.GetString(2), dr.GetInt32(3), dr.GetInt64(1)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return cats;
+            //SELECT * FROM ProfileCategory WHERE AccountId = @accountId ORDER BY Priority
+            return (from pc in db.ProfileCategories
+                    where pc.AccountId == accountId
+                    orderby pc.Priority
+                    select new ProfileCategoryItem(pc.Id, pc.CategoryName, pc.Priority, pc.AccountId)
+                    {
+                        Questions = (from pq in pc.ProfileQuestions
+                                     orderby pq.QuestionNum, pq.Question
+                                     select new ProfileQuestionItem(pq.Id, pq.CategoryId, pq.Question, pq.QuestionNum))
+                    });
 		}
 
 		static public bool ModifyCategory(ProfileCategoryItem item)
 		{
-			int rowCount = 0;
+            if (item.AccountId <= 0 || String.IsNullOrEmpty(item.CategoryName))
+                return false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayerProfileCategory", myConnection);
-					myCommand.Parameters.Add("@category", SqlDbType.VarChar, 25).Value = item.CategoryName;
-					myCommand.Parameters.Add("@priority", SqlDbType.Int).Value = item.Priority;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbCategory = (from pc in db.ProfileCategories
+                              where pc.Id == item.Id
+                              select pc).SingleOrDefault();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            if (dbCategory == null)
+                return false;
 
-			return (rowCount <= 0) ? false : true;
-		}
+            dbCategory.CategoryName = item.CategoryName;
+            dbCategory.Priority = item.Priority;
+
+            db.SubmitChanges();
+
+            return true;
+        }
 
 		static public bool AddCategory(ProfileCategoryItem item)
 		{
-			int rowCount = 0;
-
-            if (item.AccountId <= 0)
+	        //INSERT INTO ProfileCategory VALUES(@accountId, @category, @priority)
+            if (item.AccountId <= 0 || String.IsNullOrEmpty(item.CategoryName))
                 return false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreatePlayerProfileCategory", myConnection);
-					myCommand.Parameters.Add("@category", SqlDbType.VarChar, 25).Value = item.CategoryName;
-					myCommand.Parameters.Add("@priority", SqlDbType.Int).Value = item.Priority;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = item.AccountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbCategory = new SportsManager.Model.ProfileCategory();
+            dbCategory.AccountId = item.AccountId;
+            dbCategory.CategoryName = item.CategoryName;
+            dbCategory.Priority = item.Priority;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            db.ProfileCategories.InsertOnSubmit(dbCategory);
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            item.Id = dbCategory.Id;
+
+            return true;
 		}
 
-		static public bool RemoveCategory(ProfileCategoryItem item)
+		static public bool RemoveCategory(long categoryId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePlayerProfileCategory", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbCategory = (from pc in db.ProfileCategories
+                              where pc.Id == categoryId
+                              select pc).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbCategory == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            db.ProfileCategories.DeleteOnSubmit(dbCategory);
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public List<ProfileQuestionItem> GetQuestions(long catId)
+		static public IQueryable<ProfileQuestionItem> GetQuestions(long catId)
 		{
-            List<ProfileQuestionItem> cats = new List<ProfileQuestionItem>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayerProfileCategoryQuestions", myConnection);
-					myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = catId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						cats.Add(new ProfileQuestionItem(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2), dr.GetInt32(3)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return cats;
+	        //SELECT * FROM ProfileQuestion WHERE CategoryId = @catId ORDER BY QuestionNum
+            return (from pq in db.ProfileQuestions
+                    where pq.CategoryId == catId
+                    orderby pq.QuestionNum
+                    select new ProfileQuestionItem(pq.Id, pq.CategoryId, pq.Question, pq.QuestionNum));
 		}
 
 		static public bool ModifyQuestion(ProfileQuestionItem item)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayerProfileCategoryQuestion", myConnection);
-					myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = item.CategoryId;
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = item.Question;
-					myCommand.Parameters.Add("@questionNum", SqlDbType.Int).Value = item.QuestionNum;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbQuestion = (from pq in db.ProfileQuestions
+                              where pq.Id == item.Id
+                              select pq).SingleOrDefault();
+            
+            if (dbQuestion == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            dbQuestion.QuestionNum = item.QuestionNum;
+            dbQuestion.Question = item.Question;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
 		static public bool AddQuestion(ProfileQuestionItem item)
 		{
-			int rowCount = 0;
+            if (String.IsNullOrEmpty(item.Question))
+                return false;
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("CreatePlayerProfileCategoryQuestion", myConnection);
-					myCommand.Parameters.Add("@catId", SqlDbType.BigInt).Value = item.CategoryId;
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = item.Question;
-					myCommand.Parameters.Add("@questionNum", SqlDbType.Int).Value = item.QuestionNum;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            DB db = DBConnection.GetContext();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbQuestion = new SportsManager.Model.ProfileQuestion();
+            dbQuestion.CategoryId = item.CategoryId;
+            dbQuestion.Question = item.Question;
+            dbQuestion.QuestionNum = item.QuestionNum;
 
-					rowCount = myCommand.ExecuteNonQuery();
+            db.ProfileQuestions.InsertOnSubmit(dbQuestion);
 
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            item.Id = dbQuestion.Id;
+            return true;
 		}
 
-		static public bool RemoveQuestion(ProfileQuestionItem item)
+		static public bool RemoveQuestion(long questionId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePlayerProfileCategoryQuestion", myConnection);
-					myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = item.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbQuestion = (from pq in db.ProfileQuestions
+                              where pq.Id == questionId
+                              select pq).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbQuestion == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
+            db.ProfileQuestions.DeleteOnSubmit(dbQuestion);
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public List<PlayerProfile> GetPlayersWithProfiles(long accountId)
+		static public IQueryable<PlayerProfile> GetPlayersWithProfiles(long accountId)
 		{
-			List<PlayerProfile> playerProfiles = new List<PlayerProfile>();
+            //SELECT DISTINCT PlayerId, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
+            //FROM PlayerProfile LEFT JOIN Contacts ON Contacts.Id = PlayerProfile.PlayerId
+            //                   LEFT JOIN Roster ON Contacts.Id = Roster.ContactId
+            //WHERE Roster.AccountId = @accountId ORDER BY Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayersWithProfiles", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var currentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
 
-					myConnection.Open();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						playerProfiles.Add(new PlayerProfile(dr.GetInt64(0)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return playerProfiles;
+            // TODO: only get players in current season!
+            return (from pp in db.PlayerProfiles
+                    join c in db.Contacts on pp.PlayerId equals c.Id
+                    join r in db.Rosters on c.Id equals r.ContactId
+                    join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    where r.AccountId == accountId && ls.SeasonId == currentSeasonId
+                    select new PlayerProfile(pp.PlayerId)
+                    {
+                        LastName = c.LastName,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName ?? String.Empty
+                    }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
 		}
 
 		static public bool RemovePlayerProfile(PlayerProfile playerProfile)
@@ -300,50 +206,6 @@ namespace DataAccess
 			catch (SqlException ex)
 			{
 				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
-		}
-
-		static public bool AddPlayerProfile(PlayerProfile item)
-		{
-			int rowCount = 1;
-
-			Dictionary<long, string> answers = item.GetAnswers();
-
-            RemoveEmptyAnswers(item, answers);
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-                    // add question command
-					SqlCommand myCommand = new SqlCommand("dbo.CreatePlayerProfile", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = item.PlayerId;
-					SqlParameter idParam = myCommand.Parameters.Add("@answerId", SqlDbType.BigInt);
-					SqlParameter ansParam = myCommand.Parameters.Add("@answer", SqlDbType.Text);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-
-					foreach (KeyValuePair<long,string> de in answers)
-					{
-
-                        if (!String.IsNullOrEmpty(de.Value))
-                        {
-                            idParam.Value = de.Key;
-                            ansParam.Value = de.Value;
-
-                            myCommand.Prepare();
-                            myCommand.ExecuteNonQuery();
-                        }
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
 			}
 
 			return (rowCount <= 0) ? false : true;
@@ -387,106 +249,64 @@ namespace DataAccess
             return (rowCount <= 0) ? false : true;
         }
 
+        static public bool UpdatePlayerQuestionAnswer(long accountId, ProfileQuestionAnswer answer)
+        {
+            DB db = DBConnection.GetContext();
 
-		static public bool ModifyPlayerProfile(PlayerProfile item)
+            var questionAnswer = (from pp in db.PlayerProfiles
+                                  where pp.PlayerId == answer.PlayerId && pp.QuestionId == answer.QuestionId
+                                  select pp).SingleOrDefault();
+
+            if (questionAnswer == null)
+            {
+                if (String.IsNullOrEmpty(answer.Answer))
+                    return false;
+
+                questionAnswer = new SportsManager.Model.PlayerProfile();
+
+                questionAnswer.PlayerId = answer.PlayerId;
+                questionAnswer.QuestionId = answer.QuestionId;
+                questionAnswer.Answer = answer.Answer;
+
+                db.PlayerProfiles.InsertOnSubmit(questionAnswer);
+            }
+            else
+            {
+                // no answer, just delete the questionAnswer.
+                if (String.IsNullOrEmpty(answer.Answer))
+                {
+                    db.PlayerProfiles.DeleteOnSubmit(questionAnswer);
+                    db.SubmitChanges();
+
+                    answer.Id = 0;
+
+                    return true;
+                }
+                questionAnswer.Answer = answer.Answer;
+            }
+
+            db.SubmitChanges();
+            answer.Id = questionAnswer.Id;
+
+            return true;
+        }
+
+		static public IQueryable<ProfileQuestionAnswer> GetPlayerQuestionAnswer(long accountId, long playerId)
 		{
-			int rowCount = 1;
+            DB db = DBConnection.GetContext();
 
-			Dictionary<long, string> answers = item.GetAnswers();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayerProfile", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = item.PlayerId;
-					SqlParameter idParam = myCommand.Parameters.Add("@questionId", SqlDbType.BigInt);
-					SqlParameter ansParam = myCommand.Parameters.Add("@answer", SqlDbType.Text);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-
-                    foreach (KeyValuePair<long, string> de in answers)
-					{
-						idParam.Value = de.Key;
-						ansParam.Value = de.Value;
-
-						myCommand.Prepare();
-
-						myCommand.ExecuteNonQuery();
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
-		}
-
-		static public List<ProfileQuestionAnswer> GetPlayerQuestionAnswer(long playerId)
-		{
-            List<ProfileQuestionAnswer> qa = new List<ProfileQuestionAnswer>();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetProfileQuestionAnswer", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						qa.Add(new ProfileQuestionAnswer(dr.GetInt64(0), dr.GetString(1), dr.GetString(2)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return qa;
-		}
-
-		static public string GetAnswer(long playerId, long questionId)
-		{
-			string ret = String.Empty;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayerProfileAnswer", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						ret = dr.GetString(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return ret;
+            //SELECT PlayerProfile.PlayerId, ProfileQuestion.Question, PlayerProfile.Answer
+            //FROM PlayerProfile LEFT JOIN ProfileQuestion ON ProfileQuestion.Id = PlayerProfile.QuestionId
+            //WHERE PlayerId = @playerId	
+            //ORDER BY ProfileQuestion.QuestionNum
+            return (//from pp in db.PlayerProfiles
+                    //join pq in db.ProfileQuestions on pp.QuestionId equals pq.Id
+                    from pc in db.ProfileCategories
+                    join pq in db.ProfileQuestions on pc.Id equals pq.CategoryId
+                    join pp in db.PlayerProfiles on pq.Id equals pp.QuestionId
+                    where pp.PlayerId == playerId && pp.Answer != null
+                    orderby pc.Priority, pq.QuestionNum
+                    select new ProfileQuestionAnswer(pp.Id, pp.PlayerId, pp.QuestionId, pp.Answer));
 		}
 
 		static public PlayerProfile GetProfileSpotlight(long accountId)
@@ -518,37 +338,6 @@ namespace DataAccess
 			}
 
 			return p;
-		}
-
-		static public long HasPlayerProfile(long playerSeasonId)
-		{
-			long pId = 0;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.HasPlayerProfile", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerSeasonId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						pId = dr.GetInt64(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return pId;
 		}
 	}
 }

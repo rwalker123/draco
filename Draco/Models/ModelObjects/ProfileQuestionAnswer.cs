@@ -8,37 +8,40 @@ namespace ModelObjects
 	/// </summary>
 	public class ProfileQuestionAnswer
 	{
-		private long m_playerId;
-		private string m_question;
-		private string m_answer;
-
 		public ProfileQuestionAnswer()
 		{
 		}
 
-		public ProfileQuestionAnswer(long playerId, string question, string answer)
+		public ProfileQuestionAnswer(long id, long playerId, long questionId, string answer)
 		{
-			m_playerId = playerId;
-			m_question = question;
-			m_answer = answer;
+            id = Id;
+			PlayerId = playerId;
+			QuestionId = questionId;
+			Answer = answer;
 		}
 
-		public long PlayerId
-		{
-			get { return m_playerId; }
-			set { m_playerId = value; }
-		}
+        public long Id
+        {
+            get;
+            set;
+        }
 
-		public string Question
-		{
-			get { return m_question; }
-			set { m_question = value; }
-		}
+        public long PlayerId
+        {
+            get;
+            set;
+        }
 
-		public string Answer
-		{
-			get { return m_answer; }
-			set { m_answer = value; }
-		}
+        public long QuestionId
+        {
+            get;
+            set;
+        }
+
+        public string Answer
+        {
+            get;
+            set;
+        }
 	}
 }

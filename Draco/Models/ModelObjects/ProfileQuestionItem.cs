@@ -7,45 +7,40 @@ namespace ModelObjects
 /// </summary>
 	public class ProfileQuestionItem
 	{
-		private long m_id;
-		private long m_catId = 0;
-		private int m_questNum = 0;
-		private string m_question = String.Empty;
-
 		public ProfileQuestionItem()
 		{
 		}
 
 		public ProfileQuestionItem(long id, long catId, string question, int num)
 		{
-			m_id = id;
-			m_catId = catId;
-			m_question = question;
-			m_questNum = num;
+			Id = id;
+			CategoryId = catId;
+			Question = question;
+			QuestionNum = num;
 		}
 
 		public long Id
 		{
-			get { return m_id; }
-			set { m_id = value; }
+			get;
+			set;
 		}
 
 		public long CategoryId
 		{
-			get { return m_catId; }
-			set { m_catId = value; }
+			get;
+			set;
 		}
 
 		public string Question
 		{
-			get { return m_question; }
-			set { m_question = value; }
+			get;
+			set;
 		}
 
 		public int QuestionNum
 		{
-			get { return m_questNum; }
-			set { m_questNum = value; }
+			get;
+			set;
 		}
 	}
 }

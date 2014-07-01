@@ -10,8 +10,6 @@ namespace ModelObjects
 	public class PlayerProfile
 	{
 		private long m_id;
-		private Dictionary<long, string> m_answers = new Dictionary<long, string>();
-        private Contact m_contact = new Contact();
 
 		public PlayerProfile()
 		{
@@ -20,7 +18,6 @@ namespace ModelObjects
 		public PlayerProfile(long playerId)
 		{
 			m_id = playerId;
-            m_contact = DataAccess.Contacts.GetContact(m_id);
 		}
 
 		public long PlayerId
@@ -29,22 +26,30 @@ namespace ModelObjects
 			set { m_id = value; }
 		}
 
-        public string PlayerName
+        public string LastName
+        {
+            get;
+            set;
+        }
+
+        public string FirstName
+        {
+            get;
+            set;
+        }
+
+        public string MiddleName
+        {
+            get;
+            set;
+        }
+
+        public string PhotoUrl
         {
             get
             {
-                return m_contact.FullName;
+                return Contact.GetPhotoURL(m_id);
             }
         }
-
-		public void SetAnswer(long qid, string answer)
-		{
-			m_answers.Add(qid, answer);
-		}
-
-        public Dictionary<long, string> GetAnswers()
-		{
-			return m_answers;
-		}
 	}
 }

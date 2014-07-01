@@ -41,6 +41,7 @@
                     <div><label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label></div>
                     <div><label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showPlayerSurvey" />Show Player Survey</label></div>
                 </div>
             </div>
         </div>
@@ -106,6 +107,10 @@
             self.showMemberBusiness.subscribe(function (newValue) {
                 self.settingChanged('ShowBusinessDirectory', newValue);
             });
+            self.showPlayerSurvey = ko.observable();
+            self.showPlayerSurvey.subscribe(function (newValue) {
+                self.settingChanged('ShowPlayerSurvey', newValue);
+            });
             self.playerWaiver = ko.observable();
             self.playerWaiver.subscribe(function (newValue) {
                 self.settingChanged('TrackWaiver', newValue);
@@ -158,6 +163,9 @@
                 }
                 else if (settingKey == "ShowBusinessDirectory") {
                     self.showMemberBusiness(value);
+                }
+                else if (settingKey == "ShowPlayerSurvey") {
+                    self.showPlayerSurvey(value);
                 }
                 else if (settingKey == "TrackWaiver") {
                     self.playerWaiver(value);
