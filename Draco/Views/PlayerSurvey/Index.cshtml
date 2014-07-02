@@ -139,7 +139,7 @@
     <div class="panel-group" data-bind="with: currentPlayerSurvey" id="accordion1">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <img class="img-rounded img-responsive" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
+                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
                 <a data-toggle="collapse" data-parent="#accordion1" data-bind="attr: { href: '#' + PlayerId()}">
                     <span class="h3">Your Survey</span>
                 </a>
@@ -171,7 +171,7 @@
     <div class="panel-group" data-bind="foreach: surveys" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <img class="img-rounded img-responsive" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
+                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
                 <a data-toggle="collapse" data-parent="#accordion" data-bind="attr: { href: '#' + PlayerId()}">
                     <span class="h3" data-bind="html: LastName() + ', ' + FirstName() + ' ' + MiddleName()"></span>
                 </a>

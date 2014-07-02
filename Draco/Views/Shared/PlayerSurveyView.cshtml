@@ -4,7 +4,7 @@
     <div class="panel-heading">
 
         <!-- ko if: playerSurvey -->
-        <img class="img-rounded img-responsive" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: playerSurvey().PhotoUrl }" />
+        <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: playerSurvey().PhotoUrl }" />
         <span class="h3" data-bind="html: 'Spotlight on ' + playerSurvey().FirstName() + ' ' + playerSurvey().LastName()"></span>
         <!-- /ko -->
         <!-- ko ifnot: playerSurvey -->
