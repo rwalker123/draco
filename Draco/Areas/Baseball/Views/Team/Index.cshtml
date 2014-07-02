@@ -115,6 +115,15 @@
         </div> <!-- end column 1-->
 
         <div class="col-md-8"> <!-- column 2 -->
+            @if (Model.ShowPlayerInterview)
+            {
+                <div class="row">
+                    <div class="col-sm-12">
+                        @{Html.RenderPartial("PlayerSurveyView", new SportsManager.ViewModels.PlayerSurveyViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+            }
+
             @if (Model.ShowAnnouncements)
             {
                 <div class="row">
@@ -184,6 +193,11 @@ else
 @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 <script type="text/javascript" src="~/Scripts/jquery.maskedinput-1.3.1.min.js"></script>
 
+@if (Model.ShowPlayerInterview)
+{
+    <script type="text/javascript" src="~/Scripts/playersurveyspotlight.js"></script>
+}
+
 @if (Model.ShowWelcome)
 { 
     <script type="text/javascript" src="~/Scripts/welcome.js"></script>
@@ -242,6 +256,12 @@ else
 
         initTeamViewModel(@Model.AccountId, @Model.Team.Id, @Model.Team.TeamId, '@Model.Team.Name', @Model.IsAdmin.ToString().ToLower());
 
+        @if (Model.ShowPlayerInterview)
+        {
+            <text>
+                InitPlayerSurveySpotlightViewModel(@Model.AccountId, @Model.Team.Id);
+            </text>
+        }
         @if (Model.ShowWelcome)
         {
             <text>

@@ -169,6 +169,33 @@ namespace DataAccess
             return true;
 		}
 
+        static public IQueryable<PlayerProfile> GetTeamPlayersWithProfiles(long accountId, long teamSeasonId)
+        {
+            //SELECT DISTINCT PlayerId, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
+            //FROM PlayerProfile LEFT JOIN Contacts ON Contacts.Id = PlayerProfile.PlayerId
+            //                   LEFT JOIN Roster ON Contacts.Id = Roster.ContactId
+            //WHERE Roster.AccountId = @accountId ORDER BY Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
+            DB db = DBConnection.GetContext();
+
+            var currentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+
+            // TODO: only get players in current season!
+            return (from pp in db.PlayerProfiles
+                    join c in db.Contacts on pp.PlayerId equals c.Id
+                    join r in db.Rosters on c.Id equals r.ContactId
+                    join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
+                    ts.Id == teamSeasonId
+                    select new PlayerProfile(pp.PlayerId)
+                    {
+                        LastName = c.LastName,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName ?? String.Empty
+                    }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
+        }
+
 		static public IQueryable<PlayerProfile> GetPlayersWithProfiles(long accountId)
 		{
             //SELECT DISTINCT PlayerId, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName
@@ -330,5 +357,17 @@ namespace DataAccess
 
             return qry.Skip(index).FirstOrDefault();
 		}
-	}
+
+        static public PlayerProfile GetTeamProfileSpotlight(long accountId, long teamSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var qry = DataAccess.ProfileAdmin.GetTeamPlayersWithProfiles(accountId, teamSeasonId);
+
+            int count = qry.Count();
+            int index = new Random().Next(count);
+
+            return qry.Skip(index).FirstOrDefault();
+        }
+    }
 }

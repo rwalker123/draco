@@ -21,6 +21,35 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("randomteamsurvey")]
+        public HttpResponseMessage GetRandomTeamPlayerWithSurveys(long accountId, long id)
+        {
+            var playerProfile = DataAccess.ProfileAdmin.GetTeamProfileSpotlight(accountId, id);
+            if (playerProfile != null)
+            {
+                var playerAnswers = DataAccess.ProfileAdmin.GetPlayerQuestionAnswer(accountId, playerProfile.PlayerId);
+                int count = playerAnswers.Count();
+                int index = new Random().Next(count);
+                ProfileQuestionAnswer theAnswer = playerAnswers.Skip(index).FirstOrDefault();
+                if (theAnswer != null)
+                {
+                    ProfileQuestionItem theQuestion = DataAccess.ProfileAdmin.GetQuestion(theAnswer.QuestionId);
+
+                    var obj = new
+                    {
+                        PlayerProfile = playerProfile,
+                        Answer = theAnswer,
+                        Question = theQuestion
+                    };
+
+                    return Request.CreateResponse(HttpStatusCode.OK, obj);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
         [ActionName("randomsurvey")]
         public HttpResponseMessage GetRandomPlayerSurveys(long accountId)
         {

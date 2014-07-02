@@ -1,8 +1,8 @@
-﻿function InitPlayerSurveySpotlightViewModel(accountId) {
+﻿function InitPlayerSurveySpotlightViewModel(accountId, teamSeasonId) {
 
     var playerViewElem = document.getElementById("playerSurveyView");
     if (playerViewElem) {
-        var playerViewVM = new PlayerSurveyViewModel(accountId);
+        var playerViewVM = new PlayerSurveyViewModel(accountId, teamSeasonId);
         ko.applyBindings(playerViewVM, playerViewElem);
     }
 }
@@ -36,10 +36,12 @@ var SpotlightPlayerViewModel = function (data, accountId) {
         return js;
     }
 }
-var PlayerSurveyViewModel = function (accountId) {
+var PlayerSurveyViewModel = function (accountId, teamSeasonId) {
     var self = this;
 
     self.accountId = accountId;
+    self.teamSeasonId = teamSeasonId;
+
     self.isLoading = ko.observable(true);
 
     self.playerSurvey = ko.observable();
@@ -47,7 +49,12 @@ var PlayerSurveyViewModel = function (accountId) {
     self.answer = ko.observable();
 
     self.loadSpotlightPlayer = function () {
-        var url = window.config.rootUri + '/api/PlayerSurveyAPI/' + self.accountId + '/randomsurvey';
+        var url = window.config.rootUri + '/api/PlayerSurveyAPI/' + self.accountId;
+
+        if (self.teamSeasonId)
+            url = url + '/randomteamsurvey/' + self.teamSeasonId;
+        else
+            url = url + '/randomsurvey';
 
         $.ajax({
             type: "GET",

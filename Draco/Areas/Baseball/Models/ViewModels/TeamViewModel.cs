@@ -31,6 +31,10 @@ namespace SportsManager.Baseball.ViewModels
             ShowSponsors = IsAdmin || IsTeamAdmin || DataAccess.Sponsors.GetTeamSponsors(id).Any();
             ShowRoster = true;
             ShowScoreboard = true;
+
+            var showPlayerSurvey = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+            ShowPlayerInterview = showPlayerSurvey && DataAccess.ProfileAdmin.GetTeamPlayersWithProfiles(accountId, id).Any();
         }
 
         public Team Team { get; private set; }
@@ -43,6 +47,7 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowSponsors { get; private set; }
         public bool ShowRoster { get; private set; }
         public bool ShowScoreboard { get; private set; }
+        public bool ShowPlayerInterview { get; private set; }
 
         public bool IsTeamPhotoAdmin
         {
