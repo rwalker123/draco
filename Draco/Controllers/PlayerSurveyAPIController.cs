@@ -145,7 +145,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("questionAnswer")]
-        public HttpResponseMessage GetQuestionsWithCategories(long accountId, long id, ProfileQuestionAnswer data)
+        public HttpResponseMessage UpdatePlayerQuestionAnswer(long accountId, long id, ProfileQuestionAnswer data)
         {
             var aspNetUserId = Globals.GetCurrentUserId();
             var currentContactId = DataAccess.Contacts.GetContactId(aspNetUserId);

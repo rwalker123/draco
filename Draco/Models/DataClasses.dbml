@@ -229,10 +229,10 @@
       <Association Name="Contact_MemberBusiness" Member="MemberBusinesses" ThisKey="Id" OtherKey="ContactId" Type="MemberBusiness" />
       <Association Name="Contact_MessagePost" Member="MessagePosts" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessagePost" />
       <Association Name="Contact_MessageTopic" Member="MessageTopics" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessageTopic" />
-      <Association Name="Contact_PlayerProfile" Member="PlayerProfiles" ThisKey="Id" OtherKey="PlayerId" Type="PlayerProfile" />
       <Association Name="Contact_Roster" Member="Rosters" ThisKey="Id" OtherKey="ContactId" Type="Roster" />
       <Association Name="Contact_TeamSeasonManager" Member="TeamSeasonManagers" ThisKey="Id" OtherKey="ContactId" Type="TeamSeasonManager" />
       <Association Name="Contact_VoteAnswer" Member="VoteAnswers" ThisKey="Id" OtherKey="ContactId" Type="VoteAnswer" />
+      <Association Name="Contact_PlayerProfile" Member="PlayerProfiles" ThisKey="Id" OtherKey="PlayerId" Type="PlayerProfile" />
       <Association Name="AspNetUser_Contact" Member="AspNetUser" ThisKey="UserId" OtherKey="Id" Type="AspNetUser" IsForeignKey="true" DeleteRule="SET NULL" />
     </Type>
   </Table>
@@ -870,15 +870,6 @@
       <Association Name="TeamsSeason_pitchstatsum" Member="TeamsSeason" ThisKey="TeamId" OtherKey="Id" Type="TeamsSeason" IsForeignKey="true" />
     </Type>
   </Table>
-  <Table Name="dbo.PlayerProfile" Member="PlayerProfiles">
-    <Type Name="PlayerProfile">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="PlayerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="QuestionId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Answer" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Contact_PlayerProfile" Member="Contact" ThisKey="PlayerId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.PlayerRecap" Member="PlayerRecaps">
     <Type Name="PlayerRecap">
       <Column Name="PlayerId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
@@ -964,6 +955,7 @@
       <Column Name="CategoryId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Question" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
       <Column Name="QuestionNum" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Association Name="ProfileQuestion_PlayerProfile" Member="PlayerProfiles" ThisKey="Id" OtherKey="QuestionId" Type="PlayerProfile" />
       <Association Name="ProfileCategory_ProfileQuestion" Member="ProfileCategory" ThisKey="CategoryId" OtherKey="Id" Type="ProfileCategory" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
@@ -1158,6 +1150,16 @@
       <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="IsBatLeader" Type="System.Boolean" DbType="Bit NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+    </Type>
+  </Table>
+  <Table Name="dbo.PlayerProfile" Member="PlayerProfiles">
+    <Type Name="PlayerProfile">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="PlayerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="QuestionId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Answer" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Association Name="Contact_PlayerProfile" Member="Contact" ThisKey="PlayerId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="ProfileQuestion_PlayerProfile" Member="ProfileQuestion" ThisKey="QuestionId" OtherKey="Id" Type="ProfileQuestion" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
 </Database>

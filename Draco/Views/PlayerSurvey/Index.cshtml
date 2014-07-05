@@ -54,6 +54,23 @@
             </div>
         </div>
 
+        <div class="modal fade" id="deleteQuestionAnswerModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title" id="deleteModalLabel">Confirm Delete Answer</h4>
+                    </div>
+                    <div class="modal-body">
+                        You are about to delete the answser to a question. Are you sure you want to continue?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmQuestionAnswerBtn">Continue</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     <div class="panel-group" id="editQuestionsAccordion">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -190,6 +207,10 @@
                     <div class="list-group" data-bind="foreach: answers">
                         <!-- ko if: Answer -->
                         <h4 class="list-group-item-heading" data-bind="html: $root.questionFromId(QuestionId())"></h4>
+                        @if (Model.IsAdmin)
+                        {
+                            <button type="button" class="btn btn-danger" data-bind="click: $root.removePlayerAnswer" title="remove answer"><span class="glyphicon glyphicon-remove"></span></button>
+                        }
                         <p class="alert alert-info list-group-item-text" style="margin-bottom: 20px" data-bind="html: Answer"></p>
                         <!-- /ko -->
                     </div>

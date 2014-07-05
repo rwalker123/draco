@@ -343,7 +343,6 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
             self.pageNo(self.pageNo() - 1);
             self.loadSurveys();
         }
-            
     }
 
     self.isLoadingAnswers = false;
@@ -401,7 +400,30 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
             }
         });
     }
-    
+
+    self.removePlayerAnswer = function (playerAnswer) {
+        $("#deleteQuestionAnswerModal").modal("show");
+
+        $("#confirmQuestionAnswerBtn").one("click", function () {
+            self.removePlayerAnswerVerified(playerAnswer);
+        });
+    }
+
+    self.removePlayerAnswerVerified = function(playerAnswer) {
+        playerAnswer.Answer('');
+        var url = window.config.rootUri + '/api/PlayerSurveyAPI/' + self.accountId + '/questionAnswer/' + playerAnswer.PlayerId();
+
+        var data = playerAnswer.toJS();
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: data,
+            success: function (questionAnswer) {
+            }
+        });
+    }
+
     var questionMap = {};
 
     self.loadQuestions = function () {
