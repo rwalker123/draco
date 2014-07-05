@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Web.Mvc;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using System.IO;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
@@ -53,8 +55,24 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("addresslist")]
         public ActionResult AddressList(long accountId, long id)
         {
-            return View(new SportsManager.Baseball.ViewModels.TeamAddressViewModel(this, accountId, id /*teamSeasonId*/));
+            return View(new TeamAddressViewModel(this, accountId, id /*teamSeasonId*/));
         }
+
+        //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("exportaddresslist")]
+        public FileStreamResult ExportAddressList(long accountId, long id)
+        {
+            var vm = new TeamAddressViewModel(this, accountId, id);
+            Stream strm = vm.ExportToExcel();
+            var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fs.FileDownloadName = vm.Team.Name + ".xlsx";
+            return fs;
+        }
+
 
         //
         // GET: /Baseball/Team/

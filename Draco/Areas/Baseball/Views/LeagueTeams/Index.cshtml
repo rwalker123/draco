@@ -36,6 +36,7 @@
                                     <a href='@Url.Action("AddressList", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)' class="btn btn-default" title="address list">
                                         <span class="glyphicon glyphicon-list-alt"></span>
                                     </a>
+                                    <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/team/exportAddressList/")@Model.AccountId/@team.Id' title="export address list to excel"><span class="glyphicon glyphicon-export"></span></a>
                                 }
                                 
 
