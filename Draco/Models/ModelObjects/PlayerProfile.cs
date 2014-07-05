@@ -1,6 +1,3 @@
-using System;
-using System.Configuration;
-using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -9,21 +6,19 @@ namespace ModelObjects
 /// </summary>
 	public class PlayerProfile
 	{
-		private long m_id;
-
 		public PlayerProfile()
 		{
 		}
 
 		public PlayerProfile(long playerId)
 		{
-			m_id = playerId;
+		    PlayerId = playerId;
 		}
 
-		public long PlayerId
+        public long PlayerId
 		{
-			get { return m_id; }
-			set { m_id = value; }
+			get;
+			set;
 		}
 
         public string LastName
@@ -46,10 +41,8 @@ namespace ModelObjects
 
         public string PhotoUrl
         {
-            get
-            {
-                return Contact.GetPhotoURL(m_id);
-            }
+            get;
+            set;
         }
 	}
 }

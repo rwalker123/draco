@@ -575,7 +575,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
 
 
     self.populateUsers = function (url, isPrev, isFilter) {
-        var url, data, calculatePages, updateNavigation = true;
+        var data, calculatePages, updateNavigation = true;
         if (!url) {
             if (self.currentPage() && !isFilter) { //refresh after delete/add/etc.
                 url = self.currentPage();

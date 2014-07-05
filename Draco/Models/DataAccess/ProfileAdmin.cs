@@ -15,6 +15,19 @@ namespace DataAccess
 /// </summary>
 	static public class ProfileAdmin
 	{
+        private class PlayerProfileEquality : IEqualityComparer<PlayerProfile>
+        {
+            public bool Equals(PlayerProfile x, PlayerProfile y)
+            {
+                return x.PlayerId == y.PlayerId;
+            }
+
+            public int GetHashCode(PlayerProfile obj)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
 
 		static public IQueryable<ProfileCategoryItem> GetCategories(long accountId)
 		{	
@@ -179,7 +192,6 @@ namespace DataAccess
 
             var currentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
 
-            // TODO: only get players in current season!
             return (from pp in db.PlayerProfiles
                     join c in db.Contacts on pp.PlayerId equals c.Id
                     join r in db.Rosters on c.Id equals r.ContactId
@@ -188,11 +200,13 @@ namespace DataAccess
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
                     ts.Id == teamSeasonId
-                    select new PlayerProfile(pp.PlayerId)
+                    select new PlayerProfile()
                     {
+                        PlayerId = pp.PlayerId,
                         LastName = c.LastName,
                         FirstName = c.FirstName,
-                        MiddleName = c.MiddleName ?? String.Empty
+                        MiddleName = c.MiddleName ?? String.Empty,
+                        PhotoUrl = Contact.GetPhotoURL(c.Id)
                     }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
         }
 
@@ -206,20 +220,22 @@ namespace DataAccess
 
             var currentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
 
-            // TODO: only get players in current season!
-            return (from pp in db.PlayerProfiles
-                    join c in db.Contacts on pp.PlayerId equals c.Id
-                    join r in db.Rosters on c.Id equals r.ContactId
-                    join rs in db.RosterSeasons on r.Id equals rs.PlayerId
-                    join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                    where r.AccountId == accountId && ls.SeasonId == currentSeasonId
-                    select new PlayerProfile(pp.PlayerId)
-                    {
-                        LastName = c.LastName,
-                        FirstName = c.FirstName,
-                        MiddleName = c.MiddleName ?? String.Empty
-                    }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
+            return (
+                from pp in db.PlayerProfiles
+                join c in db.Contacts on pp.PlayerId equals c.Id
+                join r in db.Rosters on c.Id equals r.ContactId
+                join rs in db.RosterSeasons on r.Id equals rs.PlayerId
+                join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                where r.AccountId == accountId && ls.SeasonId == currentSeasonId
+                select new PlayerProfile()
+                {
+                    PlayerId = pp.PlayerId,
+                    LastName = c.LastName,
+                    FirstName = c.FirstName,
+                    MiddleName = c.MiddleName ?? String.Empty,
+                    PhotoUrl = Contact.GetPhotoURL(c.Id)
+                }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
 		}
 
 		static public bool RemovePlayerProfile(PlayerProfile playerProfile)

@@ -1,11 +1,10 @@
-﻿using System.Linq;
+﻿using ModelObjects;
+using SportsManager.Models;
+using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Collections.Generic;
-using ModelObjects;
-using SportsManager.Models;
-using System;
 
 namespace SportsManager.Controllers
 {
@@ -15,8 +14,16 @@ namespace SportsManager.Controllers
         [ActionName("activesurveys")]
         public HttpResponseMessage GetActivePlayersWithSurveys(long accountId)
         {
-            var playersWithProfiles = DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId);
- 
+            int pageSize = 20;
+
+            var queryValues = Request.RequestUri.ParseQueryString();
+            int pageNo = 0;
+            String strPageNo = queryValues["pageNo"];
+            if (!String.IsNullOrEmpty(strPageNo))
+                int.TryParse(strPageNo, out pageNo);
+
+            var playersWithProfiles = DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId).Skip(pageNo * pageSize).Take(pageSize);
+
             return Request.CreateResponse<IQueryable<ModelObjects.PlayerProfile>>(HttpStatusCode.OK, playersWithProfiles);
         }
 

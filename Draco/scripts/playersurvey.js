@@ -294,13 +294,29 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
         Categories: []
     }, self.accountId));
 
+    self.pageNo = ko.observable(0);
+    self.hasNext = ko.observable(false);
+
     self.loadSurveys = function () {
+        var pageSize = 20; // must match pageSize from API call.
+
         var url = window.config.rootUri + '/api/PlayerSurveyAPI/' + self.accountId + '/activesurveys';
+
+        if (self.pageNo()) {
+            url = url + "?pageNo=" + self.pageNo()
+        }
 
         $.ajax({
             type: "GET",
             url: url,
             success: function (playerSurveys) {
+                self.hasNext(playerSurveys && playerSurveys.length == pageSize);
+                if (!playerSurveys && self.pageNo() > 0) {
+                    self.pageNo(self.pageNo() - 1);
+                    self.hasNext(false);
+                    return;
+                }
+                                        
                 var mappedSurveys = $.map(playerSurveys, function (survey) {
                     if (survey.PlayerId == self.contactId) {
                         self.currentPlayerSurvey().update(survey);
@@ -315,6 +331,19 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
                 self.isLoading(false);
             }
         });
+    }
+
+    self.gotoNext = function () {
+        self.pageNo(self.pageNo() + 1);
+        self.loadSurveys();
+    }
+
+    self.gotoPrev = function () {
+        if (self.pageNo() > 0) {
+            self.pageNo(self.pageNo() - 1);
+            self.loadSurveys();
+        }
+            
     }
 
     self.isLoadingAnswers = false;

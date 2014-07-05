@@ -168,6 +168,12 @@
     <div data-bind="if: isLoading">
         <img src="/Images/busy.gif" />Loading...
     </div>
+    <!-- ko ifnot: isLoading -->
+    <ul class="pager">
+        <li class="previous"><a data-bind="visible: pageNo, click: $root.gotoPrev">&larr; Prev</a></li>
+        <li class="next"><a data-bind="visible: hasNext, click: $root.gotoNext">Next &rarr;</a></li>
+    </ul>
+    <!-- /ko -->
     <div class="panel-group" data-bind="foreach: surveys" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
@@ -191,7 +197,12 @@
             </div>
         </div>
     </div>
-
+    <!-- ko ifnot: isLoading -->
+    <ul class="pager">
+        <li class="previous"><a data-bind="visible: pageNo, click: $root.gotoPrev">&larr; Prev</a></li>
+        <li class="next"><a data-bind="visible: hasNext, click: $root.gotoNext">Next &rarr;</a></li>
+    </ul>
+    <!-- /ko -->
 </div>
 
 @section scripts {
