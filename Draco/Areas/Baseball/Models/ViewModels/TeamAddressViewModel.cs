@@ -40,9 +40,12 @@ namespace SportsManager.Baseball.ViewModels
 
                 // Get the first worksheet. 
                 WorksheetPart worksheetPart = workbookPart.WorksheetParts.First();
-
+                
                 // The SheetData object will contain all the data.
                 SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
+
+                var sheet = workbookPart.Workbook.Descendants<Sheet>().ElementAt(0);
+                sheet.Name = Team.Name;
 
                 // Begining Row pointer                       
                 int index = 4;
@@ -61,11 +64,12 @@ namespace SportsManager.Baseball.ViewModels
 
                     // New Cell
                     CreateCell(row, "A" + index, player.Contact.FullName);
-                    CreateCell(row, "B" + index, player.Contact.StreetAddress);
-                    CreateCell(row, "C" + index, player.Contact.City);
-                    CreateCell(row, "D" + index, player.Contact.State);
-                    CreateCell(row, "E" + index, player.Contact.Zip);
-                    CreateCell(row, "F" + index, player.AffiliationDuesPaid);
+                    CreateCell(row, "B" + index, player.Contact.Email);
+                    CreateCell(row, "C" + index, player.Contact.StreetAddress);
+                    CreateCell(row, "D" + index, player.Contact.City);
+                    CreateCell(row, "E" + index, player.Contact.State);
+                    CreateCell(row, "F" + index, player.Contact.Zip);
+                    CreateCell(row, "G" + index, player.AffiliationDuesPaid);
 
                     // Append Row to SheetData
                     sheetData.AppendChild(row);
