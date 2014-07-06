@@ -1,6 +1,5 @@
 ﻿using ModelObjects;
-using System;
-using System.Collections.Generic;
+using SportsManager.Models;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -42,6 +41,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles="AccountAdmin")]
         public HttpResponseMessage PostHOFClassMembers(long accountId, HOFMember hofMember)
         {
             hofMember.AccountId = accountId;
@@ -56,5 +56,15 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteHOFClassMember(long accountId, int id)
+        {
+            if (DataAccess.HOFMembers.RemoveMember(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
     }
 }

@@ -47,9 +47,9 @@ var HallOfFameClassViewModel = function (data, accountId) {
     // mappings to handle special cases in parsing the object.
     self.mapping = {
         // example:
-        //'HomeTeamId': {
+        //'Members': {
         //    create: function (options) {
-        //        return ko.observable(options.data);
+        //        return ko.observableArray(options.data);
         //    },
         //    update: function (options) {
         //        return options.data;
@@ -117,7 +117,21 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
     }
 
     self.deleteMember = function (hofMember) {
+        var url = window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/classmembers/' + hofMember.Id();
 
+        $.ajax({
+            type: "DELETE",
+            url: url,
+            success: function () {
+                var hofClass = ko.utils.arrayFirst(self.hallOfFameClasses(), function (hofClass) {
+                    return hofClass.Year() == hofMember.YearInducted();
+                });
+
+                if (hofClass) {
+                    hofClass.Members.remove(hofMember);
+                }
+            }
+        });
     }
 
     self.cancelEdit = function () {
@@ -130,18 +144,12 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
             alert('name is required');
         }
 
-        var url = window.config.rootUrl + '/api/HallOfFameAPI/' + self.accountId + '/classmembers';
+        var url = window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/classmembers';
 
         $.ajax({
             type: "POST",
             url: url,
             success: function (hofMember) {
-                var mappedHofMembers = $.map(hofMembers, function (hofMember) {
-                    return new HallOfFameMemberViewModel(hofMember, self.accountId);
-                });
-
-                hofClass.Members(mappedHofMembers);
-                hofClass.Year.filledMembers = true;
             }
         });
 
@@ -174,6 +182,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
             url: url,
             success: function (hofClasses) {
                 var mappedHofClasses = $.map(hofClasses, function (hofClass) {
+                    hofClass.Members = [];
                     return new HallOfFameClassViewModel(hofClass, self.accountId);
                 });
 

@@ -102,8 +102,21 @@ namespace DataAccess
             return dbHof.Id;
 		}
 	
-		static public bool RemoveMember(HOFMember hofMember)
+		static public bool RemoveMember(int id)
 		{
+            DB db = DBConnection.GetContext();
+
+            var dbHOF = (from h in db.hofs
+                         where h.Id == id
+                         select h).SingleOrDefault();
+
+            if (dbHOF != null)
+            {
+                db.hofs.DeleteOnSubmit(dbHOF);
+                db.SubmitChanges();
+                return true;
+            }
+
             return false;
 		}
 	
