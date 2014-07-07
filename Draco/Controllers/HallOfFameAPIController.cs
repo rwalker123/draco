@@ -83,5 +83,26 @@ namespace SportsManager.Controllers
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
         }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("availableinductees")]
+        public HttpResponseMessage GetAvailablePlayers(long accountId, string lastName, string firstName, int page)
+        {
+            int pageSize = 20;
+            var available = DataAccess.HOFMembers.GetAvailableHOFMembers(accountId, firstName, lastName).Skip((page - 1) * pageSize).Take(pageSize);
+
+            var contactNames = available.Select(a => new ModelObjects.ContactName()
+            {
+                FirstName = a.FirstName,
+                LastName = a.LastName,
+                MiddleName = a.MiddleName,
+                Id = a.Id,
+                PhotoURL = a.PhotoURL
+            });
+
+            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, contactNames);
+        }
+
+
     }
 }

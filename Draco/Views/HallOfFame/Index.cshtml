@@ -15,13 +15,41 @@
 
 
 <div class="container-fluid" id="hallOfFameView">
+    @if (Model.IsAdmin)
+    {
+        <div class="modal fade" id="deleteHofMemberModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h4 class="modal-title">Confirm Delete HOF Member</h4>
+                    </div>
+                    <div class="modal-body">
+                        You are about to remove a player from the Hall of Fame. You cannot undo this operation. Are you sure you want to continue?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmHofDeleteBtn">Continue</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    <div data-bind="if: editMode">
+
+        <button type="button" class="btn btn-default" data-bind="click: inductNewMember"><span class="glyphicon glyphicon-plus"></span> Induct new member</button>
+        <div data-bind="if: editMode">
         <form class="form-horizontal" role="form" id="editMemberForm" data-bind="with: currentEditMember">
             <div class="form-group">
-                <label class="col-sm-4 control-label">Name:</label>
-                <div class="col-sm-8">
-                    <p class="form-control-static" data-bind="html: Name"></p>
+                    <label class="col-sm-4 control-label">Name:</label>
+                <div data-bind="if: Id">
+                    <div class="col-sm-8">
+                        <p class="form-control-static" data-bind="html: Name"></p>
+                    </div>
+                </div>
+                <div data-bind="ifnot: Id">
+                    <div class="col-sm-8">
+                        <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: $root.getPlayers, select: $root.selectPlayer, minLength: 1 }" placeholder="enter player name" />
+                    </div>
                 </div>
             </div>
             <div class="form-group">
@@ -44,7 +72,8 @@
             </div>
         </form>
     </div>
-
+    }
+    
     <div data-bind="if: hallOfFameClasses().length == 0">
         <div class="alert alert-info">
             No HOF Members found.

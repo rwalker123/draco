@@ -155,7 +155,7 @@ namespace DataAccess
             return null;
 		}
 
-		static public IQueryable<Contact> GetAvailableHOFMembers(long accountId)
+		static public IQueryable<Contact> GetAvailableHOFMembers(long accountId, String firstName, String lastName)
 		{
             DB db = DBConnection.GetContext();
             long affiliationId = (from a in db.Accounts
@@ -171,7 +171,10 @@ namespace DataAccess
                           select h.ContactId);
 
             return (from c in db.Contacts
-                    where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id)
+                    where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id) &&
+                    (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
+                    (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                    orderby c.LastName, c.FirstName, c.MiddleName
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2,
                                     c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip,
                                     c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
