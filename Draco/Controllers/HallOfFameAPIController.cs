@@ -56,6 +56,23 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
+        [AcceptVerbs("Put"), HttpPut]
+        [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage PutHOFClassMembers(long accountId, HOFMember hofMember)
+        {
+            hofMember.AccountId = accountId;
+
+            if (ModelState.IsValid && hofMember != null)
+            {
+                var success = DataAccess.HOFMembers.ModifyMember(hofMember);
+                if (success)
+                    return Request.CreateResponse<ModelObjects.HOFMember>(HttpStatusCode.OK, hofMember);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("classmembers")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

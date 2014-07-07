@@ -1,5 +1,6 @@
 using ModelObjects;
 using SportsManager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -42,7 +43,7 @@ namespace DataAccess
                         ContactId = h.ContactId,
                         Biography = h.Bio,
                         YearInducted = h.YearInducted,
-                        Name = c.FirstName + " " + c.LastName,
+                        Name = Contact.BuildFullName(c.FirstName, c.MiddleName, c.LastName),
                         PhotoURL = Contact.GetLargePhotoURL(c.Id)
                     });
         }
@@ -75,8 +76,22 @@ namespace DataAccess
 
 		static public bool ModifyMember(HOFMember hofMember)
 		{
-            return false;
-		}
+            DB db = DBConnection.GetContext();
+
+            var dbHof = (from hof in db.hofs
+                         where hof.Id == hofMember.Id
+                         select hof).SingleOrDefault();
+
+            if (dbHof == null)
+                return false;
+
+            dbHof.Bio = hofMember.Biography ?? String.Empty;
+            dbHof.YearInducted = hofMember.YearInducted;
+
+            db.SubmitChanges();
+
+            return true;
+        }
 
 		static public long AddMember(HOFMember h)
 		{

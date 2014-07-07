@@ -28,6 +28,10 @@ var HallOfFameMemberViewModel = function (data, accountId) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactLargePhoto/' + self.ContactId();
+    });
+
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
     }
@@ -85,7 +89,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.editMode = ko.observable(false);
 
-    self.emptyHOfMember = {
+    self.emptyHofMember = {
         Id: 0,
         AccountId: self.accountId,
         ContactId: 0,
@@ -110,10 +114,14 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
     };
 
     self.editMember = function (hofMember) {
+        self.editMode(true);
+        //$('html, body').animate({ scrollTop: 0 }, 'fast');
+        $('html, body').animate({
+            scrollTop: $("#editMemberForm").offset().top
+        }, 'fast');
+
         var json = hofMember.toJS();
         self.currentEditMember().update(json);
-
-        self.editMode(true);
     }
 
     self.deleteMember = function (hofMember) {
@@ -129,6 +137,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
                 if (hofClass) {
                     hofClass.Members.remove(hofMember);
+                    hofClass.MemberCount(hofClass.MemberCount() - 1);
                 }
             }
         });
@@ -144,12 +153,64 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
             alert('name is required');
         }
 
+        var data = self.currentEditMember().toJS();
+
         var url = window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/classmembers';
 
         $.ajax({
-            type: "POST",
+            type: "PUT",
             url: url,
-            success: function (hofMember) {
+            data: data,
+            success: function () {
+                // find hof member in hofClasses
+                $.each(self.hallOfFameClasses(), function (index, hofClass) {
+                    var theMember = ko.utils.arrayFirst(hofClass.Members(), function (hofMember) {
+                        return (hofMember.Id() == self.currentEditMember().Id());
+                    });
+
+                    if (theMember) {
+                        theMember.Biography(self.currentEditMember().Biography());
+                        if (theMember.YearInducted() != self.currentEditMember().YearInducted()) {
+                            theMember.YearInducted(self.currentEditMember().YearInducted());
+                            hofClass.Members.remove(theMember);
+                            // update member count.
+                            hofClass.MemberCount(hofClass.MemberCount() - 1);
+                            var newHofClass = ko.utils.arrayFirst(self.hallOfFameClasses(), function (newClass) {
+                                return newClass.Year() == self.currentEditMember().YearInducted();
+                            });
+
+                            if (newHofClass) {
+                                if (newHofClass.Year.filledMembers) {
+                                    newHofClass.Members.push(theMember);
+                                    newHofClass.Members.sort(function (a, b) {
+                                        if (a.Name() == b.Name())
+                                            return 0;
+                                        return a.Name() > b.Name() ? 1 : -1;
+                                    });
+                                }
+                                // update members count.
+                                newHofClass.MemberCount(newHofClass.MemberCount() + 1);
+                            }
+                            else {
+                                // new class, add accordion.
+                                var hofClass = {
+                                    Year: theMember.YearInducted(),
+                                    MemberCount: 1,
+                                    Members: [ theMember ]
+                                }
+                                self.hallOfFameClasses.push(new HallOfFameClassViewModel(hofClass, self.accountId));
+                                self.hallOfFameClasses.sort(function (a, b) {
+                                    if (a.Year() == b.Year())
+                                        return 0;
+                                    return a.Year() < b.Year() ? 1 : -1;
+                                });
+
+                                self.makeAccordion();
+                            }
+                        }
+                        return false; // stop each loop.
+                    }
+                });
             }
         });
 
@@ -186,12 +247,11 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                     return new HallOfFameClassViewModel(hofClass, self.accountId);
                 });
 
-                mappedHofClasses.sort(function(a,b)
-                {
+                mappedHofClasses.sort(function (a, b) {
                     if (a.Year() == b.Year())
                         return 0;
                     return a.Year() < b.Year() ? 1 : -1;
-                })
+                });
 
                 self.hallOfFameClasses(mappedHofClasses);
                 if (self.hallOfFameClasses().length > 0)
@@ -201,6 +261,20 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
             }
         });
     }
+
+    self.availableInductionDates = ko.observableArray();
+
+    self.initFirstYear = function () {
+        var currentYear = (new Date).getFullYear();
+        var maxBack = 100;
+        while (maxBack >= 0) {
+            self.availableInductionDates.push({ name: currentYear + '' });
+            currentYear--;
+            maxBack--;
+        }
+    }
+
+    self.initFirstYear();
 
     self.makeAccordion = function () {
         if ($("#accordion").hasClass("ui-accordion")) {

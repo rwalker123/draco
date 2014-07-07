@@ -17,7 +17,7 @@
 <div class="container-fluid" id="hallOfFameView">
 
     <div data-bind="if: editMode">
-        <form class="form-horizontal" role="form" data-bind="with: currentEditMember">
+        <form class="form-horizontal" role="form" id="editMemberForm" data-bind="with: currentEditMember">
             <div class="form-group">
                 <label class="col-sm-4 control-label">Name:</label>
                 <div class="col-sm-8">
@@ -27,7 +27,7 @@
             <div class="form-group">
                 <label class="col-sm-4 control-label">Year Inducted:</label>
                 <div class="col-sm-8">
-                    <select data-bind="selectPicker: YearInducted"></select>
+                    <select data-bind="selectPicker: YearInducted, selectPickerOptions: { optionsArray: $root.availableInductionDates }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose year inducted...'"></select>
                 </div>
             </div>
             <div class="form-group">
@@ -62,7 +62,9 @@
                     </div>
 
                     <div class="panel-body">
-                        <img class="img-rounded" style="margin: 5px" @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>   } else { <text> alt="drop photo" onerror="this.style.width = '120px'; this.style.height='90px';" </text> } data-bind="attr: { src: PhotoURL }" />
+                        <img class="img-rounded" style="margin: 5px"
+                             @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop photo" onerror="this.style.width = '120px'; this.style.height='90px';" </text>  }
+                             data-bind="imageUploader: fileUploaderUrl, attr: { src: PhotoURL }" />
                         <div data-bind="if: Biography">
                             <div class="well" data-bind="html: Biography"></div>
                         </div>
@@ -81,6 +83,8 @@
 @section scripts {
 
 @Scripts.Render("~/bundles/knockout")
+@Scripts.Render("~/bundles/jquery-file-upload")
+
 <script src="@Url.Content("~/Scripts/halloffame.js")" type="text/javascript"></script>
 <script type="text/javascript" src="~/Scripts/knockout.validation.js"></script>
 
