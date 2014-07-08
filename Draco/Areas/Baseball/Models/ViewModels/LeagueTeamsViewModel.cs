@@ -36,7 +36,7 @@ namespace SportsManager.Baseball.ViewModels
             return DataAccess.Teams.GetDivisionTeams(divisionId);
         }
 
-        public Stream ExportToExcel()
+        public FileStream ExportToExcel()
         {
             Guid guid = Guid.NewGuid();
             var destinationFile = Controller.Server.MapPath("~/Uploads/Temp/" + guid.ToString() + ".xlsx");

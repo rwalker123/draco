@@ -1,4 +1,5 @@
-﻿using SportsManager.Models;
+﻿using SportsManager.Controllers.Attributes;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,10 +31,12 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("exportaddresslist")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [DeleteTempFile]
         public FileStreamResult ExportAddressList(long accountId)
         {
             var vm = new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId);
-            Stream strm = vm.ExportToExcel();
+            FileStream strm = vm.ExportToExcel();
+            this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             fs.FileDownloadName = vm.AccountLogoUrl + "AddressList.xlsx";
             return fs;

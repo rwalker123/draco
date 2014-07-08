@@ -468,6 +468,7 @@
     <Compile Include="Models\ModelObjects\ContactName.cs" />
     <Compile Include="Models\ModelObjects\ContactRole.cs" />
     <Compile Include="Models\ModelObjects\CurrentSeasonInfo.cs" />
+    <Compile Include="Models\ModelObjects\DeleteTempFileAttribute.cs" />
     <Compile Include="Models\ModelObjects\Division.cs" />
     <Compile Include="Models\ModelObjects\DivisionTeams.cs" />
     <Compile Include="Models\ModelObjects\Handout.cs" />

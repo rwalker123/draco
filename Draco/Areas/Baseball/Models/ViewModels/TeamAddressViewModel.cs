@@ -23,7 +23,7 @@ namespace SportsManager.Baseball.ViewModels
         public Team Team { get; private set; }
         public IQueryable<Player> Roster { get; private set; }
 
-        public Stream ExportToExcel()
+        public FileStream ExportToExcel()
         {
             Guid guid = Guid.NewGuid();
             var destinationFile = Controller.Server.MapPath("~/Uploads/Temp/" + guid.ToString() + ".xlsx");
