@@ -649,13 +649,18 @@ namespace DataAccess
 
             long seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
 
-            // get leagues in season
+            //var contactIdsInSeason = (from ls in db.LeagueSeasons
+            //                          join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+            //                          join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+            //                          join r in db.Rosters on rs.PlayerId equals r.Id
+            //                          join c in db.Contacts on r.ContactId equals c.Id
+            //                          where ls.SeasonId == seasonId && !rs.Inactive
+            //                          select c.Id).Distinct();
+
             return (from ls in db.LeagueSeasons
                     join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
                     join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
                     join r in db.Rosters on rs.PlayerId equals r.Id
-                    join c in db.Contacts on r.ContactId equals c.Id
-                    orderby c.LastName, c.FirstYear, c.MiddleName
                     where ls.SeasonId == seasonId && !rs.Inactive
                     select new Player()
                     {
@@ -663,12 +668,14 @@ namespace DataAccess
                         TeamId = rs.TeamSeasonId,
                         PlayerNumber = rs.PlayerNumber,
                         SubmittedWaiver = rs.SubmittedWaiver,
+                        ContactId = r.Contact.Id,
                         Contact = new Contact(r.Contact.Id, r.Contact.Email, r.Contact.LastName, r.Contact.FirstName, r.Contact.MiddleName, r.Contact.Phone1, r.Contact.Phone2, r.Contact.Phone3, r.Contact.CreatorAccountId, r.Contact.StreetAddress, r.Contact.City, r.Contact.State, r.Contact.Zip, r.Contact.FirstYear.GetValueOrDefault(), r.Contact.DateOfBirth, r.Contact.UserId),
                         SubmittedDriversLicense = r.SubmittedDriversLicense,
                         AccountId = r.AccountId,
                         DateAdded = rs.DateAdded.GetValueOrDefault(),
                         AffiliationDuesPaid = GetAffiliationsDues(rs.PlayerId, seasonId)
-                    });
+                    }).GroupBy(x => x.ContactId).Select(y => y.First());
+
         }
 
 		public static bool IsTeamMember(long contactId, long teamSeasonId)

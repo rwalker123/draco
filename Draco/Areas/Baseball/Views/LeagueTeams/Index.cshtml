@@ -13,6 +13,10 @@
 
 <div class="jumbotron">
     @Header.DisplayHeader("Teams", Model.AccountName, Model.AccountLogoUrl)
+    @if (Model.IsAdmin)
+    { 
+        <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId' title="export address list to excel"><span class="glyphicon glyphicon-export"></span></a>
+    }
 </div>
 
 <div class="container-fluid">

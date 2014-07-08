@@ -42,6 +42,7 @@ namespace ModelObjects
 		public bool SubmittedDriversLicense { get; set; }
 
 		public Contact Contact { get; set; }
+        internal long ContactId { get; set; }
 
 		public int Age
 		{

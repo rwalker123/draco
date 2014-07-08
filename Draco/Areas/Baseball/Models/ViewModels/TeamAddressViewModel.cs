@@ -44,9 +44,6 @@ namespace SportsManager.Baseball.ViewModels
                 var sheet = workbookPart.Workbook.Descendants<Sheet>().ElementAt(0);
                 sheet.Name = Team.Name;
 
-                // Begining Row pointer                       
-                int index = 4;
-
                 var teamNameRow = worksheetPart.Worksheet.Descendants<Row>().First();
                 var teamNameCol = teamNameRow.Descendants<Cell>().First();
                 teamNameCol.CellValue = new CellValue(Team.Name);

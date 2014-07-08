@@ -54,13 +54,18 @@ namespace SportsManager.Baseball.ViewModels
                 // The SheetData object will contain all the data.
                 SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
+                var sheet = workbookPart.Workbook.Descendants<Sheet>().ElementAt(0);
+                sheet.Name = AccountName;
+
                 var teamNameRow = worksheetPart.Worksheet.Descendants<Row>().First();
                 var teamNameCol = teamNameRow.Descendants<Cell>().First();
                 teamNameCol.CellValue = new CellValue(AccountName);
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                var allPlayers = DataAccess.TeamRoster.GetAllActivePlayers(AccountId);
-                TeamAddressViewModel.ExportRosterToExcel(allPlayers, sheetData);
+                var allPlayers = DataAccess.TeamRoster.GetAllActivePlayers(AccountId).AsEnumerable();
+                allPlayers = allPlayers.OrderBy(x => x.Contact.FullName);
+
+                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData);
 
                 // save
                 worksheetPart.Worksheet.Save();

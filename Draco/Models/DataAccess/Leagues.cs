@@ -366,7 +366,7 @@ namespace DataAccess
                     join rs in db.RosterSeasons on ts.Id equals rs.TeamSeasonId
                     join r in db.Rosters on rs.PlayerId equals r.Id
                     join c in db.Contacts on r.ContactId equals c.Id
-                    orderby c.LastName, c.FirstYear, c.MiddleName
+                    orderby c.LastName, c.FirstName, c.MiddleName
                     where (c.Email != "" && c.Email != null) && ls.Id == leagueSeasonId && !rs.Inactive
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2, c.Phone3, c.CreatorAccountId,
                         c.StreetAddress, c.City, c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
