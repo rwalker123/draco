@@ -3,6 +3,7 @@ using System.Web.Mvc;
 using ModelObjects;
 using SportsManager.Baseball.ViewModels;
 using System.IO;
+using SportsManager.Models;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
@@ -64,6 +65,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         // id = NULL if not part of league, <> NULL TeamSeasonId for account.
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("exportaddresslist")]
+        [SportsManagerAuthorize(Roles="AccountAdmin")]
         public FileStreamResult ExportAddressList(long accountId, long id)
         {
             var vm = new TeamAddressViewModel(this, accountId, id);

@@ -25,9 +25,6 @@ namespace SportsManager.Baseball.ViewModels
 
         public Stream ExportToExcel()
         {
-            //FileStream template = new FileStream(this.Controller.Server.MapPath("~/Content/TeamAddressListTemplate.xlsx"), FileMode.Open);
-            //Stream strm = new MemoryStream();
-            //template.CopyTo(strm);
             Guid guid = Guid.NewGuid();
             var destinationFile = Controller.Server.MapPath("~/Uploads/Temp/" + guid.ToString() + ".xlsx");
             File.Copy(Controller.Server.MapPath("~/Content/TeamAddressListTemplate.xlsx"), destinationFile);
@@ -44,36 +41,12 @@ namespace SportsManager.Baseball.ViewModels
                 // The SheetData object will contain all the data.
                 SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
-                // Begining Row pointer                       
-                int index = 4;
-
                 var teamNameRow = worksheetPart.Worksheet.Descendants<Row>().First();
                 var teamNameCol = teamNameRow.Descendants<Cell>().First();
                 teamNameCol.CellValue = new CellValue(Team.Name);
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                // For each item in the database, add a Row to SheetData.
-                foreach (var player in Roster)
-                {
-                    // New Row
-                    Row row = new Row();
-                    row.RowIndex = (UInt32)index;
-
-                    // New Cell
-                    CreateCell(row, "A" + index, player.Contact.FullName);
-                    CreateCell(row, "B" + index, player.Contact.StreetAddress);
-                    CreateCell(row, "C" + index, player.Contact.City);
-                    CreateCell(row, "D" + index, player.Contact.State);
-                    CreateCell(row, "E" + index, player.Contact.Zip);
-                    CreateCell(row, "F" + index, player.AffiliationDuesPaid);
-
-                    // Append Row to SheetData
-                    sheetData.AppendChild(row);
-
-                    // increase row pointer
-                    index++;
-
-                }
+                ExportRosterToExcel(Roster, sheetData);
 
                 // save
                 worksheetPart.Worksheet.Save();
@@ -82,7 +55,36 @@ namespace SportsManager.Baseball.ViewModels
             return new FileStream(destinationFile, FileMode.Open);
         }
 
-        private void CreateCell(Row row, String column, String cellText)
+        public static void ExportRosterToExcel(IQueryable<Player> Roster, SheetData sheetData)
+        {
+            // Begining Row pointer                       
+            int index = 4;
+
+            // For each item in the database, add a Row to SheetData.
+            foreach (var player in Roster)
+            {
+                // New Row
+                Row row = new Row();
+                row.RowIndex = (UInt32)index;
+
+                // New Cell
+                CreateCell(row, "A" + index, player.Contact.FullName);
+                CreateCell(row, "B" + index, player.Contact.StreetAddress);
+                CreateCell(row, "C" + index, player.Contact.City);
+                CreateCell(row, "D" + index, player.Contact.State);
+                CreateCell(row, "E" + index, player.Contact.Zip);
+                CreateCell(row, "F" + index, player.AffiliationDuesPaid);
+
+                // Append Row to SheetData
+                sheetData.AppendChild(row);
+
+                // increase row pointer
+                index++;
+
+            }
+        }
+
+        private static void CreateCell(Row row, String column, String cellText)
         {
             Cell cell = new Cell();
             cell.DataType = CellValues.InlineString;

@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SportsManager.Models;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -22,89 +24,19 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         //
-        // GET: /Baseball/Teams/Details/5
-
-        public ActionResult Details(int id)
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        // id = NULL if not part of league, <> NULL TeamSeasonId for account.
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("exportaddresslist")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public FileStreamResult ExportAddressList(long accountId)
         {
-            return View();
-        }
-
-        //
-        // GET: /Baseball/Teams/Create
-
-        public ActionResult Create()
-        {
-            return View();
-        } 
-
-        //
-        // POST: /Baseball/Teams/Create
-
-        [HttpPost]
-        public ActionResult Create(FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add insert logic here
-
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
-        
-        //
-        // GET: /Baseball/Teams/Edit/5
- 
-        public ActionResult Edit(int id)
-        {
-            return View();
-        }
-
-        //
-        // POST: /Baseball/Teams/Edit/5
-
-        [HttpPost]
-        public ActionResult Edit(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add update logic here
- 
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
-        }
-
-        //
-        // GET: /Baseball/Teams/Delete/5
- 
-        public ActionResult Delete(int id)
-        {
-            return View();
-        }
-
-        //
-        // POST: /Baseball/Teams/Delete/5
-
-        [HttpPost]
-        public ActionResult Delete(int id, FormCollection collection)
-        {
-            try
-            {
-                // TODO: Add delete logic here
- 
-                return RedirectToAction("Index");
-            }
-            catch
-            {
-                return View();
-            }
+            var vm = new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId);
+            Stream strm = vm.ExportToExcel();
+            var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fs.FileDownloadName = vm.AccountLogoUrl + "AddressList.xlsx";
+            return fs;
         }
     }
 }

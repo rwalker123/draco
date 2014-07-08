@@ -132,7 +132,7 @@ namespace SportsManager.Baseball.Controllers
 
         private IEnumerable<ModelObjects.Contact> GetSeasonContactList(long accountId)
         {
-            return DataAccess.TeamRoster.GetAllActivePlayers(accountId);
+            return DataAccess.TeamRoster.GetAllActiveContacts(accountId);
         }
 
         private IEnumerable<ModelObjects.Contact> GetUserContactList(IEnumerable<long> contactIds)
