@@ -1,6 +1,5 @@
 ﻿using ModelObjects;
-using System;
-using System.Collections.Generic;
+using SportsManager.Models;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -42,6 +41,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles="AccountAdmin")]
         public HttpResponseMessage PostHOFClassMembers(long accountId, HOFMember hofMember)
         {
             hofMember.AccountId = accountId;
@@ -55,6 +55,54 @@ namespace SportsManager.Controllers
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
+
+        [AcceptVerbs("Put"), HttpPut]
+        [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage PutHOFClassMembers(long accountId, HOFMember hofMember)
+        {
+            hofMember.AccountId = accountId;
+
+            if (ModelState.IsValid && hofMember != null)
+            {
+                var success = DataAccess.HOFMembers.ModifyMember(hofMember);
+                if (success)
+                    return Request.CreateResponse<ModelObjects.HOFMember>(HttpStatusCode.OK, hofMember);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("classmembers")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteHOFClassMember(long accountId, int id)
+        {
+            if (DataAccess.HOFMembers.RemoveMember(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("availableinductees")]
+        public HttpResponseMessage GetAvailablePlayers(long accountId, string lastName, string firstName, int page)
+        {
+            int pageSize = 20;
+            var available = DataAccess.HOFMembers.GetAvailableHOFMembers(accountId, firstName, lastName).Skip((page - 1) * pageSize).Take(pageSize);
+
+            var contactNames = available.Select(a => new ModelObjects.ContactName()
+            {
+                FirstName = a.FirstName,
+                LastName = a.LastName,
+                MiddleName = a.MiddleName,
+                Id = a.Id,
+                PhotoURL = a.PhotoURL
+            });
+
+            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, contactNames);
+        }
+
 
     }
 }

@@ -1,5 +1,6 @@
 using ModelObjects;
 using SportsManager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -42,7 +43,7 @@ namespace DataAccess
                         ContactId = h.ContactId,
                         Biography = h.Bio,
                         YearInducted = h.YearInducted,
-                        Name = c.FirstName + " " + c.LastName,
+                        Name = Contact.BuildFullName(c.FirstName, c.MiddleName, c.LastName),
                         PhotoURL = Contact.GetLargePhotoURL(c.Id)
                     });
         }
@@ -75,8 +76,22 @@ namespace DataAccess
 
 		static public bool ModifyMember(HOFMember hofMember)
 		{
-            return false;
-		}
+            DB db = DBConnection.GetContext();
+
+            var dbHof = (from hof in db.hofs
+                         where hof.Id == hofMember.Id
+                         select hof).SingleOrDefault();
+
+            if (dbHof == null)
+                return false;
+
+            dbHof.Bio = hofMember.Biography ?? String.Empty;
+            dbHof.YearInducted = hofMember.YearInducted;
+
+            db.SubmitChanges();
+
+            return true;
+        }
 
 		static public long AddMember(HOFMember h)
 		{
@@ -102,8 +117,21 @@ namespace DataAccess
             return dbHof.Id;
 		}
 	
-		static public bool RemoveMember(HOFMember hofMember)
+		static public bool RemoveMember(int id)
 		{
+            DB db = DBConnection.GetContext();
+
+            var dbHOF = (from h in db.hofs
+                         where h.Id == id
+                         select h).SingleOrDefault();
+
+            if (dbHOF != null)
+            {
+                db.hofs.DeleteOnSubmit(dbHOF);
+                db.SubmitChanges();
+                return true;
+            }
+
             return false;
 		}
 	
@@ -127,7 +155,7 @@ namespace DataAccess
             return null;
 		}
 
-		static public IQueryable<Contact> GetAvailableHOFMembers(long accountId)
+		static public IQueryable<Contact> GetAvailableHOFMembers(long accountId, String firstName, String lastName)
 		{
             DB db = DBConnection.GetContext();
             long affiliationId = (from a in db.Accounts
@@ -143,7 +171,10 @@ namespace DataAccess
                           select h.ContactId);
 
             return (from c in db.Contacts
-                    where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id)
+                    where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id) &&
+                    (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
+                    (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                    orderby c.LastName, c.FirstName, c.MiddleName
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2,
                                     c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip,
                                     c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));

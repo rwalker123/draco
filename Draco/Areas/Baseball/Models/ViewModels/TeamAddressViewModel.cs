@@ -41,6 +41,12 @@ namespace SportsManager.Baseball.ViewModels
                 // The SheetData object will contain all the data.
                 SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
+                var sheet = workbookPart.Workbook.Descendants<Sheet>().ElementAt(0);
+                sheet.Name = Team.Name;
+
+                // Begining Row pointer                       
+                int index = 4;
+
                 var teamNameRow = worksheetPart.Worksheet.Descendants<Row>().First();
                 var teamNameCol = teamNameRow.Descendants<Cell>().First();
                 teamNameCol.CellValue = new CellValue(Team.Name);
@@ -60,26 +66,27 @@ namespace SportsManager.Baseball.ViewModels
             // Begining Row pointer                       
             int index = 4;
 
-            // For each item in the database, add a Row to SheetData.
-            foreach (var player in Roster)
-            {
-                // New Row
-                Row row = new Row();
-                row.RowIndex = (UInt32)index;
+                // For each item in the database, add a Row to SheetData.
+                foreach (var player in Roster)
+                {
+                    // New Row
+                    Row row = new Row();
+                    row.RowIndex = (UInt32)index;
 
-                // New Cell
-                CreateCell(row, "A" + index, player.Contact.FullName);
-                CreateCell(row, "B" + index, player.Contact.StreetAddress);
-                CreateCell(row, "C" + index, player.Contact.City);
-                CreateCell(row, "D" + index, player.Contact.State);
-                CreateCell(row, "E" + index, player.Contact.Zip);
-                CreateCell(row, "F" + index, player.AffiliationDuesPaid);
+                    // New Cell
+                    CreateCell(row, "A" + index, player.Contact.FullName);
+                    CreateCell(row, "B" + index, player.Contact.Email);
+                    CreateCell(row, "C" + index, player.Contact.StreetAddress);
+                    CreateCell(row, "D" + index, player.Contact.City);
+                    CreateCell(row, "E" + index, player.Contact.State);
+                    CreateCell(row, "F" + index, player.Contact.Zip);
+                    CreateCell(row, "G" + index, player.AffiliationDuesPaid);
 
-                // Append Row to SheetData
-                sheetData.AppendChild(row);
+                    // Append Row to SheetData
+                    sheetData.AppendChild(row);
 
-                // increase row pointer
-                index++;
+                    // increase row pointer
+                    index++;
 
             }
         }

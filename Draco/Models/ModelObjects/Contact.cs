@@ -91,6 +91,12 @@ namespace ModelObjects
             }
         }
 
+        static public string BuildFullName(string firstName, string middleName, string lastName)
+        {
+            string fullName = lastName + ", " + firstName + " " + middleName;
+            return fullName.Trim();
+        }
+
         public string FullNameFirst
         {
             get
