@@ -36,46 +36,55 @@
     <div id="accountName">
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float:right" data-bind="click: editAccountName, visible: viewMode"><span class="glyphicon glyphicon-edit"></span></button>
+            <button type="button" class="btn btn-default" style="float:right" data-bind="click: editAccount, visible: viewMode"><span class="glyphicon glyphicon-edit"></span></button>
 
-            <form class="form-horizontal" style="display:none" role="form" data-bind="visible: !viewMode()">
+            <form class="form-horizontal" style="display:none" role="form" data-bind="with: editAccountInfo, visible: !viewMode()">
                 <div class="form-group">
                     <label for="_accountName" class="col-sm-2 control-label">Account name</label>
                     <div class="col-sm-10">
-                        <input id="_accountName" type="text" class="form-control" style="width:200px" data-bind="value: name" />
+                        <input id="_accountName" type="text" class="form-control" style="width:200px" data-bind="value: AccountName" />
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="_yearEst" class="col-sm-2 control-label">Year established</label>
                     <div class="col-sm-10">
-                        <select id="_yearEst" class="selectpicker" data-bind="value: firstYear, options: availableYears"></select>
+                        <select id="_yearEst" class="selectpicker" data-bind="value: FirstYear, options: $root.availableYears"></select>
                     </div>
                 </div>
                 <div class="form-group">
                     <label for="_twitterAcct" class="col-sm-2 control-label">Twitter account</label>
                     <div class="col-sm-10">
-                        <input class="form-control" style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: twitterAccount" />
+                        <input class="form-control" style="width: 200px" id='twitterId' type="text" placeholder="enter twitter account" data-bind="value: TwitterAccountName" />
                     </div>
                 </div>
                 <div class="form-group">
                     <div class="col-sm-2">
                     </div>
                     <div class="col-sm-10">
-                        <button type="button" class="btn btn-primary" data-bind="click: saveAccountName"><span class="glyphicon glyphicon-ok"></span></button>
-                        <button type="button" class="btn btn-danger" data-bind="click: cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
+                        <button type="button" class="btn btn-primary" data-bind="click: $root.saveAccount"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-danger" data-bind="click: $root.cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </div>
             </form>
         }
 
-        <div data-bind="visible: viewMode">
+        <div data-bind="with: accountViewModel, visible: viewMode">
             @if (String.IsNullOrEmpty(@Model.AccountLogoUrl))
             {
-                <h1 style="margin-bottom:0px;">@Model.AccountName</h1>
+                <h1 style="margin-bottom:0px;" data-bind="html: AccountName"></h1>
             }
-            else
+
+            @if (!String.IsNullOrEmpty(@Model.AccountLogoUrl) || Model.IsAdmin)
             {
-                <img class="img-rounded img-responsive" src="@Model.AccountLogoUrl" />
+                <img class="img-rounded img-responsive" onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind="imageUploader: fileUploaderUrl, attr: { src: LargeLogoURL }" />
+            }
+            
+            @if (Model.IsAdmin)
+            {
+                <span class="btn btn-default fileinput-button" title="upload league logo">
+                    <i class="glyphicon glyphicon-upload"></i>
+                    <input id="largelogoupload" class="form-control" type="file" data-maxfilesize="1">
+                </span>
             }
 
             <h2>
@@ -87,7 +96,7 @@
             {
                 <text>Home</text>
             } 
-            <small style="color: white" data-bind="visible: hasYear">est. <span data-bind="text: firstYear"></span></small>
+            <small style="color: white" data-bind="visible: hasYear">est. <span data-bind="text: FirstYear"></span></small>
             </h2>
 
             @if (Model.CurrentSeasonId == 0 && Model.IsAdmin)
@@ -600,56 +609,5 @@ else
     <!-- drag/drop support for logo -->
     @Scripts.Render("~/bundles/jquery-file-upload")
     <script type="text/javascript" src="~/Areas/Baseball/Scripts/leagueHome.js"></script>
-
-    @if (Model.IsAdmin)
-    {
-        <script type="text/javascript">
-            $(document).ready(function () {
-                $(document).bind('drop dragover', function (e) {
-                    e.preventDefault();
-                });
-
-                var elem = $('#accountLogo');
-                var busyElem = $('#accountLogoBusy');
-                elem.bind('dragenter', function (e) {
-                    $(this).addClass('over');
-                });
-
-                elem.bind('dragleave drop', function (e) {
-                    $(this).removeClass('over');
-                });
-
-                setupLogoDrop(elem, busyElem);
-            });
-
-            function setupLogoDrop(elem, busyElem) {
-                elem.fileupload({
-                    dataType: 'json',
-                    dropZone: elem,
-                    url: window.config.rootUri + '/api/FileUploaderAPI/@Model.AccountId/AccountLargeLogo',
-                    add: function (e, data) {
-
-                        // set opacity of current image and show busy cusor.
-                        elem.fadeTo('fast', 0.4);
-                        busyElem.show('fast');
-
-                        data.submit();
-                    },
-                    done: function (e, data) {
-                        var seconds = new Date().getTime() / 1000;
-                        elem.attr("src", data.result + "?" + seconds);
-                    },
-                    always: function (e, data) {
-                        //remove opacity, hide progress
-                        elem.fadeTo('fast', 1.0);
-                        busyElem.hide('fast');
-                    }
-                });
-            }
-
-        </script>
-
-    } @* Model.IsAdmin *@
-
 }
 

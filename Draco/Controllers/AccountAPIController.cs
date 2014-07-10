@@ -102,27 +102,23 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage AccountName(long accountId, AccountNameYearData accountName)
+        public HttpResponseMessage AccountName(long accountId, Account account)
         {
-            if (accountName == null || String.IsNullOrWhiteSpace(accountName.Id))
+            if (account == null || String.IsNullOrWhiteSpace(account.AccountName))
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Account a = DataAccess.Accounts.GetAccount(accountId);
-            a.AccountName = accountName.Id;
-            a.FirstYear = accountName.Year;
-            a.TwitterAccountName = accountName.TwitterAccount;
-            try
+            a.AccountName = account.AccountName;
+            a.FirstYear = account.FirstYear;
+            a.TwitterAccountName = account.TwitterAccountName;
+            bool rc = DataAccess.Accounts.ModifyAccount(a);
+            if (rc)
             {
-                DataAccess.Accounts.ModifyAccount(a);
-
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(accountName.Id ?? String.Empty)
-                };
+                return Request.CreateResponse<Account>(HttpStatusCode.OK, account);
             }
-            catch (Exception e)
+            else
             {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, e);
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
             }
         }
 

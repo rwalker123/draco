@@ -16,18 +16,60 @@
     }
 }
 
+var AccountViewModel = function (data) {
+
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+
+    self.hasYear = ko.computed(function () {
+        return !!self.FirstYear();
+    });
+
+    self.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.Id() + '/AccountLargeLogo';
+    });
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
 // edit account name
 var EditAccountNameViewModel = function (accountId, accountName, firstYear, twitterAccountName) {
     var self = this;
     self.accountId = accountId;
 
-    self.name = ko.protectedObservable(accountName);
-    self.firstYear = ko.protectedObservable(firstYear);
-    self.twitterAccount = ko.protectedObservable(twitterAccountName);
+    self.accountViewModel = ko.observable(new AccountViewModel({
+        Id: self.accountId,
+        AccountName: accountName,
+        FirstYear: firstYear,
+        TwitterAccountName: twitterAccountName,
+        LargeLogoURL: window.config.rootUri + "/Uploads/Accounts/" + self.accountId + "/Logo/LargeLogo.png"
+    }));
+
+    self.editAccountInfo = ko.observable(new AccountViewModel(self.accountViewModel().toJS()));
+
     self.viewMode = ko.observable(true);
-    self.hasYear = ko.computed(function() {
-        return !!self.firstYear;
-    });
 
     self.availableYears = [];
 
@@ -44,25 +86,24 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
 
     self.fillYears();
 
-    self.editAccountName = function () {
+    self.editAccount = function () {
         self.viewMode(false);
     }
-    self.saveAccountName = function () {
+    self.saveAccount = function () {
 
         var url = window.config.rootUri + '/api/AccountAPI/' + accountId + '/AccountName';
+
+        data = self.editAccountInfo().toJS();
+
         $.ajax({
             type: "PUT",
             url: url,
-            data: {
-                Id: self.name.uncommitValue(),
-                Year: self.firstYear.uncommitValue(),
-                TwitterAccount: self.twitterAccount.uncommitValue()
-            },
+            data: data,
             success: function (accountName) {
-                if (self.twitterAccount.uncommitValue() != self.twitterAccount())
+                if (self.accountViewModel().TwitterAccountName() != self.editAccountInfo().TwitterAccountName())
                     window.location.reload();
                 else {
-                    self.commitChanges();
+                    self.accountViewModel().update(data);
                     self.viewMode(true);
                     window.location.hash = 'update';
                 }
@@ -71,29 +112,28 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
     }
 
     self.cancelEdit = function () {
-        self.resetChanges();
+        self.editAccountInfo().update(self.accountViewModel().toJS());
         self.viewMode(true);
     }
 
-
-    self.commitChanges = function () {
-        self.doAction(self, "commit");
-        self.doAction(self.details, "commit");
-    }
-
-    self.resetChanges = function () {
-        self.doAction(self, "reset");
-        self.doAction(self.details, "reset");
-    }
-
-    self.doAction = function (target, action) {
-        for (var key in target) {
-            var prop = target[key];
-            if (ko.isWriteableObservable(prop) && prop[action]) {
-                prop[action]();
-            }
+    $('#largelogoupload').fileupload({
+        url: window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/AccountLargeLogo',
+        dataType: 'json',
+        done: function (e, data) {
+            var seconds = new Date().getTime() / 1000;
+            self.accountViewModel().LargeLogoURL(data.result + "?" + seconds);
+            //$("#largeLogoImage").attr("src", data.result + "?" + seconds);
+        },
+        progressall: function (e, data) {
+            //var progress = parseInt(data.loaded / data.total * 100, 10);
+            //$('#progress .progress-bar').css(
+            //    'width',
+            //    progress + '%'
+            //);
         }
-    }
+    }).prop('disabled', !$.support.fileInput)
+    .parent().addClass($.support.fileInput ? undefined : 'disabled');
+
 }
 
 // twitter view model
