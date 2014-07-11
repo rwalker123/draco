@@ -7,33 +7,33 @@ namespace ModelObjects
 /// </summary>
 	public class VoteResults
 	{
-		private long m_optionId;
-		private int m_totalVotes;
-		private string m_optionText;
+        public VoteResults()
+        {
+        }
 
 		public VoteResults(long optionId, string optionText, int totalVotes)
 		{
-			m_optionId = optionId;
-			m_totalVotes = totalVotes;
-			m_optionText = optionText;
+			OptionId = optionId;
+			TotalVotes = totalVotes;
+			OptionText = optionText;
 		}
 
 		public long OptionId
 		{
-			get { return m_optionId; }
-			set { m_optionId = value; }
+			get;
+			set;
 		}
 
 		public int TotalVotes
 		{
-			get { return m_totalVotes; }
-			set { m_totalVotes = value; }
+			get;
+			set;
 		}
 
 		public string OptionText
 		{
-			get { return m_optionText; }
-			set { m_optionText = value; }
+			get;
+			set;
 		}
 	}
 }

@@ -1,9 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Web.Security;
-using System.Web.SessionState;
-using SportsManager;
+﻿using SportsManager;
 using SportsManager.Model;
+using System;
+using System.Linq;
 
 /// <summary>
 /// Summary description for Twitter

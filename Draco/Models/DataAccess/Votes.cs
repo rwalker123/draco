@@ -4,6 +4,8 @@ using System.Collections;
 using System.Data.SqlClient;
 using ModelObjects;
 using System.Collections.Generic;
+using System.Linq;
+using SportsManager;
 
 namespace DataAccess
 {
@@ -12,414 +14,222 @@ namespace DataAccess
 /// </summary>
 	static public class Votes
 	{
-		static public VoteQuestion[] GetVoteQuestions(long accountId)
+		static public IQueryable<VoteQuestion> GetVoteQuestions(long accountId)
 		{
-			ArrayList voteQuestions = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetVoteQuestions", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						voteQuestions.Add(new VoteQuestion(dr.GetInt64(0), dr.GetString(2), dr.GetBoolean(3), dr.GetInt64(1)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (VoteQuestion[])voteQuestions.ToArray(typeof(VoteQuestion));
+            return (from vq in db.VoteQuestions
+                    where vq.AccountId == accountId
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = accountId,
+                        Active = vq.Active,
+                        Question = vq.Question
+                    });
 		}
 
 		static public VoteQuestion GetVoteQuestion(long id)
 		{
-			VoteQuestion voteQuestion = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetVoteQuestion", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read())
-					{
-						voteQuestion  = new VoteQuestion(dr.GetInt64(0), dr.GetString(2), dr.GetBoolean(3), dr.GetInt64(1));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return voteQuestion;
+            return (from vq in db.VoteQuestions
+                    where vq.Id == id
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = vq.AccountId,
+                        Active = vq.Active,
+                        Question = vq.Question
+                    }).SingleOrDefault();
 		}
 
-		static public VoteQuestion[] GetActiveVotes(long accountId)
+		static public IQueryable<VoteQuestion> GetActiveVotes(long accountId)
 		{
-			ArrayList voteQuestions = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetActiveVoteQuestions", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					while (dr.Read())
-					{
-						voteQuestions.Add(new VoteQuestion(dr.GetInt64(0), dr.GetString(2), dr.GetBoolean(3), dr.GetInt64(1)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (VoteQuestion[])voteQuestions.ToArray(typeof(VoteQuestion));
+            return (from vq in db.VoteQuestions
+                    where vq.AccountId == accountId && vq.Active
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = vq.AccountId,
+                        Active = vq.Active,
+                        Question = vq.Question
+                    });
 		}
 
 		static public bool ModifyVoteQuestion(VoteQuestion voteQuestion)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
+	        // Update VoteQuestion SET Question = @question, Active = @active WHERE ID = @id
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateVoteQuestion", myConnection);
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = voteQuestion.Question;
-					myCommand.Parameters.Add("@active", SqlDbType.Bit).Value = voteQuestion.Active;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = voteQuestion.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbQuestion = (from vq in db.VoteQuestions
+                              where vq.Id == voteQuestion.Id
+                              select vq).SingleOrDefault();
+            if (dbQuestion == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            dbQuestion.Question = voteQuestion.Question;
+            dbQuestion.Active = voteQuestion.Active;
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
 		static public bool AddVoteQuestion(VoteQuestion voteQuestion)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateVoteQuestion", myConnection);
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = voteQuestion.Question;
-					myCommand.Parameters.Add("@active", SqlDbType.Bit).Value = voteQuestion.Active;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = voteQuestion.AccountId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            SportsManager.Model.VoteQuestion dbVoteQuestion = new SportsManager.Model.VoteQuestion();
+            dbVoteQuestion.AccountId = voteQuestion.AccountId;
+            dbVoteQuestion.Question = voteQuestion.Question;
+            dbVoteQuestion.Active = voteQuestion.Active;
+            db.VoteQuestions.InsertOnSubmit(dbVoteQuestion);
 
-					myConnection.Open();
-					myCommand.Prepare();
+            voteQuestion.Id = dbVoteQuestion.Id;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public bool RemoveVoteQuestion(VoteQuestion v)
+		static public bool RemoveVoteQuestion(long questionId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteVoteQuestion", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = v.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbVoteQuestion = (from vq in db.VoteQuestions
+                                  where vq.Id == questionId
+                                  select vq).SingleOrDefault();
+            if (dbVoteQuestion == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.VoteQuestions.DeleteOnSubmit(dbVoteQuestion);
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public List<VoteOption> GetVoteOptions(long questionId)
+		static public IQueryable<VoteOption> GetVoteOptions(long questionId)
 		{
-			    List<VoteOption> voteOptions = new List<VoteOption>();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetVoteOptions", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						voteOptions.Add(new VoteOption(dr.GetInt64(0), dr.GetInt64(1), dr.GetString(2), dr.GetInt32(3)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return voteOptions;
+	        // SELECT * FROM VoteOptions WHERE QuestionID = @questionId ORDER BY Priority            
+            return (from vo in db.VoteOptions
+                    where vo.QuestionId == questionId
+                    orderby vo.Priority
+                    select new VoteOption()
+                    {
+                        Id = vo.Id,
+                        OptionText = vo.OptionText,
+                        Priority = vo.Priority,
+                        QuestionId = vo.QuestionId
+                    });
 		}
 
 		static public bool ModifyVoteOption(VoteOption voteOption)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateVoteOption", myConnection);
-					myCommand.Parameters.Add("@optionText", SqlDbType.VarChar, 255).Value = voteOption.OptionText;
-					myCommand.Parameters.Add("@priority", SqlDbType.Int).Value = voteOption.Priority;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = voteOption.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbOption = (from vo in db.VoteOptions
+                            where vo.Id == voteOption.Id
+                            select vo).SingleOrDefault();
+            if (dbOption == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            dbOption.OptionText = voteOption.OptionText;
+            dbOption.Priority = voteOption.Priority;
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
 		static public bool AddVoteOption(VoteOption voteOption)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateVoteOption", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = voteOption.QuestionId;
-					myCommand.Parameters.Add("@optionText", SqlDbType.VarChar, 255).Value = voteOption.OptionText;
-					myCommand.Parameters.Add("@priority", SqlDbType.BigInt).Value = voteOption.Priority;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbVoteOption = new SportsManager.Model.VoteOption();
+            dbVoteOption.OptionText = voteOption.OptionText;
+            dbVoteOption.Priority = voteOption.Priority;
+            dbVoteOption.QuestionId = voteOption.QuestionId;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.VoteOptions.InsertOnSubmit(dbVoteOption);
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            voteOption.Id = dbVoteOption.Id;
 
-			return (rowCount <= 0) ? false : true;
+            return true;
+            
 		}
 
-		static public bool RemoveVoteOption(VoteOption v)
+		static public bool RemoveVoteOption(long id)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteVoteOption", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = v.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbVoteOption = (from vo in db.VoteOptions
+                                where vo.Id == id
+                                select vo).SingleOrDefault();
+            if (dbVoteOption == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
+            db.VoteOptions.DeleteOnSubmit(dbVoteOption);
+            return true;
 		}
 
 		static public bool EnterVote(long questionId, long optionId, long contactId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.EnterVote", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.Parameters.Add("@optionId", SqlDbType.BigInt).Value = optionId;
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = contactId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            //INSERT INTO VoteAnswers VALUES(@questionId, @optionId, @contactId)
+            var dbVoteAnswers = new SportsManager.Model.VoteAnswer();
+            dbVoteAnswers.OptionId = optionId;
+            dbVoteAnswers.QuestionId = questionId;
+            dbVoteAnswers.ContactId = contactId;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.VoteAnswers.DeleteOnSubmit(dbVoteAnswers);
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public VoteResults[] GetVoteResults(long questionId)
+		static public IQueryable<VoteResults> GetVoteResults(long questionId)
 		{
-			ArrayList voteResults = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetVoteResults", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            //SELECT VoteAnswers.OptionID, VoteOptions.OptionText, COUNT(*) AS Votes  
+            //FROM VoteAnswers LEFT JOIN VoteOptions ON VoteAnswers.OptionID = VoteOptions.ID 
+            //WHERE VoteAnswers.QuestionID = @questionId GROUP BY OptionID , OptionText ORDER BY Votes DESC
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						voteResults.Add(new VoteResults(dr.GetInt64(0), dr.GetString(1), dr.GetInt32(2)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (VoteResults[])voteResults.ToArray(typeof(VoteResults));
+            return (from va in db.VoteAnswers
+                    join vo in db.VoteOptions on va.OptionId equals vo.Id
+                    where va.QuestionId == questionId
+                    group va by new { va.OptionId, vo.OptionText } into g
+                    select new VoteResults()
+                    {
+                        OptionId = g.Key.OptionId,
+                        OptionText = g.Key.OptionText,
+                        TotalVotes = g.Count()
+                    });
 		}
 
 		static public bool HasVoted(long questionId, long contactId)
 		{
-			bool hasVoted = false;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.HasVoted", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.Parameters.Add("@contactId", SqlDbType.BigInt).Value = contactId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					int voteResult = (int)myCommand.ExecuteScalar();
-
-					hasVoted = (voteResult > 0);
-					
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return hasVoted;
+            DB db = DBConnection.GetContext();
+            
+            //SELECT Count(Id)
+            //FROM VoteAnswers 
+            //WHERE QuestionId = @questionId AND ContactId = @contactId
+            return (from va in db.VoteAnswers
+                    where va.QuestionId == questionId && va.ContactId == contactId
+                    select va).Any();			
 		}
 
 		static public int GetTotalVotes(long questionId)
 		{
-			int total = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTotalVotes", myConnection);
-					myCommand.Parameters.Add("@questionId", SqlDbType.BigInt).Value = questionId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						total = dr.GetInt32(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return total;
+            //SELECT COUNT(*) AS cnt 
+            //FROM VoteAnswers 
+            //WHERE QuestionId = @questionId
+            return (from va in db.VoteAnswers
+                    where va.QuestionId == questionId
+                    select va).Count();
 		}
 	}
 }

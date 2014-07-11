@@ -7,51 +7,46 @@ namespace ModelObjects
 /// </summary>
 	public class VoteQuestion
 	{
-		private long m_id;
-		private long m_accountId;
-		private string m_question = String.Empty;
-		private bool m_active = false;
-
 		public VoteQuestion()
 		{
 		}
 
 		public VoteQuestion(long id, string question, bool active, long accountId)
 		{
-			m_id = id;
-			m_accountId = accountId;
-			m_question = question;
-			m_active = active;
+			Id = id;
+			AccountId = accountId;
+			Question = question;
+			Active = active;
 		}
 
 		public long Id
 		{
-			get { return m_id; }
-			set { m_id = value; }
+			get;
+			set;
 		}
 
 		public long AccountId
 		{
-			get { return m_accountId; }
-			set { m_accountId = value; }
+			get;
+			set;
 		}
 
 		public string Question
 		{
-			get { return m_question; }
-			set { m_question = value; }
+			get;
+			set;
 		}
 
 		public bool Active
 		{
-			get { return m_active; }
-			set { m_active = value; }
+			get;
+			set;
 		}
 
 		public bool GetVoteStatus(System.Web.HttpCookieCollection cookies)
 		{
 			bool rc = false;
-			string voteCookieName = "MSBLQ" + m_id;
+			string voteCookieName = "MSBLQ" + Id;
 
 			try
 			{
