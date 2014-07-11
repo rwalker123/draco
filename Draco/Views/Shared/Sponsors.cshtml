@@ -74,7 +74,7 @@
 
         <ul class="list-group" data-bind="foreach: sponsors, visible: !editSponsorMode()">
             <li class="list-group-item">
-                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop logo" onerror="this.style.width = '170px'; this.style.height='130px';" </text> } data-bind='imageUploader: fileUploaderUrl, attr: { src: LogoURL }' class="img-responsive img-rounded" />
+                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop logo" onerror="this.style.width = '170px'; this.style.height='130px';" </text> } data-bind='imageUploader: sponsorUploaderUrl, attr: { src: LogoURL }' class="img-responsive img-rounded" />
                 <h3 data-bind="html: Name"></h3>
                 <address style="margin: 5px">
                     <div data-bind="if: Website">

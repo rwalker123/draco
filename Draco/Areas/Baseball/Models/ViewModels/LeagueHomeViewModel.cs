@@ -28,6 +28,7 @@ namespace SportsManager.Baseball.ViewModels
             ShowBirthdays = true;
             ShowWelcomeMessages = true;
             ShowScoreboard = true;
+            ShowUserPoll = IsAdmin || DataAccess.Votes.GetActiveVotes(accountId).Any();
 
             UserTeams = DataAccess.Teams.GetCurrentUserTeams(accountId);
 
@@ -73,6 +74,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowWorkouts
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowUserPoll
         {
             get;
             private set;

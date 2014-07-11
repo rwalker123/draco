@@ -1,0 +1,59 @@
+﻿@model SportsManager.ViewModels.UserPollViewModel
+@using System.Collections.Generic;
+
+<div class="panel panel-info" id="userPollView">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">User Polls</h3>
+
+        @if (Model.IsAdmin)
+        {
+            <button type="button" class="btn btn-default" style="float: right" ><span class="glyphicon glyphicon-plus"></span></button>
+        }
+
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        @if (Model.IsAdmin)
+        {
+            <div class="modal fade" id="deleteUserPollModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" id="deleteModalLabel">Confirm Delete Poll</h4>
+                        </div>
+                        <div class="modal-body" id="deleteModalBody">
+                            You are about to delete a user poll. All data associated with the poll will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeleteBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <form data-bind="with: currentPoll, visible: editPollMode">
+                <div class="form-group">
+                    <label for="sponsor_Name" class="control-label">Question</label>
+                    <input id="sponsor_Name" class="form-control" type="text" data-bind="value: Question" />
+                </div>
+                <div class="form-group">
+                    <button class="btn btn-success" type="button"><span class="glyphicon glyphicon-ok"></span></button>
+                    <button class="btn btn-danger" type="button"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+            </form>
+        }
+
+        <div class="list-group" data-bind="foreach: userPolls, visible: !editPollMode()">
+                @if (Model.IsAdmin)
+                {
+                    <button type="button" class="btn btn-default" ><span class="glyphicon glyphicon-edit"></span></button>
+                    <button type="button" class="btn btn-danger" ><span class="glyphicon glyphicon-remove"></span></button>
+                }
+        </div>
+    </div>
+</div>
+

@@ -40,7 +40,7 @@ var AccountViewModel = function (data) {
         return !!self.FirstYear();
     });
 
-    self.fileUploaderUrl = ko.computed(function () {
+    self.accountLogoUploaderUrl = ko.computed(function () {
         return window.config.rootUri + '/api/FileUploaderAPI/' + self.Id() + '/AccountLargeLogo';
     });
 

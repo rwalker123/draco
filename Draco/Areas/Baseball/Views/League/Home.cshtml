@@ -76,15 +76,15 @@
 
             @if (!String.IsNullOrEmpty(@Model.AccountLogoUrl) || Model.IsAdmin)
             {
-                <img class="img-rounded img-responsive" onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind="imageUploader: fileUploaderUrl, attr: { src: LargeLogoURL }" />
+                <img class="img-rounded img-responsive" onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind="imageUploader: accountLogoUploaderUrl, attr: { src: LargeLogoURL }" />
             }
             
             @if (Model.IsAdmin)
             {
-                <span class="btn btn-default fileinput-button" title="upload league logo">
+                @*<span class="btn btn-default fileinput-button" title="upload league logo">
                     <i class="glyphicon glyphicon-upload"></i>
                     <input id="largelogoupload" class="form-control" type="file" data-maxfilesize="1">
-                </span>
+                </span>*@
             }
 
             <h2>
@@ -241,6 +241,13 @@
         </div>
     }
 
+    @if (Model.ShowUserPoll)
+    {
+        <div class="col-md-12">
+            @{Html.RenderPartial("UserPollView", new SportsManager.ViewModels.UserPollViewModel(Model.Controller, Model.AccountId));}
+        </div>
+    }
+
     @if (Model.ShowScoreboard)
     { 
         <div class="col-md-12">
@@ -248,12 +255,12 @@
         </div>
     }
 
-        @if (Model.ShowLeagueLeaders)
-        {
-            <div class="col-md-12">
-                @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId));}
-            </div>
-        }
+    @if (Model.ShowLeagueLeaders)
+    {
+        <div class="col-md-12">
+            @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId));}
+        </div>
+    }
 
     @if (Model.ShowBirthdays)
     {     
@@ -326,6 +333,11 @@ else
 }
     @Scripts.Render("~/bundles/bootstrap-wysiwyg")
 
+@if (Model.ShowUserPoll)
+{
+    <script type="text/javascript" src="~/Scripts/userpoll.js"></script>
+}
+
 @if (Model.ShowPlayerInterview)
 {
     <script type="text/javascript" src="~/Scripts/playersurveyspotlight.js"></script>
@@ -389,88 +401,96 @@ else
         initKOHelpers();
 
         InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@ViewData["FacebookFanPage"]', @Model.IsAdmin.ToString().ToLower() );
-        
+
         @if (Model.ShowPlayerInterview)
         {
             <text>
-                InitPlayerSurveySpotlightViewModel(@Model.AccountId);
-            </text>
+        InitPlayerSurveySpotlightViewModel(@Model.AccountId);
+        </text>
         }
-        
+
         @if (Model.ShowPhotoGallery)
         {
             <text>
-            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowWelcomeMessages)
-        {             
+        {
             <text>
-            welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowAnnouncements)
-        { 
+        {
             <text>
-            announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
+        }
+
+        @if (Model.ShowUserPoll)
+        {
+            <text>
+            initUserPollViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
             </text>
         }
-    
+
+
         @if (Model.ShowScoreboard)
-        { 
+        {
             <text>
-            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
-                
+
         @if (Model.ShowLeagueLeaders)
-        { 
+        {
             <text>
-            initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
-        
+
         @if (Model.ShowSponsors)
         {
             <text>
-            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>            
+        initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
-                
+
         @if (Model.ShowHandouts)
-        { 
+        {
             <text>
-            var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            ko.applyBindings(handoutData, document.getElementById("handouts"));
-            </text>
+        var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        ko.applyBindings(handoutData, document.getElementById("handouts"));
+        </text>
         }
 
         @if (Model.ShowWorkouts)
-        {         
+        {
             <text>
-            var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            ko.applyBindings(workoutsData, document.getElementById("workouts"));
-            </text>
+        var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        ko.applyBindings(workoutsData, document.getElementById("workouts"));
+        </text>
         }
 
         @if (Model.ShowWelcomeMessages)
-        { 
+        {
             <text>
-            // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
-            welcomeData.ShowFirstMenu();
-            </text>
+        // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
+        welcomeData.ShowFirstMenu();
+        </text>
         }
-        
+
         @if (Model.ShowAnnouncements)
-        { 
+        {
             <text>
-            announcementData.AdjustNewsMenuHeaders();
-            </text>
+        announcementData.AdjustNewsMenuHeaders();
+        </text>
         }
-        
+
 
         $("#_yearEst").selectpicker();
     });
