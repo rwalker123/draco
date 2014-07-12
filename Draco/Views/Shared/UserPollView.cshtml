@@ -48,11 +48,57 @@
         }
 
         <div class="list-group" data-bind="foreach: userPolls, visible: !editPollMode()">
-                @if (Model.IsAdmin)
-                {
-                    <button type="button" class="btn btn-default" ><span class="glyphicon glyphicon-edit"></span></button>
-                    <button type="button" class="btn btn-danger" ><span class="glyphicon glyphicon-remove"></span></button>
-                }
+
+            <div class="list-group-item">
+                <h5 class="list-group-item-heading" data-bind="html: Question"></h5>
+                <div class="list-group-item-text">
+                    <form data-bind="foreach: Results">
+                        @if (Model.CanVote)
+                        { 
+                        <div class="input-group">
+                            <span class="input-group-addon">
+                                <input type="radio" data-bind="checked: $parent.OptionSelected.NewOption, attr: { name: $parent.Id, value: OptionId }">
+                            </span>
+                            <input type="text" class="form-control" readonly="readonly" data-bind="value: OptionText" />
+                        </div><!-- /input-group -->
+                        }
+                        else
+                        {
+                            <h6 data-bind="html: OptionText"></h6>
+                        }
+
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-info" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-bind="style: { width: (TotalVotes() / $parent.totalVotes() * 100) + '%', 'aria-valuenow': (TotalVotes() / $parent.totalVotes() * 100) }">
+                                <span data-bind="html: TotalVotes"></span>
+                            </div>
+                        </div>
+                    </form>
+
+                    @if (Model.CanVote)
+                    { 
+                        <div data-bind="ifnot: HasVoted">
+                            <button type="button" class="btn btn-primary" data-bind="click: vote, enable: OptionSelected.NewOption">vote</button>
+                        </div>
+                        <div data-bind="if: HasVoted">
+                            <h6>You voted: <span data-bind="html: OptionSelected.Text"></span></h6> 
+                            <button type="button" class="btn btn-primary" data-bind="click: revote, enable: OptionSelected.NewOption">change vote</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">Login to vote!</div>
+                    }
+                    
+                    <h6><span data-bind="html: totalVotes"></span> total votes.</h6>
+
+
+                    @if (Model.IsAdmin)
+                    {
+                        <button type="button" class="btn btn-default"><span class="glyphicon glyphicon-edit"></span></button>
+                        <button type="button" class="btn btn-danger"><span class="glyphicon glyphicon-remove"></span></button>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>

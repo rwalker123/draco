@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace ModelObjects
 {
@@ -43,27 +44,22 @@ namespace ModelObjects
 			set;
 		}
 
-		public bool GetVoteStatus(System.Web.HttpCookieCollection cookies)
-		{
-			bool rc = false;
-			string voteCookieName = "MSBLQ" + Id;
+        public IQueryable<VoteResults> Results
+        {
+            get;
+            set;
+        }
 
-			try
-			{
-				foreach( System.Web.HttpCookie c in cookies )
-				{
-					if (c.Name == voteCookieName)
-					{
-						rc = (Int32.Parse(c.Value) > 0) ? true : false;
-						break;
-					}
-				}
-			}
-			catch (Exception)
-			{
-			}
+        public bool HasVoted
+        {
+            get;
+            set;
+        }
 
-			return rc;
-		}
+        public long OptionSelected
+        {
+            get;
+            set;
+        }
 	}
 }

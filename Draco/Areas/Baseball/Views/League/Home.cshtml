@@ -440,7 +440,7 @@ else
         @if (Model.ShowUserPoll)
         {
             <text>
-            initUserPollViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            initUserPollViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
             </text>
         }
 

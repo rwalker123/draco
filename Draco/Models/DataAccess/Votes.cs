@@ -177,13 +177,26 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
 
-            //INSERT INTO VoteAnswers VALUES(@questionId, @optionId, @contactId)
-            var dbVoteAnswers = new SportsManager.Model.VoteAnswer();
-            dbVoteAnswers.OptionId = optionId;
-            dbVoteAnswers.QuestionId = questionId;
-            dbVoteAnswers.ContactId = contactId;
+            var dbVoteAnswer = (from va in db.VoteAnswers
+                                where va.QuestionId == questionId && va.ContactId == contactId
+                                select va).SingleOrDefault();
 
-            db.VoteAnswers.DeleteOnSubmit(dbVoteAnswers);
+            if (dbVoteAnswer == null)
+            {
+                //INSERT INTO VoteAnswers VALUES(@questionId, @optionId, @contactId)
+                dbVoteAnswer = new SportsManager.Model.VoteAnswer();
+                dbVoteAnswer.OptionId = optionId;
+                dbVoteAnswer.QuestionId = questionId;
+                dbVoteAnswer.ContactId = contactId;
+
+                db.VoteAnswers.InsertOnSubmit(dbVoteAnswer);
+            }
+            else
+            {
+                dbVoteAnswer.OptionId = optionId;       
+            }
+
+            db.SubmitChanges();
 
             return true;
 		}
@@ -207,6 +220,38 @@ namespace DataAccess
                         TotalVotes = g.Count()
                     });
 		}
+
+        static public IQueryable<VoteQuestion> GetActiveVotesWithResults(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var contactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
+
+            return (from vq in db.VoteQuestions
+                    where vq.AccountId == accountId && vq.Active
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = vq.AccountId,
+                        Active = vq.Active,
+                        Question = vq.Question,
+                        Results = GetVoteResults(vq.Id),
+                        HasVoted = HasVoted(vq.Id, contactId),
+                        OptionSelected = UserVoteOption(vq.Id, contactId)
+                    });
+        }
+
+        static public long UserVoteOption(long questionId, long contactId)
+        {
+            DB db = DBConnection.GetContext();
+
+            //SELECT Count(Id)
+            //FROM VoteAnswers 
+            //WHERE QuestionId = @questionId AND ContactId = @contactId
+            return (from va in db.VoteAnswers
+                    where va.QuestionId == questionId && va.ContactId == contactId
+                    select va.OptionId).SingleOrDefault();			
+        }
 
 		static public bool HasVoted(long questionId, long contactId)
 		{
