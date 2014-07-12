@@ -9,11 +9,6 @@
 {
 @Styles.Render("~/Content/themes/base/css")
     <style type="text/css">
-        h3.userHeader
-        {
-            font-size:24px;
-        }
-
         ul
         {
             list-style-type: none;
@@ -71,13 +66,7 @@
         <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
     </ul>
     <div data-bind="foreach: users">
-        <h3 class="userHeader">
-            <img src='@Url.Content("~/images/busy.gif")'
-                 style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
-            <img class='fileupload' 
-            style="width: 80px; height: 60px; position: relative;vertical-align:middle;" 
-            data-bind="imageUploader: fileUploaderUrl, attr : { src: photoUrl }"
-            alt="upload photo" />
+        <h3>
             <a href="#" data-bind="text: fullName"></a>
         </h3>
         <div>
@@ -100,6 +89,15 @@
 {
 
 <script id="viewUserDetailsTemplate" type="text/html">
+
+    <img onerror="this.style.display = 'none';" data-bind="attr: { src: photoUrl }" class="img-rounded" />
+    @if (Model.IsAdmin)
+    {
+        <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+            <i class="glyphicon glyphicon-upload"></i>
+            <input class="form-control" type="file" data-maxfilesize="1">
+        </span>
+    }
 
     <div data-bind="with: details">
         <address data-bind="visible: email()">

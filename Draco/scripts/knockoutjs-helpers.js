@@ -87,11 +87,14 @@
 
     ko.bindingHandlers.imageUploader = {
         init: function (element, valueAccessor) {
-            $(element).bind('dragenter', function (e) {
+
+            var imageElement = $(element).prevAll("img:first");
+
+            imageElement.bind('dragenter', function (e) {
                 $(this).addClass('dragover');
             });
 
-            $(element).bind('dragleave drop', function (e) {
+            imageElement.bind('dragleave drop', function (e) {
                 $(this).removeClass('dragover');
             });
 
@@ -99,22 +102,22 @@
             $(element).attr('data-url', value);
             $(element).fileupload({
                 dataType: 'json',
-                dropZone: $(element),
+                dropZone: imageElement,
                 add: function (e, data) {
 
                     // set opacity of current image and show busy cusor.
-                    $(element).fadeTo('fast', 0.4);
+                    imageElement.fadeTo('fast', 0.4);
                     //busyElem.show('fast');
 
                     data.submit();
                 },
                 done: function (e, data) {
                     var seconds = new Date().getTime() / 1000;
-                    $(element).attr("src", data.result + "?" + seconds);
+                    imageElement.attr("src", data.result + "?" + seconds);
                 },
                 always: function (e, data) {
                     //remove opacity, hide progress
-                    $(element).fadeTo('fast', 1.0);
+                    imageElement.fadeTo('fast', 1.0);
                     //busyElem.hide('fast');
                 }
             });
