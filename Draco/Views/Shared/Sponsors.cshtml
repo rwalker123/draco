@@ -74,7 +74,15 @@
 
         <ul class="list-group" data-bind="foreach: sponsors, visible: !editSponsorMode()">
             <li class="list-group-item">
-                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>    } else { <text> alt="drop logo" onerror="this.style.width = '170px'; this.style.height='130px';" </text> } data-bind='imageUploader: sponsorUploaderUrl, attr: { src: LogoURL }' class="img-responsive img-rounded" />
+                <img onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind='attr: { src: LogoURL }' class="img-responsive img-rounded" />
+                @if (Model.IsAdmin)
+                {
+                    <span data-bind="imageUploader: sponsorUploaderUrl" class="btn btn-default fileinput-button" title="upload sponsor logo">
+                        <i class="glyphicon glyphicon-upload"></i>
+                        <input class="form-control" type="file" data-maxfilesize="1">
+                    </span>
+                }
+                
                 <h3 data-bind="html: Name"></h3>
                 <address style="margin: 5px">
                     <div data-bind="if: Website">

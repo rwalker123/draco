@@ -20,6 +20,8 @@
 var ManagerViewModel = function (accountId, data) {
     var self = this;
 
+    self.accountId = accountId;
+
     // mappings to handle special cases in parsing the object.
     self.mapping = {
         // example:

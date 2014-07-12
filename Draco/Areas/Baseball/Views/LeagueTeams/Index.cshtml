@@ -43,10 +43,14 @@
                                     <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/team/exportAddressList/")@Model.AccountId/@team.Id' title="export address list to excel"><span class="glyphicon glyphicon-export"></span></a>
                                 }
                                 
-
-                                <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text>  } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text>  }
-                                     @if (Model.IsAdmin) { <text>data-bind="imageUploader: fileUploaderUrl"</text> }
-                                     src="@team.TeamLogoURL" class="img-rounded" />
+                                <img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" />
+                                @if (Model.IsAdmin)
+                                {
+                                    <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload team logo">
+                                        <i class="glyphicon glyphicon-upload"></i>
+                                        <input class="form-control" type="file" data-maxfilesize="1">
+                                    </span>
+                                }
 
                                 <a data-bind="visible: viewMode" href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
                                     <h4 style="display:inline-block" data-bind="html: teamName" class="teamName">@team.Name</h4>

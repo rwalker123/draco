@@ -30,7 +30,7 @@ var SponsorViewModel = function (data, accountId) {
     self.sponsorUploaderUrl = ko.computed(function () {
         var url = window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId;
         if (self.TeamId())
-            url = url + '/TeamSponsorLogo/' + self.Id();
+            url = url + '/Team/' + self.TeamId() + '/TeamSponsorLogo/' + self.Id();
         else
             url = url + '/SponsorLogo/' + self.Id();
 

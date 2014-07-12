@@ -76,15 +76,22 @@
 
             @if (!String.IsNullOrEmpty(@Model.AccountLogoUrl) || Model.IsAdmin)
             {
-                <img class="img-rounded img-responsive" onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind="imageUploader: accountLogoUploaderUrl, attr: { src: LargeLogoURL }" />
+                <img class="img-rounded img-responsive" onload="this.style.display = 'block';" onerror="this.style.display = 'none';" data-bind="attr: { src: LargeLogoURL }" />
+                if (Model.IsAdmin)
+                { 
+                    <span data-bind="imageUploader: accountLogoUploaderUrl" class="btn btn-default fileinput-button" title="upload league logo">
+                        <i class="glyphicon glyphicon-upload"></i>
+                        <input class="form-control" type="file" data-maxfilesize="1">
+                    </span>
+                }
             }
-            
-            @if (Model.IsAdmin)
-            {
-                @*<span class="btn btn-default fileinput-button" title="upload league logo">
-                    <i class="glyphicon glyphicon-upload"></i>
-                    <input id="largelogoupload" class="form-control" type="file" data-maxfilesize="1">
-                </span>*@
+
+        @if (Model.IsAdmin)
+        {
+            @*<span class="btn btn-default fileinput-button" title="upload league logo">
+                <i class="glyphicon glyphicon-upload"></i>
+                <input id="largelogoupload" class="form-control" type="file" data-maxfilesize="1">
+            </span>*@
             }
 
             <h2>

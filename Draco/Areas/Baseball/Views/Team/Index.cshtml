@@ -14,9 +14,14 @@
     }
 
     <div data-bind="visible: viewMode()">
-        <img @if (!Model.IsAdmin) { <text> onerror="this.style.display = 'none';" </text> } else { <text> alt="drop photo" onerror="this.style.width = '80px'; this.style.height='45px';" </text> }
-             @if (Model.IsAdmin) { <text> data-bind="imageUploader: fileUploaderUrl" </text>  }
-             src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" />
+        <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" />
+        @if (Model.IsAdmin)
+        {
+            <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+                <i class="glyphicon glyphicon-upload"></i>
+                <input class="form-control" type="file" data-maxfilesize="1">
+            </span>
+        }
 
         <h1 style="display: inline-block;">
             <span data-bind="html: teamName"></span>
