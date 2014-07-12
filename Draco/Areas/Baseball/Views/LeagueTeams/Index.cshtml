@@ -34,15 +34,6 @@
                         @foreach (var team in Model.GetDivisionTeams(division.Id))
                         {
                             <li class="list-group-item team" id='team_@(team.Id + "_" + team.TeamId)'>
-                                @if (Model.IsAdmin)
-                                {
-                                    <button class="btn btn-default" data-bind="click: editTeamName, visible: viewMode" title="edit team"><span class="glyphicon glyphicon-edit"></span></button>
-                                    <a href='@Url.Action("AddressList", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)' class="btn btn-default" title="address list">
-                                        <span class="glyphicon glyphicon-list-alt"></span>
-                                    </a>
-                                    <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/team/exportAddressList/")@Model.AccountId/@team.Id' title="export address list to excel"><span class="glyphicon glyphicon-export"></span></a>
-                                }
-                                
                                 <img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" class="img-rounded" />
                                 @if (Model.IsAdmin)
                                 {
@@ -50,7 +41,9 @@
                                         <i class="glyphicon glyphicon-upload"></i>
                                         <input class="form-control" type="file" data-maxfilesize="1">
                                     </span>
+                                    <button class="btn btn-default" data-bind="click: editTeamName, visible: viewMode" title="edit team"><span class="glyphicon glyphicon-edit"></span></button>
                                 }
+
 
                                 <a data-bind="visible: viewMode" href='@Url.Action("Index", "Team", new { area = "baseball", accountId = Model.AccountId, id = team.Id }, null)'>
                                     <h4 style="display:inline-block" data-bind="html: teamName" class="teamName">@team.Name</h4>
