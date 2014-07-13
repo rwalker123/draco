@@ -74,6 +74,32 @@ namespace DataAccess
             dbQuestion.Active = voteQuestion.Active;
             db.SubmitChanges();
 
+            List<long> existingVoteOptions = new List<long>(GetVoteOptions(voteQuestion.Id).Select(x => x.Id));
+            
+            var optionIndex = 0;
+            foreach(var option in voteQuestion.Results)
+            {
+                if (option.OptionId > 0)
+                {
+                    if (existingVoteOptions.Contains(option.OptionId))
+                        existingVoteOptions.Remove(option.OptionId);
+
+                    ModifyVoteOption(new VoteOption(option.OptionId, voteQuestion.Id, option.OptionText ?? String.Empty, optionIndex++));
+                }
+                else
+                {
+                    var vo = new VoteOption(0, voteQuestion.Id, option.OptionText ?? String.Empty, optionIndex++);
+                    AddVoteOption(vo);
+                    option.OptionId = vo.Id;
+                }
+            }
+
+            // delete any remaining options.
+            foreach(var oldOption in existingVoteOptions)
+            {
+                RemoveVoteOption(oldOption);
+            }
+
             return true;
 		}
 
@@ -85,24 +111,36 @@ namespace DataAccess
             dbVoteQuestion.AccountId = voteQuestion.AccountId;
             dbVoteQuestion.Question = voteQuestion.Question;
             dbVoteQuestion.Active = voteQuestion.Active;
+            
             db.VoteQuestions.InsertOnSubmit(dbVoteQuestion);
+            db.SubmitChanges();
+
+            // add the options
+            int optionIndex = 0;
+            foreach(var option in voteQuestion.Results)
+            {
+                var vo = new VoteOption(0, dbVoteQuestion.Id, option.OptionText ?? String.Empty, optionIndex++);
+                AddVoteOption(vo);
+                option.OptionId = vo.Id;
+            }
 
             voteQuestion.Id = dbVoteQuestion.Id;
 
             return true;
 		}
 
-		static public bool RemoveVoteQuestion(long questionId)
+		static public bool RemoveVoteQuestion(long accountId, long questionId)
 		{
             DB db = DBConnection.GetContext();
 
             var dbVoteQuestion = (from vq in db.VoteQuestions
-                                  where vq.Id == questionId
+                                  where vq.AccountId == accountId && vq.Id == questionId
                                   select vq).SingleOrDefault();
             if (dbVoteQuestion == null)
                 return false;
 
             db.VoteQuestions.DeleteOnSubmit(dbVoteQuestion);
+            db.SubmitChanges();
 
             return true;
 		}
@@ -170,6 +208,8 @@ namespace DataAccess
                 return false;
 
             db.VoteOptions.DeleteOnSubmit(dbVoteOption);
+            db.SubmitChanges();
+
             return true;
 		}
 
@@ -201,7 +241,7 @@ namespace DataAccess
             return true;
 		}
 
-		static public IQueryable<VoteResults> GetVoteResults(long questionId)
+		static private IEnumerable<VoteResults> GetVoteResults(long questionId)
 		{
             DB db = DBConnection.GetContext();
 
@@ -209,16 +249,29 @@ namespace DataAccess
             //FROM VoteAnswers LEFT JOIN VoteOptions ON VoteAnswers.OptionID = VoteOptions.ID 
             //WHERE VoteAnswers.QuestionID = @questionId GROUP BY OptionID , OptionText ORDER BY Votes DESC
 
-            return (from va in db.VoteAnswers
-                    join vo in db.VoteOptions on va.OptionId equals vo.Id
-                    where va.QuestionId == questionId
-                    group va by new { va.OptionId, vo.OptionText } into g
-                    select new VoteResults()
-                    {
-                        OptionId = g.Key.OptionId,
-                        OptionText = g.Key.OptionText,
-                        TotalVotes = g.Count()
-                    });
+            string queryString = @"select VoteOptions.Id As OptionId, VoteOptions.OptionText, COUNT(VoteAnswers.Id) As TotalVotes
+                                    from VoteQuestion
+                                    left join VoteOptions on VoteQuestion.Id = VoteOptions.QuestionId
+                                    left join VoteAnswers on VoteOptions.id = VoteAnswers.OptionId
+                                    where VoteQuestion.Id = {0}
+                                    group by VoteOptions.Id, VoteOptions.OptionText, VoteOptions.Priority
+                                    order by VoteOptions.Priority";
+
+            var result = (IEnumerable<VoteResults>)db.ExecuteQuery(typeof(VoteResults), queryString, new object[] { questionId });
+
+            return result;
+
+            //return (from vq in db.VoteQuestions
+            //        join vo in db.VoteOptions on vq.Id equals vo.QuestionId
+            //        join va in db.VoteAnswers on vo.Id equals va.OptionId
+            //        where vq.Id == questionId
+            //        group new { vo, va.Id } by new { vo.Id, vo.OptionText } into g
+            //        select new VoteResults()
+            //        {
+            //            OptionId = g.Key.Id,
+            //            OptionText = g.Key.OptionText,
+            //            TotalVotes = g.Select(x => x.Id).Count()
+            //        });
 		}
 
         static public IQueryable<VoteQuestion> GetActiveVotesWithResults(long accountId)
@@ -239,6 +292,46 @@ namespace DataAccess
                         HasVoted = HasVoted(vq.Id, contactId),
                         OptionSelected = UserVoteOption(vq.Id, contactId)
                     });
+        }
+
+        static public IQueryable<VoteQuestion> GetVotesWithResults(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var contactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
+
+            return (from vq in db.VoteQuestions
+                    where vq.AccountId == accountId
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = vq.AccountId,
+                        Active = vq.Active,
+                        Question = vq.Question,
+                        Results = GetVoteResults(vq.Id),
+                        HasVoted = HasVoted(vq.Id, contactId),
+                        OptionSelected = UserVoteOption(vq.Id, contactId)
+                    });
+        }
+
+        static public VoteQuestion GetVoteWithResults(long accountId, long questionId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var contactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
+
+            return (from vq in db.VoteQuestions
+                    where vq.AccountId == accountId && vq.Id == questionId
+                    select new VoteQuestion()
+                    {
+                        Id = vq.Id,
+                        AccountId = vq.AccountId,
+                        Active = vq.Active,
+                        Question = vq.Question,
+                        Results = GetVoteResults(vq.Id),
+                        HasVoted = HasVoted(vq.Id, contactId),
+                        OptionSelected = UserVoteOption(vq.Id, contactId)
+                    }).SingleOrDefault();
         }
 
         static public long UserVoteOption(long questionId, long contactId)

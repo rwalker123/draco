@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ModelObjects
@@ -44,7 +45,7 @@ namespace ModelObjects
 			set;
 		}
 
-        public IQueryable<VoteResults> Results
+        public IEnumerable<VoteResults> Results
         {
             get;
             set;

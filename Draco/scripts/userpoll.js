@@ -73,6 +73,50 @@ var PollViewModel = function (data, accountId, contactId) {
 
     });
 
+    self.Results.NewOptionText = ko.observable();
+
+    self.addOption = function () {
+        if (!self.Results.NewOptionText())
+            return;
+
+        self.Results.push(new PollOptionViewModel({
+            OptionId: 0,
+            OptionText: self.Results.NewOptionText()
+        }));
+
+        self.Results.NewOptionText('');
+    }
+
+    self.removeOption = function (option) {
+        if (option.TotalVotes() > 0) {
+            $("#deleteUserPollOptionModal").modal("show");
+
+            $("#confirmOptionDeleteBtn").one("click", function () {
+                self.Results.remove(option);
+            });
+
+        }
+        else {
+            self.Results.remove(option);
+        }
+    }
+
+    self.moveOptionUp = function (option) {
+        var index = self.Results.indexOf(option);
+        if (index > 0) {
+            self.Results.remove(option);
+            self.Results.splice(index - 1, 0, option);
+        }
+    }
+
+    self.moveOptionDown = function (option) {
+        var index = self.Results.indexOf(option);
+        if (index < self.Results().length - 1) {
+            self.Results.remove(option);
+            self.Results.splice(index + 1, 0, option);
+        }
+    }
+
     self.vote = function () {
         if (!self.OptionSelected.NewOption())
         {
@@ -97,7 +141,6 @@ var PollViewModel = function (data, accountId, contactId) {
             }
         });
     }
-
 
     self.revote = function () {
         if (!self.OptionSelected.NewOption()) {
@@ -153,6 +196,7 @@ var PollViewModel = function (data, accountId, contactId) {
     }
 
     self.update = function (data) {
+        self.totalVotes(0);
         ko.mapping.fromJS(data, self);
     }
 
@@ -177,7 +221,7 @@ var UserPollViewModel = function (accountId, isAdmin, contactId) {
         Id: 0,
         AccountId: self.accountId,
         Question: '',
-        Active: false,
+        Active: true,
         Results: [],
         HasVoted: false,
         OptionSelected: ''
@@ -185,10 +229,105 @@ var UserPollViewModel = function (accountId, isAdmin, contactId) {
 
     self.currentPoll = ko.observable(new PollViewModel(self.emptyPoll, self.accountId, self.contactId));
 
-    self.getUserPolls = function () {
+    self.newPoll = function () {
+        self.currentPoll().update(self.emptyPoll);
+        self.editPollMode(!self.editPollMode());
+    }
+
+    self.cancelEdit = function () {
+        self.currentPoll().update(self.emptyPoll);
+        self.editPollMode(false);
+    }
+
+    self.saveChanges = function (userPoll) {
+        if (userPoll.Id()) {
+            self.updatePoll(userPoll);
+        }
+        else {
+            self.addPoll(userPoll);
+        }
+    }
+
+    self.updatePoll = function (userPoll) {
+        var data = userPoll.toJS();
+        if (!data.OptionSelected)
+            data.OptionSelected = 0;
+
         $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/polls/' + data.Id,
+            data: data,
+            success: function (pollData) {
+                var poll = ko.utils.arrayFirst(self.userPolls(), function (item) {
+                    return item.Id() == pollData.Id;
+                });
+
+                if (poll)
+                    poll.update(pollData);
+
+                self.cancelEdit();
+            }
+        });
+    }
+
+    self.addPoll = function (userPoll) {
+        var data = userPoll.toJS();
+        data.OptionSelected = 0;
+
+        $.ajax({
+            type: "POST",
+            url: window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/polls',
+            data: data,
+            success: function (pollData) {
+                self.userPolls.push(new PollViewModel(pollData, self.accountId, self.contactId));
+                self.cancelEdit();
+            }
+        });
+    }
+
+    self.editPoll = function (poll) {
+        self.currentPoll().update(poll.toJS());
+        self.editPollMode(true);
+    }
+
+    self.deletePoll = function (poll) {
+        $("#deleteUserPollModal").modal("show");
+
+        $("#confirmDeleteBtn").one("click", function () {
+            self.performDeletePoll(poll);
+        });
+    }
+
+    self.performDeletePoll = function (poll) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/polls/' + poll.Id(),
+            success: function () {
+                self.userPolls.remove(poll);
+            }
+        });
+    }
+
+    self.showInactivePolls = ko.observable(false);
+    self.toggleInactivePolls = function () {
+
+        self.cancelEdit();
+        self.showInactivePolls(!self.showInactivePolls());
+
+        self.getUserPolls();
+    }
+
+    self.getUserPolls = function () {
+        var url;
+
+        if (self.showInactivePolls())
+            url = window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/polls';
+        else
+            url = window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/activepolls';
+
+    $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/activepolls',
+            url: url,
             success: function (polls) {
                 var pollsMap = $.map(polls, function (poll) {
                     return new PollViewModel(poll, self.accountId, self.contactId);
