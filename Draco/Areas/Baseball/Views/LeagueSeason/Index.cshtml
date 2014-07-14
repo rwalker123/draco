@@ -9,11 +9,6 @@
     @Styles.Render("~/Content/themes/base/css")
 
     <style type="text/css">
-        h3.leagueHeader
-        {
-            font-size:24px;
-        }
-
         ul
         {
             list-style-type: none;
@@ -76,7 +71,7 @@
         <form class="form-horizontal" role="form">
             <div class="form-group">
                 <label for="seasonList" class="col-sm-2 control-label">Season</label>
-                <div class="col-sm-3">
+                <div class="col-sm-4">
                     <select class="selectpicker form-control" data-style="btn-primary" id="seasonList"></select>
                 </div>
                 <div class="col-sm-1">
@@ -91,10 +86,18 @@
     <small>create a league</small><br />
     <div class="form-group">
         <label for="newLeagueName" class="sr-only">League Name</label>
-        <input id="newLeagueName" style="width:200px" type="text" class="form-control" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
-        <button type="button" class="btn btn-primary" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)"><span class="glyphicon glyphicon-plus"></span></button>
+        <div class="col-sm-12">
+            <div class="input-group">
+                <input id="newLeagueName" type="text" class="form-control" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-primary" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)"><span class="glyphicon glyphicon-plus"></span></button>
+                </span>
+            </div>
+        </div>
     </div>
 </form>
+
+
 <div id="accordion" style="margin-top:20px">
 </div>        
 

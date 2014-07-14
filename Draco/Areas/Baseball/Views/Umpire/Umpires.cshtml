@@ -35,8 +35,12 @@
 <form class="form-inline" role="form">
     <div class="form-group">
         <label for="_newUmpire" class="sr-only">Last Name</label>
-        <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
-        <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire"><span class="glyphicon glyphicon-plus"></span></button>
+        <div class="input-group">
+            <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+            <span class="input-group-btn">
+                <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire"><span class="glyphicon glyphicon-plus"></span></button>
+            </span>
+        </div>
     </div>
 </form>
 

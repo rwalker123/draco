@@ -26,8 +26,12 @@
     <small>add domain</small><br />
     <div class="form-group">
         <label for="urlField" class="sr-only">Domain Name</label>
-        <input id="urlField" style="width:300px" type="url" class="form-control" placeholder="ex: http://www.yourdomain.com" pattern=".{1,}" title="Must supply a url" />
-        <button type="button" class="btn btn-primary" onclick="addUrl()"><span class="glyphicon glyphicon-plus"></span></button>
+        <div class="input-group">
+            <input id="urlField" style="width:300px" type="url" class="form-control" placeholder="ex: http://www.yourdomain.com" pattern=".{1,}" title="Must supply a url" />
+            <span class="input-group-btn">
+                <button type="button" class="btn btn-primary" onclick="addUrl()"><span class="glyphicon glyphicon-plus"></span></button>
+            </span>
+        </div>
     </div>
 </form>
 
@@ -48,9 +52,13 @@
             <form id='edit_@urlId' class="form-inline mappedUrl" style="display:none" role="form">
                 <div class="form-group">
                     <label for="url_@urlId" class="sr-only">Url</label>
-                    <input type="url" id="url_@urlId" style="width:300px" class="form-control" placeholder="ex: http://www.yourdomain.com" />
-                    <button type="button" class="btn btn-success" onclick="saveEditMode('@mappedUrl')"><span class="glyphicon glyphicon-ok"></span></button>
-                    <button type="button" class="btn btn-danger" onclick="cancelEditMode('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
+                    <div class="input-group">
+                        <input type="url" id="url_@urlId" style="width:300px" class="form-control" placeholder="ex: http://www.yourdomain.com" />
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-success" onclick="saveEditMode('@mappedUrl')"><span class="glyphicon glyphicon-ok"></span></button>
+                            <button type="button" class="btn btn-danger" onclick="cancelEditMode('@mappedUrl')"><span class="glyphicon glyphicon-remove"></span></button>
+                        </span>
+                    </div>
                 </div>
             </form>
         </div>

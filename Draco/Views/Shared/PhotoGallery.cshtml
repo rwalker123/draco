@@ -36,17 +36,21 @@
                     <div class="form-group">
                         <label for="photoAlbumSelect" class="col-sm-4 control-label">photo album</label>
                         <div class="col-sm-8">
-                            <select data-bind="options: photoAlbums, optionsText: 'name', optionsValue: 'id', value: selectedEditPhotoAlbum" data-container="body" id="photoAlbumSelect"></select>
-                            <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedEditPhotoAlbum() > 0"><span class="glyphicon glyphicon-remove"></span></button>
+                            <div class="input-group">
+                                <select data-bind="options: photoAlbums, optionsText: 'name', optionsValue: 'id', value: selectedEditPhotoAlbum" data-container="body" id="photoAlbumSelect"></select>
+                                <span class="input-group-btn">
+                                    <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedEditPhotoAlbum() > 0"><span class="glyphicon glyphicon-remove"></span></button>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="newPhotoAlbumName" class="col-sm-4 control-label">add photo album</label>
-                        <div class="col-sm-5">
+                        <div class="input-group col-sm-6">
                             <input class="form-control" data-bind="value: newPhotoAlbumName" id="newPhotoAlbumName" type="text" placeholder="enter new photo album name" />
-                        </div>
-                        <div class="col-sm-1">
-                            <button type="button" class="btn btn-success" data-bind="click: addPhotoAlbum"><span class="glyphicon glyphicon-ok"></span></button>
+                            <span class="input-group-btn">
+                                <button type="button" class="btn btn-success" data-bind="click: addPhotoAlbum"><span class="glyphicon glyphicon-ok"></span></button>
+                            </span>
                         </div>
                     </div>
                 }
