@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
 using System.Web.Http.OData;
+using System.Web.Security;
 
 namespace SportsManager.Controllers
 {
@@ -29,6 +30,7 @@ namespace SportsManager.Controllers
         private const String emailExistsError = "Email already exists.";
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("contacts")]
         public HttpResponseMessage GetContactDetails(long accountId, long id)
         {
             var contact = DataAccess.Contacts.GetContact(id);
@@ -45,12 +47,13 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("contacts")]
         public async Task<HttpResponseMessage> PostContact(long accountId, ModelObjects.Contact newContact)
         {
-            newContact.CreatorAccountId = accountId;
-
             if (ModelState.IsValid && newContact != null)
             {
+                newContact.CreatorAccountId = accountId;
+
                 try
                 {
                     bool registerAccount = false;
@@ -95,6 +98,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("resetpassword")]
         public async Task<HttpResponseMessage> ResetPassword(long accountId, long id)
         {
             ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
@@ -111,18 +115,27 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("register")]
         public async Task<HttpResponseMessage> RegisterAccount(long accountId, long id)
         {
             var contact = DataAccess.Contacts.GetContact(id);
-            var userId = await DataAccess.Contacts.RegisterUser(contact);
-            if (!String.IsNullOrEmpty(userId))
-                return Request.CreateResponse<string>(HttpStatusCode.OK, userId);
-            else
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            try
+            {
+                var userId = await DataAccess.Contacts.RegisterUser(contact);
+                if (!String.IsNullOrEmpty(userId))
+                    return Request.CreateResponse<string>(HttpStatusCode.OK, userId);
+                else
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+            catch(MembershipCreateUserException ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.Conflict, ex.Message);
+            }
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("contacts")]
         public async Task<HttpResponseMessage> PutContact(long accountId, ModelObjects.Contact contact)
         {
             contact.CreatorAccountId = accountId;
@@ -147,6 +160,10 @@ namespace SportsManager.Controllers
                         new Uri(Url.Link("ActionApi", new { action = "Contacts", accountId = accountId, id = contact.Id }));
                     return response;
                 }
+                catch (MembershipCreateUserException ex)
+                {
+                    return Request.CreateResponse(HttpStatusCode.Conflict, ex.Message);
+                }
                 catch (SqlException ex)
                 {
                     // key violation, name exists.
@@ -170,7 +187,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        [ActionName("DeleteContact")]
+        [ActionName("contacts")]
         public async Task<HttpResponseMessage> DeleteContact(long accountId, long id)
         {
             var contact = DataAccess.Contacts.GetContact(id);

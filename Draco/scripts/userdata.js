@@ -227,12 +227,22 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
     self.registerUser = function () {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/RegisterAccount/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/register/' + self.id(),
             success: function (userId) {
                 self.details.userid(userId);
                 var form = $('#' + self.id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
                     "User has been registered. Email sent to user.");
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                if (xhr && xhr.status == 409) {
+                    var form = $('#' + self.id());
+                    self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
+                        xhr.responseText);
+                }
+                else {
+                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
+                }
             }
         });
     }
@@ -352,7 +362,7 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
 
     self.updateContact = function (form) {
 
-        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=1';
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts'; // don't register for now. UI is messed up. ?register=1';
         $.ajax({
             type: "PUT",
             url: url,
@@ -380,7 +390,7 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 if (xhr && xhr.status == 409) {
-                    if (xhr.responseText.indexOf('Email') == 1)
+                    if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
                         self.addEmailExistsError($(form).find('.contactView > .contactErrorLocation'));
                     else
                         self.addNameExistsError($(form).find('.contactView > .contactErrorLocation'));
@@ -502,7 +512,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/DeleteContact/' + user.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + user.id(),
             success: function (data) {
                 // remove from data model.
                 self.populateUsers();
@@ -517,7 +527,12 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         if (id == 1 && !userData.details.email.uncommitValue())
             alert("Will not register account, no email specified");
 
-        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '?register=' + id;
+        if (!userData.details.birthdate.uncommitValue()) {
+            alert("Please enter birth date.");
+            return;
+        }
+
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts?register=' + id;
         $.ajax({
             type: "POST",
             url: url,
@@ -546,7 +561,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 if (xhr && xhr.status == 409) {
-                    if (xhr.responseText.indexOf('Email') == 1)
+                    if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
                         userData.addEmailExistsError($('#newContact > .contactView > .contactErrorLocation'));
                     else
                         userData.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
@@ -700,7 +715,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
     self.fillUserDetails = function (userData) {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + userData.id(),
             success: function (data) {
                 if (data) {
                     window.location.hash = 'update';

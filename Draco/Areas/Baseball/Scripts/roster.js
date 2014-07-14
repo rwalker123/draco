@@ -183,7 +183,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
     }
 
     self.createUser = function () {
-        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId;
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts';
         $.ajax({
             type: "POST",
             url: url,

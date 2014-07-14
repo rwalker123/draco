@@ -323,21 +323,21 @@ namespace DataAccess
                            select con).SingleOrDefault();
 
             if (contact == null)
-                throw new Exception("user doesn't exist.");
+                throw new MembershipCreateUserException("user doesn't exist.");
 
             if (String.IsNullOrEmpty(contact.Email))
-                throw new Exception("User must have an email.");
+                throw new MembershipCreateUserException("User must have an email.");
 
             // account already registered.
             if (!String.IsNullOrEmpty(contact.UserId))
-                throw new Exception("Email already registered.");
+                throw new MembershipCreateUserException("Email already registered.");
 
             var userManager = Globals.GetUserManager();
 
             // see if user is registerd.
             var user = await userManager.FindByNameAsync(contact.Email);
             if (user != null)
-                throw new Exception("Email already registered.");
+                throw new MembershipCreateUserException("Email already registered.");
 
             contact.UserId = await CreateAndEmailAccount(contact.CreatorAccountId, contact.Email);
             if (!String.IsNullOrEmpty(contact.UserId)) 
@@ -677,7 +677,7 @@ namespace DataAccess
                     errorString.Append(Environment.NewLine);
                 }
 
-                throw new Exception(errorString.ToString());
+                throw new MembershipCreateUserException(errorString.ToString());
             }
 
             return String.Empty;

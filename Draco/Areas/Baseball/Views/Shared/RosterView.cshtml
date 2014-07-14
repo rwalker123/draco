@@ -43,23 +43,29 @@
                     <div class="form-group">
                         <h3 class="control-label col-sm-12">sign a player</h3>
                         <div class="col-sm-12">
-                            <input type="text" class="autocomplete form-control pull-left" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" placeholder="enter player name" />
-                            <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected" title="sign player"><span class="glyphicon glyphicon-ok"></span></button>
+                            <div class="input-group">
+                                <input type="text" class="autocomplete form-control pull-left" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" placeholder="enter player name" />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected" title="sign player"><span class="glyphicon glyphicon-ok"></span></button>
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
                         <h3 class="control-label col-sm-12">create a player</h3>
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <input class="form-control" data-bind="value: newPlayerFirstName" placeholder="first name" />
                         </div>
-                        <div class="col-sm-3">
+                        <div class="col-sm-4">
                             <input class="form-control" data-bind="value: newPlayerMiddleName" placeholder="middle" />
                         </div>
-                        <div class="col-sm-3">
-                            <input class="form-control" data-bind="value: newPlayerLastName" placeholder="last name" />
-                        </div>
-                        <div class="col-sm-2">
-                            <button class="btn btn-primary" title="create player" data-bind="click: createPlayer"><span class="glyphicon glyphicon-plus"></span></button>
+                        <div class="col-sm-4">
+                            <div class="input-group">
+                                <input class="form-control" data-bind="value: newPlayerLastName" placeholder="last name" />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-primary" title="create player" data-bind="click: createPlayer"><span class="glyphicon glyphicon-plus"></span></button>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -159,9 +165,9 @@
                             <td class="col-sm-1">
                                 @if (Model.IsAdmin)
                                 { 
-                                    <button class="btn btn-default btn-sm" data-bind="click: $parent.editPlayer"><span class="glyphicon glyphicon-edit"></span></button>
-                                    <button class="btn btn-warning btn-sm" data-bind="click: $parent.releasePlayer"><span class="glyphicon glyphicon-minus"></span></button>
-                                    <button class="btn btn-danger btn-sm" data-bind="click: $parent.deletePlayer"><span class="glyphicon glyphicon-remove"></span></button>
+                                    <button class="btn btn-default btn-sm" data-bind="click: $parent.editPlayer" title="edit player"><span class="glyphicon glyphicon-edit"></span></button>
+                                    <button class="btn btn-warning btn-sm" data-bind="click: $parent.releasePlayer" title="release player"><span class="glyphicon glyphicon-minus"></span></button>
+                                    <button class="btn btn-danger btn-sm" data-bind="click: $parent.deletePlayer" title="delete player"><span class="glyphicon glyphicon-remove"></span></button>
                                 }
                             </td>
                         }
