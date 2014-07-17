@@ -24,6 +24,9 @@ var GameDayViewModel = function (theDate) {
     self.monthDayNumber = ko.computed(function () {
         return self.date().getDate();
     });
+    self.date.text = ko.computed(function () {
+        return moment(self.date()).format("MMMM D, YYYY");
+    });
 }
 
 var GameViewModel = function (data, accountId) {
@@ -679,11 +682,23 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         }
     }
 
+    self.calendarViewSelected = function () {
+        $.cookie('sched_view', 'calendar', { expires: 180 });
+    }
+
+    self.listViewSelected = function () {
+        $.cookie('sched_view', 'list', { expires: 180 });
+    }
+
     if ($.cookie('sched_last_selected_league')) {
         var cv = $.cookie('sched_last_selected_league');
         self.selectedLeague(cv);
     }
 
+    self.isListDefaultView = function () {
+        var v = $.cookie('sched_view');
+        return (v && v == 'list') ? true : false;
+    }
 
     $(".currentDate").datepicker({
         viewMode: 1,
