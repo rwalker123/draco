@@ -319,6 +319,21 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         self.addGameMode(true);
     }
 
+    self.enterAddGameModeFromListView = function () {
+        self.viewMode(false);
+
+        var gameDate = new Date();
+
+        self.newGame.GameDate(gameDate);
+        self.newGame.GameDate.DateText(self.newGame.GameDate());
+
+        var data = self.newGame.toJS();
+        self.editingGame().update(data);
+
+        self.isEditMode(false);
+        self.addGameMode(true);
+    }
+
     self.addGame = function (editGame) {
         if (!self.editingGame.isValid())
             return;
