@@ -407,7 +407,14 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     }
 
     self.deleteGame = function (game) {
+        $("#deleteModal").modal("show");
 
+        $("#confirmDeleteBtn").one("click", function () {
+            self.performDeleteGame(game);
+        });
+    }
+
+    self.performDeleteGame = function (game) {
         $.ajax({
             type: "DELETE",
             url: window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.selectedLeague() + '/game/' + game.Id(),
