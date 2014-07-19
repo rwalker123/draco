@@ -2,18 +2,13 @@
     initKOHelpers();
 
     var userData = new UsersClass(accountId, pageSize, firstYear);
-    ko.applyBindings(userData, document.getElementById("accordion"));
-
-    var newUserData = new UserClass(accountId, firstYear, true);
-    newUserData.selectedView('editUserDetailsTemplate');
-    newUserData.detailsVisible(false);
-
-    ko.applyBindings(newUserData, document.getElementById("newContact"));
+    ko.applyBindings(userData, document.getElementById("userdata"));
 
     $(document).bind('drop dragover', function (e) {
         e.preventDefault();
     });
 
+    // TODO: Use knockout validator
     $('#newContact').validate({
         submitHandler: function (form) {
             userData.createUser(form);
@@ -27,187 +22,101 @@
             error.appendTo($("#newContact > .contactView > .contactErrorLocation"));
         }
     });
-
-    userData.populateUsers();
 }
 
-var UserClass = function (accountId, firstYear, showCreateAccount) {
+var UserClassDetails = function (data, accountId) {
     var self = this;
+    self.accountId = accountId;
 
-    self.firstYear = firstYear;
-    self.availableYears = ko.observableArray([]);
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+}
+
+var UserClass = function (data, accountId, showCreateAccount) {
+    var self = this;
+    self.accountId = accountId;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        'details': {
+            create: function (options) {
+                return new UserClassDetails(options.data, self.accountId);
+            }
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        }
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
 
     self.showCreateAccount = ko.observable(showCreateAccount);
     self.createAccount = ko.observable(false);
 
-    self.availableGenders = ko.observableArray([
-    { id: false, name: "Male" },
-    { id: true, name: "Female" }
-    ]);
-    
-    self.availableStates = ko.observableArray([
-        { name: "Alabama", abbrev: "AL" },
-        { name: "Alaska", abbrev: "AK" },
-        { name: "Arizona", abbrev: "AZ" },
-        { name: "Arkansas", abbrev: "AR" },
-        { name: "California", abbrev: "CA" },
-        { name: "Colorado", abbrev: "CO" },
-        { name: "Connecticut", abbrev: "CT" },
-        { name: "Delaware", abbrev: "DE" },
-        { name: "Florida", abbrev: "FL" },
-        { name: "Georgia", abbrev: "GA" },
-        { name: "Hawaii", abbrev: "HI" },
-        { name: "Idaho", abbrev: "ID" },
-        { name: "Illinois", abbrev: "IL" },
-        { name: "Indiana", abbrev: "IN" },
-        { name: "Iowa", abbrev: "IA" },
-        { name: "Kansas", abbrev: "KS" },
-        { name: "Kentucky", abbrev: "KY" },
-        { name: "Louisiana", abbrev: "LA" },
-        { name: "Maine", abbrev: "ME" },
-        { name: "Maryland", abbrev: "MD" },
-        { name: "Massachusetts", abbrev: "MA" },
-        { name: "Michigan", abbrev: "MI" },
-        { name: "Minnesota", abbrev: "MN" },
-        { name: "Mississippi", abbrev: "MS" },
-        { name: "Missouri", abbrev: "MO" },
-        { name: "Montana", abbrev: "MT" },
-        { name: "Nebraska", abbrev: "NE" },
-        { name: "Nevada", abbrev: "NV" },
-        { name: "New Hampshire", abbrev: "NH" },
-        { name: "New Jersey", abbrev: "NJ" },
-        { name: "New Mexico", abbrev: "NM" },
-        { name: "New York", abbrev: "NY" },
-        { name: "North Carolina", abbrev: "NC" }, 
-        { name: "North Dakota", abbrev: "ND" }, 
-        { name: "Ohio", abbrev: "OH" },
-        { name: "Oklahoma", abbrev: "OK" },
-        { name: "Oregon", abbrev: "OR" },
-        { name: "Pennsylvania", abbrev: "PA" },
-        { name: "Rhode Island", abbrev: "RI" },
-        { name: "South Carolina", abbrev: "SC" },
-        { name: "South Dakota", abbrev: "SD" },
-        { name: "Tennessee", abbrev: "TN" },
-        { name: "Texas", abbrev: "TX" },
-        { name: "Utah", abbrev: "UT" },
-        { name: "Vermont", abbrev: "VT" },
-        { name: "Virginia", abbrev: "VA" },
-        { name: "Washington", abbrev: "WA" },
-        { name: "West Virginia", abbrev: "WV" },
-        { name: "Wisconsin", abbrev: "WI" },
-        { name: "Wyoming", abbrev: "WY" }
-    ]);
-
-    self.initFirstYear = function () {
-        var currentYear = (new Date).getFullYear();
-        if (self.firstYear > 0) {
-            var maxBack = 50;
-            while (maxBack >= 0 && currentYear >= self.firstYear) {
-                self.availableYears.push({ name: currentYear + '' });
-                currentYear--;
-                maxBack--;
-            }
-        }
-    }
-
-    self.initFirstYear();
-    self.accountId = accountId;
-
-    var initDate = new Date();
-    var newYear = initDate.getFullYear() - 21;
-    initDate.setYear(newYear);
-
-    // declare ko stuff here, otherwise it is static to the class.
-    self.id = ko.observable(0);
-    self.firstName = ko.protectedObservable('');
-    self.middleName = ko.protectedObservable('');
-    self.lastName = ko.protectedObservable('');
-    self.photoUrl = '';
-
-    self.details = {
-        loaded: false,
-        email: ko.protectedObservable(''),
-        userid: ko.observable(''),
-        address: ko.protectedObservable(''),
-        city: ko.protectedObservable(''),
-        state: ko.protectedObservable(''),
-        zip: ko.protectedObservable(''),
-        birthdate: ko.protectedObservable(''),
-        firstYear: ko.protectedObservable((new Date()).getFullYear()),
-        phone1: ko.protectedObservable(''),
-        phone2: ko.protectedObservable(''),
-        phone3: ko.protectedObservable(''),
-        gender: ko.protectedObservable(''),
-    };
-
     self.birthdateDisplay = ko.computed(function () {
-        if (!self.details.birthdate())
+        if (!self.details.DateOfBirth())
             return '';
         else
-            return moment(new Date(self.details.birthdate())).format('MMMM D, YYYY');
+            return moment(new Date(self.details.DateOfBirth())).format('MMMM D, YYYY');
     });
 
 
     self.namesEnabled = ko.observable(true);
-    self.detailsVisible = ko.observable(true);
+    self.detailsVisible = ko.observable(false);
     self.selectedView = ko.observable('viewUserDetailsTemplate'); // toggle between edit/view templates.
     self.validatingName = ko.observable(false);
 
-    self.isLocked = ko.observable(false);
-
-    self.isRegistered = ko.computed(function () {
-        return self.details.userid() && self.details.userid().length > 0;
-    }, this);
-
-    self.canRegister = ko.computed(function () {
-        // must have email and can't be already registered.
-        var hasEmail = self.details.email() && self.details.email().length > 0;
-        return !self.isRegistered() && hasEmail;
-    }, this);
-
-    self.fullName = ko.computed(function () {
-        var fullName = self.lastName() + ', ' + self.firstName();
-        if (self.middleName())
-            fullName += ' ' + self.middleName();
-
-        return fullName;
-    }, this);
-
-    self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.id();
-    }, this);
-
-    self.initData = function () {
-
-        self.id(0);
-        self.photoUrl = '';
-        self.firstName('');
-        self.middleName('');
-        self.lastName('');
-
-        self.details.loaded = false;
-        self.details.email('');
-        self.details.userid('');
-        self.details.address('');
-        self.details.city('');
-        self.details.state('');
-        self.details.zip('');
-        self.details.birthdate(self.initDate);
-        self.details.firstYear((new Date()).getFullYear());
-        self.details.phone1('');
-        self.details.phone2('');
-        self.details.phone3('');
-        self.details.gender('');
-        self.commitChanges();
-
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
         self.namesEnabled(true);
         self.detailsVisible(false);
     }
 
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+
+    self.isRegistered = ko.computed(function () {
+        return self.details.UserId() && self.details.UserId().length > 0;
+    });
+
+    self.canRegister = ko.computed(function () {
+        // must have email and can't be already registered.
+        var hasEmail = self.details.Email() && self.details.Email().length > 0;
+        return !self.isRegistered() && hasEmail;
+    }, this);
+
+    self.fullName = ko.computed(function () {
+        var fullName = self.LastName() + ', ' + self.FirstName();
+        if (self.MiddleName())
+            fullName += ' ' + self.MiddleName();
+
+        return fullName;
+    });
+
+    self.fileUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.Id();
+    });
+
     self.unlockUser = function () {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/UnlockUser/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/UnlockUser/' + self.Id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
             }
@@ -217,7 +126,7 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
     self.lockUser = function () {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/LockUser/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/LockUser/' + self.Id(),
             success: function (isLocked) {
                 self.userIsLocked(isLocked);
             }
@@ -227,10 +136,10 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
     self.registerUser = function () {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/register/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/register/' + self.Id(),
             success: function (userId) {
                 self.details.userid(userId);
-                var form = $('#' + self.id());
+                var form = $('#' + self.Id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
                     "User has been registered. Email sent to user.");
             },
@@ -250,7 +159,7 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
     self.resetPassword = function () {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/ResetPassword/' + self.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/ResetPassword/' + self.Id(),
             success: function () {
                 var form = $('#' + self.id());
                 self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
@@ -290,10 +199,10 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
             type: "GET",
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/DoesContactNameExist',
             data: {
-                Id: self.id(),
-                FirstName: self.firstName(),
-                LastName: self.lastName(),
-                MiddleName: self.middleName(),
+                Id: self.Id(),
+                FirstName: self.FirstName(),
+                LastName: self.LastName(),
+                MiddleName: self.MiddleName(),
             },
             success: function (response) {
                 self.validatingName(false);
@@ -341,51 +250,16 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
         elem.delay(5000).hide('slow');
     }
 
-    self.commitChanges = function () {
-        self.doAction(self, "commit");
-        self.doAction(self.details, "commit");
-    }
-
-    self.resetChanges = function () {
-        self.doAction(self, "reset");
-        self.doAction(self.details, "reset");
-    }
-
-    self.doAction = function (target, action) {
-        for (var key in target) {
-            var prop = target[key];
-            if (ko.isWriteableObservable(prop) && prop[action]) {
-                prop[action]();
-            }
-        }
-    }
-
     self.updateContact = function (form) {
+
+        var data = self.toJS();
 
         var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts'; // don't register for now. UI is messed up. ?register=1';
         $.ajax({
             type: "PUT",
             url: url,
-            data: {
-                Id: self.id(),
-                Email: self.details.email.uncommitValue(),
-                FirstName: self.firstName.uncommitValue(),
-                LastName: self.lastName.uncommitValue(),
-                MiddleName: self.middleName.uncommitValue(),
-                StreetAddress: self.details.address.uncommitValue(),
-                City: self.details.city.uncommitValue(),
-                State: self.details.state.uncommitValue(),
-                Zip: self.details.zip.uncommitValue(),
-                DateOfBirth: self.details.birthdate.uncommitValue() ? moment(new Date(self.details.birthdate.uncommitValue())).format('MMMM D, YYYY') : null,
-                FirstYear: self.details.firstYear.uncommitValue(),
-                Phone1: self.details.phone1.uncommitValue(),
-                Phone2: self.details.phone2.uncommitValue(),
-                Phone3: self.details.phone3.uncommitValue(),
-                IsFemale: self.details.gender.uncommitValue()
-            },
+            data: data,
             success: function (data) {
-                self.commitChanges();
-
                 self.selectedView('viewUserDetailsTemplate');
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -414,32 +288,6 @@ var UserClass = function (accountId, firstYear, showCreateAccount) {
         self.namesEnabled(true);
         self.detailsVisible(false);
         self.details.loaded = false;
-
-        self.resetChanges();
-
-        self.firstName('');
-        self.middleName('');
-        self.lastName('');
-        self.commitChanges();
-    }
-
-    self.userRendered = function (elements) {
-        // validate handler
-        $(elements[0]).closest('form').validate({
-            submitHandler: function (form) {
-                ko.dataFor(form).updateContact(form);
-            },
-            rules: {
-                firstname: { required: true, minlength: 1 },
-                lastname: { required: true, minlength: 1 },
-                email: { email: true }
-            },
-            errorPlacement: function (error, element) {
-                var formElem = $(element).closest('form');
-
-                error.appendTo(formElem.find(".contactView > .contactErrorLocation"));
-            }
-        });
     }
 }
 
@@ -449,10 +297,85 @@ var UsersClass = function (accountId, pageSize, firstYear) {
     self.pageSize = pageSize;
     self.firstYear = firstYear;
 
+    self.availableGenders = ko.observableArray([
+        { id: false, name: "Male" },
+        { id: true, name: "Female" }
+    ]);
+
+    self.availableStates = ko.observableArray([
+        { name: "Alabama", abbrev: "AL" },
+        { name: "Alaska", abbrev: "AK" },
+        { name: "Arizona", abbrev: "AZ" },
+        { name: "Arkansas", abbrev: "AR" },
+        { name: "California", abbrev: "CA" },
+        { name: "Colorado", abbrev: "CO" },
+        { name: "Connecticut", abbrev: "CT" },
+        { name: "Delaware", abbrev: "DE" },
+        { name: "Florida", abbrev: "FL" },
+        { name: "Georgia", abbrev: "GA" },
+        { name: "Hawaii", abbrev: "HI" },
+        { name: "Idaho", abbrev: "ID" },
+        { name: "Illinois", abbrev: "IL" },
+        { name: "Indiana", abbrev: "IN" },
+        { name: "Iowa", abbrev: "IA" },
+        { name: "Kansas", abbrev: "KS" },
+        { name: "Kentucky", abbrev: "KY" },
+        { name: "Louisiana", abbrev: "LA" },
+        { name: "Maine", abbrev: "ME" },
+        { name: "Maryland", abbrev: "MD" },
+        { name: "Massachusetts", abbrev: "MA" },
+        { name: "Michigan", abbrev: "MI" },
+        { name: "Minnesota", abbrev: "MN" },
+        { name: "Mississippi", abbrev: "MS" },
+        { name: "Missouri", abbrev: "MO" },
+        { name: "Montana", abbrev: "MT" },
+        { name: "Nebraska", abbrev: "NE" },
+        { name: "Nevada", abbrev: "NV" },
+        { name: "New Hampshire", abbrev: "NH" },
+        { name: "New Jersey", abbrev: "NJ" },
+        { name: "New Mexico", abbrev: "NM" },
+        { name: "New York", abbrev: "NY" },
+        { name: "North Carolina", abbrev: "NC" },
+        { name: "North Dakota", abbrev: "ND" },
+        { name: "Ohio", abbrev: "OH" },
+        { name: "Oklahoma", abbrev: "OK" },
+        { name: "Oregon", abbrev: "OR" },
+        { name: "Pennsylvania", abbrev: "PA" },
+        { name: "Rhode Island", abbrev: "RI" },
+        { name: "South Carolina", abbrev: "SC" },
+        { name: "South Dakota", abbrev: "SD" },
+        { name: "Tennessee", abbrev: "TN" },
+        { name: "Texas", abbrev: "TX" },
+        { name: "Utah", abbrev: "UT" },
+        { name: "Vermont", abbrev: "VT" },
+        { name: "Virginia", abbrev: "VA" },
+        { name: "Washington", abbrev: "WA" },
+        { name: "West Virginia", abbrev: "WV" },
+        { name: "Wisconsin", abbrev: "WI" },
+        { name: "Wyoming", abbrev: "WY" }
+    ]);
+
+    self.availableYears = ko.observableArray([]);
+
+    self.initFirstYear = function () {
+        var currentYear = (new Date).getFullYear();
+        if (self.firstYear > 0) {
+            var maxBack = 50;
+            while (maxBack >= 0 && currentYear >= self.firstYear) {
+                self.availableYears.push({ name: currentYear + '' });
+                currentYear--;
+                maxBack--;
+            }
+        }
+    }
+
+    self.initFirstYear();
+
     self.availableFilters = ko.observableArray([
         { id: 'LastName', name: "Last Name" },
         { id: 'FirstName', name: "First Name" },
     ]);
+
     // other possible filter fields. ContactName is the data
     // model and it doesn't contains these fields. If they are
     // brought back, contactName would have to include them.
@@ -482,6 +405,33 @@ var UsersClass = function (accountId, pageSize, firstYear) {
     self.filterOp = ko.observable('startswith');
     self.filterValue = ko.observable('');
     self.filterSort = ko.observable('asc');
+
+    self.emptyUser = {
+        Id: 0,
+        PhotoURL: '',
+        FirstName: '',
+        MiddleName: '',
+        LastName: '',
+        details: {
+            loaded: false,
+            Email: '',
+            UserId: '',
+            StreetAddress: '',
+            City: '',
+            State: '',
+            Zip: '',
+            DateOfBirth: new Date(),
+            FirstYear: (new Date()).getFullYear(),
+            Phone1: '',
+            Phone2: '',
+            Phone3: '',
+            IsFemale: false,
+            IsLockedOut: false
+        }
+    };
+
+    self.newUser = new UserClass(self.emptyUser, self.accountId, true)
+
 
     self.users = ko.observableArray([]);
     
@@ -515,8 +465,8 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + user.id(),
             success: function (data) {
                 // remove from data model.
-                self.populateUsers();
-                //self.users.remove(user);
+                //self.populateUsers();
+                self.users.remove(user);
             }
         });
     }
@@ -532,30 +482,16 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             return;
         }
 
+        var data = self.newUser.toJS();
+
         var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts?register=' + id;
         $.ajax({
             type: "POST",
             url: url,
-            data: {
-                Email: userData.details.email.uncommitValue(),
-                FirstName: userData.firstName.uncommitValue(),
-                LastName: userData.lastName.uncommitValue(),
-                MiddleName: userData.middleName.uncommitValue(),
-                StreetAddress: userData.details.address.uncommitValue(),
-                City: userData.details.city.uncommitValue(),
-                State: userData.details.state.uncommitValue(),
-                Zip: userData.details.zip.uncommitValue(),
-                DateOfBirth: userData.details.birthdate.uncommitValue() ? moment(new Date(userData.details.birthdate.uncommitValue())).format('MMMM D, YYYY') : null,
-                FirstYear: userData.details.firstYear.uncommitValue(),
-                Phone1: userData.details.phone1.uncommitValue(),
-                Phone2: userData.details.phone2.uncommitValue(),
-                Phone3: userData.details.phone3.uncommitValue(),
-                IsFemale: userData.details.gender.uncommitValue() ? true : false
-            },
+            data: data,
             success: function (data) {
-                userData.commitChanges();
-                userData.initData();
-
+                self.newUser.update(self.emptyUser);
+                
                 // Refresh the accordion, make sure not to change the active one.
                 self.populateUsers();
             },
@@ -616,6 +552,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             type: "GET",
             url: url,
             success: function (data) {
+                // data['odata.nextLink']
                 if (data['odata.count'])
                     self.totalRecords(data['odata.count']);
                 else
@@ -629,7 +566,6 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                         self.nextPage(null);
                         self.prevPages.removeAll();
                         self.users.removeAll();
-                        self.refreshUserList();
                         return;
                     }
                     else if (self.currentPageNo() > self.totalPages()) {
@@ -652,96 +588,48 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                     window.location.hash = 'update';
 
                     var mappedUsers = $.map(data.value, function (item) {
-                        var theUser = new UserClass(self.accountId, self.firstYear, false);
-                        theUser.id(item.Id);
-                        theUser.firstName(item.FirstName);
-                        theUser.lastName(item.LastName);
-                        theUser.middleName(item.MiddleName);
-                        theUser.photoUrl = item.PhotoURL;
-                        theUser.commitChanges();
+                        
+                        var theUser = new UserClass(self.emptyUser, self.accountId, false);
+                        theUser.Id(item.Id);
+                        theUser.FirstName(item.FirstName);
+                        theUser.LastName(item.LastName);
+                        theUser.MiddleName(item.MiddleName);
+                        theUser.PhotoURL(item.PhotoURL);
                         return theUser;
                     });
 
                     self.users(mappedUsers);
-                    self.refreshUserList();
                 }
             }
         });
     }
-
-    self.getUserId = function (t) {
-        var firstItemId = t.lastIndexOf('_');
-        if (firstItemId == -1)
-            return -1;
-
-        return t.substring(firstItemId + 1);
-    }
-
-    self.makeAccordion = function () {
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.length > 0) {
-
-                    var vm = ko.dataFor(ui.newPanel[0]);
-                    if (vm && vm.details && !vm.details.loaded) {
-                        self.fillUserDetails(vm);
-                    }
-                }
-            },
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    }
-
-    self.makeAccordion();
-
-    self.refreshUserList = function () {
-        var a = $("#accordion");
-        a.accordion('destroy');
-        self.makeAccordion();
-
-        // refresh insists on setting the first item expanded
-        //a.accordion("refresh");
-    }
-
 
     self.fillUserDetails = function (userData) {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + userData.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + userData.Id(),
             success: function (data) {
                 if (data) {
                     window.location.hash = 'update';
 
-                    userData.details.email(data.Email);
-                    userData.details.userid(data.UserId);
-                    userData.details.address(data.StreetAddress);
-                    userData.details.city(data.City);
-                    userData.details.state(data.State); 
-                    userData.details.zip(data.Zip);
-                    if (data.DateOfBirth)
-                        userData.details.birthdate(new Date(data.DateOfBirth));
-                    else
-                        userData.details.birthdate('');
-                    userData.details.firstYear(data.FirstYear);
-                    userData.details.phone1(data.Phone1);
-                    userData.details.phone2(data.Phone2);
-                    userData.details.phone3(data.Phone3);
-                    userData.details.gender(data.IsFemale);
-
-                    userData.isLocked(data.IsLockedOut);
-                    
-                    userData.details.loaded = true;
-                    userData.commitChanges();
+                    userData.details.update(data);
+                    userData.details.loaded(true);
                 }
             }
         });
     }
+
+    $('#accordion').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && vm.details && !vm.details.loaded) {
+                self.fillUserDetails(vm);
+            }
+        }
+    });
+
+    self.populateUsers();
 }

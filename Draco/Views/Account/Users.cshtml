@@ -7,14 +7,6 @@
 
 @section head
 {
-@Styles.Render("~/Content/themes/base/css")
-    <style type="text/css">
-        ul
-        {
-            list-style-type: none;
-        }
-
-    </style>
 }
 
 
@@ -45,12 +37,12 @@
     </div>
 </div>
 
-<form class="form-inline" role="form" id="newContact">
-    <small>create contact</small><br />
-    <div style="display:inline-block" data-bind="template: { name: function () { return selectedView(); } }" class="contactView" ></div>
-</form>
+<div id="userdata">
 
-<div id="accordion">
+    <form class="form-inline" role="form" data-bind="with: newUser">
+        <small>create contact</small><br />
+        <div style="display:inline-block" data-bind="template: { name: function () { return selectedView(); } }" class="contactView"></div>
+    </form>
 
     <small>filter user list</small><br />
     <form class="form-inline" role="form">
@@ -65,16 +57,26 @@
         <li class="previous"><a data-bind="visible: prevPagesAvailable, click: gotoPrev">&larr; Prev</a></li>
         <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
     </ul>
-    <div data-bind="foreach: users">
-        <h3>
-            <a href="#" data-bind="text: fullName"></a>
-        </h3>
-        <div>
-            <form class="form-inline" role="form" data-bind="attr: { id: id }">
-                <div class="contactView" data-bind="template: { name: function () { return selectedView(); }, afterRender: userRendered }"></div>
-            </form>
+    
+    <div class="panel-group" id="accordion" data-bind="foreach: users">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#" data-bind="text: fullName, attr: { href: '#' + Id() }">
+                    </a>
+                </h3>
+            </div>
+
+            <div class="panel-collapse collapse" data-bind="attr: { id: Id }">
+                <div class="panel-body">
+                    <form class="form-inline" role="form" data-bind="attr: { id: Id }">
+                        <div class="contactView" data-bind="template: { name: function () { return selectedView(); }, afterRender: userRendered }"></div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+
     <ul class="pager">
         <li class="previous"><a data-bind="visible: prevPagesAvailable, click: gotoPrev">&larr; Prev</a></li>
         <li class="next"><a data-bind="visible: nextPage, click: gotoNext">Next &rarr;</a></li>
@@ -90,7 +92,7 @@
 
 <script id="viewUserDetailsTemplate" type="text/html">
 
-    <img onerror="this.style.display = 'none';" data-bind="attr: { src: photoUrl }" class="img-rounded" />
+    <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
     @if (Model.IsAdmin)
     {
         <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
@@ -100,31 +102,31 @@
     }
 
     <div data-bind="with: details">
-        <address data-bind="visible: email()">
-            <small>email</small><br /><a data-bind="text: email, attr: {href: 'mailto:' + email()}"></a>
+        <address data-bind="visible: Email">
+            <label class="control-label">email</label><br /><a data-bind="text: Email, attr: {href: 'mailto:' + Email()}"></a>
         </address>
-        <address data-bind="visible: phone1()">
-            <small>home phone</small><br /><span data-bind="text: phone1"></span>
+        <address data-bind="visible: Phone1">
+            <label class="control-label">home phone</label><br /><span data-bind="text: Phone1"></span>
         </address>
-        <address data-bind="visible: phone2()">
-            <small>cell phone</small><br /><span data-bind="text: phone2"></span>
+        <address data-bind="visible: Phone2">
+            <label class="control-label">cell phone</label><br /><span data-bind="text: Phone2"></span>
         </address>
-        <address data-bind="visible: phone3()">
-            <small>work phone</small><br /><span data-bind="text: phone3"></span>
+        <address data-bind="visible: Phone3">
+            <label class="control-label">work phone</label><br /><span data-bind="text: Phone3"></span>
         </address>
-        <address data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
-            <small>address</small><br />
-            <span data-bind="text: address"></span><br />
-            <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
+        <address data-bind="visible: StreetAddress() || City() || State() || Zip()" style="vertical-align: top">
+            <label class="control-label">address</label><br />
+            <span data-bind="text: StreetAddress"></span><br />
+            <span data-bind="text: City"></span>, <span data-bind="text: State"></span> <span data-bind="text: Zip"></span>
         </address>
-        <address data-bind="visible: birthdate()">
-            <small>Date of Birth:</small><br /><span data-bind="text: $parent.birthdateDisplay"></span>
-        </address>
-        <address>
-            <small>first year</small><br /><span data-bind="text: firstYear"></span>
+        <address data-bind="visible: DateOfBirth">
+            <label class="control-label">Date of Birth:</label><br /><span data-bind="text: $parent.birthdateDisplay"></span>
         </address>
         <address>
-            <small>gender</small><br /><span data-bind="text: gender() ? 'Female' : 'Male'"></span>
+            <label class="control-label">first year</label><br /><span data-bind="text: FirstYear"></span>
+        </address>
+        <address>
+            <label class="control-label">gender</label><br /><span data-bind="text: IsFemale() ? 'Female' : 'Male'"></span>
         </address>
     </div>
     <div class="contactErrorLocation" style="margin: 10px">
@@ -152,60 +154,60 @@
 
         <div class="form-group">
             <small>email</small><br />
-            <label data-bind="uniqueFor: $parent.id" class='sr-only'>email</label>
-            <input type="email" class="form-control" data-bind="value: email, uniqueId: $parent.id" placeholder="email address" style="width: 400px" />
+            <label data-bind="uniqueFor: $parent.Id" class='sr-only'>email</label>
+            <input type="email" class="form-control" data-bind="value: Email, uniqueId: $parent.Id" placeholder="email address" style="width: 400px" />
         </div>
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>phone numbers</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Cell Phone">c</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone1, uniqueId: $parent.id" class="form-control" placeholder="cell phone" />
+            <label data-bind="uniqueFor: $parent.Id" class="control-label"><abbr data-toggle="tooltip" title="Cell Phone">c</abbr></label>
+            <input type="tel" data-bind="phoneNumber: Phone1, uniqueId: $parent.Id" class="form-control" placeholder="cell phone" />
 
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Home Phone">h</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone2, uniqueId: $parent.id" class="form-control" placeholder="home phone" />
+            <label data-bind="uniqueFor: $parent.Id" class="control-label"><abbr data-toggle="tooltip" title="Home Phone">h</abbr></label>
+            <input type="tel" data-bind="phoneNumber: Phone2, uniqueId: $parent.Id" class="form-control" placeholder="home phone" />
 
-            <label data-bind="uniqueFor: $parent.id" class="control-label"><abbr data-toggle="tooltip" title="Work Phone">w</abbr></label>
-            <input type="tel" data-bind="phoneNumber: phone3, uniqueId: $parent.id" class="form-control" placeholder="work phone" />
+            <label data-bind="uniqueFor: $parent.Id" class="control-label"><abbr data-toggle="tooltip" title="Work Phone">w</abbr></label>
+            <input type="tel" data-bind="phoneNumber: Phone3, uniqueId: $parent.Id" class="form-control" placeholder="work phone" />
         </div>
 
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>address</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">Street Address</label>
-            <input type="text" class="form-control" data-bind="value: address, uniqueId: $parent.id" placeholder="street address" style="width: 300px" /> <br />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">Street Address</label>
+            <input type="text" class="form-control" data-bind="value: StreetAddress, uniqueId: $parent.Id" placeholder="street address" style="width: 300px" /> <br />
 
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">City</label>
-            <input type="text" class="form-control" data-bind="value: city, uniqueId: $parent.id" placeholder="city" style="width: 200px" />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">City</label>
+            <input type="text" class="form-control" data-bind="value: City, uniqueId: $parent.Id" placeholder="city" style="width: 200px" />
 
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">State</label>
-            <select data-container="body" data-size="7" data-bind="uniqueId: $parent.id, selectPicker: state, selectPickerOptions: {optionsArray: $parent.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">State</label>
+            <select data-container="body" data-size="7" data-bind="uniqueId: $parent.Id, selectPicker: State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
 
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">Zip Code</label>
-            <input type="text" class="form-control" data-bind="value: zip, uniqueId: $parent.id" style="width: 75px" placeholder="zip" />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">Zip Code</label>
+            <input type="text" class="form-control" data-bind="value: Zip, uniqueId: $parent.Id" style="width: 75px" placeholder="zip" />
         </div>
 
         <br />
 
         <div class="form-group" style="margin-top:10px">
             <small>date of birth</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">Date of Birth</label>
-            <input type="text" data-bind="uniqueId: $parent.id, datepicker: birthdate, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" class="form-control" placeholder="birth date" /><br />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">Date of Birth</label>
+            <input type="text" data-bind="uniqueId: $parent.Id, datepicker: DateOfBirth, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" class="form-control" placeholder="birth date" /><br />
             <small>choose first year</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">First Year</label>
-            <select data-container="body" data-bind="uniqueId: $parent.id, selectPicker: firstYear, selectPickerOptions: { optionsArray: $parent.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">First Year</label>
+            <select data-container="body" data-bind="uniqueId: $parent.Id, selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
         </div>
         <br />
         <div class="form-group" style="margin-top:10px">
             <small>gender</small><br />
-            <label data-bind="uniqueFor: $parent.id" class="sr-only">Gender</label>
-            <select data-container="body" data-bind="uniqueId: $parent.id, selectPicker: gender, selectPickerOptions: { optionsArray: $parent.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+            <label data-bind="uniqueFor: $parent.Id" class="sr-only">Gender</label>
+            <select data-container="body" data-bind="uniqueId: $parent.Id, selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
         </div>
         <br />
         <div class="form-group" style="margin-top:10px" data-bind="visible: $parent.showCreateAccount">
-            <input type="checkbox" data-bind="checked: $parent.createAccount, uniqueId: $parent.id">
-            <label data-bind="uniqueFor: $parent.id">
+            <input type="checkbox" data-bind="checked: $parent.createAccount, uniqueId: $parent.Id">
+            <label data-bind="uniqueFor: $parent.Id">
                 register user account (email will be sent to user)
             </label>
         </div>
