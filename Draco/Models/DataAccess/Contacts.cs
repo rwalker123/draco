@@ -112,7 +112,10 @@ namespace DataAccess
                     orderby c.LastName, c.FirstName, c.MiddleName
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName,
                         c.Phone1, c.Phone2, c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City,
-                        c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
+                        c.State, c.Zip, c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)
+                        {
+                            IsFemale = c.IsFemale.GetValueOrDefault()
+                        });
         }
 
         static public long GetContactId(String aspNetUserId)
@@ -158,7 +161,10 @@ namespace DataAccess
                         c.Zip,
                         c.FirstYear.GetValueOrDefault(),
                         c.DateOfBirth,
-                        c.UserId)).SingleOrDefault();
+                        c.UserId)
+                        {
+                            IsFemale = c.IsFemale.GetValueOrDefault()
+                        }).SingleOrDefault();
 
         }
 
@@ -184,7 +190,10 @@ namespace DataAccess
                         c.Zip,
                         c.FirstYear.GetValueOrDefault(),
                         c.DateOfBirth,
-                        c.UserId)).SingleOrDefault();
+                        c.UserId)
+                        {
+                            IsFemale = c.IsFemale.GetValueOrDefault()
+                        }).SingleOrDefault();
         }
        
         static public IQueryable<ModelObjects.ContactName> GetContactNames(long accountId)
@@ -311,7 +320,10 @@ namespace DataAccess
                     c.MiddleName.Equals(middleName, StringComparison.CurrentCultureIgnoreCase)
                     select new Contact(c.Id, c.Email, c.LastName, c.FirstName, c.MiddleName, c.Phone1, c.Phone2,
                         c.Phone3, c.CreatorAccountId, c.StreetAddress, c.City, c.State, c.Zip,
-                        c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)).SingleOrDefault();
+                        c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId)
+                        {
+                            IsFemale = c.IsFemale.GetValueOrDefault()
+                        }).SingleOrDefault();
         }
 
         static public async Task<String> RegisterUser(Contact c)

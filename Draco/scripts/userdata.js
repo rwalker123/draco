@@ -8,20 +8,6 @@
         e.preventDefault();
     });
 
-    // TODO: Use knockout validator
-    $('#newContact').validate({
-        submitHandler: function (form) {
-            userData.createUser(form);
-        },
-        rules: {
-            firstname: { required: true, minlength: 1 },
-            lastname: { required: true, minlength: 1 },
-            email: { email: true }
-        },
-        errorPlacement: function (error, element) {
-            error.appendTo($("#newContact > .contactView > .contactErrorLocation"));
-        }
-    });
 }
 
 var UserClassDetails = function (data, accountId) {
@@ -43,6 +29,24 @@ var UserClassDetails = function (data, accountId) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
+    self.Email.extend({
+        email: true
+    });
+
+    self.DateOfBirth.extend({
+        required: true,
+        date: true
+    });
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+
 }
 
 var UserClass = function (data, accountId, showCreateAccount) {
@@ -54,7 +58,7 @@ var UserClass = function (data, accountId, showCreateAccount) {
         // example:
         'details': {
             create: function (options) {
-                return new UserClassDetails(options.data, self.accountId);
+                return ko.validatedObservable(new UserClassDetails(options.data, self.accountId));
             }
         //    update: function (options) {
         //        return options.data;
@@ -64,26 +68,27 @@ var UserClass = function (data, accountId, showCreateAccount) {
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.showCreateAccount = ko.observable(showCreateAccount);
-    self.createAccount = ko.observable(false);
-
-    self.birthdateDisplay = ko.computed(function () {
-        if (!self.details.DateOfBirth())
-            return '';
-        else
-            return moment(new Date(self.details.DateOfBirth())).format('MMMM D, YYYY');
+    self.FirstName.extend({
+        required: true
     });
 
+    self.LastName.extend({
+        required: true
+    });
 
-    self.namesEnabled = ko.observable(true);
-    self.detailsVisible = ko.observable(false);
-    self.selectedView = ko.observable('viewUserDetailsTemplate'); // toggle between edit/view templates.
-    self.validatingName = ko.observable(false);
+        //errorPlacement: function (error, element) {
+        //    error.appendTo($("#newContact > .contactView > .contactErrorLocation"));
+
+    self.Id.showCreateAccount = ko.observable(showCreateAccount);
+    self.Id.createAccount = ko.observable(false);
+
+    self.Id.namesEnabled = ko.observable(true);
+    self.Id.detailsVisible = ko.observable(false);
+    self.Id.selectedView = ko.observable('viewUserDetailsTemplate'); // toggle between edit/view templates.
+    self.Id.validatingName = ko.observable(false);
 
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
-        self.namesEnabled(true);
-        self.detailsVisible(false);
     }
 
     self.toJS = function () {
@@ -91,13 +96,20 @@ var UserClass = function (data, accountId, showCreateAccount) {
         return js;
     }
 
+    self.birthdateDisplay = ko.computed(function () {
+        if (!self.details().DateOfBirth())
+            return '';
+        else
+            return moment(new Date(self.details().DateOfBirth())).format('MMMM D, YYYY');
+    });
+
     self.isRegistered = ko.computed(function () {
-        return self.details.UserId() && self.details.UserId().length > 0;
+        return self.details().UserId() && self.details().UserId().length > 0;
     });
 
     self.canRegister = ko.computed(function () {
         // must have email and can't be already registered.
-        var hasEmail = self.details.Email() && self.details.Email().length > 0;
+        var hasEmail = self.details().Email() && self.details().Email().length > 0;
         return !self.isRegistered() && hasEmail;
     }, this);
 
@@ -168,30 +180,33 @@ var UserClass = function (data, accountId, showCreateAccount) {
         });
     }
 
+    var originalValues;
+
     self.beginEditContact = function () {
-        self.selectedView('editUserDetailsTemplate');
+        originalValues = self.toJS();
+        self.Id.selectedView('editUserDetailsTemplate');
     }
 
     self.cancelEditContact = function () {
-        self.resetChanges();
-        self.selectedView('viewUserDetailsTemplate');
+        self.update(originalValues);
+        self.Id.selectedView('viewUserDetailsTemplate');
     }
 
     self.beginCreateContact = function () {
         window.clearTimeout(self.errorTimeout);
-        if (!self.firstName.uncommitValue() || !self.lastName.uncommitValue()) {
+        if (!self.isValid()) {
             self.addNameMissingError($('#newContact > .contactView > .contactErrorLocation'));
+            return;
         }
-        else if ($("#newContact").valid()) {
-            self.doAction(this, "commit"); // commit the names.
-            self.validatingName(true);
-            self.validateNameForNewContact();
-        }
-        else {
-            self.errorTimeout = setTimeout(function () {
-                $("#newContact").validate().resetForm();
-            }, 3000);
-        }
+
+        self.Id.validatingName(true);
+        self.validateNameForNewContact();
+
+        //else {
+        //    self.errorTimeout = setTimeout(function () {
+        //        $("#newContact").validate().resetForm();
+        //    }, 3000);
+        //}
     }
 
     self.validateNameForNewContact = function () {
@@ -205,11 +220,11 @@ var UserClass = function (data, accountId, showCreateAccount) {
                 MiddleName: self.MiddleName(),
             },
             success: function (response) {
-                self.validatingName(false);
+                self.Id.validatingName(false);
 
                 if (!response) {
-                    self.namesEnabled(false);
-                    self.detailsVisible(true);
+                    self.Id.namesEnabled(false);
+                    self.Id.detailsVisible(true);
                 }
                 else {
                     self.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
@@ -250,34 +265,8 @@ var UserClass = function (data, accountId, showCreateAccount) {
         elem.delay(5000).hide('slow');
     }
 
-    self.updateContact = function (form) {
-
-        var data = self.toJS();
-
-        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts'; // don't register for now. UI is messed up. ?register=1';
-        $.ajax({
-            type: "PUT",
-            url: url,
-            data: data,
-            success: function (data) {
-                self.selectedView('viewUserDetailsTemplate');
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                if (xhr && xhr.status == 409) {
-                    if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
-                        self.addEmailExistsError($(form).find('.contactView > .contactErrorLocation'));
-                    else
-                        self.addNameExistsError($(form).find('.contactView > .contactErrorLocation'));
-                }
-                else {
-                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
-                }
-            }
-        });
-    }
-
     self.cancelContact = function () {
-        if (self.id())
+        if (self.Id())
             self.cancelEditContact();
         else
             self.cancelCreateContact();
@@ -285,8 +274,8 @@ var UserClass = function (data, accountId, showCreateAccount) {
 
     self.cancelCreateContact = function () {
 
-        self.namesEnabled(true);
-        self.detailsVisible(false);
+        self.Id.namesEnabled(true);
+        self.Id.detailsVisible(false);
         self.details.loaded = false;
     }
 }
@@ -430,8 +419,8 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         }
     };
 
-    self.newUser = new UserClass(self.emptyUser, self.accountId, true)
-
+    self.newUser = ko.validatedObservable(new UserClass(self.emptyUser, self.accountId, true));
+    self.newUser().Id.selectedView('editUserDetailsTemplate'); // toggle between edit/view templates.
 
     self.users = ko.observableArray([]);
     
@@ -462,27 +451,73 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + user.id(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + user.Id(),
             success: function (data) {
                 // remove from data model.
-                //self.populateUsers();
-                self.users.remove(user);
+                self.populateUsers();
             }
         });
     }
 
-    self.createUser = function (form) {
-        var userData = ko.dataFor(form);
-        var id = userData.createAccount() == true ? 1 : 0;
-        if (id == 1 && !userData.details.email.uncommitValue())
+    self.updateOrCreateContact = function (userData) {
+        if (userData.Id())
+            self.updateContact(userData);
+        else
+            self.createUser(userData);
+    }
+
+    self.updateContact = function (userData) {
+
+        var data = userData.toJS();
+        delete data.details;
+        var details = userData.details().toJS();
+
+        $.extend(data, details);
+
+        var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts'; // don't register for now. UI is messed up. ?register=1';
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: data,
+            success: function (data) {
+                userData.Id.selectedView('viewUserDetailsTemplate');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                if (xhr && xhr.status == 409) {
+                    if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
+                        self.addEmailExistsError($(form).find('.contactView > .contactErrorLocation'));
+                    else
+                        self.addNameExistsError($(form).find('.contactView > .contactErrorLocation'));
+                }
+                else {
+                    reportAjaxError(url, xhr, ajaxOptions, thrownError);
+                }
+            }
+        });
+    }
+
+    self.afterTemplateRendered = function () {
+        $(".selectpicker").selectpicker();
+    }
+
+    self.createUser = function (userData) {
+        if (!userData.details.isValid())
+            return;
+
+        var id = userData.Id.createAccount() == true ? 1 : 0;
+        if (id == 1 && !userData.details().Email())
             alert("Will not register account, no email specified");
 
-        if (!userData.details.birthdate.uncommitValue()) {
+        if (!userData.details().DateOfBirth()) {
             alert("Please enter birth date.");
             return;
         }
 
-        var data = self.newUser.toJS();
+        var data = userData.toJS();
+        delete data.details;
+        var details = userData.details().toJS();
+
+        $.extend(data, details);
 
         var url = window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts?register=' + id;
         $.ajax({
@@ -490,7 +525,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             url: url,
             data: data,
             success: function (data) {
-                self.newUser.update(self.emptyUser);
+                self.newUser().update(self.emptyUser);
                 
                 // Refresh the accordion, make sure not to change the active one.
                 self.populateUsers();
@@ -552,7 +587,6 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             type: "GET",
             url: url,
             success: function (data) {
-                // data['odata.nextLink']
                 if (data['odata.count'])
                     self.totalRecords(data['odata.count']);
                 else
@@ -595,6 +629,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                         theUser.LastName(item.LastName);
                         theUser.MiddleName(item.MiddleName);
                         theUser.PhotoURL(item.PhotoURL);
+                        theUser.Id.detailsVisible(true);
                         return theUser;
                     });
 
@@ -612,8 +647,24 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                 if (data) {
                     window.location.hash = 'update';
 
-                    userData.details.update(data);
-                    userData.details.loaded(true);
+                    var details = {
+                            loaded: true,
+                            Email: data.Email,
+                            UserId: data.UserId,
+                            StreetAddress: data.StreetAddress,
+                            City: data.City,
+                            State: data.State,
+                            Zip: data.Zip,
+                            DateOfBirth: data.DateOfBirth,
+                            FirstYear: data.FirstYear,
+                            Phone1: data.Phone1,
+                            Phone2: data.Phone2,
+                            Phone3: data.Phone3,
+                            IsFemale: data.IsFemale,
+                            IsLockedOut: data.IsLockedOut
+                    }
+
+                    userData.details().update(details);
                 }
             }
         });
@@ -625,7 +676,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
         if (openAnchor && openAnchor.length == 1) {
             var vm = ko.dataFor(openAnchor[0]);
-            if (vm && vm.details && !vm.details.loaded) {
+            if (vm && vm.details && !vm.details().loaded()) {
                 self.fillUserDetails(vm);
             }
         }
