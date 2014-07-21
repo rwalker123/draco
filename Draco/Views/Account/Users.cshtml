@@ -129,8 +129,9 @@
             <label class="control-label">gender</label><br /><span data-bind="text: IsFemale() ? 'Female' : 'Male'"></span>
         </address>
     </div>
-    <div class="contactErrorLocation" style="margin: 10px">
 
+    <div data-bind="if: Id.showGenericErrorMsg">
+        <div class="alert alert-danger" data-bind="html: Id.genericErrorMsg"></div>
     </div>
 
     <button type="button" class="btn btn-default" data-bind="click: beginEditContact"><span class="glyphicon glyphicon-edit"></span></button>
@@ -143,19 +144,29 @@
 
 <script id="editUserDetailsTemplate" type="text/html">
 
-    <div class="form-group" style="margin-bottom:10px">
+    <div class="form-group" style="margin-bottom:10px" data-bind="validationOptions: { messageTemplate: 'createUserErrorTemplate' }">
         <input type="text" class="form-control" data-bind="value: FirstName, enable: Id.namesEnabled" placeholder="first name" name="firstname" style="width: 150px" />
         <input type="text" class="form-control" data-bind="value: MiddleName, enable: Id.namesEnabled" placeholder="middle name" style="width: 125px" />
         <input type="text" class="form-control" data-bind="value: LastName, enable: Id.namesEnabled" placeholder="last name" name="lastname" style="width: 150px" />
         <button type="button" class="btn btn-primary" data-bind="visible: Id.namesEnabled() && !Id.detailsVisible(), click: beginCreateContact"><span class="glyphicon glyphicon-plus"></span></button>
     </div>
+    <div data-bind="if: Id.nameExistsError">
+        <div class="alert alert-danger">
+            <p>Name already exists.</p>
+        </div>
+    </div>
 
     <div data-bind="with: details, fadeVisible: Id.detailsVisible">
 
-        <div class="form-group">
+        <div class="form-group" data-bind="validationOptions: { messageTemplate: 'createUserErrorTemplate' }">
             <small>email</small><br />
             <label data-bind="uniqueFor: $parent.Id" class='sr-only'>email</label>
             <input type="email" class="form-control" data-bind="value: Email, uniqueId: $parent.Id" placeholder="email address" style="width: 400px" />
+        </div>
+        <div data-bind="if: $parent.Id.emailExistsError">
+            <div class="alert alert-danger">
+                <p>Email already exists.</p>
+            </div>
         </div>
         <br />
 
@@ -221,9 +232,13 @@
         <button type="button" class="btn btn-danger" data-bind="click: cancelContact"><span class="glyphicon glyphicon-remove"></span></button><br />
     </div>
 
-    <div class="contactErrorLocation"></div>
     <div data-bind="visible: Id.validatingName" class="alert alert-info"><i class="fa fa-spinner fa-spin fa-2x"></i> validating name...</div>
 
+</script>
+
+<script type="text/html" id="createUserErrorTemplate">
+    <span data-bind="if: !field.isValid(),
+                     attr: { title: field.error }"><span class="glyphicon glyphicon-exclamation-sign"></span></span>
 </script>
 
 @Scripts.Render("~/bundles/knockout")

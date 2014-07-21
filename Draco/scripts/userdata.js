@@ -76,9 +76,6 @@ var UserClass = function (data, accountId, showCreateAccount) {
         required: true
     });
 
-        //errorPlacement: function (error, element) {
-        //    error.appendTo($("#newContact > .contactView > .contactErrorLocation"));
-
     self.Id.showCreateAccount = ko.observable(showCreateAccount);
     self.Id.createAccount = ko.observable(false);
 
@@ -86,6 +83,14 @@ var UserClass = function (data, accountId, showCreateAccount) {
     self.Id.detailsVisible = ko.observable(false);
     self.Id.selectedView = ko.observable('viewUserDetailsTemplate'); // toggle between edit/view templates.
     self.Id.validatingName = ko.observable(false);
+
+    self.Id.nameExistsError = ko.observable(false);
+    self.Id.emailExistsError = ko.observable(false);
+    self.Id.genericErrorMsg = ko.observable('');
+
+    self.isValid = function () {
+        return !self.Id.nameExistsError() && !self.Id.emailExistsError();
+    }
 
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
@@ -150,16 +155,12 @@ var UserClass = function (data, accountId, showCreateAccount) {
             type: "PUT",
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/register/' + self.Id(),
             success: function (userId) {
-                self.details.userid(userId);
-                var form = $('#' + self.Id());
-                self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
-                    "User has been registered. Email sent to user.");
+                self.details().UserId(userId);
+                self.addGenericError("User has been registered. Email sent to user.");
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 if (xhr && xhr.status == 409) {
-                    var form = $('#' + self.id());
-                    self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
-                        xhr.responseText);
+                    self.addGenericError(xhr.responseText);
                 }
                 else {
                     reportAjaxError(url, xhr, ajaxOptions, thrownError);
@@ -173,9 +174,7 @@ var UserClass = function (data, accountId, showCreateAccount) {
             type: "PUT",
             url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/ResetPassword/' + self.Id(),
             success: function () {
-                var form = $('#' + self.id());
-                self.addGenericError($(form).find('.contactView > .contactErrorLocation'),
-                    "Password has been reset. Email sent to user.");
+                self.addGenericError("Password has been reset. Email sent to user.");
             }
         });
     }
@@ -193,21 +192,29 @@ var UserClass = function (data, accountId, showCreateAccount) {
     }
 
     self.beginCreateContact = function () {
-        window.clearTimeout(self.errorTimeout);
         if (!self.isValid()) {
-            self.addNameMissingError($('#newContact > .contactView > .contactErrorLocation'));
             return;
         }
 
         self.Id.validatingName(true);
         self.validateNameForNewContact();
-
-        //else {
-        //    self.errorTimeout = setTimeout(function () {
-        //        $("#newContact").validate().resetForm();
-        //    }, 3000);
-        //}
     }
+
+    self.FirstName.subscribe(function () {
+        self.Id.nameExistsError(false);
+    });
+
+    self.MiddleName.subscribe(function () {
+        self.Id.nameExistsError(false);
+    });
+
+    self.LastName.subscribe(function () {
+        self.Id.nameExistsError(false);
+    });
+
+    self.details().Email.subscribe(function () {
+        self.Id.emailExistsError(false);
+    });
 
     self.validateNameForNewContact = function () {
         $.ajax({
@@ -225,44 +232,24 @@ var UserClass = function (data, accountId, showCreateAccount) {
                 if (!response) {
                     self.Id.namesEnabled(false);
                     self.Id.detailsVisible(true);
+                    self.Id.nameExistsError(false);
                 }
                 else {
-                    self.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
+                    self.Id.nameExistsError(true);
                 }
             }
         });
     }
 
-    self.addGenericError = function (errorElement, msg) {
-        var elem = jQuery('<div/>', {
-            'class': 'alert alert-danger',
-            text: msg
-        }).appendTo(errorElement);
-        elem.delay(5000).hide('slow');
-    }
+    self.Id.showGenericErrorMsg = ko.observable(false);
 
-    self.addNameMissingError = function (errorElement) {
-        var elem = jQuery('<div/>', {
-            'class': 'alert alert-danger',
-            text: 'First name and Last name required.'
-        }).appendTo(errorElement);
-        elem.delay(5000).hide('slow');
-    }
-
-    self.addNameExistsError = function (errorElement) {
-        var elem = jQuery('<div/>', {
-            'class': 'alert alert-danger',
-            text: 'Name already exists.'
-        }).appendTo(errorElement);
-        elem.delay(5000).hide('slow');
-    }
-
-    self.addEmailExistsError = function (errorElement) {
-        var elem = jQuery('<div/>', {
-            'class': 'alert alert-danger',
-            text: 'Email already exists.'
-        }).appendTo(errorElement);
-        elem.delay(5000).hide('slow');
+    self.addGenericError = function (msg) {
+        self.Id.genericErrorMsg(msg);
+        self.Id.showGenericErrorMsg(true);
+        setTimeout(function () {
+            self.Id.genericErrorMsg('');
+            self.Id.showGenericErrorMsg(false);
+        }, 5000);
     }
 
     self.cancelContact = function () {
@@ -467,6 +454,8 @@ var UsersClass = function (accountId, pageSize, firstYear) {
     }
 
     self.updateContact = function (userData) {
+        if (!userData.isValid() || !userData.details.isValid())
+            return;
 
         var data = userData.toJS();
         delete data.details;
@@ -485,9 +474,9 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             error: function (xhr, ajaxOptions, thrownError) {
                 if (xhr && xhr.status == 409) {
                     if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
-                        self.addEmailExistsError($(form).find('.contactView > .contactErrorLocation'));
+                        userData.Id.emailExistsError(true);
                     else
-                        self.addNameExistsError($(form).find('.contactView > .contactErrorLocation'));
+                        userData.Id.nameExistsError(true);
                 }
                 else {
                     reportAjaxError(url, xhr, ajaxOptions, thrownError);
@@ -501,7 +490,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
     }
 
     self.createUser = function (userData) {
-        if (!userData.details.isValid())
+        if (!userData.isValid() || !userData.details.isValid())
             return;
 
         var id = userData.Id.createAccount() == true ? 1 : 0;
@@ -527,15 +516,18 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             success: function (data) {
                 self.newUser().update(self.emptyUser);
                 
+                self.newUser().Id.namesEnabled(true);
+                self.newUser().Id.detailsVisible(false);
+
                 // Refresh the accordion, make sure not to change the active one.
                 self.populateUsers();
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 if (xhr && xhr.status == 409) {
                     if (xhr.responseText.toUpperCase().indexOf('EMAIL') > 0)
-                        userData.addEmailExistsError($('#newContact > .contactView > .contactErrorLocation'));
+                        userData.Id.emailExistsError(true);
                     else
-                        userData.addNameExistsError($('#newContact > .contactView > .contactErrorLocation'));
+                        userData.Id.nameExistsError(true);
                 }
                 else {
                     reportAjaxError(url, xhr, ajaxOptions, thrownError);
