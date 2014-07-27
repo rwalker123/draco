@@ -12,9 +12,9 @@ namespace SportsManager.Controllers
     public class BackupSiteAPIController : ApiController
     {
         // API Key
-        //String apiKey = "el5RRxCKL9XhR9y4UuhnAaxV8IcrZfs02jvhS7vFvhyloChIMYr0ew0qJELCIr50";
+        String apiKey = "el5RRxCKL9XhR9y4UuhnAaxV8IcrZfs02jvhS7vFvhyloChIMYr0ew0qJELCIr50";
         // Sandbox Key
-        const string apiKey = "FtA4Ak6rn8KeR07hb0vbcXrxJPKgffAFxPx54icmAsbTQzOKJk7oOBioeAtt1fgu";
+        //const string apiKey = "FtA4Ak6rn8KeR07hb0vbcXrxJPKgffAFxPx54icmAsbTQzOKJk7oOBioeAtt1fgu";
 
         // Web Service URL
         const String webServiceUrl = "https://api.discountasp.net/1.0/customerapi.asmx/Sql2012CreateBackup";
