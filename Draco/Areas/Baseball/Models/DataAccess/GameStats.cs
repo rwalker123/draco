@@ -1978,8 +1978,8 @@ namespace DataAccess
                     join l in db.Leagues on ls.LeagueId equals l.Id
                     join bss in db.batstatsums on rs.Id equals bss.PlayerId
                     where rs.PlayerId == rosterPlayerId && bss.Id != null
-                    orderby s.Name, l.Name, ts.Name
                     group new { bss, s, l, ts } by new { bss.PlayerId, seasonName = s.Name, leagueName = l.Name, teamName = ts.Name } into g
+                    orderby g.Key.seasonName, g.Key.leagueName, g.Key.teamName
                     select new GameCareerBatStats(g.Key.PlayerId,
                         g.Key.seasonName,
                         g.Key.teamName,
@@ -2092,8 +2092,8 @@ namespace DataAccess
                     join l in db.Leagues on ls.LeagueId equals l.Id
                     join bss in db.pitchstatsums on rs.Id equals bss.PlayerId
                     where rs.PlayerId == rosterPlayerId && bss.Id != null
-                    orderby s.Name, l.Name, ts.Name
                     group new { bss, s, l, ts } by new { bss.PlayerId, seasonName = s.Name, leagueName = l.Name, teamName = ts.Name } into g
+                    orderby g.Key.seasonName, g.Key.leagueName, g.Key.teamName
                     select new GameCareerPitchStats(g.Key.PlayerId,
                         g.Key.seasonName,
                         g.Key.teamName,
