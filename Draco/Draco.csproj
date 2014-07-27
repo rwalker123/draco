@@ -279,6 +279,7 @@
     <Compile Include="CleanMessageBoard.aspx.designer.cs">
       <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
     </Compile>
+    <Compile Include="Controllers\BackupSiteAPIController.cs" />
     <Compile Include="Controllers\DiscussionsAPIController.cs" />
     <Compile Include="Controllers\DiscussionsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\FieldsController.cs" />
