@@ -36,7 +36,7 @@ var SeasonViewModel = function(data, accountId) {
     });
 
     self.Name.subscribe(function () {
-        if (self.Name() == 0)
+        if (!self.Name())
             return;
 
         $.ajax({
@@ -78,6 +78,8 @@ var SeasonSetupViewModel = function (accountId) {
 			    });
 
 			    self.seasons(mappedSeasons);
+			    self.seasons.sort(self.sortBySeasonName);
+
 			    self.setCurrentSeasonDisplay();
 			});
     };
@@ -85,34 +87,37 @@ var SeasonSetupViewModel = function (accountId) {
     self.newSeasonName = ko.observable();
 
     self.addSeason = function () {
-        if (self.newSeasonName().length == 0)
+        if (!self.newSeasonName())
             return;
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/',
+            url: window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Season/',
             data: {
-                AccountId: this.accountId,
+                AccountId: self.accountId,
                 Name: self.newSeasonName()
             },
             success: function (seasonId) {
 
-                var jsonObj = []; //declare array
-                jsonObj.push({ Id: seasonId, Name: name, AccountId: target.accountId });
-                target.createSeasonFromTemplate(target, jsonObj);
-
                 var seasonvm = new SeasonViewModel({
                     Id: seasonId,
-                    Name: self.newSeasonName
+                    Name: self.newSeasonName()
                 }, self.accountId);
 
-                self.seasons.push_back(seasonvm);
+                self.seasons.push(seasonvm);
+                self.seasons.sort(self.sortBySeasonName);
 
                 self.newSeasonName("");
                 self.setCurrentSeasonDisplay();
             }
         });
     };
+
+    self.sortBySeasonName = function (l, r) {
+        var lName = l.Name();
+        var rName = r.Name();
+        return lName == rName ? 0 : (lName < rName ? -1 : 1);
+    }
 
     self.deleteSeason = function (seasonVM) {
         $("#myModal").modal("show");
@@ -156,7 +161,7 @@ var SeasonSetupViewModel = function (accountId) {
 
     self.setCurrentSeasonDisplay = function () {
 
-        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason',
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/CurrentSeason',
             function (data) {
                 if (data.HasSeasons) {
                     if (data.SeasonId != 0) {

@@ -27,11 +27,11 @@
         <form class="form-inline" role="form" style="margin-top:20px">
             <small>add season</small><br />
             <div class="form-group">
-                <label for="newSeasonName" class="sr-only">Season Name</label>
+                <label data-bind="newSeasonName" class="sr-only">Season Name</label>
                 <div class="input-group">
-                    <input id="newSeasonName" style="width:300px" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
+                    <input data-bind="value: newSeasonName" id="newSeasonName" style="width:300px" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
                     <span class="input-group-btn">
-                        <button type="button" class="btn btn-primary" onclick="javascript: seasonSetupData.addSeason()"><span class="glyphicon glyphicon-plus"></span></button>
+                        <button type="button" class="btn btn-primary" data-bind="click: addSeason"><span class="glyphicon glyphicon-plus"></span></button>
                     </span>
                 </div>
             </div>
@@ -71,14 +71,17 @@
                                 <div class="input-group">
                                     <input data-bind="uniqueId: Id, value: Name" type="text" class="form-control" placeholder="enter season name" pattern=".{1,}" title="Must supply a name" />
                                     <div class="input-group-btn">
-                                        <button type="button" class="btn btn-danger" data-bind="enabled: !Id.deleting(), click: $root.deleteSeason"><span class="glyphicon glyphicon-remove"></span></button>
+                                        <button type="button" class="btn btn-danger" data-bind="enable: !Id.deleting(), click: $root.deleteSeason" title="permanatly delete season"><span class="glyphicon glyphicon-remove"></span></button>
                                     </div>
                                 </div>
+                            </div>
+                            <div data-bind="if: Id.deleting">
+                                <img src="/Images/busy.gif" />deleting season...
                             </div>
                         </form>
 
                         <br />
-                        <button type="button" class="btn btn-success" data-bind="click: $root.setCurrentSeason">Set as Current</button>
+                        <button type="button" class="btn btn-success" data-bind="enable: !Id.deleting(), click: $root.setCurrentSeason">Set as Current</button>
                     </div>
                 </div>
             </div>
