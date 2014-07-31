@@ -1,166 +1,183 @@
-﻿var SeasonSetupClass = function (accountId) {
-    this.init(accountId);
-};
+﻿function initSeasonData(accountId) {
+    initKOHelpers();
 
-$.extend(SeasonSetupClass.prototype, {
-    // object variables
-    accountId: 0,
+    var seasonSetupElem = document.getElementById("seasonsetup");
+    if (seasonSetupElem) {
+        var seasonSetupVM = new SeasonSetupViewModel(accountId);
+        ko.applyBindings(seasonSetupVM, seasonSetupElem);
+    }
 
-    init: function (accountId) {
-        this.accountId = accountId;
-    },
+}
 
-    fillSeasons: function () {
-        var target = this;
-        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Seasons',
-			function (data) {
-			    if (data.length) {
-			        window.location.hash = 'update';
+var SeasonViewModel = function(data, accountId) {
+    var self = this;
 
-			        target.createSeasonFromTemplate(target, data);
-			    }
+    self.accountId = accountId;
 
-			    target.setCurrentSeasonDisplay();
-			});
-    },
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-    addSeason: function () {
-        var name = $('#newSeasonName').val();
-        if (name.length == 0)
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Id.deleting = ko.observable(false);
+
+    self.Name.extend({
+        email: true
+    });
+
+    self.Name.subscribe(function () {
+        if (!self.Name())
             return;
 
-        var target = this;
         $.ajax({
-            type: "POST",
-            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/',
+            type: "PUT",
+            url: window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Season/' + self.Id(),
             data: {
-                AccountId: this.accountId,
-                Name: name
+                AccountId: self.accountId,
+                Name: self.Name()
             },
             success: function (seasonId) {
-                window.location.hash = 'update';
-
-                $('#newSeasonName').val('');
-
-                var jsonObj = []; //declare array
-                jsonObj.push({ Id: seasonId, Name: name, AccountId: target.accountId});
-                target.createSeasonFromTemplate(target, jsonObj);
-                target.setCurrentSeasonDisplay();
             }
         });
-    },
+    });
 
-    deleteSeason: function (seasonId) {
-        var target = this;
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+
+
+}
+
+var SeasonSetupViewModel = function (accountId) {
+    var self = this;
+
+    self.accountId = accountId;
+    self.seasons = ko.observableArray();
+
+    self.fillSeasons = function () {
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Seasons',
+			function (data) {
+			    var mappedSeasons = $.map(data, function (season) {
+			        return new SeasonViewModel(season, self.accountId);
+			    });
+
+			    self.seasons(mappedSeasons);
+			    self.seasons.sort(self.sortBySeasonName);
+
+			    self.setCurrentSeasonDisplay();
+			});
+    };
+
+    self.newSeasonName = ko.observable();
+
+    self.addSeason = function () {
+        if (!self.newSeasonName())
+            return;
+
+        $.ajax({
+            type: "POST",
+            url: window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Season/',
+            data: {
+                AccountId: self.accountId,
+                Name: self.newSeasonName()
+            },
+            success: function (seasonId) {
+
+                var seasonvm = new SeasonViewModel({
+                    Id: seasonId,
+                    Name: self.newSeasonName()
+                }, self.accountId);
+
+                self.seasons.push(seasonvm);
+                self.seasons.sort(self.sortBySeasonName);
+
+                self.newSeasonName("");
+                self.setCurrentSeasonDisplay();
+            }
+        });
+    };
+
+    self.sortBySeasonName = function (l, r) {
+        var lName = l.Name();
+        var rName = r.Name();
+        return lName == rName ? 0 : (lName < rName ? -1 : 1);
+    }
+
+    self.deleteSeason = function (seasonVM) {
         $("#myModal").modal("show");
 
         $("#confirmDeleteBtn").one("click", function () {
-            target.makeDeleteCall(target, seasonId);
+            self.makeDeleteCall(seasonVM);
         });
-    },
+    };
 
-    makeDeleteCall: function (target, seasonId) {
+    self.makeDeleteCall = function (seasonVM) {
+
+        seasonVM.Id.deleting(true);
 
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
+            url: window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Season/' + seasonVM.Id(),
             success: function (deletedSeasonId) {
-                window.location.hash = 'update';
-
-                $('#seasonHeader_' + deletedSeasonId).remove();
-                $('#seasonData_' + deletedSeasonId).remove();
-                target.makeAccordion();
-                target.setCurrentSeasonDisplay();
-            }
-        });
-
-    },
-
-    editSeason: function (seasonId) {
-        var name = $('#newSeasonName_' + seasonId).val();
-        if (name.length == 0)
-            return;
-
-        var target = this;
-        $.ajax({
-            type: "PUT",
-            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Season/' + seasonId,
-            data: {
-                AccountId: this.accountId,
-                Name: name
+                self.seasons.remove(seasonVM);
+                self.setCurrentSeasonDisplay();
             },
-            success: function (seasonId) {
-                window.location.hash = 'update';
-
-                $('#seasonHeaderLink_' + seasonId).html(name);
+            complete: function () {
+                seasonVM.Id.deleting(false);
             }
         });
-    },
 
-    createSeasonFromTemplate: function (target, data) {
+    };
 
-        if ($("#accordion").hasClass("ui-accordion"))
-            $("#accordion").accordion("destroy");
-
-        $('#accordion').append($("#seasonTemplate").render(data));
-        target.makeAccordion();
-    },
-
-    makeAccordion: function () {
-        var target = this;
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    },
-
-    setCurrentSeason: function (seasonId) {
-        var target = this;
-
-        $.each($('.currentSeason'), function(index, item) {
-            $(this).removeClass('currentSeason');
-        });
+    self.setCurrentSeason = function (seasonVM) {
 
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason/' + seasonId,
+            url: window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/CurrentSeason/' + seasonVM.Id(),
             success: function (currentSeasonId) {
-                window.location.hash = 'update';
-                target.setCurrentSeasonDisplay();
+                self.setCurrentSeasonDisplay();
             }
         });
 
-    },
+    };
 
-    setCurrentSeasonDisplay: function () {
+    self.currentSeason = ko.observable();
 
-        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/CurrentSeason',
+    self.setCurrentSeasonDisplay = function () {
+
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/CurrentSeason',
             function (data) {
-                if (data.HasSeasons)
-                {
-                    if (data.SeasonId != 0)
-                    {
-                        $('#currentSeasonDisplay').html('Current Season: ' + data.SeasonName);
-                        $('#setCurrentSeasonBtn_' + data.SeasonId).addClass('currentSeason');
+                if (data.HasSeasons) {
+                    if (data.SeasonId != 0) {
+                        self.currentSeason(data.SeasonName);
                     }
-                    else
-                    {
-                        $('#currentSeasonDisplay').html('Select a current season.');
+                    else {
+                        self.currentSeason(null);
                     }
                 }
-                else
-                { 
-                    $('#currentSeasonDisplay').html('Create a season to continue.');
+                else {
+                    self.currentSeason(null);
                 }
             });
-    },
-});
+    };
+
+    self.fillSeasons();
+};
 
 
