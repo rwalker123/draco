@@ -6,21 +6,8 @@
 }
 
 @section head {
-    @Styles.Render("~/Content/themes/base/css")
 
     <style type="text/css">
-        ul
-        {
-            list-style-type: none;
-        }
-
-        li.divisionTeam
-        {
-            font-size: 16px;
-            font-style: italic;
-            color: gray;
-            margin:5px;
-        }
     </style>
 }
 
@@ -38,192 +25,193 @@
 
 @if (!Model.HasSeason)
 {
-	<h3 class="alert alert-info">You must select an active <a class="btn btn-primary" href='@Url.Action("Index", "Season", new { area = "", accountId = Model.AccountId }, null)'>season</a> before creating any Leagues.</h3> 
+    <h3 class="alert alert-info">You must select an active <a class="btn btn-primary" href='@Url.Action("Index", "Season", new { area = "", accountId = Model.AccountId }, null)'>season</a> before creating any Leagues.</h3>
     return;
 }
 
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="deleteModalLabel">Confirm Delete League</h4>
+<div class="container" id="leagueSetup">
+
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Delete League</h4>
+                </div>
+                <div class="modal-body" id="deleteModalBody">
+                    You are about to delete a league. All data associated with the league for the current season will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeleteBtn">Continue</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                </div>
             </div>
-            <div class="modal-body" id="deleteModalBody">
-                You are about to delete a league. All data associated with the league for the current season will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+        </div>
+    </div>
+
+    <div class="modal fade" id="copySeasonModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Copy Season</h4>
+                </div>
+                <div class="modal-body" id="deleteModalBody">
+                    Importing league data will MERGE all current league data with imported data. Are you sure you want to continue?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmCopySeasonBtn">Continue</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeleteBtn">Continue</button>
-                <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+        </div>
+    </div>
+
+    <div class="panel-group" id="copyFromSeason" data-bind="if: seasons">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#copyFromSeason" href="#copyFromSeasonPanel">
+                        Import Previous Season
+                    </a>
+                </h3>
+            </div>
+            <div class="panel-collapse collapse" id="copyFromSeasonPanel">
+                <div class="panel-body">
+                    <p class="help-block" style="width:400px">
+                        Importing a previous season will give you a head start in setting up your league. Importing will bring in the league setup of
+                        a previous season. This includes the leagues, divisions, teams, and rosters. It does not include schedules, statistics, or any
+                        other data that involves games played in a season.
+                    </p>
+                    <form class="form-horizontal" role="form">
+                        <div class="form-group">
+                            <label for="seasonList" class="col-sm-2 control-label">Season</label>
+                            <div class="col-sm-4">
+                                <select data-container="body" class="form-control" data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
+                            </div>
+                            <div class="col-sm-1">
+                                <button type="button" class="btn btn-default" data-bind="click: copySeason" title="import selected season into current season">Import</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form class="form-inline" role="form" style="margin-top:20px">
+        <small>create a league</small><br />
+        <div class="form-group">
+            <label data-bind="uniqueFor: currentSeasonId" class="sr-only">League Name</label>
+            <div class="col-sm-12">
+                <div class="input-group">
+                    <input data-bind="uniqueId: currentSeasonId, value: newLeagueName" type="text" class="form-control" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-primary" data-bind="click: addLeague" title="add league"><span class="glyphicon glyphicon-plus"></span></button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="panel-group" id="accordion" data-bind="foreach: { data: leagues, as: 'league' }">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" data-bind="html: Name, attr: { href: '#' + Id() }">
+                    </a>
+                </h3>
+            </div>
+            <div class="panel-collapse collapse" data-bind="attr: { id: Id }">
+                <div class="panel-body">
+
+                    <form class="form-inline" role="form">
+                        <small>update league name</small><br />
+                        <div class="form-group">
+                            <label data-bind="uniqueFor: Id" class="sr-only">League Name</label>
+                            <div class="input-group">
+                                <input class="form-control" type="text" data-bind="value: Name, uniqueId: Id" />
+                                <span class="input-group-btn">
+                                    <button type="button" class="btn btn-danger" data-bind="click: $root.deleteLeague" title="Permantly delete league"><span class="glyphicon glyphicon-remove"></span></button>
+                                </span>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="form-group" style="margin-top:5px">
+                            <small>create a division</small><br />
+                            <label data-bind="uniqueFor: Id" class="sr-only">Division Name</label>
+                            <input class="form-control" data-bind="uniqueId: Id, value: Id.newDivisionName" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
+                            <label data-bind="uniqueFor: Id" class="control-label">Sort Order</label>
+                            <div class="input-group">
+                                <input class="form-control" data-bind="uniqueId: Id, value: Id.newDivisionPriority" type="number" style="width:50px" min="0" max="100" />
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-primary" data-bind="click: addDivision" title="add division"><span class="glyphicon glyphicon-plus"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                    </form>
+
+                    <small>divisions</small><br />
+
+                    <div data-bind="foreach: Id.Divisions">
+                        <form class="form-inline" role="form">
+                            <label data-bind="uniqueFor: Id" class="sr-only">Division Name</label>
+                            <input data-bind="value: Name, uniqueId: Id" class="form-control" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
+                            <label data-bind="uniqueFor: Id" class="control-label">Sort order</label>
+                            <div class="input-group">
+                                <input data-bind="value: Priority, uniqueId: Id" class="form-control" type="number" style="width:70px" min="0" max="100" />
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-danger" data-bind="click: league.deleteDivision" title="permantly delete division"><span class="glyphicon glyphicon-remove"></span></button>
+                                </div>
+                            </div>
+                            <hr />
+                            <small>division teams</small><br />
+
+                            <select data-container="body" data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                            <button type="button" class="btn btn-success form-control" data-bind="click: league.addTeamToDivision" title="add selected team to division"><span class="glyphicon glyphicon-ok"></span></button>
+                            <div class="input-group">
+                                <label data-bind="uniqueFor: Id" class="sr-only">Team Name</label>
+                                <input data-bind="uniqueId: Id, value: Id.newTeamName" class="form-control" maxlength="25" type="text" placeholder="enter new team name" />
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-primary" data-bind="click: league.addNewTeam" title="create team and add to division"><span class="glyphicon glyphicon-plus"></span></button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- ko if: Teams().length == 0 -->
+                        <div class="alert alert-info">Add teams to division.</div>
+                        <!-- /ko -->
+                        <ul class="list-group" data-bind="foreach: Teams">
+                            <li class="list-group-item">
+                                <button type="button" class="btn btn-warning left" data-bind="click: league.removeTeamFromDivision" title="remove team from league"><span class="glyphicon glyphicon-minus"></span></button>
+                                <span data-bind="imageUploader: teamLogoUploaderUrl" class="btn btn-default fileinput-button left" title="upload team logo">
+                                    <i class="glyphicon glyphicon-upload"></i>
+                                    <input class="form-control" type="file" data-maxfilesize="1">
+                                </span>
+                                <img class="img-rounded img-responsive left" onload="this.style.display = 'inline-block';" onerror="this.style.display = 'none';" data-bind="attr: { src: TeamLogoURL }" />
+                                <span style="vertical-align:middle" data-bind="html: Name"></span>
+
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="copyFromSeason" style="display:none;max-width:600px;margin-bottom:20px">
-    <h3>Import Previous Season</h3>
-    <div style="overflow:visible">
-        <p class="help-block" style="width:400px">
-            Importing a previous season will give you a head start in setting up your league. Importing will bring in the league setup of
-            a previous season. This includes the leagues, divisions, teams, and rosters. It does not include schedules, statistics, or any
-            other data that involves games played in a season.
-        </p>
-        <form class="form-horizontal" role="form">
-            <div class="form-group">
-                <label for="seasonList" class="col-sm-2 control-label">Season</label>
-                <div class="col-sm-4">
-                    <select class="selectpicker form-control" data-style="btn-primary" id="seasonList"></select>
-                </div>
-                <div class="col-sm-1">
-                    <button type="button" class="btn btn-default"  onclick="leagueSetupData.copySeason(@Model.CurrentSeasonId);">Import</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-
-<form class="form-inline" role="form" style="margin-top:20px">
-    <small>create a league</small><br />
-    <div class="form-group">
-        <label for="newLeagueName" class="sr-only">League Name</label>
-        <div class="col-sm-12">
-            <div class="input-group">
-                <input id="newLeagueName" type="text" class="form-control" placeholder="enter league name" pattern=".{1,}" title="Must supply a name" />
-                <span class="input-group-btn">
-                    <button type="button" class="btn btn-primary" onclick="leagueSetupData.addLeague(@Model.CurrentSeasonId)"><span class="glyphicon glyphicon-plus"></span></button>
-                </span>
-            </div>
-        </div>
-    </div>
-</form>
-
-
-<div id="accordion" style="margin-top:20px">
-</div>        
 
 @section scripts
 {
-@Scripts.Render("~/bundles/jsrender")
+    <script type="text/javascript" src="~/Areas/Baseball/Scripts/leaguesetup.js"></script>
+    @Scripts.Render("~/bundles/knockout")
+    @Scripts.Render("~/bundles/jquery-file-upload")
 
-<script id="teamOptionTemplate" type="text/x-jsrender">
-<option value='{{:Id}}'>{{:Name}}</option>
-</script>
+    <script type="text/javascript">
 
-<script id="seasonOptionTemplate" type="text/x-jsrender">
-<option value='{{:Id}}'>{{:Name}}</option>
-</script>
-
-<script id="leagueTemplate" type="text/x-jsrender">
-<h3 class="leagueHeader" id='leagueHeader_{{:Id}}'><a id='leagueHeaderLink_{{:Id}}' href="#">{{>Name}}</a></h3>
-<div id='leagueData_{{:Id}}' class='leagueData'>
-    <form class="form-inline" role="form">
-        <small>update league name</small><br />
-        <div class="form-group">
-            <label for="newLeagueName_{{:Id}}" class="sr-only">League Name</label>
-            <input class="form-control" id='newLeagueName_{{:Id}}' type="text" value='{{>Name}}' />
-            <button type="button" class="btn btn-default" onclick="leagueSetupData.editLeague({{:Id}})">Update Name</button>
-            <button type="button" class="btn btn-danger" onclick="leagueSetupData.deleteLeague({{:Id}})"><span class="glyphicon glyphicon-remove"></span></button>
-        </div>
-        <hr />
-        <div class="form-group" style="margin-top:5px">
-            <small>create a division</small><br />
-            <label for="NewDivisionName_{{:Id}}" class="sr-only">Division Name</label>
-            <input class="form-control" id="NewDivisionName_{{:Id}}" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
-            <label for="NewDivisionPriority_{{:Id}}" class="control-label">Sort Order</label>
-            <input class="form-control" id="NewDivisionPriority_{{:Id}}" type="number" style="width:50px" min="0" max="100" value="1" />
-            <button type="button" class="btn btn-primary" onclick="leagueSetupData.addDivision({{:Id}})"><span class="glyphicon glyphicon-plus"></span></button>
-        </div>
-        <hr />
-    </form>
-
-    <small>divisions</small><br />
-
-    <div id="LeagueSetupData_{{:Id}}" data-hasdata="False">
-        Loading...
-    </div>
-
-    <span style='display:none' id='divisionTeamPanel_{{:Id}}'>
-
-        <select class="leagueselectpicker" id='divisionTeamSelect_{{:Id}}'>
-            <option value='0'>New Team...</option>
-        </select>
-        <span id='newTeam_{{:Id}}' style="display: none"><label for="newTeamName_{{:Id}}" class="sr-only">Team Name</label><input class="form-control" maxlength="25" type="text" id='newTeamName_{{:Id}}' placeholder="enter team name" /></span>
-    </span>
-
-
-</div>
-</script>
-
-<script id="teamTemplate" type="text/x-jsrender">
-<li class="division_{{>DivisionId}} divisionTeam" id='divisionTeam_{{:Id}}' data-name='{{>Name}}'>
-    <button type="button" class="btn btn-warning" onclick="leagueSetupData.removeTeamFromDivision({{:LeagueId}}, {{:DivisionId}}, {{:Id}})"><span class="glyphicon glyphicon-minus"></span></button>
-    
-    <img src='@Url.Content("~/images/busy.gif")' id='teamLogoBusy_{{:Id}}'
-         style="position: absolute;z-index:1;margin-left:35px;margin-top:25px;border: none;display:none" />
-    <img id='teamLogo_{{:Id}}' class='fileupload img-rounded'
-         style="position: relative;vertical-align:middle;width:80px;height:45px" alt="upload logo"
-         data-url='@Url.Content("~/api/FileUploaderAPI/")@Model.AccountId/TeamLogo/{{:TeamId}}' src='{{:TeamLogoURL}}'/>
-
-    <span style="vertical-align:middle">{{:Name}}</span>
-
-</li>
-</script>
-
-<script id="divisionTemplate" type="text/x-jsrender">
-    <div class='divisionItem' style="margin-top:20px" id='division_{{:Id}}' data-priority='{{:Priority}}' data-name='{{>Name}}'>
-        <div id="divisionHeader_{{:Id}}">
-            <h4 style="float:left; margin-right:10px"><span id='divisionHeaderName_{{:Id}}'>{{:Name}}</span></h4>
-            <div style="float: left">
-                <button type="button" class="btn btn-default" onclick="leagueSetupData.editDivision({{:Id}})"><span class="glyphicon glyphicon-edit"></span></button>
-                <button type="button" class="btn btn-danger" onclick="leagueSetupData.deleteDivision({{:Id}})"><span class="glyphicon glyphicon-remove"></span></button>
-                <button id='divisionTeamEdit_{{:Id}}' type="button" class="btn btn-default" onclick="leagueSetupData.startAddTeam({{:LeagueId}}, {{:Id}})">Add Team</button>
-            </div>
-        </div>
-        <div style="clear:both"></div>
-        <form class="form-inline" role="form" id='divisionEdit_{{:Id}}' style='display:none'>
-            <label for="editDivisionName_{{:Id}}" class="sr-only">Division Name</label>
-            <input id="editDivisionName_{{:Id}}" class="form-control" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" value='{{>Name}}' />
-            <label for="editDivisionPriority_{{:Id}}" class="control-label">Sort order</label>
-            <input id="editDivisionPriority_{{:Id}}" class="form-control" type="number" style="width:50px" min="0" max="100" value="{{:Priority}}" />
-            <button type="button" class="btn btn-success" onclick="leagueSetupData.saveDivisionEdit({{:LeagueId}}, {{:Id}})"><span class="glyphicon glyphicon-ok"></span></button>
-            <button type="button" class="btn btn-danger" onclick="leagueSetupData.cancelDivisionEdit({{:Id}})"><span class="glyphicon glyphicon-remove"></span></button>
-        </form>
-
-        <form class="form-inline addDivisionTeamPanel" style="margin-left:30px;display:none" role="form" id='addDivisionTeamPanel_{{:Id}}'>
-            <button type="button" class="btn btn-success form-control" style="width:55px" onclick="leagueSetupData.addTeamToDivision({{:LeagueId}}, {{:Id}})"><span class="glyphicon glyphicon-ok"></span></button>
-            <button type="button" class="btn btn-default form-control" style="width:75px" onclick="leagueSetupData.stopAddTeam({{:LeagueId}}, {{:Id}})">Done</button>
-            <hr />
-        </form>
-
-        <ul class="divisionTeams" id="divisionTeams_{{:Id}}">
-            {{for Teams tmpl="#teamTemplate" /}}
-            {{if Teams.length <= 0}}
-            <li class="placeholder alert alert-info" id='placeholder_{{:Id}}'>Click add team to add teams to this division.</li>
-            {{else}}
-            <li class="placeholder alert alert-info" id='placeholder_{{:Id}}' style='display:none'>Click add team to add teams to this division.</li>
-            {{/if}}
-        </ul>
-        <hr />
-    </div>
-</script>
-
-<script type="text/javascript" src="~/Areas/Baseball/Scripts/leaguesetup.js"></script>
-
-@Scripts.Render("~/bundles/jquery-file-upload")
-
-<script type="text/javascript">
-
-    var leagueSetupData = new LeagueSetupClass(@Model.AccountId, @Model.CurrentSeasonId);
-
-    $(document).ready(function () {
-
-        $('.selectpicker').selectpicker();
-
-        $(document).bind('drop dragover', function (e) {
-            e.preventDefault();
+        $(document).ready(function () {
+            initLeagueSetupData(@Model.AccountId, @Model.CurrentSeasonId);
         });
-
-        leagueSetupData.fillLeagues();
-    });
-</script>
+    </script>
 }

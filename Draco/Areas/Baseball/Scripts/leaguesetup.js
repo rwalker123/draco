@@ -1,731 +1,476 @@
-﻿var LeagueSetupClass = function (accountId, currentSeasonId) {
-    this.init(accountId, currentSeasonId);
-};
+﻿function initLeagueSetupData(accountId, currentSeasonId) {
+    initKOHelpers();
 
-$.extend(LeagueSetupClass.prototype, {
-    // object variables
-    accountId: 0,
-    currentSeasonId: 0,
+    var userData = new LeagueSetupClass(accountId, currentSeasonId);
+    ko.applyBindings(userData, document.getElementById("leagueSetup"));
 
-    init: function (accountId, currentSeasonId) {
-        this.accountId = accountId;
-        this.currentSeasonId = currentSeasonId;
-        this.fillSeasonList();
-    },
+    $(document).bind('drop dragover', function (e) {
+        e.preventDefault();
+    });
+}
 
-    fillSeasonList: function () {
+var SeasonViewModel = function (data) {
+    var self = this;
 
-        var target = this;
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + this.accountId + '/Seasons',
-			function (data) {
-			    var selectList = $('#seasonList');
+    ko.mapping.fromJS(data, self.mapping, self);
 
-			    if (data.length) {
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
 
-			        $.each(data, function (index, item) {
-			            if (item.Id != target.currentSeasonId) {
-			                selectList.append($('#seasonOptionTemplate').render(item));
-			            }
-			        });
-			    }
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
 
-			    if (selectList.children().length > 0) {
-			        $('#copyFromSeason').show();
-			        $('.selectpicker').selectpicker('refresh');
-                }
-			    else {
-			        $('#copyFromSeason').hide();
-			    }
+var LeagueViewModel = function (data, accountId) {
+    var self = this;
 
-			});
+    self.accountId = accountId;
 
-        $("#copyFromSeason").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'Divisions': {
+        //    create: function (options) {
+        //        return new DivisionViewModel(options.data, self.accountId);
+        //    }
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-    },
+    ko.mapping.fromJS(data, self.mapping, self);
 
-    getLeagueId: function (t) {
-        var firstItemId = t.lastIndexOf('_');
-        if (firstItemId == -1)
-            return -1;
+    self.Id.isPopulated = ko.observable(false);
+    self.Id.newDivisionName = ko.observable();
+    self.Id.newDivisionPriority = ko.observable(1);
+    self.Id.unassignedTeams = ko.observableArray();
+    self.Id.Divisions = ko.observableArray();
 
-        return t.substring(firstItemId + 1);
-    },
-
-    fillLeagues: function () {
-        var target = this;
-        $.getJSON(window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/Leagues',
-			function (data) {
-			    if (data.length) {
-			        window.location.hash = 'update';
-
-			        target.createLeagueFromTemplate(target, data);
-			    }
-
-			    // if no more leagues, import from previous season becomes a
-			    // move viable option.
-			    if ($(".leagueHeader").length > 0) {
-			        $('#copyFromSeason').accordion({ active: false });
-			    }
-			    else {
-			        $('#copyFromSeason').accordion({ active: 0 });
-			    }
-			});
-    },
-
-    createLeagueFromTemplate: function (target, data) {
-
-        if ($("#accordion").hasClass("ui-accordion"))
-            $("#accordion").accordion("destroy");
-
-        $('#accordion').append($("#leagueTemplate").render(data));
-        target.makeAccordion();
-
-        // setup the action when a team is selected from the team drop
-        // down associated with each league.
-        $.each(data, function (index, item) {
-            $('#divisionTeamSelect_' + item.Id).change(function () {
-                var listSelect = $('#divisionTeamSelect_' + item.Id);
-                var isNewTeam = parseInt(listSelect.val()) == 0;
-                if (isNewTeam) {
-                    $('#newTeam_' + item.Id).show();
-                }
-                else {
-                    $('#newTeam_' + item.Id).hide();
-                }
-            });
-        });
-
-        $(".leagueselectpicker").selectpicker();
-    },
-
-    makeAccordion: function () {
-        var target = this;
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.attr('id') !== undefined) {
-
-                    var leagueId = target.getLeagueId(ui.newPanel.attr('id'));
-                    var divItem = $('#LeagueSetupData_' + leagueId);
-                    if (divItem.data('hasdata') == 'False') {
-                        target.fillLeagueData(target, divItem);
-                    }
-                }
-            },
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    },
-
-    makeTeamsDraggable: function () {
-        $("#accordion li").draggable({
-            appendTo: "body",
-            helper: "clone"
-        });
-
-        $("#accordion ul").droppable({
-            activeClass: "ui-state-default",
-            hoverClass: "ui-state-hover",
-            accept: function (ui) {
-                return !ui.hasClass($(this).attr('id'));
-            },
-            drop: function (event, ui) {
-                $(this).find(".placeholder").remove();
-
-                ui.draggable.appendTo(this);
-
-                // set the new class to be the id of the parent.                    
-                var currentClass = ui.draggable.attr('class').split(' ');
-                currentClass[0] = $(this).attr('id');
-
-                var newClass = currentClass.join(' ');
-                ui.draggable.attr('class', newClass);
-
-            }
-        }).sortable({
-            items: "li:not(.placeholder)",
-            cursor: 'move',
-            sort: function () {
-                // gets added unintentionally by droppable interacting with sortable
-                // using connectWithSortable fixes this, but doesn't allow you to customize active/hoverClass options
-                $(this).removeClass("ui-state-default");
-            }
-        });
-    },
-
-    fillLeagueData: function (target, elem) {
-        var divId = elem.attr('id');
-        var leagueSeasonId = target.getLeagueId(divId);
-        if (leagueSeasonId == -1) {
-            return;
-        }
-
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueSeasonId;
+    self.populateDivisonData = function () {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + self.Id();
         $.ajax({
             type: "GET",
             url: url,
             success: function (divisionData) {
-                window.location.hash = 'update';
-                elem.data('hasdata', 'True');
-                elem.html('');
-
-                elem.append($("#divisionTemplate").render(divisionData));
-
-                target.fillTeamList(leagueSeasonId);
-
-                // attach file uploaders for each team.
-                $.each(divisionData, function (index, item) {
-                    target.attachTeamFileUploaders(target, item.Id);
+                var mappedDivisions = $.map(divisionData, function(division) {
+                    return new DivisionViewModel(division, self);
                 });
 
-                $("#accordion").accordion("refresh");
-                // this isn't working, dragging team to another division
-                // doesn't add them to that division. Comment out functionality
-                // until it can be fixed.
-                //target.makeTeamsDraggable();
+                self.Id.Divisions(mappedDivisions);
+                self.Id.isPopulated(true);
+                self.fillTeamList();
             }
         });
-    },
+    }
 
-    fillTeamList: function (leagueId) {
-        var selectList = $('#divisionTeamSelect_' + leagueId);
-        var target = this;
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + leagueId;
+    self.fillTeamList = function () {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/UnassignedTeams/' + self.Id();
         $.ajax({
             type: "GET",
             url: url,
             success: function (teams) {
-                window.location.hash = 'update';
-
-                selectList.append($('#teamOptionTemplate').render(teams));
-                target.selectFirstTeam(leagueId);
-                selectList.selectpicker("refresh");
-
+                self.Id.unassignedTeams(teams);
             }
         });
+    }
 
-    },
-
-    selectFirstTeam: function(leagueId) {
-        var teamSelectList = $('#divisionTeamSelect_' + leagueId);
-
-        if (teamSelectList.children().length > 1) {
-            $('#newTeam_' + leagueId).hide();
-
-            var option = teamSelectList.children('option').eq(1);
-            teamSelectList.val(option.val());
-        }
-        else { // only can be New Team left..
-            $('#newTeam_' + leagueId).show();
-        }
-    },
-
-    startAddTeam: function (leagueId, divisionId) {
-        var editElem = $('#divisionTeamPanel_' + leagueId).parent();
-
-        // first stop any other existing add for this league.
-        if (editElem.attr('class') == 'addDivisionTeamPanel') {
-            var oldDivId = this.getLeagueId(editElem.attr('id'));
-            this.stopAddTeam(leagueId, oldDivId);
-        }
-
-        editElem = $('#divisionTeamPanel_' + leagueId);
-
-        $('#divisionTeamEdit_' + divisionId).hide();
-
-        var divPanel = $('#addDivisionTeamPanel_' + divisionId);
-        editElem.prependTo(divPanel);
-        editElem.show();
-        divPanel.show();
-
-    },
-
-    stopAddTeam: function (leagueId, divisionId) {
-        // move team select list back to parent element.
-        var divTeamPanel = $('#divisionTeamPanel_' + leagueId);
-        divTeamPanel.appendTo($('#leagueData_' + leagueId));
-        divTeamPanel.hide();
-
-        // swap back to add team link.
-        $('#addDivisionTeamPanel_' + divisionId).hide();
-        $('#divisionTeamEdit_' + divisionId).show();
-    },
-
-    addTeamToDivision: function (leagueId, divisionId) {
-        var listSelect = $('#divisionTeamSelect_' + leagueId);
-        var selectedValue = parseInt(listSelect.val());
-
-        var target = this;
-
-        if (selectedValue == 0) {
-            var name = $('#newTeamName_' + leagueId).val();
-            if (name.length == 0)
-                return;
-
-            var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + leagueId;
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: {
-                    AccountId: this.accountId,
-                    LeagueId: leagueId,
-                    DivisionId: divisionId,
-                    Name: name
-                },
-                success: function (team) {
-                    window.location.hash = 'update';
-                    $('#newTeamName_' + leagueId).val('');
-
-                    var jsonObj = []; //declare array
-                    jsonObj.push({ Id: team.Id, TeamId: team.TeamId, LeagueId: leagueId, Name: name, DivisionId: divisionId });
-                    target.updateTeamList(target, jsonObj, true);
-                }
-            });
-
-        }
-        else {
-            var selectedTeamName = $('#divisionTeamSelect_' + leagueId + ' option:selected').text();
-
-            var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/TeamDivision/' + divisionId;
-            $.ajax({
-                type: "PUT",
-                url: url,
-                data: {
-                    Id: selectedValue
-                },
-                success: function (team) {
-                    window.location.hash = 'update';
-
-                    var jsonObj = []; //declare array
-                    jsonObj.push({ Id: team.Id, TeamId: team.TeamId, LeagueId: leagueId, Name: selectedTeamName, DivisionId: divisionId });
-                    target.updateTeamList(target, jsonObj, false);
-                }
-            });
-        }
-    },
-
-    // update the html after adding a team to a division.
-    updateTeamList: function (target, teamDataList, fromNewTeam) {
-        var teamData = teamDataList[0];
-
-        // add team to list.
-        $('#placeholder_' + teamData.DivisionId).hide();
-
-        $('#divisionTeams_' + teamData.DivisionId).append($("#teamTemplate").render(teamData));
-        target.positionTeamInDivisionList(target, teamData);
-        this.addTeamFileUploaders(teamData.Id);
-
-        // remove team from select list.
-        var teamSelectList = $('#divisionTeamSelect_' + teamData.LeagueId);
-        teamSelectList.find("option[value='" + teamData.Id + "']").remove();
-        teamSelectList.selectpicker("refresh");
-
-        // avoid going back to New team selection if we didn't come from new team
-        // and teams are available.
-        if (!fromNewTeam) {
-            target.selectFirstTeam(teamData.LeagueId);
-        }
-
-        // don't stop, allow multiple teams added.
-        //target.stopAddTeam(leagueId, divisionId);
-    },
-
-    attachTeamFileUploaders : function(target, divisionId) {
-        var allTeams = $('#divisionTeams_' + divisionId + ' > li.divisionTeam');
-        $.each(allTeams, function (index, item) {
-            var teamId = target.getLeagueId(item.id);
-            target.addTeamFileUploaders(teamId);
-        });
-    },
-
-    addTeamFileUploaders: function(teamId) {
-        var logo = $('#teamLogo_' + teamId);
-        var logoBusy = $('#teamLogoBusy_' + teamId);
-        this.configureFileUpload(logo, logoBusy);
-
-        //var photo = $('#teamPhoto_' + teamId);
-        //var photoBusy = $('#teamPhotoBusy_' + teamId);
-        //this.configureFileUpload(photo, photoBusy);
-    },
-
-    configureFileUpload: function(elem, busyElem) {
-        elem.bind('dragenter', function (e) {
-            $(this).addClass('over');
-        });
-
-        elem.bind('dragleave drop', function (e) {
-            $(this).removeClass('over');
-        });
-
-        elem.fileupload({
-            dataType: 'json',
-            dropZone: elem,
-            add: function (e, data) {
-
-                // set opacity of current image and show busy cusor.
-                elem.fadeTo('fast', 0.4);
-                busyElem.show('fast');
-
-                data.submit();
-            },
-            done: function (e, data) {
-                var seconds = new Date().getTime() / 1000;
-                elem.attr("src", data.result + "?" + seconds);
-            },
-            always: function (e, data) {
-                //remove opacity, hide progress
-                elem.fadeTo('fast', 1.0);
-                busyElem.hide('fast');
-            }
-        });
-    },
-
-    positionTeamInDivisionList: function(target, teamData) {
-        // foreach division, until priority is greater than ours.
-        var teamElems = $('#divisionTeams_' + teamData.DivisionId + ' > .divisionTeam');
-
-        var beforeElem;
-        $.each(teamElems, function (index, item) {
-            if (target.getLeagueId(item.id) != teamData.Id) {
-                if (item.getAttribute('data-name') > teamData.Name) {
-                    beforeElem = item;
-                    return false;
-                }
-            }
-        });
-
-        var targetElem = $('#divisionTeam_' + teamData.Id);
-        if (beforeElem) {
-            targetElem.insertBefore($('#' + beforeElem.id));
-        }
-        else {
-            targetElem.appendTo($('#divisionTeams_' + teamData.DivisionId));
-        }
-    },
-
-    removeTeamFromDivision: function (leagueId, divisionId, teamId) {
-        var target = this;
-
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionTeams/' + teamId;
-        $.ajax({
-            type: "DELETE",
-            url: url,
-            success: function (divisionId) {
-                window.location.hash = 'update';
-
-                // remove file uploaders.
-                $('#fileupload_' + teamId).fileupload('destroy');
-
-                var divTeam = $('#divisionTeam_' + teamId);
-                var teamName = divTeam.data('name');
-                divTeam.remove();
-
-                // show placeholder if this is last team.
-                if ($('.division_' + divisionId).length == 0) {
-                    $('#placeholder_' + divisionId).show();
-                }
-
-                // add team back to select list.
-                var jsonObj = []; //declare array
-                jsonObj.push({ Id: teamId, LeagueId: leagueId, DivisionId: divisionId, Name: teamName });
-                target.addTeamToSelectList(jsonObj[0]);
-            }
-        });
-    },
-
-    addTeamToSelectList: function (teamData) {
-        var teamOptions = $('#divisionTeamSelect_' + teamData.LeagueId  + ' option');
-
-        var beforeElem;
-        $.each(teamOptions, function (index, item) {
-            if (index > 0) { // skip index 0 which is New Team...
-                if (item.text > teamData.Name) {
-                    beforeElem = item;
-                    return false;
-                }
-            }
-        });
-
-        var targetElem = $('#teamOptionTemplate').render(teamData);
-        if (beforeElem) {
-            $(targetElem).insertBefore(beforeElem);
-        }
-        else {
-            $('#divisionTeamSelect_' + teamData.LeagueId).append(targetElem);
-        }
-
-        // select the team.
-        $('#divisionTeamSelect_' + teamData.LeagueId).val(teamData.Id);
-        $('#newTeam_' + teamData.LeagueId).hide();
-        $('#divisionTeamSelect_' + teamData.LeagueId).selectpicker("refresh");
-    },
-
-    addDivision: function (leagueId) {
-
-        var name = $('#NewDivisionName_' + leagueId).val();
-        if (name.length == 0)
+    self.Name.subscribe(function () {
+        if (self.Name().length == 0)
             return;
 
-        var sortOrder = $('#NewDivisionPriority_' + leagueId).val();
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/LeagueSetup/' + self.Id();
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: {
+                Name: self.Name()
+            },
+            success: function (leagueId) {
+            }
+        });
+    });
+
+    self.addDivision = function (leagueVM) {
+
+        if (self.Id.newDivisionName().length == 0)
+            return;
+
+        if (self.Id.newDivisionPriority().length == 0)
+            self.Id.newDivisionPriority(1);
+
+        var sortOrder = self.Id.newDivisionPriority();
         if (isNaN(sortOrder))
             return;
 
-        var target = this;
-
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + leagueId;
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + leagueVM.Id();
         $.ajax({
             type: "POST",
             url: url,
             data: {
-                LeagueId: leagueId,
-                Name: name,
+                LeagueId: leagueVM.Id(),
+                Name: self.Id.newDivisionName(),
                 Priority: sortOrder
             },
             success: function (divisionId) {
-                window.location.hash = 'update';
 
-                var jsonObj = []; //declare array
-                jsonObj.push({
+                var data = {
                     Id: divisionId,
-                    LeagueId: leagueId,
-                    Name: name,
+                    LeagueId: leagueVM.Id(),
+                    Name: self.Id.newDivisionName(),
                     Priority: sortOrder,
                     Teams: []
-                });
-                $('#LeagueSetupData_' + leagueId).append($("#divisionTemplate").render(jsonObj));
+                };
 
-                target.repositionDivisionBySortOrder(leagueId, divisionId);
+                var newDivision = new DivisionViewModel(data, self);
+
+                self.Id.Divisions.push(newDivision);
+
+                self.Id.Divisions.sort(self.sortByPriority);
 
                 // reset the data fields.
-                $('#NewDivisionName_' + leagueId).val('');
-                $('#NewDivisionPriority_' + leagueId).val('1');
+                self.Id.newDivisionName('');
+                self.Id.newDivisionPriority(1);
             }
         });
 
-    },
+    }
 
-    editDivision: function (divisionId) {
-        var headerElem = $('#divisionHeader_' + divisionId);
-        headerElem.hide();
-
-        var editElem = $('#divisionEdit_' + divisionId);
-        editElem.show();
-    },
-
-    cancelDivisionEdit: function (divisionId) {
-        var headerElem = $('#divisionHeader_' + divisionId);
-        headerElem.show();
-
-        var editElem = $('#divisionEdit_' + divisionId);
-        editElem.hide();
-
-        // reset fields
-        var divItem = $('#division_' + divisionId);
-        var divisionName = divItem.data('name');
-        var divisionPriority = divItem.data('priority');
-
-        $('#editDivisionName_' + divisionId).val(divisionName);
-        $('#editDivisionPriority_' + divisionId).val(divisionPriority);
-    },
-
-    saveDivisionEdit: function (leagueId, divisionId) {
-        var name = $('#editDivisionName_' + divisionId).val();
-        if (name.length == 0)
-            return;
-
-        var sortOrder = $('#editDivisionPriority_' + divisionId).val();
-        if (isNaN(sortOrder))
-            return;
-
-        var target = this;
-
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId;
-        $.ajax({
-            type: "PUT",
-            url: url,
-            data: {
-                Id: divisionId,
-                LeagueId: leagueId,
-                Name: name,
-                Priority: sortOrder
-            },
-            success: function (obj) {
-                window.location.hash = 'update';
-
-                $('#divisionHeaderName_' + divisionId).html(name);
-                var divItem = $('#division_' + divisionId);
-                divItem.data('priority', sortOrder);
-                divItem.data('name', name);
-
-                target.repositionDivisionBySortOrder(leagueId, divisionId);
-
-                target.cancelDivisionEdit(divisionId);
-            }
-        });
-    },
-
-    repositionDivisionBySortOrder: function (leagueId, divisionId) {
-        // foreach division, until priority is greater than ours.
-        var targetElem = $('#division_' + divisionId);
-        var targetPriority = parseInt(targetElem.data('priority'));
-        var targetName = targetElem.data('name');
-        var targetElemId = targetElem.attr('id');
-
-        var divisionElems = $('#LeagueSetupData_' + leagueId + ' > .divisionItem');
-
-        var beforeElem;
-        $.each(divisionElems, function (index, item) {
-            if (item.id != targetElemId) {
-                var itemPriority = parseInt(item.getAttribute('data-priority'));
-                if (targetPriority < itemPriority) {
-                    beforeElem = item;
-                    return false;
-                }
-                else if (targetPriority == itemPriority) {
-                    if (targetName < item.getAttribute('data-name')) {
-                        beforeElem = item;
-                        return false;
-                    }
-                }
-            }
-        });
-
-        if (beforeElem) {
-            targetElem.insertBefore($('#' + beforeElem.id));
-        }
-        else {
-            targetElem.appendTo($('#LeagueSetupData_' + leagueId));
-        }
-    },
-
-    deleteDivision: function (divisionId) {
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/DivisionSetup/' + divisionId;
+    self.deleteDivision = function (divisionVM) {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + divisionVM.Id();
         $.ajax({
             type: "DELETE",
             url: url,
             success: function (divisionId) {
-                window.location.hash = 'update';
-
-                $('#division_' + divisionId).remove();
-                $("#accordion").accordion("refresh");
+                self.Id.Divisions.remove(divisionVM);
             }
         });
-    },
+    }
 
-    addLeague: function (seasonId) {
-        var name = $('#newLeagueName').val();
-        if (name.length == 0)
-            return;
+    self.sortDivisions = function () {
+        self.Id.Divisions.sort(self.sortByPriority);
+    }
 
-        var target = this;
+    self.sortByPriority = function (left, right) {
+        var lDivPriority = left.Priority();
+        var rDivPriority = right.Priority();
+        return lDivPriority == rDivPriority ? 0 : (lDivPriority < rDivPriority ? -1 : 1);
+    }
 
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + seasonId;
+    self.removeTeamFromDivision = function (teamVM) {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionTeams/' + teamVM.Id();
         $.ajax({
-            type: "POST",
+            type: "DELETE",
             url: url,
-            data: {
-                Name: name
-            },
-            success: function (leagueId) {
-                window.location.hash = 'update';
-                $('#newLeagueName').val('');
+            success: function (divisionId) {
+                var divisionVM = ko.utils.arrayFirst(self.Id.Divisions(), function(div) {
+                    return (div.Id() == teamVM.DivisionId());
+                });
 
-                var jsonObj = []; //declare array
-                jsonObj.push({ Id: leagueId, Name: name });
-                target.createLeagueFromTemplate(target, jsonObj);
+                if (divisionVM) {
+                    divisionVM.Teams.remove(teamVM);
+                }
 
-                $('#copyFromSeason').accordion({ active: false });
+                teamVM.DivisionId(0);
+                self.Id.unassignedTeams.push(teamVM.toJS());
             }
         });
-    },
+    }
 
-    editLeague: function (leagueId) {
-        var name = $('#newLeagueName_' + leagueId).val();
-        if (name.length == 0)
+    self.addTeamToDivision = function (divisionVM) {
+        if (!divisionVM.Id.selectedNewTeam())
             return;
 
-        var target = this;
-
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId;
-
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/TeamDivision/' + divisionVM.Id();
         $.ajax({
             type: "PUT",
             url: url,
             data: {
-                Name: name
+                Id: divisionVM.Id.selectedNewTeam()
             },
-            success: function (leagueId) {
-                window.location.hash = 'update';
+            success: function (newTeam) {
 
-                $('#leagueHeaderLink_' + leagueId).html(name);
+                var team = ko.utils.arrayFirst(self.Id.unassignedTeams(), function (t) {
+                    return t.Id == newTeam.Id;
+                });
+
+                if (team) {
+                    self.Id.unassignedTeams.remove(team);
+                }
+
+                divisionVM.Teams.push(new TeamViewModel(newTeam, self.accountId));
+                divisionVM.Teams.sort(self.sortByTeamName);
             }
         });
-    },
+    }
 
-    deleteLeague: function (leagueId) {
-        
-        var target = this;
+    self.addNewTeam = function (divisionVM) {
+        if (divisionVM.Id.newTeamName().length == 0)
+            return;
+
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/TeamDivision/' + self.Id();
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                AccountId: this.accountId,
+                LeagueId: self.Id(),
+                DivisionId: divisionVM.Id(),
+                Name: divisionVM.Id.newTeamName()
+            },
+            success: function (team) {
+
+                divisionVM.Teams.push(new TeamViewModel(team, self.accountId));
+                divisionVM.Teams.sort(self.sortByTeamName);
+                divisionVM.Id.newTeamName('');
+            }
+        });
+    }
+
+    self.sortByTeamName = function (left, right) {
+        var lName = left.Name();
+        var rName = right.Name();
+        return lName == rName ? 0 : (lName < rName ? -1 : 1);
+    }
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
+
+var DivisionViewModel = function (data, leagueVM) {
+    var self = this;
+
+    self.accountId = leagueVM.accountId;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        'Teams': {
+            create: function (options) {
+                return new TeamViewModel(options.data, self.accountId);
+            }
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        }
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Id.selectedNewTeam = ko.observable();
+    self.Id.newTeamName = ko.observable();
+
+    self.Name.subscribe(function () {
+        self.updateDivision();
+    });
+    self.Priority.subscribe(function () {
+        self.updateDivision();
+    });
+    
+    self.updateDivision = function () {
+
+        if (self.Name().length == 0)
+            return;
+
+        if (isNaN(self.Priority()))
+            return;
+
+        var data = self.toJS();
+
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + self.Id();
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: data,
+            success: function (obj) {
+                leagueVM.sortDivisions();
+            }
+        });
+    }
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
+var TeamViewModel = function (data, accountId) {
+    var self = this;
+
+    self.accountId = accountId;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+    //'HomeTeamId': {
+    //    create: function (options) {
+    //        return ko.observable(options.data);
+            //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+            //}
+        }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.teamLogoUploaderUrl = ko.computed(function () {
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.TeamId();
+    });
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+        }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
+var LeagueSetupClass = function (accountId, currentSeasonId) {
+    var self = this;
+
+    self.accountId = accountId;
+    self.currentSeasonId = currentSeasonId;
+
+    self.leagues = ko.observableArray();
+    self.seasons = ko.observableArray();
+    self.selectedSeasonId = ko.observable();
+
+    self.fillSeasonList = function () {
+
+        $.getJSON(window.config.rootUri + '/api/SeasonsAPI/' + self.accountId + '/Seasons',
+			function (data) {
+			    var mappedSeasons = $.map(data, function (item) {
+			        if (item.Id != self.currentSeasonId) {
+			            return new SeasonViewModel(item);
+			        }
+			    });
+
+			    self.seasons(mappedSeasons);
+			});
+    }
+
+    self.fillLeagues = function () {
+        $.getJSON(window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/Leagues',
+			function (data) {
+
+			    var mappedLeagues = $.map(data, function (item) {
+			        return new LeagueViewModel(item, self.accountId);
+			    });
+
+			    self.leagues(mappedLeagues);
+
+			    if (!self.leagues().length)
+			        $('#copyFromSeasonPanel').collapse('show');
+			});
+    }
+
+    self.newLeagueName = ko.observable();
+
+    self.addLeague = function () {
+        if (self.newLeagueName().length == 0)
+            return;
+
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/LeagueSetup/' + self.currentSeasonId;
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                Name: self.newLeagueName()
+            },
+            success: function (leagueId) {
+                var leagueViewModel = new LeagueViewModel({
+                    Id: leagueId,
+                    Name: self.newLeagueName()
+                }, self.accountId);
+
+                self.leagues.push(leagueViewModel);
+
+                $('#copyFromSeasonPanel').collapse('hide');
+
+                self.newLeagueName("");
+            }
+        });
+    }
+
+    self.deleteLeague = function (leagueVM) {
 
         $("#deleteModal").modal("show");
 
         $("#confirmDeleteBtn").one("click", function () {
-            target.makeLeagueDeleteCall(target, leagueId);
+            self.makeLeagueDeleteCall(leagueVM);
         });
-    },
+    }
 
-    makeLeagueDeleteCall: function (target, leagueId) {
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueSetup/' + leagueId;
+    self.makeLeagueDeleteCall = function (leagueVM) {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/LeagueSetup/' + leagueVM.Id();
         $.ajax({
             type: "DELETE",
             url: url,
             success: function (deletedLeagueId) {
-                window.location.hash = 'update';
 
-                $('#leagueHeader_' + deletedLeagueId).remove();
-                $('#leagueData_' + deletedLeagueId).remove();
-
-                if ($("#accordion").hasClass("ui-accordion"))
-                    $("#accordion").accordion("destroy");
-
-                target.makeAccordion();
-
+                self.leagues.remove(leagueVM);
                 // if no more leagues, import from previous season becomes a
                 // more viable option.
-                if ($(".leagueHeader").length == 0) {
-                    $('#copyFromSeason').accordion({ active: 0 });
+                if (self.leagues().length == 0) {
+                    $('#copyFromSeasonPanel').collapse('show');
                 }
             }
         });
-    },
+    }
 
-    copySeason: function (seasonId) {
-        if ($(".leagueHeader").length > 0) {
-            var answer = confirm('Importing league data will MERGE all current league data with imported data. Are you sure you want to continue?');
-            if (!answer)
-                return;
+
+    self.copySeason = function () {
+        if (!self.selectedSeasonId())
+            return;
+
+        if (self.leagues().length > 0) {
+            $("#copySeasonModal").modal("show");
+
+            $("#confirmCopySeasonBtn").one("click", function () {
+                self.performCopySeason();
+            });
         }
+        else
+            self.performCopySeason();
+    }
 
-        var copyFromSeasonId = $('#seasonList option:selected').val();
-        var target = this;
+    self.performCopySeason = function () {
+        
+        var copyFromSeasonId = self.selectedSeasonId();
+        var seasonId = self.currentSeasonId;
 
-        var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/CopyLeagueSetup/' + seasonId;
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/CopyLeagueSetup/' + seasonId;
         $.ajax({
             type: "POST",
             url: url,
@@ -734,16 +479,32 @@ $.extend(LeagueSetupClass.prototype, {
                 Id: copyFromSeasonId
             },
             success: function (teamSeasonId) {
-                window.location.hash = 'update';
 
                 // remove all old leagues
-                $('.leagueHeader').remove();
-                $('.leagueData').remove();
+                self.leagues.removeAll();
 
                 // restore...
-                target.fillLeagues();
+                self.fillLeagues();
+
+                if (self.seasons().length)
+                    $('#copyFromSeasonPanel').collapse('hide');
             }
         });
-    },
-});
+    }
+
+    $('#accordion').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && !vm.Id.isPopulated()) {
+                vm.populateDivisonData();
+            }
+        }
+    });
+
+    self.fillSeasonList();
+    self.fillLeagues();
+};
 
