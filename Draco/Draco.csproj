@@ -684,7 +684,6 @@
     <Content Include="Views\Discussions\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
