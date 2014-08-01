@@ -60,8 +60,6 @@ var SeasonViewModel = function(data, accountId) {
         var js = ko.mapping.toJS(self);
         return js;
     }
-
-
 }
 
 var SeasonSetupViewModel = function (accountId) {

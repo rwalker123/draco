@@ -25,19 +25,19 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [ActionName("AddUmpire")]
+        [ActionName("umpire")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage AddUmpire(long accountId, long id)
         {
-            long umpId = DataAccess.Umpires.AddUmpire(accountId, id);
-            if (umpId > 0)
-                return Request.CreateResponse<long>(HttpStatusCode.Created, umpId);
+            var ump = DataAccess.Umpires.AddUmpire(accountId, id);
+            if (ump != null)
+                return Request.CreateResponse<ModelObjects.Umpire>(HttpStatusCode.Created, ump);
             else
                 return Request.CreateResponse(HttpStatusCode.InternalServerError);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
-        [ActionName("RemoveUmpire")]
+        [ActionName("umpire")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteUmpire(long accountId, long id)
         {

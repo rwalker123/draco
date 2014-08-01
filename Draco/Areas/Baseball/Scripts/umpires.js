@@ -20,49 +20,82 @@
     umpireData.populateUmpires();
 }
 
-var UmpireClass = function (accountId) {
+var UserDetailsViewModel = function (data) {
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
+var UmpireViewModel = function (data, accountId) {
     var self = this;
     self.accountId = accountId;
 
-    self.id = 0;
-    self.contactId = ko.observable('');
-    self.firstName = ko.observable('');
-    self.middleName = ko.observable('');
-    self.lastName = ko.observable('');
-    self.photoUrl = '';
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
 
     self.fullName = ko.computed(function () {
-        var fullName = self.lastName() + ', ' + self.firstName();
-        if (self.middleName())
-            fullName += ' ' + self.middleName();
+        var fullName = self.LastName() + ', ' + self.FirstName();
+        if (self.MiddleName())
+            fullName += ' ' + self.MiddleName();
 
         return fullName;
-    }, this);
+    });
 
     self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.contactId();
-    }, this);
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/ContactPhoto/' + self.ContactId();
+    });
 
-    self.details = {};
-    self.details.loaded = false;
-    self.details.email = ko.observable('');
-    self.details.address = ko.observable('');
-    self.details.city = ko.observable('');
-    self.details.state = ko.observable('');
-    self.details.zip = ko.observable('');
-    self.details.phone1 = ko.observable('');
-    self.details.phone2 = ko.observable('');
-    self.details.phone3 = ko.observable('');
+    self.Details = ko.observable();
 
-    self.detailsVisible = ko.observable(true);
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
 
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
 }
 
 var UmpiresClass = function (accountId) {
     var self = this;
     self.accountId = accountId;
 
-    self.umpires = ko.observableArray([]);
+    self.umpires = ko.observableArray();
 
     self.selectedPlayer = ko.observable(null);
     self.hasSelectedPlayer = ko.computed(function () {
@@ -119,12 +152,22 @@ var UmpiresClass = function (accountId) {
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AddUmpire/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + self.selectedPlayer().id,
             dataType: "json",
             success: function (data) {
-                self.populateUmpires();
+                var vm = new UmpireViewModel(data, self.accountId);
+                self.umpires.push(vm);
+                self.umpires.sort(self.sortByName);
+                self.selectedPlayer(null);
+                $("#_newUmpire").val('');
             }
         });
+    }
+
+    self.sortByName = function (l, r) {
+        var lName = l.fullName().toUpperCase();
+        var rName = r.fullName().toUpperCase();
+        return lName == rName ? 0 : (lName < rName ? -1 : 1);
     }
 
     self.populateUmpires = function () {
@@ -133,61 +176,19 @@ var UmpiresClass = function (accountId) {
             url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId,
             success: function (data) {
                 var mappedUsers = $.map(data, function (item) {
-                    var umpire = new UmpireClass(item.AccountId);
-                    umpire.id = item.Id;
-                    umpire.contactId(item.ContactId);
-                    umpire.firstName(item.FirstName);
-                    umpire.lastName(item.LastName);
-                    umpire.middleName(item.MiddleName);
-                    umpire.photoUrl = item.PhotoURL;
-                    return umpire;
+                    return new UmpireViewModel(item, item.AccountId);
                 });
 
                 self.umpires(mappedUsers);
-                self.refreshUmpireList();
             }
         });
-    }
-
-    self.makeAccordion = function () {
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.length > 0) {
-
-                    var vm = ko.dataFor(ui.newPanel[0]);
-                    if (vm && vm.details && !vm.details.loaded) {
-                        self.fillUmpireDetails(vm);
-                    }
-                }
-            },
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    }
-
-    self.makeAccordion();
-
-    self.refreshUmpireList = function () {
-        var a = $("#accordion");
-        a.accordion('destroy');
-        self.makeAccordion();
-
-        // refresh insists on setting the first item expanded
-        //a.accordion("refresh");
     }
 
     self.deleteUmpire = function (umpire) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/RemoveUmpire/' + umpire.id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + umpire.Id(),
             success: function (data) {
                 // remove from data model.
                 self.umpires.remove(umpire);
@@ -198,25 +199,24 @@ var UmpiresClass = function (accountId) {
     self.fillUmpireDetails = function (userData) {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/GetContactDetails/' + userData.contactId(),
+            url: window.config.rootUri + '/api/ContactsAPI/' + self.accountId + '/contacts/' + userData.ContactId(),
             success: function (data) {
-                if (data) {
-                    window.location.hash = 'update';
-
-                    userData.details.email(data.Email);
-                    userData.details.address(data.StreetAddress);
-                    userData.details.city(data.City);
-                    userData.details.state(data.State);
-                    userData.details.zip(data.Zip);
-                    userData.details.phone1(data.Phone1);
-                    userData.details.phone2(data.Phone2);
-                    userData.details.phone3(data.Phone3);
-
-                    userData.details.loaded = true;
-                }
+                userData.Details(new UserDetailsViewModel(data));
             }
         });
     }
+
+    $('#accordion').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && !vm.Details()) {
+                self.fillUmpireDetails(vm);
+            }
+        }
+    });
 
 }
 

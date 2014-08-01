@@ -7,19 +7,7 @@
 
 @section head
 {
-@Styles.Render("~/Content/themes/base/css")
-<style type="text/css">
-    .divLabel {
-        display: inline-block;
-        width: 125px;
-    }
-
-    .formLine {
-        margin: 5px;
-        margin-bottom: 10px;
-    }
-
-</style>
+    @Styles.Render("~/Content/themes/base/css")
 }
 
 <div class="jumbotron">
@@ -27,36 +15,73 @@
     <p class="help-block">Define umpires for the league.</p>
 </div> <!-- content-wrapper -->
 
-<p class="help-block" style="display: inline-block" >Search for users to add as umpires. If this is a new umpire, 
-    add them as a </p><a class="btn btn-primary" style="margin-left: 5px; margin-right: 5px; margin-top: -6px" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a><p class="help-block" style="display: inline-block">first.</p>
+<div class="container">
+    <p class="help-block" style="display: inline-block">
+        Search for users to add as umpires. If this is a new umpire,
+        add them as a
+    </p> <a class="btn btn-primary" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a> <p class="help-block" style="display: inline-block">first.</p>
 
-<br /><small>(type last name to begin search)</small><br />
+    <br /><small>(type last name to begin search)</small><br />
 
-<form class="form-inline" role="form">
-    <div class="form-group">
-        <label for="_newUmpire" class="sr-only">Last Name</label>
-        <div class="input-group">
-            <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
-            <span class="input-group-btn">
-                <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire"><span class="glyphicon glyphicon-plus"></span></button>
-            </span>
+    <form class="form-inline" role="form">
+        <div class="form-group">
+            <label for="_newUmpire" class="sr-only">Last Name</label>
+            <div class="input-group">
+                <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+                <span class="input-group-btn">
+                    <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire" title="add umpire"><span class="glyphicon glyphicon-plus"></span></button>
+                </span>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
 
-<div id="accordion" style="margin-top:20px">
-    <div data-bind="foreach: umpires">
-        <h3>
-            <a href="#" data-bind="text: fullName"></a>
-        </h3>
-        <div>
-            <form data-bind="attr: { id: id }">
-                <div class="contactView" data-bind="template: 'viewUserDetailsTemplate'"></div>
-            </form>
+    <div class="panel-group" id="accordion" data-bind="foreach: umpires">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#" data-bind="text: fullName, attr: { href: '#' + Id() }"></a>
+                </h3>
+            </div>
+            <div class="panel-collapse collapse" data-bind="attr: { id: Id }">
+                <div class="panel-body">
+                    <form data-bind="attr: { id: Id }">
+                        <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
+                        @if (Model.IsAdmin)
+                        {
+                            <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+                                <i class="glyphicon glyphicon-upload"></i>
+                                <input class="form-control" type="file" data-maxfilesize="1">
+                            </span>
+                        }
+
+                        <div data-bind="with: Details">
+                            <address class="formLine" data-bind="visible: Email()">
+                                <small>email</small><br />
+                                <a data-bind="text: Email, attr: {href: 'mailto:' + Email()}"></a>
+                            </address>
+                            <address data-bind="visible: Phone1()">
+                                <small>home phone</small><br /> <span data-bind="text: Phone1"></span>
+                            </address>
+                            <address data-bind="visible: Phone2()">
+                                <small>cell phone</small><br /> <span data-bind="text: Phone2"></span>
+                            </address>
+                            <address data-bind="visible: Phone3()">
+                                <small>work phone</small><br /> <span data-bind="text: Phone3"></span>
+                            </address>
+                            <address data-bind="visible: StreetAddress() || City() || State() || Zip()" style="vertical-align: top">
+                                <small>address</small><br />
+                                <span data-bind="text: StreetAddress"></span><br />
+                                <span data-bind="text: City"></span>, <span data-bind="text: State"></span> <span data-bind="text: Zip"></span>
+                            </address>
+                        </div>
+                        <button type="button" class="btn btn-warning" data-bind="click: $parent.deleteUmpire" title="remove umpire"><span class="glyphicon glyphicon-minus"></span></button>
+
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
 
 @section scripts 
 {
@@ -64,41 +89,6 @@
 @Scripts.Render("~/bundles/jquery-file-upload")
 
 <script type="text/javascript" src="~/Areas/Baseball/Scripts/umpires.js"></script>
-
-<script id="viewUserDetailsTemplate" type="text/html">
-
-    <img onerror="this.style.display = 'none';" data-bind="attr: { src: photoUrl }" class="img-rounded" />
-    @if (Model.IsAdmin)
-    {
-        <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
-            <i class="glyphicon glyphicon-upload"></i>
-            <input class="form-control" type="file" data-maxfilesize="1">
-        </span>
-    }
-
-    <div data-bind="with: details">
-        <address class="formLine" data-bind="visible: email()">
-            <small>email</small><br />
-            <a data-bind="text: email, attr: {href: 'mailto:' + email()}"></a>
-        </address>
-        <address data-bind="visible: phone1()">
-            <small>home phone</small><br /> <span data-bind="text: phone1"></span>
-        </address>
-        <address data-bind="visible: phone2()">
-            <small>cell phone</small><br /> <span data-bind="text: phone2"></span>
-        </address>
-        <address data-bind="visible: phone3()">
-            <small>work phone</small><br /> <span data-bind="text: phone3"></span>
-        </address>
-        <address data-bind="visible: address() || city() || state() || zip()" style="vertical-align: top">
-            <small>address</small><br />
-            <span data-bind="text: address"></span><br />
-            <span data-bind="text: city"></span>, <span data-bind="text: state"></span> <span data-bind="text: zip"></span>
-        </address>
-    </div>
-    <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUmpire"><span class="glyphicon glyphicon-remove"></span></button>
-
-</script>
 
 <script type="text/javascript">
     $(document).ready(function () {

@@ -63,10 +63,10 @@ namespace DataAccess
                     }).SingleOrDefault();
         }
 
-        static public long AddUmpire(long accountId, long contactId)
+        static public Umpire AddUmpire(long accountId, long contactId)
         {
             if (accountId <= 0)
-                return 0;
+                return null;
 
             DB db = DBConnection.GetContext();
             SportsManager.Model.LeagueUmpire dbUmp = new SportsManager.Model.LeagueUmpire();
@@ -76,7 +76,16 @@ namespace DataAccess
             db.LeagueUmpires.InsertOnSubmit(dbUmp);
             db.SubmitChanges();
 
-            return dbUmp.Id;
+            return new Umpire()
+                    {
+                        Id = dbUmp.Id,
+                        AccountId = accountId,
+                        ContactId = contactId,
+                        FirstName = dbUmp.Contact.FirstName,
+                        LastName = dbUmp.Contact.LastName,
+                        MiddleName = dbUmp.Contact.MiddleName,
+                        PhotoURL = Contact.GetPhotoURL(contactId)
+                    };
         }
 
 
