@@ -11,8 +11,11 @@ namespace SportsManager.Baseball.ViewModels
             : base(c, accountId)
         {
             SeasonName = DataAccess.Seasons.GetCurrentSeasonName(AccountId);
-            FirstYear = (Account.FirstYear == 0) ? DateTime.Now.Year : Account.FirstYear;
-            YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
+            if (Account != null)
+            {
+                FirstYear = (Account.FirstYear == 0) ? DateTime.Now.Year : Account.FirstYear;
+                YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
+            }
             ShowVideos = false; // !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
 
