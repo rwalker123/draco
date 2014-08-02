@@ -74,10 +74,7 @@ namespace SportsManager.Baseball.Controllers
                     return Request.CreateResponse(HttpStatusCode.BadRequest);
 
                 // Create a 201 response.
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
-                {
-                    Content = new StringContent(workoutData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.WorkoutAnnouncement>(HttpStatusCode.Created, workoutData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Workouts", accountId = accountId, id = workoutData.Id }));
                 return response;
@@ -178,7 +175,7 @@ namespace SportsManager.Baseball.Controllers
                     return Request.CreateResponse(HttpStatusCode.BadRequest);
 
                 // Create a 201 response.
-                return Request.CreateResponse(HttpStatusCode.NoContent);
+                return Request.CreateResponse<ModelObjects.WorkoutAnnouncement>(HttpStatusCode.OK, workoutData);
             }
             else
             {

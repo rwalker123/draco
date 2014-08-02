@@ -24,7 +24,7 @@ namespace ModelObjects
 			Phone3 = phone3;
 			Phone4 = phone4;
 			Positions = positions;
-			WantToManager = manager;
+			WantToManage = manager;
 			WorkoutId = workoutId;
 			DateRegistered = dateRegistered;
             WhereHeard = whereHeard;
@@ -39,7 +39,7 @@ namespace ModelObjects
 		public string Phone3 { get; set; }
 		public string Phone4 { get; set; }
 		public string Positions { get; set; }
-		public bool WantToManager { get; set; }
+		public bool WantToManage { get; set; }
 		public long WorkoutId { get; set; }
 		public DateTime DateRegistered { get; set; }
         public string WhereHeard { get; set; }
