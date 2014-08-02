@@ -154,7 +154,7 @@
 
 @section scripts {
 
-@Scripts.Render("~/bundles/jsrender")
+@Scripts.Render("~/bundles/knockout")
 
 <script id="adminItemTemplate" type="text/x-jsrender">
 <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
@@ -189,10 +189,6 @@
             window.location.hash = '';
             window.location.reload();
         }
-
-        userRolesData.makeAccordion();
-
-        $(".selectpicker").selectpicker();
 
         $("input#playerSelectInput, input#ownerPlayerSelect").autocomplete({
 

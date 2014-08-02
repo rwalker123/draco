@@ -40,38 +40,6 @@ $.extend(UserRoleClass.prototype, {
         return (roleId == this.leagueAdminId);
     },
 
-    makeAccordion: function () {
-        var target = this;
-
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.attr('id') !== undefined) {
-
-                    var adminId = target.getAdminId(ui.newPanel.attr('id'));
-                    if (target.isTeamAdmin(adminId))
-                        $('#teamSelect').prependTo($('#div_playerSelect_' + adminId));
-
-                    $('#playerSelect').prependTo($('#div_playerSelect_' + adminId));
-                    $('#playerSelect').val('');
-
-                    var divItem = $('#adminsList_' + adminId);
-                    if (!divItem.data('hasdata')) {
-                        target.populateAdminList(target, divItem);
-                    }
-                }
-            },
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    },
-
     setSelectedUser: function (user) {
         this.selectedUser = user;
     },
