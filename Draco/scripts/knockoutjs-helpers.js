@@ -364,39 +364,6 @@
         }
     };
 
-    //wrapper to an observable that requires accept/cancel
-    ko.protectedObservable = function (initialValue) {
-        //private variables
-        var _temp = initialValue;
-        var _actual = ko.observable(initialValue);
-
-        var result = ko.dependentObservable({
-            read: _actual,
-            write: function (newValue) {
-                _temp = newValue;
-            }
-        });
-
-        result.uncommitValue = function () {
-            return _temp;
-        };
-
-        //commit the temporary value to our observable, if it is different
-        result.commit = function () {
-            if (_temp !== _actual()) {
-                _actual(_temp);
-            }
-        };
-
-        //notify subscribers to update their value with the original
-        result.reset = function () {
-            _actual.valueHasMutated();
-            _temp = _actual();
-        };
-
-        return result;
-    };
-
     ko.bindingHandlers.numericText = {
         update: function (element, valueAccessor, allBindingsAccessor) {
             var value = ko.utils.unwrapObservable(valueAccessor()),

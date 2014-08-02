@@ -17,7 +17,26 @@
 
     <div class="panel-body">
 
-        @if (Model.IsAdmin) { 
+        @if (Model.IsAdmin)
+        {
+            <div class="modal fade" id="deletePhotoModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title">Confirm Delete Photo</h4>
+                        </div>
+                        <div class="modal-body">
+                            You are about to delete a photo gallery item. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeletePhotoBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <form class="form-horizontal" style="margin-left:10px;" data-bind="visible: !viewMode()">
                 <div class="form-group">
                     <label for="enterPhotoGalleryTitle" class="col-sm-4 control-label">photo title</label>
@@ -37,9 +56,9 @@
                         <label for="photoAlbumSelect" class="col-sm-4 control-label">photo album</label>
                         <div class="col-sm-8">
                             <div class="input-group">
-                                <select data-bind="options: photoAlbums, optionsText: 'name', optionsValue: 'id', value: selectedEditPhotoAlbum" data-container="body" id="photoAlbumSelect"></select>
+                                <select data-container="body" data-bind="selectPicker: selectedEditPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'" ></select>
                                 <span class="input-group-btn">
-                                    <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedEditPhotoAlbum() > 0"><span class="glyphicon glyphicon-remove"></span></button>
+                                    <button class="btn btn-danger" data-bind="click: deletePhotoAlbum, enable: selectedEditPhotoAlbum() > 0" title="delete photo album"><span class="glyphicon glyphicon-remove"></span></button>
                                 </span>
                             </div>
                         </div>
@@ -83,7 +102,7 @@
         @if (!Model.IsTeamEdit)
         {
         <h4>Select Album: 
-            <select data-bind="selectPicker: selectedPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'" data-container="body" class="photoGalleryItemAlbum"></select>
+            <select data-container="body" data-bind="selectPicker: selectedPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'" class="photoGalleryItemAlbum"></select>
         </h4>
         }
         
@@ -97,16 +116,16 @@
                 </ol>*@
                 <div class="carousel-inner" data-bind="foreach: photoGalleryItems">
                     <div class="item" data-bind="css: {'active': $index()==0}">
-                        <img class="img-responsive" data-bind="attr: {src: photoUrl, alt: photoHeading }">
+                        <img class="img-responsive" data-bind="attr: {src: PhotoURL, alt: Title }">
                         <div class="carousel-caption">
                             <div data-bind="visible: viewMode">
-                                <h4 style="color: antiquewhite" data-bind="text: photoHeading"></h4>
-                                <span style="color: antiquewhite" data-bind="text: photoCaption"></span>
+                                <h4 style="color: antiquewhite" data-bind="text: Title"></h4>
+                                <span style="color: antiquewhite" data-bind="text: Caption"></span>
                                 @if (Model.IsAdmin)
                                 {
-                                    <div data-bind="if: photoHeading() != '[deleted]'">
-                                        <button type="button" class="btn btn-default" data-bind="click: $root.editPhoto"><span class="glyphicon glyphicon-edit"></span></button>
-                                        <button type="button" class="btn btn-danger" data-bind="click: $root.deletePhoto"><span class="glyphicon glyphicon-remove"></span></button>
+                                    <div data-bind="if: Title() != '[deleted]'">
+                                        <button type="button" class="btn btn-default" data-bind="click: $root.editPhoto" title="edit photo"><span class="glyphicon glyphicon-edit"></span></button>
+                                        <button type="button" class="btn btn-danger" data-bind="click: $root.deletePhoto" title="permantly delete photo"><span class="glyphicon glyphicon-remove"></span></button>
                                     </div>
                                 }
                             </div>
@@ -115,15 +134,15 @@
                             <div data-bind="visible: !viewMode()">
                                 <form class="form-horizontal">
                                     <div class="form-group">
-                                        <label for="enterPhotoGalleryTitle" class="col-sm-3 control-label">title</label>
+                                        <label data-bind="uniqueFor: Id" class="col-sm-3 control-label">title</label>
                                         <div class="col-sm-9">
-                                            <input type="text" class="form-control" id="enterPhotoGalleryTitle" placeholder="enter title" data-bind="value: photoHeading" />
+                                            <input type="text" class="form-control" placeholder="enter title" data-bind="value: Title, uniqueId: Id" />
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="enterPhotoGalleryCaption" class="col-sm-3 control-label">caption</label>
+                                        <label data-bind="uniqueFor: Id" class="col-sm-3 control-label">caption</label>
                                         <div class="col-sm-9">
-                                            <input type="text" class="form-control" id="enterPhotoGalleryCaption" placeholder="enter caption" data-bind="value: photoCaption" />
+                                            <input type="text" class="form-control" placeholder="enter caption" data-bind="value: Caption, uniqueId: Id" />
                                         </div>
                                     </div>
                                     @if (!Model.IsTeamEdit)
@@ -131,7 +150,7 @@
                                     <div class="form-group">
                                         <label for="photoAlbumSelect" class="col-sm-3 control-label">album</label>
                                         <div class="col-sm-9">
-                                            <select data-bind="options: $root.editablePhotoAlbums, optionsText: 'name', optionsValue: 'id', value: photoAlbumId" data-container="body" class="photoGalleryItemAlbum"></select>
+                                            <select data-bind="selectPicker: AlbumId, selectPickerOptions: { optionsArray: $root.editablePhotoAlbums }, optionsText: 'name', optionsValue: 'id'" data-container="body" class="photoGalleryItemAlbum"></select>
                                         </div>
                                     </div>
                                     }
