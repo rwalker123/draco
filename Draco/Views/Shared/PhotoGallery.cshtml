@@ -102,7 +102,7 @@
         @if (!Model.IsTeamEdit)
         {
         <h4>Select Album: 
-            <select data-container="body" data-bind="selectPicker: selectedPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'" class="photoGalleryItemAlbum"></select>
+            <select data-container="body" data-bind="selectPicker: selectedPhotoAlbum, selectPickerOptions: { optionsArray: photoAlbums }, optionsText: 'name', optionsValue: 'id'"></select>
         </h4>
         }
         
@@ -150,13 +150,14 @@
                                     <div class="form-group">
                                         <label for="photoAlbumSelect" class="col-sm-3 control-label">album</label>
                                         <div class="col-sm-9">
-                                            <select data-bind="selectPicker: AlbumId, selectPickerOptions: { optionsArray: $root.editablePhotoAlbums }, optionsText: 'name', optionsValue: 'id'" data-container="body" class="photoGalleryItemAlbum"></select>
+                                            @*<select data-bind="selectPicker: AlbumId, selectPickerOptions: { optionsArray: $root.photoAlbums }, optionsText: 'name', optionsValue: 'id', attr: { id: Id() + '_albums'}" data-container="body"></select>*@
+                                            <select data-bind="value: AlbumId, options: $root.editablePhotoAlbums, optionsText: 'name', optionsValue: 'id', attr: { id: Id() + '_albums'}" data-container="body"></select>
                                         </div>
                                     </div>
                                     }
                                     <div class="form-group">
-                                        <button type="button" class="btn btn-success" data-bind="click: $root.savePhoto"><span class="glyphicon glyphicon-ok"></span></button>
-                                        <button type="button" class="btn btn-danger" data-bind="click: $root.endEditPhoto"><span class="glyphicon glyphicon-remove"></span></button>
+                                        <button type="button" class="btn btn-success" data-bind="click: $root.savePhoto" title="save changes"><span class="glyphicon glyphicon-ok"></span></button>
+                                        <button type="button" class="btn btn-danger" data-bind="click: $root.endEditPhoto"title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
                                     </div>
                                 </form>
                             </div>

@@ -153,6 +153,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
 
     self.editPhoto = function (photo) {
         self.editingSavedData = photo.toJS();
+        $('#' + photo.Id() + '_albums').selectpicker();
         photo.viewMode(false);
         $('#photoGalleryCarousel').carousel('pause');
     }
@@ -242,13 +243,13 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
             type: "GET",
             url:  url,
             success: function (photos) {
-                var count = 0;
-                var mappedPhotos = $.map(photos, function (photo) {
-                    return new PhotoViewModel(photo);
+                self.photoGalleryItems.removeAll();
+
+                $.each(photos, function (index, photo) {
+                    self.photoGalleryItems.push(new PhotoViewModel(photo));
                 });
 
-                self.photoGalleryItems(mappedPhotos);
-                self.photoGalleryItemsCount(mappedPhotos.length);
+                self.photoGalleryItemsCount(photos.length);
             }
         });
     }
@@ -387,6 +388,14 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 self.selectedEditPhotoAlbum(0);
             },
             error: function (xhr, ajaxOptions, thrownError) {
+                self.editablePhotoAlbums.removeAll();
+                self.editablePhotoAlbums.unshift({
+                    name: 'default',
+                    id: 0
+                });
+
+                self.selectedEditPhotoAlbum(0);
+
                 if (xhr.status == 404)
                     return;
 
