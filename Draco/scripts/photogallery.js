@@ -7,6 +7,36 @@
     }
 }
 
+var PhotoViewModel = function (data) {
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.viewMode = ko.observable(true);
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
 var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     var self = this;
 
@@ -70,7 +100,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 self.editablePhotoAlbums.remove(function (item) {
                     return item.id == id;
                 });
-                $('#photoAlbumSelect').selectpicker('refresh');
             }
         });
     }
@@ -98,7 +127,6 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
 
                 self.selectedEditPhotoAlbum(photoAlbum.Id);
                 self.newPhotoAlbumName("");
-                $('#photoAlbumSelect').selectpicker('refresh');
             }
         });
     }
@@ -120,7 +148,12 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
         return a.pop().toLowerCase();
     }
 
+    // copy of data before editing
+    self.editingSavedData = null;
+
     self.editPhoto = function (photo) {
+        self.editingSavedData = photo.toJS();
+        $('#' + photo.Id() + '_albums').selectpicker();
         photo.viewMode(false);
         $('#photoGalleryCarousel').carousel('pause');
     }
@@ -131,21 +164,16 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
         if (self.teamId)
             url = url + '/team/' + self.teamId;
 
-        url = url + '/photos/' + photo.Id;
+        url = url + '/photos/' + photo.Id();
+
+        var data = photo.toJS();
 
         $.ajax({
             type: "PUT",
             url: url,
-            data: {
-                Id: photo.Id,
-                Title: photo.photoHeading.uncommitValue(),
-                Caption: photo.photoCaption.uncommitValue(),
-                AlbumId: photo.photoAlbumId.uncommitValue()
-            },
-            success: function (photoAlbum) {
-                photo.photoHeading.commit();
-                photo.photoCaption.commit();
-                photo.photoAlbumId.commit();
+            data: data,
+            success: function (newPhoto) {
+                photo.update(newPhoto);
                 photo.viewMode(true);
                 $('#photoGalleryCarousel').carousel('cycle');
             }
@@ -153,31 +181,35 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.endEditPhoto = function (photo) {
-        photo.photoHeading.reset();
-        photo.photoCaption.reset();
-        photo.photoAlbumId.reset();
+        photo.update(self.editingSavedData);
         photo.viewMode(true);
         $('#photoGalleryCarousel').carousel('cycle');
     }
 
     self.deletePhoto = function (photo) {
+        $("#deletePhotoModal").modal("show");
 
+        $("#confirmDeletePhotoBtn").one("click", function () {
+            self.performDeletePhoto(photo);
+        });
+
+    }
+
+    self.performDeletePhoto = function (photo) {
         var url = window.config.rootUri + '/api/PhotoGalleryAPI/' + self.accountId;
         if (self.teamId)
             url = url + '/team/' + self.teamId;
 
-        url = url + '/photos/' + photo.Id;
+        url = url + '/photos/' + photo.Id();
 
         $.ajax({
             type: "DELETE",
             url:  url,
             success: function (id) {
 
-                photo.Id = -1;
-                photo.photoHeading("[deleted]");
-                photo.photoHeading.commit();
-                photo.photoCaption("");
-                photo.photoCaption.commit();
+                photo.Id(-1);
+                photo.Title("[deleted]");
+                photo.Caption("");
                 photo.viewMode(true);
                 // DELETING was messing up control. For now, just
                 // mark it deleted and it will be gone the next refresh
@@ -211,23 +243,13 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
             type: "GET",
             url:  url,
             success: function (photos) {
-                var count = 0;
-                var mappedPhotos = $.map(photos, function (photo) {
-                    ++count;
-                    return {
-                        Id: photo.Id,
-                        photoUrl: photo.PhotoURL,
-                        photoHeading: ko.protectedObservable(photo.Title),
-                        photoCaption: ko.protectedObservable(photo.Caption),
-                        photoAlbumId: ko.protectedObservable(photo.AlbumId),
-                        viewMode: ko.observable(true)
-                    };
+                self.photoGalleryItems.removeAll();
+
+                $.each(photos, function (index, photo) {
+                    self.photoGalleryItems.push(new PhotoViewModel(photo));
                 });
 
-                self.photoGalleryItems(mappedPhotos);
-                self.photoGalleryItemsCount(count);
-
-                $('.photoGalleryItemAlbum').selectpicker();
+                self.photoGalleryItemsCount(photos.length);
             }
         });
     }
@@ -287,16 +309,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                         var photo = data.result;
 
                         self.photoGalleryItemsCount(self.photoGalleryItemsCount() + 1);
-                        self.photoGalleryItems.push({
-                            Id: photo.Id,
-                            photoUrl: photo.PhotoURL,
-                            photoHeading: ko.protectedObservable(photo.Title),
-                            photoCaption: ko.protectedObservable(photo.Caption),
-                            photoAlbumId: ko.protectedObservable(photo.AlbumId),
-                            viewMode: ko.observable(true),
-                        });
-
-                        $('.photoGalleryItemAlbum').selectpicker();
+                        self.photoGalleryItems.push(new PhotoViewModel(photo));
 
                         self.selectedFileName(self.selectedFileNameDefaultText);
                         self.photoGalleryCaption("");
@@ -373,9 +386,16 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
                 });
 
                 self.selectedEditPhotoAlbum(0);
-                $('#photoAlbumSelect').selectpicker();
             },
             error: function (xhr, ajaxOptions, thrownError) {
+                self.editablePhotoAlbums.removeAll();
+                self.editablePhotoAlbums.unshift({
+                    name: 'default',
+                    id: 0
+                });
+
+                self.selectedEditPhotoAlbum(0);
+
                 if (xhr.status == 404)
                     return;
 

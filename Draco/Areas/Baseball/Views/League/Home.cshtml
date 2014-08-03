@@ -477,7 +477,7 @@ else
 
         @if (Model.ShowWorkouts)
         {
-            <text>
+        <text>
         var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         ko.applyBindings(workoutsData, document.getElementById("workouts"));
         </text>

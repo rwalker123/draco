@@ -1,15 +1,22 @@
-﻿var WorkoutRegistrantViewModel = function (parent) {
+﻿var WorkoutRegistrantViewModel = function (data, workoutId) {
     var self = this;
 
-    self.Id = ko.observable(0);
-    self.Phone = ko.observable('');
-    self.Name = ko.observable('');
-    self.Age = ko.observable('');
-    self.Positions = ko.observable('');
-    self.Email = ko.observable('');
-    self.interestInManage = ko.observable(false);
-    self.whereHeardOption = ko.observable('');
-    self.parent = parent;
+    var workoutId = workoutId;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
 
     self.removeRegistrant = function () {
         alert('not implemented');
@@ -18,24 +25,51 @@
     self.editRegistrant = function () {
         alert('not implemented');
     }
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        js.DateRegistered = moment(new Date()).format("MM/DD/YYYY");
+        return js;
+    }
+
 }
 
-var WorkoutViewModel = function (accountId, isAdmin) {
+var WorkoutViewModel = function (data, parent) {
     var self = this;
 
-    self.accountId = accountId;
-    self.isAdmin = isAdmin;
+    self.accountId = parent.accountId;
+    self.isAdmin = parent.isAdmin;
+    
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-    self.Id = ko.observable('');
-    self.WorkoutDate = ko.protectedObservable('');
-    self.DisplayDate = ko.computed(function () {
-        return moment(self.WorkoutDate()).format("dddd, MMMM Do YYYY");
-    })
-    self.WorkoutTime = ko.protectedObservable('');
-    self.WorkoutLocation = ko.protectedObservable('0');
-    self.WorkoutField = ko.protectedObservable('');
-    self.Comments = ko.protectedObservable('');
-    self.Description = ko.protectedObservable('');
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.WorkoutDate.DisplayDate = ko.computed(function () {
+        return moment(self.WorkoutDate()).format("dddd, MMMM Do YYYY, h:mm a");
+    });
+
+    self.WorkoutDate.TimeText = ko.observable(moment(self.WorkoutDate() || new Date()).format("h:mm a"));
+    self.WorkoutDate.DateText = ko.observable(moment(self.WorkoutDate() || new Date()).format("MM/DD/YYYY"));
+
+
+    self.WorkoutLocation.WorkoutField = ko.computed(function () {
+        return parent.getFieldName(self.WorkoutLocation());
+    });
 
     self.fieldUrl = ko.computed(function () {
         return window.config.rootUri + '/baseball/fields/index/' + self.accountId + '/' + self.WorkoutLocation();
@@ -45,12 +79,27 @@ var WorkoutViewModel = function (accountId, isAdmin) {
     self.emailText = ko.observable();
     self.emailSubject = ko.observable();
 
-    self.NumRegistered = ko.observable('0');
     self.registerForWorkout = ko.observable(false);
     self.viewMode = ko.observable(true);
     self.editRegistrantsMode = ko.observable(false);
 
-    self.registerData = new WorkoutRegistrantViewModel(self);
+    self.emptyWorkoutRegistrant = {
+        Id: 0,
+        Name: '',
+        Email: '',
+        Age: 0,
+        Phone1: '',
+        Phone2: '',
+        Phone3: '',
+        Phone4: '',
+        Positions: '',
+        WantToManage: false,
+        WorkoutId: self.Id(),
+        DateRegistered: new Date(),
+        WhereHeard: ''
+    }
+
+    self.registerData = new WorkoutRegistrantViewModel(self.emptyWorkoutRegistrant);
     self.workoutRegistrants = ko.observableArray();
 
     self.sendEmailMode = function () {
@@ -80,17 +129,7 @@ var WorkoutViewModel = function (accountId, isAdmin) {
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/registrants/' + self.Id(),
             success: function (regs) {
                 var mappedRegs = $.map(regs, function (reg) {
-                    var regvm = new WorkoutRegistrantViewModel(self);
-                    regvm.Id(reg.Id);
-                    regvm.Phone(reg.Phone1);
-                    regvm.Name(reg.Name);
-                    regvm.Age(reg.Age);
-                    regvm.Positions(reg.Positions);
-                    regvm.Email(reg.Email);
-                    regvm.interestInManage(reg.WantToManager);
-                    regvm.whereHeardOption(reg.WhereHeard);
-
-                    return regvm;
+                    return new WorkoutRegistrantViewModel(reg);
                 });
 
                 self.workoutRegistrants(mappedRegs);
@@ -148,22 +187,16 @@ var WorkoutViewModel = function (accountId, isAdmin) {
         }
 
         if (!w.Email()) {
-            alert("Please enter an email address.")
+            alert("Please enter an email address.");
+            return;
         }
 
-           
+        var data = w.toJS();
+
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/register/' + w.parent.Id(),
-            data: {
-                Phone1: w.Phone(),
-                Name: w.Name(),
-                Age: w.Age(),
-                Positions: w.Positions(),
-                Email: w.Email(),
-                WantToManage: w.interestInManage(),
-                whereHeard: w.whereHeardOption()
-            },
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/register/' + w.WorkoutId(),
+            data: data,
             success: function (workoutId) {
                 self.registerForWorkout(false);
                 alert('You are now registered for the workout.');
@@ -176,25 +209,23 @@ var WorkoutViewModel = function (accountId, isAdmin) {
         this.registerForWorkout(false);
     }
 
-    self.commit = function () {
-        self.WorkoutDate.commit();
-        self.WorkoutTime.commit();
-        self.WorkoutLocation.commit();
-        self.WorkoutField.commit();
-        self.Comments.commit();
-        self.Description.commit();
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+        self.WorkoutDate.TimeText(moment(self.WorkoutDate()).format("h:mm a"));
+        self.WorkoutDate.DateText(moment(self.WorkoutDate()).format("MM/DD/YYYY"));
     }
 
-    self.clearData = function () {
+    self.toJS = function () {
+        var gameTime = new Date("1/1/1980 " + self.WorkoutDate.TimeText());
+        var gameDate = new Date(self.WorkoutDate.DateText());
+        gameDate.setHours(gameTime.getHours());
+        gameDate.setMinutes(gameTime.getMinutes());
 
-        self.WorkoutDate('');
-        self.WorkoutTime('');
-        self.WorkoutLocation('0');
-        self.WorkoutField('');
-        self.Description('');
-        self.Comments('');
+        var js = ko.mapping.toJS(self);
 
-        self.commit();
+        js.WorkoutDate = moment(gameDate).format("MM/DD/YYYY h:mm a");
+
+        return js;
     }
 }
 
@@ -213,10 +244,15 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     self.editWorkoutMode = ko.observable(false);
     self.editWhereHeard = ko.observable(false);
 
-    self.newWorkout = new WorkoutViewModel(self.accountId, self.isAdmin);
-
-    // track whether we are editing a "new" workout or an existing workout.
-    self.currentEditWorkout = ko.observable(self.newWorkout);
+    self.emptyWorkout = {
+        Id: 0,
+        AccountId: self.accountId,
+        Description: '',
+        WorkoutDate: new Date(),
+        WorkoutLocation: 0,
+        Comments: '',
+        NumRegistered: 0
+    }
 
     self.startWorkoutWhereHeardEdit = function () {
         if (self.editWhereHeard()) {
@@ -231,7 +267,11 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     self.startWorkoutAdd = function () {
         if (self.viewMode()) {
             self.stopWorkoutWhereHeardAdd();
-            self.currentEditWorkout(self.newWorkout);
+            self.currentEditWorkout().update(self.emptyWorkout);
+            // tinyMCE editor will not bind two-ways, have to manually set the control
+            // when changing the data model.
+            tinymce.get('workoutEditor').setContent('');
+
             self.viewMode(false);
         }
         else
@@ -352,59 +392,48 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
         else
             type = "POST";
 
-        if (w.Description.uncommitValue().length <= 0) {
+        if (w.Description().length <= 0) {
             alert("enter a title");
             return;
         }
 
-        if (!w.WorkoutDate.uncommitValue()) {
+        if (!w.WorkoutDate.DateText()) {
             alert("enter a workout date");
             return;
         }
 
-        if (!w.WorkoutTime.uncommitValue()) {
+        if (!w.WorkoutDate.TimeText()) {
             alert("enter a workout time");
             return;
         }
 
+        var data = w.toJS();
+
         $.ajax({
             type: type,
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/workouts',
-            data: {
-                Id: w.Id() || 0,
-                Description: w.Description.uncommitValue(),
-                WorkoutDate: w.WorkoutDate.uncommitValue(),
-                WorkoutTime: w.WorkoutTime.uncommitValue(),
-                WorkoutLocation: w.WorkoutLocation.uncommitValue(),
-                Comments: w.Comments.uncommitValue()
-            },
-            success: function (workoutId) {
-                w.WorkoutField(self.getFieldName(w.WorkoutLocation.uncommitValue()));
-                w.commit();
+            data: data,
+            success: function (workoutData) {
 
                 if (!self.editWorkoutMode()) {
-                    var workout = new WorkoutViewModel(self.accountId, self.isAdmin);
-
-                    workout.Id(workoutId);
-                    workout.Comments(w.Comments());
-                    workout.Description(w.Description());
-                    workout.WorkoutLocation(w.WorkoutLocation());
-                    workout.WorkoutDate(new Date(w.WorkoutDate()));
-                    workout.WorkoutTime(w.WorkoutTime());
-                    workout.WorkoutField(self.getFieldName(workout.WorkoutLocation.uncommitValue()));
-
-                    workout.commit();
-
+                    var workout = new WorkoutViewModel(workoutData, self);
                     self.workouts.push(workout);
-
-                    w.clearData();
-
-                    // tinyMCE editor will not bind two-ways, have to manually set the control
-                    // when changing the data model.
-                    tinymce.get('workoutEditor').setContent('');
                 }
-                else
-                    self.cancelEditMode();
+                else {
+                    var theWorkout = ko.utils.arrayFirst(self.workouts(), function (workout) {
+                        return (workout.Id() == data.Id)
+                    });
+
+                    if (theWorkout) {
+                        theWorkout.update(workoutData);
+                    }
+                }
+
+                // tinyMCE editor will not bind two-ways, have to manually set the control
+                // when changing the data model.
+                tinymce.get('workoutEditor').setContent('');
+
+                self.cancelEditMode();
             }
         });
     }
@@ -414,20 +443,17 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     }
 
     self.editWorkout = function (workout) {
-        self.currentEditWorkout(workout);
+        self.currentEditWorkout().update(workout.toJS());
+        // tinyMCE editor will not bind two-ways, have to manually set the control
+        // when changing the data model.
+        tinymce.get('workoutEditor').setContent(self.currentEditWorkout().Comments());
         self.editWorkoutMode(true);
         self.viewMode(false);
     }
 
     self.cancelEditMode = function () {
-        if (self.editWorkoutMode()) {
-            self.editWorkoutMode(false);
-            self.viewMode(true);
-        }
-        else {
-            self.newWorkout.commit();
-            self.newWorkout.clearData();
-        }
+        self.editWorkoutMode(false);
+        self.viewMode(true);
     }
 
     self.deleteWorkout = function (workout) {
@@ -462,19 +488,7 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
             url: url,
             success: function (workouts) {
                 var mappedFields = $.map(workouts, function (w) {
-                    var workout = new WorkoutViewModel(self.accountId, self.isAdmin);
-                    
-                    workout.Id(w.Id);
-                    workout.Comments(w.Comments);
-                    workout.Description(w.Description);
-                    workout.WorkoutLocation(w.WorkoutLocation);
-                    workout.WorkoutDate(w.WorkoutDate);
-                    workout.WorkoutTime(moment(w.WorkoutTime).format("h:mm a"));
-                    workout.WorkoutField(self.getFieldName(w.WorkoutLocation));
-                    workout.NumRegistered(w.NumRegistered);
-                    workout.commit();
-
-                    return workout;
+                    return new WorkoutViewModel(w, self);
                 });
 
                 self.workouts(mappedFields);
@@ -486,6 +500,10 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
         });
 
     }
+
+    // track whether we are editing a "new" workout or an existing workout.
+    self.currentEditWorkout = ko.observable(new WorkoutViewModel(self.emptyWorkout, self));
+
 
     self.getAvailableFields();
 };

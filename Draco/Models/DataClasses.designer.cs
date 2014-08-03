@@ -244,15 +244,15 @@ namespace SportsManager
     partial void InsertAspNetUser(SportsManager.Model.AspNetUser instance);
     partial void UpdateAspNetUser(SportsManager.Model.AspNetUser instance);
     partial void DeleteAspNetUser(SportsManager.Model.AspNetUser instance);
-    partial void InsertWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
-    partial void UpdateWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
-    partial void DeleteWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     partial void InsertDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
     partial void UpdateDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
     partial void DeleteDisplayLeagueLeader(SportsManager.Model.DisplayLeagueLeader instance);
     partial void InsertPlayerProfile(SportsManager.Model.PlayerProfile instance);
     partial void UpdatePlayerProfile(SportsManager.Model.PlayerProfile instance);
     partial void DeletePlayerProfile(SportsManager.Model.PlayerProfile instance);
+    partial void InsertWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
+    partial void UpdateWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
+    partial void DeleteWorkoutAnnouncement(SportsManager.Model.WorkoutAnnouncement instance);
     #endregion
 		
 		public DB() : 
@@ -861,14 +861,6 @@ namespace SportsManager
 			}
 		}
 		
-		public System.Data.Linq.Table<SportsManager.Model.WorkoutAnnouncement> WorkoutAnnouncements
-		{
-			get
-			{
-				return this.GetTable<SportsManager.Model.WorkoutAnnouncement>();
-			}
-		}
-		
 		public System.Data.Linq.Table<SportsManager.Model.DisplayLeagueLeader> DisplayLeagueLeaders
 		{
 			get
@@ -882,6 +874,14 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.PlayerProfile>();
+			}
+		}
+		
+		public System.Data.Linq.Table<SportsManager.Model.WorkoutAnnouncement> WorkoutAnnouncements
+		{
+			get
+			{
+				return this.GetTable<SportsManager.Model.WorkoutAnnouncement>();
 			}
 		}
 	}
@@ -26189,322 +26189,6 @@ namespace SportsManager.Model
 		}
 	}
 	
-	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.WorkoutAnnouncement")]
-	public partial class WorkoutAnnouncement : INotifyPropertyChanging, INotifyPropertyChanged
-	{
-		
-		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
-		
-		private long _Id;
-		
-		private long _AccountId;
-		
-		private string _WorkoutDesc;
-		
-		private System.DateTime _WorkoutDate;
-		
-		private System.DateTime _WorkoutTime;
-		
-		private long _FieldId;
-		
-		private string _Comments;
-		
-		private EntitySet<WorkoutRegistration> _WorkoutRegistrations;
-		
-		private EntityRef<Account> _Account;
-		
-		private EntityRef<AvailableField> _AvailableField;
-		
-    #region Extensibility Method Definitions
-    partial void OnLoaded();
-    partial void OnValidate(System.Data.Linq.ChangeAction action);
-    partial void OnCreated();
-    partial void OnIdChanging(long value);
-    partial void OnIdChanged();
-    partial void OnAccountIdChanging(long value);
-    partial void OnAccountIdChanged();
-    partial void OnWorkoutDescChanging(string value);
-    partial void OnWorkoutDescChanged();
-    partial void OnWorkoutDateChanging(System.DateTime value);
-    partial void OnWorkoutDateChanged();
-    partial void OnWorkoutTimeChanging(System.DateTime value);
-    partial void OnWorkoutTimeChanged();
-    partial void OnFieldIdChanging(long value);
-    partial void OnFieldIdChanged();
-    partial void OnCommentsChanging(string value);
-    partial void OnCommentsChanged();
-    #endregion
-		
-		public WorkoutAnnouncement()
-		{
-			this._WorkoutRegistrations = new EntitySet<WorkoutRegistration>(new Action<WorkoutRegistration>(this.attach_WorkoutRegistrations), new Action<WorkoutRegistration>(this.detach_WorkoutRegistrations));
-			this._Account = default(EntityRef<Account>);
-			this._AvailableField = default(EntityRef<AvailableField>);
-			OnCreated();
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
-		public long Id
-		{
-			get
-			{
-				return this._Id;
-			}
-			set
-			{
-				if ((this._Id != value))
-				{
-					this.OnIdChanging(value);
-					this.SendPropertyChanging();
-					this._Id = value;
-					this.SendPropertyChanged("Id");
-					this.OnIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL")]
-		public long AccountId
-		{
-			get
-			{
-				return this._AccountId;
-			}
-			set
-			{
-				if ((this._AccountId != value))
-				{
-					if (this._Account.HasLoadedOrAssignedValue)
-					{
-						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
-					}
-					this.OnAccountIdChanging(value);
-					this.SendPropertyChanging();
-					this._AccountId = value;
-					this.SendPropertyChanged("AccountId");
-					this.OnAccountIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WorkoutDesc", DbType="VarChar(100) NOT NULL", CanBeNull=false)]
-		public string WorkoutDesc
-		{
-			get
-			{
-				return this._WorkoutDesc;
-			}
-			set
-			{
-				if ((this._WorkoutDesc != value))
-				{
-					this.OnWorkoutDescChanging(value);
-					this.SendPropertyChanging();
-					this._WorkoutDesc = value;
-					this.SendPropertyChanged("WorkoutDesc");
-					this.OnWorkoutDescChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WorkoutDate", DbType="SmallDateTime NOT NULL")]
-		public System.DateTime WorkoutDate
-		{
-			get
-			{
-				return this._WorkoutDate;
-			}
-			set
-			{
-				if ((this._WorkoutDate != value))
-				{
-					this.OnWorkoutDateChanging(value);
-					this.SendPropertyChanging();
-					this._WorkoutDate = value;
-					this.SendPropertyChanged("WorkoutDate");
-					this.OnWorkoutDateChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WorkoutTime", DbType="SmallDateTime NOT NULL")]
-		public System.DateTime WorkoutTime
-		{
-			get
-			{
-				return this._WorkoutTime;
-			}
-			set
-			{
-				if ((this._WorkoutTime != value))
-				{
-					this.OnWorkoutTimeChanging(value);
-					this.SendPropertyChanging();
-					this._WorkoutTime = value;
-					this.SendPropertyChanged("WorkoutTime");
-					this.OnWorkoutTimeChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FieldId", DbType="BigInt NOT NULL")]
-		public long FieldId
-		{
-			get
-			{
-				return this._FieldId;
-			}
-			set
-			{
-				if ((this._FieldId != value))
-				{
-					if (this._AvailableField.HasLoadedOrAssignedValue)
-					{
-						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
-					}
-					this.OnFieldIdChanging(value);
-					this.SendPropertyChanging();
-					this._FieldId = value;
-					this.SendPropertyChanged("FieldId");
-					this.OnFieldIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Comments", DbType="Text NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
-		public string Comments
-		{
-			get
-			{
-				return this._Comments;
-			}
-			set
-			{
-				if ((this._Comments != value))
-				{
-					this.OnCommentsChanging(value);
-					this.SendPropertyChanging();
-					this._Comments = value;
-					this.SendPropertyChanged("Comments");
-					this.OnCommentsChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="WorkoutAnnouncement_WorkoutRegistration", Storage="_WorkoutRegistrations", ThisKey="Id", OtherKey="WorkoutId")]
-		public EntitySet<WorkoutRegistration> WorkoutRegistrations
-		{
-			get
-			{
-				return this._WorkoutRegistrations;
-			}
-			set
-			{
-				this._WorkoutRegistrations.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_WorkoutAnnouncement", Storage="_Account", ThisKey="AccountId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Account Account
-		{
-			get
-			{
-				return this._Account.Entity;
-			}
-			set
-			{
-				Account previousValue = this._Account.Entity;
-				if (((previousValue != value) 
-							|| (this._Account.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Account.Entity = null;
-						previousValue.WorkoutAnnouncements.Remove(this);
-					}
-					this._Account.Entity = value;
-					if ((value != null))
-					{
-						value.WorkoutAnnouncements.Add(this);
-						this._AccountId = value.Id;
-					}
-					else
-					{
-						this._AccountId = default(long);
-					}
-					this.SendPropertyChanged("Account");
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="AvailableField_WorkoutAnnouncement", Storage="_AvailableField", ThisKey="FieldId", OtherKey="Id", IsForeignKey=true)]
-		public AvailableField AvailableField
-		{
-			get
-			{
-				return this._AvailableField.Entity;
-			}
-			set
-			{
-				AvailableField previousValue = this._AvailableField.Entity;
-				if (((previousValue != value) 
-							|| (this._AvailableField.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._AvailableField.Entity = null;
-						previousValue.WorkoutAnnouncements.Remove(this);
-					}
-					this._AvailableField.Entity = value;
-					if ((value != null))
-					{
-						value.WorkoutAnnouncements.Add(this);
-						this._FieldId = value.Id;
-					}
-					else
-					{
-						this._FieldId = default(long);
-					}
-					this.SendPropertyChanged("AvailableField");
-				}
-			}
-		}
-		
-		public event PropertyChangingEventHandler PropertyChanging;
-		
-		public event PropertyChangedEventHandler PropertyChanged;
-		
-		protected virtual void SendPropertyChanging()
-		{
-			if ((this.PropertyChanging != null))
-			{
-				this.PropertyChanging(this, emptyChangingEventArgs);
-			}
-		}
-		
-		protected virtual void SendPropertyChanged(String propertyName)
-		{
-			if ((this.PropertyChanged != null))
-			{
-				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
-		}
-		
-		private void attach_WorkoutRegistrations(WorkoutRegistration entity)
-		{
-			this.SendPropertyChanging();
-			entity.WorkoutAnnouncement = this;
-		}
-		
-		private void detach_WorkoutRegistrations(WorkoutRegistration entity)
-		{
-			this.SendPropertyChanging();
-			entity.WorkoutAnnouncement = null;
-		}
-	}
-	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.DisplayLeagueLeaders")]
 	public partial class DisplayLeagueLeader : INotifyPropertyChanging, INotifyPropertyChanged
 	{
@@ -26852,6 +26536,298 @@ namespace SportsManager.Model
 			{
 				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.WorkoutAnnouncement")]
+	public partial class WorkoutAnnouncement : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private long _Id;
+		
+		private long _AccountId;
+		
+		private string _WorkoutDesc;
+		
+		private System.DateTime _WorkoutDate;
+		
+		private long _FieldId;
+		
+		private string _Comments;
+		
+		private EntitySet<WorkoutRegistration> _WorkoutRegistrations;
+		
+		private EntityRef<Account> _Account;
+		
+		private EntityRef<AvailableField> _AvailableField;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnIdChanging(long value);
+    partial void OnIdChanged();
+    partial void OnAccountIdChanging(long value);
+    partial void OnAccountIdChanged();
+    partial void OnWorkoutDescChanging(string value);
+    partial void OnWorkoutDescChanged();
+    partial void OnWorkoutDateChanging(System.DateTime value);
+    partial void OnWorkoutDateChanged();
+    partial void OnFieldIdChanging(long value);
+    partial void OnFieldIdChanged();
+    partial void OnCommentsChanging(string value);
+    partial void OnCommentsChanged();
+    #endregion
+		
+		public WorkoutAnnouncement()
+		{
+			this._WorkoutRegistrations = new EntitySet<WorkoutRegistration>(new Action<WorkoutRegistration>(this.attach_WorkoutRegistrations), new Action<WorkoutRegistration>(this.detach_WorkoutRegistrations));
+			this._Account = default(EntityRef<Account>);
+			this._AvailableField = default(EntityRef<AvailableField>);
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
+		public long Id
+		{
+			get
+			{
+				return this._Id;
+			}
+			set
+			{
+				if ((this._Id != value))
+				{
+					this.OnIdChanging(value);
+					this.SendPropertyChanging();
+					this._Id = value;
+					this.SendPropertyChanged("Id");
+					this.OnIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL")]
+		public long AccountId
+		{
+			get
+			{
+				return this._AccountId;
+			}
+			set
+			{
+				if ((this._AccountId != value))
+				{
+					if (this._Account.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnAccountIdChanging(value);
+					this.SendPropertyChanging();
+					this._AccountId = value;
+					this.SendPropertyChanged("AccountId");
+					this.OnAccountIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WorkoutDesc", DbType="VarChar(100) NOT NULL", CanBeNull=false)]
+		public string WorkoutDesc
+		{
+			get
+			{
+				return this._WorkoutDesc;
+			}
+			set
+			{
+				if ((this._WorkoutDesc != value))
+				{
+					this.OnWorkoutDescChanging(value);
+					this.SendPropertyChanging();
+					this._WorkoutDesc = value;
+					this.SendPropertyChanged("WorkoutDesc");
+					this.OnWorkoutDescChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WorkoutDate", DbType="SmallDateTime NOT NULL")]
+		public System.DateTime WorkoutDate
+		{
+			get
+			{
+				return this._WorkoutDate;
+			}
+			set
+			{
+				if ((this._WorkoutDate != value))
+				{
+					this.OnWorkoutDateChanging(value);
+					this.SendPropertyChanging();
+					this._WorkoutDate = value;
+					this.SendPropertyChanged("WorkoutDate");
+					this.OnWorkoutDateChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_FieldId", DbType="BigInt NOT NULL")]
+		public long FieldId
+		{
+			get
+			{
+				return this._FieldId;
+			}
+			set
+			{
+				if ((this._FieldId != value))
+				{
+					if (this._AvailableField.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnFieldIdChanging(value);
+					this.SendPropertyChanging();
+					this._FieldId = value;
+					this.SendPropertyChanged("FieldId");
+					this.OnFieldIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Comments", DbType="Text NOT NULL", CanBeNull=false, UpdateCheck=UpdateCheck.Never)]
+		public string Comments
+		{
+			get
+			{
+				return this._Comments;
+			}
+			set
+			{
+				if ((this._Comments != value))
+				{
+					this.OnCommentsChanging(value);
+					this.SendPropertyChanging();
+					this._Comments = value;
+					this.SendPropertyChanged("Comments");
+					this.OnCommentsChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="WorkoutAnnouncement_WorkoutRegistration", Storage="_WorkoutRegistrations", ThisKey="Id", OtherKey="WorkoutId")]
+		public EntitySet<WorkoutRegistration> WorkoutRegistrations
+		{
+			get
+			{
+				return this._WorkoutRegistrations;
+			}
+			set
+			{
+				this._WorkoutRegistrations.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_WorkoutAnnouncement", Storage="_Account", ThisKey="AccountId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Account Account
+		{
+			get
+			{
+				return this._Account.Entity;
+			}
+			set
+			{
+				Account previousValue = this._Account.Entity;
+				if (((previousValue != value) 
+							|| (this._Account.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Account.Entity = null;
+						previousValue.WorkoutAnnouncements.Remove(this);
+					}
+					this._Account.Entity = value;
+					if ((value != null))
+					{
+						value.WorkoutAnnouncements.Add(this);
+						this._AccountId = value.Id;
+					}
+					else
+					{
+						this._AccountId = default(long);
+					}
+					this.SendPropertyChanged("Account");
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="AvailableField_WorkoutAnnouncement", Storage="_AvailableField", ThisKey="FieldId", OtherKey="Id", IsForeignKey=true)]
+		public AvailableField AvailableField
+		{
+			get
+			{
+				return this._AvailableField.Entity;
+			}
+			set
+			{
+				AvailableField previousValue = this._AvailableField.Entity;
+				if (((previousValue != value) 
+							|| (this._AvailableField.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._AvailableField.Entity = null;
+						previousValue.WorkoutAnnouncements.Remove(this);
+					}
+					this._AvailableField.Entity = value;
+					if ((value != null))
+					{
+						value.WorkoutAnnouncements.Add(this);
+						this._FieldId = value.Id;
+					}
+					else
+					{
+						this._FieldId = default(long);
+					}
+					this.SendPropertyChanged("AvailableField");
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+		
+		private void attach_WorkoutRegistrations(WorkoutRegistration entity)
+		{
+			this.SendPropertyChanging();
+			entity.WorkoutAnnouncement = this;
+		}
+		
+		private void detach_WorkoutRegistrations(WorkoutRegistration entity)
+		{
+			this.SendPropertyChanging();
+			entity.WorkoutAnnouncement = null;
 		}
 	}
 }

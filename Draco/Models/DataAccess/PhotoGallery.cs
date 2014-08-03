@@ -19,7 +19,7 @@ namespace DataAccess
 		public static IQueryable<PhotoGalleryAlbum> GetEditablePhotoAlbums(long accountId)
 		{
             var userId = Globals.GetCurrentUserId();
-            bool isSitePhotoAdmin = ContactRoles.IsPhotoAdmin(accountId, userId);
+            bool isSitePhotoAdmin = DataAccess.Accounts.IsAccountAdmin(accountId, userId) || ContactRoles.IsPhotoAdmin(accountId, userId);
             if (isSitePhotoAdmin)
             {
                 return GetPhotoAlbums(accountId);

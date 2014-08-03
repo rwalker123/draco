@@ -27,7 +27,7 @@ namespace DataAccess
                         DateRegistered = wr.DateRegistered,
                         Age = wr.Age,
                         Positions = wr.Positions,
-                        WantToManager = wr.IsManager,
+                        WantToManage = wr.IsManager,
                         WorkoutId = workoutId,
                         WhereHeard = wr.WhereHeard,
                         Phone1 = wr.Phone1,
@@ -60,7 +60,7 @@ namespace DataAccess
                 dbRegistrant.Phone3 = wr.Phone3;
                 dbRegistrant.Phone4 = wr.Phone4;
                 dbRegistrant.Positions = wr.Positions;
-                dbRegistrant.IsManager = wr.WantToManager;
+                dbRegistrant.IsManager = wr.WantToManage;
                 dbRegistrant.WhereHeard = wr.WhereHeard;
 
                 db.SubmitChanges();
@@ -90,14 +90,14 @@ namespace DataAccess
                 Age = wr.Age,
                 DateRegistered = DateTime.Now,
                 EMail = wr.Email,
-                IsManager = wr.WantToManager,
+                IsManager = wr.WantToManage,
                 Name = wr.Name,
                 Phone1 = wr.Phone1,
                 Phone2 = wr.Phone2,
                 Phone3 = wr.Phone3,
                 Phone4 = wr.Phone4,
-                Positions = wr.Positions,
-                WhereHeard = wr.WhereHeard,
+                Positions = wr.Positions ?? String.Empty,
+                WhereHeard = wr.WhereHeard ?? String.Empty,
                 WorkoutId = wr.WorkoutId
             };
 

@@ -93,7 +93,7 @@ namespace DataAccess
             
             return (from wa in db.WorkoutAnnouncements
                     where wa.AccountId == accountId && wa.WorkoutDate >= now
-                    orderby wa.WorkoutDate, wa.WorkoutTime
+                    orderby wa.WorkoutDate
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -101,8 +101,7 @@ namespace DataAccess
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
-                        WorkoutLocation = wa.FieldId,
-                        WorkoutTime = wa.WorkoutTime
+                        WorkoutLocation = wa.FieldId
                     });
         }
 
@@ -112,7 +111,7 @@ namespace DataAccess
 
             return (from wa in db.WorkoutAnnouncements
                  join wr in db.WorkoutRegistrations on wa.Id equals wr.WorkoutId into regsInWorkout
-                 orderby wa.WorkoutDate, wa.WorkoutTime
+                 orderby wa.WorkoutDate
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -121,7 +120,6 @@ namespace DataAccess
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
                         WorkoutLocation = wa.FieldId,
-                        WorkoutTime = wa.WorkoutTime,
                         NumRegistered = regsInWorkout.Count()
                     });
         }
@@ -132,7 +130,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from wa in db.WorkoutAnnouncements
                     where wa.AccountId == accountId
-                    orderby wa.WorkoutDate, wa.WorkoutTime
+                    orderby wa.WorkoutDate
                     select new WorkoutAnnouncement()
                     {
                         Id = wa.Id,
@@ -140,8 +138,7 @@ namespace DataAccess
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
-                        WorkoutLocation = wa.FieldId,
-                        WorkoutTime = wa.WorkoutTime
+                        WorkoutLocation = wa.FieldId
                     });
 		}
 
@@ -158,8 +155,7 @@ namespace DataAccess
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
-                        WorkoutLocation = wa.FieldId,
-                        WorkoutTime = wa.WorkoutTime
+                        WorkoutLocation = wa.FieldId
                     }).SingleOrDefault();
         }
 
@@ -173,7 +169,6 @@ namespace DataAccess
             {
                 dbWorkout.WorkoutDate = w.WorkoutDate;
                 dbWorkout.WorkoutDesc = w.Description;
-                dbWorkout.WorkoutTime = w.WorkoutTime;
                 dbWorkout.Comments = w.Comments;
                 dbWorkout.FieldId = w.WorkoutLocation;
 
@@ -192,7 +187,6 @@ namespace DataAccess
             {
                 AccountId = w.AccountId,
                 FieldId = w.WorkoutLocation,
-                WorkoutTime = w.WorkoutTime,
                 WorkoutDate = w.WorkoutDate,
                 WorkoutDesc = w.Description == null ? String.Empty : w.Description,
                 Comments = w.Comments == null ? String.Empty : w.Comments
