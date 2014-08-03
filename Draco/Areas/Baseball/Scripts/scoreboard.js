@@ -27,6 +27,8 @@ var GameResultViewModel = function (data) {
             return "FG";
         else if (self.GameStatus() == 5)
             return "DNR";
+        else
+            return "";
     });
 
     self.update = function (data) {
@@ -264,7 +266,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
         }
     }
 
-
     self.updateGameResult = function (editGame) {
 
         self.editingGameResults().updateGameResult(function (updatedGame) {
@@ -284,9 +285,6 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.cancelUpdateGameResult = function (game) {
         $("#gameResultsModal").modal("hide");
     }
-
-
-
 
     self.getGameSummary = function (teamId, gameId, observableSummary) {
 
