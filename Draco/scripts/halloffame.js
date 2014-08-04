@@ -208,7 +208,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
     self.saveEdit = function () {
 
         if (!self.currentEditMember().Id()) {
-            if (!self.selectedPlayer().id) {
+            if (!self.selectedPlayer() || !self.selectedPlayer().id) {
                 alert('select a player');
                 return;
             }
@@ -299,8 +299,6 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                     return 0;
                 return a.Year() < b.Year() ? 1 : -1;
             });
-
-            self.makeAccordion();
         }
     }
 
@@ -343,8 +341,6 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                 self.hallOfFameClasses(mappedHofClasses);
                 if (self.hallOfFameClasses().length > 0)
                     self.getHOFClassMembers(self.hallOfFameClasses()[0]);
-
-                self.makeAccordion();
             }
         });
     }
@@ -363,26 +359,17 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.initFirstYear();
 
-    self.makeAccordion = function () {
-        if ($("#accordion").hasClass("ui-accordion")) {
-            $("#accordion").accordion("destroy");
+    $('#accordion').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && vm.Year && !vm.Year.filledMembers) {
+                self.getHOFClassMembers(vm);
+            }
         }
-
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.length > 0) {
-
-                    var vm = ko.dataFor(ui.newPanel[0]);
-                    if (vm && vm.Year && !vm.Year.filledMembers) {
-                        self.getHOFClassMembers(vm);
-                    }
-                }
-            },
-
-        });
-
-    }
+    });
 
     self.getHallOfFameClasses();
 }

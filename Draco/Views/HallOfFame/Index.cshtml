@@ -48,7 +48,7 @@
                 </div>
                 <div data-bind="ifnot: Id">
                     <div class="col-sm-8">
-                        <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: $root.getPlayers, select: $root.selectPlayer, minLength: 1 }" placeholder="enter player name" />
+                        <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: $root.getPlayers, select: $root.selectPlayer, minLength: 1 }" placeholder="type last name to search for player" />
                     </div>
                 </div>
             </div>
@@ -80,35 +80,46 @@
         </div>
     </div>
     <div id="accordion" data-bind="foreach: hallOfFameClasses">
-        <h3><span data-bind="html: 'Class of ' + Year()"></span><span style="margin-left: 10px" class="badge pull-right" data-bind="html: MemberCount() + ' Members'"></span></h3>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#" data-bind="attr: { href: '#' + Year() }">
+                        <span data-bind="html: 'Class of ' + Year()"></span><span style="margin-left: 10px" class="badge pull-right" data-bind="html: MemberCount() + ' Members'"></span>
+                    </a>
+                </h3>
+            </div>
+            <div class="panel-collapse collapse" data-bind="attr: { id: Year }">
+                <div class="panel-body">
+                    <div data-bind="foreach: Members">
+                        <div data-bind="css: { row: $parent.newHOFRowClass($index) }"></div>
+                        <div class="col-sm-4 col-md-4 col-lg-4">
+                            <div class="panel panel-info">
+                                <div class="panel-heading">
+                                    <h3 class="panel-title"><span data-bind="html: Name"></span></h3>
+                                </div>
 
-        <div data-bind="foreach: Members">
-            <div data-bind="css: { row: $parent.newHOFRowClass($index) }"></div>
-            <div class="col-sm-4 col-md-4 col-lg-4">
-                <div class="panel panel-info">
-                    <div class="panel-heading">
-                        <h3 class="panel-title"><span data-bind="html: Name"></span></h3>
-                    </div>
-
-                    <div class="panel-body">
-                        <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
-                        @if (Model.IsAdmin)
-                        {
-                            <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
-                                <i class="glyphicon glyphicon-upload"></i>
-                                <input class="form-control" type="file" data-maxfilesize="1">
-                            </span>
-                        }
+                                <div class="panel-body">
+                                    <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
+                                    @if (Model.IsAdmin)
+                                    {
+                                        <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+                                            <i class="glyphicon glyphicon-upload"></i>
+                                            <input class="form-control" type="file" data-maxfilesize="1">
+                                        </span>
+                                    }
 
 
-                        <div data-bind="if: Biography">
-                            <div class="well" data-bind="html: Biography"></div>
+                                    <div data-bind="if: Biography">
+                                        <div class="well" data-bind="html: Biography"></div>
+                                    </div>
+                                    @if (Model.IsAdmin)
+                                    {
+                                        <button type="button" class="btn btn-default" title="edit" data-bind="click: $root.editMember"><span class="glyphicon glyphicon-edit"></span></button>
+                                        <button type="button" class="btn btn-danger" title="delete" data-bind="click: $root.deleteMember"><span class="glyphicon glyphicon-remove"></span></button>
+                                    }
+                                </div>
+                            </div>
                         </div>
-                        @if (Model.IsAdmin)
-                        {
-                            <button type="button" class="btn btn-default" title="edit" data-bind="click: $root.editMember"><span class="glyphicon glyphicon-edit"></span></button>
-                            <button type="button" class="btn btn-danger" title="delete" data-bind="click: $root.deleteMember"><span class="glyphicon glyphicon-remove"></span></button>
-                        }
                     </div>
                 </div>
             </div>
