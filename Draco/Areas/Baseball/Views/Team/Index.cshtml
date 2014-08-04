@@ -2,7 +2,7 @@
 @using System.Web.Optimization;
 
 @{
-    ViewBag.Title = Model.AccountName + " " + Model.Team.Name;
+    ViewBag.Title = Model.AccountName + " " + Model.LeagueName + " " + Model.Team.Name;
 }
 @section head {
     @Styles.Render("~/Content/themes/base/css")
@@ -24,7 +24,7 @@
         }
 
         <h1 style="display: inline-block;">
-            <span data-bind="html: teamName"></span>
+            @Model.LeagueName <span data-bind="html: teamName"></span>
         </h1>
     </div>
     @if (Model.IsAdmin)
@@ -33,7 +33,7 @@
             <div class="form-group">
                 <label for="_teamName" class="sr-only">Team name</label>
                 <div class="col-sm-12">
-                    <input id="_teamName" type="text" class="form-control" style="width:200px" data-bind="value: teamName" />
+                    <input id="_teamName" type="text" class="form-control" data-bind="value: teamName" />
                 </div>
             </div>
             <div class="form-group">
