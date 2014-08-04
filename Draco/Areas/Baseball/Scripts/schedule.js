@@ -16,6 +16,15 @@
     }
 }
 
+var weekday = new Array(7);
+weekday[0] = "Sun";
+weekday[1] = "Mon";
+weekday[2] = "Tue";
+weekday[3] = "Wed";
+weekday[4] = "Thu";
+weekday[5] = "Fri";
+weekday[6] = "Sat";
+
 var GameDayViewModel = function (theDate) {
     var self = this;
     
@@ -23,6 +32,12 @@ var GameDayViewModel = function (theDate) {
     self.games = ko.observableArray();
     self.monthDayNumber = ko.computed(function () {
         return self.date().getDate();
+    });
+    self.monthName = ko.computed(function () {
+        return moment(self.date()).format("MMM");
+    });
+    self.dayOfWeek = ko.computed(function () {
+        return weekday[self.date().getDay()];
     });
     self.date.text = ko.computed(function () {
         return moment(self.date()).format("MMMM D, YYYY");
