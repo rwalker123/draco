@@ -10,10 +10,6 @@
     @Styles.Render("~/Content/themes/base/css")
 
 <style type="text/css">
-    h3.adminHeader
-    {
-        font-size:24px;
-    }
 
     .ui-autocomplete {
         max-height: 100px;
@@ -31,122 +27,154 @@
     <p class="help-block">Define roles for users for your account.</p>
 </div> <!-- content-wrapper -->
 
-@if (Model.IsAccountOwner) 
+@if (Model.IsAccountOwner)
 {
-<div id="accountOwner">
-<div id="changeAccountOwner" style="max-width:500px;text-align:center">
-    <h3 style="display:inline-block">You are the Account Owner</h3> <button type="button" class="btn btn-warning" onclick="userRolesData.startChangeAccountOwner()">Change</button>
-    <p class="help-block">The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
-</div>
-<div id="changeAccountOwnerWarning" style="max-width:500px;text-align:center;display: none">
-<div class="alert alert-warning">
-    <strong>Warning!</strong> You can only change the account owner if you are the account owner. If you change the account owner to someone else, you will not be able
-    to change it back. Only the new account owner will be able to change it back.
-</div>
-<h4>Change Account Owner</h4>
-<small>(type last name to begin search)</small><br />
-<form class="form-inline" role="form">
-    <input style="width:350px" class="form-control" id="ownerPlayerSelect"/>
-    <button type="button" class="btn btn-success" onclick="userRolesData.changeAccountOwner(@Model.AccountId)"><span class="glyphicon glyphicon-ok"></span></button>
-    <button type="button" class="btn btn-danger" onclick="userRolesData.cancelChangeAccountOwner()"><span class="glyphicon glyphicon-remove"></span></button>
-</form>
-<hr />
-    
-</div>
-</div>
+    <div id="accountOwner">
+        <div id="changeAccountOwner" style="max-width:500px;text-align:center">
+            <h3 style="display:inline-block">You are the Account Owner</h3> <button type="button" class="btn btn-warning" onclick="userRolesData.startChangeAccountOwner()">Change</button>
+            <p class="help-block">The account owner, by default, has all administrative privledges for the entire site. You don't have to be added to any administration group below.</p>
+        </div>
+        <div id="changeAccountOwnerWarning" style="max-width:500px;text-align:center;display: none">
+            <div class="alert alert-warning">
+                <strong>Warning!</strong> You can only change the account owner if you are the account owner. If you change the account owner to someone else, you will not be able
+                to change it back. Only the new account owner will be able to change it back.
+            </div>
+            <h4>Change Account Owner</h4>
+            <small>(type last name to begin search)</small><br />
+            <form class="form-inline" role="form">
+                <input style="width:350px" class="form-control" id="ownerPlayerSelect" />
+                <button type="button" class="btn btn-success" onclick="userRolesData.changeAccountOwner(@Model.AccountId)"><span class="glyphicon glyphicon-ok"></span></button>
+                <button type="button" class="btn btn-danger" onclick="userRolesData.cancelChangeAccountOwner()"><span class="glyphicon glyphicon-remove"></span></button>
+            </form>
+            <hr />
+
+        </div>
+    </div>
 }
 
-<div id="accordion">
-    <h3 class="adminHeader" id="AdminHeader_@Model.AccountAdminId">Account Administrators</h3>
-    <div id="AdminData_@Model.AccountAdminId">
-        <p class="help-block">Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.</p>
+<div class="panel-group" id="accordion">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#accountAdmins">Account Administrators</a>
+            </h3>
+        </div>
+        <div class="panel-collapse collapse" id="accountAdmins">
+            <div class="panel-body">
+                <p class="help-block">Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.</p>
 
-        <small>add administrator (type last name to begin search)</small><br />
-        <form class="form-inline" role="form">
-            <div id="div_playerSelect_@Model.AccountAdminId" class="form-group">
-                <div style="display:inline-block" id="playerSelect">
-                    <label for="playerSelectInput" class="sr-only">Last Name</label>
-                    <input class="form-control" type="text" id="playerSelectInput" style="width: 400px;" />
+                <small>add administrator (type last name to begin search)</small><br />
+                <form class="form-inline" role="form">
+                    <div id="div_playerSelect_@Model.AccountAdminId" class="form-group">
+                        <div style="display:inline-block" id="playerSelect">
+                            <label for="playerSelectInput" class="sr-only">Last Name</label>
+                            <input class="form-control" type="text" id="playerSelectInput" style="width: 400px;" />
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </form>
+
+
+                <hr />
+
+                <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.AccountAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
+                <div id="adminsList_@Model.AccountAdminId" data-hasdata="false" style="display:none">
+
                 </div>
-                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
             </div>
-        </form>
-
-
-        <hr />
-
-        <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.AccountAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
-        <div id="adminsList_@Model.AccountAdminId" data-hasdata="false" style="display:none">
-
         </div>
-    </div>
-    <h3 class="adminHeader" id="AdminHeader_@Model.AccountPhotoAdminId">Account Photo Administrators</h3>
-    <div id="AdminData_@Model.AccountPhotoAdminId">
-        <p class="help-block">Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.</p>
-
-        <small>add administrator (type last name to begin search)</small><br />
-        <form class="form-inline" role="form">
-            <div id="div_playerSelect_@Model.AccountPhotoAdminId" class="form-group">
-                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
-            </div>
-        </form>
-
-        <hr />
-
-        <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.AccountPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
-        <div id="adminsList_@Model.AccountPhotoAdminId" data-hasdata="false" style="display:none">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#accountPhotoAdmins">Account Photo Administrators</a>
+            </h3>
         </div>
-</div>
-    <h3 class="adminHeader" id="AdminHeader_@Model.LeagueAdminId">League Administrators</h3>
-    <div id="AdminData_@Model.LeagueAdminId">
-        <p class="help-block">League administrators have access to all functions for a specific league. The can create divisions and teams for a league, but cannot create or delete leagues in the account.</p>
+        <div class="panel-collapse collapse" id="accountPhotoAdmins">
+            <div class="panel-body">
+                <p class="help-block">Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.</p>
 
-        <small>add administrator (type last name to begin search)</small><br />
-        <form class="form-inline" role="form">
-            <div id="div_playerSelect_@Model.LeagueAdminId" class="form-group">
-                <select class="selectpicker" id="availableLeagues" data-container="body" title="Choose a league..."></select>
-                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                <small>add administrator (type last name to begin search)</small><br />
+                <form class="form-inline" role="form">
+                    <div id="div_playerSelect_@Model.AccountPhotoAdminId" class="form-group">
+                        <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.AccountPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </form>
+
+                <hr />
+
+                <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.AccountPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
+                <div id="adminsList_@Model.AccountPhotoAdminId" data-hasdata="false" style="display:none">
+                </div>
             </div>
-        </form>
-        <hr />
-
-        <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.LeagueAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
-        <div id="adminsList_@Model.LeagueAdminId" data-hasdata="false" style="display:none">
         </div>
-    </div>
-    <h3 class="adminHeader" id="AdminHeader_@Model.TeamAdminId">Team Administrators</h3>
-    <div id="AdminData_@Model.TeamAdminId">
-        <p class="help-block">Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.</p>
-
-        <small>add administrator (type last name to begin search)</small><br />
-        <form class="form-inline" role="form">
-            <div id="div_playerSelect_@Model.TeamAdminId" class="form-group">
-                <select class="selectpicker" id="teamSelect" data-container="body" title="Choose a team..."></select>
-                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
-            </div>
-        </form>
-        <hr />
-
-        <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.TeamAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
-        <div id="adminsList_@Model.TeamAdminId" data-hasdata="false" style="display:none">
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#leagueAdmins">League Administrators</a>
+            </h3>
         </div>
-    </div>
-    <h3 class="adminHeader" id="AdminHeader_@Model.TeamPhotoAdminId">Team Photo Administrators</h3>
-    <div id="AdminData_@Model.TeamPhotoAdminId">
-        <p class="help-block">Team photo administrators can manage all photos and videos related to a specific team.</p>
+        <div class="panel-collapse collapse" id="leagueAdmins">
+            <div class="panel-body">
+                <p class="help-block">League administrators have access to all functions for a specific league. The can create divisions and teams for a league, but cannot create or delete leagues in the account.</p>
 
-        <small>add administrator (type last name to begin search)</small><br />
-        <form class="form-inline" role="form">
-            <div id="div_playerSelect_@Model.TeamPhotoAdminId" class="form-group">
+                <small>add administrator (type last name to begin search)</small><br />
+                <form class="form-inline" role="form">
+                    <div id="div_playerSelect_@Model.LeagueAdminId" class="form-group">
+                        <select class="selectpicker" id="availableLeagues" data-container="body" title="Choose a league..."></select>
+                        <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.LeagueAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </form>
+                <hr />
 
-                <select class="selectpicker" id="teamPhotoSelect" data-container="body" title="Choose a team..."></select>
-                <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.LeagueAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
+                <div id="adminsList_@Model.LeagueAdminId" data-hasdata="false" style="display:none">
+                </div>
             </div>
-        </form>
-        <hr />
+        </div>
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#teamAdmins">Team Administrators</a>
+            </h3>
+        </div>
+        <div class="panel-collapse collapse" id="teamAdmins">
+            <div class="panel-body">
+                <p class="help-block">Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.</p>
 
-        <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.TeamPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
-        <div id="adminsList_@Model.TeamPhotoAdminId" data-hasdata="false" style="display:none">
+                <small>add administrator (type last name to begin search)</small><br />
+                <form class="form-inline" role="form">
+                    <div id="div_playerSelect_@Model.TeamAdminId" class="form-group">
+                        <select class="selectpicker" id="teamSelect" data-container="body" title="Choose a team..."></select>
+                        <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </form>
+                <hr />
+
+                <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.TeamAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
+                <div id="adminsList_@Model.TeamAdminId" data-hasdata="false" style="display:none">
+                </div>
+            </div>
+        </div>
+        <div class="panel-heading">
+            <h3 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#teamPhotoAdmins">Team Photo Administrators</a>
+            </h3>
+        </div>
+        <div class="panel-collapse collapse" id="teamPhotoAdmins">
+            <div class="panel-body">
+                <p class="help-block">Team photo administrators can manage all photos and videos related to a specific team.</p>
+
+                <small>add administrator (type last name to begin search)</small><br />
+                <form class="form-inline" role="form">
+                    <div id="div_playerSelect_@Model.TeamPhotoAdminId" class="form-group">
+
+                        <select class="selectpicker" id="teamPhotoSelect" data-container="body" title="Choose a team..."></select>
+                        <button type="button" class="btn btn-primary" onclick="javascript: userRolesData.addSelectedUserToRole('@Model.TeamPhotoAdminId')"><span class="glyphicon glyphicon-plus"></span></button>
+                    </div>
+                </form>
+                <hr />
+
+                <p style="max-width:400px;display:none" class="alert alert-info" id="noAdminText_@Model.TeamPhotoAdminId">No Administrators defined. Click the add button to add administrators to the selected group.</p>
+                <div id="adminsList_@Model.TeamPhotoAdminId" data-hasdata="false" style="display:none">
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -154,93 +182,93 @@
 
 @section scripts {
 
-@Scripts.Render("~/bundles/knockout")
+    @Scripts.Render("~/bundles/knockout")
 
-<script id="adminItemTemplate" type="text/x-jsrender">
-<div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
-    <div class="row" style="margin-bottom: 5px">
-        <div class="col-md-1">
-            <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'><span class="glyphicon glyphicon-minus"></span></button>
+    <script id="adminItemTemplate" type="text/x-jsrender">
+        <div id='div_adminItem{{:~roleId}}_{{:RoleData}}_{{:Id}}'>
+            <div class="row" style="margin-bottom: 5px">
+                <div class="col-md-1">
+                    <button type='button' class="btn btn-warning" onclick='javascript:userRolesData.removeUserFromRole("{{:Id}}", "{{:~roleId}}", {{:RoleData}});'><span class="glyphicon glyphicon-minus"></span></button>
+                </div>
+                <div class="h4 col-md-3">
+                    {{if PhotoURL}}
+                    <img onerror="this.style.display = 'none';" class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}' />
+                    {{/if}}
+                    {{:FirstName}} {{:LastName}}
+                </div>
+                <div class="h5 col-md-3">
+                    {{:RoleDataText}}
+                </div>
+            </div>
         </div>
-        <div class="h4 col-md-3">
-            {{if PhotoURL}}
-            <img onerror="this.style.display = 'none';" class='playerPhoto' src='{{:PhotoURL}}' alt='{{:LastName}}' />
-            {{/if}}
-            {{:FirstName}} {{:LastName}}
-        </div>
-        <div class="h5 col-md-3">
-            {{:RoleDataText}}
-        </div>
-    </div>
-</div>
-</script>
+    </script>
 
-<script type="text/javascript" src="@Url.Content("~/Scripts/jquery-qtip-1.0.0-rc3171452/jquery.qtip-1.0.0-rc3.min.js")"></script>
-<script type="text/javascript" src="@Url.Content("~/Scripts/imagetooltip.js")"></script>
-<script type="text/javascript" src="~/Scripts/userroles.js"></script>
+    @*<script type="text/javascript" src="@Url.Content("~/Scripts/jquery-qtip-1.0.0-rc3171452/jquery.qtip-1.0.0-rc3.min.js")"></script>
+        <script type="text/javascript" src="@Url.Content("~/Scripts/imagetooltip.js")"></script>*@
+    <script type="text/javascript" src="~/Scripts/userroles.js"></script>
 
-<script type="text/javascript">
-    var userRolesData = new UserRoleClass(@Model.AccountId, '@Model.CurrentUserId', '@Model.LeagueAdminId', '@Model.TeamAdminId', '@Model.TeamPhotoAdminId');
+    <script type="text/javascript">
+        var userRolesData = new UserRoleClass(@Model.AccountId, '@Model.CurrentUserId', '@Model.LeagueAdminId', '@Model.TeamAdminId', '@Model.TeamPhotoAdminId');
 
-    $(document).ready(function () {
-        // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
-        // on this page, hash is set to update. If back is pressed in that case, then reload the page.
-        if (window.location.hash == '#update') {
-            window.location.hash = '';
-            window.location.reload();
-        }
-
-        $("input#playerSelectInput, input#ownerPlayerSelect").autocomplete({
-
-            source: function (request, response) {
-                var searchTerm = this.term;
-
-                $.ajax({
-                    url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
-                    dataType: "json",
-                    data: {
-                        lastName: searchTerm,
-                        firstName: '',
-                        page: 1
-                    },
-                    success: function (data) {
-
-                        var results = $.map(data, function (item) {
-                            var fullName = item.LastName + ", " + item.FirstName;
-                            if (item.MiddleName)
-                                fullName = fullName + ' ' + item.MiddleName;
-
-                            return {
-                                label:  fullName,
-                                Id: item.Id,
-                                PhotoURL: item.PhotoURL,
-                                FirstName: item.FirstName,
-                                LastName: item.LastName
-                            }
-                        });
-                        response(results);
-                    },
-                });
-            },
-            minLength: 1,
-            select: function (e, ui) {
-                if (this.id == "ownerPlayerSelect")
-                    userRolesData.setSelectedAccountOwner(ui.item);
-                else
-                    userRolesData.setSelectedUser(ui.item);
+        $(document).ready(function () {
+            // Ajax state is not remembered when clicking "back" button. Whenever a change is made with Ajax
+            // on this page, hash is set to update. If back is pressed in that case, then reload the page.
+            if (window.location.hash == '#update') {
+                window.location.hash = '';
+                window.location.reload();
             }
+
+            $("input#playerSelectInput, input#ownerPlayerSelect").autocomplete({
+
+                source: function (request, response) {
+                    var searchTerm = this.term;
+
+                    $.ajax({
+                        url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
+                        dataType: "json",
+                        data: {
+                            lastName: searchTerm,
+                            firstName: '',
+                            page: 1
+                        },
+                        success: function (data) {
+
+                            var results = $.map(data, function (item) {
+                                var fullName = item.LastName + ", " + item.FirstName;
+                                if (item.MiddleName)
+                                    fullName = fullName + ' ' + item.MiddleName;
+
+                                return {
+                                    label:  fullName,
+                                    Id: item.Id,
+                                    PhotoURL: item.PhotoURL,
+                                    FirstName: item.FirstName,
+                                    LastName: item.LastName
+                                }
+                            });
+                            response(results);
+                        },
+                    });
+                },
+                minLength: 1,
+                select: function (e, ui) {
+                    if (this.id == "ownerPlayerSelect")
+                        userRolesData.setSelectedAccountOwner(ui.item);
+                    else
+                        userRolesData.setSelectedUser(ui.item);
+                }
+            });
+
+            $.ui.autocomplete.prototype._renderItem = function (ul, item) {
+                var li = $("<li>");
+                li.data("item.autocomplete", item);
+                var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
+                li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+                li.appendTo(ul);
+
+                return li;
+            };
         });
-        
-        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-            var li = $("<li>");
-            li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : '/Images/defaultperson.png';
-            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-            li.appendTo(ul);
 
-            return li;
-        };
-    });
-
-</script>    
+    </script>
 }
