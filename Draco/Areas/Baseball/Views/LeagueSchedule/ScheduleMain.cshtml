@@ -169,67 +169,39 @@
                 </div>
             </form>
 
-                            Html.RenderPartial("EnterGameResults", Model.EnableTweet);
+            Html.RenderPartial("EnterGameResults", Model.EnableTweet);
         }
 
-        <div class="tab-content">
-            <div class="tab-pane fade" data-bind="css: { 'in active': !$root.isListDefaultView() }" id="calendar">
-                <div class="row">
-                    <div class="table-responsive" data-bind="visible: viewMode() && !loadingSchedule()">
-                        <table class="table table-bordered col-lg-7">
-                            <thead>
-                                <tr>
-                                    <th class="col-lg-1">Sunday</th>
-                                    <th class="col-lg-1">Monday</th>
-                                    <th class="col-lg-1">Tuesday</th>
-                                    <th class="col-lg-1">Wednesday</th>
-                                    <th class="col-lg-1">Thursday</th>
-                                    <th class="col-lg-1">Friday</th>
-                                    <th class="col-lg-1">Saturday</th>
-                                </tr>
-                            </thead>
-                            <tbody data-bind="foreach: gameMonth">
-                                <tr data-bind="foreach: $data">
-                                    <td data-bind="css: { notCurrentMonth: date().getMonth() != $root.currentDate().getMonth() }">
-                                        <div class="row" style="margin-bottom: 10px">
-                                            <span class="small col-sm-7" data-bind="html: monthDayNumber"></span>
-                                            @if (Model.IsAdmin)
-                                            {
-                                                <div class="col-sm-4">
-                                                    <button class="btn btn-default btn-xs noPrint" data-bind="visible: $root.selectedLeague() > 0, click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
-                                                </div>
-                                            }
-                                        </div>
-
-                                        <div class="list-group" data-bind="foreach: games">
-                                            <div class="list-group-item">
-                                                <!-- ko if: $root.selectedLeague() == 0 -->
-                                                <div class="row">
-                                                    <span data-bind="html: LeagueName"></span>
-                                                </div>
-                                                <!-- /ko -->
-                                                <div class="row">
-                                                    <a class="col-sm-8" data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a>
-                                                    <span class="col-sm-4" data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
-                                                </div>
-                                                <div class="row">
-                                                    <a class="col-sm-8" data-bind="trimText: HomeTeamName, trimTextLength: 10, attr: {title: HomeTeamName, href: HomeTeamId.href}"></a>
-                                                    <span class="col-sm-4" data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
-                                                </div>
-                                                <div class="row">
-                                                    <a class="col-sm-12" data-bind="trimText: FieldName, trimTextLength: 15, visible: !GameStatus.isFinal() && FieldName(), attr: {title: FieldName, href: FieldId.href}"></a>
-                                                </div>
-                                                <div class="row">
-                                                    <span class="col-sm-12" data-bind="html: GameDate.TimeText, visible: !GameStatus.isFinal()"></span>
-                                                </div>
-                                                <div class="row">
-                                                    <span class="col-sm-12" data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
-                                                </div>
-                                                <div class="row">
-                                                    @if (Model.IsAdmin)
-                                                    {
-                                                        <div class="col-sm-8 noPrint">
-                                                            <div class="btn-group">
+    <div class="tab-content" data-bind="visible: viewMode() && !loadingSchedule()">
+        <div class="tab-pane fade" data-bind="css: { 'in active': !$root.isListDefaultView() }" id="calendar">
+            <div data-bind="foreach: gameMonth">
+                <div data-bind="foreach: $data">
+                    <div style="display: inline-block; width: 13%; min-width: 150px; vertical-align: top;">
+                        <div class="list-group">
+                            <div class="list-group-item list-group-item-info">
+                                <span data-bind="html: dayOfWeek"></span>
+                                <span data-bind="html: monthName"></span>
+                                <span data-bind="html: monthDayNumber"></span>
+                                @if (Model.IsAdmin)
+                                {
+                                    <button class="btn btn-default btn-xs noPrint pull-right" title="create game" data-bind="visible: $root.selectedLeague() > 0, click: $root.enterAddGameMode"><span class="glyphicon glyphicon-plus"></span></button>
+                                }
+                            </div>
+                            <!-- ko if: games().length == 0 -->
+                            <div class="list-group-item">
+                                <i>no games scheduled</i>
+                            </div>
+                            <!-- /ko -->
+                            <div class="list-group" data-bind="foreach: games">
+                                <div class="list-group-item" style="padding: 0px 0px 0px 0px">
+                                    <div class="table-responsive">
+                                        <table style="width: 100%" class="table-condensed">
+                                            <tbody>
+                                                @if (Model.IsAdmin)
+                                                {
+                                                    <tr class="noPrint">
+                                                        <td>
+                                                            <div class="btn-group pull-right">
                                                                 <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
                                                                     <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
                                                                 </button>
@@ -240,86 +212,120 @@
                                                                     <li><a data-bind="click: $root.enterGameResults" title="enter game results"><span class="glyphicon glyphicon-bullhorn"></span> result</a></li>
                                                                 </ul>
                                                             </div>
-                                                        </div>
-                                                    }
+                                                        </td>
+                                                    </tr>
+                                                }
 
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                                                <!-- ko if: $root.selectedLeague() == 0 -->
+                                                <tr>
+                                                    <td data-bind="html: LeagueName"></td>
+                                                </tr>
+                                                <!-- /ko -->
+                                                <tr>
+                                                    <td>
+                                                        <table style="width: 100%" class="table-condensed table-striped">
+                                                            <tr>
+                                                                <td><a data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a></td>
+                                                                <td><span data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span></td>
+                                                                <!-- ko if: GameStatus.isFinal -->
+                                                                <td><span class="col-sm-12" data-bind="html: GameStatus.Text"></span></td>
+                                                            <!-- /ko -->
+                                                            </tr>
+                                                            <tr>
+                                                                <td><a data-bind="trimText: HomeTeamName, trimTextLength: 10, attr: {title: HomeTeamName, href: HomeTeamId.href}"></a></td>
+                                                                <td><span data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span></td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                                <!-- ko if: !GameStatus.isFinal() && FieldName()-->
+                                                <tr>
+                                                    <td><a data-bind="trimText: FieldName, trimTextLength: 15, attr: {title: FieldName, href: FieldId.href}"></a></td>
+                                                </tr>
+                                                <!-- /ko -->
+                                                <!-- ko ifnot: GameStatus.isFinal -->
+                                                <tr>
+                                                    <td><span data-bind="html: GameDate.TimeText"></span></td>
+                                                </tr>
+                                                <!-- /ko -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" data-bind="css: { 'in active': $root.isListDefaultView() }" id="list">
-                @if (Model.IsAdmin)
-                {
-                    <button class="btn btn-default noPrint" data-bind="visible: viewMode() && $root.selectedLeague() > 0, click: $root.enterAddGameModeFromListView"><span class="glyphicon glyphicon-plus"></span> add game</button>
-                }
-                <table class="table table-striped table-bordered" data-bind="visible: viewMode() && !loadingSchedule()">
-                    <tbody data-bind="foreach: gameMonth">
-                        <!-- ko foreach: $data -->
-                        <!-- ko if: games().length -->
-                        <!-- ko if: date().getMonth() == $root.currentDate().getMonth() -->
-                        <tr>
-                            <td colspan="8" data-bind="html: date.text"></td>
-                        </tr>
-                        <!-- ko foreach: games -->
-                        <tr>
-                            <!-- ko if: $root.selectedLeague() == 0 -->
-                            <td data-bind="html: LeagueName"></td>
-                            <!-- /ko -->
-                            <td data-bind="html: GameDate.TimeText"></td>
-                            <td>
-                                <a data-bind="html: FieldName"></a>
-                            </td>
-                            <td>
-                                <!-- away Team-->
-                                <a data-bind="html: AwayTeamName, attr: {href: AwayTeamId.href}"></a>
-
-                            </td>
-                            <td>
-                                <!-- away team score-->
-                                <span data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
-                            </td>
-                            <td>
-                                <!-- Home Team-->
-                                at <a data-bind="html: HomeTeamName, attr: {href: AwayTeamId.href}"></a>
-                            </td>
-                            <td>
-                                <!-- home team score-->
-                                <span data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
-                            </td>
-                            <td>
-                                <span data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
-                            </td>
-                            @if (Model.IsAdmin)
-                            {
-                                <td class="noPrint">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
-                                            <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu" role="menu">
-                                            <li><a data-bind="visible: $root.selectedLeague() > 0, click: $root.editGame"><span class="glyphicon glyphicon-edit"></span> edit</a></li>
-                                            <li><a data-bind="click: $root.deleteGame"><span class="glyphicon glyphicon-remove"></span> delete</a></li>
-                                            <li class="divider"></li>
-                                            <li><a data-bind="click: $root.enterGameResults" title="enter game results"><span class="glyphicon glyphicon-bullhorn"></span> result</a></li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            }
-                        </tr>
-                        <!-- /ko -->
-                        <!-- /ko -->
-                        <!-- /ko -->
-                        <!-- /ko -->
-                    </tbody>
-                </table>
-            </div>
         </div>
+        <div class="tab-pane fade" data-bind="css: { 'in active': $root.isListDefaultView() }" id="list">
+            @if (Model.IsAdmin)
+                {
+                <button class="btn btn-default noPrint" data-bind="visible: viewMode() && $root.selectedLeague() > 0, click: $root.enterAddGameModeFromListView"><span class="glyphicon glyphicon-plus"></span> add game</button>
+                }
+            <table class="table table-striped table-bordered" data-bind="visible: viewMode() && !loadingSchedule()">
+                <tbody data-bind="foreach: gameMonth">
+                    <!-- ko foreach: $data -->
+                    <!-- ko if: games().length -->
+                    <!-- ko if: date().getMonth() == $root.currentDate().getMonth() -->
+                    <tr>
+                        <td colspan="8" data-bind="html: date.text"></td>
+                    </tr>
+                    <!-- ko foreach: games -->
+                    <tr>
+                        <!-- ko if: $root.selectedLeague() == 0 -->
+                        <td data-bind="html: LeagueName"></td>
+                        <!-- /ko -->
+                        <td data-bind="html: GameDate.TimeText"></td>
+                        <td>
+                            <a data-bind="html: FieldName"></a>
+                        </td>
+                        <td>
+                            <!-- away Team-->
+                            <a data-bind="html: AwayTeamName, attr: {href: AwayTeamId.href}"></a>
+
+                        </td>
+                        <td>
+                            <!-- away team score-->
+                            <span data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span>
+                        </td>
+                        <td>
+                            <!-- Home Team-->
+                            at <a data-bind="html: HomeTeamName, attr: {href: AwayTeamId.href}"></a>
+                        </td>
+                        <td>
+                            <!-- home team score-->
+                            <span data-bind="visible: GameStatus.isFinalScore, html: HomeScore"></span>
+                        </td>
+                        <td>
+                            <span data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
+                        </td>
+                        @if (Model.IsAdmin)
+                            {
+                            <td class="noPrint">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
+                                        <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li><a data-bind="visible: $root.selectedLeague() > 0, click: $root.editGame"><span class="glyphicon glyphicon-edit"></span> edit</a></li>
+                                        <li><a data-bind="click: $root.deleteGame"><span class="glyphicon glyphicon-remove"></span> delete</a></li>
+                                        <li class="divider"></li>
+                                        <li><a data-bind="click: $root.enterGameResults" title="enter game results"><span class="glyphicon glyphicon-bullhorn"></span> result</a></li>
+                                    </ul>
+                                </div>
+                            </td>
+                            }
+                    </tr>
+                    <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     </div>
 
 @section Scripts {

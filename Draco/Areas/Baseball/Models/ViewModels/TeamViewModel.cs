@@ -23,6 +23,9 @@ namespace SportsManager.Baseball.ViewModels
 
             IsTeamMember = DataAccess.Teams.IsTeamMember(id);
 
+            if (Team != null)
+                LeagueName = DataAccess.Leagues.GetLeagueName(Team.LeagueId);
+
             ShowHandouts = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowWelcome = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowAnnouncements = IsTeamMember || IsAdmin || IsTeamAdmin;
@@ -39,6 +42,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public Team Team { get; private set; }
 
+        public String LeagueName { get; private set; }
         public bool ShowPhotoGallery { get; private set; }
         public bool ShowHandouts { get; private set; }
         public bool ShowWelcome { get; private set; }
