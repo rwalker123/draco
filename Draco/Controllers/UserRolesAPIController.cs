@@ -40,12 +40,10 @@ namespace SportsManager.Controllers
                 if (id == 0)
                     return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-                // Create a 201 response.
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+                var newRole = DataAccess.ContactRoles.ContactNameFromRole(accountId, cr.RoleId, cr.RoleData, cr.ContactId);
 
+                // Create a 201 response.
+                var response = Request.CreateResponse<ContactNameRole>(HttpStatusCode.Created, newRole);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "ContactRole", accountId = accountId, id = id }));
 
