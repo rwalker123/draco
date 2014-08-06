@@ -439,7 +439,23 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     }
 
     self.postTwitter = function (workout) {
-        alert("not implemented");
+
+        $.ajax({
+            type: "PUT",
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/twitter/' + workout.Id(),
+            success: function () {
+                alert("Workout Tweet Successful.")
+            },
+            error: function (jqXHR, ajaxOptions, thrownError) {
+                // not authenticated with twitter, will have to go thru page refresh
+                if (jqXHR && jqXHR.status && jqXHR.status == 417) {
+                    window.location.href = window.config.rootUri + '/Baseball/Workouts/Twitter/' + self.accountId + '/' + workout.Id() + '?referer=' + window.location.href;
+                }
+                else {
+                    reportAjaxError(jqXHR.url, jqXHR, ajaxOptions, thrownError);
+                }
+            }
+        });
     }
 
     self.editWorkout = function (workout) {

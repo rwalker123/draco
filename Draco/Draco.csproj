@@ -267,6 +267,7 @@
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\WorkoutsController.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
@@ -1148,6 +1149,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Areas\Baseball\Views\Workouts\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>
   <ItemGroup>
