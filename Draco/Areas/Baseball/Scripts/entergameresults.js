@@ -87,7 +87,25 @@ var GameResultsViewModel = function (accountId, data) {
     }
 
     self.tweetGameResult = function (game) {
-        window.location.href = window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '/' + game.Id + '?referer=' + window.location.href;
+        var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.LeagueId() + '/tweetresult/';
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: game,
+            success: function () {
+            },
+            error: function (jqXHR, ajaxOptions, thrownError) {
+                // not authenticated with twitter, will have to go thru page refresh
+                if (jqXHR && jqXHR.status && jqXHR.status == 417) {
+                    window.location.href = window.config.rootUri + '/Baseball/LeagueSchedule/GameResultTwitter/' + self.accountId + '/' + game.Id + '?referer=' + window.location.href;
+                }
+                else {
+                    reportAjaxError(jqXHR.url, jqXHR, ajaxOptions, thrownError);
+                }
+            }
+        });
+
     }
 
     self.update = function (data) {

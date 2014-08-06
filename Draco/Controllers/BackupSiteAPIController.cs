@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Security;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -19,24 +18,84 @@ namespace SportsManager.Controllers
         // Web Service URL
         const String webServiceUrl = "https://api.discountasp.net/1.0/customerapi.asmx/Sql2012CreateBackup";
 
-        const String databaseName = "SQL2012_152800_ezrecsports";
-
-        const String ftpUri = "ftp://ftp.walkerhome.org";
-
-        const String ftpUsername = "0022194|walkerhomeo";
-        const String ftpPassword = "xV47yaQ8";
-
-        const String backupFileName = "SQL2012_152800_ezrecsports_backup.bak";
-        const String backupDir = "/uploads/dbbackup";
-        const String backupFullName = "/_database/" + backupFileName;
-
         //[SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("GET"), HttpGet]
         public async Task<HttpResponseMessage> BackupSite()
         {
+            Task<bool> dbResult = BackupDatabase();
+            Task<bool> uploadsResult = BackupUploads();
+            bool result = await dbResult && await uploadsResult;
+
+            return Request.CreateResponse(HttpStatusCode.OK);
+        }
+
+        private async Task<bool> BackupUploads()
+        {
+            var basePath = HttpContext.Current.Server.MapPath("~/Uploads");
+            if (!Directory.Exists(basePath))
+                return false;
+
+            var baseBackupsDir = basePath + "\\backups";
+            
+            if (!Directory.Exists(baseBackupsDir))
+            {
+                Directory.CreateDirectory(baseBackupsDir);
+            }
+
+            var backupdate = DateTime.Now.ToString("yyyy-MM-dd");
+            var backupDir = baseBackupsDir + "\\" + backupdate;
+
+            if (!Directory.Exists(backupDir))
+            {
+                Directory.CreateDirectory(backupDir);
+            }
+            else
+            {
+                return false; // backup only once a day.
+            }
+
+            Task t1 = Task.Run(() =>
+            {
+                var dirPath = basePath + "\\Contacts";
+                var zipFile = backupDir + "\\Contacts.zip";
+                System.IO.Compression.ZipFile.CreateFromDirectory(dirPath, zipFile);
+            }
+            );
+
+            Task t2 = Task.Run(() =>
+            {
+                var dirPath = basePath + "\\Teams";
+                var zipFile = backupDir + "\\Teams.zip";
+                System.IO.Compression.ZipFile.CreateFromDirectory(dirPath, zipFile);
+            });
+
+            Task t3 = Task.Run(() =>
+            {
+                var dirPath = basePath + "\\Accounts";
+                var zipFile = backupDir + "\\Accounts.zip";
+                System.IO.Compression.ZipFile.CreateFromDirectory(dirPath, zipFile);
+            });
+
+            await t1;
+            await t2;
+            await t3;
+
+            RemoveOldBackups(baseBackupsDir);
+
+            return true;
+        }
+
+        private async Task<bool> BackupDatabase()
+        {
+            String databaseName = "SQL2012_152800_ezrecsports";
+
+            String backupFileName = "SQL2012_152800_ezrecsports_backup.bak";
+            String backupDir = HttpContext.Current.Server.MapPath("~/uploads/dbbackup");
+            String backupFullName = HttpContext.Current.Server.MapPath("~/_database/" + backupFileName);
 
             // delete any previous _database backup
-            DeleteFile(backupFullName);
+            if (File.Exists(backupFullName))
+                File.Delete(backupFullName);
 
             // backup db into uploads/dbbackup directory.
             HttpClient backupRequest = new HttpClient();
@@ -47,61 +106,49 @@ namespace SportsManager.Controllers
             if (response.IsSuccessStatusCode)
             {
                 // move backup file to uploads.
-                String newDirName = DateTime.Now.ToString("yyyy-MM-dd");
+                String newDirName = backupDir + "\\" + DateTime.Now.ToString("yyyy-MM-dd");
 
-                CreateDir(newDirName);
+                if (!Directory.Exists(newDirName))
+                    Directory.CreateDirectory(newDirName);
 
-                String uploadsBackupFile = backupDir + "/" + newDirName + "/" + backupFileName;
-                MoveFile(backupFullName, uploadsBackupFile);
+                if (File.Exists(backupFullName))
+                    File.Move(backupFullName, newDirName + "\\" + backupFileName);
+
+                RemoveOldBackups(backupDir);
             }
 
-            return Request.CreateResponse(HttpStatusCode.OK);
+            return true;
         }
 
-        private void MoveFile(String oldName, String newName)
+        private bool RemoveOldBackups(string backupDir)
         {
-            FtpWebRequest ftpRenReq = (FtpWebRequest)FtpWebRequest.Create(ftpUri + oldName);
-            ftpRenReq.Credentials = new NetworkCredential(ftpUsername, ftpPassword);
-            ftpRenReq.Method = WebRequestMethods.Ftp.Rename;
-            ftpRenReq.RenameTo = newName;
-            using (FtpWebResponse ftpRenResponse = (FtpWebResponse)ftpRenReq.GetResponse())
-            {
-                //Console.WriteLine("Rename status: {0}", ftpRenResponse.StatusDescription);
-            }
-        }
+            if (!Directory.Exists(backupDir))
+                return true;
 
-        private void CreateDir(String dirName)
-        {
-            Uri backupFile = new Uri(ftpUri + "/" + backupDir + "/" + dirName);
-            FtpWebRequest ftpReq = (FtpWebRequest)FtpWebRequest.Create(backupFile);
-            ftpReq.Credentials = new NetworkCredential(ftpUsername, ftpPassword);
-            ftpReq.Method = WebRequestMethods.Ftp.MakeDirectory;
-            using (FtpWebResponse ftpDeleteResponse = (FtpWebResponse)ftpReq.GetResponse())
-            {
-                //Console.WriteLine("Delete status: {0}", ftpDeleteResponse.StatusDescription);
-            }
-        }
+            // go back 5 days.
+            var deleteOlderThan = DateTime.Now.Subtract(new TimeSpan(5, 0, 0, 0));
 
-        private void DeleteFile(String fileName)
-        {
-            Uri backupFile = new Uri(ftpUri + "/" + fileName);
-            FtpWebRequest ftpReq = (FtpWebRequest)FtpWebRequest.Create(backupFile);
-            ftpReq.Credentials = new NetworkCredential(ftpUsername, ftpPassword);
-            ftpReq.Method = WebRequestMethods.Ftp.DeleteFile;
-            try
+            // delete backups older than 5 days.
+            string[] alldirs = Directory.GetDirectories(backupDir);
+
+            foreach(var dir in alldirs)
             {
-                using (FtpWebResponse ftpDeleteResponse = (FtpWebResponse)ftpReq.GetResponse())
+                if (String.IsNullOrEmpty(dir))
+                    continue;
+
+                DateTime dateCreated;
+                DirectoryInfo di = new DirectoryInfo(dir);
+                if (DateTime.TryParse(di.Name, out dateCreated))
                 {
-                    //Console.WriteLine("Delete status: {0}", ftpDeleteResponse.StatusDescription);
+                    // only delete if older than 5 days.
+                    if (dateCreated < deleteOlderThan)
+                    {
+                        Directory.Delete(dir, true);
+                    }
                 }
             }
-            catch (WebException ex)
-            {
-                FtpWebResponse response = (FtpWebResponse)ex.Response;
-                // ok if file doesn't exist.
-                if (response.StatusCode != FtpStatusCode.ActionNotTakenFileUnavailable)
-                    throw ex;
-            }
+
+            return true;
         }
     }
 }

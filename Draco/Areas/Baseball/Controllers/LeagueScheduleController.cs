@@ -1,4 +1,5 @@
-﻿using SportsManager.Baseball.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels;
 using SportsManager.Models;
 using System;
 using System.Web;
@@ -33,6 +34,29 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Redirect(Request.QueryString.Get("referer"));
             }
 
+            var tweetText = GetGameResultTweetText(g);
+
+			var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
+
+			if (!String.IsNullOrEmpty(a.TwitterAccountName))
+			{
+                return RedirectToAction("SendTweetAsync", "TwitterOauth", new
+                {
+                    area = "",
+                    referer = Request.QueryString.Get("referer") ?? "",
+                    accountId = accountId,
+                    tweet = tweetText
+                });
+			}
+
+            if (!String.IsNullOrEmpty(Request.QueryString.Get("referer")))
+                return Redirect(Request.QueryString.Get("referer"));
+
+            return View();
+        }
+
+        static internal String GetGameResultTweetText(Game g)
+        {
             string homeTeam = DataAccess.Teams.GetTeamName(g.HomeTeamId);
             string awayTeam = DataAccess.Teams.GetTeamName(g.AwayTeamId);
 
@@ -71,25 +95,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request);
 
-            tweetText = String.Format("{0} http://{1}", tweetText, uri);
-
-			var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
-
-			if (!String.IsNullOrEmpty(a.TwitterAccountName))
-			{
-                return RedirectToAction("SendTweetAsync", "TwitterOauth", new
-                {
-                    area = "",
-                    referer = Request.QueryString.Get("referer") ?? "",
-                    accountId = accountId,
-                    tweet = tweetText
-                });
-			}
-
-            if (!String.IsNullOrEmpty(Request.QueryString.Get("referer")))
-                return Redirect(Request.QueryString.Get("referer"));
-
-            return View();
+            return String.Format("{0} http://{1}", tweetText, uri);
         }
 	}
 }

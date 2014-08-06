@@ -1,13 +1,13 @@
 ﻿using DataAccess;
-using Microsoft.Owin.Security;
+using LinqToTwitter;
 using SportsManager.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
@@ -186,25 +186,66 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("twitter")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostTwitter(long accountId, long id)
+        public async Task<HttpResponseMessage> PostTwitter(long accountId, long id)
         {
-            return Request.CreateResponse(HttpStatusCode.NotImplemented);
+            // if twitter keys then use them, if not return "Unauthorized" so that 
+            // signin can begin and refresh page, etc.
+            var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            //var properties = new AuthenticationProperties() { RedirectUri = RedirectUri };
-            //HttpContext.Current.GetOwinContext().Authentication.Challenge(properties, LoginProvider);
+            if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
+                return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
 
-            //var wa = DataAccess.Workouts.GetWorkoutAnnouncement(id);
-            //if (wa != null)
-            //{
-            //    string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request) + "Forms/RegisterWorkout.aspx?id=" + m_workoutId.ToString();
+            String tweet = GetWorkoutTweetText(id);
+            if (String.IsNullOrEmpty(tweet))
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
 
-            //    bool isTwitterConfigured = DataAccess.SocialIntegration.Twitter.SetupTwitterStatusUpdate(Server.UrlEncode(String.Format("{0} @ {1} {2} {3}. Click link to register! http://{4}", wa.Description, wa.WorkoutDate.ToString("M"), wa.WorkoutTime.ToString("t"), DataAccess.Fields.GetFieldName(wa.WorkoutLocation), uri)));
-            //    if (isTwitterConfigured)
-            //    {
-            //        Session["TwitterRefererPage"] = "~/Default.aspx";
-            //        Response.Redirect("~/Twitter/TwitterAPI.aspx");
-            //    }
-            //}
+            var auth = new MvcAuthorizer
+            {
+                CredentialStore = new InMemoryCredentialStore()
+                {
+                    ConsumerKey = ConfigurationManager.AppSettings["TwitterConsumerKey"],
+                    ConsumerSecret = ConfigurationManager.AppSettings["TwitterConsumerSecret"],
+                    OAuthToken = a.TwitterOauthToken,
+                    OAuthTokenSecret = a.TwitterOauthSecretKey
+                }
+            };
+
+            var ctx = new TwitterContext(auth);
+
+            try
+            {
+                Status responseTweet = await ctx.TweetAsync(tweet);
+                return Request.CreateResponse(HttpStatusCode.OK);
+            }
+            catch (TwitterQueryException ex)
+            {
+                // if we get an authentication error, try to have the user log in.
+                if (ex.ErrorCode == 32)
+                {
+                    return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
+                }
+            }
+        }
+
+        static internal String GetWorkoutTweetText(long workoutId)
+        {
+            var wa = DataAccess.Workouts.GetWorkoutAnnouncement(workoutId);
+            if (wa != null)
+            {
+                string registerWorkoutUri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request); // + "Forms/RegisterWorkout.aspx?id=" + m_workoutId.ToString();
+
+                return String.Format("{0} @ {1} {2} {3}. Click link to register! http://{4}", wa.Description, wa.WorkoutDate.ToString("M"), wa.WorkoutDate.ToString("t"), DataAccess.Fields.GetFieldName(wa.WorkoutLocation), registerWorkoutUri);
+            }
+
+            return String.Empty;
         }
 
         [AcceptVerbs("DELETE"), HttpPost]

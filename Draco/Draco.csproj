@@ -154,6 +154,7 @@
     <Reference Include="System.Data.Services.Client" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Net.Http.Extensions, Version=2.2.22.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Net.Http.2.2.22\lib\net45\System.Net.Http.Extensions.dll</HintPath>
@@ -266,6 +267,7 @@
     <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\WorkoutsController.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
@@ -447,7 +449,6 @@
     <Compile Include="Models\DataAccess\Sponsors.cs" />
     <Compile Include="Models\DataAccess\TeamRoster.cs" />
     <Compile Include="Models\DataAccess\Teams.cs" />
-    <Compile Include="Models\DataAccess\VideoAccounts.cs" />
     <Compile Include="Models\DataAccess\Votes.cs" />
     <Compile Include="Models\DataClasses.cs">
       <DependentUpon>DataClasses.dbml</DependentUpon>
@@ -1148,6 +1149,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Areas\Baseball\Views\Workouts\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>
   <ItemGroup>
