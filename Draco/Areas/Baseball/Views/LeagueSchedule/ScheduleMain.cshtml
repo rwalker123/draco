@@ -8,21 +8,12 @@
 
 @section head {
 <link href="~/Content/print.css" rel="stylesheet" type="text/css" media="print" />
-
-    <style>
-        .notCurrentMonth {
-            background-color: rgba(197, 197, 197, .2);
-        }
-    </style>
-
 }
 
 <div class="jumbotron">
     @Header.DisplayHeader("Schedule", Model.AccountName, Model.AccountLogoUrl)
     <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
 </div>
-
-<div id="datepicker"></div>
 
 @if (Model.TwitterError != null)
 {
@@ -223,7 +214,7 @@
                                                 <!-- /ko -->
                                                 <tr>
                                                     <td>
-                                                        <table style="width: 100%" class="table-condensed table-striped">
+                                                        <table style="width: 100%" class="table-condensed">
                                                             <tr>
                                                                 <td><a data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a></td>
                                                                 <td><span data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span></td>
