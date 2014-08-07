@@ -78,18 +78,16 @@
             </div>
             <div class="panel-collapse collapse" id="copyFromSeasonPanel">
                 <div class="panel-body">
-                    <p class="help-block" style="width:400px">
+                    <p class="help-block" style="max-width:400px">
                         Importing a previous season will give you a head start in setting up your league. Importing will bring in the league setup of
                         a previous season. This includes the leagues, divisions, teams, and rosters. It does not include schedules, statistics, or any
                         other data that involves games played in a season.
                     </p>
-                    <form class="form-horizontal" role="form">
-                        <div class="form-group">
-                            <label for="seasonList" class="col-sm-2 control-label">Season</label>
-                            <div class="col-sm-4">
-                                <select data-container="body" class="form-control" data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
-                            </div>
-                            <div class="col-sm-1">
+                    <form class="form-inline" role="form">
+                        <div class="input-group">
+                            <label for="seasonList" class="sr-only">Season</label>
+                            <select data-container="body" data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
+                            <div class="input-group-btn">
                                 <button type="button" class="btn btn-default" data-bind="click: copySeason" title="import selected season into current season">Import</button>
                             </div>
                         </div>
@@ -141,9 +139,9 @@
                             <small>create a division</small><br />
                             <label data-bind="uniqueFor: Id" class="sr-only">Division Name</label>
                             <input class="form-control" data-bind="uniqueId: Id, value: Id.newDivisionName" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
-                            <label data-bind="uniqueFor: Id" class="control-label">Sort Order</label>
+                            <label data-bind="uniqueFor: Id" class="sr-only">Sort Order</label>
                             <div class="input-group">
-                                <input class="form-control" data-bind="uniqueId: Id, value: Id.newDivisionPriority" type="number" style="width:50px" min="0" max="100" />
+                                <input class="form-control" data-bind="uniqueId: Id, value: Id.newDivisionPriority" type="number" min="0" max="100" placeholder="sort order" />
                                 <div class="input-group-btn">
                                     <button type="button" class="btn btn-primary" data-bind="click: addDivision" title="add division"><span class="glyphicon glyphicon-plus"></span></button>
                                 </div>
@@ -158,9 +156,9 @@
                         <form class="form-inline" role="form">
                             <label data-bind="uniqueFor: Id" class="sr-only">Division Name</label>
                             <input data-bind="value: Name, uniqueId: Id" class="form-control" type="text" placeholder="enter division name" pattern=".{1,}" title="Must supply a name" />
-                            <label data-bind="uniqueFor: Id" class="control-label">Sort order</label>
+                            <label data-bind="uniqueFor: Id" class="sr-only">Sort order</label>
                             <div class="input-group">
-                                <input data-bind="value: Priority, uniqueId: Id" class="form-control" type="number" style="width:70px" min="0" max="100" />
+                                <input data-bind="value: Priority, uniqueId: Id" class="form-control" type="number" min="0" max="100" placeholder="sort order" />
                                 <div class="input-group-btn">
                                     <button type="button" class="btn btn-danger" data-bind="click: league.deleteDivision" title="permantly delete division"><span class="glyphicon glyphicon-remove"></span></button>
                                 </div>
@@ -168,8 +166,12 @@
                             <hr />
                             <small>division teams</small><br />
 
-                            <select data-container="body" data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
-                            <button type="button" class="btn btn-success form-control" data-bind="click: league.addTeamToDivision" title="add selected team to division"><span class="glyphicon glyphicon-ok"></span></button>
+                            <div class="input-group">
+                                <select data-container="body" data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-success" data-bind="click: league.addTeamToDivision" title="add selected team to division"><span class="glyphicon glyphicon-ok"></span></button>
+                                </div>
+                            </div>
                             <div class="input-group">
                                 <label data-bind="uniqueFor: Id" class="sr-only">Team Name</label>
                                 <input data-bind="uniqueId: Id, value: Id.newTeamName" class="form-control" maxlength="25" type="text" placeholder="enter new team name" />
