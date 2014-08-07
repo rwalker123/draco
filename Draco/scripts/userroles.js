@@ -1,109 +1,49 @@
-﻿var UserRoleClass = function (accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId) {
-    this.init(accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId);
+﻿var InitUserRoleClass = function (accountId, currentUserId, accountAdminId, accountPhotoAdminId, leagueAdminId, teamAdminId, teamPhotoAdminId, isAccountOwner) {
+
+    initKOHelpers();
+
+    var vm = new UserRoleViewModel(accountId, currentUserId, accountAdminId, accountPhotoAdminId, leagueAdminId, teamAdminId, teamPhotoAdminId, isAccountOwner);
+    ko.applyBindings(vm, document.getElementById("userRoles"));
 };
 
-$.extend(UserRoleClass.prototype, {
-    // object variables
-    accountId: 0,
-    retrievedLeagues: false,
-    retrievedTeams: false,
-    selectedUser: null,
-    selectedAccountOwner: null,
-    currentUserId: null,
+var AdminTypeViewModel = function(data)
+{
+    var self = this;
 
-    init: function (accountId, currentUserId, leagueAdminId, teamAdminId, teamPhotoAdminId) {
-        this.accountId = accountId;
-        this.currentUserId = currentUserId;
-        this.teamAdminId = teamAdminId;
-        this.teamPhotoAdminId = teamPhotoAdminId;
-        this.leagueAdminId = leagueAdminId;
-    },
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
 
-    getAdminId: function (t) {
-        var firstItemId = t.lastIndexOf('_');
-        if (firstItemId == -1)
-            return "";
+    ko.mapping.fromJS(data, self.mapping, self);
 
-        return t.substring(firstItemId + 1);
-    },
+    self.selectedLeague = ko.observable();
+    self.selectedTeam = ko.observable();
 
-    isTeamAdmin: function (roleId) {
-
-        return (roleId == this.teamAdminId || roleId == this.teamPhotoAdminId);
-    },
-
-    isTeamPhotoAdmin: function (roleId) {
-        return (roleId == this.teamPhotoAdminId);
-    },
-
-    isLeagueAdmin: function (roleId) {
-        return (roleId == this.leagueAdminId);
-    },
-
-    makeAccordion: function () {
-        var target = this;
-
-        $("#accordion").accordion({
-            heightStyle: 'content',
-            autoHeight: false,
-            collapsible: true,
-            active: false,
-            header: 'h3',
-            beforeActivate: function (event, ui) {
-                if (ui.newPanel !== undefined && ui.newPanel.attr('id') !== undefined) {
-
-                    var adminId = target.getAdminId(ui.newPanel.attr('id'));
-                    if (target.isTeamAdmin(adminId))
-                        $('#teamSelect').prependTo($('#div_playerSelect_' + adminId));
-
-                    $('#playerSelect').prependTo($('#div_playerSelect_' + adminId));
-                    $('#playerSelect').val('');
-
-                    var divItem = $('#adminsList_' + adminId);
-                    if (!divItem.data('hasdata')) {
-                        target.populateAdminList(target, divItem);
-                    }
-                }
-            },
-            changestart: function (event, ui) {
-                var clicked = $(this).find('.ui-state-active').attr('id');
-                $('#' + clicked).load('/widgets/' + clicked);
-            }
-        });
-    },
-
-    setSelectedUser: function (user) {
-        this.selectedUser = user;
-    },
-
-    setSelectedAccountOwner: function (user) {
-        this.selectedAccountOwner = user;
-    },
-
-    clearSelected: function () {
-        this.selectedUser = null;
-    },
-
-    addSelectedUserToRole: function (roleId) {
-        if (!this.selectedUser)
+    self.addSelectedUserToRole = function (vm) {
+        if (!self.selectedUser)
             return;
 
-        var target = this;
-        var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/AddToRole';
-        var roleData = 0;
-        var roleDataText = '';
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AddToRole';
 
-        if (this.isLeagueAdmin(roleId)) {
-            roleData = $('#availableLeagues').val();
-            roleDataText = $("#availableLeagues option[value='" + roleData + "']").text()
+        var roleData;
+        var roleDataText;
+        if (self.ShowLeagues()) {
+            roleData = self.selectedLeague();
+            roleDataText = 'todo: league name';
         }
-        else if (this.isTeamPhotoAdmin(roleId)) {
-            roleData = $('#teamPhotoSelect').val();
-            roleDataText = $("#teamPhotoSelect option[value='" + roleData + "']").text()
-        }
-        else if (this.isTeamAdmin(roleId)) {
-            roleData = $('#teamSelect').val();
-            roleDataText = $("#teamSelect option[value='" + roleData + "']").text()
+
+        if (self.ShowTeams()) {
+            roleData = self.selectedTeam();
+            roleDataText = 'todo: team name';
         }
 
         $.ajax({
@@ -111,188 +51,311 @@ $.extend(UserRoleClass.prototype, {
             url: url,
             data: {
                 Id: 0,
-                AccountId: target.accountId,
-                ContactId: target.selectedUser.Id,
-                RoleId: roleId,
+                AccountId: self.AccountId(),
+                ContactId: self.selectedUser.id,
+                RoleId: self.Id(),
                 RoleData: roleData
             },
-            success: function (adminId) {
+            success: function (adminData) {
                 window.location.hash = 'update';
-                var elem = $('#div_adminItem' + roleId + '_' + roleData + '_' + target.selectedUser.Id);
-                // rest call returns success if element already in list, check to make sure
-                // we don't add it twice.
-                if (elem.length == 0) {
-                    target.addToAdminList(target, roleId, roleData, roleDataText, target.selectedUser);
-                }
+                // if user already exists, don't add again.
+                var existingUser = ko.utils.arrayFirst(self.admins(), function (admin) {
+                    return admin.Id == adminData.Id && admin.RoleId == adminData.RoleId && admin.RoleData == adminData.RoleData;
+                });
+                if (!existingUser)
+                    self.admins.push(adminData);
 
-                $("input#playerSelect").val('');
+                self.selectedUser = null;
+                $("input.autocomplete").val('');
             }
         });
-    },
+    }
 
-    removeUserFromRole: function (userId, roleId, roleData) {
-        var target = this;
-        var roleDiv = $('#div_adminItem' + roleId + '_' + roleData + '_' + userId);
-        var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/DeleteFromRole';
+    self.Id.isPopulated = ko.observable(false);
+
+    self.selectedUser = null;
+
+    self.selectUser = function (e, ui) {
+        if (ui && ui.item) {
+            self.selectedUser = {
+                id: ui.item.Id,
+                text: ui.item.value,
+                logo: ui.item.PhotoURL,
+                hasLogo: (!!ui.item.PhotoURL),
+                selected: ko.observable(true)
+            };
+        }
+
+        return true;
+    }
+
+    self.populateAdminList = function () {
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AdminsForRole/' + self.Id();
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (admins) {
+                window.location.hash = 'update';
+                self.Id.isPopulated(true);
+                self.admins(admins);
+            }
+        });
+    }
+
+    self.removeUserFromRole = function (vm) {
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/DeleteFromRole';
 
         $.ajax({
             type: 'DELETE',
             url: url,
             data: {
-                ContactId: userId,
-                RoleId: roleId,
-                RoleData: roleData
+                ContactId: vm.Id,
+                RoleId: vm.RoleId,
+                RoleData: vm.RoleData
             },
             success: function (dbId) {
                 window.location.hash = 'update';
-                roleDiv.remove();
-                if ($('#adminsList_' + roleId).children().length == 0) {
-                    $('#noAdminText_' + roleId).show();
-                    $('#adminsList_' + roleId).hide();
-                }
+                self.admins.remove(vm);
             }
         });
-    },
+    }
 
-    addToAdminList: function(target, roleId, roleData, roleDataText, data) {
-        var noAdminText = $('#noAdminText_' + roleId);
-        if (noAdminText.is(':visible'))
-            noAdminText.hide();
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
 
-        var adminsList = $('#adminsList_' + roleId);
-        if (!adminsList.is(':visible'))
-            adminsList.show();
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
 
-        data.RoleData = roleData;
-        data.RoleDataText = roleDataText;
-        $('#adminsList_' + roleId).append($('#adminItemTemplate').render(data, { roleId: roleId, roleData: roleData }));
-    },
+var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accountPhotoAdminId, leagueAdminId, teamAdminId, teamPhotoAdminId, isAccountOwner) {
+    
+    var self = this;
+    self.accountId = accountId;
 
-    populateAdminList: function (target, elem) {
-            var roleId = target.getAdminId(elem.attr('id'));
-            if (!roleId) {
-                return;
-            }
+    self.isAccountOwner = ko.observable(isAccountOwner);
+    self.currentUserId = currentUserId;
 
-            var url = window.config.rootUri + '/api/UserRolesAPI/' + this.accountId + '/AdminsForRole/' + roleId;
+    self.teamAdminId = teamAdminId;
+    self.teamPhotoAdminId = teamPhotoAdminId;
+    self.leagueAdminId = leagueAdminId;
 
-            $.ajax({
-                type: 'GET',
-                url: url,
-                success: function (data) {
-                    window.location.hash = 'update';
+    self.showChangeAccountWarning = ko.observable(false);
+    self.changeAccountOwnerVisible = ko.observable(true);
+    
+    self.availableLeagues = ko.observableArray();
+    self.availableTeams = ko.observableArray();
 
-                    if (data.length > 0) {
-                        $('#noAdminText_' + roleId).hide();
-                        $('#adminsList_' + roleId).show();
-                        $('#adminsList_' + roleId).append($('#adminItemTemplate').render(data, { roleId: roleId }));
-                    }
-                    else {
-                        $('#noAdminText_' + roleId).show();
-                        $('#adminsList_' + roleId).hide();
-                    }
+    self.adminType = ko.observableArray([
+        new AdminTypeViewModel(
+        {
+            Id: accountAdminId,
+            Title: 'Account Administrator',
+            HelpText: 'Account administrators have access to everything in the account. This includes leagues, teams, photos and all setup related features.',
+            ShowLeagues: false,
+            ShowTeams: false,
+            AccountId: self.accountId,
+            admins: ko.observableArray()
+        }),
+        new AdminTypeViewModel(
+        {
+            Id: accountPhotoAdminId,
+            Title: 'Account Photo Administrator',
+            HelpText: 'Account photo administrators have access to all photo and video functions on the site. They may upload, approve, and delete any photo on the site.',
+            ShowLeagues: false,
+            ShowTeams: false,
+            AccountId: self.accountId,
+            admins: ko.observableArray()
+        }),
+        new AdminTypeViewModel(
+        {
+            Id: leagueAdminId,
+            Title: 'League Administrator',
+            HelpText: 'League administrators have access to all functions for a specific league. They can create divisions and teams for a league, but cannot create or delete leagues in the account.',
+            ShowLeagues: true,
+            ShowTeams: false,
+            AccountId: self.accountId,
+            admins: ko.observableArray()
+        }),
+        new AdminTypeViewModel(
+        {
+            Id: teamAdminId,
+            Title: 'Team Administrator',
+            HelpText: 'Team administrators have the same access to a team that a manager does. They can enter game statistics and recaps, make announcements, and enter team sponsors.',
+            ShowLeagues: false,
+            ShowTeams: true,
+            AccountId: self.accountId,
+            admins: ko.observableArray()
+        }),
+        new AdminTypeViewModel(
+        {
+            Id: teamPhotoAdminId,
+            Title: 'Team Photo Administrator',
+            HelpText: 'Team photo administrators can manage all photos and videos related to a specific team.',
+            ShowLeagues: false,
+            ShowTeams: true,
+            AccountId: self.accountId,
+            admins: ko.observableArray()
+        })
+]);
 
-                    target.ensureDataLoaded(roleId);
-                    $('#adminsList_' + roleId).data('hasdata', true);
-                },
-                error: function (xhr, ajaxOptions, thrownError) {
-                    if (xhr.status == 404) {
-                        $('#adminsList_' + roleId).html('');
-                        $('#adminsList_' + roleId).hide();
-                        $('#noAdminText_' + roleId).show();
-                    }
-                    else {
-                        reportAjaxError(url, xhr, ajaxOptions, thrownError);
-                    }
-                }
-            });
+    self.isTeamAdmin = function (roleId) {
 
-    },
+        return (roleId == self.teamAdminId || roleId == self.teamPhotoAdminId);
+    }
+
+    self.isTeamPhotoAdmin = function (roleId) {
+        return (roleId == self.teamPhotoAdminId);
+    }
+
+    self.isLeagueAdmin = function (roleId) {
+        return (roleId == self.leagueAdminId);
+    }
 
     // ensure that the select options are populated
-    ensureDataLoaded: function (roleId) {
-        var target = this;
+    self.getLeagues = function () {
 
-        if (this.isLeagueAdmin(roleId)) { // league admin
-            if (!this.retrievedLeagues) {
-                var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/Leagues';
-                $.ajax({
-                    type: 'GET',
-                    url: url,
-                    success: function (leagues) {
-                        window.location.hash = 'update';
-                        var leagueSelect = $('#availableLeagues');
-                        $.each(leagues, function () {
-                            leagueSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
-                        });
-
-                        target.retrievedLeagues = true;
-
-                        leagueSelect.selectpicker('refresh');
-                    }
-                });
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/Leagues';
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (leagues) {
+                self.availableLeagues(leagues);
             }
-        }
-        else if (this.isTeamAdmin(roleId)) { // team admin
-            if (!this.retrievedTeams) {
-                var url = window.config.rootUri + '/api/LeaguesAPI/' + this.accountId + '/LeagueTeams';
-                $.ajax({
-                    type: 'GET',
-                    url: url,
-                    success: function (leagues) {
-                        window.location.hash = 'update';
-                        var teamSelect = $('#teamSelect');
-                        var teamPhotoSelect = $('#teamPhotoSelect');
-                        $.each(leagues, function () {
-                            teamSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
-                            teamPhotoSelect.append($('<option></option>').attr("value", this.Id).text(this.Name));
-                        });
+        });
+    }
 
-                        target.retrievedTeams = true;
-
-                        teamSelect.selectpicker('refresh');
-                        teamPhotoSelect.selectpicker('refresh');
-                    }
-                });
+    self.getTeams = function () {
+        var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/LeagueTeams';
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (teams) {
+                window.location.hash = 'update';
+                self.availableTeams(teams);
             }
-        }
-    },
+        });
+    }
 
-    startChangeAccountOwner: function () {
-        $('#changeAccountOwnerWarning').show('fast');
-        $('#changeAccountOwner').hide();
-    },
+    self.startChangeAccountOwner = function () {
+        self.showChangeAccountWarning(true);
+        self.changeAccountOwnerVisible(false);
+    }
 
-    cancelChangeAccountOwner: function () {
-        $('#changeAccountOwnerWarning').hide();
-        $('#changeAccountOwner').show('fast');
-    },
+    self.cancelChangeAccountOwner = function () {
+        self.showChangeAccountWarning(false);
+        self.changeAccountOwnerVisible(true);
+    }
 
-    changeAccountOwner: function () {
-        if (!this.selectedAccountOwner)
+    self.changeAccountOwner = function () {
+
+        if (!self.selectedNewOwner)
             return;
 
         // only current owner can change owner, so this is just saying we changed
         // the user to ourself, which is what is already set.
-        if (this.selectedAccountOwner == this.currentUserId)
+        if (self.selectedNewOwner == this.currentUserId)
             return;
 
-        var target = this;
+        $("#changeOwnerModal").modal("show");
 
+        $("#confirmChangeOwnerBtn").one("click", function () {
+            self.performChangeOwner();
+        });
+
+    }
+
+    self.performChangeOwner = function() {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/AccountAPI/' + this.accountId + '/AccountOwner',
+            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/AccountOwner',
             data: {
-                Id: this.selectedAccountOwner.Id
+                Id: self.selectedNewOwner.id
             },
             success: function (newOwner) {
-                if (target.currentUserId != newOwner) {
-                    $('#accountOwner').remove();
+                if (self.currentUserId != newOwner) {
+                    self.isAccountOwner(false);
                     window.location.hash = 'update';
                 }
 
-                target.cancelChangeAccountOwner();
+                self.cancelChangeAccountOwner();
             }
         });
     }
-});
+
+    self.getPlayers = function (request, response) {
+        var searchTerm = this.term;
+
+        $.ajax({
+            url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
+            dataType: "json",
+            data: {
+                lastName: searchTerm,
+                firstName: '',
+                page: 1
+            },
+            success: function (data) {
+
+                var results = $.map(data, function (item) {
+                    var fullName = item.LastName + ", " + item.FirstName;
+                    if (item.MiddleName)
+                        fullName = fullName + ' ' + item.MiddleName;
+
+                    return {
+                        label: fullName,
+                        Id: item.Id,
+                        PhotoURL: item.PhotoURL,
+                        FirstName: item.FirstName,
+                        LastName: item.LastName
+                    }
+                });
+                response(results);
+            },
+        });
+    }
+
+    $.ui.autocomplete.prototype._renderItem = function (ul, item) {
+        var li = $("<li>");
+        li.data("item.autocomplete", item);
+        var photoURL = item.PhotoURL;
+        li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
+        li.appendTo(ul);
+
+        return li;
+    };
+ 
+    self.selectedNewOwner = null;
+
+    self.selectNewOwner = function (e, ui) {
+        if (ui && ui.item) {
+            self.selectedNewOwner = {
+                id: ui.item.Id,
+                text: ui.item.value,
+                logo: ui.item.PhotoURL,
+                hasLogo: (!!ui.item.PhotoURL),
+                selected: ko.observable(true)
+            };
+        }
+
+        return true;
+    }
+
+
+    $('#accordion').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && !vm.Id.isPopulated()) {
+                vm.populateAdminList();
+            }
+        }
+    });
+
+    self.getLeagues();
+    self.getTeams();
+}

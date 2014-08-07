@@ -18,9 +18,6 @@ namespace SportsManager
             bundles.Add(new ScriptBundle("~/bundles/jqueryui").Include(
                         "~/Scripts/jquery-ui-{version}.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/jsrender").Include(
-                        "~/Scripts/jsrender.js"));
-
             bundles.Add(new ScriptBundle("~/bundles/knockout").Include(
                         "~/Scripts/knockout-{version}.js",
                         "~/Scripts/knockoutjs-helpers.js",
