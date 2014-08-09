@@ -8,7 +8,7 @@
 
 @section facebooklike
 {
-    @*<!-- facebook like control -->
+<!-- facebook like control -->
 <div id="fb-root"></div>
 <script>
 (function (d, s, id) {
@@ -18,7 +18,7 @@
     js.src = '//connect.facebook.net/en_US/all.js#xfbml=1&appId=@System.Configuration.ConfigurationManager.AppSettings["FacebookAppId"]';
     fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
-<!-- end facebook like control -->*@
+
 }
 
 @section head {
@@ -116,18 +116,22 @@
 
         </div>
 
-        @*@if (ViewData["TwitterAccountName"] != null)
+        @if (ViewData["TwitterAccountName"] != null)
         {
-            <div style="display:inline-block"  id="twitterDisplay">
-                <a href='https://twitter.com/@ViewData["TwitterAccountName"]' class="twitter-follow-button" data-size="large" data-show-count="true" data-lang="en">Follow @@@ViewData["TwitterAccountName"]</a>
-                <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = "//platform.twitter.com/widgets.js"; fjs.parentNode.insertBefore(js, fjs); } }(document, "script", "twitter-wjs");</script>
+            <div class="row">
+                <div style="display:inline-block" id="twitterDisplay">
+                    <a href='https://twitter.com/@ViewData["TwitterAccountName"]' class="twitter-follow-button" data-size="large" data-show-count="true" data-lang="en">Follow @@@ViewData["TwitterAccountName"]</a>
+                    <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = "//platform.twitter.com/widgets.js"; fjs.parentNode.insertBefore(js, fjs); } }(document, "script", "twitter-wjs");</script>
+                </div>
             </div>
         }
 
         @if (ViewData["AccountUrl"] != null)
         {
-            <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
-        }*@
+            <div class="row">
+                <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
+            </div>
+        }
 
     </div>
 </div>
