@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Database Name="detroitmsbl" EntityNamespace="SportsManager.Model" ContextNamespace="SportsManager" Class="DB" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
-  <Connection Mode="WebSettings" ConnectionString="Data Source=ocbsteokjs.database.windows.net;Initial Catalog=detroitmsbl;User ID=ray;MultipleActiveResultSets=True" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="webDBConnection" Provider="System.Data.SqlClient" />
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="SQL2012_152800_ezrecsports2" EntityNamespace="SportsManager.Model" ContextNamespace="SportsManager" Class="DB" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="WebSettings" ConnectionString="Data Source=localhost;Initial Catalog=SQL2012_152800_ezrecsports2;Integrated Security=True" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="webDBConnection" Provider="System.Data.SqlClient" />
   <Table Name="dbo.AccountHandouts" Member="AccountHandouts">
     <Type Name="AccountHandout">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -27,27 +27,26 @@
       <Column Name="TwitterWidgetScript" Type="System.String" DbType="VarChar(512)" CanBeNull="true" />
       <Association Name="Account_AccountHandout" Member="AccountHandouts" ThisKey="Id" OtherKey="AccountId" Type="AccountHandout" />
       <Association Name="Account_AccountSetting" Member="AccountSettings" ThisKey="Id" OtherKey="AccountId" Type="AccountSetting" />
-      <Association Name="Account_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="AccountId" Type="AccountWelcome" />
       <Association Name="Account_AvailableField" Member="AvailableFields" ThisKey="Id" OtherKey="AccountId" Type="AvailableField" />
       <Association Name="Account_CurrentSeason" Member="CurrentSeason" ThisKey="Id" OtherKey="AccountId" Type="CurrentSeason" Cardinality="One" />
       <Association Name="Account_DivisionDef" Member="DivisionDefs" ThisKey="Id" OtherKey="AccountId" Type="DivisionDef" />
       <Association Name="Account_GolfLeagueCourse" Member="GolfLeagueCourses" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueCourse" />
       <Association Name="Account_GolfLeagueSetup" Member="GolfLeagueSetups" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueSetup" />
-      <Association Name="Account_hof" Member="hofs" ThisKey="Id" OtherKey="AccountId" Type="hof" />
-      <Association Name="Account_HOFNomination" Member="HOFNominations" ThisKey="Id" OtherKey="AccountId" Type="HOFNomination" />
-      <Association Name="Account_HOFNominationSetup" Member="HOFNominationSetup" ThisKey="Id" OtherKey="AccountId" Type="HOFNominationSetup" Cardinality="One" />
       <Association Name="Account_League" Member="Leagues" ThisKey="Id" OtherKey="AccountId" Type="League" />
-      <Association Name="Account_LeagueFAQ" Member="LeagueFAQs" ThisKey="Id" OtherKey="AccountId" Type="LeagueFAQ" />
-      <Association Name="Account_LeagueNew" Member="LeagueNews" ThisKey="Id" OtherKey="AccountId" Type="LeagueNew" />
       <Association Name="Account_LeagueUmpire" Member="LeagueUmpires" ThisKey="Id" OtherKey="AccountId" Type="LeagueUmpire" />
       <Association Name="Account_PhotoGallery" Member="PhotoGalleries" ThisKey="Id" OtherKey="AccountId" Type="PhotoGallery" />
       <Association Name="Account_ProfileCategory" Member="ProfileCategories" ThisKey="Id" OtherKey="AccountId" Type="ProfileCategory" />
       <Association Name="Account_Roster" Member="Rosters" ThisKey="Id" OtherKey="AccountId" Type="Roster" />
       <Association Name="Account_Season" Member="Seasons" ThisKey="Id" OtherKey="AccountId" Type="Season" />
-      <Association Name="Account_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="AccountId" Type="Sponsor" />
       <Association Name="Account_Team" Member="Teams" ThisKey="Id" OtherKey="AccountId" Type="Team" />
       <Association Name="Account_VoteQuestion" Member="VoteQuestions" ThisKey="Id" OtherKey="AccountId" Type="VoteQuestion" />
       <Association Name="Account_WorkoutAnnouncement" Member="WorkoutAnnouncements" ThisKey="Id" OtherKey="AccountId" Type="WorkoutAnnouncement" />
+      <Association Name="Account_LeagueFAQ" Member="LeagueFAQs" ThisKey="Id" OtherKey="AccountId" Type="LeagueFAQ" />
+      <Association Name="Account_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="AccountId" Type="AccountWelcome" />
+      <Association Name="Account_LeagueNew" Member="LeagueNews" ThisKey="Id" OtherKey="AccountId" Type="LeagueNew" />
+      <Association Name="Account_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="AccountId" Type="Sponsor" />
+      <Association Name="Account_hof" Member="hofs" ThisKey="Id" OtherKey="AccountId" Type="hof" />
+      <Association Name="Account_HOFNomination" Member="HOFNominations" ThisKey="Id" OtherKey="AccountId" Type="HOFNomination" />
       <Association Name="AccountType_Account" Member="AccountType" ThisKey="AccountTypeId" OtherKey="Id" Type="AccountType" IsForeignKey="true" />
       <Association Name="Affiliation_Account" Member="Affiliation" ThisKey="AffiliationId" OtherKey="Id" Type="Affiliation" IsForeignKey="true" />
     </Type>
@@ -70,27 +69,6 @@
       <Column Name="TwitterAppId" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
       <Column Name="TwitterSecret" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
       <Association Name="AccountType_Account" Member="Accounts" ThisKey="Id" OtherKey="AccountTypeId" Type="Account" />
-    </Type>
-  </Table>
-  <Table Name="dbo.AccountWelcome" Member="AccountWelcomes">
-    <Type Name="AccountWelcome">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="OrderNo" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
-      <Column Name="CaptionMenu" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="WelcomeText" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="TeamId" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
-      <Association Name="Account_AccountWelcome" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="Team_AccountWelcome" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
-    </Type>
-  </Table>
-  <Table Name="dbo.GameRecap" Member="GameRecaps">
-    <Type Name="GameRecap">
-      <Column Name="GameId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
-      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
-      <Column Name="Recap" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="LeagueSchedule_GameRecap" Member="LeagueSchedule" ThisKey="GameId" OtherKey="Id" Type="LeagueSchedule" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="TeamsSeason_GameRecap" Member="TeamsSeason" ThisKey="TeamId" OtherKey="Id" Type="TeamsSeason" IsForeignKey="true" />
     </Type>
   </Table>
   <Table Name="dbo.Affiliations" Member="Affiliations">
@@ -224,15 +202,15 @@
       <Association Name="Contact_GolfLeagueSetup3" Member="GolfLeagueSetups3" ThisKey="Id" OtherKey="TreasurerId" Type="GolfLeagueSetup" />
       <Association Name="Contact_GolfRoster" Member="GolfRosters" ThisKey="Id" OtherKey="ContactId" Type="GolfRoster" />
       <Association Name="Contact_GolfScore" Member="GolfScores" ThisKey="Id" OtherKey="ContactId" Type="GolfScore" />
-      <Association Name="Contact_hof" Member="hofs" ThisKey="Id" OtherKey="ContactId" Type="hof" />
       <Association Name="Contact_LeagueUmpire" Member="LeagueUmpires" ThisKey="Id" OtherKey="ContactId" Type="LeagueUmpire" />
-      <Association Name="Contact_MemberBusiness" Member="MemberBusinesses" ThisKey="Id" OtherKey="ContactId" Type="MemberBusiness" />
-      <Association Name="Contact_MessagePost" Member="MessagePosts" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessagePost" />
       <Association Name="Contact_MessageTopic" Member="MessageTopics" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessageTopic" />
       <Association Name="Contact_Roster" Member="Rosters" ThisKey="Id" OtherKey="ContactId" Type="Roster" />
       <Association Name="Contact_TeamSeasonManager" Member="TeamSeasonManagers" ThisKey="Id" OtherKey="ContactId" Type="TeamSeasonManager" />
       <Association Name="Contact_VoteAnswer" Member="VoteAnswers" ThisKey="Id" OtherKey="ContactId" Type="VoteAnswer" />
+      <Association Name="Contact_MemberBusiness" Member="MemberBusinesses" ThisKey="Id" OtherKey="ContactId" Type="MemberBusiness" />
+      <Association Name="Contact_hof" Member="hofs" ThisKey="Id" OtherKey="ContactId" Type="hof" />
       <Association Name="Contact_PlayerProfile" Member="PlayerProfiles" ThisKey="Id" OtherKey="PlayerId" Type="PlayerProfile" />
+      <Association Name="Contact_MessagePost" Member="MessagePosts" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessagePost" />
       <Association Name="AspNetUser_Contact" Member="AspNetUser" ThisKey="UserId" OtherKey="Id" Type="AspNetUser" IsForeignKey="true" DeleteRule="SET NULL" />
     </Type>
   </Table>
@@ -637,37 +615,6 @@
       <Association Name="GolfCourse_GolfTeeInformation" Member="GolfCourse" ThisKey="CourseId" OtherKey="Id" Type="GolfCourse" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.hof" Member="hofs">
-    <Type Name="hof">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="YearInducted" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
-      <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Bio" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Account_hof" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="Contact_hof" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
-  <Table Name="dbo.HOFNomination" Member="HOFNominations">
-    <Type Name="HOFNomination">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Nominator" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="PhoneNumber" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
-      <Column Name="EMail" Type="System.String" DbType="VarChar(75) NOT NULL" CanBeNull="false" />
-      <Column Name="Nominee" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="Reason" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Account_HOFNomination" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
-  <Table Name="dbo.HOFNominationSetup" Member="HOFNominationSetups">
-    <Type Name="HOFNominationSetup">
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
-      <Column Name="EnableNomination" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Column Name="CriteriaText" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Account_HOFNominationSetup" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.League" Member="Leagues">
     <Type Name="League">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -684,26 +631,6 @@
       <Column Name="Description" Type="System.String" DbType="VarChar(25) NOT NULL" CanBeNull="false" />
       <Column Name="LeagueSeasonId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Association Name="LeagueSeason_LeagueEvent" Member="LeagueSeason" ThisKey="LeagueSeasonId" OtherKey="Id" Type="LeagueSeason" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
-  <Table Name="dbo.LeagueFAQ" Member="LeagueFAQs">
-    <Type Name="LeagueFAQ">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Question" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
-      <Column Name="Answer" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Account_LeagueFAQ" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
-  <Table Name="dbo.LeagueNews" Member="LeagueNews">
-    <Type Name="LeagueNew">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Date" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
-      <Column Name="Title" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="Text" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="SpecialAnnounce" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Association Name="Account_LeagueNew" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.LeagueSchedule" Member="LeagueSchedules">
@@ -723,12 +650,12 @@
       <Column Name="Umpire2" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Umpire3" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Umpire4" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="LeagueSchedule_GameRecap" Member="GameRecaps" ThisKey="Id" OtherKey="GameId" Type="GameRecap" />
       <Association Name="LeagueSchedule_batstatsum" Member="batstatsums" ThisKey="Id" OtherKey="GameId" Type="batstatsum" />
       <Association Name="LeagueSchedule_fieldstatsum" Member="fieldstatsums" ThisKey="Id" OtherKey="GameId" Type="fieldstatsum" />
       <Association Name="LeagueSchedule_GameEjection" Member="GameEjections" ThisKey="Id" OtherKey="gameId" Type="GameEjection" />
       <Association Name="LeagueSchedule_pitchstatsum" Member="pitchstatsums" ThisKey="Id" OtherKey="GameId" Type="pitchstatsum" />
       <Association Name="LeagueSchedule_PlayerRecap" Member="PlayerRecaps" ThisKey="Id" OtherKey="GameId" Type="PlayerRecap" />
+      <Association Name="LeagueSchedule_GameRecap" Member="GameRecaps" ThisKey="Id" OtherKey="GameId" Type="GameRecap" />
       <Association Name="LeagueSeason_LeagueSchedule" Member="LeagueSeason" ThisKey="LeagueId" OtherKey="Id" Type="LeagueSeason" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
@@ -758,21 +685,6 @@
       <Association Name="Contact_LeagueUmpire" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.MemberBusiness" Member="MemberBusinesses">
-    <Type Name="MemberBusiness">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="StreetAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="CityStateZip" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="Description" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="EMail" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="Phone" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
-      <Column Name="Fax" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
-      <Column Name="WebSite" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Association Name="Contact_MemberBusiness" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.MessageCategory" Member="MessageCategories">
     <Type Name="MessageCategory">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -785,21 +697,6 @@
       <Column Name="isTeam" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
       <Column Name="isModerated" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
       <Association Name="MessageCategory_MessageTopic" Member="MessageTopics" ThisKey="Id" OtherKey="CategoryId" Type="MessageTopic" />
-    </Type>
-  </Table>
-  <Table Name="dbo.MessagePost" Member="MessagePosts">
-    <Type Name="MessagePost">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="TopicId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="PostOrder" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
-      <Column Name="ContactCreatorId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="PostDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
-      <Column Name="PostText" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="EditDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
-      <Column Name="PostSubject" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
-      <Column Name="CategoryId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="Contact_MessagePost" Member="Contact" ThisKey="ContactCreatorId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="MessageTopic_MessagePost" Member="MessageTopic" ThisKey="TopicId" OtherKey="Id" Type="MessageTopic" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.MessageTopic" Member="MessageTopics">
@@ -998,23 +895,6 @@
       <Association Name="Account_Season" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
     </Type>
   </Table>
-  <Table Name="dbo.Sponsors" Member="Sponsors">
-    <Type Name="Sponsor">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="StreetAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="CityStateZip" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="Description" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="EMail" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="Phone" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
-      <Column Name="Fax" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
-      <Column Name="WebSite" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="Account_Sponsor" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
-      <Association Name="Team_Sponsor" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.TeamHandouts" Member="TeamHandouts">
     <Type Name="TeamHandout">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -1024,27 +904,16 @@
       <Association Name="Team_TeamHandout" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.TeamNews" Member="TeamNews">
-    <Type Name="TeamNew">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Date" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
-      <Column Name="Text" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Column Name="Title" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
-      <Column Name="SpecialAnnounce" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Association Name="Team_TeamNew" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.Teams" Member="Teams">
     <Type Name="Team">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
       <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="WebAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Association Name="Team_TeamHandout" Member="TeamHandouts" ThisKey="Id" OtherKey="TeamId" Type="TeamHandout" />
+      <Association Name="Team_TeamsSeason" Member="TeamsSeasons" ThisKey="Id" OtherKey="TeamId" Type="TeamsSeason" />
+      <Association Name="Team_TeamNew" Member="TeamNews" ThisKey="Id" OtherKey="TeamId" Type="TeamNew" />
       <Association Name="Team_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="TeamId" Type="AccountWelcome" />
       <Association Name="Team_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="TeamId" Type="Sponsor" />
-      <Association Name="Team_TeamHandout" Member="TeamHandouts" ThisKey="Id" OtherKey="TeamId" Type="TeamHandout" />
-      <Association Name="Team_TeamNew" Member="TeamNews" ThisKey="Id" OtherKey="TeamId" Type="TeamNew" />
-      <Association Name="Team_TeamsSeason" Member="TeamsSeasons" ThisKey="Id" OtherKey="TeamId" Type="TeamsSeason" />
       <Association Name="Account_Team" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
@@ -1064,7 +933,6 @@
       <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Name" Type="System.String" DbType="VarChar(25) NOT NULL" CanBeNull="false" />
       <Column Name="DivisionSeasonId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="TeamsSeason_GameRecap" Member="GameRecaps" ThisKey="Id" OtherKey="TeamId" Type="GameRecap" />
       <Association Name="TeamsSeason_batstatsum" Member="batstatsums" ThisKey="Id" OtherKey="TeamId" Type="batstatsum" />
       <Association Name="TeamsSeason_fieldstatsum" Member="fieldstatsums" ThisKey="Id" OtherKey="TeamId" Type="fieldstatsum" />
       <Association Name="TeamsSeason_GolfMatch" Member="GolfMatches" ThisKey="Id" OtherKey="Team2" Type="GolfMatch" />
@@ -1074,6 +942,7 @@
       <Association Name="TeamsSeason_pitchstatsum" Member="pitchstatsums" ThisKey="Id" OtherKey="TeamId" Type="pitchstatsum" />
       <Association Name="TeamsSeason_PlayerRecap" Member="PlayerRecaps" ThisKey="Id" OtherKey="TeamId" Type="PlayerRecap" />
       <Association Name="TeamsSeason_TeamSeasonManager" Member="TeamSeasonManagers" ThisKey="Id" OtherKey="TeamSeasonId" Type="TeamSeasonManager" />
+      <Association Name="TeamsSeason_GameRecap" Member="GameRecaps" ThisKey="Id" OtherKey="TeamId" Type="GameRecap" />
       <Association Name="LeagueSeason_TeamsSeason" Member="LeagueSeason" ThisKey="LeagueSeasonId" OtherKey="Id" Type="LeagueSeason" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="Team_TeamsSeason" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
@@ -1138,16 +1007,6 @@
       <Column Name="IsBatLeader" Type="System.Boolean" DbType="Bit NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
     </Type>
   </Table>
-  <Table Name="dbo.PlayerProfile" Member="PlayerProfiles">
-    <Type Name="PlayerProfile">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="PlayerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="QuestionId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Answer" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
-      <Association Name="Contact_PlayerProfile" Member="Contact" ThisKey="PlayerId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="ProfileQuestion_PlayerProfile" Member="ProfileQuestion" ThisKey="QuestionId" OtherKey="Id" Type="ProfileQuestion" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.WorkoutAnnouncement" Member="WorkoutAnnouncements">
     <Type Name="WorkoutAnnouncement">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -1159,6 +1018,138 @@
       <Association Name="WorkoutAnnouncement_WorkoutRegistration" Member="WorkoutRegistrations" ThisKey="Id" OtherKey="WorkoutId" Type="WorkoutRegistration" />
       <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="AvailableField_WorkoutAnnouncement" Member="AvailableField" ThisKey="FieldId" OtherKey="Id" Type="AvailableField" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.TeamNews" Member="TeamNews">
+    <Type Name="TeamNew">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Date" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Text" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="SpecialAnnounce" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Team_TeamNew" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.LeagueFAQ" Member="LeagueFAQs">
+    <Type Name="LeagueFAQ">
+      <Column Name="id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Question" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="Answer" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Association Name="Account_LeagueFAQ" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.AccountWelcome" Member="AccountWelcomes">
+    <Type Name="AccountWelcome">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="OrderNo" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="CaptionMenu" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="WelcomeText" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="TeamId" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
+      <Association Name="Account_AccountWelcome" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Team_AccountWelcome" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.GameRecap" Member="GameRecaps">
+    <Type Name="GameRecap">
+      <Column Name="GameId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="Recap" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Association Name="LeagueSchedule_GameRecap" Member="LeagueSchedule" ThisKey="GameId" OtherKey="Id" Type="LeagueSchedule" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="TeamsSeason_GameRecap" Member="TeamsSeason" ThisKey="TeamId" OtherKey="Id" Type="TeamsSeason" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.LeagueNews" Member="LeagueNews">
+    <Type Name="LeagueNew">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Date" Type="System.DateTime" DbType="SmallDateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="Text" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="SpecialAnnounce" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Account_LeagueNew" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.Sponsors" Member="Sponsors">
+    <Type Name="Sponsor">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="StreetAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="CityStateZip" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="Phone" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
+      <Column Name="Fax" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
+      <Column Name="WebSite" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Association Name="Account_Sponsor" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
+      <Association Name="Team_Sponsor" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.MemberBusiness" Member="MemberBusinesses">
+    <Type Name="MemberBusiness">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="StreetAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="CityStateZip" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="Phone" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
+      <Column Name="Fax" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
+      <Column Name="WebSite" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Association Name="Contact_MemberBusiness" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.hof" Member="hofs">
+    <Type Name="hof">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="YearInducted" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Bio" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Association Name="Account_hof" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Contact_hof" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.HOFNomination" Member="HOFNominations">
+    <Type Name="HOFNomination">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Nominator" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="PhoneNumber" Type="System.String" DbType="VarChar(14) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="VarChar(75) NOT NULL" CanBeNull="false" />
+      <Column Name="Nominee" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Reason" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Association Name="Account_HOFNomination" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.PlayerProfile" Member="PlayerProfiles">
+    <Type Name="PlayerProfile">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="PlayerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="QuestionId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Answer" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Association Name="Contact_PlayerProfile" Member="Contact" ThisKey="PlayerId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="ProfileQuestion_PlayerProfile" Member="ProfileQuestion" ThisKey="QuestionId" OtherKey="Id" Type="ProfileQuestion" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.MessagePost" Member="MessagePosts">
+    <Type Name="MessagePost">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="TopicId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="PostOrder" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ContactCreatorId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="PostDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="PostText" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="EditDate" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="PostSubject" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Association Name="Contact_MessagePost" Member="Contact" ThisKey="ContactCreatorId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="MessageTopic_MessagePost" Member="MessageTopic" ThisKey="TopicId" OtherKey="Id" Type="MessageTopic" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
 </Database>

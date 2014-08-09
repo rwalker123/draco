@@ -1,1260 +1,1247 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 27, 66.5" name="DataClasses">
+<ordesignerObjectsDiagram dslVersion="1.0.0.0" absoluteBounds="0, 0, 23.5, 111.25" name="DataClasses">
   <DataContextMoniker Name="/DB" />
   <nestedChildShapes>
-    <classShape Id="321bccfd-48bc-462a-86f2-84ede7a0a6e4" absoluteBounds="1.875, 2, 2, 1.5785953776041666">
+    <classShape Id="321bccfd-48bc-462a-86f2-84ede7a0a6e4" absoluteBounds="6.25, 42.75, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/AccountHandout" />
       <nestedChildShapes>
-        <elementListCompartment Id="64ea53eb-b427-4cc8-8f0a-82e9a4fdb03a" absoluteBounds="1.8900000000000001, 2.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="64ea53eb-b427-4cc8-8f0a-82e9a4fdb03a" absoluteBounds="6.2650000000000006, 43.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" absoluteBounds="0.75, 2.25, 2, 3.5016097005208326">
+    <classShape Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" absoluteBounds="3.5, 56.875, 2, 3.5016097005208309">
       <DataClassMoniker Name="/DB/Account" />
       <nestedChildShapes>
-        <elementListCompartment Id="931ead97-a0a5-4658-adb6-aa1a5d745425" absoluteBounds="0.765, 2.71, 1.9700000000000002, 2.941609700520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="931ead97-a0a5-4658-adb6-aa1a5d745425" absoluteBounds="3.515, 57.335, 1.9700000000000002, 2.941609700520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(1.45923076923077 : 2.25); (1.45923076923077 : 1.75); (1.97128205128205 : 1.75 : JumpStart); (2.13794871794872 : 1.75 : JumpEnd); (2.875 : 1.75); (2.875 : 2)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.296878 : 56.875); (5.296878 : 54.8958968098958); (5.54166666666667 : 54.8958968098958 : JumpStart); (5.70833333333333 : 54.8958968098958 : JumpEnd); (5.875 : 54.8958968098958); (5.875 : 43.5392976888021); (5.91666666666667 : 43.5392976888021 : JumpStart); (6.20833333333333 : 43.5392976888021 : JumpEnd); (6.25 : 43.5392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_AccountHandout" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="321bccfd-48bc-462a-86f2-84ede7a0a6e4" />
       </nodes>
     </associationConnector>
-    <classShape Id="38d4a6e9-7868-413d-81e6-5404020ceb67" absoluteBounds="1, 1.375, 2, 1.3862939453125">
+    <classShape Id="38d4a6e9-7868-413d-81e6-5404020ceb67" absoluteBounds="6.25, 40.625, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/AccountSetting" />
       <nestedChildShapes>
-        <elementListCompartment Id="748f0cf7-1896-429e-8210-845d5de953bd" absoluteBounds="1.0150000000000001, 1.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="748f0cf7-1896-429e-8210-845d5de953bd" absoluteBounds="6.2650000000000006, 41.085, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(2.05461538461538 : 2.25); (2.05461538461538 : 1.125); (2 : 1.125); (2 : 1.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.031252 : 56.875); (5.031252 : 55.0208968098958); (5.21354466666667 : 55.0208968098958 : JumpStart); (5.38021133333333 : 55.0208968098958 : JumpEnd); (5.54166666666667 : 55.0208968098958 : JumpStart); (5.70833333333333 : 55.0208968098958 : JumpEnd); (5.72916666666667 : 55.0208968098958 : JumpStart); (5.89583333333333 : 55.0208968098958 : JumpEnd); (6.125 : 55.0208968098958); (6.125 : 41.3181469726563); (6.25 : 41.3181469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_AccountSetting" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="38d4a6e9-7868-413d-81e6-5404020ceb67" />
       </nodes>
     </associationConnector>
-    <classShape Id="87d4698e-033a-4898-912c-fe9cad85dbd1" absoluteBounds="1.375, 0.625, 2, 2.1554996744791666">
+    <classShape Id="87d4698e-033a-4898-912c-fe9cad85dbd1" absoluteBounds="0.75, 57.5, 2, 2.1554996744791595">
       <DataClassMoniker Name="/DB/AccountType" />
       <nestedChildShapes>
-        <elementListCompartment Id="fccd76ac-c73b-4a21-b0d4-82a35504cbce" absoluteBounds="1.3900000000000001, 1.085, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="fccd76ac-c73b-4a21-b0d4-82a35504cbce" absoluteBounds="0.76500000000000012, 57.96, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(1.375 : 1.9434267202524); (0.5 : 1.9434267202524); (0.5 : 4.55953879957933); (0.75 : 4.55953879957933)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(2.75 : 58.5777498372396); (3.04166416666667 : 58.5777498372396 : JumpStart); (3.20833083333333 : 58.5777498372396 : JumpEnd); (3.5 : 58.5777498372396)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AccountType/AccountType_Account" />
       <nodes>
         <classShapeMoniker Id="87d4698e-033a-4898-912c-fe9cad85dbd1" />
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
       </nodes>
     </associationConnector>
-    <classShape Id="d38ea29d-251b-4c56-b6c8-0cbd7802b257" absoluteBounds="3.875, 12.125, 2, 1.9631982421874987">
-      <DataClassMoniker Name="/DB/AccountWelcome" />
-      <nestedChildShapes>
-        <elementListCompartment Id="68515c5f-4e79-47c3-bc39-6026468f7d77" absoluteBounds="3.89, 12.585, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="1f381a85-b690-461a-95ef-4cb24aa6d590" absoluteBounds="10.75, 0.75, 2, 1.3862939453125003">
-      <DataClassMoniker Name="/DB/GameRecap" />
-      <nestedChildShapes>
-        <elementListCompartment Id="f245755b-33cc-4cd8-994b-d3d24f403e20" absoluteBounds="10.765, 1.21, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="e3c1f2ff-de1f-42fd-ba9b-1b583d1633ab" absoluteBounds="1.375, 7.375, 2, 1.1939925130208344">
+    <classShape Id="e3c1f2ff-de1f-42fd-ba9b-1b583d1633ab" absoluteBounds="0.75, 55, 2, 1.1939925130208309">
       <DataClassMoniker Name="/DB/Affiliation" />
       <nestedChildShapes>
-        <elementListCompartment Id="36cbbea3-c71b-46d9-8b79-b52b39279f07" absoluteBounds="1.3900000000000001, 7.835, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="36cbbea3-c71b-46d9-8b79-b52b39279f07" absoluteBounds="0.76500000000000012, 55.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="95cc9ebc-5d1d-40d3-a86d-673445824307" absoluteBounds="7.75, 2, 2, 1.1939925130208335">
+    <classShape Id="95cc9ebc-5d1d-40d3-a86d-673445824307" absoluteBounds="9.75, 40, 2, 1.1939925130208309">
       <DataClassMoniker Name="/DB/AspNetRole" />
       <nestedChildShapes>
-        <elementListCompartment Id="f715dd16-8259-4abe-b4e2-248c3c6fb73c" absoluteBounds="7.765, 2.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="f715dd16-8259-4abe-b4e2-248c3c6fb73c" absoluteBounds="9.765, 40.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="a61d8b5a-323d-4bce-b081-4510200f0ec8" absoluteBounds="7.5, 6.375, 2, 1.5785953776041666">
+    <classShape Id="a61d8b5a-323d-4bce-b081-4510200f0ec8" absoluteBounds="6.5, 34.75, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/AspNetUserClaim" />
       <nestedChildShapes>
-        <elementListCompartment Id="f4ad5af1-6cd4-4e19-b132-0172cff518ec" absoluteBounds="7.515, 6.835, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="f4ad5af1-6cd4-4e19-b132-0172cff518ec" absoluteBounds="6.515, 35.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="78bc17c2-b3f7-427f-bbb8-6c67dd7a8add" absoluteBounds="7.5, 4.25, 2, 1.3862939453125005">
+    <classShape Id="78bc17c2-b3f7-427f-bbb8-6c67dd7a8add" absoluteBounds="6.5, 37.75, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/AspNetUserLogin" />
       <nestedChildShapes>
-        <elementListCompartment Id="15c8a654-d023-46e1-abc6-9657ce8193ec" absoluteBounds="7.515, 4.71, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="15c8a654-d023-46e1-abc6-9657ce8193ec" absoluteBounds="6.515, 38.21, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="0472db47-cf22-427b-97fc-204319432884" absoluteBounds="10.5, 6, 2, 1.1939925130208344">
+    <classShape Id="0472db47-cf22-427b-97fc-204319432884" absoluteBounds="12.5, 49, 2, 1.1939925130208309">
       <DataClassMoniker Name="/DB/AspNetUserRole" />
       <nestedChildShapes>
-        <elementListCompartment Id="6e936bbd-c60e-4c36-a608-1a045793c8fa" absoluteBounds="10.515, 6.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="6e936bbd-c60e-4c36-a608-1a045793c8fa" absoluteBounds="12.515, 49.46, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="72df9ca6-d7f2-44d2-953d-5d9677e680ba" absoluteBounds="7.5, 14.125, 2, 3.3093082682291666">
+    <classShape Id="72df9ca6-d7f2-44d2-953d-5d9677e680ba" absoluteBounds="6.25, 62.875, 2, 3.3093082682291595">
       <DataClassMoniker Name="/DB/AvailableField" />
       <nestedChildShapes>
-        <elementListCompartment Id="34baa88d-f8cc-4f1e-af53-68ee98702e4f" absoluteBounds="7.515, 14.585, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="34baa88d-f8cc-4f1e-af53-68ee98702e4f" absoluteBounds="6.265, 63.335, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="0d6c4ab1-de9a-4918-9d8b-54c52f7742b6" absoluteBounds="12.75, 8.75, 2, 5.6169254557291666">
+    <classShape Id="0d6c4ab1-de9a-4918-9d8b-54c52f7742b6" absoluteBounds="20.75, 76.875, 2, 5.6169254557291595">
       <DataClassMoniker Name="/DB/batstatsum" />
       <nestedChildShapes>
-        <elementListCompartment Id="57e16478-23df-4a82-8fc8-e09d23ae7224" absoluteBounds="12.765, 9.21, 1.9700000000000002, 5.0569254557291661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="57e16478-23df-4a82-8fc8-e09d23ae7224" absoluteBounds="20.765, 77.335000000000008, 1.9700000000000002, 5.0569254557291661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="4c5d923b-3d14-4f8c-b49b-901f77d1f213" absoluteBounds="10.25, 12, 2, 1.7708968098958344">
+    <classShape Id="4c5d923b-3d14-4f8c-b49b-901f77d1f213" absoluteBounds="9.25, 47, 2, 1.7708968098958309">
       <DataClassMoniker Name="/DB/ContactRole" />
       <nestedChildShapes>
-        <elementListCompartment Id="84cb3b3c-06ab-44ff-b220-ee1f99bba087" absoluteBounds="10.265, 12.46, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="84cb3b3c-06ab-44ff-b220-ee1f99bba087" absoluteBounds="9.265, 47.46, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" absoluteBounds="7.5, 8.75, 2, 4.0785139973958309">
+    <classShape Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" absoluteBounds="6.5, 47.5, 2, 4.0785139973958309">
       <DataClassMoniker Name="/DB/Contact" />
       <nestedChildShapes>
-        <elementListCompartment Id="9965fea2-d106-4881-b3dc-337eebbcf778" absoluteBounds="7.515, 9.21, 1.9700000000000002, 3.518513997395833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="9965fea2-d106-4881-b3dc-337eebbcf778" absoluteBounds="6.515, 47.96, 1.9700000000000002, 3.518513997395833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="b5b05c1a-d98e-4b2c-9eec-dc847d5d7a82" absoluteBounds="3.875, 9.875, 2, 1.1939925130208344">
+    <classShape Id="b5b05c1a-d98e-4b2c-9eec-dc847d5d7a82" absoluteBounds="6.25, 58.75, 2, 1.1939925130208309">
       <DataClassMoniker Name="/DB/CurrentSeason" />
       <nestedChildShapes>
-        <elementListCompartment Id="654a975c-53b8-4c70-8045-83e493a0ba59" absoluteBounds="3.89, 10.335, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="654a975c-53b8-4c70-8045-83e493a0ba59" absoluteBounds="6.2650000000000006, 59.21, 1.9700000000000002, 0.63399251302083326" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="ac7f2681-90fb-4518-9c2a-ffeaac22f339" absoluteBounds="3.875, 18.875, 2, 1.3862939453125023">
+    <classShape Id="ac7f2681-90fb-4518-9c2a-ffeaac22f339" absoluteBounds="6.25, 69.875, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/DivisionDef" />
       <nestedChildShapes>
-        <elementListCompartment Id="ec8771a5-ccf6-46b9-bf36-11536b665377" absoluteBounds="3.89, 19.335, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="ec8771a5-ccf6-46b9-bf36-11536b665377" absoluteBounds="6.2650000000000006, 70.335000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="553f637d-ef74-4959-9ca7-933a592e301c" absoluteBounds="6.625, 18.875, 2, 1.5785953776041666">
+    <classShape Id="553f637d-ef74-4959-9ca7-933a592e301c" absoluteBounds="9, 69.75, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/DivisionSeason" />
       <nestedChildShapes>
-        <elementListCompartment Id="f2795a82-f913-424e-a2a7-cd3909368914" absoluteBounds="6.64, 19.335, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="f2795a82-f913-424e-a2a7-cd3909368914" absoluteBounds="9.015, 70.210000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="be8f1a58-19cb-404b-bf98-0455b3027c45" absoluteBounds="10.25, 9.125, 2, 1.3862939453124987">
+    <classShape Id="be8f1a58-19cb-404b-bf98-0455b3027c45" absoluteBounds="9, 63.875, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/FieldContact" />
       <nestedChildShapes>
-        <elementListCompartment Id="7e14bddf-c741-4a8d-9e77-b3a4cf41de42" absoluteBounds="10.265, 9.585, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="7e14bddf-c741-4a8d-9e77-b3a4cf41de42" absoluteBounds="9.015, 64.335000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="66011f59-c304-443f-a3f1-1e81dedc5870" absoluteBounds="13.75, 3.75, 2, 3.3093082682291666">
+    <classShape Id="66011f59-c304-443f-a3f1-1e81dedc5870" absoluteBounds="17.75, 76, 2, 3.3093082682291595">
       <DataClassMoniker Name="/DB/fieldstatsum" />
       <nestedChildShapes>
-        <elementListCompartment Id="62f3e0e8-06d9-47db-ae34-5d228ce75020" absoluteBounds="13.765, 4.21, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="62f3e0e8-06d9-47db-ae34-5d228ce75020" absoluteBounds="17.765, 76.46, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="69ac44e3-9e46-4013-b94e-4004a6986041" absoluteBounds="0.75, 15.75, 2, 1.9631982421875005">
+    <classShape Id="69ac44e3-9e46-4013-b94e-4004a6986041" absoluteBounds="17.75, 72.875, 2, 1.9631982421875023">
       <DataClassMoniker Name="/DB/GameEjection" />
       <nestedChildShapes>
-        <elementListCompartment Id="7f585f78-c3cb-4996-95a9-84158036b152" absoluteBounds="0.765, 16.21, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="7f585f78-c3cb-4996-95a9-84158036b152" absoluteBounds="17.765, 73.335000000000008, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(0.820309 : 5.75160970052083); (0.820309 : 13.1065991210937); (3.32291666666667 : 13.1065991210937 : JumpStart); (3.86458333333333 : 13.1065991210937 : JumpEnd); (3.875 : 13.1065991210937)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_AccountWelcome" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="d38ea29d-251b-4c56-b6c8-0cbd7802b257" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(2.0625 : 7.375); (2.0625 : 5.75160970052083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(2.75 : 55.6074446614583); (3.04166416666667 : 55.6074446614583 : JumpStart); (3.20833083333333 : 55.6074446614583 : JumpEnd); (3.968748 : 55.6074446614583); (3.968748 : 56.875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Affiliation/Affiliation_Account" />
       <nodes>
         <classShapeMoniker Id="e3c1f2ff-de1f-42fd-ba9b-1b583d1633ab" />
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.65625 : 3.19399251302083); (9.65625 : 6.26044840494792); (10.5 : 6.26044840494792)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11.75 : 40.5969962565104); (13.1666666666667 : 40.5969962565104 : JumpStart); (13.3333333333333 : 40.5969962565104 : JumpEnd); (14.40625 : 40.5969962565104); (14.40625 : 49)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/AspNetRole/AspNetRole_AspNetUserRole" />
       <nodes>
         <classShapeMoniker Id="95cc9ebc-5d1d-40d3-a86d-673445824307" />
         <classShapeMoniker Id="0472db47-cf22-427b-97fc-204319432884" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.351561 : 5.75160970052083); (1.351561 : 6.9375); (1.40104066666667 : 6.9375 : JumpStart); (1.56770733333333 : 6.9375 : JumpEnd); (1.66666666666667 : 6.9375 : JumpStart); (1.96614633333333 : 6.9375 : JumpEnd); (1.97916666666667 : 6.9375 : JumpStart); (2.14583333333333 : 6.9375 : JumpEnd); (2.33073166666667 : 6.9375 : JumpStart); (2.49739833333333 : 6.9375 : JumpEnd); (3.32291666666667 : 6.9375 : JumpStart); (3.70833333333333 : 6.9375 : JumpEnd); (3.71875 : 6.9375); (3.71875 : 16.7796536341146); (3.72916666666667 : 16.7796536341146 : JumpStart); (3.89583333333333 : 16.7796536341146 : JumpEnd); (6.16666666666667 : 16.7796536341146 : JumpStart); (6.33333333333333 : 16.7796536341146 : JumpEnd); (7.5 : 16.7796536341146)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 58.0162769055489); (5.60207205108059 : 58.3729472396732 : JumpStart); (5.64792794891941 : 58.5331814882319 : JumpEnd); (5.78957205108059 : 59.0281284272786 : JumpStart); (5.83542794891941 : 59.1883626758373 : JumpEnd); (5.91457205108059 : 59.4649158856822 : JumpStart); (5.96042794891941 : 59.6251501342409 : JumpEnd); (6.390625 : 61.1283875466747); (6.390625 : 64.5296541341146); (6.25 : 64.5296541341146)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_AvailableField" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="72df9ca6-d7f2-44d2-953d-5d9677e680ba" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 12.4142569986979); (9.79166666666667 : 12.4142569986979 : JumpStart); (10.1770833333333 : 12.4142569986979 : JumpEnd); (10.25 : 12.4142569986979)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 48.1354484049479); (9.25 : 48.1354484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_ContactRole" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="4c5d923b-3d14-4f8c-b49b-901f77d1f213" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.085935 : 5.75160970052083); (1.085935 : 10.4719962565104); (3.32291666666667 : 10.4719962565104 : JumpStart); (3.86458333333333 : 10.4719962565104 : JumpEnd); (3.875 : 10.4719962565104)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 59.3469962565104); (5.54166666666667 : 59.3469962565104 : JumpStart); (6.02083333333333 : 59.3469962565104 : JumpEnd); (6.25 : 59.3469962565104)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_CurrentSeason" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="b5b05c1a-d98e-4b2c-9eec-dc847d5d7a82" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.679691 : 5.75160970052083); (2.679691 : 6.875); (3.32291666666667 : 6.875 : JumpStart); (3.52083333333333 : 6.875 : JumpEnd); (3.5625 : 6.875); (3.5625 : 19.5681469726563); (3.875 : 19.5681469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.49846153846154 : 60.3766097005208); (5.56607443490112 : 60.4442225969604 : JumpStart); (5.68392556509888 : 60.5620737271582 : JumpEnd); (5.75357443490112 : 60.6317225969604 : JumpStart); (5.87142556509888 : 60.7495737271582 : JumpEnd); (6.09375 : 60.9718981620593); (6.09375 : 70.5681469726563); (6.25 : 70.5681469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_DivisionDef" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="ac7f2681-90fb-4518-9c2a-ffeaac22f339" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.875 : 19.5681469726563); (6.625 : 19.5681469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 70.5681469726563); (8.47916666666667 : 70.5681469726563 : JumpStart); (8.70833333333333 : 70.5681469726563 : JumpEnd); (8.72916666666667 : 70.5681469726563 : JumpStart); (8.89583333333333 : 70.5681469726563 : JumpEnd); (9 : 70.5681469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/DivisionDef/DivisionDef_DivisionSeason" />
       <nodes>
         <classShapeMoniker Id="ac7f2681-90fb-4518-9c2a-ffeaac22f339" />
         <classShapeMoniker Id="553f637d-ef74-4959-9ca7-933a592e301c" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 14.125); (9.50357443490112 : 14.1214255650989 : JumpStart); (9.71517556509888 : 13.9098244349011 : JumpEnd); (9.875 : 13.75); (9.875 : 9.81814697265625); (9.91666666666667 : 9.81814697265625 : JumpStart); (10.1770833333333 : 9.81814697265625 : JumpEnd); (10.25 : 9.81814697265625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 64.5681469726563); (8.41666666666667 : 64.5681469726563 : JumpStart); (8.70833333333333 : 64.5681469726563 : JumpEnd); (8.72916666666667 : 64.5681469726563 : JumpStart); (8.89583333333333 : 64.5681469726563 : JumpEnd); (9 : 64.5681469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AvailableField/AvailableField_FieldContact" />
       <nodes>
         <classShapeMoniker Id="72df9ca6-d7f2-44d2-953d-5d9677e680ba" />
         <classShapeMoniker Id="be8f1a58-19cb-404b-bf98-0455b3027c45" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 9.40907348632813); (10.25 : 9.40907348632813)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 48.4087837986654); (9.09375 : 48.4087837986654); (9.09375 : 63.875)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_FieldContact" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="be8f1a58-19cb-404b-bf98-0455b3027c45" />
       </nodes>
     </associationConnector>
-    <classShape Id="cc406803-b318-4ccd-a38d-c8d658d464ba" absoluteBounds="1.75, 49.625, 2, 16.578107096354159">
+    <classShape Id="cc406803-b318-4ccd-a38d-c8d658d464ba" absoluteBounds="3.5, 61.25, 2, 16.578107096354159">
       <DataClassMoniker Name="/DB/GolfCourse" />
       <nestedChildShapes>
-        <elementListCompartment Id="0894428a-2343-4af2-94c1-072c72e277f3" absoluteBounds="1.7650000000000001, 50.085, 1.9700000000000002, 16.018107096354164" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="0894428a-2343-4af2-94c1-072c72e277f3" absoluteBounds="3.515, 61.71, 1.9700000000000002, 16.018107096354164" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="41e5949c-5313-4916-8ca2-2e946172720a" absoluteBounds="19, 21.5, 2, 3.3093082682291666">
+    <classShape Id="41e5949c-5313-4916-8ca2-2e946172720a" absoluteBounds="14.75, 60.875, 2, 3.3093082682291595">
       <DataClassMoniker Name="/DB/WorkoutRegistration" />
       <nestedChildShapes>
-        <elementListCompartment Id="f4be5473-babb-4397-9097-d9400560f2a4" absoluteBounds="19.015, 21.96, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="f4be5473-babb-4397-9097-d9400560f2a4" absoluteBounds="14.765, 61.335, 1.9700000000000002, 2.7493082682291665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="24d45f30-4354-4c3e-98ed-8856299523f5" absoluteBounds="12.25, 40.375, 2, 1.3862939453125023">
+    <classShape Id="24d45f30-4354-4c3e-98ed-8856299523f5" absoluteBounds="12.25, 65, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/GolfCourseForContact" />
       <nestedChildShapes>
-        <elementListCompartment Id="6b0617a6-be46-4301-89cd-c0ba1d53a376" absoluteBounds="12.265, 40.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="6b0617a6-be46-4301-89cd-c0ba1d53a376" absoluteBounds="12.265, 65.460000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="8653d916-4f64-4a11-bd7c-35dd76729953" absoluteBounds="19.25, 15.375, 2, 1.3862939453124987">
+    <classShape Id="8653d916-4f64-4a11-bd7c-35dd76729953" absoluteBounds="12.25, 51.875, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/GolferStatsConfiguration" />
       <nestedChildShapes>
-        <elementListCompartment Id="b637420b-1188-4c98-9f38-8ade94185f9f" absoluteBounds="19.265, 15.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="b637420b-1188-4c98-9f38-8ade94185f9f" absoluteBounds="12.265, 52.335, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="241859f7-bfd2-4739-9102-3c183cc21b35" absoluteBounds="15.5, 31.375, 2, 1.7708968098958344">
+    <classShape Id="241859f7-bfd2-4739-9102-3c183cc21b35" absoluteBounds="20.5, 84.125, 2, 1.7708968098958167">
       <DataClassMoniker Name="/DB/GolferStatsValue" />
       <nestedChildShapes>
-        <elementListCompartment Id="37b58ef3-32ce-474e-bbda-37330e15e1cf" absoluteBounds="15.515, 31.835, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="37b58ef3-32ce-474e-bbda-37330e15e1cf" absoluteBounds="20.515, 84.585000000000008, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="ecbcf0be-f951-43b8-bc24-b854ea46b362" absoluteBounds="3.875, 4, 2, 1.5785953776041666">
+    <classShape Id="ecbcf0be-f951-43b8-bc24-b854ea46b362" absoluteBounds="6.25, 55.75, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/GolfLeagueCourse" />
       <nestedChildShapes>
-        <elementListCompartment Id="2a2011c4-ec85-4e9e-b959-faecac7fc57f" absoluteBounds="3.8899999999999997, 4.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="2a2011c4-ec85-4e9e-b959-faecac7fc57f" absoluteBounds="6.265, 56.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" absoluteBounds="17.25, 0.75, 2, 8.1168440755208326">
+    <classShape Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" absoluteBounds="9.25, 54.5, 2, 8.11684407552083">
       <DataClassMoniker Name="/DB/GolfLeagueSetup" />
       <nestedChildShapes>
-        <elementListCompartment Id="5c551ed3-68fd-4cb2-b990-f4cc58028807" absoluteBounds="17.265, 1.21, 1.9700000000000002, 7.556844075520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="5c551ed3-68fd-4cb2-b990-f4cc58028807" absoluteBounds="9.265, 54.96, 1.9700000000000002, 7.556844075520833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" absoluteBounds="12.75, 25.125, 2, 2.7324039713541666">
+    <classShape Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" absoluteBounds="11.75, 81, 2, 2.7324039713541595">
       <DataClassMoniker Name="/DB/GolfMatch" />
       <nestedChildShapes>
-        <elementListCompartment Id="77d734be-9592-494a-a964-bf3b33c68b67" absoluteBounds="12.765, 25.585, 1.9700000000000002, 2.1724039713541665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="77d734be-9592-494a-a964-bf3b33c68b67" absoluteBounds="11.765, 81.460000000000008, 1.9700000000000002, 2.1724039713541665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" absoluteBounds="15.5, 25.625, 2, 1.5785953776041666">
+    <classShape Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" absoluteBounds="17.5, 83.5, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/GolfMatchScore" />
       <nestedChildShapes>
-        <elementListCompartment Id="70574758-cf92-4081-ace7-4502230a46b3" absoluteBounds="15.515, 26.085, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="70574758-cf92-4081-ace7-4502230a46b3" absoluteBounds="17.515, 83.960000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="140e18e1-5b67-4fb4-b10e-7070c4edcc4e" absoluteBounds="18.75, 25.75, 2, 2.1554996744791666">
+    <classShape Id="140e18e1-5b67-4fb4-b10e-7070c4edcc4e" absoluteBounds="20.5, 89.625, 2, 2.1554996744791595">
       <DataClassMoniker Name="/DB/GolfRoster" />
       <nestedChildShapes>
-        <elementListCompartment Id="8f8b3493-1463-434e-a0a2-d84435a434a6" absoluteBounds="18.765, 26.21, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="8f8b3493-1463-434e-a0a2-d84435a434a6" absoluteBounds="20.515, 90.085000000000008, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" absoluteBounds="12.75, 44.375, 2, 6.1938297526041595">
+    <classShape Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" absoluteBounds="14.75, 104.125, 2, 6.1938297526041595">
       <DataClassMoniker Name="/DB/GolfScore" />
       <nestedChildShapes>
-        <elementListCompartment Id="902cd6c7-dee2-4213-8ad0-5738f1a07dcb" absoluteBounds="12.765, 44.835, 1.9700000000000002, 5.6338297526041661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="902cd6c7-dee2-4213-8ad0-5738f1a07dcb" absoluteBounds="14.765, 104.58500000000001, 1.9700000000000002, 5.6338297526041661" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="50a7d559-de83-4bfb-ba02-6d16880ea967" absoluteBounds="16.5, 39.75, 2, 2.5401025390625023">
+    <classShape Id="50a7d559-de83-4bfb-ba02-6d16880ea967" absoluteBounds="9.5, 66.25, 2, 2.5401025390625023">
       <DataClassMoniker Name="/DB/GolfStatDef" />
       <nestedChildShapes>
-        <elementListCompartment Id="17c69943-dbb8-48dd-9a97-b7f6dfd2bf11" absoluteBounds="16.515, 40.21, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="17c69943-dbb8-48dd-9a97-b7f6dfd2bf11" absoluteBounds="9.515, 66.710000000000008, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="c8e48f3c-6c0f-430e-b2a4-70b01adbd9d4" absoluteBounds="10, 43.625, 2, 7.5399397786458309">
+    <classShape Id="c8e48f3c-6c0f-430e-b2a4-70b01adbd9d4" absoluteBounds="12, 103.5, 2, 7.5399397786458167">
       <DataClassMoniker Name="/DB/GolfTeeInformation" />
       <nestedChildShapes>
-        <elementListCompartment Id="3d66598a-9914-43cc-a240-7099d01ea76d" absoluteBounds="10.015, 44.085, 1.9700000000000002, 6.979939778645833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="3d66598a-9914-43cc-a240-7099d01ea76d" absoluteBounds="12.015, 103.96000000000001, 1.9700000000000002, 6.979939778645833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="9eb4e8b6-e180-4f6f-83fb-b180cbbaccfe" absoluteBounds="17.25, 9.875, 2, 1.7708968098958327">
-      <DataClassMoniker Name="/DB/hof" />
-      <nestedChildShapes>
-        <elementListCompartment Id="6af603f0-a746-4e86-a3c7-d794e3fab367" absoluteBounds="17.265, 10.335, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="18c12e76-50be-424a-a1f5-9310e813ca00" absoluteBounds="3.5, 46, 2, 2.1554996744791595">
-      <DataClassMoniker Name="/DB/HOFNomination" />
-      <nestedChildShapes>
-        <elementListCompartment Id="3e9be0d7-e24f-4c40-97e4-2f0762db3ce3" absoluteBounds="3.515, 46.46, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="0c0b4a97-cd4d-45f1-b6ff-5cc16afeedc5" absoluteBounds="3.5, 20.375, 2, 1.3862939453124987">
-      <DataClassMoniker Name="/DB/HOFNominationSetup" />
-      <nestedChildShapes>
-        <elementListCompartment Id="4eeee0c4-d689-412e-88ec-f467a8dcc723" absoluteBounds="3.515, 20.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="1b48fea5-8576-4bea-81c5-c3e6e2e071b5" absoluteBounds="3.5, 26.5, 2, 1.3862939453125023">
+    <classShape Id="1b48fea5-8576-4bea-81c5-c3e6e2e071b5" absoluteBounds="6.25, 84.625, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/League" />
       <nestedChildShapes>
-        <elementListCompartment Id="ebc2d40d-ed08-44e0-8ca6-821a89baf82a" absoluteBounds="3.515, 26.96, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="ebc2d40d-ed08-44e0-8ca6-821a89baf82a" absoluteBounds="6.2650000000000006, 85.085000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="dc806934-2352-4e85-87f2-1f37e7e2eda2" absoluteBounds="9, 31.5, 2, 1.5785953776041666">
+    <classShape Id="dc806934-2352-4e85-87f2-1f37e7e2eda2" absoluteBounds="11.75, 89.25, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/LeagueEvent" />
       <nestedChildShapes>
-        <elementListCompartment Id="5fb18902-de15-445b-9acd-5797a9eeea73" absoluteBounds="9.015, 31.96, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="5fb18902-de15-445b-9acd-5797a9eeea73" absoluteBounds="11.765, 89.710000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="d08c855f-8532-4165-baca-c6e7e5e2f44a" absoluteBounds="3.5, 35.375, 2, 1.5785953776041666">
-      <DataClassMoniker Name="/DB/LeagueFAQ" />
-      <nestedChildShapes>
-        <elementListCompartment Id="d71582d3-cd5d-4c14-8d46-cd0719f03684" absoluteBounds="3.515, 35.835, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="ade857cc-0ac2-4372-b856-cbc2d46a46d1" absoluteBounds="3.5, 43.25, 2, 1.9631982421875023">
-      <DataClassMoniker Name="/DB/LeagueNew" />
-      <nestedChildShapes>
-        <elementListCompartment Id="2cbc5c81-3ebe-4f23-ad68-801df326f40f" absoluteBounds="3.515, 43.71, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" absoluteBounds="9, 38.5, 2, 3.6939111328125023">
+    <classShape Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" absoluteBounds="11.75, 92.25, 2, 3.6939111328125023">
       <DataClassMoniker Name="/DB/LeagueSchedule" />
       <nestedChildShapes>
-        <elementListCompartment Id="8c4edeaa-c9bb-4f52-b4f6-1854299b3fd7" absoluteBounds="9.015, 38.96, 1.9700000000000002, 3.1339111328125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="8c4edeaa-c9bb-4f52-b4f6-1854299b3fd7" absoluteBounds="11.765, 92.710000000000008, 1.9700000000000002, 3.1339111328125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="bb1c914f-e045-477b-87a3-b19abf2b910a" absoluteBounds="6.25, 27.625, 2, 1.3862939453125023">
+    <classShape Id="bb1c914f-e045-477b-87a3-b19abf2b910a" absoluteBounds="9, 85.625, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/LeagueSeason" />
       <nestedChildShapes>
-        <elementListCompartment Id="fa698f76-a7aa-44e0-a25f-c630f060625c" absoluteBounds="6.265, 28.085, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="fa698f76-a7aa-44e0-a25f-c630f060625c" absoluteBounds="9.015, 86.085000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="a0a1947c-78d5-47a7-b8c3-e3502aeb1715" absoluteBounds="16.25, 13.125, 2, 1.3862939453125005">
+    <classShape Id="a0a1947c-78d5-47a7-b8c3-e3502aeb1715" absoluteBounds="9.25, 51.875, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/LeagueUmpire" />
       <nestedChildShapes>
-        <elementListCompartment Id="08d5697d-3b02-4d3a-8486-51477f5846ae" absoluteBounds="16.265, 13.585, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="08d5697d-3b02-4d3a-8486-51477f5846ae" absoluteBounds="9.265, 52.335, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="818968ef-d5fe-4efd-9457-ba73cffef8c6" absoluteBounds="10.25, 55.875, 2, 2.7324039713541595">
-      <DataClassMoniker Name="/DB/MemberBusiness" />
-      <nestedChildShapes>
-        <elementListCompartment Id="7a404b85-7847-4052-bc18-d6ff456f8b05" absoluteBounds="10.265, 56.335, 1.9700000000000002, 2.1724039713541665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="ccf7231f-a44e-4fc1-9645-226cc9c7cb9b" absoluteBounds="17.5, 34.75, 2, 2.5401025390625023">
+    <classShape Id="ccf7231f-a44e-4fc1-9645-226cc9c7cb9b" absoluteBounds="9.5, 36.25, 2, 2.5401025390625023">
       <DataClassMoniker Name="/DB/MessageCategory" />
       <nestedChildShapes>
-        <elementListCompartment Id="134af0a9-6230-4ec8-a100-fb72c5edf688" absoluteBounds="17.515, 35.21, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="134af0a9-6230-4ec8-a100-fb72c5edf688" absoluteBounds="9.515, 36.71, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="a0ccd989-2e65-4240-9d07-0a1ff10ffd7a" absoluteBounds="23, 13.75, 2, 2.5401025390624987">
-      <DataClassMoniker Name="/DB/MessagePost" />
-      <nestedChildShapes>
-        <elementListCompartment Id="5e6527c2-26e7-4ba9-8962-64cd59fe025e" absoluteBounds="23.015, 14.21, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" absoluteBounds="20.25, 12, 2, 2.1554996744791666">
+    <classShape Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" absoluteBounds="12.25, 45.5, 2, 2.1554996744791595">
       <DataClassMoniker Name="/DB/MessageTopic" />
       <nestedChildShapes>
-        <elementListCompartment Id="48f3f772-77da-47c9-b462-6154cf02cfc8" absoluteBounds="20.265, 12.46, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="48f3f772-77da-47c9-b462-6154cf02cfc8" absoluteBounds="12.265, 45.96, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="82b80686-87f4-4dea-a5ed-7b017d3f740c" absoluteBounds="7.5, 4.375, 2, 1.7708968098958327">
+    <classShape Id="82b80686-87f4-4dea-a5ed-7b017d3f740c" absoluteBounds="6.25, 52.75, 2, 1.7708968098958309">
       <DataClassMoniker Name="/DB/PhotoGallery" />
       <nestedChildShapes>
-        <elementListCompartment Id="9474b62f-752f-4e2e-b2ff-8a36d1daae21" absoluteBounds="7.515, 4.835, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="9474b62f-752f-4e2e-b2ff-8a36d1daae21" absoluteBounds="6.265, 53.21, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="2db83c6d-2c1f-4912-ab2a-9338e9232e3f" absoluteBounds="4.75, 7.75, 2, 1.7708968098958335">
+    <classShape Id="2db83c6d-2c1f-4912-ab2a-9338e9232e3f" absoluteBounds="3.5, 52.75, 2, 1.7708968098958309">
       <DataClassMoniker Name="/DB/PhotoGalleryAlbum" />
       <nestedChildShapes>
-        <elementListCompartment Id="1c4bf5d2-1b2b-47a9-89e4-f2340d505519" absoluteBounds="4.765, 8.21, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="1c4bf5d2-1b2b-47a9-89e4-f2340d505519" absoluteBounds="3.5149999999999997, 53.21, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="ed7d00b9-9743-4d0a-bdb8-75f9298f4eab" absoluteBounds="24.75, 27.125, 2, 5.8092268880208309">
+    <classShape Id="ed7d00b9-9743-4d0a-bdb8-75f9298f4eab" absoluteBounds="20.75, 69.75, 2, 5.8092268880208451">
       <DataClassMoniker Name="/DB/pitchstatsum" />
       <nestedChildShapes>
-        <elementListCompartment Id="2f20dad3-c746-4d92-9009-36338cc2a030" absoluteBounds="24.765, 27.585, 1.9700000000000002, 5.249226888020833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="2f20dad3-c746-4d92-9009-36338cc2a030" absoluteBounds="20.765, 70.210000000000008, 1.9700000000000002, 5.249226888020833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="e9ff31cf-0c54-4926-a341-22bc9214fdcc" absoluteBounds="21.75, 29.375, 2, 1.3862939453125023">
+    <classShape Id="e9ff31cf-0c54-4926-a341-22bc9214fdcc" absoluteBounds="17.75, 81, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/PlayerRecap" />
       <nestedChildShapes>
-        <elementListCompartment Id="a052788f-87da-42fd-8293-3df8e25c6912" absoluteBounds="21.765, 29.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="a052788f-87da-42fd-8293-3df8e25c6912" absoluteBounds="17.765, 81.460000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="c294d0a5-e34c-4762-94a1-97e1696203c4" absoluteBounds="22, 22.375, 2, 1.3862939453125023">
+    <classShape Id="c294d0a5-e34c-4762-94a1-97e1696203c4" absoluteBounds="15, 72.25, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/PlayerSeasonAffiliationDue" />
       <nestedChildShapes>
-        <elementListCompartment Id="7cf14a2e-95d3-451b-945c-8f36eee230eb" absoluteBounds="22.015, 22.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="7cf14a2e-95d3-451b-945c-8f36eee230eb" absoluteBounds="15.015, 72.710000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="1792c86b-664c-464d-b422-7af32903503e" absoluteBounds="11.75, 36.25, 2, 2.5401025390625023">
+    <classShape Id="1792c86b-664c-464d-b422-7af32903503e" absoluteBounds="14.5, 85.875, 2, 2.5401025390625023">
       <DataClassMoniker Name="/DB/PlayoffBracket" />
       <nestedChildShapes>
-        <elementListCompartment Id="3ac562ad-27be-4c11-a844-6e5b14a5dfd5" absoluteBounds="11.765, 36.71, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="3ac562ad-27be-4c11-a844-6e5b14a5dfd5" absoluteBounds="14.515, 86.335000000000008, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="aa745e84-ad04-46f0-a4d1-32bb318bcba0" absoluteBounds="14.5, 36.25, 2, 2.5401025390625023">
+    <classShape Id="aa745e84-ad04-46f0-a4d1-32bb318bcba0" absoluteBounds="17.25, 85.875, 2, 2.5401025390625023">
       <DataClassMoniker Name="/DB/PlayoffGame" />
       <nestedChildShapes>
-        <elementListCompartment Id="e6ea12fb-a573-46c8-82f4-b1b455365791" absoluteBounds="14.515, 36.71, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="e6ea12fb-a573-46c8-82f4-b1b455365791" absoluteBounds="17.265, 86.335000000000008, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="7cab2872-1540-459b-abe5-9c5c3056a500" absoluteBounds="11.75, 33.875, 2, 1.5785953776041666">
+    <classShape Id="7cab2872-1540-459b-abe5-9c5c3056a500" absoluteBounds="14.5, 83.625, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/PlayoffSeed" />
       <nestedChildShapes>
-        <elementListCompartment Id="2108f6af-ea4d-415f-9bef-ba0ff18e4412" absoluteBounds="11.765, 34.335, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="2108f6af-ea4d-415f-9bef-ba0ff18e4412" absoluteBounds="14.515, 84.085000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="9b2b818d-7a9e-4984-bdf0-bb46adc1e4bd" absoluteBounds="9, 35.375, 2, 1.7708968098958309">
+    <classShape Id="9b2b818d-7a9e-4984-bdf0-bb46adc1e4bd" absoluteBounds="11.75, 85.125, 2, 1.7708968098958167">
       <DataClassMoniker Name="/DB/PlayoffSetup" />
       <nestedChildShapes>
-        <elementListCompartment Id="a8204249-4249-447d-a7d6-9ce90906409e" absoluteBounds="9.015, 35.835, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="a8204249-4249-447d-a7d6-9ce90906409e" absoluteBounds="11.765, 85.585000000000008, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="0b99e672-309f-4b2d-8f6e-6d6c1442d154" absoluteBounds="3.5, 37.625, 2, 1.5785953776041737">
+    <classShape Id="0b99e672-309f-4b2d-8f6e-6d6c1442d154" absoluteBounds="6.25, 96.875, 2, 1.5785953776041879">
       <DataClassMoniker Name="/DB/ProfileCategory" />
       <nestedChildShapes>
-        <elementListCompartment Id="df6d41e0-39b5-43f5-9294-1d82fe832ad0" absoluteBounds="3.515, 38.085, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="df6d41e0-39b5-43f5-9294-1d82fe832ad0" absoluteBounds="6.2650000000000006, 97.335000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="9d65efc9-5967-4a3a-b1dd-fe50b5b691c8" absoluteBounds="6.25, 37.625, 2, 1.5785953776041595">
+    <classShape Id="9d65efc9-5967-4a3a-b1dd-fe50b5b691c8" absoluteBounds="9, 96.875, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/ProfileQuestion" />
       <nestedChildShapes>
-        <elementListCompartment Id="b9ca6d14-5d0d-462b-8f15-c32799fdc508" absoluteBounds="6.265, 38.085, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="b9ca6d14-5d0d-462b-8f15-c32799fdc508" absoluteBounds="9.015, 97.335000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" absoluteBounds="16.25, 16, 2, 1.5785953776041666">
+    <classShape Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" absoluteBounds="12.25, 57.75, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/Roster" />
       <nestedChildShapes>
-        <elementListCompartment Id="c4e3e679-fce1-48ea-8c21-23c1b893cb39" absoluteBounds="16.265, 16.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="c4e3e679-fce1-48ea-8c21-23c1b893cb39" absoluteBounds="12.265, 58.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" absoluteBounds="19, 17.875, 2, 2.1554996744791666">
+    <classShape Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" absoluteBounds="15, 57.5, 2, 2.1554996744791595">
       <DataClassMoniker Name="/DB/RosterSeason" />
       <nestedChildShapes>
-        <elementListCompartment Id="1947e1bb-3816-4a0e-a8bf-fb9c8551eba4" absoluteBounds="19.015, 18.335, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="1947e1bb-3816-4a0e-a8bf-fb9c8551eba4" absoluteBounds="15.015, 57.96, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="c051b6be-7bd4-4442-b29e-7e8814a17b42" absoluteBounds="3.5, 28.875, 2, 1.3862939453125023">
+    <classShape Id="c051b6be-7bd4-4442-b29e-7e8814a17b42" absoluteBounds="6.25, 86.75, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/Season" />
       <nestedChildShapes>
-        <elementListCompartment Id="76d86d57-91c0-48fc-acff-74c51dbed529" absoluteBounds="3.515, 29.335, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="76d86d57-91c0-48fc-acff-74c51dbed529" absoluteBounds="6.2650000000000006, 87.210000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="3021401d-f242-4dee-9841-53a5386a8bef" absoluteBounds="10.25, 21.25, 2, 2.9247054036458309">
-      <DataClassMoniker Name="/DB/Sponsor" />
-      <nestedChildShapes>
-        <elementListCompartment Id="6a6f6508-a2ff-47fc-a826-4dd44616d6fe" absoluteBounds="10.265, 21.71, 1.9700000000000002, 2.364705403645833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="e4a0679b-8cf7-40dd-a2e8-d5cb4b9b244e" absoluteBounds="6.25, 31, 2, 1.5785953776041701">
+    <classShape Id="e4a0679b-8cf7-40dd-a2e8-d5cb4b9b244e" absoluteBounds="9, 94.25, 2, 1.5785953776041879">
       <DataClassMoniker Name="/DB/TeamHandout" />
       <nestedChildShapes>
-        <elementListCompartment Id="7cb5d8ae-6974-4b66-8c03-3f9337aa282b" absoluteBounds="6.265, 31.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="7cb5d8ae-6974-4b66-8c03-3f9337aa282b" absoluteBounds="9.015, 94.710000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="00f901ed-de2a-48f6-a515-b18a0607967a" absoluteBounds="6.25, 33.25, 2, 1.9631982421875023">
-      <DataClassMoniker Name="/DB/TeamNew" />
-      <nestedChildShapes>
-        <elementListCompartment Id="c8092d64-3f7b-466d-a20c-de9834b82b1f" absoluteBounds="6.265, 33.71, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <classShape Id="d5d55165-6051-4bf2-8511-115f0c15ee05" absoluteBounds="3.5, 32.375, 2, 1.3862939453125023">
+    <classShape Id="d5d55165-6051-4bf2-8511-115f0c15ee05" absoluteBounds="6.25, 90.375, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/Team" />
       <nestedChildShapes>
-        <elementListCompartment Id="24e88e86-6793-4f9e-87fc-cf04a7bf4c8a" absoluteBounds="3.515, 32.835, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="24e88e86-6793-4f9e-87fc-cf04a7bf4c8a" absoluteBounds="6.2650000000000006, 90.835000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="f2935e63-1b00-41da-8d8c-a171d165c446" absoluteBounds="13.75, 22.125, 2, 1.3862939453125023">
+    <classShape Id="f2935e63-1b00-41da-8d8c-a171d165c446" absoluteBounds="17.5, 90, 2, 1.3862939453125023">
       <DataClassMoniker Name="/DB/TeamSeasonManager" />
       <nestedChildShapes>
-        <elementListCompartment Id="b47b2c4e-0581-4ba8-9174-49cdf242632a" absoluteBounds="13.765, 22.585, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="b47b2c4e-0581-4ba8-9174-49cdf242632a" absoluteBounds="17.515, 90.460000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="291d9dba-5587-4949-a381-77e1f128fbc6" absoluteBounds="10, 25.875, 2, 1.7708968098958309">
+    <classShape Id="291d9dba-5587-4949-a381-77e1f128fbc6" absoluteBounds="14.75, 89.75, 2, 1.7708968098958451">
       <DataClassMoniker Name="/DB/TeamsSeason" />
       <nestedChildShapes>
-        <elementListCompartment Id="363ad24a-84d7-4854-baed-cc9e4d575ae4" absoluteBounds="10.015, 26.335, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="363ad24a-84d7-4854-baed-cc9e4d575ae4" absoluteBounds="14.765, 90.210000000000008, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="2d307439-b463-4605-aeca-d907641dfe64" absoluteBounds="10.25, 28.625, 2, 1.5785953776041666">
+    <classShape Id="2d307439-b463-4605-aeca-d907641dfe64" absoluteBounds="11.75, 100.375, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/VoteAnswer" />
       <nestedChildShapes>
-        <elementListCompartment Id="abb93bfe-7f8c-487f-b6f5-3def7ace2521" absoluteBounds="10.265, 29.085, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="abb93bfe-7f8c-487f-b6f5-3def7ace2521" absoluteBounds="11.765, 100.83500000000001, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="26481c2a-8e0c-47fd-b59f-c2fe7e8d03e1" absoluteBounds="6.25, 43.25, 2, 1.5785953776041595">
+    <classShape Id="26481c2a-8e0c-47fd-b59f-c2fe7e8d03e1" absoluteBounds="9, 101.5, 2, 1.5785953776041595">
       <DataClassMoniker Name="/DB/VoteOption" />
       <nestedChildShapes>
-        <elementListCompartment Id="de1a75df-183c-4727-a4a3-61e27b27edad" absoluteBounds="6.265, 43.71, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="de1a75df-183c-4727-a4a3-61e27b27edad" absoluteBounds="9.015, 101.96000000000001, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="dca21a74-d15b-4983-8ed5-60b44222adbe" absoluteBounds="3.5, 40.875, 2, 1.5785953776041737">
+    <classShape Id="dca21a74-d15b-4983-8ed5-60b44222adbe" absoluteBounds="6.25, 99.25, 2, 1.5785953776041879">
       <DataClassMoniker Name="/DB/VoteQuestion" />
       <nestedChildShapes>
-        <elementListCompartment Id="75180760-f17c-49ee-b6ec-48ef13859488" absoluteBounds="3.515, 41.335, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="75180760-f17c-49ee-b6ec-48ef13859488" absoluteBounds="6.2650000000000006, 99.710000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(9.5 : 11.2556469726562); (9.79166666666667 : 11.2556469726562 : JumpStart); (10.1770833333333 : 11.2556469726562 : JumpEnd); (12.2291666666667 : 11.2556469726562 : JumpStart); (12.3958333333333 : 11.2556469726562 : JumpEnd); (12.5 : 11.2556469726562); (12.5 : 33.625); (13.7916666666667 : 33.625 : JumpStart); (13.9583333333333 : 33.625 : JumpEnd); (14 : 33.625); (14 : 40); (13.9583333333333 : 40 : JumpStart); (13.7916666666667 : 40 : JumpEnd); (13.25 : 40); (13.25 : 40.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(7.7460941875 : 51.5785139973958); (7.7460941875 : 52.5); (8.32291616666667 : 52.5 : JumpStart); (8.48958283333334 : 52.5 : JumpEnd); (8.5 : 52.5); (8.5 : 65.7556469726563); (8.54166666666667 : 65.7556469726563 : JumpStart); (8.70833333333333 : 65.7556469726563 : JumpEnd); (8.72916666666667 : 65.7556469726563 : JumpStart); (8.89583333333333 : 65.7556469726563 : JumpEnd); (10.4166666666667 : 65.7556469726563 : JumpStart); (10.5833333333333 : 65.7556469726563 : JumpEnd); (11.7291666666667 : 65.7556469726563 : JumpStart); (11.8958333333333 : 65.7556469726563 : JumpEnd); (12.25 : 65.7556469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfCourseForContact" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="24d45f30-4354-4c3e-98ed-8856299523f5" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.98437325 : 49.625); (1.98437325 : 40.625); (2.19791716666667 : 40.625 : JumpStart); (2.36458383333333 : 40.625 : JumpEnd); (2.49479441666667 : 40.625 : JumpStart); (2.66146108333333 : 40.625 : JumpEnd); (2.72916666666667 : 40.625 : JumpStart); (2.89583333333333 : 40.625 : JumpEnd); (2.97916666666667 : 40.625 : JumpStart); (3.14583333333333 : 40.625 : JumpEnd); (3.16666666666667 : 40.625 : JumpStart); (3.33333333333333 : 40.625 : JumpEnd); (8.29166666666667 : 40.625 : JumpStart); (8.86458333333333 : 40.625 : JumpEnd); (8.875 : 40.625); (8.875 : 42.6939111328125); (11.875 : 42.6939111328125); (11.875 : 41.0681469726563); (12.25 : 41.0681469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 69.2700512695313); (5.54166666666667 : 69.2700512695313 : JumpStart); (5.70833333333333 : 69.2700512695313 : JumpEnd); (5.72916666666667 : 69.2700512695313 : JumpStart); (6.34895833333333 : 69.2700512695313 : JumpEnd); (8.47916666666667 : 69.2700512695313 : JumpStart); (8.70833333333333 : 69.2700512695313 : JumpEnd); (8.72916666666667 : 69.2700512695313 : JumpStart); (8.89583333333333 : 69.2700512695313 : JumpEnd); (11.7291666666667 : 69.2700512695313 : JumpStart); (11.8958333333333 : 69.2700512695313 : JumpEnd); (13.25 : 69.2700512695313); (13.25 : 66.3862939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfCourse/GolfCourse_GolfCourseForContact" />
       <nodes>
         <classShapeMoniker Id="cc406803-b318-4ccd-a38d-c8d658d464ba" />
         <classShapeMoniker Id="24d45f30-4354-4c3e-98ed-8856299523f5" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 12.7792822281651); (9.81607443490112 : 13.0953566630662 : JumpStart); (9.93392556509888 : 13.213207793264 : JumpEnd); (9.94107443490112 : 13.2203566630662 : JumpStart); (10.0589255650989 : 13.338207793264 : JumpEnd); (10.0625 : 13.3417822281651); (10.0625 : 14.875); (10.0729166666667 : 14.875 : JumpStart); (10.2395833333333 : 14.875 : JumpEnd); (12.3541666666667 : 14.875 : JumpStart); (12.7708333333333 : 14.875 : JumpEnd); (13.6666666666667 : 14.875 : JumpStart); (13.8333333333333 : 14.875 : JumpEnd); (14.2916671666667 : 14.875 : JumpStart); (14.4583338333333 : 14.875 : JumpEnd); (15.2916666666667 : 14.875 : JumpStart); (15.4583333333333 : 14.875 : JumpEnd); (18.75 : 14.875); (19.25 : 15.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 50.8519848132011); (8.72311028094391 : 51.5064355226871 : JumpStart); (8.77688971905609 : 51.6641870672568 : JumpEnd); (8.875 : 51.9519745358574); (8.875 : 51.5); (9.01041666666667 : 51.5 : JumpStart); (9.17708333333333 : 51.5 : JumpEnd); (11.875 : 51.5); (12.25 : 51.875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolferStatsConfiguration" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="8653d916-4f64-4a11-bd7c-35dd76729953" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.765626 : 12.8285139973958); (8.765626 : 13.9375); (8.94791866666667 : 13.9375 : JumpStart); (9.11458533333333 : 13.9375 : JumpEnd); (9.47916666666667 : 13.9375 : JumpStart); (9.77083333333333 : 13.9375 : JumpEnd); (9.78125 : 13.9375); (9.78125 : 31.25); (11.0729166666667 : 31.25 : JumpStart); (11.5833333333333 : 31.25 : JumpEnd); (12.4166666666667 : 31.25 : JumpStart); (12.6458333333333 : 31.25 : JumpEnd); (14.0416666666667 : 31.25 : JumpStart); (14.2083333333333 : 31.25 : JumpEnd); (15.125 : 31.25); (15.125 : 32.2604484049479); (15.5 : 32.2604484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 50.8191433862305); (8.66666666666667 : 50.8191433862305 : JumpStart); (8.83333333333333 : 50.8191433862305 : JumpEnd); (9.01041666666667 : 50.8191433862305 : JumpStart); (9.17708333333333 : 50.8191433862305 : JumpEnd); (11.7291666666667 : 50.8191433862305 : JumpStart); (11.8958333333333 : 50.8191433862305 : JumpEnd); (17.0416666666667 : 50.8191433862305 : JumpStart); (17.2083333333333 : 50.8191433862305 : JumpEnd); (19.9166666666667 : 50.8191433862305 : JumpStart); (20.0833333333333 : 50.8191433862305 : JumpEnd); (20.59375 : 50.8191433862305); (20.59375 : 84.125)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Contact/Contact_GolferStatsValue" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="241859f7-bfd2-4739-9102-3c183cc21b35" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.75 : 4.85220011393229); (3.875 : 4.85220011393229)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 57.1017976888021); (5.54166666666667 : 57.1017976888021 : JumpStart); (5.70833333333333 : 57.1017976888021 : JumpEnd); (5.72916666666667 : 57.1017976888021 : JumpStart); (6.02083333333333 : 57.1017976888021 : JumpEnd); (6.25 : 57.1017976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_GolfLeagueCourse" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="ecbcf0be-f951-43b8-bc24-b854ea46b362" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.57812775 : 49.625); (2.57812775 : 17.9631982421875); (2.72916666666667 : 17.9631982421875 : JumpStart); (3.64583333333333 : 17.9631982421875 : JumpEnd); (3.75 : 17.9631982421875); (3.75 : 4.39524998209635); (3.875 : 4.39524998209635)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 61.3115374615385); (5.56607443490112 : 61.2454630266374 : JumpStart); (5.68392556509888 : 61.1276118964396 : JumpEnd); (5.75357443490112 : 61.0579630266374 : JumpStart); (5.93392556509888 : 60.8776118964396 : JumpEnd); (5.9375 : 60.8740374615385); (5.9375 : 56.394646844401); (5.97916666666667 : 56.394646844401 : JumpStart); (6.14583333333333 : 56.394646844401 : JumpEnd); (6.25 : 56.394646844401)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfCourse/GolfCourse_GolfLeagueCourse" />
       <nodes>
         <classShapeMoniker Id="cc406803-b318-4ccd-a38d-c8d658d464ba" />
         <classShapeMoniker Id="ecbcf0be-f951-43b8-bc24-b854ea46b362" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.75 : 3.66429768880208); (9.57291666666667 : 3.66429768880208 : JumpStart); (9.73958333333333 : 3.66429768880208 : JumpEnd); (9.91666666666667 : 3.66429768880208 : JumpStart); (10.0833333333333 : 3.66429768880208 : JumpEnd); (17.25 : 3.66429768880208)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 58.0392976888021); (5.54166666666667 : 58.0392976888021 : JumpStart); (5.70833333333333 : 58.0392976888021 : JumpEnd); (5.72916666666667 : 58.0392976888021 : JumpStart); (6.02083333333333 : 58.0392976888021 : JumpEnd); (8.32291616666667 : 58.0392976888021 : JumpStart); (8.95833333333333 : 58.0392976888021 : JumpEnd); (9.01041666666667 : 58.0392976888021 : JumpStart); (9.17708333333333 : 58.0392976888021 : JumpEnd); (9.25 : 58.0392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_GolfLeagueSetup" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 10.8834679589844); (9.79166666666667 : 10.8834679589844 : JumpStart); (10.0833333333333 : 10.8834679589844 : JumpEnd); (12.5 : 10.8834679589844); (12.5 : 8.5); (12.5416666666667 : 8.5 : JumpStart); (12.7708333333333 : 8.5 : JumpEnd); (15.2916666666667 : 8.5 : JumpStart); (15.4583333333333 : 8.5 : JumpEnd); (16.6666666666667 : 8.5 : JumpStart); (16.8333333333333 : 8.5 : JumpEnd); (17 : 8.5); (17 : 9.11684407552083); (17.0416666666667 : 9.11684407552083 : JumpStart); (17.2083333333333 : 9.11684407552083 : JumpEnd); (17.6354146666667 : 9.11684407552083 : JumpStart); (17.8020813333333 : 9.11684407552083 : JumpEnd); (18.25 : 9.11684407552083); (18.25 : 8.86684407552083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.4062495 : 51.5785139973958); (8.4062495 : 61.3116682942708); (8.41666666666667 : 61.3116682942708 : JumpStart); (8.70833333333333 : 61.3116682942708 : JumpEnd); (8.72916666666667 : 61.3116682942708 : JumpStart); (8.95833333333333 : 61.3116682942708 : JumpEnd); (9.01041666666667 : 61.3116682942708 : JumpStart); (9.17708333333333 : 61.3116682942708 : JumpEnd); (9.25 : 61.3116682942708)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfLeagueSetup" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 11.6278259863281); (9.91666666666667 : 11.6278259863281 : JumpStart); (10.0833333333333 : 11.6278259863281 : JumpEnd); (12.2291666666667 : 11.6278259863281 : JumpStart); (12.3958333333333 : 11.6278259863281 : JumpEnd); (12.625 : 11.6278259863281); (12.625 : 8.25); (16.75 : 8.25); (16.75 : 9.36684407552083); (17.718748 : 9.36684407552083); (17.718748 : 8.86684407552083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.4062495 : 51.5785139973958); (8.4062495 : 60.6278279036458); (8.41666666666667 : 60.6278279036458 : JumpStart); (8.70833333333333 : 60.6278279036458 : JumpEnd); (9.01041666666667 : 60.6278279036458 : JumpStart); (9.17708333333333 : 60.6278279036458 : JumpEnd); (9.25 : 60.6278279036458)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfLeagueSetup1" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 8.9062505); (12.375 : 8.9062505); (12.375 : 8.625); (17.125 : 8.625); (17.125 : 9.24184407552083); (18.781252 : 9.24184407552083); (18.781252 : 8.86684407552083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.4062495 : 51.5785139973958); (8.4062495 : 61.9955086848958); (8.41666666666667 : 61.9955086848958 : JumpStart); (8.70833333333333 : 61.9955086848958 : JumpEnd); (8.72916666666667 : 61.9955086848958 : JumpStart); (8.95833333333333 : 61.9955086848958 : JumpEnd); (9.01041666666667 : 61.9955086848958 : JumpStart); (9.17708333333333 : 61.9955086848958 : JumpEnd); (9.25 : 61.9955086848958)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfLeagueSetup2" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.09375225 : 8.75); (9.09375225 : 8.07859537760417); (9.91666666666667 : 8.07859537760417 : JumpStart); (10.1770833333333 : 8.07859537760417 : JumpEnd); (12.6041666666667 : 8.07859537760417 : JumpStart); (12.7708333333333 : 8.07859537760417 : JumpEnd); (15.2916666666667 : 8.07859537760417 : JumpStart); (15.4583333333333 : 8.07859537760417 : JumpEnd); (16.875 : 8.07859537760417); (16.875 : 6.11340134440104); (17.25 : 6.11340134440104)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.4062495 : 51.5785139973958); (8.4062495 : 55.1354484049479); (8.41666666666667 : 55.1354484049479 : JumpStart); (8.95833333333333 : 55.1354484049479 : JumpEnd); (9.01041666666667 : 55.1354484049479 : JumpStart); (9.17708333333333 : 55.1354484049479 : JumpEnd); (9.25 : 55.1354484049479)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfLeagueSetup3" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="913e76b6-6dc1-48f0-98b3-147be90a1eed" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.2812505 : 49.625); (2.2812505 : 25.46875); (2.49479441666667 : 25.46875 : JumpStart); (2.66146108333333 : 25.46875 : JumpEnd); (2.72916666666667 : 25.46875 : JumpStart); (3.39583333333333 : 25.46875 : JumpEnd); (5.66666666666667 : 25.46875 : JumpStart); (5.95833333333333 : 25.46875 : JumpEnd); (6.32291666666667 : 25.46875 : JumpStart); (6.48958333333333 : 25.46875 : JumpEnd); (7.72916666666667 : 25.46875 : JumpStart); (7.89583333333333 : 25.46875 : JumpEnd); (9.47916666666667 : 25.46875 : JumpStart); (9.95833333333333 : 25.46875 : JumpEnd); (10.0104166666667 : 25.46875 : JumpStart); (10.2395833333333 : 25.46875 : JumpEnd); (11.0260436666667 : 25.46875 : JumpStart); (11.1927103333333 : 25.46875 : JumpEnd); (12.3541666666667 : 25.46875 : JumpStart); (12.6770833333333 : 25.46875 : JumpEnd); (12.75 : 25.46875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(4.49999975 : 77.8281070963542); (4.49999975 : 81.7377872428386); (4.94791866666667 : 81.7377872428386 : JumpStart); (5.11458533333333 : 81.7377872428386 : JumpEnd); (5.72916666666667 : 81.7377872428386 : JumpStart); (6.30208333333333 : 81.7377872428386 : JumpEnd); (10.5985664218875 : 81.7377872428386 : JumpStart); (10.7652330885542 : 81.7377872428386 : JumpEnd); (11.0416666666667 : 81.7377872428386 : JumpStart); (11.6145833333333 : 81.7377872428386 : JumpEnd); (11.75 : 81.7377872428386)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/GolfCourse/GolfCourse_GolfMatch" />
       <nodes>
         <classShapeMoniker Id="cc406803-b318-4ccd-a38d-c8d658d464ba" />
         <classShapeMoniker Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(14.75 : 26.4142976888021); (15.5 : 26.4142976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 82.9743964726563); (13.7916666666667 : 82.9743964726563 : JumpStart); (13.9583333333333 : 82.9743964726563 : JumpEnd); (14.1041666666667 : 82.9743964726563 : JumpStart); (14.2708333333333 : 82.9743964726563 : JumpEnd); (14.2916666666667 : 82.9743964726563 : JumpStart); (14.4583333333333 : 82.9743964726563 : JumpEnd); (16.5104154166667 : 82.9743964726563 : JumpStart); (16.7708358333333 : 82.9743964726563 : JumpEnd); (16.7916666666667 : 82.9743964726563 : JumpStart); (16.9583333333333 : 82.9743964726563 : JumpEnd); (17.0416666666667 : 82.9743964726563 : JumpStart); (17.2083333333333 : 82.9743964726563 : JumpEnd); (17.59375 : 82.9743964726563); (17.59375 : 83.5)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfMatch/GolfMatch_GolfMatchScore" />
       <nodes>
         <classShapeMoniker Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" />
         <classShapeMoniker Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(18.75 : 26.4767976888021); (17.5 : 26.4767976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(21.2092307692308 : 89.625); (20.4537212653735 : 89.3626226179668 : JumpStart); (20.2962787346265 : 89.3079451336636 : JumpEnd); (20.125 : 89.2484625384615); (20.125 : 84.2892976888021); (20.0833333333333 : 84.2892976888021 : JumpStart); (19.9166666666667 : 84.2892976888021 : JumpEnd); (19.7395833333333 : 84.2892976888021 : JumpStart); (19.5729166666667 : 84.2892976888021 : JumpEnd); (19.5 : 84.2892976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfRoster/GolfRoster_GolfMatchScore" />
       <nodes>
         <classShapeMoniker Id="140e18e1-5b67-4fb4-b10e-7070c4edcc4e" />
         <classShapeMoniker Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.296878 : 12.8285139973958); (9.296878 : 13.625); (9.59375 : 13.625); (9.59375 : 27.9199039713542); (9.69791666666667 : 27.9199039713542 : JumpStart); (9.95833333333333 : 27.9199039713542 : JumpEnd); (9.97916416666667 : 27.9199039713542 : JumpStart); (10.1770833333333 : 27.9199039713542 : JumpEnd); (10.8854146666667 : 27.9199039713542 : JumpStart); (11.0520813333333 : 27.9199039713542 : JumpEnd); (12.0416666666667 : 27.9199039713542 : JumpStart); (12.2083333333333 : 27.9199039713542 : JumpEnd); (12.3541666666667 : 27.9199039713542 : JumpStart); (12.7708333333333 : 27.9199039713542 : JumpEnd); (14.9166666666667 : 27.9199039713542 : JumpStart); (15.0833333333333 : 27.9199039713542 : JumpEnd); (18.375 : 27.9199039713542); (18.375 : 26.7964978372396); (18.75 : 26.7964978372396)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 49.777934783153); (9.01041666666667 : 49.777934783153 : JumpStart); (9.17708333333333 : 49.777934783153 : JumpEnd); (11.7291666666667 : 49.777934783153 : JumpStart); (11.8958333333333 : 49.777934783153 : JumpEnd); (12.1666666666667 : 49.777934783153 : JumpStart); (12.3333333333333 : 49.777934783153 : JumpEnd); (12.375 : 49.777934783153); (12.375 : 50.5689925130208); (17.0416666666667 : 50.5689925130208 : JumpStart); (17.2083333333333 : 50.5689925130208 : JumpEnd); (20 : 50.5689925130208); (20 : 89.25); (20.2916666666667 : 89.25 : JumpStart); (20.4583333333333 : 89.25 : JumpEnd); (21.5 : 89.25); (21.5 : 89.625)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfRoster" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="140e18e1-5b67-4fb4-b10e-7070c4edcc4e" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(14.375 : 44.375); (14.375 : 32.7344251074219); (15.5 : 32.7344251074219)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.75 : 104.126537461538); (17.1265374615385 : 103.75); (20.375 : 103.75); (20.375 : 86.0208968098958); (20.5 : 85.8958968098958)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfScore/GolfScore_GolferStatsValue" />
       <nodes>
         <classShapeMoniker Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" />
         <classShapeMoniker Id="241859f7-bfd2-4739-9102-3c183cc21b35" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(13.531248 : 44.375); (13.531248 : 42.0112939453125); (14.75 : 42.0112939453125); (14.75 : 39.0401025390625); (14.125 : 39.0401025390625); (14.125 : 28.1074039713542); (15 : 28.1074039713542); (15 : 26.8401985332031); (15.5 : 26.8401985332031)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(15.75 : 104.125); (15.75 : 99.0785953776042); (17 : 99.0785953776042); (17 : 84.2892976888021); (17.0416666666667 : 84.2892976888021 : JumpStart); (17.2083333333333 : 84.2892976888021 : JumpEnd); (17.5 : 84.2892976888021)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/GolfScore/GolfScore_GolfMatchScore" />
       <nodes>
         <classShapeMoniker Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" />
         <classShapeMoniker Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 11.4417364794922); (9.79166666666667 : 11.4417364794922 : JumpStart); (10.1770833333333 : 11.4417364794922 : JumpEnd); (12.2291666666667 : 11.4417364794922 : JumpStart); (12.3958333333333 : 11.4417364794922 : JumpEnd); (12.5625 : 11.4417364794922); (12.5625 : 33.375); (13.875 : 33.375); (13.875 : 40.125); (14.2916666666667 : 40.125 : JumpStart); (14.4583333333333 : 40.125 : JumpEnd); (14.5 : 40.125); (14.5 : 44); (14.4583333333333 : 44 : JumpStart); (14.2916666666667 : 44 : JumpEnd); (13.6145813333333 : 44 : JumpStart); (13.4479146666667 : 44 : JumpEnd); (13.109372 : 44); (13.109372 : 44.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(6.77514348046875 : 51.5785139973958); (6.77514348046875 : 52.625); (8.32291616666667 : 52.625 : JumpStart); (8.58333333333333 : 52.625 : JumpEnd); (8.625 : 52.625); (8.625 : 77); (10.5985664218875 : 77 : JumpStart); (10.7652330885542 : 77 : JumpEnd); (11.0416666666667 : 77 : JumpStart); (11.2083333333333 : 77 : JumpEnd); (11.3125 : 77); (11.3125 : 103); (14.375 : 103); (14.375 : 105.642205438151); (14.4166666666667 : 105.642205438151 : JumpStart); (14.5833333333333 : 105.642205438151 : JumpEnd); (14.75 : 105.642205438151)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Contact/Contact_GolfScore" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(3.75 : 62.4365055338542); (13.90625 : 62.4365055338542); (13.90625 : 50.5688297526042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.031252 : 77.8281070963542); (5.031252 : 103.375); (14.2916666666667 : 103.375 : JumpStart); (14.4583333333333 : 103.375 : JumpEnd); (14.5 : 103.375); (14.5 : 107.221914876302); (14.75 : 107.221914876302)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/GolfCourse/GolfCourse_GolfScore" />
       <nodes>
         <classShapeMoniker Id="cc406803-b318-4ccd-a38d-c8d658d464ba" />
         <classShapeMoniker Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(18.5 : 41.0200512695313); (21.15625 : 41.0200512695313); (21.15625 : 16.7612939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(10.5 : 66.25); (10.5 : 65.5112939453125); (11.5 : 65.5112939453125); (11.5 : 52.5993989726563); (11.7291666666667 : 52.5993989726563 : JumpStart); (11.8958333333333 : 52.5993989726563 : JumpEnd); (12.25 : 52.5993989726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfStatDef/GolfStatDef_GolferStatsConfiguration" />
       <nodes>
         <classShapeMoniker Id="50a7d559-de83-4bfb-ba02-6d16880ea967" />
         <classShapeMoniker Id="8653d916-4f64-4a11-bd7c-35dd76729953" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 47.4719148763021); (12.75 : 47.4719148763021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(14 : 108.832872314453); (14.75 : 108.832872314453)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfTeeInformation/GolfTeeInformation_GolfScore" />
       <nodes>
         <classShapeMoniker Id="c8e48f3c-6c0f-430e-b2a4-70b01adbd9d4" />
         <classShapeMoniker Id="d4ac6d52-22ab-4f65-92f0-1bb525491ee9" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(3.75 : 50.3949698893229); (10 : 50.3949698893229)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(3.9687475 : 77.8281070963542); (3.9687475 : 107.269969889323); (12 : 107.269969889323)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/GolfCourse/GolfCourse_GolfTeeInformation" />
       <nodes>
         <classShapeMoniker Id="cc406803-b318-4ccd-a38d-c8d658d464ba" />
         <classShapeMoniker Id="c8e48f3c-6c0f-430e-b2a4-70b01adbd9d4" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(0.75 : 4.00080485026042); (0.583333333333333 : 4.00080485026042 : JumpStart); (0.416666666666667 : 4.00080485026042 : JumpEnd); (0.375 : 4.00080485026042); (0.375 : 11.875); (0.736975666666667 : 11.875 : JumpStart); (0.903642333333334 : 11.875 : JumpEnd); (3.32291666666667 : 11.875 : JumpStart); (3.92708333333333 : 11.875 : JumpEnd); (7.25 : 11.875); (7.25 : 13.0785139973958); (7.88541466666667 : 13.0785139973958 : JumpStart); (8.05208133333333 : 13.0785139973958 : JumpEnd); (8.15104066666667 : 13.0785139973958 : JumpStart); (8.31770733333333 : 13.0785139973958 : JumpEnd); (8.41666666666667 : 13.0785139973958 : JumpStart); (8.58333333333333 : 13.0785139973958 : JumpEnd); (8.68229266666667 : 13.0785139973958 : JumpStart); (8.84895933333333 : 13.0785139973958 : JumpEnd); (8.94791866666667 : 13.0785139973958 : JumpStart); (9.38021133333334 : 13.0785139973958 : JumpEnd); (9.71589843589737 : 13.0785139973958 : JumpStart); (9.95833333333333 : 13.0785139973958 : JumpEnd); (10.03125 : 13.0785139973958); (10.03125 : 14.6794254557292); (10.0729166666667 : 14.6794254557292 : JumpStart); (10.2395833333333 : 14.6794254557292 : JumpEnd); (12.3541666666667 : 14.6794254557292 : JumpStart); (12.7708333333333 : 14.6794254557292 : JumpEnd); (13.6666666666667 : 14.6794254557292 : JumpStart); (13.8333333333333 : 14.6794254557292 : JumpEnd); (14.2916671666667 : 14.6794254557292 : JumpStart); (14.4583338333333 : 14.6794254557292 : JumpEnd); (15.2916666666667 : 14.6794254557292 : JumpStart); (15.4583333333333 : 14.6794254557292 : JumpEnd); (16 : 14.6794254557292); (16 : 12.0208968098958); (18.25 : 12.0208968098958); (18.25 : 11.6458968098958)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_hof" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="9eb4e8b6-e180-4f6f-83fb-b180cbbaccfe" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(8.6250005 : 8.75); (8.6250005 : 8.4375); (9.91666666666667 : 8.4375 : JumpStart); (10.1770833333333 : 8.4375 : JumpEnd); (12.5416666666667 : 8.4375 : JumpStart); (12.7708333333333 : 8.4375 : JumpEnd); (15.2916666666667 : 8.4375 : JumpStart); (15.4583333333333 : 8.4375 : JumpEnd); (16.375 : 8.4375); (16.375 : 10.7604484049479); (17.25 : 10.7604484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Contact/Contact_hof" />
-      <nodes>
-        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
-        <classShapeMoniker Id="9eb4e8b6-e180-4f6f-83fb-b180cbbaccfe" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(1.484374 : 5.75160970052083); (1.484374 : 7.1875); (1.66666666666667 : 7.1875 : JumpStart); (1.96614633333333 : 7.1875 : JumpEnd); (1.97916666666667 : 7.1875 : JumpStart); (2.14583333333333 : 7.1875 : JumpEnd); (3.46875 : 7.1875); (3.46875 : 15); (3.0625 : 15); (3.0625 : 47.0777498372396); (3.5 : 47.0777498372396)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_HOFNomination" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="18c12e76-50be-424a-a1f5-9310e813ca00" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(2.546878 : 5.75160970052083); (2.546878 : 6.625); (2.59635766666667 : 6.625 : JumpStart); (2.76302433333333 : 6.625 : JumpEnd); (3.4375 : 6.625); (3.4375 : 15.75); (3.375 : 15.75); (3.375 : 21.0681469726563); (3.5 : 21.0681469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_HOFNominationSetup" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="0c0b4a97-cd4d-45f1-b6ff-5cc16afeedc5" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(2.281252 : 5.75160970052083); (2.281252 : 6.75); (2.33073166666667 : 6.75 : JumpStart); (2.49739833333333 : 6.75 : JumpEnd); (2.59635766666667 : 6.75 : JumpStart); (2.76302433333333 : 6.75 : JumpEnd); (3.32291666666667 : 6.75 : JumpStart); (3.48958333333333 : 6.75 : JumpEnd); (3.5 : 6.75); (3.5 : 14.75); (3.48958333333333 : 14.75 : JumpStart); (3.32291666666667 : 14.75 : JumpEnd); (3 : 14.75); (3 : 27.1931469726563); (3.04166666666667 : 27.1931469726563 : JumpStart); (3.39583333333333 : 27.1931469726563 : JumpEnd); (3.5 : 27.1931469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 60.350454854367); (5.56607443490112 : 60.4165292892681 : JumpStart); (5.68392556509888 : 60.5343804194659 : JumpEnd); (5.75357443490112 : 60.6040292892681 : JumpStart); (5.87142556509888 : 60.7218804194659 : JumpEnd); (5.87857443490112 : 60.7290292892681 : JumpStart); (5.99642556509888 : 60.8468804194659 : JumpEnd); (6.21875 : 61.069204854367); (6.21875 : 85.3181469726563); (6.25 : 85.3181469726563)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_League" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="1b48fea5-8576-4bea-81c5-c3e6e2e071b5" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.75 : 5.75160970052083); (1.75 : 7); (1.79947966666667 : 7 : JumpStart); (1.96614633333333 : 7 : JumpEnd); (1.97916666666667 : 7 : JumpStart); (2.14583333333333 : 7 : JumpEnd); (2.33073166666667 : 7 : JumpStart); (2.49739833333333 : 7 : JumpEnd); (3.32291666666667 : 7 : JumpStart); (3.58333333333333 : 7 : JumpEnd); (3.59375 : 7); (3.59375 : 15.875); (3.53645833333333 : 15.875 : JumpStart); (3.22916666666667 : 15.875 : JumpEnd); (3.1875 : 15.875); (3.1875 : 36.1642976888021); (3.5 : 36.1642976888021)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_LeagueFAQ" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="d08c855f-8532-4165-baca-c6e7e5e2f44a" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(2.679691 : 5.75160970052083); (2.679691 : 6.8125); (3.32291666666667 : 6.8125 : JumpStart); (3.83333333333333 : 6.8125 : JumpEnd); (3.84375 : 6.8125); (3.84375 : 15.25); (3.83333333333333 : 15.25 : JumpStart); (3.32291666666667 : 15.25 : JumpEnd); (3.25 : 15.25); (3.25 : 44.2315991210938); (3.5 : 44.2315991210938)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_LeagueNew" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="ade857cc-0ac2-4372-b856-cbc2d46a46d1" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(10 : 38.5); (10 : 37.3958968098958); (11.0729166666667 : 37.3958968098958 : JumpStart); (11.2395833333333 : 37.3958968098958 : JumpEnd); (11.25 : 37.3958968098958); (11.25 : 30.4535953776042); (11.2395833333333 : 30.4535953776042 : JumpStart); (11.0729166666667 : 30.4535953776042 : JumpEnd); (10.1770833333333 : 30.4535953776042 : JumpStart); (10.0104166666667 : 30.4535953776042 : JumpEnd); (9.875 : 30.4535953776042); (9.875 : 14.2708968098958); (10 : 14.2708968098958); (10 : 1.44314697265625); (10.75 : 1.44314697265625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_GameRecap" />
-      <nodes>
-        <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
-        <classShapeMoniker Id="1f381a85-b690-461a-95ef-4cb24aa6d590" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(10.531252 : 38.5); (10.531252 : 37.6458968098958); (11.0729166666667 : 37.6458968098958 : JumpStart); (11.2395833333333 : 37.6458968098958 : JumpEnd); (11.5 : 37.6458968098958); (11.5 : 30.4535953776042); (12.4375 : 30.4535953776042); (12.4375 : 12.9973752210286); (12.4791666666667 : 12.9973752210286 : JumpStart); (12.6770833333333 : 12.9973752210286 : JumpEnd); (12.75 : 12.9973752210286)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 94.7588525390625); (16.9166666666667 : 94.7588525390625 : JumpStart); (17.0833333333333 : 94.7588525390625 : JumpEnd); (19.5729166666667 : 94.7588525390625 : JumpStart); (19.7395833333333 : 94.7588525390625 : JumpEnd); (20.2916666666667 : 94.7588525390625 : JumpStart); (20.4583333333333 : 94.7588525390625 : JumpEnd); (22.65625 : 94.7588525390625); (22.65625 : 82.4919254557292)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_batstatsum" />
       <nodes>
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
         <classShapeMoniker Id="0d6c4ab1-de9a-4918-9d8b-54c52f7742b6" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.468748 : 38.5); (9.468748 : 37.5208968098958); (9.91666666666667 : 37.5208968098958 : JumpStart); (10.0833333333333 : 37.5208968098958 : JumpEnd); (11.0729166666667 : 37.5208968098958 : JumpStart); (11.2395833333333 : 37.5208968098958 : JumpEnd); (11.375 : 37.5208968098958); (11.375 : 30.7035953776042); (11.4166666666667 : 30.7035953776042 : JumpStart); (11.5833333333333 : 30.7035953776042 : JumpEnd); (12.4166666666667 : 30.7035953776042 : JumpStart); (12.6458333333333 : 30.7035953776042 : JumpEnd); (12.6875 : 30.7035953776042); (12.6875 : 7.69399251302083); (12.75 : 7.69399251302083); (12.75 : 5.40465413411458); (13.75 : 5.40465413411458)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 92.2807682307692); (14.1875 : 91.8432682307692); (14.1875 : 77.6546541341146); (14.2916666666667 : 77.6546541341146 : JumpStart); (14.4583333333333 : 77.6546541341146 : JumpEnd); (16.7916666666667 : 77.6546541341146 : JumpStart); (16.9583333333333 : 77.6546541341146 : JumpEnd); (17.0416666666667 : 77.6546541341146 : JumpStart); (17.2083333333333 : 77.6546541341146 : JumpEnd); (17.2916666666667 : 77.6546541341146 : JumpStart); (17.6145833333333 : 77.6546541341146 : JumpEnd); (17.75 : 77.6546541341146)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_fieldstatsum" />
       <nodes>
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
         <classShapeMoniker Id="66011f59-c304-443f-a3f1-1e81dedc5870" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9 : 40.0392976888021); (8.86458333333333 : 40.0392976888021 : JumpStart); (8.29166666666667 : 40.0392976888021 : JumpEnd); (3.33333333333333 : 40.0392976888021 : JumpStart); (3.16666666666667 : 40.0392976888021 : JumpEnd); (3.14583333333333 : 40.0392976888021 : JumpStart); (2.97916666666667 : 40.0392976888021 : JumpEnd); (2.89583333333333 : 40.0392976888021 : JumpStart); (2.72916666666667 : 40.0392976888021 : JumpEnd); (2.66146108333333 : 40.0392976888021 : JumpStart); (2.49479441666667 : 40.0392976888021 : JumpEnd); (2.36458383333333 : 40.0392976888021 : JumpStart); (2.19791716666667 : 40.0392976888021 : JumpEnd); (1.445311375 : 40.0392976888021); (1.445311375 : 17.7131982421875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 92.2853836153846); (14.375 : 91.6603836153846); (14.375 : 75.4631982421875); (16.7916666666667 : 75.4631982421875 : JumpStart); (16.9583333333333 : 75.4631982421875 : JumpEnd); (17.1582223548678 : 75.4631982421875); (17.3160744349011 : 75.3053461621542 : JumpStart); (17.4339255650989 : 75.1874950319564 : JumpEnd); (17.4723244349011 : 75.1490961621542 : JumpStart); (17.6839255650989 : 74.9374950319564 : JumpEnd); (17.7832223548678 : 74.8381982421875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_GameEjection" />
       <nodes>
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
         <classShapeMoniker Id="69ac44e3-9e46-4013-b94e-4004a6986041" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(7.8125 : 27.625); (7.8125 : 20.4535953776042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(10.9776060208834 : 85.625); (11.0660744349011 : 85.5365315859823 : JumpStart); (11.1839255650989 : 85.4186804557845 : JumpEnd); (11.1910744349011 : 85.4115315859823 : JumpStart); (11.3714255650989 : 85.2311804557845 : JumpEnd); (11.375 : 85.2276060208834); (11.375 : 71.7023800734675); (11 : 71.3273800734675)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_DivisionSeason" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="553f637d-ef74-4959-9ca7-933a592e301c" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(6.40625 : 27.625); (6.40625 : 17.6050032552083); (6.33333333333333 : 17.6050032552083 : JumpStart); (6.16666666666667 : 17.6050032552083 : JumpEnd); (3.89583333333333 : 17.6050032552083 : JumpStart); (3.66666666666667 : 17.6050032552083 : JumpEnd); (3.64583333333333 : 17.6050032552083 : JumpStart); (2.79166666666667 : 17.6050032552083 : JumpEnd); (2.75 : 17.6050032552083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11 : 85.6793843778546); (11.0660744349011 : 85.6133099429535 : JumpStart); (11.1839255650989 : 85.4954588127557 : JumpEnd); (11.1910744349011 : 85.4883099429535 : JumpStart); (11.3714255650989 : 85.3079588127557 : JumpEnd); (11.53125 : 85.1481343778546); (11.53125 : 75.2131982421875); (11.7291666666667 : 75.2131982421875 : JumpStart); (11.8958333333333 : 75.2131982421875 : JumpEnd); (13.7916666666667 : 75.2131982421875 : JumpStart); (13.9583333333333 : 75.2131982421875 : JumpEnd); (16.7916666666667 : 75.2131982421875 : JumpStart); (16.9583333333333 : 75.2131982421875 : JumpEnd); (17.0416666666667 : 75.2131982421875 : JumpStart); (17.2083333333333 : 75.2131982421875 : JumpEnd); (17.3432867976262 : 75.2131982421875); (17.4723244349011 : 75.0841606049126 : JumpStart); (17.6839255650989 : 74.8725594747148 : JumpEnd); (17.75 : 74.8064850398137)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_GameEjection" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="69ac44e3-9e46-4013-b94e-4004a6986041" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 28.3349519856771); (9.29166666666667 : 28.3349519856771 : JumpStart); (9.45833333333333 : 28.3349519856771 : JumpEnd); (9.47916666666667 : 28.3349519856771 : JumpStart); (9.64583333333333 : 28.3349519856771 : JumpEnd); (9.69791666666667 : 28.3349519856771 : JumpStart); (9.95833333333333 : 28.3349519856771 : JumpEnd); (10.0104166666667 : 28.3349519856771 : JumpStart); (10.1770833333333 : 28.3349519856771 : JumpEnd); (10.8854146666667 : 28.3349519856771 : JumpStart); (11.0520813333333 : 28.3349519856771 : JumpEnd); (12.3541666666667 : 28.3349519856771 : JumpStart); (12.7708333333333 : 28.3349519856771 : JumpEnd); (13.4375 : 28.3349519856771); (13.4375 : 27.8574039713542)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(10.3638005104417 : 85.625); (10.3638005104417 : 82.3688961214193); (10.5985664218875 : 82.3688961214193 : JumpStart); (10.7652330885542 : 82.3688961214193 : JumpEnd); (11.0416666666667 : 82.3688961214193 : JumpStart); (11.6145833333333 : 82.3688961214193 : JumpEnd); (11.75 : 82.3688961214193)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_GolfMatch" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 27.9904218977865); (9.375 : 27.9904218977865); (9.375 : 31.5)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(10 : 87.0112939453125); (10 : 90.0392976888021); (10.4166666666667 : 90.0392976888021 : JumpStart); (10.5833333333333 : 90.0392976888021 : JumpEnd); (11.0416666666667 : 90.0392976888021 : JumpStart); (11.4583333333333 : 90.0392976888021 : JumpEnd); (11.75 : 90.0392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_LeagueEvent" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="dc806934-2352-4e85-87f2-1f37e7e2eda2" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.22760602088341 : 29.0112939453125); (8.625 : 29.4086879244291); (8.625 : 41.1478564108073); (8.79166666666667 : 41.1478564108073 : JumpStart); (8.95833333333333 : 41.1478564108073 : JumpEnd); (9 : 41.1478564108073)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11 : 87.0112939453125); (11.0660744349011 : 87.0773683802136 : JumpStart); (11.1839255650989 : 87.1952195104114 : JumpEnd); (11.1910744349011 : 87.2023683802136 : JumpStart); (11.3714255650989 : 87.3827195104114 : JumpEnd); (11.375 : 87.3862939453125); (11.375 : 94.0969555664063); (11.75 : 94.0969555664063)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_LeagueSchedule" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 27.0312475); (5.66666666666667 : 27.0312475 : JumpStart); (6.11458333333333 : 27.0312475 : JumpEnd); (6.32291666666667 : 27.0312475 : JumpStart); (6.48958333333333 : 27.0312475 : JumpEnd); (6.828125 : 27.0312475); (6.828125 : 27.625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 85.8181469726563); (8.66666666666667 : 85.8181469726563 : JumpStart); (8.83333333333333 : 85.8181469726563 : JumpEnd); (9 : 85.8181469726563)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/League/League_LeagueSeason" />
       <nodes>
         <classShapeMoniker Id="1b48fea5-8576-4bea-81c5-c3e6e2e071b5" />
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(16.25 : 14.1959724589844); (16.2395833333333 : 14.1959724589844 : JumpStart); (15.9166666666667 : 14.1959724589844 : JumpEnd); (15.7083333333333 : 14.1959724589844 : JumpStart); (15.5416666666667 : 14.1959724589844 : JumpEnd); (15.4583333333333 : 14.1959724589844 : JumpStart); (15.2916666666667 : 14.1959724589844 : JumpEnd); (15 : 14.1959724589844); (15 : 14.6169254557292); (14.4583338333333 : 14.6169254557292 : JumpStart); (14.2916671666667 : 14.6169254557292 : JumpEnd); (13.8333333333333 : 14.6169254557292 : JumpStart); (13.6666666666667 : 14.6169254557292 : JumpEnd); (12.7708333333333 : 14.6169254557292 : JumpStart); (12.3541666666667 : 14.6169254557292 : JumpEnd); (10.2395833333333 : 14.6169254557292 : JumpStart); (9.66666666666667 : 14.6169254557292 : JumpEnd); (9.65625 : 14.6169254557292); (9.65625 : 13.375); (9.38021133333333 : 13.375 : JumpStart); (9.21354466666667 : 13.375 : JumpEnd); (9.11458533333333 : 13.375 : JumpStart); (8.94791866666667 : 13.375 : JumpEnd); (8.84895933333333 : 13.375 : JumpStart); (8.68229266666667 : 13.375 : JumpEnd); (8.58333333333333 : 13.375 : JumpStart); (8.41666666666667 : 13.375 : JumpEnd); (8.31770733333333 : 13.375 : JumpStart); (8.15104066666667 : 13.375 : JumpEnd); (6.625 : 13.375); (6.625 : 14.3381982421875); (6.33333333333333 : 14.3381982421875 : JumpStart); (6.16666666666667 : 14.3381982421875 : JumpEnd); (3.92708333333333 : 14.3381982421875 : JumpStart); (3.32291666666667 : 14.3381982421875 : JumpEnd); (1.75 : 14.3381982421875); (1.75 : 15.75)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11.25 : 53.2612939453125); (11.4410744349011 : 53.4523683802136 : JumpStart); (11.5589255650989 : 53.5702195104114 : JumpEnd); (11.625 : 53.6362939453125); (11.7291666666667 : 53.6362939453125 : JumpStart); (11.8958333333333 : 53.6362939453125 : JumpEnd); (17.0416666666667 : 53.6362939453125 : JumpStart); (17.2083333333333 : 53.6362939453125 : JumpEnd); (18.75 : 53.6362939453125); (18.75 : 72.875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueUmpire/LeagueUmpire_GameEjection" />
       <nodes>
         <classShapeMoniker Id="a0a1947c-78d5-47a7-b8c3-e3502aeb1715" />
         <classShapeMoniker Id="69ac44e3-9e46-4013-b94e-4004a6986041" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.882813 : 5.75160970052083); (1.882813 : 7.28125); (1.97916666666667 : 7.28125 : JumpStart); (2.14583333333333 : 7.28125 : JumpEnd); (3.32291666666667 : 7.28125 : JumpStart); (3.73958333333333 : 7.28125 : JumpEnd); (3.78125 : 7.28125); (3.78125 : 14.1506982421875); (6.16666666666667 : 14.1506982421875 : JumpStart); (6.33333333333333 : 14.1506982421875 : JumpEnd); (6.54166666666667 : 14.1506982421875 : JumpStart); (6.70833333333333 : 14.1506982421875 : JumpEnd); (7.4375 : 14.1506982421875); (7.4375 : 13.8333968098958); (8.15104066666667 : 13.8333968098958 : JumpStart); (8.31770733333333 : 13.8333968098958 : JumpEnd); (8.68229266666667 : 13.8333968098958 : JumpStart); (8.84895933333333 : 13.8333968098958 : JumpEnd); (8.94791866666667 : 13.8333968098958 : JumpStart); (9.11458533333333 : 13.8333968098958 : JumpEnd); (9.47916666666667 : 13.8333968098958 : JumpStart); (10.2083333333333 : 13.8333968098958 : JumpEnd); (12.2291666666667 : 13.8333968098958 : JumpStart); (12.6770833333333 : 13.8333968098958 : JumpEnd); (12.71875 : 13.8333968098958); (12.71875 : 14.4294254557292); (14.9166666666667 : 14.4294254557292 : JumpStart); (15.0833333333333 : 14.4294254557292 : JumpEnd); (15.2916666666667 : 14.4294254557292 : JumpStart); (15.4583333333333 : 14.4294254557292 : JumpEnd); (15.5416666666667 : 14.4294254557292 : JumpStart); (15.7083333333333 : 14.4294254557292 : JumpEnd); (15.9166666666667 : 14.4294254557292 : JumpStart); (16.0833333333333 : 14.4294254557292 : JumpEnd); (16.15625 : 14.4294254557292); (16.15625 : 13.4403214863281); (16.25 : 13.4403214863281)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 58.6258048502604); (5.54166666666667 : 58.6258048502604 : JumpStart); (6.02083333333333 : 58.6258048502604 : JumpEnd); (6.1875 : 58.6258048502604); (6.1875 : 58.375); (8.32291616666667 : 58.375 : JumpStart); (8.70833333333333 : 58.375 : JumpEnd); (8.75 : 58.375); (8.75 : 54); (8.91666666666667 : 54 : JumpStart); (9.17708333333333 : 54 : JumpEnd); (10.218748 : 54); (10.218748 : 53.2612939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_LeagueUmpire" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="a0a1947c-78d5-47a7-b8c3-e3502aeb1715" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(7.968748 : 12.8285139973958); (7.968748 : 13.4431469726563); (8.15104066666667 : 13.4431469726563 : JumpStart); (8.31770733333333 : 13.4431469726563 : JumpEnd); (8.41666666666667 : 13.4431469726563 : JumpStart); (8.58333333333333 : 13.4431469726563 : JumpEnd); (8.68229266666667 : 13.4431469726563 : JumpStart); (8.84895933333333 : 13.4431469726563 : JumpEnd); (8.94791866666667 : 13.4431469726563 : JumpStart); (9.11458533333333 : 13.4431469726563 : JumpEnd); (9.21354466666667 : 13.4431469726563 : JumpStart); (9.38021133333333 : 13.4431469726563 : JumpEnd); (9.79166666666667 : 13.4431469726563 : JumpStart); (10.1145833333333 : 13.4431469726563 : JumpEnd); (10.125 : 13.4431469726563); (10.125 : 14.7419254557292); (12.3541666666667 : 14.7419254557292 : JumpStart); (12.7708333333333 : 14.7419254557292 : JumpEnd); (13.6666666666667 : 14.7419254557292 : JumpStart); (13.8333333333333 : 14.7419254557292 : JumpEnd); (14.2916671666667 : 14.7419254557292 : JumpStart); (14.4583338333333 : 14.7419254557292 : JumpEnd); (15.2916666666667 : 14.7419254557292 : JumpStart); (15.4583333333333 : 14.7419254557292 : JumpEnd); (15.625 : 14.7419254557292); (15.625 : 13.8181469726563); (15.9166666666667 : 13.8181469726563 : JumpStart); (16.2395833333333 : 13.8181469726563 : JumpEnd); (16.25 : 13.8181469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(7.33788928125 : 51.5785139973958); (7.33788928125 : 52.0625); (7.66276085416667 : 52.0625 : JumpStart); (7.82942752083333 : 52.0625 : JumpEnd); (7.86686330729167 : 52.0625 : JumpStart); (8.03352997395833 : 52.0625 : JumpEnd); (8.07096576041667 : 52.0625 : JumpStart); (8.23763242708334 : 52.0625 : JumpEnd); (8.32291616666667 : 52.0625 : JumpStart); (8.48958283333334 : 52.0625 : JumpEnd); (9.01041666666667 : 52.0625 : JumpStart); (9.17708333333333 : 52.0625 : JumpEnd); (9.25 : 52.0625)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_LeagueUmpire" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="a0a1947c-78d5-47a7-b8c3-e3502aeb1715" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.031252 : 12.8285139973958); (9.031252 : 14.0625); (9.47916666666667 : 14.0625 : JumpStart); (9.73958333333333 : 14.0625 : JumpEnd); (9.8125 : 14.0625); (9.8125 : 27.375); (9.67708333333333 : 27.375 : JumpStart); (9.47916666666667 : 27.375 : JumpEnd); (8.375 : 27.375); (8.375 : 57.2412019856771); (10.25 : 57.2412019856771)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Contact/Contact_MemberBusiness" />
-      <nodes>
-        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
-        <classShapeMoniker Id="818968ef-d5fe-4efd-9457-ba73cffef8c6" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 12.7669745358574); (9.81607443490112 : 13.0830489707585 : JumpStart); (9.93392556509888 : 13.2009001009563 : JumpEnd); (9.96875 : 13.2357245358574); (9.96875 : 15.0272127278646); (10.0104166666667 : 15.0272127278646 : JumpStart); (10.2395833333333 : 15.0272127278646 : JumpEnd); (12.3541666666667 : 15.0272127278646 : JumpStart); (12.7708333333333 : 15.0272127278646 : JumpEnd); (13.6666666666667 : 15.0272127278646 : JumpStart); (13.8333333333333 : 15.0272127278646 : JumpEnd); (14.2916671666667 : 15.0272127278646 : JumpStart); (14.4583338333333 : 15.0272127278646 : JumpEnd); (15.2916666666667 : 15.0272127278646 : JumpStart); (15.4583333333333 : 15.0272127278646 : JumpEnd); (18.8188793945313 : 15.0272127278646 : JumpStart); (18.9855460611979 : 15.0272127278646 : JumpEnd); (21.4166666666667 : 15.0272127278646 : JumpStart); (21.5833333333333 : 15.0272127278646 : JumpEnd); (23 : 15.0272127278646)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Contact/Contact_MessagePost" />
-      <nodes>
-        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
-        <classShapeMoniker Id="a0ccd989-2e65-4240-9d07-0a1ff10ffd7a" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(22.25 : 13.9527498372396); (23 : 13.9527498372396)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/MessageTopic/MessageTopic_MessagePost" />
-      <nodes>
-        <classShapeMoniker Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" />
-        <classShapeMoniker Id="a0ccd989-2e65-4240-9d07-0a1ff10ffd7a" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(8.15624875 : 8.75); (8.15624875 : 8.5625); (8.54166716666667 : 8.5625 : JumpStart); (8.70833383333333 : 8.5625 : JumpEnd); (9.01041891666667 : 8.5625 : JumpStart); (9.17708558333333 : 8.5625 : JumpEnd); (9.91666666666667 : 8.5625 : JumpStart); (10.1770833333333 : 8.5625 : JumpEnd); (12.5104166666667 : 8.5625 : JumpStart); (12.7708333333333 : 8.5625 : JumpEnd); (15.2916666666667 : 8.5625 : JumpStart); (15.4583333333333 : 8.5625 : JumpEnd); (15.75 : 8.5625); (15.75 : 12.625); (15.9166666666667 : 12.625 : JumpStart); (16.0833333333333 : 12.625 : JumpEnd); (19.875 : 12.625); (19.875 : 13.0777498372396); (20.25 : 13.0777498372396)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 48.1668597380809); (12.34375 : 48.1668597380809); (12.34375 : 47.6554996744792)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_MessageTopic" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(19.5 : 36.0200512695313); (21.0729166666667 : 36.0200512695313 : JumpStart); (21.2395833333333 : 36.0200512695313 : JumpEnd); (21.5 : 36.0200512695313); (21.5 : 14.1554996744792)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11.5 : 37.5200512695313); (13.25 : 37.5200512695313); (13.25 : 45.5)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/MessageCategory/MessageCategory_MessageTopic" />
       <nodes>
         <classShapeMoniker Id="ccf7231f-a44e-4fc1-9645-226cc9c7cb9b" />
         <classShapeMoniker Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.75 : 5.72035720052083); (7.5 : 5.72035720052083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(4.11230769230769 : 56.875); (4.68379184164188 : 56.7651100393253 : JumpStart); (4.84746015835812 : 56.7336384667391 : JumpEnd); (4.94941784164188 : 56.7140331534167 : JumpStart); (5.11308615835812 : 56.6825615808305 : JumpEnd); (5.21504384164188 : 56.662956267508 : JumpStart); (5.37871215835812 : 56.6314846949218 : JumpEnd); (5.54316584164188 : 56.5998621051966 : JumpStart); (5.70683415835812 : 56.5683905326104 : JumpEnd); (5.73066584164188 : 56.5638079685237 : JumpStart); (6.01933415835812 : 56.5083003048222 : JumpEnd); (6.0625 : 56.5); (6.0625 : 53.6354484049479); (6.25 : 53.6354484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_PhotoGallery" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="82b80686-87f4-4dea-a5ed-7b017d3f740c" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(4.75 : 8.63544840494792); (4.62712 : 8.63544840494792); (4.62712 : 6.26877680989583); (8.5 : 6.26877680989583); (8.5 : 6.14589680989583)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 53.130224202474); (5.54166666666667 : 53.130224202474 : JumpStart); (5.70833333333333 : 53.130224202474 : JumpEnd); (5.72916666666667 : 53.130224202474 : JumpStart); (6.20833333333333 : 53.130224202474 : JumpEnd); (6.25 : 53.130224202474)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/PhotoGalleryAlbum/PhotoGalleryAlbum_PhotoGallery" />
       <nodes>
         <classShapeMoniker Id="2db83c6d-2c1f-4912-ab2a-9338e9232e3f" />
         <classShapeMoniker Id="82b80686-87f4-4dea-a5ed-7b017d3f740c" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(11 : 39.3638012695313); (14.6666666666667 : 39.3638012695313 : JumpStart); (14.8333333333333 : 39.3638012695313 : JumpEnd); (21.0729166666667 : 39.3638012695313 : JumpStart); (21.2395833333333 : 39.3638012695313 : JumpEnd); (25.75 : 39.3638012695313); (25.75 : 32.9342268880208)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 94.1350707421875); (16.9166666666667 : 94.1350707421875 : JumpStart); (17.0833333333333 : 94.1350707421875 : JumpEnd); (19.5729166666667 : 94.1350707421875 : JumpStart); (19.7395833333333 : 94.1350707421875 : JumpEnd); (20.2916666666667 : 94.1350707421875 : JumpStart); (20.4583333333333 : 94.1350707421875 : JumpEnd); (22.5729166666667 : 94.1350707421875 : JumpStart); (22.7395833333333 : 94.1350707421875 : JumpEnd); (23 : 94.1350707421875); (23 : 82.7419254557292); (22.7395833333333 : 82.7419254557292 : JumpStart); (22.5729166666667 : 82.7419254557292 : JumpEnd); (20.6770833333333 : 82.7419254557292 : JumpStart); (20.5104166666667 : 82.7419254557292 : JumpEnd); (20.375 : 82.7419254557292); (20.375 : 75.9342268880208); (20.5104166666667 : 75.9342268880208 : JumpStart); (20.6770833333333 : 75.9342268880208 : JumpEnd); (21.75 : 75.9342268880208); (21.75 : 75.5592268880208)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_pitchstatsum" />
       <nodes>
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
         <classShapeMoniker Id="ed7d00b9-9743-4d0a-bdb8-75f9298f4eab" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(11 : 39.1706994042969); (13.7916666666667 : 39.1706994042969 : JumpStart); (14.0833333333333 : 39.1706994042969 : JumpEnd); (14.2916666666667 : 39.1706994042969 : JumpStart); (14.4583333333333 : 39.1706994042969 : JumpEnd); (14.6666666666667 : 39.1706994042969 : JumpStart); (14.8333333333333 : 39.1706994042969 : JumpEnd); (21.0729166666667 : 39.1706994042969 : JumpStart); (21.2395833333333 : 39.1706994042969 : JumpEnd); (22.75 : 39.1706994042969); (22.75 : 30.7612939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 95.3826343359375); (16.9166666666667 : 95.3826343359375 : JumpStart); (17.0833333333333 : 95.3826343359375 : JumpEnd); (19.65625 : 95.3826343359375); (19.65625 : 82.3862939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_PlayerRecap" />
       <nodes>
         <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
         <classShapeMoniker Id="e9ff31cf-0c54-4926-a341-22bc9214fdcc" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(13.75 : 37.5200512695313); (14.0416666666667 : 37.5200512695313 : JumpStart); (14.2083333333333 : 37.5200512695313 : JumpEnd); (14.5 : 37.5200512695313)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.5 : 87.1450512695313); (16.5104154166667 : 87.1450512695313 : JumpStart); (17.0833333333333 : 87.1450512695313 : JumpEnd); (17.25 : 87.1450512695313)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/PlayoffBracket/PlayoffBracket_PlayoffGame" />
       <nodes>
         <classShapeMoniker Id="1792c86b-664c-464d-b422-7af32903503e" />
         <classShapeMoniker Id="aa745e84-ad04-46f0-a4d1-32bb318bcba0" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(11 : 36.6979484049479); (11.1666666666667 : 36.6979484049479 : JumpStart); (11.5833333333333 : 36.6979484049479 : JumpEnd); (11.75 : 36.6979484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 86.3854484049479); (13.7916666666667 : 86.3854484049479 : JumpStart); (13.9583333333333 : 86.3854484049479 : JumpEnd); (14.1041666666667 : 86.3854484049479 : JumpStart); (14.2708333333333 : 86.3854484049479 : JumpEnd); (14.2916666666667 : 86.3854484049479 : JumpStart); (14.4583333333333 : 86.3854484049479 : JumpEnd); (14.5 : 86.3854484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/PlayoffSetup/PlayoffSetup_PlayoffBracket" />
       <nodes>
         <classShapeMoniker Id="9b2b818d-7a9e-4984-bdf0-bb46adc1e4bd" />
         <classShapeMoniker Id="1792c86b-664c-464d-b422-7af32903503e" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(10 : 35.375); (10 : 34.6249995); (11.1666666666667 : 34.6249995 : JumpStart); (11.4583333333333 : 34.6249995 : JumpEnd); (11.75 : 34.6249995)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.75 : 85.125); (13.8160744349011 : 85.0589255650989 : JumpStart); (13.9339255650989 : 84.9410744349011 : JumpEnd); (14 : 84.875); (14 : 85.7035953776042); (14.1285744349011 : 85.5750209427031 : JumpStart); (14.2464255650989 : 85.4571698125053 : JumpEnd); (14.3160744349011 : 85.3875209427031 : JumpStart); (14.4339255650989 : 85.2696698125053 : JumpEnd); (14.5 : 85.2035953776042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/PlayoffSetup/PlayoffSetup_PlayoffSeed" />
       <nodes>
         <classShapeMoniker Id="9b2b818d-7a9e-4984-bdf0-bb46adc1e4bd" />
         <classShapeMoniker Id="7cab2872-1540-459b-abe5-9c5c3056a500" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 28.9569075674579); (8.31607443490112 : 29.022982002359 : JumpStart); (8.43392556509888 : 29.1408331325568 : JumpEnd); (8.62857443490112 : 29.335482002359 : JumpStart); (8.74642556509888 : 29.4533331325568 : JumpEnd); (8.78125 : 29.4881575674579); (8.78125 : 36.2604484049479); (9 : 36.2604484049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11 : 86.2917009049479); (11.0416666666667 : 86.2917009049479 : JumpStart); (11.3958333333333 : 86.2917009049479 : JumpEnd); (11.75 : 86.2917009049479)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_PlayoffSetup" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="9b2b818d-7a9e-4984-bdf0-bb46adc1e4bd" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(0.953122 : 5.75160970052083); (0.953122 : 7.25); (1.00260166666667 : 7.25 : JumpStart); (1.16926833333333 : 7.25 : JumpEnd); (1.97916666666667 : 7.25 : JumpStart); (2.14583333333333 : 7.25 : JumpEnd); (3.32291666666667 : 7.25 : JumpStart); (3.67708333333333 : 7.25 : JumpEnd); (3.6875 : 7.25); (3.6875 : 16.125); (3.64583333333333 : 16.125 : JumpStart); (3.16666666666667 : 16.125 : JumpEnd); (3.125 : 16.125); (3.125 : 38.4142976888021); (3.16666666666667 : 38.4142976888021 : JumpStart); (3.33333333333333 : 38.4142976888021 : JumpEnd); (3.5 : 38.4142976888021)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.47538461538462 : 60.3766097005208); (5.56607443490112 : 60.4672995200373 : JumpStart); (5.68392556509888 : 60.5851506502351 : JumpEnd); (5.75357443490112 : 60.6547995200373 : JumpStart); (5.87142556509888 : 60.7726506502351 : JumpEnd); (5.90625 : 60.8074750851362); (5.90625 : 97.6642976888021); (6.25 : 97.6642976888021)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_ProfileCategory" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="0b99e672-309f-4b2d-8f6e-6d6c1442d154" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 38.4142976888021); (6.25 : 38.4142976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 97.6642976888021); (9 : 97.6642976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/ProfileCategory/ProfileCategory_ProfileQuestion" />
       <nodes>
         <classShapeMoniker Id="0b99e672-309f-4b2d-8f6e-6d6c1442d154" />
         <classShapeMoniker Id="9d65efc9-5967-4a3a-b1dd-fe50b5b691c8" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(18.25 : 17.2011946614583); (21.0729166666667 : 17.2011946614583 : JumpStart); (21.2395833333333 : 17.2011946614583 : JumpEnd); (22.46875 : 17.2011946614583); (22.46875 : 22.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(13.25 : 59.3285953776042); (13.25 : 60.25); (14.5 : 60.25); (14.5 : 72.9431469726563); (15 : 72.9431469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Roster/Roster_PlayerSeasonAffiliationDue" />
       <nodes>
         <classShapeMoniker Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" />
         <classShapeMoniker Id="c294d0a5-e34c-4762-94a1-97e1696203c4" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.148439 : 5.75160970052083); (2.148439 : 6.53125); (2.19791866666667 : 6.53125 : JumpStart); (2.76302433333333 : 6.53125 : JumpEnd); (3.32291666666667 : 6.53125 : JumpStart); (3.48958333333333 : 6.53125 : JumpEnd); (3.53125 : 6.53125); (3.53125 : 17.4968082682292); (3.66666666666667 : 17.4968082682292 : JumpStart); (3.89583333333333 : 17.4968082682292 : JumpEnd); (6.16666666666667 : 17.4968082682292 : JumpStart); (6.33333333333333 : 17.4968082682292 : JumpEnd); (9.47916666666667 : 17.4968082682292 : JumpStart); (9.95833333333333 : 17.4968082682292 : JumpEnd); (10.0104166666667 : 17.4968082682292 : JumpStart); (10.2395833333333 : 17.4968082682292 : JumpEnd); (12.3541666666667 : 17.4968082682292 : JumpStart); (12.7708333333333 : 17.4968082682292 : JumpEnd); (13.6666666666667 : 17.4968082682292 : JumpStart); (13.8333333333333 : 17.4968082682292 : JumpEnd); (14.2916671666667 : 17.4968082682292 : JumpStart); (14.4583338333333 : 17.4968082682292 : JumpEnd); (15.2916666666667 : 17.4968082682292 : JumpStart); (15.4583333333333 : 17.4968082682292 : JumpEnd); (16.15625 : 17.4968082682292); (16.15625 : 16.363396844401); (16.25 : 16.363396844401)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 58.6258048502604); (5.54166666666667 : 58.6258048502604 : JumpStart); (6.02083333333333 : 58.6258048502604 : JumpEnd); (6.125 : 58.6258048502604); (6.125 : 58.5); (8.32291616666667 : 58.5 : JumpStart); (8.70833333333333 : 58.5 : JumpEnd); (8.875 : 58.5); (8.875 : 54.25); (8.91666666666667 : 54.25 : JumpStart); (9.17708333333333 : 54.25 : JumpEnd); (11.4166666666667 : 54.25 : JumpStart); (11.5833333333333 : 54.25 : JumpEnd); (11.7291666666667 : 54.25 : JumpStart); (11.8958333333333 : 54.25 : JumpEnd); (13.25 : 54.25); (13.25 : 57.75)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_Roster" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.05692307692308 : 12.8285139973958); (8.41878099301828 : 12.9116173310095 : JumpStart); (8.58121900698172 : 12.9489224164188 : JumpEnd); (8.68440699301828 : 12.9726202968495 : JumpStart); (8.84684500698172 : 13.0099253822588 : JumpEnd); (8.95003299301828 : 13.0336232626895 : JumpStart); (9.11247100698172 : 13.0709283480987 : JumpEnd); (9.21565899301828 : 13.0946262285294 : JumpStart); (9.37809700698172 : 13.1319313139387 : JumpEnd); (9.90625 : 13.2532255358574); (9.90625 : 16.7892976888021); (10.0104166666667 : 16.7892976888021 : JumpStart); (10.2395833333333 : 16.7892976888021 : JumpEnd); (12.3541666666667 : 16.7892976888021 : JumpStart); (12.7708333333333 : 16.7892976888021 : JumpEnd); (13.6666666666667 : 16.7892976888021 : JumpStart); (13.8333333333333 : 16.7892976888021 : JumpEnd); (14.2916671666667 : 16.7892976888021 : JumpStart); (14.4583338333333 : 16.7892976888021 : JumpEnd); (15.2916666666667 : 16.7892976888021 : JumpStart); (15.4583333333333 : 16.7892976888021 : JumpEnd); (16.0729166666667 : 16.7892976888021 : JumpStart); (16.2395833333333 : 16.7892976888021 : JumpEnd); (16.25 : 16.7892976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.15429909375 : 51.5785139973958); (8.15429909375 : 52.25); (8.32291616666667 : 52.25 : JumpStart); (8.48958283333334 : 52.25 : JumpEnd); (9 : 52.25); (9 : 54.375); (9.01041666666667 : 54.375 : JumpStart); (9.17708333333333 : 54.375 : JumpEnd); (11.4166666666667 : 54.375 : JumpStart); (11.5833333333333 : 54.375 : JumpEnd); (11.7291666666667 : 54.375 : JumpStart); (11.8958333333333 : 54.375 : JumpEnd); (12 : 54.375); (12 : 58.5392976888021); (12.25 : 58.5392976888021)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Contact/Contact_Roster" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(19 : 18.40625); (14.4583338333333 : 18.40625 : JumpStart); (14.2916671666667 : 18.40625 : JumpEnd); (13.75 : 18.40625); (13.75 : 14.3669254557292)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(17 : 59.6247294437099); (17.0660744349011 : 59.690803878611 : JumpStart); (17.1839255650989 : 59.8086550088088 : JumpEnd); (17.53125 : 60.1559794437099); (17.53125 : 80.1546541341146); (19.9166666666667 : 80.1546541341146 : JumpStart); (20.0833333333333 : 80.1546541341146 : JumpEnd); (20.2916666666667 : 80.1546541341146 : JumpStart); (20.4583333333333 : 80.1546541341146 : JumpEnd); (20.5104166666667 : 80.1546541341146 : JumpStart); (20.6770833333333 : 80.1546541341146 : JumpEnd); (20.75 : 80.1546541341146)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/RosterSeason/RosterSeason_batstatsum" />
       <nodes>
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
         <classShapeMoniker Id="0d6c4ab1-de9a-4918-9d8b-54c52f7742b6" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(19 : 18.1093725); (15.375 : 18.1093725); (15.375 : 7.05930826822917)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(17 : 59.6062679052484); (17.0660744349011 : 59.6723423401495 : JumpStart); (17.1839255650989 : 59.7901934703473 : JumpEnd); (17.625 : 60.2312679052484); (17.625 : 76.7960750670573); (17.75 : 76.7960750670573)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/RosterSeason/RosterSeason_fieldstatsum" />
       <nodes>
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
         <classShapeMoniker Id="66011f59-c304-443f-a3f1-1e81dedc5870" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(19 : 18.6406275); (14.4583338333333 : 18.6406275 : JumpStart); (14.2916671666667 : 18.6406275 : JumpEnd); (12.7708333333333 : 18.6406275 : JumpStart); (12.3541666666667 : 18.6406275 : JumpEnd); (10.2395833333333 : 18.6406275 : JumpStart); (10.0104166666667 : 18.6406275 : JumpEnd); (9.95833333333333 : 18.6406275 : JumpStart); (9.47916666666667 : 18.6406275 : JumpEnd); (9.17708333333333 : 18.6406275 : JumpStart); (9.01041666666667 : 18.6406275 : JumpEnd); (6.48958333333333 : 18.6406275 : JumpStart); (6.16666666666667 : 18.6406275 : JumpEnd); (3.89583333333333 : 18.6406275 : JumpStart); (3.72916666666667 : 18.6406275 : JumpEnd); (3.64583333333333 : 18.6406275 : JumpStart); (2.72916666666667 : 18.6406275 : JumpEnd); (2.66146108333333 : 18.6406275 : JumpStart); (2.49479441666667 : 18.6406275 : JumpEnd); (2.0429720625 : 18.6406275); (2.0429720625 : 17.7131982421875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(17 : 58.4988045295473); (17.0416666666667 : 58.4988045295473 : JumpStart); (17.2083333333333 : 58.4988045295473 : JumpEnd); (18.2187475 : 58.4988045295473); (18.2187475 : 72.875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/RosterSeason/RosterSeason_GameEjection" />
       <nodes>
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
         <classShapeMoniker Id="69ac44e3-9e46-4013-b94e-4004a6986041" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(21 : 18.9527498372396); (21.0729166666667 : 18.9527498372396 : JumpStart); (21.2395833333333 : 18.9527498372396 : JumpEnd); (22.3854166666667 : 18.9527498372396 : JumpStart); (22.5520833333333 : 18.9527498372396 : JumpEnd); (25.75 : 18.9527498372396); (25.75 : 27.125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(17 : 59.0294592943209); (17.0416666666667 : 59.0294592943209 : JumpStart); (17.2083333333333 : 59.0294592943209 : JumpEnd); (18.1354141666667 : 59.0294592943209 : JumpStart); (18.3020808333333 : 59.0294592943209 : JumpEnd); (18.6666666666667 : 59.0294592943209 : JumpStart); (18.8333333333333 : 59.0294592943209 : JumpEnd); (19.9166666666667 : 59.0294592943209 : JumpStart); (20.0833333333333 : 59.0294592943209 : JumpEnd); (20.5104166666667 : 59.0294592943209 : JumpStart); (20.6770833333333 : 59.0294592943209 : JumpEnd); (21.75 : 59.0294592943209); (21.75 : 69.75)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/RosterSeason/RosterSeason_pitchstatsum" />
       <nodes>
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
         <classShapeMoniker Id="ed7d00b9-9743-4d0a-bdb8-75f9298f4eab" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(21 : 19.5228772558594); (21.0729166666667 : 19.5228772558594 : JumpStart); (21.2395833333333 : 19.5228772558594 : JumpEnd); (21.84375 : 19.5228772558594); (21.84375 : 29.375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.9507692307692 : 59.6554996744792); (17.0660744349011 : 59.7708048786111 : JumpStart); (17.1839255650989 : 59.8886560088088 : JumpEnd); (17.375 : 60.0797304437099); (17.375 : 81.6931469726563); (17.75 : 81.6931469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/RosterSeason/RosterSeason_PlayerRecap" />
       <nodes>
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
         <classShapeMoniker Id="e9ff31cf-0c54-4926-a341-22bc9214fdcc" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(18.25 : 17.4211475195313); (19.09375 : 17.4211475195313); (19.09375 : 17.875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(14.25 : 58.5392976888021); (15 : 58.5392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Roster/Roster_RosterSeason" />
       <nodes>
         <classShapeMoniker Id="0e9a1e40-798f-4bbb-8eee-12c1b30e886d" />
         <classShapeMoniker Id="13e29bcc-eab1-40dd-a2f1-8245398473fa" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 29.6675464453125); (5.66666666666667 : 29.6675464453125 : JumpStart); (6.11458333333333 : 29.6675464453125 : JumpEnd); (7.20755051044171 : 29.6675464453125); (7.20755051044171 : 29.0112939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 87.241601160607); (8.66666666666667 : 87.241601160607 : JumpStart); (8.83333333333333 : 87.241601160607 : JumpEnd); (9.4687475 : 87.241601160607); (9.4687475 : 87.0112939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Season/Season_LeagueSeason" />
       <nodes>
         <classShapeMoniker Id="c051b6be-7bd4-4442-b29e-7e8814a17b42" />
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 29.3394176953125); (5.66666666666667 : 29.3394176953125 : JumpStart); (6.11458333333333 : 29.3394176953125 : JumpEnd); (7.12421717710838 : 29.3394176953125 : JumpStart); (7.29088384377504 : 29.3394176953125 : JumpEnd); (8.29166666666667 : 29.3394176953125 : JumpStart); (8.77083333333333 : 29.3394176953125 : JumpEnd); (9.29166666666667 : 29.3394176953125 : JumpStart); (9.45833333333333 : 29.3394176953125 : JumpEnd); (9.47916666666667 : 29.3394176953125 : JumpStart); (9.64583333333333 : 29.3394176953125 : JumpEnd); (9.69791666666667 : 29.3394176953125 : JumpStart); (9.95833333333333 : 29.3394176953125 : JumpEnd); (10 : 29.3394176953125); (10 : 28.5); (10.0104166666667 : 28.5 : JumpStart); (10.1770833333333 : 28.5 : JumpEnd); (12.3541666666667 : 28.5 : JumpStart); (12.7708333333333 : 28.5 : JumpEnd); (14.0416666666667 : 28.5 : JumpStart); (14.2083333333333 : 28.5 : JumpEnd); (21.0729166666667 : 28.5 : JumpStart); (21.2395833333333 : 28.5 : JumpEnd); (21.4166666666667 : 28.5 : JumpStart); (21.5833333333333 : 28.5 : JumpEnd); (21.7604166666667 : 28.5 : JumpStart); (21.9270833333333 : 28.5 : JumpEnd); (23 : 28.5); (23 : 23.7612939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 87.6050434453125); (8.66666666666667 : 87.6050434453125 : JumpStart); (8.83333333333333 : 87.6050434453125 : JumpEnd); (9.91666666666667 : 87.6050434453125 : JumpStart); (10.0833333333333 : 87.6050434453125 : JumpEnd); (10.4166666666667 : 87.6050434453125 : JumpStart); (10.5833333333333 : 87.6050434453125 : JumpEnd); (11.0416666666667 : 87.6050434453125 : JumpStart); (11.4583333333333 : 87.6050434453125 : JumpEnd); (13.875 : 87.6050434453125); (13.875 : 74.0112939453125); (15.9375005 : 74.0112939453125); (15.9375005 : 73.6362939453125)]" fixedFrom="Algorithm" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Season/Season_PlayerSeasonAffiliationDue" />
       <nodes>
         <classShapeMoniker Id="c051b6be-7bd4-4442-b29e-7e8814a17b42" />
         <classShapeMoniker Id="c294d0a5-e34c-4762-94a1-97e1696203c4" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.015626 : 5.75160970052083); (2.015626 : 6.4375); (2.06510566666667 : 6.4375 : JumpStart); (2.76302433333333 : 6.4375 : JumpEnd); (3.32291666666667 : 6.4375 : JumpStart); (3.48958333333333 : 6.4375 : JumpEnd); (3.625 : 6.4375); (3.625 : 15.125); (3.61458333333333 : 15.125 : JumpStart); (3.32291666666667 : 15.125 : JumpEnd); (3.14583333333333 : 15.125 : JumpStart); (2.91666666666667 : 15.125 : JumpEnd); (2.875 : 15.125); (2.875 : 29.5681469726563); (2.97916666666667 : 29.5681469726563 : JumpStart); (3.39583333333333 : 29.5681469726563 : JumpEnd); (3.5 : 29.5681469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.5 : 60.3750702389824); (5.56607443490112 : 60.4411446738835 : JumpStart); (5.68392556509888 : 60.5589958040813 : JumpEnd); (5.75357443490112 : 60.6286446738835 : JumpStart); (5.87142556509888 : 60.7464958040813 : JumpEnd); (6.1875 : 61.0625702389824); (6.1875 : 87.4431469726563); (6.25 : 87.4431469726563)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_Season" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="c051b6be-7bd4-4442-b29e-7e8814a17b42" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(2.414065 : 5.75160970052083); (2.414065 : 7.09375); (3.453125 : 7.09375); (3.453125 : 22.9992491744792); (5.66666666666667 : 22.9992491744792 : JumpStart); (5.95833333333333 : 22.9992491744792 : JumpEnd); (6.32291666666667 : 22.9992491744792 : JumpStart); (6.48958333333333 : 22.9992491744792 : JumpEnd); (7.72916666666667 : 22.9992491744792 : JumpStart); (7.89583333333333 : 22.9992491744792 : JumpEnd); (9.47916666666667 : 22.9992491744792 : JumpStart); (9.95833333333333 : 22.9992491744792 : JumpEnd); (10.0104166666667 : 22.9992491744792 : JumpStart); (10.2395833333333 : 22.9992491744792 : JumpEnd); (10.25 : 22.9992491744792)]" fixedFrom="Algorithm" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Account/Account_Sponsor" />
-      <nodes>
-        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
-        <classShapeMoniker Id="3021401d-f242-4dee-9841-53a5386a8bef" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(4.5 : 32.375); (4.5 : 30.5112939453125); (5.75 : 30.5112939453125); (5.75 : 20.5112939453125); (6.25 : 20.5112939453125); (6.25 : 13.1065991210937); (5.875 : 13.1065991210937)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Team/Team_AccountWelcome" />
-      <nodes>
-        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
-        <classShapeMoniker Id="d38ea29d-251b-4c56-b6c8-0cbd7802b257" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(5.47760602088341 : 32.375); (5.875 : 31.9776060208834); (5.875 : 22.7123527018229); (6.32291666666667 : 22.7123527018229 : JumpStart); (6.48958333333333 : 22.7123527018229 : JumpEnd); (7.72916666666667 : 22.7123527018229 : JumpStart); (7.89583333333333 : 22.7123527018229 : JumpEnd); (9.47916666666667 : 22.7123527018229 : JumpStart); (9.95833333333333 : 22.7123527018229 : JumpEnd); (10.0104166666667 : 22.7123527018229 : JumpStart); (10.2395833333333 : 22.7123527018229 : JumpEnd); (10.25 : 22.7123527018229)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Team/Team_Sponsor" />
-      <nodes>
-        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
-        <classShapeMoniker Id="3021401d-f242-4dee-9841-53a5386a8bef" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(3.9687475 : 32.375); (3.9687475 : 31.6562475); (4.41666666666667 : 31.6562475 : JumpStart); (4.58333333333333 : 31.6562475 : JumpEnd); (6.25 : 31.6562475)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(7.25 : 91.7612939453125); (7.25 : 95.0392976888021); (9 : 95.0392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Team/Team_TeamHandout" />
       <nodes>
         <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
         <classShapeMoniker Id="e4a0679b-8cf7-40dd-a2e8-d5cb4b9b244e" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 33.5056469726563); (6.25 : 33.5056469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Team/Team_TeamNew" />
-      <nodes>
-        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
-        <classShapeMoniker Id="00f901ed-de2a-48f6-a515-b18a0607967a" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(1.218748 : 5.75160970052083); (1.218748 : 6.1875); (1.26822766666667 : 6.18749999999999 : JumpStart); (2.76302433333333 : 6.1875 : JumpEnd); (3.65625 : 6.1875); (3.65625 : 15.5625); (3.64583333333333 : 15.5625 : JumpStart); (3.35416666666667 : 15.5625 : JumpEnd); (3.3125 : 15.5625); (3.3125 : 33.0681469726563); (3.5 : 33.0681469726563)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.45076923076923 : 60.3766097005208); (5.56607443490112 : 60.4919149046527 : JumpStart); (5.68392556509888 : 60.6097660348505 : JumpEnd); (5.75357443490112 : 60.6794149046527 : JumpStart); (5.87142556509888 : 60.7972660348505 : JumpEnd); (5.94107443490112 : 60.8669149046527 : JumpStart); (6.10580056509888 : 61.0316410348505 : JumpEnd); (6.15625 : 61.0820904697516); (6.15625 : 91.0681469726563); (6.25 : 91.0681469726563)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_Team" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.5 : 11.0695574658203); (9.79166666666667 : 11.0695574658203 : JumpStart); (10.1770833333333 : 11.0695574658203 : JumpEnd); (12.3125 : 11.0695574658203); (12.3125 : 14.4919254557292); (12.3541666666667 : 14.4919254557292 : JumpStart); (12.7708333333333 : 14.4919254557292 : JumpEnd); (13.6666666666667 : 14.4919254557292 : JumpStart); (13.8333333333333 : 14.4919254557292 : JumpEnd); (14.3750005 : 14.4919254557292); (14.3750005 : 22.125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 48.703884753105); (9.01041666666667 : 48.703884753105 : JumpStart); (9.17708333333333 : 48.703884753105 : JumpEnd); (12.25 : 48.703884753105); (12.25 : 50.4439925130208); (12.2916666666667 : 50.4439925130208 : JumpStart); (12.4583333333333 : 50.4439925130208 : JumpEnd); (17.125 : 50.4439925130208); (17.125 : 85.625); (19.5 : 85.625); (19.5 : 89.375); (18.5 : 89.375); (18.5 : 90)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Contact/Contact_TeamSeasonManager" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="f2935e63-1b00-41da-8d8c-a171d165c446" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 26.7604484049479); (12.1666666666667 : 26.7604484049479 : JumpStart); (12.3333333333333 : 26.7604484049479 : JumpEnd); (12.3541666666667 : 26.7604484049479 : JumpStart); (12.5833333333333 : 26.7604484049479 : JumpEnd); (12.59375 : 26.7604484049479); (12.59375 : 2.1362939453125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GameRecap" />
-      <nodes>
-        <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
-        <classShapeMoniker Id="1f381a85-b690-461a-95ef-4cb24aa6d590" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(10.15625 : 25.875); (10.15625 : 14.1001611328125); (12.2291666666667 : 14.1001611328125 : JumpStart); (12.6770833333333 : 14.1001611328125 : JumpEnd); (12.75 : 14.1001611328125)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.65625 : 89.75); (16.65625 : 80.5773295670573); (16.7916666666667 : 80.5773295670573 : JumpStart); (16.9583333333333 : 80.5773295670573 : JumpEnd); (17.0416666666667 : 80.5773295670573 : JumpStart); (17.2083333333333 : 80.5773295670573 : JumpEnd); (17.2916666666667 : 80.5773295670573 : JumpStart); (17.4583333333333 : 80.5773295670573 : JumpEnd); (19.9166666666667 : 80.5773295670573 : JumpStart); (20.0833333333333 : 80.5773295670573 : JumpEnd); (20.2916666666667 : 80.5773295670573 : JumpStart); (20.4583333333333 : 80.5773295670573 : JumpEnd); (20.5104166666667 : 80.5773295670573 : JumpStart); (20.6770833333333 : 80.5773295670573 : JumpEnd); (20.75 : 80.5773295670573)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_batstatsum" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="0d6c4ab1-de9a-4918-9d8b-54c52f7742b6" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(10.09375 : 25.875); (10.09375 : 4.72286365315755); (12.5104166666667 : 4.72286365315755 : JumpStart); (12.6770833333333 : 4.72286365315755 : JumpEnd); (13.75 : 4.72286365315755)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.6875025 : 89.75); (16.6875025 : 78.5132337011719); (16.7916666666667 : 78.5132337011719 : JumpStart); (16.9583333333333 : 78.5132337011719 : JumpEnd); (17.0416666666667 : 78.5132337011719 : JumpStart); (17.2083333333333 : 78.5132337011719 : JumpEnd); (17.2916666666667 : 78.5132337011719 : JumpStart); (17.6145833333333 : 78.5132337011719 : JumpEnd); (17.75 : 78.5132337011719)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_fieldstatsum" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="66011f59-c304-443f-a3f1-1e81dedc5870" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 26.255224202474); (12.75 : 26.255224202474)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.6249975 : 89.75); (16.6249975 : 81.9559457363281); (14.4583333333333 : 81.9559457363281 : JumpStart); (14.2916666666667 : 81.9559457363281 : JumpEnd); (14.2708333333333 : 81.9559457363281 : JumpStart); (14.1041666666667 : 81.9559457363281 : JumpEnd); (13.9583333333333 : 81.9559457363281 : JumpStart); (13.7916666666667 : 81.9559457363281 : JumpEnd); (13.75 : 81.9559457363281)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GolfMatch" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 27.2656726074219); (12.1666666666667 : 27.2656726074219 : JumpStart); (12.3333333333333 : 27.2656726074219 : JumpEnd); (12.4791666666667 : 27.2656726074219 : JumpStart); (12.6458333333333 : 27.2656726074219 : JumpEnd); (12.75 : 27.2656726074219)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.59374875 : 89.75); (16.59374875 : 82.4651711044922); (14.4583333333333 : 82.4651711044922 : JumpStart); (14.2916666666667 : 82.4651711044922 : JumpEnd); (14.2708333333333 : 82.4651711044922 : JumpStart); (14.1041666666667 : 82.4651711044922 : JumpEnd); (13.9583333333333 : 82.4651711044922 : JumpStart); (13.7916666666667 : 82.4651711044922 : JumpEnd); (13.75 : 82.4651711044922)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GolfMatch1" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="ba0f6b87-d2b9-4e56-9f8d-c1e9266f3999" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 26.5078363037109); (12.25 : 26.5078363037109); (12.25 : 27.9824039713542); (12.4791666666667 : 27.9824039713542 : JumpStart); (12.7708333333333 : 27.9824039713542 : JumpEnd); (14.9166666666667 : 27.9824039713542 : JumpStart); (15.0833333333333 : 27.9824039713542 : JumpEnd); (16.5 : 27.9824039713542); (16.5 : 27.2035953776042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.71875125 : 89.75); (16.71875125 : 84.2892976888021); (16.7916666666667 : 84.2892976888021 : JumpStart); (16.9583333333333 : 84.2892976888021 : JumpEnd); (17.0416666666667 : 84.2892976888021 : JumpStart); (17.2083333333333 : 84.2892976888021 : JumpEnd); (17.5 : 84.2892976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GolfMatchScore" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="2e95f49e-21fe-4fa8-8d47-e9a671fe416a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(12 : 27.6458968098958); (12.125 : 27.7708968098958); (12.125 : 28.2179996744792); (12.4791666666667 : 28.2179996744792 : JumpStart); (12.7708333333333 : 28.2179996744792 : JumpEnd); (14.0416666666667 : 28.2179996744792 : JumpStart); (14.2083333333333 : 28.2179996744792 : JumpEnd); (18.4375 : 28.2179996744792); (18.75 : 27.9054996744792)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.75 : 89.84375); (16.9166666666667 : 89.84375 : JumpStart); (17.0833333333333 : 89.84375 : JumpEnd); (18.4166666666667 : 89.84375 : JumpStart); (18.5833333333333 : 89.84375 : JumpEnd); (19.5729166666667 : 89.84375 : JumpStart); (19.7395833333333 : 89.84375 : JumpEnd); (20.2916666666667 : 89.84375 : JumpStart); (20.4583333333333 : 89.84375 : JumpEnd); (20.5 : 89.84375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GolfRoster" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="140e18e1-5b67-4fb4-b10e-7070c4edcc4e" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(10.968748 : 27.6458968098958); (10.968748 : 28.4375); (12.6041666666667 : 28.4375 : JumpStart); (12.7708333333333 : 28.4375 : JumpEnd); (14.0416666666667 : 28.4375 : JumpStart); (14.2083333333333 : 28.4375 : JumpEnd); (21.0729166666667 : 28.4375 : JumpStart); (21.2395833333333 : 28.4375 : JumpEnd); (24.375 : 28.4375); (24.375 : 30.0296134440104); (24.75 : 30.0296134440104)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(15.640622375 : 89.75); (15.640622375 : 88.6651025390625); (16.5104154166667 : 88.6651025390625 : JumpStart); (16.8020845833333 : 88.6651025390625 : JumpEnd); (16.875 : 88.6651025390625); (16.875 : 73.8862939453125); (17.0416666666667 : 73.8862939453125 : JumpStart); (17.2083333333333 : 73.8862939453125 : JumpEnd); (17.25 : 73.8862939453125); (17.25 : 71.2812505); (17.2916666666667 : 71.2812505 : JumpStart); (17.7083333333333 : 71.2812505 : JumpEnd); (18.1354141666667 : 71.2812505 : JumpStart); (18.3020808333333 : 71.2812505 : JumpEnd); (18.6666666666667 : 71.2812505 : JumpStart); (18.8333333333333 : 71.2812505 : JumpEnd); (19.9166666666667 : 71.2812505 : JumpStart); (20.0833333333333 : 71.2812505 : JumpEnd); (20.5104166666667 : 71.2812505 : JumpStart); (20.6770833333333 : 71.2812505 : JumpEnd); (20.75 : 71.2812505)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_pitchstatsum" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="ed7d00b9-9743-4d0a-bdb8-75f9298f4eab" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(10.09375 : 27.6458968098958); (10.09375 : 30.5785953776042); (11.1666666666667 : 30.5785953776042 : JumpStart); (11.3333333333333 : 30.5785953776042 : JumpEnd); (12.6041666666667 : 30.5785953776042 : JumpStart); (12.7708333333333 : 30.5785953776042 : JumpEnd); (14.0416666666667 : 30.5785953776042 : JumpStart); (14.2083333333333 : 30.5785953776042 : JumpEnd); (21.75 : 30.5785953776042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.67187625 : 89.75); (16.67187625 : 81.3153209863281); (16.7916666666667 : 81.3153209863281 : JumpStart); (16.9583333333333 : 81.3153209863281 : JumpEnd); (17.0416666666667 : 81.3153209863281 : JumpStart); (17.2083333333333 : 81.3153209863281 : JumpEnd); (17.2916666666667 : 81.3153209863281 : JumpStart); (17.4583333333333 : 81.3153209863281 : JumpEnd); (17.75 : 81.3153209863281)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_PlayerRecap" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="e9ff31cf-0c54-4926-a341-22bc9214fdcc" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(11.109377 : 25.875); (11.109377 : 24.4247054036458); (12.6041666666667 : 24.4247054036458 : JumpStart); (12.7708333333333 : 24.4247054036458 : JumpEnd); (12.875 : 24.4247054036458); (12.875 : 22.8181469726563); (13.75 : 22.8181469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(16.75 : 90.2840734863281); (16.9166666666667 : 90.2840734863281 : JumpStart); (17.0833333333333 : 90.2840734863281 : JumpEnd); (17.5 : 90.2840734863281)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_TeamSeasonManager" />
       <nodes>
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
         <classShapeMoniker Id="f2935e63-1b00-41da-8d8c-a171d165c446" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 28.1626869417318); (9.29166666666667 : 28.1626869417318 : JumpStart); (9.45833333333333 : 28.1626869417318 : JumpEnd); (9.47916666666667 : 28.1626869417318 : JumpStart); (9.64583333333333 : 28.1626869417318 : JumpEnd); (9.69791666666667 : 28.1626869417318 : JumpStart); (9.95833333333333 : 28.1626869417318 : JumpEnd); (10.0624975 : 28.1626869417318); (10.0624975 : 27.6458968098958)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(10.5 : 87.0112939453125); (10.5 : 91.29974609375); (11.0416666666667 : 91.29974609375 : JumpStart); (11.4583333333333 : 91.29974609375 : JumpEnd); (14.1041666666667 : 91.29974609375 : JumpStart); (14.2708333333333 : 91.29974609375 : JumpEnd); (14.2916666666667 : 91.29974609375 : JumpStart); (14.4583333333333 : 91.29974609375 : JumpEnd); (14.75 : 91.29974609375)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/LeagueSeason/LeagueSeason_TeamsSeason" />
       <nodes>
         <classShapeMoniker Id="bb1c914f-e045-477b-87a3-b19abf2b910a" />
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 32.4293843778546); (6.03125 : 31.8981343778546); (6.03125 : 26.45312425); (6.32291666666667 : 26.45312425 : JumpStart); (6.48958333333333 : 26.45312425 : JumpEnd); (9.47916666666667 : 26.45312425 : JumpStart); (9.67708333333333 : 26.45312425 : JumpEnd); (9.69791666666667 : 26.45312425 : JumpStart); (9.95833333333333 : 26.45312425 : JumpEnd); (10 : 26.45312425)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 91.4728214518229); (9.66666666666667 : 91.4728214518229 : JumpStart); (9.83333333333333 : 91.4728214518229 : JumpEnd); (11.0416666666667 : 91.4728214518229 : JumpStart); (11.4583333333333 : 91.4728214518229 : JumpEnd); (14.1041666666667 : 91.4728214518229 : JumpStart); (14.2708333333333 : 91.4728214518229 : JumpEnd); (14.2916666666667 : 91.4728214518229 : JumpStart); (14.4583333333333 : 91.4728214518229 : JumpEnd); (14.75 : 91.4728214518229)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Team/Team_TeamsSeason" />
       <nodes>
         <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
         <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.5 : 12.8285139973958); (8.5 : 13.6875); (8.68229266666667 : 13.6875 : JumpStart); (8.84895933333333 : 13.6875 : JumpEnd); (8.94791866666667 : 13.6875 : JumpStart); (9.11458533333333 : 13.6875 : JumpEnd); (9.5625 : 13.6875); (9.5625 : 29.7715060364583); (9.69791666666667 : 29.7715060364583 : JumpStart); (9.95833333333333 : 29.7715060364583 : JumpEnd); (10.0104166666667 : 29.7715060364583 : JumpStart); (10.1770833333333 : 29.7715060364583 : JumpEnd); (10.25 : 29.7715060364583)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.5 : 49.3800715973307); (9.01041666666667 : 49.3800715973307 : JumpStart); (9.17708333333333 : 49.3800715973307 : JumpEnd); (11.8125 : 49.3800715973307); (11.8125 : 80.75); (11.6145833333333 : 80.75 : JumpStart); (11.2916666666667 : 80.75 : JumpEnd); (11.25 : 80.75); (11.25 : 100); (12.75 : 100); (12.75 : 100.375)]" fixedFrom="Algorithm" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Contact/Contact_VoteAnswer" />
       <nodes>
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
         <classShapeMoniker Id="2d307439-b463-4605-aeca-d907641dfe64" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 43.3119285109675); (8.6875 : 42.8744285109675); (8.6875 : 28.9822093476563); (9.69791666666667 : 28.9822093476563 : JumpStart); (9.95833333333333 : 28.9822093476563 : JumpEnd); (10.0104166666667 : 28.9822093476563 : JumpStart); (10.1770833333333 : 28.9822093476563 : JumpEnd); (10.25 : 28.9822093476563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(11 : 101.726797688802); (11.2291666666667 : 101.726797688802 : JumpStart); (11.3958333333333 : 101.726797688802 : JumpEnd); (11.75 : 101.726797688802)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/VoteOption/VoteOption_VoteAnswer" />
       <nodes>
         <classShapeMoniker Id="26481c2a-8e0c-47fd-b59f-c2fe7e8d03e1" />
         <classShapeMoniker Id="2d307439-b463-4605-aeca-d907641dfe64" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 42.3550032552083); (7.16666666666667 : 42.3550032552083 : JumpStart); (7.33333333333333 : 42.3550032552083 : JumpEnd); (8.29166666666667 : 42.3550032552083 : JumpStart); (8.45833333333333 : 42.3550032552083 : JumpEnd); (8.60416666666667 : 42.3550032552083 : JumpStart); (8.95833333333333 : 42.3550032552083 : JumpEnd); (11.15625 : 42.3550032552083); (11.15625 : 30.2035953776042)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 100.601797688802); (9.91666666666667 : 100.601797688802 : JumpStart); (10.0833333333333 : 100.601797688802 : JumpEnd); (11.2291666666667 : 100.601797688802 : JumpStart); (11.3958333333333 : 100.601797688802 : JumpEnd); (11.75 : 100.601797688802)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/VoteQuestion/VoteQuestion_VoteAnswer" />
       <nodes>
         <classShapeMoniker Id="dca21a74-d15b-4983-8ed5-60b44222adbe" />
         <classShapeMoniker Id="2d307439-b463-4605-aeca-d907641dfe64" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(5.5 : 41.5837491276042); (7.25 : 41.5837491276042); (7.25 : 43.25)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(8.25 : 99.8946463444011); (10 : 99.8946463444011); (10 : 101.5)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/VoteQuestion/VoteQuestion_VoteOption" />
       <nodes>
         <classShapeMoniker Id="dca21a74-d15b-4983-8ed5-60b44222adbe" />
         <classShapeMoniker Id="26481c2a-8e0c-47fd-b59f-c2fe7e8d03e1" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.617187 : 5.75160970052083); (1.617187 : 6.34375); (1.66666666666667 : 6.34375 : JumpStart); (2.76302433333333 : 6.34375 : JumpEnd); (3.40625 : 6.34375); (3.40625 : 15.4375); (3.33333333333333 : 15.4375 : JumpStart); (3.16666666666667 : 15.4375 : JumpEnd); (3.14583333333333 : 15.4375 : JumpStart); (2.91666666666667 : 15.4375 : JumpEnd); (2.8125 : 15.4375); (2.8125 : 41.6642976888021); (2.97916666666667 : 41.6642976888021 : JumpStart); (3.14583333333333 : 41.6642976888021 : JumpEnd); (3.16666666666667 : 41.6642976888021 : JumpStart); (3.33333333333333 : 41.6642976888021 : JumpEnd); (3.5 : 41.6642976888021)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.42615384615385 : 60.3766097005208); (5.56607443490112 : 60.5165302892681 : JumpStart); (5.68392556509888 : 60.6343814194659 : JumpEnd); (5.75357443490112 : 60.7040302892681 : JumpStart); (5.87142556509888 : 60.8218814194659 : JumpEnd); (5.875 : 60.825455854367); (5.875 : 100.039297688802); (6.25 : 100.039297688802)]" fixedFrom="NotFixed" fixedTo="Algorithm">
       <AssociationMoniker Name="/DB/Account/Account_VoteQuestion" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="dca21a74-d15b-4983-8ed5-60b44222adbe" />
       </nodes>
     </associationConnector>
-    <classShape Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" absoluteBounds="5.75, 6.625, 2, 3.1170068359375">
+    <classShape Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" absoluteBounds="3.75, 48, 2, 3.1170068359375023">
       <DataClassMoniker Name="/DB/AspNetUser" />
       <nestedChildShapes>
-        <elementListCompartment Id="bd6a0b63-726a-4c01-9a96-ecea9e1ec3f5" absoluteBounds="5.765, 7.085, 1.9700000000000002, 2.5570068359375" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="bd6a0b63-726a-4c01-9a96-ecea9e1ec3f5" absoluteBounds="3.7649999999999997, 48.46, 1.9700000000000002, 2.5570068359375" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(7.75 : 8.25804868880208); (8.421877125 : 8.25804868880208); (8.421877125 : 7.95359537760417)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(4.75 : 48); (4.75 : 35.5392976888021); (5.72916666666667 : 35.5392976888021 : JumpStart); (5.89583333333333 : 35.5392976888021 : JumpEnd); (5.91666666666667 : 35.5392976888021 : JumpStart); (6.08333333333333 : 35.5392976888021 : JumpEnd); (6.5 : 35.5392976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AspNetUser/AspNetUser_AspNetUserClaim" />
       <nodes>
         <classShapeMoniker Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" />
         <classShapeMoniker Id="a61d8b5a-323d-4bce-b081-4510200f0ec8" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(6.6562485 : 6.625); (6.6562485 : 4.94314697265625); (7.5 : 4.94314697265625)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.2812525 : 48); (5.2812525 : 38.4431469726563); (5.72916666666667 : 38.4431469726563 : JumpStart); (5.89583333333333 : 38.4431469726563 : JumpEnd); (5.91666666666667 : 38.4431469726563 : JumpStart); (6.08333333333333 : 38.4431469726563 : JumpEnd); (6.5 : 38.4431469726563)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AspNetUser/AspNetUser_AspNetUserLogin" />
       <nodes>
         <classShapeMoniker Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" />
         <classShapeMoniker Id="78bc17c2-b3f7-427f-bbb8-6c67dd7a8add" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(7.75 : 8.5); (9.01041891666667 : 8.5 : JumpStart); (9.17708558333333 : 8.5 : JumpEnd); (9.91666666666667 : 8.5 : JumpStart); (10.1770833333333 : 8.5 : JumpEnd); (12.4375 : 8.5); (12.4375 : 7.19399251302083)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(4.75 : 51.1170068359375); (4.75 : 51.8285139973958); (5.72916666666667 : 51.8285139973958 : JumpStart); (6.20833333333333 : 51.8285139973958 : JumpEnd); (6.69181014713542 : 51.8285139973958 : JumpStart); (6.85847681380208 : 51.8285139973958 : JumpEnd); (7.02945762760417 : 51.8285139973958 : JumpStart); (7.19612429427083 : 51.8285139973958 : JumpEnd); (7.25455594791667 : 51.8285139973958 : JumpStart); (7.42122261458333 : 51.8285139973958 : JumpEnd); (7.66276085416667 : 51.8285139973958 : JumpStart); (7.82942752083333 : 51.8285139973958 : JumpEnd); (7.86686330729167 : 51.8285139973958 : JumpStart); (8.03352997395833 : 51.8285139973958 : JumpEnd); (8.07096576041667 : 51.8285139973958 : JumpStart); (8.23763242708334 : 51.8285139973958 : JumpEnd); (8.32291616666667 : 51.8285139973958 : JumpStart); (8.48958283333334 : 51.8285139973958 : JumpEnd); (8.75 : 51.8285139973958); (8.75 : 49.9267463847656); (9.01041666666667 : 49.9267463847656 : JumpStart); (9.17708333333333 : 49.9267463847656 : JumpEnd); (11.7291666666667 : 49.9267463847656 : JumpStart); (11.8958333333333 : 49.9267463847656 : JumpEnd); (12.1666666666667 : 49.9267463847656 : JumpStart); (12.4583333333333 : 49.9267463847656 : JumpEnd); (12.5 : 49.9267463847656)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AspNetUser/AspNetUser_AspNetUserRole" />
       <nodes>
         <classShapeMoniker Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" />
         <classShapeMoniker Id="0472db47-cf22-427b-97fc-204319432884" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(6.59375 : 9.7420068359375); (6.59375 : 11.5032462565104); (7.5 : 11.5032462565104)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(5.75 : 49.5585034179688); (5.79166666666667 : 49.5585034179688 : JumpStart); (6.20833333333333 : 49.5585034179688 : JumpEnd); (6.5 : 49.5585034179688)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AspNetUser/AspNetUser_Contact" />
       <nodes>
         <classShapeMoniker Id="8d36e46e-92d8-4859-b7a1-0754a77e55f7" />
         <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
       </nodes>
     </associationConnector>
-    <classShape Id="2e1824d0-5e2c-4cba-a663-b8bc08567b76" absoluteBounds="14.75, 1, 2, 1.5785953776041666">
+    <classShape Id="2e1824d0-5e2c-4cba-a663-b8bc08567b76" absoluteBounds="0.75, 0.75, 2, 1.5785953776041666">
       <DataClassMoniker Name="/DB/DisplayLeagueLeader" />
       <nestedChildShapes>
-        <elementListCompartment Id="62045511-372b-45f8-8ca6-33be9adc8a16" absoluteBounds="14.765, 1.46, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="62045511-372b-45f8-8ca6-33be9adc8a16" absoluteBounds="0.76500000000000057, 1.21, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <classShape Id="d2d88230-ff81-471b-8e29-78f07736b652" absoluteBounds="11, 53.875, 2, 1.5785953776041666">
-      <DataClassMoniker Name="/DB/PlayerProfile" />
-      <nestedChildShapes>
-        <elementListCompartment Id="7ff6e329-0dfb-4f43-aea3-2bd05adca434" absoluteBounds="11.015, 54.335, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
-      </nestedChildShapes>
-    </classShape>
-    <associationConnector edgePoints="[(8.234374 : 12.8285139973958); (8.234374 : 14); (9.47916666666667 : 14 : JumpStart); (9.73958333333333 : 14 : JumpEnd); (9.75 : 14); (9.75 : 27.375); (9.67708333333333 : 27.375 : JumpStart); (9.47916666666667 : 27.375 : JumpEnd); (8.5 : 27.375); (8.5 : 54.6642976888021); (11 : 54.6642976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/Contact/Contact_PlayerProfile" />
-      <nodes>
-        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
-        <classShapeMoniker Id="d2d88230-ff81-471b-8e29-78f07736b652" />
-      </nodes>
-    </associationConnector>
-    <associationConnector edgePoints="[(8.25 : 39.1732367741887); (8.31607443490112 : 39.2393112090898 : JumpStart); (8.43392556509888 : 39.3571623392876 : JumpEnd); (8.56607443490112 : 39.4893112090898 : JumpStart); (8.74642556509888 : 39.6696623392876 : JumpEnd); (8.78125 : 39.7044867741887); (8.78125 : 54.238396844401); (11 : 54.238396844401)]" fixedFrom="NotFixed" fixedTo="NotFixed">
-      <AssociationMoniker Name="/DB/ProfileQuestion/ProfileQuestion_PlayerProfile" />
-      <nodes>
-        <classShapeMoniker Id="9d65efc9-5967-4a3a-b1dd-fe50b5b691c8" />
-        <classShapeMoniker Id="d2d88230-ff81-471b-8e29-78f07736b652" />
-      </nodes>
-    </associationConnector>
-    <classShape Id="c7e9afea-c7a1-4ce4-9930-0e5fe6087403" absoluteBounds="16.75, 19.875, 2, 1.9631982421875">
+    <classShape Id="c7e9afea-c7a1-4ce4-9930-0e5fe6087403" absoluteBounds="12, 60.5, 2, 1.9631982421875023">
       <DataClassMoniker Name="/DB/WorkoutAnnouncement" />
       <nestedChildShapes>
-        <elementListCompartment Id="5421fa40-18e7-4aaa-a43d-8b66041e54e3" absoluteBounds="16.765, 20.335, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+        <elementListCompartment Id="5421fa40-18e7-4aaa-a43d-8b66041e54e3" absoluteBounds="12.015, 60.96, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
       </nestedChildShapes>
     </classShape>
-    <associationConnector edgePoints="[(17.75 : 21.8381982421875); (17.75 : 23.1546541341146); (19 : 23.1546541341146)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+    <associationConnector edgePoints="[(14 : 61.6690991210938); (14.4166666666667 : 61.6690991210938 : JumpStart); (14.5833333333333 : 61.6690991210938 : JumpEnd); (14.75 : 61.6690991210938)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/WorkoutAnnouncement/WorkoutAnnouncement_WorkoutRegistration" />
       <nodes>
         <classShapeMoniker Id="c7e9afea-c7a1-4ce4-9930-0e5fe6087403" />
         <classShapeMoniker Id="41e5949c-5313-4916-8ca2-2e946172720a" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(1.75 : 5.75160970052083); (1.75 : 7.3125); (3.32291666666667 : 7.3125 : JumpStart); (3.80208333333333 : 7.3125 : JumpEnd); (3.8125 : 7.3125); (3.8125 : 20.3237939453125); (6.16666666666667 : 20.3237939453125 : JumpStart); (6.48958333333333 : 20.3237939453125 : JumpEnd); (6.5625 : 20.3237939453125); (6.5625 : 20.8517976888021); (7.72916666666667 : 20.8517976888021 : JumpStart); (7.89583333333333 : 20.8517976888021 : JumpEnd); (9.47916666666667 : 20.8517976888021 : JumpStart); (9.95833333333333 : 20.8517976888021 : JumpEnd); (10.0104166666667 : 20.8517976888021 : JumpStart); (10.2395833333333 : 20.8517976888021 : JumpEnd); (12.3541666666667 : 20.8517976888021 : JumpStart); (12.7708333333333 : 20.8517976888021 : JumpEnd); (14.2916671666667 : 20.8517976888021 : JumpStart); (14.4583338333333 : 20.8517976888021 : JumpEnd); (16.75 : 20.8517976888021)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+    <associationConnector edgePoints="[(4.43182492307692 : 60.3766097005208); (4.43182492307692 : 61); (5.54166666666667 : 61 : JumpStart); (5.70833333333333 : 61 : JumpEnd); (5.72820412820517 : 61 : JumpStart); (6.43721633668125 : 61 : JumpEnd); (8.32291616666667 : 61 : JumpStart); (8.70833333333333 : 61 : JumpEnd); (8.875 : 61); (8.875 : 62.8668440755208); (9.01041666666667 : 62.8668440755208 : JumpStart); (9.17708333333333 : 62.8668440755208 : JumpEnd); (11.4166666666667 : 62.8668440755208 : JumpStart); (11.5833333333333 : 62.8668440755208 : JumpEnd); (11.625 : 62.8668440755208); (11.625 : 61.4815991210938); (11.7291666666667 : 61.4815991210938 : JumpStart); (11.8958333333333 : 61.4815991210938 : JumpEnd); (12 : 61.4815991210938)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/Account/Account_WorkoutAnnouncement" />
       <nodes>
         <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
         <classShapeMoniker Id="c7e9afea-c7a1-4ce4-9930-0e5fe6087403" />
       </nodes>
     </associationConnector>
-    <associationConnector edgePoints="[(9.09375 : 17.4343082682292); (9.09375 : 20.6526940332031); (9.47916666666667 : 20.6526940332031 : JumpStart); (9.95833333333333 : 20.6526940332031 : JumpEnd); (10.0104166666667 : 20.6526940332031 : JumpStart); (10.2395833333333 : 20.6526940332031 : JumpEnd); (12.3541666666667 : 20.6526940332031 : JumpStart); (12.7708333333333 : 20.6526940332031 : JumpEnd); (14.2916671666667 : 20.6526940332031 : JumpStart); (14.4583338333333 : 20.6526940332031 : JumpEnd); (16.75 : 20.6526940332031)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+    <associationConnector edgePoints="[(8.25 : 63.34375); (8.41666666666667 : 63.34375 : JumpStart); (8.70833333333333 : 63.34375 : JumpEnd); (8.72916666666667 : 63.34375 : JumpStart); (8.89583333333333 : 63.34375 : JumpEnd); (9.01041666666667 : 63.34375 : JumpStart); (9.17708333333333 : 63.34375 : JumpEnd); (11.4166666666667 : 63.34375 : JumpStart); (11.5833333333333 : 63.34375 : JumpEnd); (11.7291666666667 : 63.34375 : JumpStart); (11.8958333333333 : 63.34375 : JumpEnd); (12.09375 : 63.34375); (12.09375 : 62.4631982421875)]" fixedFrom="NotFixed" fixedTo="NotFixed">
       <AssociationMoniker Name="/DB/AvailableField/AvailableField_WorkoutAnnouncement" />
       <nodes>
         <classShapeMoniker Id="72df9ca6-d7f2-44d2-953d-5d9677e680ba" />
         <classShapeMoniker Id="c7e9afea-c7a1-4ce4-9930-0e5fe6087403" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="32a7e903-8b04-488d-8a39-d2734dfae297" absoluteBounds="9, 91.625, 2, 1.9631982421875023">
+      <DataClassMoniker Name="/DB/TeamNew" />
+      <nestedChildShapes>
+        <elementListCompartment Id="0dfe52e7-f4a4-4292-a9df-35c0699257f3" absoluteBounds="9.015, 92.085000000000008, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(8.25 : 90.9999995); (8.66666666666667 : 90.9999995 : JumpStart); (8.83333333333333 : 90.9999995 : JumpEnd); (9.75 : 90.9999995); (9.75 : 91.625)]" fixedFrom="Algorithm" fixedTo="NotFixed">
+      <AssociationMoniker Name="/DB/Team/Team_TeamNew" />
+      <nodes>
+        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
+        <classShapeMoniker Id="32a7e903-8b04-488d-8a39-d2734dfae297" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="8d73c877-6abb-46e7-b7fd-fa29f73fffdb" absoluteBounds="6.25, 72, 2, 1.5785953776041595">
+      <DataClassMoniker Name="/DB/LeagueFAQ" />
+      <nestedChildShapes>
+        <elementListCompartment Id="7902791d-276a-42af-92cc-b95ef4353271" absoluteBounds="6.2650000000000006, 72.460000000000008, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5.5 : 58.8289808318309); (5.60471466015913 : 59.2462149822793 : JumpStart); (5.64528533984087 : 59.4078683080352 : JumpEnd); (5.79221466015913 : 59.9933062022688 : JumpStart); (5.8533436578154 : 60.2368738685928 : JumpEnd); (5.91721466015913 : 60.4913670155951 : JumpStart); (5.95778533984087 : 60.653020341351 : JumpEnd); (6 : 60.8212240851362); (6 : 72.7892976888021); (6.07291666666667 : 72.7892976888021 : JumpStart); (6.23958333333333 : 72.7892976888021 : JumpEnd); (6.25 : 72.7892976888021)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/DB/Account/Account_LeagueFAQ" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="8d73c877-6abb-46e7-b7fd-fa29f73fffdb" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="46fa6adf-bbb9-4be3-a202-792839c057f9" absoluteBounds="9, 73.25, 2, 1.9631982421875023">
+      <DataClassMoniker Name="/DB/AccountWelcome" />
+      <nestedChildShapes>
+        <elementListCompartment Id="2f7353a3-f9ee-444d-b263-9cea49d14ef4" absoluteBounds="9.015, 73.710000000000008, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5.5 : 58.3718348732973); (5.60970833657807 : 58.9595486655304 : JumpStart); (5.64029166342193 : 59.1233852850541 : JumpEnd); (5.79720833657807 : 59.9639968185229 : JumpStart); (5.82779166342193 : 60.1278334380465 : JumpEnd); (5.94423176923076 : 60.7516097005208); (6.19946524019058 : 60.7516097005208 : JumpStart); (6.36613190685724 : 60.7516097005208 : JumpEnd); (8.32291616666667 : 60.7516097005208 : JumpStart); (8.70833333333333 : 60.7516097005208 : JumpEnd); (8.8125 : 60.7516097005208); (8.8125 : 73.0625); (9 : 73.25)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/DB/Account/Account_AccountWelcome" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="46fa6adf-bbb9-4be3-a202-792839c057f9" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(8.25 : 91.4118987226562); (8.75 : 91.4118987226562); (8.75 : 85.4054996744792); (10.2804671771084 : 85.4054996744792 : JumpStart); (10.447133843775 : 85.4054996744792 : JumpEnd); (10.6818997552209 : 85.4054996744792); (10.6818997552209 : 75.2131982421875)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Team/Team_AccountWelcome" />
+      <nodes>
+        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
+        <classShapeMoniker Id="46fa6adf-bbb9-4be3-a202-792839c057f9" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="11b71f11-aa33-4baa-932a-1aba646af799" absoluteBounds="17.5, 92.125, 2, 1.3862939453125023">
+      <DataClassMoniker Name="/DB/GameRecap" />
+      <nestedChildShapes>
+        <elementListCompartment Id="b63f6e7a-a6d0-427a-b340-466efd4f01af" absoluteBounds="17.515, 92.585000000000008, 1.9700000000000002, 0.8262939453125" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(13.75 : 92.9295912803486); (16.9166666666667 : 92.9295912803486 : JumpStart); (17.0833333333333 : 92.9295912803486 : JumpEnd); (17.5 : 92.9295912803486)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/DB/LeagueSchedule/LeagueSchedule_GameRecap" />
+      <nodes>
+        <classShapeMoniker Id="a02cd778-fc81-4f2a-be39-12f51a77ddc4" />
+        <classShapeMoniker Id="11b71f11-aa33-4baa-932a-1aba646af799" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(16.25 : 91.5208968098958); (16.25 : 92.4960431401743); (16.9166666666667 : 92.4960431401743 : JumpStart); (17.0833333333333 : 92.4960431401743 : JumpEnd); (17.5 : 92.4960431401743)]" fixedFrom="NotFixed" fixedTo="NotFixed">
+      <AssociationMoniker Name="/DB/TeamsSeason/TeamsSeason_GameRecap" />
+      <nodes>
+        <classShapeMoniker Id="291d9dba-5587-4949-a381-77e1f128fbc6" />
+        <classShapeMoniker Id="11b71f11-aa33-4baa-932a-1aba646af799" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="98e915ff-eb42-41a2-9ffb-9dc1a5425ec5" absoluteBounds="1.625, 3.125, 2, 1.9631982421875">
+      <DataClassMoniker Name="/DB/LeagueNew" />
+      <nestedChildShapes>
+        <elementListCompartment Id="d760bc2f-5028-46a7-9b89-33b451f58165" absoluteBounds="1.6400000000000001, 3.585, 1.9700000000000002, 1.4031982421875" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(3.5 : 60.0473046875); (3.1249975 : 60.0473046875); (3.1249975 : 5.0881982421875)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Account/Account_LeagueNew" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="98e915ff-eb42-41a2-9ffb-9dc1a5425ec5" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="34457324-10a4-4cee-9c34-71aa484e127c" absoluteBounds="3.625, 1.25, 2, 2.9247054036458331">
+      <DataClassMoniker Name="/DB/Sponsor" />
+      <nestedChildShapes>
+        <elementListCompartment Id="53eeb429-3cfd-4cef-805d-cb215c465a39" absoluteBounds="3.64, 1.71, 1.9700000000000002, 2.364705403645833" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(4.765626 : 56.875); (4.765626 : 54.7708968098958); (5.54166666666667 : 54.7708968098958 : JumpStart); (5.70833333333333 : 54.7708968098958 : JumpEnd); (5.72916666666667 : 54.7708968098958 : JumpStart); (5.95833333333333 : 54.7708968098958 : JumpEnd); (6 : 54.7708968098958); (6 : 2.71235270182292); (5.625 : 2.71235270182292)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Account/Account_Sponsor" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="34457324-10a4-4cee-9c34-71aa484e127c" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(7.25 : 90.375); (7.25 : 88.3862939453125); (6.23958333333333 : 88.3862939453125 : JumpStart); (6.07291666666667 : 88.3862939453125 : JumpEnd); (5.98958333333333 : 88.3862939453125 : JumpStart); (5.82291666666667 : 88.3862939453125 : JumpEnd); (5.8125 : 88.3862939453125); (5.8125 : 3.47478105273437); (5.625 : 3.47478105273437)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Team/Team_Sponsor" />
+      <nodes>
+        <classShapeMoniker Id="d5d55165-6051-4bf2-8511-115f0c15ee05" />
+        <classShapeMoniker Id="34457324-10a4-4cee-9c34-71aa484e127c" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="3994bc61-3f53-4112-ab19-dffa39e2dc26" absoluteBounds="10, 42.875, 2, 2.7324039713541666">
+      <DataClassMoniker Name="/DB/MemberBusiness" />
+      <nestedChildShapes>
+        <elementListCompartment Id="8cce0b72-a5b2-481a-b133-001b226ead37" absoluteBounds="10.015, 43.335, 1.9700000000000002, 2.1724039713541665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(8.40625 : 47.5); (8.40625 : 44.9992496744792); (10 : 44.9992496744792)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Contact/Contact_MemberBusiness" />
+      <nodes>
+        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
+        <classShapeMoniker Id="3994bc61-3f53-4112-ab19-dffa39e2dc26" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="f0d0a543-48e6-45cd-9ba2-a4434c622423" absoluteBounds="7.375, 77.25, 2, 1.7708968098958331">
+      <DataClassMoniker Name="/DB/hof" />
+      <nestedChildShapes>
+        <elementListCompartment Id="7b83a2f5-3035-4db3-9471-1c72b9f3ceb8" absoluteBounds="7.39, 77.71, 1.9700000000000002, 1.2108968098958333" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5.5 : 60.3012240851362); (5.56607443490112 : 60.3672985200373 : JumpStart); (5.68392556509888 : 60.4851496502351 : JumpEnd); (5.75357443490112 : 60.5547985200373 : JumpStart); (5.87142556509888 : 60.6726496502351 : JumpEnd); (5.87857443490112 : 60.6797985200373 : JumpStart); (5.99642556509888 : 60.7976496502351 : JumpEnd); (6.265625 : 61.0668490851362); (6.265625 : 78.1354484049479); (7.375 : 78.1354484049479)]" fixedFrom="NotFixed" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Account/Account_hof" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="f0d0a543-48e6-45cd-9ba2-a4434c622423" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(7.1127909609375 : 51.5785139973958); (7.1127909609375 : 52.5); (6.85847681380208 : 52.5 : JumpStart); (6.69181014713542 : 52.5 : JumpEnd); (6.20833333333333 : 52.5 : JumpStart); (5.72916666666667 : 52.5 : JumpEnd); (5.625 : 52.5); (5.625 : 77.661472202474); (5.72916666666667 : 77.661472202474 : JumpStart); (6.34895833333333 : 77.661472202474 : JumpEnd); (7.375 : 77.661472202474)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Contact/Contact_hof" />
+      <nodes>
+        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
+        <classShapeMoniker Id="f0d0a543-48e6-45cd-9ba2-a4434c622423" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="9d6e6bb6-c7d0-4271-93c1-59f1a8b57721" absoluteBounds="7.75, 83, 2, 2.1554996744791666">
+      <DataClassMoniker Name="/DB/HOFNomination" />
+      <nestedChildShapes>
+        <elementListCompartment Id="215ce496-f3e5-4cba-9c1c-1d66e0053c0c" absoluteBounds="7.765, 83.46, 1.9700000000000002, 1.5954996744791665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(5.5 : 60.310454854367); (5.56607443490112 : 60.3765292892681 : JumpStart); (5.68392556509888 : 60.4943804194659 : JumpEnd); (5.75357443490112 : 60.5640292892681 : JumpStart); (5.87142556509888 : 60.6818804194659 : JumpEnd); (5.87857443490112 : 60.6890292892681 : JumpStart); (5.99642556509888 : 60.8068804194659 : JumpEnd); (6.046875 : 60.857329854367); (6.046875 : 83.7812505); (6.07291666666667 : 83.7812505 : JumpStart); (6.30208333333333 : 83.7812505 : JumpEnd); (7.75 : 83.7812505)]" fixedFrom="NotFixed" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Account/Account_HOFNomination" />
+      <nodes>
+        <classShapeMoniker Id="a9fc91cc-126b-4b15-ad45-3d97f775eb1c" />
+        <classShapeMoniker Id="9d6e6bb6-c7d0-4271-93c1-59f1a8b57721" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="6584976c-b56a-49b3-b2f0-933208541909" absoluteBounds="13.625, 97.25, 2, 1.5785953776041666">
+      <DataClassMoniker Name="/DB/PlayerProfile" />
+      <nestedChildShapes>
+        <elementListCompartment Id="3324e25e-46fc-4214-a02e-6ac7a010e078" absoluteBounds="13.64, 97.71, 1.9700000000000002, 1.0185953776041665" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(7.950196640625 : 51.5785139973958); (7.950196640625 : 52.375); (8.32291616666667 : 52.375 : JumpStart); (8.48958283333334 : 52.375 : JumpEnd); (8.5625 : 52.375); (8.5625 : 76.75); (10.5985664218875 : 76.75 : JumpStart); (10.7652330885542 : 76.75 : JumpEnd); (11.125 : 76.75); (11.125 : 98.0392976888021); (11.1666666666667 : 98.0392976888021 : JumpStart); (11.3958333333333 : 98.0392976888021 : JumpEnd); (13.625 : 98.0392976888021)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Contact/Contact_PlayerProfile" />
+      <nodes>
+        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
+        <classShapeMoniker Id="6584976c-b56a-49b3-b2f0-933208541909" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(11 : 97.582148844401); (11.0416666666667 : 97.582148844401 : JumpStart); (11.3958333333333 : 97.582148844401 : JumpEnd); (13.625 : 97.582148844401)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/ProfileQuestion/ProfileQuestion_PlayerProfile" />
+      <nodes>
+        <classShapeMoniker Id="9d65efc9-5967-4a3a-b1dd-fe50b5b691c8" />
+        <classShapeMoniker Id="6584976c-b56a-49b3-b2f0-933208541909" />
+      </nodes>
+    </associationConnector>
+    <classShape Id="9c76fcf8-ee5a-4c27-b620-6ffe10ed9d36" absoluteBounds="17.125, 47.625, 2, 2.5401025390625">
+      <DataClassMoniker Name="/DB/MessagePost" />
+      <nestedChildShapes>
+        <elementListCompartment Id="e71b66f7-0b84-441c-a0a8-7700b952162f" absoluteBounds="17.14, 48.085, 1.9700000000000002, 1.9801025390625" name="DataPropertiesCompartment" titleTextColor="Black" itemTextColor="Black" />
+      </nestedChildShapes>
+    </classShape>
+    <associationConnector edgePoints="[(8.5 : 48.8854484049479); (9.01041666666667 : 48.8854484049479 : JumpStart); (9.17708333333333 : 48.8854484049479 : JumpEnd); (12.1666666666667 : 48.8854484049479 : JumpStart); (12.3333333333333 : 48.8854484049479 : JumpEnd); (14.3229166666667 : 48.8854484049479 : JumpStart); (14.4895833333333 : 48.8854484049479 : JumpEnd); (17.125 : 48.8854484049479)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/Contact/Contact_MessagePost" />
+      <nodes>
+        <classShapeMoniker Id="234dabab-5f32-4f8c-8e3d-efe8d01da152" />
+        <classShapeMoniker Id="9c76fcf8-ee5a-4c27-b620-6ffe10ed9d36" />
+      </nodes>
+    </associationConnector>
+    <associationConnector edgePoints="[(14.25 : 46.5624995); (14.3229166666667 : 46.5624995 : JumpStart); (14.4895833333333 : 46.5624995 : JumpEnd); (18.125 : 46.5624995); (18.125 : 47.625)]" fixedFrom="Algorithm" fixedTo="Algorithm">
+      <AssociationMoniker Name="/DB/MessageTopic/MessageTopic_MessagePost" />
+      <nodes>
+        <classShapeMoniker Id="f5890b59-8eb4-49d8-a653-4e673df35c7f" />
+        <classShapeMoniker Id="9c76fcf8-ee5a-4c27-b620-6ffe10ed9d36" />
       </nodes>
     </associationConnector>
   </nestedChildShapes>
