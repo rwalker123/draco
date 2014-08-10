@@ -908,8 +908,6 @@
     <Content Include="Scripts\locales\bootstrap-datepicker.zh-CN.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.zh-TW.js" />
     <Content Include="Scripts\Map.js" />
-    <Content Include="Scripts\masonry\masonry.pkgd.js" />
-    <Content Include="Scripts\masonry\masonry.pkgd.min.js" />
     <Content Include="Scripts\modernizr-2.7.2.js" />
     <Content Include="Scripts\photogallery.js" />
     <Content Include="Scripts\respond.js" />
