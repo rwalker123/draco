@@ -437,7 +437,7 @@ else
         @if (Model.ShowAnnouncements)
         {
             <text>
-        announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         </text>
         }
 
@@ -494,14 +494,6 @@ else
         welcomeData.ShowFirstMenu();
         </text>
         }
-
-        @if (Model.ShowAnnouncements)
-        {
-            <text>
-        announcementData.AdjustNewsMenuHeaders();
-        </text>
-        }
-
 
         $("#_yearEst").selectpicker();
     });

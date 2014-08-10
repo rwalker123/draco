@@ -277,7 +277,7 @@ else
         @if (Model.ShowAnnouncements)
         {
             <text>
-        announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
         }
 
@@ -334,13 +334,6 @@ else
             <text>
         // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
         welcomeData.ShowFirstMenu();
-        </text>
-        }
-
-        @if (Model.ShowAnnouncements)
-        {
-            <text>
-        announcementData.AdjustNewsMenuHeaders();
         </text>
         }
 

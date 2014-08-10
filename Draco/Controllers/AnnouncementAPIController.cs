@@ -1,5 +1,8 @@
-﻿using SportsManager.Models;
+﻿using ModelObjects;
+using SportsManager.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -8,6 +11,50 @@ namespace SportsManager.Controllers
 {
     public class AnnouncementAPIController : ApiController
     {
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("Announcements")]
+        public HttpResponseMessage GetAnnouncements(long accountId)
+        {
+            var allNews = DataAccess.LeagueNews.GetAllNews(accountId);
+            return ProcessNews(allNews);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("TeamAnnouncements")]
+        public HttpResponseMessage GetAnnouncements(long accountId, long teamSeasonId)
+        {
+            var allNews = DataAccess.TeamNews.GetTeamAnnouncements(teamSeasonId);
+            return ProcessNews(allNews);
+        }
+
+        private HttpResponseMessage ProcessNews(IQueryable<LeagueNewsItem> allNews)
+        {
+            List<LeagueNewsItem> specialAnnouncments = new List<LeagueNewsItem>();
+            List<LeagueNewsItem> headlineLinks = new List<LeagueNewsItem>();
+            List<LeagueNewsItem> otherLinks = new List<LeagueNewsItem>();
+
+            int NumHeadlineLinks = 3;
+
+            foreach (var news in allNews)
+            {
+                if (news.SpecialAnnounce)
+                    specialAnnouncments.Add(news);
+                else if (headlineLinks.Count < NumHeadlineLinks)
+                    headlineLinks.Add(news);
+                else
+                    otherLinks.Add(news);
+            }
+
+            var newsResponse = new
+            {
+                SpecialNews = specialAnnouncments,
+                OtherNews = headlineLinks,
+                OlderNews = otherLinks
+            };
+
+            return Request.CreateResponse(HttpStatusCode.OK, newsResponse);
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcement")]
         public HttpResponseMessage GetAnnouncement(long accountId, long id)
@@ -65,10 +112,7 @@ namespace SportsManager.Controllers
 
                 // Create a 201 response.
                 //var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
-                {
-                    Content = new StringContent(announcementData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
                 return response;
@@ -93,10 +137,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 // Create a 200 response.
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(announcementData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.OK, announcementData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
                 return response;
@@ -124,14 +165,12 @@ namespace SportsManager.Controllers
                 // need to use the teamId not team Season.
                 announcementData.AccountId = team.TeamId;
 
-                DataAccess.TeamNews.AddTeamAnnouncement(announcementData);
+                if (!DataAccess.TeamNews.AddTeamAnnouncement(announcementData))
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
 
                 // Create a 201 response.
                 //var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
-                {
-                    Content = new StringContent(announcementData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
                 return response;
@@ -165,10 +204,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 // Create a 200 response.
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(announcementData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.OK, announcementData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
                 return response;

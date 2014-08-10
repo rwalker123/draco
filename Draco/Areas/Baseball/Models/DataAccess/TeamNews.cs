@@ -81,6 +81,9 @@ namespace DataAccess
 
             db.TeamNews.InsertOnSubmit(dbItem);
             db.SubmitChanges();
+
+            newsItem.Id = dbItem.Id;
+
             return true;
 		}
 
