@@ -270,7 +270,8 @@ else
         @if (Model.ShowWelcome)
         {
             <text>
-        welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+
+        initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
         }
 
@@ -328,14 +329,6 @@ else
         }
 
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-
-        @if (Model.ShowWelcome)
-        {
-            <text>
-        // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
-        welcomeData.ShowFirstMenu();
-        </text>
-        }
 
     });
 </script>

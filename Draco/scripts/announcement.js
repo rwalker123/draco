@@ -37,7 +37,6 @@ var NewsItemViewModel = function (data) {
         var js = ko.mapping.toJS(self);
         return js;
     }
-
 }
 
 var AnnouncementClass = function (accountId, isAdmin, teamId) {

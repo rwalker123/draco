@@ -333,6 +333,22 @@ namespace DataAccess
             return (rowCount > 0);
         }
 
+        static public IQueryable<AccountWelcome> GetAccountWelcomeTextHeaders(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+            return (from aw in db.AccountWelcomes
+                    where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
+                    select new AccountWelcome()
+                    {
+                        Id = aw.Id,
+                        AccountId = accountId,
+                        TeamId = 0,
+                        CaptionText = aw.CaptionMenu,
+                        OrderNo = aw.OrderNo,
+                        WelcomeText = "" // don't return text.
+                    });
+        }
+
         static public IQueryable<AccountWelcome> GetAccountWelcomeText(long accountId)
         {
             DB db = DBConnection.GetContext();

@@ -430,7 +430,7 @@ else
         @if (Model.ShowWelcomeMessages)
         {
             <text>
-        welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         </text>
         }
 
@@ -484,14 +484,6 @@ else
         <text>
         var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         ko.applyBindings(workoutsData, document.getElementById("workouts"));
-        </text>
-        }
-
-        @if (Model.ShowWelcomeMessages)
-        {
-            <text>
-        // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
-        welcomeData.ShowFirstMenu();
         </text>
         }
 
