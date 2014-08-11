@@ -29,6 +29,8 @@ var NewsItemViewModel = function (data) {
         return moment(self.Date()).format("MMM DD, YYYY");
     });
 
+    self.Id.isLoaded = ko.observable(self.Text().length > 0);
+
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
     }
@@ -51,6 +53,12 @@ var AnnouncementClass = function (accountId, isAdmin, teamId) {
     self.otherNews = ko.observableArray();
     self.olderNews = ko.observableArray();
     self.selectedOlderNews = ko.observable();
+    self.selectedOlderNews.subscribe(function () {
+        if (!self.selectedOlderNews())
+            return;
+        if (!self.selectedOlderNews().Id.isLoaded())
+            self.fillAnnouncementText(self.selectedOlderNews());
+    });
 
     self.allNews = [];
 
@@ -229,6 +237,37 @@ var AnnouncementClass = function (accountId, isAdmin, teamId) {
             }
         });
     };
+
+    self.fillAnnouncementText = function (vm) {
+        var url = window.config.rootUri + '/api/AnnouncementAPI/' + self.accountId;
+        if (self.teamId)
+            url = url + '/Team/' + self.teamId + '/Announcement/';
+        else
+            url = url + '/Announcement/';
+
+        url = url + vm.Id();
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (announcement) {
+                vm.Text(announcement);
+                vm.Id.isLoaded(true);
+            }
+        });
+    }
+
+    $('#otherNewsSection').on('show.bs.collapse', function () {
+
+        //get the anchor of the accordian that does not has the class "collapsed"
+        var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');
+        if (openAnchor && openAnchor.length == 1) {
+            var vm = ko.dataFor(openAnchor[0]);
+            if (vm && !vm.Id.isLoaded()) {
+                self.fillAnnouncementText(vm);
+            }
+        }
+    });
 
     self.loadAnnouncements();
 }

@@ -38,11 +38,19 @@ namespace SportsManager.Controllers
             foreach (var news in allNews)
             {
                 if (news.SpecialAnnounce)
+                {
                     specialAnnouncments.Add(news);
+                }
                 else if (headlineLinks.Count < NumHeadlineLinks)
+                {
+                    news.Text = String.Empty; // don't send back text improve performance.
                     headlineLinks.Add(news);
+                }
                 else
+                {
+                    news.Text = String.Empty; // don't send back text improve performance.
                     otherLinks.Add(news);
+                }
             }
 
             var newsResponse = new
