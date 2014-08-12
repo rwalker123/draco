@@ -382,6 +382,8 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     self.availableBatPlayers = ko.observableArray();
     self.playerBatStats = ko.observableArray();
     self.batStatsTotals = ko.observable();
+    self.isBatLoading = ko.observable(false);
+    self.isPitchLoading = ko.observable(false);
 
     self.addPlayerToBatStats = function (player) {
         var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/game/' + self.selectedGame() + '/gameplayerbatstats/' + player.Id;
@@ -433,6 +435,8 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url = url + '/' + self.selectedGame();
         }
 
+        self.isBatLoading(true);
+
         $.ajax({
             type: "GET",
             url: url,
@@ -443,6 +447,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 });
 
                 self.playerBatStats(playerStats);
+                self.isBatLoading(false);
             }
         });
 
@@ -561,6 +566,8 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url = url + '/' + self.selectedGame();
         }
 
+        self.isPitchLoading(true);
+
         $.ajax({
             type: "GET",
             url: url,
@@ -571,6 +578,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
                 });
 
                 self.playerPitchStats(playerStats);
+                self.isPitchLoading(false);
             }
         });
 

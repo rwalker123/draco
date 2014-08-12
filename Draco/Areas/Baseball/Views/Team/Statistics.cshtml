@@ -61,7 +61,10 @@
         </ul>
         <div class="tab-content">
             <div class="tab-pane fade in active" id="batting">
-                <div class="table-responsive">
+                <div data-bind="visible: isBatLoading">
+                    <img src="~/Images/busy.gif" /> Loading...
+                </div>
+                <div class="table-responsive" data-bind="visible: !isBatLoading()">
                     <table id="batStatsTable" class="table table-striped statsTable">
                         <thead>
                             <tr>
@@ -180,8 +183,11 @@
             </div>
 
             <div id="pitching" class="tab-pane fade">
-                <div class="tab-pane fade in active" id="batting">
-                    <div class="table-responsive">
+                    <div data-bind="visible: isPitchLoading">
+                        <img src="~/Images/busy.gif" /> Loading...
+                    </div>
+
+                    <div class="table-responsive" data-bind="visible: !isPitchLoading()">
                         <table id="pitchStatsTable" class="table table-striped statsTable">
                             <thead>
                                 <tr>
@@ -292,7 +298,6 @@
                         </div>
                     }
                 </div>
-            </div>
 
             <div id="gamesummary" class="tab-pane fade" data-bind="if: selectedGame() > 0">
 
