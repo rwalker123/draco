@@ -110,10 +110,6 @@
             {
                 <p class="help-block">You currently do not have any seasons setup. Click <b>@Html.ActionLink("here", "Index", "Season", new { area = "", accountId = Model.AccountId }, new { @class = "btn btn-primary" })</b> to set or create a new season.</p>
             }
-
-            
-
-
         </div>
 
         @if (ViewData["TwitterAccountName"] != null)
@@ -137,6 +133,17 @@
 </div>
 
 <div class="container-fluid">
+    @if (Model.ContactId == 0 && Model.ShowFAQMessage)
+    { 
+    <div class="row center-block text-center">
+        <div class="col-sm-12">
+            <div class="alert alert-success">
+                <b>Interested in learning about the @Model.AccountName? You can start by visiting the </b><a href="@Url.Action("Index", "LeagueFAQ", new { area = "", accountId = Model.AccountId }, null)" class="btn btn-success">FAQ</a> 
+            </div>
+        </div>
+    </div>
+    }
+    
     <div class="row">
         <div class="col-md-8"> <!-- column 1-->
             @if (Model.ShowWorkouts)

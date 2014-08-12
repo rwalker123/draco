@@ -1,8 +1,6 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
+using SportsManager;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -13,146 +11,72 @@ namespace DataAccess
 	{
 		static public LeagueFAQItem GetFAQItem(long faqId)
 		{
-			LeagueFAQItem i = null;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetFAQItem", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = faqId;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						i = new LeagueFAQItem(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetInt64(1));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return i;
+            return (from faq in db.LeagueFAQs
+                    where faq.id == faqId
+                    select new LeagueFAQItem(faq.id, faq.Question, faq.Answer, faq.AccountId)).SingleOrDefault();
 		}
 
-		static public LeagueFAQItem[] GetFAQ(long accountId)
+		static public IQueryable<LeagueFAQItem> GetFAQ(long accountId)
 		{
-			ArrayList faq = new ArrayList();
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetFAQ", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
+            return (from faq in db.LeagueFAQs
+                    where faq.AccountId == accountId
+                    select new LeagueFAQItem(faq.id, faq.Question, faq.Answer, faq.AccountId));
+        }
 
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						faq.Add( new LeagueFAQItem(dr.GetInt64(0), dr.GetString(2), dr.GetString(3), dr.GetInt64(1)));
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return (LeagueFAQItem[])faq.ToArray(typeof(LeagueFAQItem));
-		}
-
-		static public bool ModifyFAQ(LeagueFAQItem faq)
+		static public bool ModifyFAQ(LeagueFAQItem modFaq)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateFAQ", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = faq.Id;
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = faq.Question;
-					myCommand.Parameters.Add("@answer", SqlDbType.Text).Value = faq.Answer;
+            var dbFaq = (from faq in db.LeagueFAQs
+                         where faq.id == modFaq.Id
+                         select faq).SingleOrDefault();
 
-					myConnection.Open();
-					myCommand.Prepare();
+            if (dbFaq == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            dbFaq.Answer = modFaq.Answer;
+            dbFaq.Question = modFaq.Question;
 
-			return (rowCount <= 0) ? false : true;
+            db.SubmitChanges();
+
+            return true;
 		}
 
 		static public bool AddFAQ(LeagueFAQItem faq)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateFAQ", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@question", SqlDbType.VarChar, 255).Value = faq.Question;
-					myCommand.Parameters.Add("@answer", SqlDbType.Text).Value = faq.Answer;
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = faq.AccountId;
+            var dbFaq = new SportsManager.Model.LeagueFAQ();
+            dbFaq.AccountId = faq.AccountId;
+            dbFaq.Question = faq.Question;
+            dbFaq.Answer = faq.Answer;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.LeagueFAQs.InsertOnSubmit(dbFaq);
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            faq.Id = dbFaq.id;
 
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
-		static public bool RemoveFAQ(LeagueFAQItem faq)
+		static public bool RemoveFAQ(long faqId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteFAQ", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = faq.Id;
+            var dbFaq = (from faq in db.LeagueFAQs
+                         where faq.id == faqId
+                         select faq).SingleOrDefault();
+            if (dbFaq == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.LeagueFAQs.DeleteOnSubmit(dbFaq);
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 	}
 }
