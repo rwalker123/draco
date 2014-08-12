@@ -18,6 +18,9 @@ var StatisticsViewModel = function (accountId, isAdmin) {
 
     self.pageSize = 50;
 
+    self.isBatLoading = ko.observable(false);
+    self.isPitchLoading = ko.observable(false);
+
     self.selectedSeasonId = ko.observable();
     self.selectedSeasonId.subscribe(function (data) {
 
@@ -170,6 +173,8 @@ var StatisticsViewModel = function (accountId, isAdmin) {
         if (self.selectedDivisionId())
             url += "&divisionId=" + self.selectedDivisionId();
 
+        self.isBatLoading(true);
+
         $.ajax({
             type: "GET",
             url: url,
@@ -184,6 +189,8 @@ var StatisticsViewModel = function (accountId, isAdmin) {
                     self.batStatsPageNumber(self.batStatsPageNumber() - 1);
                     self.nextBatStatsAvailable(false);
                 }
+
+                self.isBatLoading(false);
             }
         });
     }
@@ -237,6 +244,8 @@ var StatisticsViewModel = function (accountId, isAdmin) {
         if (self.selectedDivisionId())
             url += "&divisionId=" + self.selectedDivisionId();
 
+        self.isPitchLoading(true);
+
         $.ajax({
             type: "GET",
             url: url,
@@ -251,6 +260,8 @@ var StatisticsViewModel = function (accountId, isAdmin) {
                     self.pitchStatsPageNumber(self.pitchStatsPageNumber() - 1);
                     self.nextPitchStatsAvailable(false);
                 }
+
+                self.isPitchLoading(false);
             }
         });
     }
