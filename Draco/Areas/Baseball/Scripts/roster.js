@@ -2,16 +2,6 @@
     var rosterElem = document.getElementById("roster");
     if (rosterElem) {
 
-        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-            var li = $("<li>");
-            li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
-            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-            li.appendTo(ul);
-
-            return li;
-        };
-
         var rosterVM = new RosterViewModel(accountId, isAdmin, isTeamAdmin, teamId, firstYear);
         rosterVM.init();
         ko.applyBindings(rosterVM, rosterElem);
@@ -77,8 +67,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.signPlayerVisible = ko.observable(false);
 
-    self.selectedPlayer = ko.observable();
-
     self.init = function () {
         var elem = $("#handoutSelectedFileName");
 
@@ -93,6 +81,8 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
         self.loadPlayers();
     }
+
+    self.selectedPlayer = ko.observable();
 
     self.isPlayerSelected = ko.computed(function () {
         return self.selectedPlayer();
@@ -205,10 +195,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             },
             success: function (data) {
                 self.selectedPlayer({
-                    id: +data,
-                    text: '',
-                    logo: '',
-                    hasLogo: false
+                    Id: +data
                 });
 
                 self.newPlayerFirstName('');
@@ -288,7 +275,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamId + '/roster/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/Team/' + self.teamId + '/roster/' + self.selectedPlayer().Id,
             success: function (item) {
                 var player = new PlayerViewModel(self.accountId, item);
 
@@ -300,7 +287,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
                 });
 
                 self.selectedPlayer(null);
-                $("input.autocomplete").val('');
 
             }
         });
@@ -321,13 +307,12 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     }
 
-    self.getPlayers = function (request, response) {
-        var searchTerm = this.term;
+    self.getPlayers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availableplayers',
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -346,22 +331,9 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             }
         });
-    }
-
-    self.selectPlayer = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedPlayer({
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL)
-            });
-        }
-
-        return true;
     }
 
     self.availableYears = ko.observableArray([]);

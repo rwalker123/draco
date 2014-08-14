@@ -350,24 +350,23 @@ var StatisticsViewModel = function (accountId, isAdmin) {
         });
     }
 
-    self.foundPlayer = undefined;
+    self.foundPlayer = ko.observable();
 
     self.loadPlayer = function () {
-        if (!self.foundPlayer || !self.foundPlayer.id) {
+        if (!self.foundPlayer() || !self.foundPlayer().Id) {
             return;
         }
 
-        window.location = window.config.rootUri + '/baseball/player/contact/' + self.accountId + '/' + self.foundPlayer.id;
+        window.location = window.config.rootUri + '/baseball/player/contact/' + self.accountId + '/' + self.foundPlayer().Id;
     }
 
-    self.getPlayers = function (request, response) {
-        var searchTerm = this.term;
+    self.getPlayers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
             dataType: "json",
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -386,33 +385,8 @@ var StatisticsViewModel = function (accountId, isAdmin) {
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             },
         });
     }
-
-    self.selectPlayer = function (e, ui) {
-        if (ui && ui.item) {
-            self.foundPlayer = {
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL),
-                selected: ko.observable(true)
-            };
-        }
-
-        return true;
-    }
-
-    $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-        var li = $("<li>");
-        li.data("item.autocomplete", item);
-        var photoURL = item.PhotoURL;
-        li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-        li.appendTo(ul);
-
-        return li;
-    };
-
 }
