@@ -147,23 +147,12 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.selectedPlayer = ko.observable();
 
-    $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-        var li = $("<li>");
-        li.data("item.autocomplete", item);
-        var photoURL = item.PhotoURL;
-        li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-        li.appendTo(ul);
-
-        return li;
-    };
-
-    self.getPlayers = function (request, response) {
-        var searchTerm = this.term;
+    self.getPlayers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/availableinductees',
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -182,24 +171,10 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             }
         });
     }
-
-    self.selectPlayer = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedPlayer({
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL)
-            });
-        }
-
-        return true;
-    }
-
 
     self.cancelEdit = function () {
         self.editMode(false);
@@ -208,13 +183,13 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
     self.saveEdit = function () {
 
         if (!self.currentEditMember().Id()) {
-            if (!self.selectedPlayer() || !self.selectedPlayer().id) {
+            if (!self.selectedPlayer() || !self.selectedPlayer().Id) {
                 alert('select a player');
                 return;
             }
 
-            self.currentEditMember().ContactId(self.selectedPlayer().id);
-            self.currentEditMember().Name(self.selectedPlayer().text);
+            self.currentEditMember().ContactId(self.selectedPlayer().Id);
+            self.currentEditMember().Name(self.selectedPlayer().label);
         }
         else if (!self.currentEditMember().Name()) {
             alert('name is required');

@@ -5,16 +5,6 @@
         e.preventDefault();
     });
 
-    $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-        var li = $("<li>");
-        li.data("item.autocomplete", item);
-        var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
-        li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-        li.appendTo(ul);
-
-        return li;
-    };
-
     var umpireData = new UmpiresClass(accountId);
     ko.applyBindings(umpireData);
     umpireData.populateUmpires();
@@ -97,19 +87,18 @@ var UmpiresClass = function (accountId) {
 
     self.umpires = ko.observableArray();
 
-    self.selectedPlayer = ko.observable(null);
+    self.selectedPlayer = ko.observable();
     self.hasSelectedPlayer = ko.computed(function () {
         return self.selectedPlayer() != null;
     }, self);
 
-    self.getPlayers = function (request, response) {
-        var searchTerm = this.term;
+    self.getPlayers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AvailableUmpires',
             dataType: "json",
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -128,22 +117,9 @@ var UmpiresClass = function (accountId) {
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             }
         });
-    }
-
-    self.selectPlayer = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedPlayer({
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL)
-            });
-        }
-
-        return true;
     }
 
     self.addUmpire = function () {
@@ -152,14 +128,13 @@ var UmpiresClass = function (accountId) {
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + self.selectedPlayer().id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + self.selectedPlayer().Id,
             dataType: "json",
             success: function (data) {
                 var vm = new UmpireViewModel(data, self.accountId);
                 self.umpires.push(vm);
                 self.umpires.sort(self.sortByName);
                 self.selectedPlayer(null);
-                $("#_newUmpire").val('');
             }
         });
     }

@@ -5,7 +5,7 @@
     ViewBag.Title = Model.AccountName + " " + Model.LeagueName + " " + Model.Team.Name;
 }
 @section head {
-    @Styles.Render("~/Content/themes/base/css")
+@Styles.Render("~/Content/typeahead")
 }
 <div class="jumbotron" id="teamInfo">
     @if (Model.IsAdmin)

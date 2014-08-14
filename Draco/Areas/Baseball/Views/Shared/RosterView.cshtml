@@ -44,7 +44,8 @@
                         <h3 class="control-label col-sm-12">sign a player</h3>
                         <div class="col-sm-12">
                             <div class="input-group">
-                                <input type="text" class="autocomplete form-control pull-left" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" placeholder="enter player name" />
+                                <input type="text" class="form-control pull-left" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="enter player name" />
+
                                 <span class="input-group-btn">
                                     <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected" title="sign player"><span class="glyphicon glyphicon-ok"></span></button>
                                 </span>
