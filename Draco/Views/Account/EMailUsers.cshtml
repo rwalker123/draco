@@ -7,24 +7,13 @@
 
 @section head
 {
-    @Styles.Render("~/Content/themes/base/css")
+@Styles.Render("~/Content/typeahead")
 
     <style>
-        .bar
-        {
-            height: 18px;
-            background: green;
-        }
-
-    div.toArea {
-        float:left;
-        width:300px;
-    }
-
-    div.messageArea {
-        background: white;
-        float:left;
-        margin-left:20px;
+    .bar
+    {
+        height: 18px;
+        background: green;
     }
 
     input.radio {
@@ -51,40 +40,47 @@
     <p class="help-block">Email website users.</p>
 </div> <!-- content-wrapper -->
 
-<div class="container-fluid">
-    <div class="row-fluid">
+<div class="container">
+    <div class="row">
         <div class="col-md-5">
             <span class="toText">From</span><br />
             <img onerror="this.style.display = 'none';" class="photo" src="@Model.PhotoUrl" />
             <span style="margin-left:10px">@Model.UserName<br /></span><span style="margin-left: 10px">@Model.Email</span>
             <div style="clear:both; margin-bottom: 20px"></div>
             <br /><span class="toText">To</span><br />
-
-            <select class="selectpicker" data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
-            <div data-bind="fadeVisible: toOptionsAvailable">
-                <div data-bind="visible: toField() == 5">
-                    <small>(type last name to begin search)</small><br />
-                    <input type="text" class="form-control" style="vertical-align:middle" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
-                </div>
-                <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
-                <div data-bind="visible: availableToData().length > 0">
-                    <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px" data-bind="foreach: availableToData">
-                        <li class="list-group-item">
-                            <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img onerror="this.style.display = 'none';" style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+                <form role="form">
+                    <div class="form-group">
+                        <div class="col-sm-12">
+                            <select class="selectpicker" data-bind="value: toField, options: availableTo, optionsText: 'text', optionsValue: 'id', optionsTitle: 'title'"></select>
+                        </div>
+                    </div>
+                    <div data-bind="fadeVisible: toOptionsAvailable" class="form-group">
+                        <div data-bind="visible: toField() == 5" class="col-sm-12">
+                            <input type="text" id="toOptionsInput" class="form-control" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectPlayer, options: { highlight: true } }" placeholder="type last name to begin search" />
+                        </div>
+                    </div>
+                   <div class="form-group">
+                        <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
+                       <div class="col-sm-12">
+                           <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px;" data-bind="foreach: availableToData">
+                               <li class="list-group-item">
+                                   <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img onerror="this.style.display = 'none';" style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
+                               </li>
+                           </ul>
+                       </div>
+                    </div>
+                </form>
         </div>
-
         <div class="col-md-7">
 
             <div class="row">
-                <div class="col-md-7">
-                    <input type="text" class="form-control" data-bind="value: subject" placeholder="add a subject" />
-                </div>
-                <div class="col-md-4">
-                    <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button>
+                <div class="col-sm-11">
+                    <div class="input-group">
+                        <input type="text" class="form-control" data-bind="value: subject" placeholder="add a subject" />
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-success" data-bind="click: sendEmail, enable: canSend">Send</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <hr />
@@ -236,14 +232,13 @@ else
 
         }
 
-        self.getPlayers = function (request, response) {
-            var searchTerm = this.term;
+        self.getPlayers = function (query, cb) {
 
             $.ajax({
                 url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
                 dataType: "json",
                 data: {
-                    lastName: searchTerm,
+                    lastName: query,
                     firstName: '',
                     page: 1
                 },
@@ -259,29 +254,30 @@ else
                             Id: item.Id,
                             PhotoURL: item.PhotoURL,
                             FirstName: item.FirstName,
-                            LastName: item.LastName
+                            LastName: item.LastName,
+                            selected: ko.observable()
                         }
                     });
-                    response(results);
+                    cb(results);
                 },
             });
         }
 
-        selectPlayer = function (e, ui) {
-            if (ui && ui.item) {
+        self.selectPlayer = ko.observable();
+        self.selectPlayer.subscribe(function () {
+            if (self.selectPlayer()) {
                 self.availableToData.push({
-                    id: ui.item.Id,
-                    text: ui.item.value,
-                    logo: ui.item.PhotoURL,
-                    hasLogo: (!!ui.item.PhotoURL),
+                    id: self.selectPlayer().Id,
+                    text: self.selectPlayer().label,
+                    logo: self.selectPlayer().PhotoURL,
+                    hasLogo: true,
                     selected: ko.observable(true)
                 });
-                // clear out input area.
-                ui.item.value = '';
-            }
 
-            return true;
-        }
+                self.selectPlayer(null);
+                $("#toOptionsField").val(null);
+            }
+        });
 
         self.getLeagues = function () {
             $.ajax({
@@ -406,16 +402,6 @@ else
 
     function initViewModel(accountId) {
         initKOHelpers();
-
-        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-            var li = $("<li>");
-            li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL;
-            li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-            li.appendTo(ul);
-
-            return li;
-        };
 
         var emailData = new EmailUsersClass(@Model.AccountId);
         ko.applyBindings(emailData);

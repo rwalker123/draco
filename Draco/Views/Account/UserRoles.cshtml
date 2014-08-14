@@ -6,7 +6,7 @@
 
 @section head
 {
-    @Styles.Render("~/Content/themes/base/css")
+@Styles.Render("~/Content/typeahead")
 }
 
 
@@ -34,8 +34,8 @@
                 <p class="help-block">type last name to begin search</p>
                 <form class="form-inline" role="form">
                     <div class="input-group col-sm-12">
-
-                        <input class="form-control autocomplete" id="ownerPlayerSelect" placeholder="Find contact (type last name)" data-bind="autocomplete: { source: getPlayers, select: selectNewOwner, minLength: 1 }" />
+                        var searchTerm = this.term;
+                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedNewOwner, options: { highlight: true } }" />
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-success" data-bind="click: changeAccountOwner" title="change account owner"><span class="glyphicon glyphicon-ok"></span></button>
                             <button type="button" class="btn btn-danger" data-bind="click: cancelChangeAccountOwner" title="cancel change account owner"><span class="glyphicon glyphicon-remove"></span></button>
@@ -78,7 +78,7 @@
                     <p class="help-block" data-bind="html: HelpText"></p>
                     <p class="help-block">add administrator (type last name to begin search)</p>
                     <div class="row">
-                        <form class="form-inline" role="form">
+                        <form class="form-horizontal" role="form">
                             <!-- ko if: ShowLeagues -->
                             <div class="form-group col-sm-12">
                                 <label data-bind="uniqueFor: Id" class="control-label">select league</label>
@@ -86,17 +86,15 @@
                             </div>
                             <!-- /ko -->
                             <!-- ko if: ShowTeams -->
-                            <div class="form-group">
-                                <div class="form-group col-sm-12">
-                                    <label data-bind="uniqueFor: Id" class="control-label">select team</label>
-                                    <select data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: $parent.availableTeams }, optionsText: 'Name', optionsValue: 'Id'" data-container="body" title="Choose a team..."></select>
-                                </div>
+                            <div class="form-group col-sm-12">
+                                <label data-bind="uniqueFor: Id" class="control-label">select team</label>
+                                <select data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: $parent.availableTeams }, optionsText: 'Name', optionsValue: 'Id'" data-container="body" title="Choose a team..."></select>
                             </div>
                             <!-- /ko -->
                             <div class="form-group col-sm-12">
                                 <label data-bind="uniqueFor: Id" class="sr-only">Last Name</label>
-                                <div class="input-group col-sm-12">
-                                    <input type="text" class="form-control autocomplete" placeholder="find player (type last name)" data-bind="uniqueId: Id, autocomplete: { source: $root.getPlayers, select: selectUser, minLength: 1 }" />
+                                <div class="input-group ">
+                                    <input type="text" class="form-control" placeholder="find player (type last name)" data-bind="uniqueId: Id, typeahead: { datasets: { source: $root.getPlayers, displayKey: 'label' }, target: selectedUser, options: { highlight: true } }" />
                                     <div class="input-group-btn">
                                         <button type="button" class="btn btn-primary" data-bind="click: addSelectedUserToRole" title="add user to role"><span class="glyphicon glyphicon-plus"></span></button>
                                     </div>

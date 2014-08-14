@@ -18,12 +18,13 @@
             <div class="row">
                 <form style="display:none" data-bind="visible: !viewMode()">
                     <div class="form-group">
-                        <label class="control-label">enter a manager name</label>
-                        <div class="col-sm-10">
-                            <input type="text" class="autocomplete form-control" data-bind="autocomplete: { source: getAvailableManagers, select: selectPlayer, minLength: 1 }" />
-                        </div>
-                        <div class="col-sm-2">
-                            <button class="btn btn-primary" data-bind="click: addManager, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button>
+                        <div class="col-sm-12">
+                            <div class="input-group">
+                                <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: getAvailableManagers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type manager last name" />
+                                <div class="input-group-btn">
+                                    <button class="btn btn-primary" data-bind="click: addManager, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>

@@ -55,18 +55,30 @@
         }
     };
 
-    // jQuery autocomplete..
-    ko.bindingHandlers.autocomplete = {
-        init: function (element, params) {
-            $(element).autocomplete(params());
+    //<input type="text" data-bind="typeahead: { target: ProductViewModel, datasets: { source: Products }, options: { hint: true, minLength: 3, highlight: true } }" />
 
-            //handle disposal (if KO removes by the template binding)
-            ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-                $(element).autocomplete("destroy");
+    ko.bindingHandlers.typeahead = {
+        init: function (element, params) {
+            var binding = this;
+            var elem = $(element);
+            var value = params();
+
+            elem.bind('typeahead:selected', function (e, suggestionObject, datasetName) {
+                value.target(suggestionObject);
             });
+
+            if (value.datasets && value.datasets.source)
+                value.datasets.source = ko.utils.unwrapObservable(value.datasets.source); 
+
+            elem.typeahead(value.options, value.datasets);
         },
-        update: function (element, params) {
-            $(element).autocomplete("option", "source", params().source);
+        update: function (element, valueAccessor) {
+            var elem = $(element);
+            var value = valueAccessor();
+            if (value.target() && value.target().label)
+                elem.val(value.target().label);
+            else
+                elem.val(value.target());
         }
     };
 

@@ -2,16 +2,6 @@
     var managersElem = document.getElementById("teamManagers");
     if (managersElem) {
 
-        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-            var li = $("<li>");
-            li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
-            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-            li.appendTo(ul);
-
-            return li;
-        };
-
         var managersVM = new ManagersViewModel(accountId, isAdmin, isTeamAdmin, teamId);
         ko.applyBindings(managersVM, managersElem);
     }
@@ -93,13 +83,14 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     }
 
     self.addManager = function () {
-        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + self.selectedPlayer().id;
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + self.selectedPlayer().Id;
         $.ajax({
             type: "POST",
             url: url,
             success: function (manager) {
                 var mvm = new ManagerViewModel(self.accountId, manager);
                 self.managers.push(mvm);
+                self.selectedPlayer(null);
             }
         });
 
@@ -120,13 +111,12 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     }
 
-    self.getAvailableManagers = function (request, response) {
-        var searchTerm = this.term;
+    self.getAvailableManagers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availablemanagers',
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -145,24 +135,10 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             }
         });
     }
 
-    self.selectPlayer = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedPlayer({
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL)
-            });
-        }
-
-        return true;
-    }
-
     self.getManagers();
-
 }
