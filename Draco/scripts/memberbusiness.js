@@ -43,7 +43,7 @@ var MemberBusinessViewModel = function (data, accountId) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.Website.extend({
-        url: true
+        url: false
     });
 
     self.EMail.extend({
