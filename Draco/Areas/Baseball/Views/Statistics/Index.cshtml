@@ -145,28 +145,31 @@
                                 <li class="next"><a data-bind="visible: nextBatStatsAvailable, click: gotoBatStatsNext">Next &rarr;</a></li>
                             </ul>
 
+                            <div data-bind="visible: isBatLoading">
+                                <img src="~/Images/busy.gif" /> Loading...
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-striped statsTable">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="at bats">AB</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="hits">H</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="runs scored">R</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="doubles" data-sort-field="D">2B</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="triples" data-sort-field="T">3B</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="home runs">HR</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="runs batted in">RBI</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="strike outs">SO</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="walks">BB</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="hit by pitch">HBP</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="stolen base">SB</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="total bases">TB</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="plate appearances">PA</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="on base percentage" data-sort-field="OBA">OBP</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="slugging percentage">SLG</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="on base percentage + slugging percentage">OPS</th>
-                                            <th class="sortableField" data-bind="click: batSortBy" data-toggle="tooltip" title="batting average">AVG</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="at bats">AB</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="hits">H</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="runs scored">R</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="doubles" data-sort-field="D">2B</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="triples" data-sort-field="T">3B</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="home runs">HR</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="runs batted in">RBI</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="strike outs">SO</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="walks">BB</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="hit by pitch">HBP</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="stolen base">SB</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="total bases">TB</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="plate appearances">PA</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="on base percentage" data-sort-field="OBA">OBP</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="slugging percentage">SLG</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="on base percentage + slugging percentage">OPS</th>
+                                            <th data-bind="click: batSortBy, css: { sortableField: !isBatLoading() }" data-toggle="tooltip" title="batting average">AVG</th>
                                         </tr>
                                     </thead>
                                     <tbody data-bind="foreach: leagueSortableBatStats">
@@ -205,31 +208,34 @@
                                 <li class="next"><a data-bind="visible: nextPitchStatsAvailable, click: gotoPitchStatsNext">Next &rarr;</a></li>
                             </ul>
 
+                            <div data-bind="visible: isPitchLoading">
+                                <img src="~/Images/busy.gif" /> Loading...
+                            </div>
                             <div class="table-responsive">
                                 <table id="pitchStatsTable" class="table table-striped statsTable">
                                     <thead>
                                         <tr>
                                             <th>Name</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="wins">W</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="losses">L</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="saves">S</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="innings pitched">IP</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="batters faced">BF</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="hits given up">H</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="runs scored">R</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="earned runs scored">ER</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="doubles" data-sort-field="D">2B</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="triples" data-sort-field="T">3B</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="home runs">HR</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="strike outs">SO</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="walks">BB</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="hit batters" data-sort-field="HBP">HB</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="strikouts per 9 innings" data-sort-field="K9">K/9</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="walks per 9 innings" data-sort-field="BB9">BB/9</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="opponents batting average">OBA</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="opponents slugging percentage">SLG</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="walks + hits / innings pitched">WHIP</th>
-                                            <th class="sortableField" data-bind="click: pitchSortBy" data-toggle="tooltip" title="earned run average">ERA</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="wins">W</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="losses">L</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="saves">S</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="innings pitched">IP</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="batters faced">BF</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="hits given up">H</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="runs scored">R</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="earned runs scored">ER</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="doubles" data-sort-field="D">2B</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="triples" data-sort-field="T">3B</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="home runs">HR</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="strike outs">SO</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="walks">BB</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="hit batters" data-sort-field="HBP">HB</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="strikouts per 9 innings" data-sort-field="K9">K/9</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="walks per 9 innings" data-sort-field="BB9">BB/9</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="opponents batting average">OBA</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="opponents slugging percentage">SLG</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="walks + hits / innings pitched">WHIP</th>
+                                            <th data-bind="click: pitchSortBy, css: { sortableField: !isPitchLoading() }" data-toggle="tooltip" title="earned run average">ERA</th>
                                         </tr>
                                     </thead>
                                     <tbody data-bind="foreach: leagueSortablePitchStats">

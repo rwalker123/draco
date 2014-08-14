@@ -525,6 +525,22 @@ namespace DataAccess
                         c.FirstYear.GetValueOrDefault(), c.DateOfBirth, c.UserId));
 		}
 
+        static public IQueryable<AccountWelcome> GetWelcomeTextHeaders(long accountId, long teamId)
+        {
+            DB db = DBConnection.GetContext();
+            return (from aw in db.AccountWelcomes
+                    where aw.AccountId == accountId && aw.TeamId == teamId
+                    select new AccountWelcome()
+                    {
+                        Id = aw.Id,
+                        AccountId = accountId,
+                        TeamId = teamId,
+                        CaptionText = aw.CaptionMenu,
+                        OrderNo = aw.OrderNo,
+                        WelcomeText = "" // don't return message text.
+                    });
+        }
+
         static public IQueryable<AccountWelcome> GetWelcomeText(long accountId, long teamId)
         {
             DB db = DBConnection.GetContext();

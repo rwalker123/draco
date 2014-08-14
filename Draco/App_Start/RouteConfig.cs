@@ -60,6 +60,7 @@ namespace SportsManager
                 httpContext.Request.FilePath.StartsWith(virtualPath + "/TwitterOauth", System.StringComparison.InvariantCultureIgnoreCase) ||
                 httpContext.Request.FilePath.StartsWith(virtualPath + "/PlayerSurvey", System.StringComparison.InvariantCultureIgnoreCase) ||
                 httpContext.Request.FilePath.StartsWith(virtualPath + "/BackupSite", System.StringComparison.InvariantCultureIgnoreCase) ||
+                httpContext.Request.FilePath.StartsWith(virtualPath + "/LeagueFAQ", System.StringComparison.InvariantCultureIgnoreCase) ||
                 httpContext.Request.FilePath.StartsWith(virtualPath + "/HallOfFame", System.StringComparison.InvariantCultureIgnoreCase))
             {
                 return null;

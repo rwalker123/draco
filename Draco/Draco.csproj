@@ -414,6 +414,8 @@
     <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
+    <Compile Include="Controllers\LeagueFAQAPIController.cs" />
+    <Compile Include="Controllers\LeagueFAQController.cs" />
     <Compile Include="Controllers\MemberBusinessAPIController.cs" />
     <Compile Include="Controllers\PlayerSurveyAPIController.cs" />
     <Compile Include="Controllers\PlayerSurveyController.cs" />
@@ -619,6 +621,7 @@
     <Content Include="Scripts\jsnlog.min.js" />
     <Content Include="Scripts\knockout-3.1.0.debug.js" />
     <Content Include="Scripts\knockout-3.1.0.js" />
+    <Content Include="Scripts\leaguefaq.js" />
     <Content Include="Scripts\memberbusiness.js" />
     <Content Include="Scripts\mindmup-editabletable.js" />
     <Content Include="Scripts\moment-with-locales.js" />
@@ -854,8 +857,6 @@
     <Content Include="Scripts\locales\bootstrap-datepicker.zh-CN.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.zh-TW.js" />
     <Content Include="Scripts\Map.js" />
-    <Content Include="Scripts\masonry\masonry.pkgd.js" />
-    <Content Include="Scripts\masonry\masonry.pkgd.min.js" />
     <Content Include="Scripts\modernizr-2.7.2.js" />
     <Content Include="Scripts\photogallery.js" />
     <Content Include="Scripts\respond.js" />
@@ -1091,6 +1092,7 @@
     <Content Include="Views\PlayerSurvey\Index.cshtml" />
     <Content Include="Views\Shared\PlayerSurveyView.cshtml" />
     <Content Include="Views\Shared\UserPollView.cshtml" />
+    <Content Include="Views\LeagueFAQ\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

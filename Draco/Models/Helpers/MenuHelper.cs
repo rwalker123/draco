@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using ModelObjects;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
-using ModelObjects;
 
 namespace SportsManager.Models.Helpers
 {
@@ -79,6 +80,9 @@ namespace SportsManager.Models.Helpers
                 string standingsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "Standings", action = "Index", accountId = accountId })).VirtualPath;
 
+                string faqurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                    new RouteValueDictionary(new { area = "", controller = "LeagueFAQ", action = "Index", accountId = accountId })).VirtualPath;
+
                 string statsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "Statistics", action = "Index", accountId = accountId })).VirtualPath;
 
@@ -128,6 +132,11 @@ namespace SportsManager.Models.Helpers
                 var leagueMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "League");
                 leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
                 leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
+
+                if (DataAccess.LeagueFAQ.GetFAQ(accountId).Any())
+                {
+                    leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(faqurl, "League FAQ", "FAQ Page"));
+                }
 
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
 	            {

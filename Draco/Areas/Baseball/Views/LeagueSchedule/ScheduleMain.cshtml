@@ -185,28 +185,24 @@
                             <!-- /ko -->
                             <div class="list-group" data-bind="foreach: games">
                                 <div class="list-group-item" style="padding: 0px 0px 0px 0px">
-                                    <div class="table-responsive">
-                                        <table style="width: 100%" class="table-condensed">
-                                            <tbody>
-                                                @if (Model.IsAdmin)
-                                                {
-                                                    <tr class="noPrint">
-                                                        <td>
-                                                            <div class="btn-group pull-right">
-                                                                <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
-                                                                    <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
-                                                                </button>
-                                                                <ul data-container="body" class="dropdown-menu" role="menu">
-                                                                    <li><a data-bind="visible: $root.selectedLeague() > 0, click: $root.editGame"><span class="glyphicon glyphicon-edit"></span> edit</a></li>
-                                                                    <li><a data-bind="click: $root.deleteGame"><span class="glyphicon glyphicon-remove"></span> delete</a></li>
-                                                                    <li class="divider"></li>
-                                                                    <li><a data-bind="click: $root.enterGameResults" title="enter game results"><span class="glyphicon glyphicon-bullhorn"></span> result</a></li>
-                                                                </ul>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                }
+                                    @if (Model.IsAdmin)
+                                    {
+                                        <div class="btn-group pull-right noPrint" style="margin: 2px">
+                                            <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
+                                                <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
+                                            </button>
+                                            <ul data-container="body" class="dropdown-menu" role="menu">
+                                                <li><a data-bind="visible: $root.selectedLeague() > 0, click: $root.editGame"><span class="glyphicon glyphicon-edit"></span> edit</a></li>
+                                                <li><a data-bind="click: $root.deleteGame"><span class="glyphicon glyphicon-remove"></span> delete</a></li>
+                                                <li class="divider"></li>
+                                                <li><a data-bind="click: $root.enterGameResults" title="enter game results"><span class="glyphicon glyphicon-bullhorn"></span> result</a></li>
+                                            </ul>
+                                        </div>
+                                    }
 
+                                    <div class="table-responsive">
+                                        <table class="table-condensed">
+                                            <tbody>
                                                 <!-- ko if: $root.selectedLeague() == 0 -->
                                                 <tr>
                                                     <td data-bind="html: LeagueName"></td>

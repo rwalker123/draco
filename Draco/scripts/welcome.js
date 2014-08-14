@@ -1,284 +1,219 @@
-﻿var WelcomeClass = function (accountId, isAdmin, teamId) {
-    this.init(accountId, isAdmin, teamId);
-};
+﻿function initWelcomesViewModel(accountId, isAdmin, teamId) {
 
-$.extend(WelcomeClass.prototype, {
+    var wmElem = document.getElementById("WelcomeMessages");
+    if (wmElem) {
+        var wmVM = new WelcomeClass(accountId, isAdmin, teamId);
+        ko.applyBindings(wmVM, wmElem);
+    }
+}
+
+var WelcomeMessageViewModel = function(data) {
+
+    var self = this;
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        // example:
+        //'HomeTeamId': {
+        //    create: function (options) {
+        //        return ko.observable(options.data);
+        //    },
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Id.isLoaded = ko.observable(false);
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
+var WelcomeClass = function (accountId, isAdmin, teamId) {
+    var self = this;
+
     // object variables
-    welcomeId: 0,
-    accountId: 0,
-    teamId: 0,
-    menuLinkSelector: 'a[id^="MenuLink_"]',
+    self.accountId = accountId;
+    self.teamId = teamId;
+    self.isAdmin = isAdmin;
 
-    init: function (accountId, isAdmin, teamId) {
-        this.welcomeId = 0;
-        this.accountId = accountId;
-        this.isAdmin = isAdmin;
-        this.teamId = teamId;
+    self.welcomeMessages = ko.observableArray();
+    self.isEditMode = ko.observable(false);
 
-        $('#welcomeMessageControl').tinymce(
-            {
-                height: 400,
-                toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link',
-                toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', 
-                menu : {}, 
-                plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], 
-                tools: 'inserttable',
-                content_css: window.config.rootUri +  '/Content/tinymce.css',
-                selector: "textarea.welcomeTextArea"
-            });
+    self.emptyWelcomeMessage = {
+        Id: 0,
+        AccountId: self.accountId,
+        TeamId: self.teamId ? self.teamId : 0,
+        CaptionText: '',
+        OrderNo: 0,
+        WelcomeText: ''
+    }
+
+    self.currentWelcomeEdit = ko.observable(new WelcomeMessageViewModel(self.emptyWelcomeMessage));
+
+    self.cancelWelcomeEdit = function () {
+        self.isEditMode(false);
+    }
+
+    self.startWelcomeAdd = function () {
+        self.currentWelcomeEdit().update(self.emptyWelcomeMessage);
+        self.isEditMode(!self.isEditMode());
+    }
+
+    self.startWelcomeEdit = function (vm) {
+        self.currentWelcomeEdit().update(vm.toJS());
+        self.isEditMode(true);
     },
 
-    cancelWelcomeEdit: function () {
-        $('#editMessage').hide();
-        $('#welcomeSaveLabel').hide();
-        $('#welcomeEditLabel').show();
-        $("#WelcomeMessages").show();
-    },
+    self.deleteWelcome = function (vm) {
 
-    startWelcomeAdd: function () {
-        if ($('#editMessage').is(':visible')) {
-            this.cancelWelcomeEdit();
-            return;
-        }
+        $("#deleteWelcomeMessageModal").modal("show");
 
-        $('#WelcomeMessages').hide();
-        $('#welcomeEditLabel').hide();
-        $('#noWelcomeMessage').hide();
+        $("#confirmWelcomeMessageDeleteBtn").one("click", function () {
+            self.doDeleteWelcome(vm);
+        });
+    }
 
-        $('#welcomeMessageControl').html('');
-        $('#category').val('Welcome');
+    self.doDeleteWelcome = function (vm) {
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + self.accountId;
 
-        $('#editMessage').show();
-        $('#welcomeSaveLabel').show();
-
-        this.welcomeId = 0;
-    },
-
-    startWelcomeEdit: function (id) {
-        $('#WelcomeMessages').hide();
-        $('#welcomeEditLabel').hide();
-
-        $('#welcomeMessageControl').html($('#div_WelcomeMessage_' + id).html());
-        $('#category').val($('#MenuLink_' + id).text());
-        $('#position').val($('#MenuLink_' + id).data("menuposition"));
-
-        $('#editMessage').show();
-        $('#welcomeSaveLabel').show();
-
-        this.welcomeId = id;
-    },
-
-    deleteWelcome: function (id) {
-        var target = this;
-
-        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId;
-
-        if (target.teamId)
-            url = url + '/Team/' + target.teamId + '/WelcomeText/' + id;
+        if (self.teamId)
+            url = url + '/Team/' + self.teamId + '/WelcomeText/' + vm.Id();
         else
-            url = url + '/WelcomeText/' + id;
+            url = url + '/WelcomeText/' + vm.Id();
 
         $.ajax({
             type: 'DELETE',
             url: url,
-            success: function (dbWelcomeId) {
+            success: function () {
                 window.location.hash = 'update';
 
-                target.cancelWelcomeEdit();
-                if (dbWelcomeId != 0) {
-                    var menuLink = '#MenuLink_' + dbWelcomeId;
-
-                    $('#div_WelcomeMessageChrome_' + dbWelcomeId).remove();
-                    $(menuLink).remove();
-                    target.ShowFirstMenu();
-
-                    var menuItems = $(this.menuLinkSelector);
-                    if (menuItems.length == 1) {
-                        menuItems.hide();
+                self.welcomeMessages.remove(vm);
+                $('#welcomeMessagesTab a:first').tab('show');
+                if (self.welcomeMessages().length > 0) {
+                    if (!self.welcomeMessages()[0].Id.isLoaded()) {
+                        self.fillMenuText(self.welcomeMessages()[0]);
                     }
                 }
+                    
+                self.cancelWelcomeEdit();
             }
         });
-    },
+    }
 
-    saveWelcome: function () {
-        var target = this;
+    self.saveWelcome = function () {
+
+        if (!self.currentWelcomeEdit())
+            return;
 
         var requestType;
-        var url = window.config.rootUri + '/api/WelcomeAPI/' + target.accountId;
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + self.accountId;
 
-        if (target.teamId)
-            url = url + '/Team/' + target.teamId + '/WelcomeText';
+        if (self.teamId)
+            url = url + '/Team/' + self.teamId + '/WelcomeText';
         else
             url = url + '/WelcomeText';
 
-        if (this.welcomeId == 0) {
+        if (self.currentWelcomeEdit().Id() == 0) {
             requestType = 'POST'; // new message
         }
         else {
             requestType = 'PUT'; // update existing
-            url = url + "/" + this.welcomeId;
+            url = url + "/" + self.currentWelcomeEdit().Id();
         }
+
+        var data = self.currentWelcomeEdit().toJS();
 
         $.ajax({
             type: requestType,
             url: url,
-            data: {
-                Id: this.welcomeId,
-                OrderNo: $('#position').val(),
-                AccountId: this.accountId,
-                CaptionText: $('#category').val(),
-                WelcomeText: $('#welcomeMessageControl').html(),
-                TeamId: this.teamId || 0
-            },
-            success: function (dbWelcomeId) {
-                target.cancelWelcomeEdit();
-                if (dbWelcomeId != 0) { // if success, can't be 0.
-                    if (target.welcomeId != 0) { // edit
-                        target.updateWelcomeMessage(dbWelcomeId, target);
+            data: data,
+            success: function (dbWelcome) {
+                if (self.currentWelcomeEdit().Id() != 0) { // edit
+                    var existingMessage = ko.utils.arrayFirst(self.welcomeMessages(), function(item) {
+                        return item.Id() == dbWelcome.Id;
+                    });
+                    if (existingMessage) {
+                        existingMessage.update(dbWelcome);
                     }
-                    else { // new message
-                        target.addWelcomeMessage(dbWelcomeId, target);
-                    }
-
-                    window.location.hash = 'update';
                 }
-            }
-        });
-    },
-
-    addWelcomeMessage: function (dbWelcomeId, target) {
-        var titleLink = $('<a>', {
-            'class': 'welcomeMenuItem',
-            'id': 'MenuLink_' + dbWelcomeId,
-            'data-menuposition': $('#position').val(),
-            'href': 'javascript:welcomeData.ShowWelcomeMenu(' + dbWelcomeId + ')',
-            'html': $('#category').val()
-        });
-
-        titleLink.appendTo($('#WelcomeMessageMenuSection'));
-
-        var welcomeMessageChrome = $('<div>', {
-            'id': 'div_WelcomeMessageChrome_' + dbWelcomeId,
-            'style': 'display:none',
-            'class': 'details'
-        });
-
-        if (target.isAdmin) {
-            var adminLink = $('<div>', {
-                'class': 'grad',
-                'style': 'float:right',
-                'html': '<a class="btn btn-default" href="javascript:welcomeData.startWelcomeEdit(' + dbWelcomeId + ')"><span class="glyphicon glyphicon-edit"></span></a> <a class="btn btn-danger" href="javascript:welcomeData.deleteWelcome(' + dbWelcomeId + ')"><span class="glyphicon glyphicon-remove"></span></a>'
-            });
-
-            adminLink.appendTo(welcomeMessageChrome);
-        }
-
-        var welcomeMessage = $('<div>', {
-            'id': 'div_WelcomeMessage_' + dbWelcomeId,
-            'data-hasdata': 'True',
-            'html': $('#welcomeMessageControl').html()
-        });
-
-        welcomeMessage.appendTo(welcomeMessageChrome);
-
-        welcomeMessageChrome.appendTo($('#WelcomeMessageDataSection'));
-
-        target.repositionWelcomeMessage(dbWelcomeId, $('#position').val());
-    },
-
-    updateWelcomeMessage: function (dbWelcomeId, target) {
-        $('#div_WelcomeMessage_' + dbWelcomeId).html($('#welcomeMessageControl').html());
-        $('#MenuLink_' + dbWelcomeId).html($('#category').val());
-
-        var oldPosition = $('#MenuLink_' + dbWelcomeId).data("menuposition");
-        var newPosition = $('#position').val();
-
-        $('#MenuLink_' + dbWelcomeId).data("menuposition", newPosition);
-
-        if (oldPosition != newPosition)
-            target.repositionWelcomeMessage(dbWelcomeId, newPosition);
-    },
-
-    repositionWelcomeMessage: function (dbWelcomeId, newPosition) {
-        var foundInsert = false;
-
-        $('a[id^="MenuLink_"]').each(function (index, element) {
-            
-            if (newPosition < $(this).data('menuposition')) {
-                $('#MenuLink_' + dbWelcomeId).insertBefore($(this));
-                foundInsert = true;
-                return false;
-            }
-        });
-
-        // put at end of list.
-        if (!foundInsert) {
-            $('#MenuLink_' + dbWelcomeId).appendTo($('#WelcomeMessageMenuSection'));
-        }
-    },
-
-    ShowWelcomeMenu: function (welcomeTextId) {
-        var divId = 'div_WelcomeMessageChrome_' + welcomeTextId;
-
-        var jqueryElement = $('#' + divId);
-
-        // show the content.
-        $('.details').hide();
-        jqueryElement.show('fast');
-
-        // reset all the styles
-        $(this.menuLinkSelector).attr('class', 'welcomeMenuItem');
-
-        // set style for selected item.
-        var divMenuId = '#MenuLink_' + welcomeTextId;
-        $(divMenuId).attr('class', 'welcomeMenuItemSelected');
-
-        var welcomeMessageElement = $('#div_WelcomeMessage_' + welcomeTextId);
-
-        if (welcomeMessageElement.data('hasdata') == 'False') {
-
-            var url = window.config.rootUri + '/api/WelcomeAPI/' + this.accountId;
-
-            if (this.teamId)
-                url = url + '/Team/' + this.teamId;
-
-            url = url + '/WelcomeText/' + welcomeTextId;
-
-            $.ajax({
-                type: 'GET',
-                url: url,
-                success: function (theText) {
-                    welcomeMessageElement.html(theText);
-                    welcomeMessageElement.data('hasdata', 'True');
+                else { // new message
+                    var newvm = new WelcomeMessageViewModel(dbWelcome);
+                    newvm.Id.isLoaded(true);
+                    self.welcomeMessages.push(newvm);
                 }
-            });
 
-        }
-    },
+                self.welcomeMessages.sort(self.sortByOrder);
 
-    ShowFirstMenu: function () {
-        // parse the welcome id from the html id.
-        var firstItem = $('.details:first').attr('id');
-        if (firstItem != undefined) {
-            var firstItemId = firstItem.lastIndexOf('_');
-            if (firstItemId != -1) {
-                $('#noWelcomeMessage').hide();
-
-                this.ShowWelcomeMenu(firstItem.substring(firstItemId + 1));
-
-                if ($('.details').length == 1) {
-                    $(this.menuLinkSelector).hide();
-                }
+                window.location.hash = 'update';
+                self.cancelWelcomeEdit();
             }
-            else {
-                $('#noWelcomeMessage').show();;
-            }
-
-        }
-        else {
-            $('#noWelcomeMessage').show();
-        }
+        });
     }
-});
 
+    self.sortByOrder = function(l, r) {
+        var lo = l.OrderNo();
+        var ro = r.OrderNo();
+
+        return lo == ro ? 0 : (lo < ro ? -1 : 1);
+    }
+
+    self.fillMenuText = function (vm) {
+
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + self.accountId;
+
+        if (this.teamId)
+            url = url + '/Team/' + this.teamId;
+
+        url = url + '/WelcomeText/' + vm.Id();
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (theText) {
+                vm.WelcomeText(theText);
+                vm.Id.isLoaded(true);
+            }
+        });
+    }
+
+    self.fillWelcomeHeaders = function () {
+
+        var url = window.config.rootUri + '/api/WelcomeAPI/' + self.accountId;
+
+        if (this.teamId)
+            url = url + '/Team/' + this.teamId;
+
+        url = url + '/WelcomeTextHeaders';
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            success: function (texts) {
+                mappedTexts = $.map(texts, function (text) {
+                    return new WelcomeMessageViewModel(text);
+                });
+
+                self.welcomeMessages(mappedTexts);
+                if (self.welcomeMessages().length > 0)
+                    self.fillMenuText(self.welcomeMessages()[0]);
+            }
+        });
+
+    }
+
+    self.tabSelected = function (vm) {
+        self.fillMenuText(vm);
+    }
+
+    self.fillWelcomeHeaders();
+}

@@ -8,7 +8,7 @@
 
 @section facebooklike
 {
-    @*<!-- facebook like control -->
+<!-- facebook like control -->
 <div id="fb-root"></div>
 <script>
 (function (d, s, id) {
@@ -18,7 +18,7 @@
     js.src = '//connect.facebook.net/en_US/all.js#xfbml=1&appId=@System.Configuration.ConfigurationManager.AppSettings["FacebookAppId"]';
     fjs.parentNode.insertBefore(js, fjs);
 }(document, 'script', 'facebook-jssdk'));</script>
-<!-- end facebook like control -->*@
+
 }
 
 @section head {
@@ -110,29 +110,40 @@
             {
                 <p class="help-block">You currently do not have any seasons setup. Click <b>@Html.ActionLink("here", "Index", "Season", new { area = "", accountId = Model.AccountId }, new { @class = "btn btn-primary" })</b> to set or create a new season.</p>
             }
-
-            
-
-
         </div>
 
-        @*@if (ViewData["TwitterAccountName"] != null)
+        @if (ViewData["TwitterAccountName"] != null)
         {
-            <div style="display:inline-block"  id="twitterDisplay">
-                <a href='https://twitter.com/@ViewData["TwitterAccountName"]' class="twitter-follow-button" data-size="large" data-show-count="true" data-lang="en">Follow @@@ViewData["TwitterAccountName"]</a>
-                <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = "//platform.twitter.com/widgets.js"; fjs.parentNode.insertBefore(js, fjs); } }(document, "script", "twitter-wjs");</script>
+            <div class="row">
+                <div style="display:inline-block" id="twitterDisplay">
+                    <a href='https://twitter.com/@ViewData["TwitterAccountName"]' class="twitter-follow-button" data-size="large" data-show-count="true" data-lang="en">Follow @@@ViewData["TwitterAccountName"]</a>
+                    <script>!function (d, s, id) { var js, fjs = d.getElementsByTagName(s)[0]; if (!d.getElementById(id)) { js = d.createElement(s); js.id = id; js.src = "//platform.twitter.com/widgets.js"; fjs.parentNode.insertBefore(js, fjs); } }(document, "script", "twitter-wjs");</script>
+                </div>
             </div>
         }
 
         @if (ViewData["AccountUrl"] != null)
         {
-            <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
-        }*@
+            <div class="row">
+                <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
+            </div>
+        }
 
     </div>
 </div>
 
 <div class="container-fluid">
+    @if (Model.ContactId == 0 && Model.ShowFAQMessage)
+    { 
+    <div class="row center-block text-center">
+        <div class="col-sm-12">
+            <div class="alert alert-success">
+                <b>Interested in learning about the @Model.AccountName? You can start by visiting the </b><a href="@Url.Action("Index", "LeagueFAQ", new { area = "", accountId = Model.AccountId }, null)" class="btn btn-success">FAQ</a> 
+            </div>
+        </div>
+    </div>
+    }
+    
     <div class="row">
         <div class="col-md-8"> <!-- column 1-->
             @if (Model.ShowWorkouts)
@@ -426,14 +437,14 @@ else
         @if (Model.ShowWelcomeMessages)
         {
             <text>
-        welcomeData = new WelcomeClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         </text>
         }
 
         @if (Model.ShowAnnouncements)
         {
             <text>
-        announcementData = new AnnouncementClass(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
         </text>
         }
 
@@ -482,22 +493,6 @@ else
         ko.applyBindings(workoutsData, document.getElementById("workouts"));
         </text>
         }
-
-        @if (Model.ShowWelcomeMessages)
-        {
-            <text>
-        // from welcome message. If no welcome message, ShowFirstMenu doesn't exist.
-        welcomeData.ShowFirstMenu();
-        </text>
-        }
-
-        @if (Model.ShowAnnouncements)
-        {
-            <text>
-        announcementData.AdjustNewsMenuHeaders();
-        </text>
-        }
-
 
         $("#_yearEst").selectpicker();
     });

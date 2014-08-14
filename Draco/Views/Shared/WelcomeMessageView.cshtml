@@ -5,70 +5,92 @@
     return;
 }
 
-<div class="panel panel-info">
+<div class="panel panel-info" id="WelcomeMessages">
     <div class="panel-heading">
         <h3 class="panel-title" style="float: left;">Information</h3>
 
         @if (Model.IsAdmin)
         {
-            <button type="button" class="btn btn-default" style="float: right" onclick="javascript:welcomeData.startWelcomeAdd()"><span class="glyphicon glyphicon-plus"></span></button>
+            <button type="button" class="btn btn-default pull-right" data-bind="click: startWelcomeAdd"><span class="glyphicon glyphicon-plus"></span></button>
         }
 
         <div style="clear:both"></div>
     </div>
 
     <div class="panel-body">
-        <form class="form-inline" id="editMessage" style="display: none; margin-top:20px;">
-            <h4 id="welcomeSaveLabel" style="margin-bottom:10px; display: none">
-                <button type="button" class="btn btn-primary" onclick="javascript:welcomeData.saveWelcome()"><span class="glyphicon glyphicon-ok"></span></button>
-                <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.cancelWelcomeEdit()"><span class="glyphicon glyphicon-remove"></span></button>
-            </h4>
-            <label style="margin-right:5px" for="category" class="control-label">Category</label>
-            <input id="category" name="category" class="form-control" type="text" style="width: 200px" value="Welcome" />
-            <label style="margin-right:5px" for="position" class="control-label">Message position</label>
-            <input id="position" name="position" class="form-control" type="number" value="1" style="width: 70px" />
-            <textarea class="welcomeTextArea" id="welcomeMessageControl"></textarea>
-        </form>
-
-        <div id="WelcomeMessages">
-
-            <p id="noWelcomeMessage" class="help-block" style="display: none">Click the <a class="btn btn-default" href="javascript:welcomeData.startWelcomeAdd()"><span class="glyphicon glyphicon-plus"></span></a> button to add welcome messages.</p>
-
-            @{
-                bool firstTime = true;
-            }
-
-            <div id="WelcomeMessageMenuSection" style="margin-bottom:15px">
-                @foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
-                {
-                    string url = "javascript:welcomeData.ShowWelcomeMenu(" + aw.Id.ToString() + ")";
-                <a class="welcomeMenuItem" id="MenuLink_@aw.Id" data-menuposition="@aw.OrderNo" href="@url">@aw.CaptionText</a>
-                }
-            </div>
-
-            <div id="WelcomeMessageDataSection">
-                @foreach (ModelObjects.AccountWelcome aw in Model.AccountTexts)
-                {
-                <div id='div_WelcomeMessageChrome_@aw.Id' style="display:none" class='details'>
-                    @if (Model.IsAdmin)
-                        {
-                        <div style="float:right">
-                            <button type="button" class="btn btn-default" onclick="javascript:welcomeData.startWelcomeEdit(@aw.Id)"><span class="glyphicon glyphicon-edit"></span></button>
-                            <button type="button" class="btn btn-danger" onclick="javascript:welcomeData.deleteWelcome(@aw.Id)"><span class="glyphicon glyphicon-remove"></span></button>
+        @if (Model.IsAdmin)
+        {
+            <div class="modal fade" id="deleteWelcomeMessageModal" tabindex="-1" role="dialog" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" >Confirm Delete Welcome Message</h4>
                         </div>
-                        }
-                    <div id="div_WelcomeMessage_@aw.Id" data-hasdata="@firstTime">
-                        @if (firstTime)
-                            {
-                            @:@Html.Raw(aw.WelcomeText)
-                    }
+                        <div class="modal-body" id="deleteModalBody">
+                            You are about to delete permanently a welcome message. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmWelcomeMessageDeleteBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
                     </div>
                 </div>
-
-                    firstTime = false;
-                }
             </div>
 
+            <form class="form" role="form" data-bind="with: currentWelcomeEdit, visible: isEditMode">
+                <div class="form-group">
+                    <label for="wm_category" class="control-label col-md-3">Category</label>
+                    <div class="col-md-9">
+                        <input id="wm_category" class="form-control" type="text" data-bind="value: CaptionText" placeholder="welcome title" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="wm_position" class="control-label col-md-3">Message position</label>
+                    <div class="col-md-9">
+                        <input id="wm_position" class="form-control" type="number" value="1" data-bind="value: OrderNo" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-12">
+                        <textarea data-bind="wysiwyg: WelcomeText, wysiwygConfig: { height: 300, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' } "></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-9">
+                        <button type="button" class="btn btn-primary" data-bind="click: $root.saveWelcome" title="save changes"><span class="glyphicon glyphicon-ok"></span></button>
+                        <button type="button" class="btn btn-danger" data-bind="click: $root.cancelWelcomeEdit" title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
+                    </div>
+                </div>
+            </form>
+        }
+
+        <div data-bind="visible: !isEditMode()">
+            <div data-bind="visible: welcomeMessages().length == 0">
+                <p class="help-block">Click the <a class="btn btn-default" data-bind="click: $root.startWelcomeAdd"><span class="glyphicon glyphicon-plus"></span></a> button to add welcome messages.</p>
+            </div>
+
+            <ul class="nav nav-tabs" id="welcomeMessagesTab" role="tablist" data-bind="foreach: welcomeMessages">
+                <li data-bind="css: { active: $index() == 0 }"><a data-toggle="tab" role="tab" data-bind="event: { 'shown.bs.tab': $root.tabSelected }, attr: { href: '#welcomeMessageTab_' + Id() }"><span data-bind="html: CaptionText"></span></a></li>
+            </ul>
+
+            <div class="tab-content" data-bind="foreach: welcomeMessages">
+                <div class="tab-pane fade" data-bind="attr: { id: 'welcomeMessageTab_' + Id() }, css: { 'in active': $index() == 0 }">
+                    <div data-bind="ifnot: Id.isLoaded">
+                        <img src="~/Images/busy.gif" />Loading...
+                    </div>
+                    <div data-bind="if: Id.isLoaded">
+                        @if (Model.IsAdmin)
+                        {
+                            <div class="pull-right">
+                                <button type="button" class="btn btn-default" data-bind="click: $root.startWelcomeEdit" title="edit welcome message"><span class="glyphicon glyphicon-edit"></span></button>
+                                <button type="button" class="btn btn-danger" data-bind="click: $root.deleteWelcome" title="permanently delete welcome message"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
+                        }
+                        <span data-bind="html: WelcomeText"></span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+   </div>
 </div>

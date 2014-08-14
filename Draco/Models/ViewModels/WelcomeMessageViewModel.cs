@@ -16,8 +16,7 @@ namespace SportsManager.ViewModels
             if (team == null)
                 return;
 
-            AccountTexts = DataAccess.Teams.GetWelcomeText(accountId, team.TeamId);
-            HasMessage = AccountTexts.Any();
+            HasMessage = DataAccess.Teams.GetWelcomeText(accountId, team.TeamId).Any();
             
             // account admins and team admins.
             if (!IsAdmin)
@@ -29,17 +28,10 @@ namespace SportsManager.ViewModels
         public WelcomeMessageViewModel(Controller c, long accountId)
             : base(c, accountId)
         {
-            AccountTexts = Accounts.GetAccountWelcomeText(accountId);
-            HasMessage = AccountTexts.Any();
+            HasMessage = Accounts.GetAccountWelcomeText(accountId).Any();
         }
 
         public bool HasMessage
-        {
-            get;
-            private set;
-        }
-
-        public IEnumerable<AccountWelcome> AccountTexts
         {
             get;
             private set;

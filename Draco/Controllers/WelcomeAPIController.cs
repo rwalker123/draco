@@ -1,5 +1,6 @@
 ﻿using SportsManager.Models;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -38,6 +39,36 @@ namespace SportsManager.Controllers
             return GetWelcomeText(accountId, id);
         }
 
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("WelcomeTextHeaders")]
+        public HttpResponseMessage GetWelcomeTextHeaders(long accountId)
+        {
+            var welcomeTexts = DataAccess.Accounts.GetAccountWelcomeTextHeaders(accountId);
+            if (welcomeTexts != null)
+            {
+                return Request.CreateResponse<IQueryable<ModelObjects.AccountWelcome>>(HttpStatusCode.OK, welcomeTexts);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
+
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("WelcomeTextHeaders")]
+        public HttpResponseMessage TeamGetWelcomeTextHeaders(long accountId, long teamSeasonId)
+        {
+            var welcomeTexts = DataAccess.Teams.GetWelcomeTextHeaders(accountId, teamSeasonId);
+            if (welcomeTexts != null)
+            {
+                return Request.CreateResponse<IQueryable<ModelObjects.AccountWelcome>>(HttpStatusCode.OK, welcomeTexts);
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+            }
+        }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("POST"), HttpPost]
@@ -70,10 +101,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.BadRequest);
 
                 // Create a 201 response.
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
-                {
-                    Content = new StringContent(welcomeData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.AccountWelcome>(HttpStatusCode.Created, welcomeData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "WelcomeText", accountId = accountId, id = welcomeData.Id }));
                 return response;
@@ -106,10 +134,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 // Create a 200 response.
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(welcomeData.Id.ToString())
-                };
+                var response = Request.CreateResponse<ModelObjects.AccountWelcome>(HttpStatusCode.OK, welcomeData);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "WelcomeText", accountId = accountId, id = welcomeData.Id }));
                 return response;

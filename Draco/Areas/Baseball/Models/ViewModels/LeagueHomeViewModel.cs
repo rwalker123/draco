@@ -22,6 +22,7 @@ namespace SportsManager.Baseball.ViewModels
             ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();
             ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
             ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
+            ShowFAQMessage = DataAccess.LeagueFAQ.GetFAQ(accountId).Any();
 
             var showPlayerSurvey = false;
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
@@ -102,6 +103,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowSponsors
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowFAQMessage
         {
             get;
             private set;
