@@ -2,6 +2,19 @@
 
     initKOHelpers();
 
+    ko.validation.rules['url'] = {
+        validator: function (val, required) {
+            if (!val) {
+                return !required
+            }
+            val = val.replace(/^\s+|\s+$/, ''); //Strip whitespace
+            //Regex by Diego Perini from: http://mathiasbynens.be/demo/url-regex
+            return val.match(/^(?:(?:https?|ftp):\/\/)(?:\S+(?::\S*)?@)?(?:(?!10(?:\.\d{1,3}){3})(?!127(?:\.‌​\d{1,3}){3})(?!169\.254(?:\.\d{1,3}){2})(?!192\.168(?:\.\d{1,3}){2})(?!172\.(?:1[‌​6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1‌​,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00‌​a1-\uffff0-9]+-?)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]+-?)*[a-z\u‌​00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/i);
+        },
+        message: 'This field has to be a valid URL'
+    };
+    ko.validation.registerExtenders();
+
     var memberBusinessElem = document.getElementById("memberBusinessView");
     if (memberBusinessElem) {
         var memberBusinessVM = new MemberBusinessesViewModel(accountId, isAdmin, contactId);
@@ -28,6 +41,14 @@ var MemberBusinessViewModel = function (data, accountId) {
     }
 
     ko.mapping.fromJS(data, self.mapping, self);
+
+    self.Website.extend({
+        url: true
+    });
+
+    self.EMail.extend({
+        email: true
+    });
 
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
@@ -66,9 +87,11 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
     };
 
     self.memberBusinesses = ko.observableArray();
-    self.userBusiness = ko.observable(new MemberBusinessViewModel(emptyBusiness, self.accountId));
+    self.userBusiness = ko.validatedObservable(new MemberBusinessViewModel(emptyBusiness, self.accountId));
 
     self.saveEditBusiness = function (data) {
+        if (!data.isValid())
+            return;
         
         var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId;
 
