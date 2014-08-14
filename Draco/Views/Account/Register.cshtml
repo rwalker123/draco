@@ -5,16 +5,7 @@
 
 @section head
 {
-    @Styles.Render("~/Content/themes/base/css")
-
-    <style type="text/css">
-        .ui-autocomplete {
-            max-height: 100px;
-            overflow-y: auto;
-            /* prevent horizontal scrollbar */
-            overflow-x: hidden;
-        }
-    </style>
+@Styles.Render("~/Content/typeahead")
 }
 
 <h2>@ViewBag.Title.</h2>
@@ -83,16 +74,20 @@
 
     $(document).ready(function () {
 
-        $("input#playerName").autocomplete({
-
-            source: function (request, response) {
-                var searchTerm = this.term;
+        $("input#playerName").typeahead({
+            hint: true,
+            highlight: true,
+            minLength: 1
+        },
+        {
+            displayKey: 'label',
+            source: function (query, cb) {
 
                 $.ajax({
                     url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
                     dataType: "json",
                     data: {
-                        lastName: searchTerm,
+                        lastName: query,
                         firstName: '',
                         page: 1
                     },
@@ -104,33 +99,20 @@
                                 fullName = fullName + ' ' + item.MiddleName;
 
                             return {
-                                label:  fullName,
+                                label: fullName,
                                 Id: item.Id,
                                 PhotoURL: item.PhotoURL,
                                 FirstName: item.FirstName,
                                 LastName: item.LastName
                             }
                         });
-                        response(results);
+                        cb(results);
                     },
                 });
-            },
-            minLength: 1,
-            select: function (e, ui) {
-                var playerId = ui.item.Id;
-                document.getElementById("playerId").value = playerId;
             }
+        }).bind('typeahead:selected', function (e, suggestionObject, datasetName) {
+            document.getElementById("playerId").value = suggestionObject.Id;
         });
-
-        $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-            var li = $("<li>");
-            li.data("item.autocomplete", item);
-            var photoURL = item.PhotoURL ? item.PhotoURL : window.config.rootUri + '/Images/defaultperson.png';
-            li.append("<a><img width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-            li.appendTo(ul);
-
-            return li;
-        };
 
         $(".selectpicker").selectpicker();
 

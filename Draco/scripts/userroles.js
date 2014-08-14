@@ -29,7 +29,7 @@ var AdminTypeViewModel = function(data)
     self.selectedTeam = ko.observable();
 
     self.addSelectedUserToRole = function (vm) {
-        if (!self.selectedUser)
+        if (!self.selectedUser())
             return;
 
         var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AddToRole';
@@ -52,7 +52,7 @@ var AdminTypeViewModel = function(data)
             data: {
                 Id: 0,
                 AccountId: self.AccountId(),
-                ContactId: self.selectedUser.id,
+                ContactId: self.selectedUser().Id,
                 RoleId: self.Id(),
                 RoleData: roleData
             },
@@ -65,29 +65,14 @@ var AdminTypeViewModel = function(data)
                 if (!existingUser)
                     self.admins.push(adminData);
 
-                self.selectedUser = null;
-                $("input.autocomplete").val('');
+                self.selectedUser(null);
             }
         });
     }
 
     self.Id.isPopulated = ko.observable(false);
 
-    self.selectedUser = null;
-
-    self.selectUser = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedUser = {
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL),
-                selected: ko.observable(true)
-            };
-        }
-
-        return true;
-    }
+    self.selectedUser = ko.observable();
 
     self.populateAdminList = function () {
         var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AdminsForRole/' + self.Id();
@@ -252,12 +237,12 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
 
     self.changeAccountOwner = function () {
 
-        if (!self.selectedNewOwner)
+        if (!self.selectedNewOwner())
             return;
 
         // only current owner can change owner, so this is just saying we changed
         // the user to ourself, which is what is already set.
-        if (self.selectedNewOwner == this.currentUserId)
+        if (self.selectedNewOwner().Id == this.currentUserId)
             return;
 
         $("#changeOwnerModal").modal("show");
@@ -273,7 +258,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
             type: "PUT",
             url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/AccountOwner',
             data: {
-                Id: self.selectedNewOwner.id
+                Id: self.selectedNewOwner().Id
             },
             success: function (newOwner) {
                 if (self.currentUserId != newOwner) {
@@ -286,14 +271,13 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
         });
     }
 
-    self.getPlayers = function (request, response) {
-        var searchTerm = this.term;
+    self.getPlayers = function (query, cb) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
             dataType: "json",
             data: {
-                lastName: searchTerm,
+                lastName: query,
                 firstName: '',
                 page: 1
             },
@@ -312,37 +296,12 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
                         LastName: item.LastName
                     }
                 });
-                response(results);
+                cb(results);
             },
         });
     }
 
-    $.ui.autocomplete.prototype._renderItem = function (ul, item) {
-        var li = $("<li>");
-        li.data("item.autocomplete", item);
-        var photoURL = item.PhotoURL;
-        li.append("<a><img onerror=\"this.style.display = 'none';\" width='40px' height='30px' style='vertical-align: middle' src='" + photoURL + "' /><span style='font-weight: 600'>" + item.label + "</span></a>");
-        li.appendTo(ul);
-
-        return li;
-    };
- 
-    self.selectedNewOwner = null;
-
-    self.selectNewOwner = function (e, ui) {
-        if (ui && ui.item) {
-            self.selectedNewOwner = {
-                id: ui.item.Id,
-                text: ui.item.value,
-                logo: ui.item.PhotoURL,
-                hasLogo: (!!ui.item.PhotoURL),
-                selected: ko.observable(true)
-            };
-        }
-
-        return true;
-    }
-
+    self.selectedNewOwner = ko.observable();
 
     $('#accordion').on('show.bs.collapse', function () {
 

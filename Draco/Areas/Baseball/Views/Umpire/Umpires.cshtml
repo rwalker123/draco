@@ -7,7 +7,7 @@
 
 @section head
 {
-    @Styles.Render("~/Content/themes/base/css")
+@Styles.Render("~/Content/typeahead")
 }
 
 <div class="jumbotron">
@@ -21,13 +21,11 @@
         add them as a
     </p> <a class="btn btn-primary" href='@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)'>user</a> <p class="help-block" style="display: inline-block">first.</p>
 
-    <br /><small>(type last name to begin search)</small><br />
-
     <form class="form-inline" role="form">
         <div class="form-group">
             <label for="_newUmpire" class="sr-only">Last Name</label>
             <div class="input-group">
-                <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="autocomplete: { source: getPlayers, select: selectPlayer, minLength: 1 }" />
+                <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type last name to add umpire" />
                 <span class="input-group-btn">
                     <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire" title="add umpire"><span class="glyphicon glyphicon-plus"></span></button>
                 </span>

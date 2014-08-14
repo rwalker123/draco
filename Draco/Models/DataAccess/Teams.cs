@@ -691,7 +691,7 @@ namespace DataAccess
             return (from rs in db.RosterSeasons
                     join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                    where ls.SeasonId == seasonId && rs.PlayerId == rosterId
+                    where ls.SeasonId == seasonId && rs.PlayerId == rosterId && !rs.Inactive
                     select new Team()
                     {
                         Id = ts.Id,
