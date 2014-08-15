@@ -134,7 +134,8 @@ namespace DataAccess
                         {
                             HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
                             AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
-                            FieldName = DataAccess.Fields.GetFieldName(sched.FieldId)
+                            FieldName = DataAccess.Fields.GetFieldName(sched.FieldId),
+                            HasGameRecap = sched.GameRecaps.Any()
                         });
         }
 
@@ -164,7 +165,8 @@ namespace DataAccess
                         HomeTeamName = DataAccess.Teams.GetTeamName(sched.HTeamId),
                         AwayTeamName = DataAccess.Teams.GetTeamName(sched.VTeamId),
                         FieldName = DataAccess.Fields.GetFieldName(sched.FieldId),
-                        LeagueName = DataAccess.Leagues.GetLeagueName(sched.LeagueId)
+                        LeagueName = DataAccess.Leagues.GetLeagueName(sched.LeagueId),
+                        HasGameRecap = sched.GameRecaps.Any()
                     });
         }
 

@@ -24,8 +24,37 @@
     </div>
 }
 <div id="schedule" class="container-fluid">
-@if (Model.IsAdmin)
-                    {
+    <div class="modal fade" id="gameRecapModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Game Recap</h4>
+                </div>
+                <div class="modal-body" style="max-height: 400px;overflow:auto">
+                    <ul id="statsTab" class="nav nav-tabs">
+                        <li class="active"><a href="#homeTeam" data-toggle="tab"><span data-bind="html: homeTeamName"></span></a></li>
+                        <li><a href="#awayTeam" data-toggle="tab"><span data-bind="html: awayTeamName"></span></a></li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade in active" id="homeTeam">
+                            <span data-bind="html: homeGameSummary"></span>
+                        </div>
+                        <div class="tab-pane fade" id="awayTeam">
+                            <span data-bind="html: awayGameSummary"></span>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" data-dismiss="modal"><span class="glyphicon glyphicon-ok"></span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @if (Model.IsAdmin)
+    {
     <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -43,7 +72,7 @@
             </div>
         </div>
     </div>
-}
+    }
     <div class="row noPrint">
         <select data-bind="selectPicker: selectedLeague" data-container="body" id="leagueSelect">
             @foreach (ModelObjects.League l in Model.Leagues)
@@ -215,7 +244,9 @@
                                                                 <td><a data-bind="trimText: AwayTeamName, trimTextLength: 10, attr: {title: AwayTeamName, href: AwayTeamId.href}"></a></td>
                                                                 <td><span data-bind="visible: GameStatus.isFinalScore, html: AwayScore"></span></td>
                                                                 <!-- ko if: GameStatus.isFinal -->
-                                                                <td><span class="col-sm-12" data-bind="html: GameStatus.Text"></span></td>
+                                                                <td>
+                                                                    <span class="col-sm-12" data-bind="html: GameStatus.Text"></span>
+                                                                </td>
                                                             <!-- /ko -->
                                                             </tr>
                                                             <tr>
@@ -233,6 +264,13 @@
                                                 <!-- ko ifnot: GameStatus.isFinal -->
                                                 <tr>
                                                     <td><span data-bind="html: GameDate.TimeText"></span></td>
+                                                </tr>
+                                                <!-- /ko -->
+                                                <!-- ko if: HasGameRecap -->
+                                                <tr class="noPrint">
+                                                    <td>
+                                                        <a class="btn btn-success btn-xs" data-bind="click: $root.popupGameRecap">recap</a>
+                                                    </td>
                                                 </tr>
                                                 <!-- /ko -->
                                             </tbody>
@@ -286,9 +324,12 @@
                         </td>
                         <td>
                             <span data-bind="visible: GameStatus.isFinal, html: GameStatus.Text"></span>
+                            <!-- ko if: GameStatus.isFinal() && HasGameRecap() -->
+                            <a class="btn btn-success btn-xs noPrint" data-bind="click: $root.popupGameRecap">recap</a>
+                            <!-- /ko -->
                         </td>
                         @if (Model.IsAdmin)
-                            {
+                        {
                             <td class="noPrint">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
@@ -302,7 +343,7 @@
                                     </ul>
                                 </div>
                             </td>
-                            }
+                        }
                     </tr>
                     <!-- /ko -->
                     <!-- /ko -->

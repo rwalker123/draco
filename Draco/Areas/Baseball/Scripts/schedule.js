@@ -230,7 +230,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         Umpire1: 0,
         Umpire2: 0,
         Umpire3: 0,
-        Umpire4: 0
+        Umpire4: 0,
+        HasGameRecap: false
     }, self.accountId);
 
     // data for game currently being edit.
@@ -247,7 +248,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         Umpire1: 0,
         Umpire2: 0,
         Umpire3: 0,
-        Umpire4: 0
+        Umpire4: 0,
+        HasGameRecap: false
     }, self.accountId));
 
     self.editingGameResults = ko.validatedObservable(new GameResultsViewModel(self.accountId, {
@@ -490,6 +492,44 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
 
         self.viewMode(true);
     }
+
+    self.homeGameSummary = ko.observable('');
+    self.awayGameSummary = ko.observable('');
+    self.homeTeamName = ko.observable();
+    self.awayTeamName = ko.observable();
+
+    self.popupGameRecap = function (item) {
+        self.getGameSummary(item.AwayTeamId(), item.Id(), self.awayGameSummary);
+        self.getGameSummary(item.HomeTeamId(), item.Id(), self.homeGameSummary);
+
+        self.homeTeamName(item.HomeTeamName());
+        self.awayTeamName(item.AwayTeamName());
+
+        $("#gameRecapModal").modal("show");
+    };
+
+    self.getGameSummary = function (teamId, gameId, observableSummary) {
+
+        var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + teamId + '/gamesummary/' + gameId;
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (gameSummary) {
+                if (gameSummary) {
+                    observableSummary(gameSummary);
+                    if (self.homeGameSummary == observableSummary)
+                        $('#statsTab a:first').tab('show') // Select first tab
+                }
+                else {
+                    observableSummary("No Game Summary");
+                    if (self.homeGameSummary == observableSummary)
+                        $('#statsTab a:last').tab('show') // Select last tab
+                }
+            }
+        });
+
+    };
 
     self.setupMonthData = function (theDate) {
 
