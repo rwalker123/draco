@@ -60,13 +60,17 @@
                         </div>
                     </div>
                    <div class="form-group">
-                        <span data-bind="visible: toField() != 5 && availableToData().length == 0">No records found.</span>
+                        <span data-bind="visible: toField() != 5 && toField() != 1 && availableToData().length == 0">No records found.</span>
                        <div class="col-sm-12">
                            <ul class="list-group" style="overflow-y:auto; overflow-x:auto; max-height: 400px;" data-bind="foreach: availableToData">
                                <li class="list-group-item">
                                    <label><input type="checkbox" style="margin-top:-5px" data-bind="checked: selected, value: id" /><img onerror="this.style.display = 'none';" style="width:40px;height:30px;vertical-align:middle;margin-bottom:3px;margin-left:3px" data-bind="attr: { src: logo }, visible: hasLogo" /><span style="margin-left:5px;margin-top:3px" data-bind="text: text"></span></label>
                                </li>
                            </ul>
+                           <div data-bind="visible: toField() != 1 && toField() != 5 && availableToData().length > 0">
+                               <button type="button" data-bind="click: selectAll" class="btn btn-default">select all</button>
+                               <button type="button" data-bind="click: deselectAll" class="btn btn-default">de-select all</button>
+                           </div>
                        </div>
                     </div>
                 </form>
@@ -216,6 +220,17 @@ else
             }
         });
 
+        self.selectAll = function () {
+            $.each(self.availableToData(), function (index, item) {
+                item.selected(true);
+            });
+        }
+
+        self.deselectAll = function () {
+            $.each(self.availableToData(), function (index, item) {
+                item.selected(false);
+            });
+        }
         self.removeTo = function (removeItem) {
             removeItem.selected(false);
         }
