@@ -84,6 +84,12 @@
                         {
                             <th>Age</th>
                             <th>Signed</th>
+                            if (Model.TrackGamesPlayed)
+                            { 
+                            <th>
+                                <abbr title="Games Played">GP</abbr>
+                            </th>
+                            }
                             if (Model.IsAdmin)
                             { 
                                 <th>Actions</th>
@@ -163,6 +169,10 @@
                             <td class="col-sm-2">
                                 <span data-bind="html: DateAdded.Formatted"></span>
                             </td>
+                            if (Model.TrackGamesPlayed)
+                            { 
+                                <td class="col-sm-1" data-bind="html: GamesPlayed"></td>
+                            }
                             <td class="col-sm-1">
                                 @if (Model.IsAdmin)
                                 { 
@@ -235,7 +245,6 @@
                         </td>
 
                             <td class="col-sm-1" data-bind="html: Age"></td>
-
                             <td class="col-sm-2">
                                 <span data-bind="html: DateAdded.Formatted"></span>
                             </td>

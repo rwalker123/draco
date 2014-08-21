@@ -189,7 +189,11 @@
                 </div>
             </form>
 
-            Html.RenderPartial("EnterGameResults", Model.EnableTweet);
+            Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.EnterGameResults()
+            {
+                ShowTweetResults = Model.EnableTweet,
+                TrackGamesPlayed = Model.TrackGamesPlayed
+            });
         }
 
     <div class="tab-content" data-bind="visible: viewMode() && !loadingSchedule()">

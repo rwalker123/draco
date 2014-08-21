@@ -131,7 +131,8 @@ namespace DataAccess
 						Contact = new Contact(r.Contact.Id, r.Contact.Email, r.Contact.LastName, r.Contact.FirstName, r.Contact.MiddleName, r.Contact.Phone1, r.Contact.Phone2, r.Contact.Phone3, r.Contact.CreatorAccountId, r.Contact.StreetAddress, r.Contact.City, r.Contact.State, r.Contact.Zip, r.Contact.FirstYear.GetValueOrDefault(), r.Contact.DateOfBirth, r.Contact.UserId),
 						SubmittedDriversLicense = r.SubmittedDriversLicense,
 						DateAdded = rs.DateAdded.GetValueOrDefault(),
-						AffiliationDuesPaid = GetAffiliationsDues(rs.PlayerId, seasonId)
+						AffiliationDuesPaid = GetAffiliationsDues(rs.PlayerId, seasonId),
+                        GamesPlayed = 0
 					}).SingleOrDefault();
 		}
 
@@ -159,7 +160,8 @@ namespace DataAccess
 						SubmittedDriversLicense = r.SubmittedDriversLicense,
 						AccountId = r.AccountId,
 						DateAdded = rs.DateAdded.GetValueOrDefault(),
-						AffiliationDuesPaid = GetAffiliationsDues(rs.PlayerId, seasonId)
+						AffiliationDuesPaid = GetAffiliationsDues(rs.PlayerId, seasonId),
+                        GamesPlayed = rs.PlayerRecaps.Count()
 					});
 		}
 

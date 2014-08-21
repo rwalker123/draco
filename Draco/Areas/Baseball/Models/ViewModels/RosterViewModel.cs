@@ -19,6 +19,10 @@ namespace SportsManager.Baseball.ViewModels
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowIdentification"), out showIdStatus);
             ShowIdStatus = showIdStatus;
 
+            var trackGamesPlayed = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "TrackGamesPlayed"), out trackGamesPlayed);
+            TrackGamesPlayed = trackGamesPlayed;
+
             var trackPlayerWaiver = false;
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "TrackWaiver"), out trackPlayerWaiver);
             TrackPlayerWaiver = trackPlayerWaiver;
@@ -38,6 +42,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public bool ShowWaiverStatus { get; private set; }
         public bool ShowIdStatus { get; private set; }
+        public bool TrackGamesPlayed { get; private set; }
         public bool TrackPlayerWaiver { get; private set; }
         public bool TrackIdSubmitted { get; private set; }
         public bool ShowUserInfoOnRosterPage { get; private set; }

@@ -115,7 +115,8 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             FirstYear: 0,
             DateOfBirth: new Date(),
             IsFemale: false,
-            UserId: ''
+            UserId: '',
+            GamesPlayed: 0
         }
     });
 

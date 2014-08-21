@@ -57,6 +57,7 @@
 
                     <div><label><input type="checkbox" data-bind="checked: playerIdentification" />Track player identification submitted</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showIdentification" />Show Identification status on Roster page</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: trackGamesPlayed" />Track each players games played</label></div>
                 </div>
             </div>
         </div>
@@ -127,6 +128,10 @@
             self.showIdentification.subscribe(function (newValue) {
                 self.settingChanged('ShowIdentification', newValue);
             });
+            self.trackGamesPlayed = ko.observable();
+            self.trackGamesPlayed.subscribe(function (newValue) {
+                self.settingChanged('TrackGamesPlayed', newValue);
+            });
             self.printableRoster = ko.observable();
             self.printableRoster.subscribe(function (newValue) {
                 self.settingChanged('ShowRosterCard', newValue);
@@ -178,6 +183,9 @@
                 }
                 else if (settingKey == "ShowIdentification") {
                     self.showIdentification(value);
+                }
+                else if (settingKey == "TrackGamesPlayed") {
+                    self.trackGamesPlayed(value);
                 }
                 else if (settingKey == "ShowRosterCard") {
                     self.printableRoster(value);

@@ -23,6 +23,10 @@ namespace SportsManager.Baseball.ViewModels
                 ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
             }
 
+            var trackGamesPlayed = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "TrackGamesPlayed"), out trackGamesPlayed);
+            TrackGamesPlayed = trackGamesPlayed;
+
             EnableTweet = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId));
 
             TwitterError = (String)c.Session["twitterError"];
@@ -31,6 +35,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public String TwitterError { get; private set; }
         public bool EnableTweet { get; private set; }
+        public bool TrackGamesPlayed { get; private set; }
 
         public long SeasonId { get; private set; }
 

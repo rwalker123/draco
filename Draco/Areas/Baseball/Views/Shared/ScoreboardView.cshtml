@@ -46,7 +46,12 @@
                             <h4 class="modal-title">Enter Game Results</h4>
                         </div>
                         <div class="modal-body" style="max-height: 480px;overflow:auto">
-                            @{Html.RenderPartial("EnterGameResults", true); }
+                            @{Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.EnterGameResults
+                              {
+                                  ShowTweetResults = Model.ShowTweetResults,
+                                  TrackGamesPlayed = Model.TrackGamesPlayed
+                              }); 
+                            }
                         </div>
                     </div>
                 </div>
