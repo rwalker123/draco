@@ -633,8 +633,14 @@
     <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
+    <Content Include="Scripts\tinymce\plugins\colorpicker\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\colorpicker\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
     <Content Include="Scripts\tinymce\plugins\example\dialog.html" />
+    <Content Include="Scripts\tinymce\plugins\table\classes\Dialogs.js" />
+    <Content Include="Scripts\tinymce\plugins\textpattern\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\textpattern\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\dl.gif" />
     <Content Include="Scripts\typeahead.bundle.js" />
     <Content Include="Scripts\typeahead.bundle.min.js" />
     <Content Include="Scripts\typeahead.jquery.js" />
