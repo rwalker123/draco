@@ -338,6 +338,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from aw in db.AccountWelcomes
                     where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
+                    orderby aw.OrderNo
                     select new AccountWelcome()
                     {
                         Id = aw.Id,
@@ -354,6 +355,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from aw in db.AccountWelcomes
                     where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
+                    orderby aw.OrderNo
                     select new AccountWelcome()
                     {
                         Id = aw.Id,
