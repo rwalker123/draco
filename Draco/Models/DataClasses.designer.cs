@@ -259,7 +259,7 @@ namespace SportsManager
     #endregion
 		
 		public DB() : 
-				base(global::System.Configuration.ConfigurationManager.ConnectionStrings["SQL2012_152800_ezrecsportsConnectionString"].ConnectionString, mappingSource)
+				base(global::System.Configuration.ConfigurationManager.ConnectionStrings["webDBConnection"].ConnectionString, mappingSource)
 		{
 			OnCreated();
 		}
