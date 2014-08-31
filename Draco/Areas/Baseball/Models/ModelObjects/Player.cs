@@ -49,22 +49,10 @@ namespace ModelObjects
 		{
 			get
 			{
-				DateTime today = DateTime.Today;
                 if (Contact == null)
                     return 0;
 
-				int years = today.Year - Contact.DateOfBirth.Year;
-				if (today.Month == Contact.DateOfBirth.Month)
-				{
-					if (today.Day < Contact.DateOfBirth.Day)
-						years--;
-				}
-				else if (today.Month < Contact.DateOfBirth.Month)
-				{
-					years--;
-				}
-
-				return years;
+                return Globals.CalculateAge(Contact.DateOfBirth);
 			}
 		}
 

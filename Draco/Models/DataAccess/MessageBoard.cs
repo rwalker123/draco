@@ -4,6 +4,7 @@ using SportsManager;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 
 
@@ -668,7 +669,34 @@ namespace DataAccess
             foreach (ModelObjects.Account acc in accounts)
             {
                 CleanupMessageBoard(acc.Id);
+                CleanupPlayerClassified(acc.Id);
             }
+        }
+
+        public static int CleanupPlayerClassified(long accountId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var configDaysToKeep = ConfigurationManager.AppSettings["DaysToKeepPlayerClassified"];
+            int daysToKeep = 30;
+            int.TryParse(configDaysToKeep, out daysToKeep);
+
+            DateTime minDate = DateTime.Today.Subtract(new TimeSpan(daysToKeep, 0, 0, 0, 0));
+
+            var expiredTeamClassifieds = (from tw in db.TeamsWantedClassifieds
+                                      where tw.AccountId == accountId && tw.DateCreated < minDate
+                                      select tw);
+            db.TeamsWantedClassifieds.DeleteAllOnSubmit(expiredTeamClassifieds);
+
+
+            var expiredPlayersClassifieds = (from pw in db.PlayersWantedClassifieds
+                                          where pw.AccountId == accountId && pw.DateCreated < minDate
+                                          select pw);
+            db.PlayersWantedClassifieds.DeleteAllOnSubmit(expiredPlayersClassifieds);
+
+            db.SubmitChanges();
+
+            return 1;
         }
 
         public static int CleanupMessageBoard(long accountId)

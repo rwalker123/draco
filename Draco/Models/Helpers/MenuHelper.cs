@@ -100,6 +100,16 @@ namespace SportsManager.Models.Helpers
 
                 var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
 
+                var showPlayerClassified = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
+                if (showPlayerClassified)
+                {
+                    string playerclassifiedurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                        new RouteValueDictionary(new { area = "baseball", controller = "PlayerClassified", action = "Index", accountId = accountId })).VirtualPath;
+
+                    forumsMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(playerclassifiedurl, "Player Classified", "Players wanting to play and needed"));
+                }
+
                 var showPlayerSurvey = false;
                 bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
                 if (showPlayerSurvey)

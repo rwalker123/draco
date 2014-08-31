@@ -97,18 +97,23 @@ namespace ModelObjects
             return fullName.Trim();
         }
 
+        static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
+        {
+            System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
+
+            if (!String.IsNullOrWhiteSpace(middleName))
+                fullName.Append(middleName + " ");
+
+            fullName.Append(lastName);
+
+            return fullName.ToString();
+        }
+
         public string FullNameFirst
         {
             get
             {
-                System.Text.StringBuilder fullName = new System.Text.StringBuilder(FirstName + " ");
-
-                if (!String.IsNullOrWhiteSpace(MiddleName))
-                    fullName.Append(MiddleName + " ");
-
-                fullName.Append(LastName);
-
-                return fullName.ToString();
+                return Contact.BuildFullNameFirst(FirstName, MiddleName, LastName);
             }
         }
 

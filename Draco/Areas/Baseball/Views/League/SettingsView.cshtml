@@ -41,6 +41,7 @@
                     <div><label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label></div>
                     <div><label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showPlayerClassified" />Show Player Classified (team needs player/player needs team)</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerSurvey" />Show Player Survey</label></div>
                 </div>
             </div>
@@ -103,6 +104,10 @@
             self.userEditContact = ko.observable();
             self.userEditContact.subscribe(function (newValue) {
                 self.settingChanged('EditContactInfo', newValue);
+            });
+            self.showPlayerClassified = ko.observable();
+            self.showPlayerClassified.subscribe(function (newValue) {
+                self.settingChanged('ShowPlayerClassified', newValue);
             });
             self.showMemberBusiness = ko.observable();
             self.showMemberBusiness.subscribe(function (newValue) {
@@ -168,6 +173,9 @@
                 }
                 else if (settingKey == "ShowBusinessDirectory") {
                     self.showMemberBusiness(value);
+                }
+                else if (settingKey == "ShowPlayerClassified") {
+                    self.showPlayerClassified(value);
                 }
                 else if (settingKey == "ShowPlayerSurvey") {
                     self.showPlayerSurvey(value);

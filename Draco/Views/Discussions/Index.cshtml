@@ -47,6 +47,27 @@
 
 <div class="container-fluid" id="discussions">
 
+    @if (Model.ShowPlayerClassified)
+    {
+        <div class="row center-block text-center">
+            <div class="col-sm-12">
+                <div class="alert alert-info">
+                    Need players for your team or tournament? Want to get on a team? Head on over to our <a href="@Url.Action("Index", "PlayerClassified", new { area = "baseball", accountId = Model.AccountId }, null)" class="btn btn-success">Player Classified</a> board for more information.
+                    <div style="font-style: italic">
+                        @if (Model.NumberOfPlayerRequests > 0)
+                        {
+                            <p>There are currently <strong>@Model.NumberOfPlayerRequests</strong> player(s) looking for a team!</p>
+                        }
+                        @if (Model.NumberOfTeamRequests > 0)
+                        {
+                            <p>There are currently <strong>@Model.NumberOfTeamRequests</strong> team(s) looking for players!</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <ol class="breadcrumb" data-bind="foreach: breadcrumbs">
         <li class="h4"><a data-bind="html: Title, click: Callback, attr: { 'href': '#' }"></a></li>
     </ol>

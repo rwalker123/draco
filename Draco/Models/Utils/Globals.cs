@@ -247,6 +247,23 @@ static public class Globals
     {
         return HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>();
     }
+
+    public static int CalculateAge(DateTime birthDate)
+    {
+        DateTime today = DateTime.Today;
+        int years = today.Year - birthDate.Year;
+        if (today.Month == birthDate.Month)
+        {
+            if (today.Day < birthDate.Day)
+                years--;
+        }
+        else if (today.Month < birthDate.Month)
+        {
+            years--;
+        }
+
+        return years;
+    }
 }
 
 public class EmailUserValidator : IIdentityValidator<ApplicationUser>

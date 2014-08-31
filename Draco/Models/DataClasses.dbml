@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Database Name="SQL2012_152800_ezrecsports2" EntityNamespace="SportsManager.Model" ContextNamespace="SportsManager" Class="DB" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
-  <Connection Mode="WebSettings" ConnectionString="Data Source=localhost;Initial Catalog=SQL2012_152800_ezrecsports2;Integrated Security=True" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="webDBConnection" Provider="System.Data.SqlClient" />
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="SQL2012_152800_ezrecsports" EntityNamespace="SportsManager.Model" ContextNamespace="SportsManager" Class="DB" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="WebSettings" ConnectionString="Data Source=localhost;Initial Catalog=SQL2012_152800_ezrecsports;Integrated Security=True" SettingsObjectName="System.Configuration.ConfigurationManager.ConnectionStrings" SettingsPropertyName="SQL2012_152800_ezrecsportsConnectionString" Provider="System.Data.SqlClient" />
   <Table Name="dbo.AccountHandouts" Member="AccountHandouts">
     <Type Name="AccountHandout">
       <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
@@ -47,6 +47,8 @@
       <Association Name="Account_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="AccountId" Type="Sponsor" />
       <Association Name="Account_hof" Member="hofs" ThisKey="Id" OtherKey="AccountId" Type="hof" />
       <Association Name="Account_HOFNomination" Member="HOFNominations" ThisKey="Id" OtherKey="AccountId" Type="HOFNomination" />
+      <Association Name="Account_PlayersWantedClassified" Member="PlayersWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="PlayersWantedClassified" />
+      <Association Name="Account_TeamsWantedClassified" Member="TeamsWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="TeamsWantedClassified" />
       <Association Name="AccountType_Account" Member="AccountType" ThisKey="AccountTypeId" OtherKey="Id" Type="AccountType" IsForeignKey="true" />
       <Association Name="Affiliation_Account" Member="Affiliation" ThisKey="AffiliationId" OtherKey="Id" Type="Affiliation" IsForeignKey="true" />
     </Type>
@@ -211,6 +213,7 @@
       <Association Name="Contact_hof" Member="hofs" ThisKey="Id" OtherKey="ContactId" Type="hof" />
       <Association Name="Contact_PlayerProfile" Member="PlayerProfiles" ThisKey="Id" OtherKey="PlayerId" Type="PlayerProfile" />
       <Association Name="Contact_MessagePost" Member="MessagePosts" ThisKey="Id" OtherKey="ContactCreatorId" Type="MessagePost" />
+      <Association Name="Contact_PlayersWantedClassified" Member="PlayersWantedClassifieds" ThisKey="Id" OtherKey="CreatedByContactId" Type="PlayersWantedClassified" />
       <Association Name="AspNetUser_Contact" Member="AspNetUser" ThisKey="UserId" OtherKey="Id" Type="AspNetUser" IsForeignKey="true" DeleteRule="SET NULL" />
     </Type>
   </Table>
@@ -1150,6 +1153,34 @@
       <Column Name="CategoryId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Association Name="Contact_MessagePost" Member="Contact" ThisKey="ContactCreatorId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="MessageTopic_MessagePost" Member="MessageTopic" ThisKey="TopicId" OtherKey="Id" Type="MessageTopic" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.PlayersWantedClassified" Member="PlayersWantedClassifieds">
+    <Type Name="PlayersWantedClassified">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="CreatedByContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="TeamEventName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="PositionsNeeded" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Association Name="Account_PlayersWantedClassified" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Contact_PlayersWantedClassified" Member="Contact" ThisKey="CreatedByContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+    </Type>
+  </Table>
+  <Table Name="dbo.TeamsWantedClassified" Member="TeamsWantedClassifieds">
+    <Type Name="TeamsWantedClassified">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Phone" Type="System.String" DbType="VarChar(15) NOT NULL" CanBeNull="false" />
+      <Column Name="Experience" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
+      <Column Name="PositionsPlayed" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="AccessCode" Type="System.Guid" DbType="UniqueIdentifier NOT NULL" CanBeNull="false" />
+      <Column Name="BirthDate" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Association Name="Account_TeamsWantedClassified" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
 </Database>
