@@ -185,6 +185,42 @@ namespace SportsManager.Controllers
             }
         }
 
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("contactinfo")]
+        public HttpResponseMessage PutContactInfo(long accountId, ModelObjects.Contact contact)
+        {
+            contact.CreatorAccountId = accountId;
+
+            if (ModelState.IsValid && contact != null)
+            {
+                try
+                {
+                    var dbContact = DataAccess.Contacts.GetContact(contact.Id);
+                    if (contact.UserId != Globals.GetCurrentUserId())
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                    DataAccess.Contacts.UpdateContactInfo(contact);
+
+                    // Create a 200 response.
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(contact.Id.ToString())
+                    };
+                    response.Headers.Location =
+                        new Uri(Url.Link("ActionApi", new { action = "Contacts", accountId = accountId, id = contact.Id }));
+                    return response;
+                }
+                catch (MembershipCreateUserException ex)
+                {
+                    return Request.CreateResponse(HttpStatusCode.Conflict, ex.Message);
+                }
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+        }
+
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("contacts")]

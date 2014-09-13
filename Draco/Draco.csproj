@@ -76,9 +76,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Bin\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
-    <Reference Include="JSNLog, Version=2.7.3.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="JSNLog, Version=2.7.4.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\JSNLog.2.7.3.0\lib\net40\JSNLog.dll</HintPath>
+      <HintPath>..\packages\JSNLog.2.7.4.0\lib\net40\JSNLog.dll</HintPath>
     </Reference>
     <Reference Include="LinqToTwitter.AspNet, Version=3.0.2.30107, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -187,9 +187,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.2\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http.OData, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Http.OData, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.2.2\lib\net45\System.Web.Http.OData.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.3.0\lib\net45\System.Web.Http.OData.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Http.WebHost, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -622,6 +622,8 @@
     <Content Include="fonts\fontawesome-webfont.ttf" />
     <Content Include="fonts\fontawesome-webfont.eot" />
     <Content Include="fonts\FontAwesome.otf" />
+    <Content Include="Scripts\bootstrap-select.js.map" />
+    <Content Include="Content\bootstrap-select.css.map" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
@@ -658,6 +660,7 @@
     <Content Include="Scripts\typeahead.jquery.js" />
     <Content Include="Scripts\typeahead.jquery.min.js" />
     <Content Include="Scripts\userpoll.js" />
+    <Content Include="Scripts\userprofiledata.js" />
     <Content Include="Scripts\wysiwyg.min.js" />
     <Content Include="Views\Discussions\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
@@ -1109,6 +1112,7 @@
     <Content Include="Views\Shared\PlayerSurveyView.cshtml" />
     <Content Include="Views\Shared\UserPollView.cshtml" />
     <Content Include="Views\LeagueFAQ\Index.cshtml" />
+    <Content Include="Scripts\jsnlog.js.map" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

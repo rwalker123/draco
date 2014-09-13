@@ -1,23 +1,134 @@
 ﻿@using SportsManager.Models;
 @using Microsoft.AspNet.Identity;
+@model SportsManager.ViewModels.AccountViewModel
 @{
     ViewBag.Title = "Manage Account";
 }
 
 <h2>@ViewBag.Title.</h2>
 
+@if (Model.ContactId == 0)
+{
+    <p class="alert alert-danger">You must be logged in to see this page.</p>
+    return;
+}
+
 <p class="text-success">@ViewBag.StatusMessage</p>
 <div class="row">
     <div class="col-md-12">
-        @if (ViewBag.HasLocalPassword)
-        {
-            @Html.Partial("_ChangePasswordPartial")
-        }
-        else
-        {
-            @Html.Partial("_SetPasswordPartial")
-        }
 
+        <br />
+        <p>You're logged in as <strong>@User.Identity.GetUserName()</strong>.</p>
+        <br />
+        <ul class="nav nav-tabs" role="tablist">
+            @if (ViewBag.ShowUserInfo)
+            {
+                <li class="active"><a href="#userinfo" role="tab" data-toggle="tab">Contact Information</a></li>
+            }
+            <li @if (!ViewBag.ShowUserInfo) { <text>class="active" </text> }><a href="#password" role="tab" data-toggle="tab">Change Password</a></li>
+        </ul>
+
+        <div class="tab-content" id="contact" data-bind="with: user">
+            <div class="tab-pane fade @if (ViewBag.ShowUserInfo) { <text>in active</text> }" id="userinfo">
+                <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
+                @*@if (Model.IsAdmin)
+                {
+                    <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+                        <i class="glyphicon glyphicon-upload"></i>
+                        <input class="form-control" type="file" data-maxfilesize="1">
+                    </span>
+                }*@
+
+                <br />
+
+                <div data-bind="visible: !$root.editMode()">
+                    <address data-bind="visible: Phone1">
+                        <label class="control-label">home phone</label><br /><span data-bind="text: Phone1"></span>
+                    </address>
+                    <address data-bind="visible: Phone2">
+                        <label class="control-label">cell phone</label><br /><span data-bind="text: Phone2"></span>
+                    </address>
+                    <address data-bind="visible: Phone3">
+                        <label class="control-label">work phone</label><br /><span data-bind="text: Phone3"></span>
+                    </address>
+                    <address data-bind="visible: StreetAddress() || City() || State() || Zip()" style="vertical-align: top">
+                        <label class="control-label">address</label><br />
+                        <span data-bind="text: StreetAddress"></span><br />
+                        <span data-bind="text: City"></span>, <span data-bind="text: State"></span> <span data-bind="text: Zip"></span>
+                    </address>
+                    @if (ViewBag.EditUserInfo)
+                    {
+                        <button class="btn btn-default" data-bind="click: $root.editInfo" title="edit information"><span class="glyphicon glyphicon-edit"></span></button>
+                    }
+                </div>
+
+                @if (ViewBag.EditUserInfo)
+                { 
+                <form class="form-horizontal" data-bind="with: $root.editUser, visible: $root.editMode" role="form">
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">home phone</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="phoneNumber: Phone1" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">cell phone</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="phoneNumber: Phone2" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">work phone</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="phoneNumber: Phone3" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">address</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="value: StreetAddress" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">city</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="value: City" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">state</label>
+                        <div class="col-sm-10">
+                            @*<select data-container="body" data-bind="selectPicker: State, selectPickerOptions: { optionsArray: $root.availableStates }, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>*@
+                            <select data-container="body" class="selectpicker" data-bind="uniqueId: $parent.Id, value: State, options: $root.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label col-sm-2">zip</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" data-bind="value: Zip" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-offset-2">
+                            <button class="btn btn-success" title="save" data-bind="click: $root.saveEditInfo"><span class="glyphicon glyphicon-ok"></span></button>
+                            <button class="btn btn-danger" title="cancel" data-bind="click: $root.cancelEditInfo"><span class="glyphicon glyphicon-remove"></span></button>
+                        </div>
+                    </div>
+                </form>
+                }
+                
+            </div>
+            <div class="tab-pane fade @if (!ViewBag.ShowUserInfo) { <text>in active</text> }" id="password">
+                @if (ViewBag.HasLocalPassword)
+                {
+                    @Html.Partial("_ChangePasswordPartial", new ManageUserViewModel())
+                }
+                else
+                {
+                    @Html.Partial("_SetPasswordPartial", new ManageUserViewModel())
+                }
+            </div>
+        </div>
         @*<section id="externalLogins">
             @Html.Action("RemoveAccountList")
             @Html.Partial("_ExternalLoginsListPartial", new { Action = "LinkLogin", ReturnUrl = ViewBag.ReturnUrl })
@@ -25,5 +136,16 @@
     </div>
 </div>
 @section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
+@Scripts.Render("~/bundles/jqueryval")
+@Scripts.Render("~/bundles/knockout")
+
+<script type="text/javascript" src="~/Scripts/userprofiledata.js"></script>
+<script type="text/javascript" src="~/Scripts/jquery.maskedinput-1.3.1.min.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        initUserProfileData(@Model.AccountId, @Model.ContactId);
+    });
+</script>
+
 }

@@ -460,6 +460,31 @@ namespace DataAccess
             return true;
         }
 
+        static public bool UpdateContactInfo(Contact contact)
+        {
+            DB db = DBConnection.GetContext();
+            var dbContact = (from c in db.Contacts
+                             where c.Id == contact.Id
+                             select c).SingleOrDefault();
+            if (dbContact == null)
+                return false;
+
+            contact.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone1));
+            contact.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone2));
+            contact.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone3));
+
+            dbContact.StreetAddress = contact.StreetAddress;
+            dbContact.City = contact.City;
+            dbContact.State = contact.State;
+            dbContact.Zip = contact.Zip;
+            dbContact.Phone1 = contact.Phone1;
+            dbContact.Phone2 = contact.Phone2;
+            dbContact.Phone3 = contact.Phone3;
+
+            db.SubmitChanges();
+            return true;
+        }
+
         static public void UpdateUserId(Contact contact)
         {
             DB db = DBConnection.GetContext();

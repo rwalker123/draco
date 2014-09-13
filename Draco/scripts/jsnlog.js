@@ -11,6 +11,19 @@ function JL(loggerName) {
         return JL.__;
     }
 
+    // Implements Array.reduce. JSNLog supports IE8+ and reduce is not supported in that browser.
+    // Same interface as the standard reduce, except that
+    if (!Array.prototype.reduce) {
+        Array.prototype.reduce = function (callback, initialValue) {
+            var previousValue = initialValue;
+            for (var i = 0; i < this.length; i++) {
+                previousValue = callback(previousValue, this[i], i, this);
+            }
+
+            return previousValue;
+        };
+    }
+
     var accumulatedLoggerName = '';
     var logger = ('.' + loggerName).split('.').reduce(function (prev, curr, idx, arr) {
         // if loggername is a.b.c, than currentLogger will be set to the loggers
@@ -188,20 +201,31 @@ var JL;
         return logObject;
     }
 
+    var StringifiedLogObject = (function () {
+        // * msg -
+        //      if the logObject is a scalar (after possible function evaluation), this is set to
+        //      string representing the scalar. Otherwise it is left undefined.
+        // * meta -
+        //      if the logObject is an object (after possible function evaluation), this is set to
+        //      that object. Otherwise it is left undefined.
+        // * finalString -
+        //      This is set to the string representation of logObject (after possible function evaluation),
+        //      regardless of whether it is an scalar or an object. An object is stringified to a JSON string.
+        //      Note that you can't call this field "final", because as some point this was a reserved
+        //      JavaScript keyword and using final trips up some minifiers.
+        function StringifiedLogObject(msg, meta, finalString) {
+            this.msg = msg;
+            this.meta = meta;
+            this.finalString = finalString;
+        }
+        return StringifiedLogObject;
+    })();
+
     // Takes a logObject, which can be
     // * a scalar
     // * an object
     // * a parameterless function, which returns the scalar or object to log.
-    // Returns an object with these fields:
-    // * msg -
-    //      if the logObject is a scalar (after possible function evaluation), this is set to
-    //      string representing the scalar. Otherwise it is left undefined.
-    // * meta -
-    //      if the logObject is an object (after possible function evaluation), this is set to
-    //      that object. Otherwise it is left undefined.
-    // * final -
-    //      This is set to the string representation of logObject (after possible function evaluation),
-    //      regardless of whether it is an scalar or an object. An object is stringified to a JSON string.
+    // Returns a stringifiedLogObject
     function stringifyLogObject(logObject) {
         // Note that this works if logObject is null.
         // typeof null is object.
@@ -211,27 +235,24 @@ var JL;
 
         switch (typeof actualLogObject) {
             case "string":
-                return { msg: actualLogObject, final: actualLogObject };
+                return new StringifiedLogObject(actualLogObject, null, actualLogObject);
             case "number":
                 finalString = actualLogObject.toString();
-                return { msg: finalString, final: finalString };
+                return new StringifiedLogObject(finalString, null, finalString);
             case "boolean":
                 finalString = actualLogObject.toString();
-                return { msg: finalString, final: finalString };
+                return new StringifiedLogObject(finalString, null, finalString);
             case "undefined":
-                return { msg: "undefined" };
+                return new StringifiedLogObject("undefined");
             case "object":
                 if ((actualLogObject instanceof RegExp) || (actualLogObject instanceof String) || (actualLogObject instanceof Number) || (actualLogObject instanceof Boolean)) {
                     finalString = actualLogObject.toString();
-                    return { msg: finalString, final: finalString };
+                    return new StringifiedLogObject(finalString, null, finalString);
                 } else {
-                    return {
-                        meta: actualLogObject,
-                        final: JSON.stringify(actualLogObject)
-                    };
+                    return new StringifiedLogObject(null, actualLogObject, JSON.stringify(actualLogObject));
                 }
             default:
-                return { msg: "unknown", final: "unknown" };
+                return new StringifiedLogObject("unknown", null, "unknown");
         }
     }
 
@@ -306,7 +327,7 @@ var JL;
         function Exception(data, inner) {
             this.inner = inner;
             this.name = "JL.Exception";
-            this.message = stringifyLogObject(data).final;
+            this.message = stringifyLogObject(data).finalString;
         }
         return Exception;
     })();
@@ -692,12 +713,12 @@ var JL;
 
                 compositeMessage = stringifyLogObject(excObject);
 
-                if (allowMessage(this, compositeMessage.final)) {
+                if (allowMessage(this, compositeMessage.finalString)) {
                     // See whether message is a duplicate
                     if (this.onceOnly) {
                         i = this.onceOnly.length - 1;
                         while (i >= 0) {
-                            if (new RegExp(this.onceOnly[i]).test(compositeMessage.final)) {
+                            if (new RegExp(this.onceOnly[i]).test(compositeMessage.finalString)) {
                                 if (this.seenRegexes[i]) {
                                     return this;
                                 }
@@ -722,7 +743,7 @@ var JL;
                     i = this.appenders.length - 1;
                     while (i >= 0) {
                         this.appenders[i].log(levelToString(level), compositeMessage.msg, compositeMessage.meta, function () {
-                        }, level, compositeMessage.final, this.loggerName);
+                        }, level, compositeMessage.finalString, this.loggerName);
                         i--;
                     }
                 }

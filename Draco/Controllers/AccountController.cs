@@ -198,10 +198,22 @@ namespace SportsManager.Controllers
         // GET: /Account/Manage
         public ActionResult Manage(long? accountId, ManageMessageId? message)
         {
+
+            ViewBag.ShowUserInfo = false;
+            ViewBag.EditUserInfo = false;
+
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
                 ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+
+                bool showUserInfo = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId.Value, "ShowContactInfo"), out showUserInfo);
+                ViewBag.ShowUserInfo = showUserInfo;
+
+                bool editUserInfo = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId.Value, "EditContactInfo"), out editUserInfo);
+                ViewBag.EditUserInfo = editUserInfo; 
             }
 
 
@@ -213,7 +225,7 @@ namespace SportsManager.Controllers
                 : "";
             ViewBag.HasLocalPassword = HasPassword();
             ViewBag.ReturnUrl = Url.Action("Manage");
-            return View();
+            return View(new ViewModels.AccountViewModel(this, accountId.GetValueOrDefault()));
         }
 
         //
