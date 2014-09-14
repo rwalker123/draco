@@ -88,7 +88,8 @@ namespace SportsManager.Areas.Golf.Controllers
                     AccountId = accountId,
                     LeagueId = id,
                     DivisionId = 0,
-                    Name = vm.Name
+                    Name = vm.Name,
+                    YouTubeUserId = string.Empty
                 };
 
                 long teamSeasonId = DataAccess.Teams.AddTeam(newTeam);
@@ -128,7 +129,8 @@ namespace SportsManager.Areas.Golf.Controllers
                 {
                     Id = vm.TeamSeasonId,
                     DivisionId = 0,
-                    Name = vm.Name
+                    Name = vm.Name,
+                    YouTubeUserId = string.Empty
                 };
 
                 bool modifySuccess = DataAccess.Teams.ModifyTeam(newTeam);

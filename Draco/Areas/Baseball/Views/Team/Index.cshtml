@@ -156,6 +156,15 @@
                 </div>
             }
 
+            @if (Model.VideosEnabled && Model.ShowVideos)
+            {
+                <div class="row">
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("VideosView", new SportsManager.ViewModels.VideoViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    </div>
+                </div>
+            }
+            
             @if (Model.ShowPhotoGallery)
             {
                 <div class="row">
@@ -232,6 +241,11 @@ else
 @if (Model.ShowSponsors)
 {
     <script type="text/javascript" src="~/Scripts/sponsors.js"></script>
+}
+
+@if (Model.VideosEnabled && Model.ShowVideos)
+{
+    <script type="text/javascript" src="~/Scripts/videos.js"></script>
 }
 
 @Scripts.Render("~/bundles/jquery-file-upload")
@@ -323,6 +337,13 @@ else
             <text>
         initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
+        }
+
+        @if (Model.VideosEnabled && Model.ShowVideos)
+        {
+            <text>
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', @Model.Team.Id);
+            </text>
         }
 
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);

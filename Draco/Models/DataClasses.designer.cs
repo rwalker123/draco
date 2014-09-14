@@ -190,9 +190,6 @@ namespace SportsManager
     partial void InsertTeamHandout(SportsManager.Model.TeamHandout instance);
     partial void UpdateTeamHandout(SportsManager.Model.TeamHandout instance);
     partial void DeleteTeamHandout(SportsManager.Model.TeamHandout instance);
-    partial void InsertTeam(SportsManager.Model.Team instance);
-    partial void UpdateTeam(SportsManager.Model.Team instance);
-    partial void DeleteTeam(SportsManager.Model.Team instance);
     partial void InsertTeamSeasonManager(SportsManager.Model.TeamSeasonManager instance);
     partial void UpdateTeamSeasonManager(SportsManager.Model.TeamSeasonManager instance);
     partial void DeleteTeamSeasonManager(SportsManager.Model.TeamSeasonManager instance);
@@ -256,6 +253,9 @@ namespace SportsManager
     partial void InsertTeamsWantedClassified(SportsManager.Model.TeamsWantedClassified instance);
     partial void UpdateTeamsWantedClassified(SportsManager.Model.TeamsWantedClassified instance);
     partial void DeleteTeamsWantedClassified(SportsManager.Model.TeamsWantedClassified instance);
+    partial void InsertTeam(SportsManager.Model.Team instance);
+    partial void UpdateTeam(SportsManager.Model.Team instance);
+    partial void DeleteTeam(SportsManager.Model.Team instance);
     #endregion
 		
 		public DB() : 
@@ -720,14 +720,6 @@ namespace SportsManager
 			}
 		}
 		
-		public System.Data.Linq.Table<SportsManager.Model.Team> Teams
-		{
-			get
-			{
-				return this.GetTable<SportsManager.Model.Team>();
-			}
-		}
-		
 		public System.Data.Linq.Table<SportsManager.Model.TeamSeasonManager> TeamSeasonManagers
 		{
 			get
@@ -893,6 +885,14 @@ namespace SportsManager
 			get
 			{
 				return this.GetTable<SportsManager.Model.TeamsWantedClassified>();
+			}
+		}
+		
+		public System.Data.Linq.Table<SportsManager.Model.Team> Teams
+		{
+			get
+			{
+				return this.GetTable<SportsManager.Model.Team>();
 			}
 		}
 	}
@@ -1140,8 +1140,6 @@ namespace SportsManager.Model
 		
 		private EntitySet<Season> _Seasons;
 		
-		private EntitySet<Team> _Teams;
-		
 		private EntitySet<VoteQuestion> _VoteQuestions;
 		
 		private EntitySet<WorkoutAnnouncement> _WorkoutAnnouncements;
@@ -1161,6 +1159,8 @@ namespace SportsManager.Model
 		private EntitySet<PlayersWantedClassified> _PlayersWantedClassifieds;
 		
 		private EntitySet<TeamsWantedClassified> _TeamsWantedClassifieds;
+		
+		private EntitySet<Team> _Teams;
 		
 		private EntityRef<AccountType> _AccountType;
 		
@@ -1215,7 +1215,6 @@ namespace SportsManager.Model
 			this._ProfileCategories = new EntitySet<ProfileCategory>(new Action<ProfileCategory>(this.attach_ProfileCategories), new Action<ProfileCategory>(this.detach_ProfileCategories));
 			this._Rosters = new EntitySet<Roster>(new Action<Roster>(this.attach_Rosters), new Action<Roster>(this.detach_Rosters));
 			this._Seasons = new EntitySet<Season>(new Action<Season>(this.attach_Seasons), new Action<Season>(this.detach_Seasons));
-			this._Teams = new EntitySet<Team>(new Action<Team>(this.attach_Teams), new Action<Team>(this.detach_Teams));
 			this._VoteQuestions = new EntitySet<VoteQuestion>(new Action<VoteQuestion>(this.attach_VoteQuestions), new Action<VoteQuestion>(this.detach_VoteQuestions));
 			this._WorkoutAnnouncements = new EntitySet<WorkoutAnnouncement>(new Action<WorkoutAnnouncement>(this.attach_WorkoutAnnouncements), new Action<WorkoutAnnouncement>(this.detach_WorkoutAnnouncements));
 			this._LeagueFAQs = new EntitySet<LeagueFAQ>(new Action<LeagueFAQ>(this.attach_LeagueFAQs), new Action<LeagueFAQ>(this.detach_LeagueFAQs));
@@ -1226,6 +1225,7 @@ namespace SportsManager.Model
 			this._HOFNominations = new EntitySet<HOFNomination>(new Action<HOFNomination>(this.attach_HOFNominations), new Action<HOFNomination>(this.detach_HOFNominations));
 			this._PlayersWantedClassifieds = new EntitySet<PlayersWantedClassified>(new Action<PlayersWantedClassified>(this.attach_PlayersWantedClassifieds), new Action<PlayersWantedClassified>(this.detach_PlayersWantedClassifieds));
 			this._TeamsWantedClassifieds = new EntitySet<TeamsWantedClassified>(new Action<TeamsWantedClassified>(this.attach_TeamsWantedClassifieds), new Action<TeamsWantedClassified>(this.detach_TeamsWantedClassifieds));
+			this._Teams = new EntitySet<Team>(new Action<Team>(this.attach_Teams), new Action<Team>(this.detach_Teams));
 			this._AccountType = default(EntityRef<AccountType>);
 			this._Affiliation = default(EntityRef<Affiliation>);
 			OnCreated();
@@ -1704,19 +1704,6 @@ namespace SportsManager.Model
 			}
 		}
 		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_Team", Storage="_Teams", ThisKey="Id", OtherKey="AccountId")]
-		public EntitySet<Team> Teams
-		{
-			get
-			{
-				return this._Teams;
-			}
-			set
-			{
-				this._Teams.Assign(value);
-			}
-		}
-		
 		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_VoteQuestion", Storage="_VoteQuestions", ThisKey="Id", OtherKey="AccountId")]
 		public EntitySet<VoteQuestion> VoteQuestions
 		{
@@ -1844,6 +1831,19 @@ namespace SportsManager.Model
 			set
 			{
 				this._TeamsWantedClassifieds.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_Team", Storage="_Teams", ThisKey="Id", OtherKey="AccountId")]
+		public EntitySet<Team> Teams
+		{
+			get
+			{
+				return this._Teams;
+			}
+			set
+			{
+				this._Teams.Assign(value);
 			}
 		}
 		
@@ -2079,18 +2079,6 @@ namespace SportsManager.Model
 			entity.Account = null;
 		}
 		
-		private void attach_Teams(Team entity)
-		{
-			this.SendPropertyChanging();
-			entity.Account = this;
-		}
-		
-		private void detach_Teams(Team entity)
-		{
-			this.SendPropertyChanging();
-			entity.Account = null;
-		}
-		
 		private void attach_VoteQuestions(VoteQuestion entity)
 		{
 			this.SendPropertyChanging();
@@ -2206,6 +2194,18 @@ namespace SportsManager.Model
 		}
 		
 		private void detach_TeamsWantedClassifieds(TeamsWantedClassified entity)
+		{
+			this.SendPropertyChanging();
+			entity.Account = null;
+		}
+		
+		private void attach_Teams(Team entity)
+		{
+			this.SendPropertyChanging();
+			entity.Account = this;
+		}
+		
+		private void detach_Teams(Team entity)
 		{
 			this.SendPropertyChanging();
 			entity.Account = null;
@@ -21366,297 +21366,6 @@ namespace SportsManager.Model
 		}
 	}
 	
-	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Teams")]
-	public partial class Team : INotifyPropertyChanging, INotifyPropertyChanged
-	{
-		
-		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
-		
-		private long _Id;
-		
-		private long _AccountId;
-		
-		private string _WebAddress;
-		
-		private EntitySet<TeamHandout> _TeamHandouts;
-		
-		private EntitySet<TeamsSeason> _TeamsSeasons;
-		
-		private EntitySet<TeamNew> _TeamNews;
-		
-		private EntitySet<AccountWelcome> _AccountWelcomes;
-		
-		private EntitySet<Sponsor> _Sponsors;
-		
-		private EntityRef<Account> _Account;
-		
-    #region Extensibility Method Definitions
-    partial void OnLoaded();
-    partial void OnValidate(System.Data.Linq.ChangeAction action);
-    partial void OnCreated();
-    partial void OnIdChanging(long value);
-    partial void OnIdChanged();
-    partial void OnAccountIdChanging(long value);
-    partial void OnAccountIdChanged();
-    partial void OnWebAddressChanging(string value);
-    partial void OnWebAddressChanged();
-    #endregion
-		
-		public Team()
-		{
-			this._TeamHandouts = new EntitySet<TeamHandout>(new Action<TeamHandout>(this.attach_TeamHandouts), new Action<TeamHandout>(this.detach_TeamHandouts));
-			this._TeamsSeasons = new EntitySet<TeamsSeason>(new Action<TeamsSeason>(this.attach_TeamsSeasons), new Action<TeamsSeason>(this.detach_TeamsSeasons));
-			this._TeamNews = new EntitySet<TeamNew>(new Action<TeamNew>(this.attach_TeamNews), new Action<TeamNew>(this.detach_TeamNews));
-			this._AccountWelcomes = new EntitySet<AccountWelcome>(new Action<AccountWelcome>(this.attach_AccountWelcomes), new Action<AccountWelcome>(this.detach_AccountWelcomes));
-			this._Sponsors = new EntitySet<Sponsor>(new Action<Sponsor>(this.attach_Sponsors), new Action<Sponsor>(this.detach_Sponsors));
-			this._Account = default(EntityRef<Account>);
-			OnCreated();
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
-		public long Id
-		{
-			get
-			{
-				return this._Id;
-			}
-			set
-			{
-				if ((this._Id != value))
-				{
-					this.OnIdChanging(value);
-					this.SendPropertyChanging();
-					this._Id = value;
-					this.SendPropertyChanged("Id");
-					this.OnIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL")]
-		public long AccountId
-		{
-			get
-			{
-				return this._AccountId;
-			}
-			set
-			{
-				if ((this._AccountId != value))
-				{
-					if (this._Account.HasLoadedOrAssignedValue)
-					{
-						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
-					}
-					this.OnAccountIdChanging(value);
-					this.SendPropertyChanging();
-					this._AccountId = value;
-					this.SendPropertyChanged("AccountId");
-					this.OnAccountIdChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WebAddress", DbType="VarChar(100) NOT NULL", CanBeNull=false)]
-		public string WebAddress
-		{
-			get
-			{
-				return this._WebAddress;
-			}
-			set
-			{
-				if ((this._WebAddress != value))
-				{
-					this.OnWebAddressChanging(value);
-					this.SendPropertyChanging();
-					this._WebAddress = value;
-					this.SendPropertyChanged("WebAddress");
-					this.OnWebAddressChanged();
-				}
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamHandout", Storage="_TeamHandouts", ThisKey="Id", OtherKey="TeamId")]
-		public EntitySet<TeamHandout> TeamHandouts
-		{
-			get
-			{
-				return this._TeamHandouts;
-			}
-			set
-			{
-				this._TeamHandouts.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamsSeason", Storage="_TeamsSeasons", ThisKey="Id", OtherKey="TeamId")]
-		public EntitySet<TeamsSeason> TeamsSeasons
-		{
-			get
-			{
-				return this._TeamsSeasons;
-			}
-			set
-			{
-				this._TeamsSeasons.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamNew", Storage="_TeamNews", ThisKey="Id", OtherKey="TeamId")]
-		public EntitySet<TeamNew> TeamNews
-		{
-			get
-			{
-				return this._TeamNews;
-			}
-			set
-			{
-				this._TeamNews.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_AccountWelcome", Storage="_AccountWelcomes", ThisKey="Id", OtherKey="TeamId")]
-		public EntitySet<AccountWelcome> AccountWelcomes
-		{
-			get
-			{
-				return this._AccountWelcomes;
-			}
-			set
-			{
-				this._AccountWelcomes.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_Sponsor", Storage="_Sponsors", ThisKey="Id", OtherKey="TeamId")]
-		public EntitySet<Sponsor> Sponsors
-		{
-			get
-			{
-				return this._Sponsors;
-			}
-			set
-			{
-				this._Sponsors.Assign(value);
-			}
-		}
-		
-		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_Team", Storage="_Account", ThisKey="AccountId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
-		public Account Account
-		{
-			get
-			{
-				return this._Account.Entity;
-			}
-			set
-			{
-				Account previousValue = this._Account.Entity;
-				if (((previousValue != value) 
-							|| (this._Account.HasLoadedOrAssignedValue == false)))
-				{
-					this.SendPropertyChanging();
-					if ((previousValue != null))
-					{
-						this._Account.Entity = null;
-						previousValue.Teams.Remove(this);
-					}
-					this._Account.Entity = value;
-					if ((value != null))
-					{
-						value.Teams.Add(this);
-						this._AccountId = value.Id;
-					}
-					else
-					{
-						this._AccountId = default(long);
-					}
-					this.SendPropertyChanged("Account");
-				}
-			}
-		}
-		
-		public event PropertyChangingEventHandler PropertyChanging;
-		
-		public event PropertyChangedEventHandler PropertyChanged;
-		
-		protected virtual void SendPropertyChanging()
-		{
-			if ((this.PropertyChanging != null))
-			{
-				this.PropertyChanging(this, emptyChangingEventArgs);
-			}
-		}
-		
-		protected virtual void SendPropertyChanged(String propertyName)
-		{
-			if ((this.PropertyChanged != null))
-			{
-				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-			}
-		}
-		
-		private void attach_TeamHandouts(TeamHandout entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = this;
-		}
-		
-		private void detach_TeamHandouts(TeamHandout entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = null;
-		}
-		
-		private void attach_TeamsSeasons(TeamsSeason entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = this;
-		}
-		
-		private void detach_TeamsSeasons(TeamsSeason entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = null;
-		}
-		
-		private void attach_TeamNews(TeamNew entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = this;
-		}
-		
-		private void detach_TeamNews(TeamNew entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = null;
-		}
-		
-		private void attach_AccountWelcomes(AccountWelcome entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = this;
-		}
-		
-		private void detach_AccountWelcomes(AccountWelcome entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = null;
-		}
-		
-		private void attach_Sponsors(Sponsor entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = this;
-		}
-		
-		private void detach_Sponsors(Sponsor entity)
-		{
-			this.SendPropertyChanging();
-			entity.Team = null;
-		}
-	}
-	
 	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.TeamSeasonManager")]
 	public partial class TeamSeasonManager : INotifyPropertyChanging, INotifyPropertyChanged
 	{
@@ -27347,6 +27056,321 @@ namespace SportsManager.Model
 			{
 				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
 			}
+		}
+	}
+	
+	[global::System.Data.Linq.Mapping.TableAttribute(Name="dbo.Teams")]
+	public partial class Team : INotifyPropertyChanging, INotifyPropertyChanged
+	{
+		
+		private static PropertyChangingEventArgs emptyChangingEventArgs = new PropertyChangingEventArgs(String.Empty);
+		
+		private long _Id;
+		
+		private long _AccountId;
+		
+		private string _WebAddress;
+		
+		private string _YouTubeUserId;
+		
+		private EntitySet<TeamHandout> _TeamHandouts;
+		
+		private EntitySet<TeamsSeason> _TeamsSeasons;
+		
+		private EntitySet<TeamNew> _TeamNews;
+		
+		private EntitySet<AccountWelcome> _AccountWelcomes;
+		
+		private EntitySet<Sponsor> _Sponsors;
+		
+		private EntityRef<Account> _Account;
+		
+    #region Extensibility Method Definitions
+    partial void OnLoaded();
+    partial void OnValidate(System.Data.Linq.ChangeAction action);
+    partial void OnCreated();
+    partial void OnIdChanging(long value);
+    partial void OnIdChanged();
+    partial void OnAccountIdChanging(long value);
+    partial void OnAccountIdChanged();
+    partial void OnWebAddressChanging(string value);
+    partial void OnWebAddressChanged();
+    partial void OnYouTubeUserIdChanging(string value);
+    partial void OnYouTubeUserIdChanged();
+    #endregion
+		
+		public Team()
+		{
+			this._TeamHandouts = new EntitySet<TeamHandout>(new Action<TeamHandout>(this.attach_TeamHandouts), new Action<TeamHandout>(this.detach_TeamHandouts));
+			this._TeamsSeasons = new EntitySet<TeamsSeason>(new Action<TeamsSeason>(this.attach_TeamsSeasons), new Action<TeamsSeason>(this.detach_TeamsSeasons));
+			this._TeamNews = new EntitySet<TeamNew>(new Action<TeamNew>(this.attach_TeamNews), new Action<TeamNew>(this.detach_TeamNews));
+			this._AccountWelcomes = new EntitySet<AccountWelcome>(new Action<AccountWelcome>(this.attach_AccountWelcomes), new Action<AccountWelcome>(this.detach_AccountWelcomes));
+			this._Sponsors = new EntitySet<Sponsor>(new Action<Sponsor>(this.attach_Sponsors), new Action<Sponsor>(this.detach_Sponsors));
+			this._Account = default(EntityRef<Account>);
+			OnCreated();
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Name="id", Storage="_Id", AutoSync=AutoSync.OnInsert, DbType="BigInt NOT NULL IDENTITY", IsPrimaryKey=true, IsDbGenerated=true)]
+		public long Id
+		{
+			get
+			{
+				return this._Id;
+			}
+			set
+			{
+				if ((this._Id != value))
+				{
+					this.OnIdChanging(value);
+					this.SendPropertyChanging();
+					this._Id = value;
+					this.SendPropertyChanged("Id");
+					this.OnIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_AccountId", DbType="BigInt NOT NULL")]
+		public long AccountId
+		{
+			get
+			{
+				return this._AccountId;
+			}
+			set
+			{
+				if ((this._AccountId != value))
+				{
+					if (this._Account.HasLoadedOrAssignedValue)
+					{
+						throw new System.Data.Linq.ForeignKeyReferenceAlreadyHasValueException();
+					}
+					this.OnAccountIdChanging(value);
+					this.SendPropertyChanging();
+					this._AccountId = value;
+					this.SendPropertyChanged("AccountId");
+					this.OnAccountIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_WebAddress", DbType="VarChar(100) NOT NULL", CanBeNull=false)]
+		public string WebAddress
+		{
+			get
+			{
+				return this._WebAddress;
+			}
+			set
+			{
+				if ((this._WebAddress != value))
+				{
+					this.OnWebAddressChanging(value);
+					this.SendPropertyChanging();
+					this._WebAddress = value;
+					this.SendPropertyChanged("WebAddress");
+					this.OnWebAddressChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_YouTubeUserId", DbType="VarChar(100)")]
+		public string YouTubeUserId
+		{
+			get
+			{
+				return this._YouTubeUserId;
+			}
+			set
+			{
+				if ((this._YouTubeUserId != value))
+				{
+					this.OnYouTubeUserIdChanging(value);
+					this.SendPropertyChanging();
+					this._YouTubeUserId = value;
+					this.SendPropertyChanged("YouTubeUserId");
+					this.OnYouTubeUserIdChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamHandout", Storage="_TeamHandouts", ThisKey="Id", OtherKey="TeamId")]
+		public EntitySet<TeamHandout> TeamHandouts
+		{
+			get
+			{
+				return this._TeamHandouts;
+			}
+			set
+			{
+				this._TeamHandouts.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamsSeason", Storage="_TeamsSeasons", ThisKey="Id", OtherKey="TeamId")]
+		public EntitySet<TeamsSeason> TeamsSeasons
+		{
+			get
+			{
+				return this._TeamsSeasons;
+			}
+			set
+			{
+				this._TeamsSeasons.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_TeamNew", Storage="_TeamNews", ThisKey="Id", OtherKey="TeamId")]
+		public EntitySet<TeamNew> TeamNews
+		{
+			get
+			{
+				return this._TeamNews;
+			}
+			set
+			{
+				this._TeamNews.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_AccountWelcome", Storage="_AccountWelcomes", ThisKey="Id", OtherKey="TeamId")]
+		public EntitySet<AccountWelcome> AccountWelcomes
+		{
+			get
+			{
+				return this._AccountWelcomes;
+			}
+			set
+			{
+				this._AccountWelcomes.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Team_Sponsor", Storage="_Sponsors", ThisKey="Id", OtherKey="TeamId")]
+		public EntitySet<Sponsor> Sponsors
+		{
+			get
+			{
+				return this._Sponsors;
+			}
+			set
+			{
+				this._Sponsors.Assign(value);
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.AssociationAttribute(Name="Account_Team", Storage="_Account", ThisKey="AccountId", OtherKey="Id", IsForeignKey=true, DeleteOnNull=true, DeleteRule="CASCADE")]
+		public Account Account
+		{
+			get
+			{
+				return this._Account.Entity;
+			}
+			set
+			{
+				Account previousValue = this._Account.Entity;
+				if (((previousValue != value) 
+							|| (this._Account.HasLoadedOrAssignedValue == false)))
+				{
+					this.SendPropertyChanging();
+					if ((previousValue != null))
+					{
+						this._Account.Entity = null;
+						previousValue.Teams.Remove(this);
+					}
+					this._Account.Entity = value;
+					if ((value != null))
+					{
+						value.Teams.Add(this);
+						this._AccountId = value.Id;
+					}
+					else
+					{
+						this._AccountId = default(long);
+					}
+					this.SendPropertyChanged("Account");
+				}
+			}
+		}
+		
+		public event PropertyChangingEventHandler PropertyChanging;
+		
+		public event PropertyChangedEventHandler PropertyChanged;
+		
+		protected virtual void SendPropertyChanging()
+		{
+			if ((this.PropertyChanging != null))
+			{
+				this.PropertyChanging(this, emptyChangingEventArgs);
+			}
+		}
+		
+		protected virtual void SendPropertyChanged(String propertyName)
+		{
+			if ((this.PropertyChanged != null))
+			{
+				this.PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+			}
+		}
+		
+		private void attach_TeamHandouts(TeamHandout entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = this;
+		}
+		
+		private void detach_TeamHandouts(TeamHandout entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = null;
+		}
+		
+		private void attach_TeamsSeasons(TeamsSeason entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = this;
+		}
+		
+		private void detach_TeamsSeasons(TeamsSeason entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = null;
+		}
+		
+		private void attach_TeamNews(TeamNew entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = this;
+		}
+		
+		private void detach_TeamNews(TeamNew entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = null;
+		}
+		
+		private void attach_AccountWelcomes(AccountWelcome entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = this;
+		}
+		
+		private void detach_AccountWelcomes(AccountWelcome entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = null;
+		}
+		
+		private void attach_Sponsors(Sponsor entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = this;
+		}
+		
+		private void detach_Sponsors(Sponsor entity)
+		{
+			this.SendPropertyChanging();
+			entity.Team = null;
 		}
 	}
 }

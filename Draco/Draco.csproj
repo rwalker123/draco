@@ -527,6 +527,7 @@
     <Compile Include="Models\ViewModels\AccountViewModel.cs" />
     <Compile Include="Models\ViewModels\AnnouncementsViewModel.cs" />
     <Compile Include="Models\ViewModels\CreateSeasonViewModel.cs" />
+    <Compile Include="Models\ViewModels\VideoViewModel.cs" />
     <Compile Include="Models\ViewModels\UserPollViewModel.cs" />
     <Compile Include="Models\ViewModels\PlayerSurveyViewModel.cs" />
     <Compile Include="Models\ViewModels\DiscussionsViewModel.cs" />
@@ -589,8 +590,8 @@
     <Content Include="Images\busy.gif" />
     <Content Include="Models\DataClasses.dbml">
       <Generator>MSLinqToSQLGenerator</Generator>
-      <LastGenOutput>DataClasses.designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>DataClasses.designer.cs</LastGenOutput>
     </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="NuGet\readme.txt" />
@@ -661,6 +662,7 @@
     <Content Include="Scripts\typeahead.jquery.min.js" />
     <Content Include="Scripts\userpoll.js" />
     <Content Include="Scripts\userprofiledata.js" />
+    <Content Include="Scripts\videos.js" />
     <Content Include="Scripts\wysiwyg.min.js" />
     <Content Include="Views\Discussions\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
@@ -1113,6 +1115,7 @@
     <Content Include="Views\Shared\UserPollView.cshtml" />
     <Content Include="Views\LeagueFAQ\Index.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Views\Shared\VideosView.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

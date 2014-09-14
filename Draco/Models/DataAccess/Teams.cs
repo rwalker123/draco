@@ -93,6 +93,7 @@ namespace DataAccess
                         AccountId = t.AccountId,
                         DivisionId = ts.DivisionSeasonId,
                         LeagueId = ts.LeagueSeasonId,
+                        YouTubeUserId = t.YouTubeUserId,
                         Name = ts.Name
                     }).SingleOrDefault();
 		}
@@ -171,6 +172,7 @@ namespace DataAccess
                         Name = l.Name + " " + ts.Name,
                         DivisionId = ts.DivisionSeasonId,
                         LeagueId = ts.LeagueSeasonId,
+                        YouTubeUserId = t.YouTubeUserId,
                         AccountId = accountId
                     });
 		}
@@ -209,14 +211,30 @@ namespace DataAccess
 			return true;
 		}
 
-		static public long AddTeam(Team t)
+        static public bool ModifyYouTubeId(Team team)
+        {
+            DB db = DBConnection.GetContext();
+
+            SportsManager.Model.Team dbTeam = (from ts in db.Teams
+                                                            where ts.Id == team.TeamId
+                                                            select ts).Single();
+
+            dbTeam.YouTubeUserId = team.YouTubeUserId;
+
+            db.SubmitChanges();
+
+            return true;
+        }
+
+        static public long AddTeam(Team t)
 		{
             DB db = DBConnection.GetContext();
 
 			SportsManager.Model.Team dbTeam = new SportsManager.Model.Team()
 			{
 				AccountId = t.AccountId,
-				WebAddress = String.Empty
+				WebAddress = String.Empty,
+                YouTubeUserId = String.Empty
 			};
 
 			db.Teams.InsertOnSubmit(dbTeam);

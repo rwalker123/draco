@@ -147,6 +147,31 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        public HttpResponseMessage YouTubeUserId(long accountId, long teamSeasonId, IdData youTubeUserId)
+        {
+            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (account != null)
+            {
+                account.YouTubeUserId = youTubeUserId.Id;
+                if (DataAccess.Teams.ModifyYouTubeId(account))
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(youTubeUserId.Id ?? String.Empty)
+                    };
+                    return response;
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage TwitterScript(long accountId)
         {

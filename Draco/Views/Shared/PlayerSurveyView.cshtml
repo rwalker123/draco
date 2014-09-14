@@ -1,6 +1,6 @@
 ﻿@model SportsManager.ViewModels.PlayerSurveyViewModel
 
-<div class="panel panel-info" id="playerSurveyView">
+<div class="panel panel-default" id="playerSurveyView">
     <div class="panel-heading">
 
         <!-- ko if: playerSurvey -->
@@ -18,7 +18,7 @@
         </div>
         <div data-bind="ifnot: isLoading">
             <h4 data-bind="html: question"></h4>
-            <p class="alert alert-info" style="margin-bottom: 20px" data-bind="html: answer"></p>
+            <p class="alert alert-success" style="margin-bottom: 20px" data-bind="html: answer"></p>
         </div>
         <div>
             View all player surveys @Html.ActionLink("here", "Index", "PlayerSurvey", new { area = "", accountId = Model.AccountId }, new { @class="btn btn-default"})

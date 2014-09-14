@@ -24,8 +24,10 @@ namespace SportsManager.Baseball.ViewModels
             IsTeamMember = DataAccess.Teams.IsTeamMember(id);
 
             if (Team != null)
+            {
                 LeagueName = DataAccess.Leagues.GetLeagueName(Team.LeagueId);
-
+                YouTubeUserId = Team.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
+            }
             ShowHandouts = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowWelcome = IsTeamMember || IsAdmin || IsTeamAdmin;
             ShowAnnouncements = IsTeamMember || IsAdmin || IsTeamAdmin;
@@ -38,6 +40,10 @@ namespace SportsManager.Baseball.ViewModels
             var showPlayerSurvey = false;
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
             ShowPlayerInterview = showPlayerSurvey && DataAccess.ProfileAdmin.GetTeamPlayersWithProfiles(accountId, id).Any();
+
+            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin || IsTeamAdmin;
+            VideosEnabled = true;
+
         }
 
         public Team Team { get; private set; }
@@ -52,6 +58,24 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowRoster { get; private set; }
         public bool ShowScoreboard { get; private set; }
         public bool ShowPlayerInterview { get; private set; }
+
+        public bool VideosEnabled
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowVideos
+        {
+            get;
+            private set;
+        }
+
+        public string YouTubeUserId
+        {
+            get;
+            private set;
+        }
 
         public bool IsTeamPhotoAdmin
         {

@@ -155,11 +155,11 @@
                 </div>
             }
 
-            @if (Model.ShowPlayerInterview)
+            @if (Model.VideosEnabled && Model.ShowVideos)
             {
                 <div class="row">
-                    <div class="col-sm-12">
-                        @{Html.RenderPartial("PlayerSurveyView", new SportsManager.ViewModels.PlayerSurveyViewModel(Model.Controller, Model.AccountId));}
+                    <div class="col-md-12">
+                        @{Html.RenderPartial("VideosView", new SportsManager.ViewModels.VideoViewModel(Model.Controller, Model.AccountId));}
                     </div>
                 </div>
             }
@@ -173,6 +173,15 @@
                 </div>
             }
 
+            @if (Model.ShowPlayerInterview)
+            {
+                <div class="row">
+                    <div class="col-sm-12">
+                        @{Html.RenderPartial("PlayerSurveyView", new SportsManager.ViewModels.PlayerSurveyViewModel(Model.Controller, Model.AccountId));}
+                    </div>
+                </div>
+            }
+
         @if (Model.ShowAnnouncements)
         { 
             <div class="row">
@@ -181,7 +190,8 @@
                 </div>
             </div>
         }
-        
+
+
         @if (Model.ShowPhotoGallery)
         {
             <div class="row">
@@ -209,44 +219,6 @@
             </div>
         }
         
-    @if (Model.VideosEnabled && Model.ShowVideos)
-    {
-        <div class="row">
-            <div id="videos" data-bind="visible: videosVisible">
-                <div class="col-md-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <h3 class="panel-title" style="float: left;">Videos</h3>
-                            @if (Model.IsAdmin)
-                            {
-                                <h3 class="panel-title" style="float: right;"><a href="">[add]</a></h3>
-                            }
-
-                            <div style="clear:both"></div>
-                        </div>
-
-                        <div class="panel-body">
-                            @if (Model.IsAdmin)
-                            {
-                                <div data-bind="visible: viewMode">
-                                    <span style="font-size: larger">YouTube User Id: <span style="font-size: larger;font-weight: bold" data-bind="text: viewUserId"></span></span>
-                                    <button type="button" class="btn btn-link" style="padding:0px" data-bind="click: editYouTube">edit</button>
-                                </div>
-                                <div data-bind="visible: !viewMode()">
-                                    YouTube User Id: <input type="text" data-bind="value: userId" />
-                                    <button type="button" class="btn btn-primary" style="padding:0px" data-bind="click: saveUserId">save</button> <button type="button" class="btn btn-warning" style="padding:0px" data-bind="click: resetUserId">cancel</button>
-                                </div>
-                            }
-                            <div style="float:left" id="player"></div>
-                            <div style="float:left" id="videos2"></div>
-                            <div style="clear:both"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
-
 
     </div>
 
@@ -404,6 +376,12 @@ else
     <script type="text/javascript" src="~/Scripts/sponsors.js"></script>
 }
 
+@if (Model.VideosEnabled && Model.ShowVideos)
+{
+    <script type="text/javascript" src="~/Scripts/videos.js"></script>
+}
+
+
 <!-- main javascript -->
 <script type="text/javascript">
 
@@ -422,29 +400,29 @@ else
         @if (Model.ShowPlayerInterview)
         {
             <text>
-        InitPlayerSurveySpotlightViewModel(@Model.AccountId);
-        </text>
+            InitPlayerSurveySpotlightViewModel(@Model.AccountId);
+            </text>
         }
 
         @if (Model.ShowPhotoGallery)
         {
             <text>
-        InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
         }
 
         @if (Model.ShowWelcomeMessages)
         {
             <text>
-        initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
         }
 
         @if (Model.ShowAnnouncements)
         {
             <text>
             initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            </text>
         }
 
         @if (Model.ShowUserPoll)
@@ -458,169 +436,51 @@ else
         @if (Model.ShowScoreboard)
         {
             <text>
-        initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
         }
 
         @if (Model.ShowLeagueLeaders)
         {
             <text>
-        initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
         }
 
         @if (Model.ShowSponsors)
         {
             <text>
-        initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        </text>
+            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
         }
 
 
         @if (Model.ShowHandouts)
         {
             <text>
-        var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        ko.applyBindings(handoutData, document.getElementById("handouts"));
-        </text>
+            var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            ko.applyBindings(handoutData, document.getElementById("handouts"));
+            </text>
         }
 
         @if (Model.ShowWorkouts)
         {
-        <text>
-        var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-        ko.applyBindings(workoutsData, document.getElementById("workouts"));
-        </text>
+            <text>
+            var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            ko.applyBindings(workoutsData, document.getElementById("workouts"));
+            </text>
+        }
+
+        @if (Model.VideosEnabled && Model.ShowVideos)
+        {
+            <text>
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId');
+            </text>
         }
 
         $("#_yearEst").selectpicker();
     });
 </script>
-
-
-    @if (Model.VideosEnabled && Model.ShowVideos)
-    {
-        <!-- video playing -->
-        <script type="text/javascript">
-
-            $(function() {
-                // 2. This code loads the IFrame Player API code asynchronously.
-                var tag = document.createElement('script');
-
-                // This is a protocol-relative URL as described here:
-                //     http://paulirish.com/2010/the-protocol-relative-url/
-                // If you're testing a local page accessed via a file:/// URL, please set tag.src to
-                //     "https://www.youtube.com/iframe_api" instead.
-                tag.src = "//www.youtube.com/iframe_api";
-                var firstScriptTag = document.getElementsByTagName('script')[0];
-                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-            });
-
-
-            // 3. This function creates an <iframe> (and YouTube player)
-            //    after the API code downloads.
-            var player;
-            function loadVideo(playerUrl, autoPlay) {
-                player.cueVideoByUrl(playerUrl);
-                if (autoPlay)
-                    player.playVideo();
-            }
-
-            function onYouTubeIframeAPIReady() {
-
-                @if (Model.IsAdmin) {
-            <text>
-                $(function () {
-                    var ytViewModel = new youTubeViewModel(@Model.AccountId, '@Model.YouTubeUserId');
-                    ko.applyBindings(ytViewModel, document.getElementById("videos"));
-                });
-                </text>
-        }
-
-
-                player = new YT.Player('player', {
-                    width: '425',
-                    @if(Model.IsAdmin)
-            {
-                <text>
-                    height: '250',
-                    </text>
-            }
-            else
-            {
-                <text>
-                    height: '300',
-                    </text>
-            }
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    }
-                });
-
-                loadVideos('@Model.YouTubeUserId');
-            }
-
-            function loadVideos(youTubeId) {
-
-                $.ajax({
-                    dataType: "json",
-                    url: 'http://gdata.youtube.com/feeds/users/' + youTubeId + '/uploads?alt=json-in-script&max-results=50&callback=?',
-                    success: function (data) {
-
-                        var feed = data.feed;
-                        var entries = feed.entry || [];
-
-                        @if (!Model.IsAdmin) {
-                    <text>
-                        if (entries.length == 0) {
-                            $('#videos').hide();
-                            return;
-                        }
-                        </text>
-                }
-
-                        var videoHeight = '';
-                        @if (Model.IsAdmin) {
-                    // set the height of the video list if admin.
-                    <text>
-                        videoHeight = " style='height: 240px'";
-                        </text>
-                }
-
-                        $('#videos2').html('');
-                        var html = ['<ul class="videos"' + videoHeight + '>'];
-                        for (var i = 0; i < entries.length; i++) {
-                            var entry = entries[i];
-                            var title = entry.title.$t.substr(0, 20);
-                            var thumbnailUrl = entries[i].media$group.media$thumbnail[0].url;
-                            var playerUrl = entries[i].media$group.media$content[0].url; // entries[i].id.$t.match('[^/]*$');
-                            html.push('<li onclick="loadVideo(\'', playerUrl, '\', true)">',
-                                      '<span class="titlec">', title, '...</span><br /><img src="',
-                                      thumbnailUrl, '" style="width:130px;height:97px;cursor:pointer" />', '</span></li>');
-                        }
-                        html.push('</ul><br style="clear: left;"/>');
-                        $('#videos2').html(html.join(''));
-                    }
-                });
-            }
-
-            // 4. The API will call this function when the video player is ready.
-            function onPlayerReady(event) {
-            }
-
-            // 5. The API calls this function when the player's state changes.
-            //    The function indicates that when playing a video (state=1),
-            //    the player should play for six seconds and then stop.
-            function onPlayerStateChange(event) {
-            }
-
-            function stopVideo() {
-            }
-
-        </script>
-    }
-
 
     <!-- disqus
 

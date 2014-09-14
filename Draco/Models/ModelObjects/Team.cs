@@ -64,6 +64,12 @@ namespace ModelObjects
 			set;
 		}
 
+        public string YouTubeUserId
+        {
+            get;
+            set;
+        }
+
 		private string TeamDir
 		{
 			get
