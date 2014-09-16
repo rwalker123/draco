@@ -121,5 +121,14 @@ var GameResultsViewModel = function (accountId, data) {
         var js = ko.mapping.toJS(self);
         return js;
     }
+
+    self.gameStatusOptions = ko.observableArray([
+        { id: 0, value: 'Incomplete' },
+        { id: 1, value: 'Final' },
+        { id: 2, value: 'Rainout' },
+        { id: 3, value: 'Postponed' },
+        { id: 4, value: 'Forfeit' },
+        { id: 5, value: 'Did not report' }
+    ]);
 }
 
