@@ -10,13 +10,7 @@
         <div class="form-group">
             <label class="col-md-3 control-label" for="newGameStatus">Game Status:</label>
             <div class="col-md-9">
-                <select id="newGameStatus" data-container="body" data-bind="selectPicker: GameStatus">
-                    <option value="0">Incomplete</option>
-                    <option value="1">Final</option>
-                    <option value="2">Rainout</option>
-                    <option value="3">Postponed</option>
-                    <option value="4">Forfeit</option>
-                    <option value="5">Did not report</option>
+                <select id="newGameStatus" data-bind="selectPicker: GameStatus, selectPickerOptions: { optionsArray: gameStatusOptions }, optionsValue: 'id', optionsText: 'value'">
                 </select>
             </div>
         </div>
