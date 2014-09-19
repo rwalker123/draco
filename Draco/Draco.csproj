@@ -588,6 +588,10 @@
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Images\busy.gif" />
+    <Content Include="Images\youtube\youtube1.PNG" />
+    <Content Include="Images\youtube\youtube2.png" />
+    <Content Include="Images\youtube\youtube3.PNG" />
+    <Content Include="Images\youtube\youtube4.PNG" />
     <Content Include="Models\DataClasses.dbml">
       <Generator>MSLinqToSQLGenerator</Generator>
       <SubType>Designer</SubType>
