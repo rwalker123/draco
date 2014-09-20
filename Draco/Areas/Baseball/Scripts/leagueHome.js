@@ -201,7 +201,7 @@ var FacebookViewModel = function (accountId, fanPage, isAdmin) {
     self.editFanPage = ko.observable(fanPage);
 
     self.fanPageUrl = ko.computed(function () {
-        return 'http://www.facebook.com/' + self.fanPage();
+        return 'https://www.facebook.com/' + self.fanPage();
     }, self);
 
     self.isVisible = ko.computed(function () {
@@ -209,11 +209,11 @@ var FacebookViewModel = function (accountId, fanPage, isAdmin) {
     }, self);
 
     self.saveFanPage = function () {
-        self.fanPage(self.editFanPage);
+        self.fanPage(self.editFanPage());
     }
 
     self.cancelSaveFanPage = function () {
-        self.editFanPage(self.fanPage);
+        self.editFanPage(self.fanPage());
     }
 }
 
