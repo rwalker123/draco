@@ -23,6 +23,10 @@ namespace SportsManager.Baseball.ViewModels
             ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
             ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
             ShowFAQMessage = DataAccess.LeagueFAQ.GetFAQ(accountId).Any();
+            
+            var showFacebookLike = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
+            ShowFacebookLike = showFacebookLike;
 
             var showPlayerSurvey = false;
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
@@ -54,6 +58,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowAnnouncements
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowFacebookLike
         {
             get;
             private set;

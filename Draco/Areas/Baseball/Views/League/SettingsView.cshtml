@@ -35,14 +35,13 @@
         <div class="col-md-3">
             <div class="panel panel-primary">
                 <div class="panel-heading">
-                    <h3 class="panel-title">Contact Information</h3>
+                    <h3 class="panel-title">Account Features</h3>
                 </div>
                 <div class="panel-body">
-                    <div><label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label></div>
-                    <div><label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerClassified" />Show Player Classified (team needs player/player needs team)</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerSurvey" />Show Player Survey</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showFacebookLike" />Show Facebook Like</label></div>
                 </div>
             </div>
         </div>
@@ -66,6 +65,18 @@
         <div class="col-md-3">
             <div class="panel panel-primary">
                 <div class="panel-heading">
+                    <h3 class="panel-title">Contact Information</h3>
+                </div>
+                <div class="panel-body">
+                    <div><label><input type="checkbox" data-bind="checked: myInformation" />Show contact information on "My Information" screen </label></div>
+                    <div><label><input type="checkbox" data-bind="checked: userEditContact" />Allow users to edit contact information</label></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
                     <h3 class="panel-title">Team Pages</h3>
                 </div>
                 <div class="panel-body">
@@ -73,9 +84,7 @@
                     <div><label><input type="checkbox" data-bind="checked: showUserDataOnRoster" />Show user data on Roster</label></div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-3">
             <div class="panel panel-primary">
                 <div class="panel-heading">
                     <h3 class="panel-title">Message Board</h3>
@@ -116,6 +125,10 @@
             self.showPlayerSurvey = ko.observable();
             self.showPlayerSurvey.subscribe(function (newValue) {
                 self.settingChanged('ShowPlayerSurvey', newValue);
+            });
+            self.showFacebookLike = ko.observable();
+            self.showFacebookLike.subscribe(function (newValue) {
+                self.settingChanged('ShowFacebookLike', newValue);
             });
             self.playerWaiver = ko.observable();
             self.playerWaiver.subscribe(function (newValue) {
@@ -179,6 +192,9 @@
                 }
                 else if (settingKey == "ShowPlayerSurvey") {
                     self.showPlayerSurvey(value);
+                }
+                else if (settingKey == "ShowFacebookLike") {
+                    self.showFacebookLike(value);
                 }
                 else if (settingKey == "TrackWaiver") {
                     self.playerWaiver(value);

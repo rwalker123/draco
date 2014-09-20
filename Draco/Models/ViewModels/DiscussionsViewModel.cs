@@ -20,6 +20,10 @@ namespace SportsManager.ViewModels
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
             ShowPlayerClassified = showPlayerClassified;
 
+            var showFacebookLike = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
+            ShowFacebookLike = showFacebookLike;
+
             if (showPlayerClassified)
             {
                 // number of players requesting teams.
@@ -32,6 +36,7 @@ namespace SportsManager.ViewModels
         public bool DisplayPosterPhoto { get; private set; }
         public bool ShowMemberBusiness { get; private set; }
         public bool ShowPlayerClassified { get; private set; }
+        public bool ShowFacebookLike { get; private set; }
 
         public int NumberOfPlayerRequests { get; private set; }
         public int NumberOfTeamRequests { get; private set; }
