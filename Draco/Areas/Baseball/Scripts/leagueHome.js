@@ -1,19 +1,6 @@
-﻿function InitViewModels(accountId, accountName, firstYear, twitterAccountName, facebookFanPage, isAdmin ) {
+﻿function InitViewModels(accountId, accountName, firstYear, twitterAccountName) {
     var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear, twitterAccountName);
     ko.applyBindings(editAccountVM, document.getElementById("accountName"));
-
-    var twitterFeed = document.getElementById("twitterFeed");
-    if (twitterFeed) {
-        var twitterVM = new TwitterViewModel(accountId, isAdmin);
-        ko.applyBindings(twitterVM, twitterFeed);
-        twitterVM.loadTwitterScript();
-    }
-
-    var facebookFeed = document.getElementById("facebookFeed");
-    if (facebookFeed) {
-        var facebookVM = new FacebookViewModel(accountId, facebookFanPage, isAdmin);
-        ko.applyBindings(facebookVM, facebookFeed);
-    }
 }
 
 var AccountViewModel = function (data) {
@@ -134,86 +121,5 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
     }).prop('disabled', !$.support.fileInput)
     .parent().addClass($.support.fileInput ? undefined : 'disabled');
 
-}
-
-// twitter view model
-var TwitterViewModel = function (accountId, isAdmin) {
-    var self = this;
-    
-    self.accountId = accountId;
-    self.isAdmin = isAdmin;
-
-    // twitter script displayed in input field.
-    self.twitterScript = ko.observable();
-
-    // twitter script in div element that renders the twitter page.
-    self.htmlTwitterScript = ko.observable();
-
-    self.displayTwitterFeed = ko.computed(function () {
-        return (self.isAdmin || self.htmlTwitterScript())
-    }, self);
-
-    self.loadTwitterScript = function () {
-
-        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/TwitterScript';
-        $.ajax({
-            type: "GET",
-            dataType: "json",
-            url: url,
-            success: function (data) {
-                self.htmlTwitterScript(data);
-                setTimeout(function () {
-                    twttr.widgets.load();
-                }, 1000);
-            }
-        });
-    }
-
-    self.saveTwitterScript = function () {
-        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/SaveTwitterScript';
-
-        $.ajax({
-            type: "PUT",
-            dataType: "json",
-            url: url,
-            data: {
-                Script: self.twitterScript()
-            },
-            success: function (data) {
-                self.htmlTwitterScript(self.twitterScript());
-                twttr.widgets.load();
-                self.twitterScript('');
-            }
-        });
-    }
-}
-
-// facebook fan page
-var FacebookViewModel = function (accountId, fanPage, isAdmin) {
-    var self = this;
-
-    self.accountId = accountId;
-    self.isAdmin = isAdmin;
-
-    self.isEditMode = ko.observable(false);
-
-    self.fanPage = ko.observable(fanPage);
-    self.editFanPage = ko.observable(fanPage);
-
-    self.fanPageUrl = ko.computed(function () {
-        return 'https://www.facebook.com/' + self.fanPage();
-    }, self);
-
-    self.isVisible = ko.computed(function () {
-        return (self.fanPage() || self.isAdmin);
-    }, self);
-
-    self.saveFanPage = function () {
-        self.fanPage(self.editFanPage());
-    }
-
-    self.cancelSaveFanPage = function () {
-        self.editFanPage(self.fanPage());
-    }
 }
 

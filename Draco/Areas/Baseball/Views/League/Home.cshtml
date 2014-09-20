@@ -225,62 +225,14 @@
         @if (Model.TwitterEnabled)
         {
             <div class="col-md-12" id="twitterFeed" data-bind="if: displayTwitterFeed">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Twitter</h3>
-                    </div>
-                    <div class="panel-body">
-
-                        @if (Model.IsAdmin)
-                        {
-                            <form class="form-horizontal" role="form">
-                                <div class="form-group">
-                                    <label class="control-label col-sm-3">Twitter Widget:</label>
-                                    <div class="col-sm-9">
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" data-bind="value: twitterScript" placeholder="paste twitter widget code here" />
-                                            <div class="input-group-btn">
-                                                <button type="button" class="btn btn-primary" data-bind="click: saveTwitterScript">save</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <span>Click <a href='https://twitter.com/settings/widgets' target="twitter">here</a> to visit Twitter to create a widget.</span><br /><br />
-                            </form>
-                        }
-
-                        <div data-bind="html: htmlTwitterScript"></div>
-                    </div>
-                </div>
+                @{Html.RenderPartial("TwitterView", new SportsManager.ViewModels.AccountViewModel(Model.Controller, Model.AccountId));}
             </div>
         }
 
         @if (Model.FacebookEnabled)
         {
             <div class="col-md-12" id="facebookFeed" data-bind="if: isVisible">
-                <div class="panel panel-primary">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Facebook</h3>
-                    </div>
-                    <div class="panel-body">
-                        @if (Model.IsAdmin)
-                        {
-                            <form class="form-horizontal" role="form">
-                                <label class="control-label col-sm-3">Facebook Fan Page:</label>
-                                <div class="col-sm-9">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" data-bind="value: editFanPage" placeholder="enter Facebook Fan Page" />
-                                        <div class="input-group-btn">
-                                            <button type="button" class="btn btn-primary" data-bind="click: saveFanPage">save</button>
-                                            <button type="button" class="btn btn-danger" data-bind="click: cancelSaveFanPage">reset</button><br />
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
-                        }
-                        <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
-                    </div>
-                </div>
+                @{Html.RenderPartial("FacebookView", new SportsManager.ViewModels.AccountViewModel(Model.Controller, Model.AccountId));}
             </div>
         }
 
@@ -408,6 +360,15 @@ else
     <script type="text/javascript" src="~/Scripts/videos.js"></script>
 }
 
+@if (Model.TwitterEnabled)
+{
+    <script type="text/javascript" src="~/Scripts/twitter.js"></script>
+}
+
+@if (Model.FacebookEnabled)
+{
+    <script type="text/javascript" src="~/Scripts/facebook.js"></script>
+}
 
 <!-- main javascript -->
 <script type="text/javascript">
@@ -422,80 +383,80 @@ else
 
         initKOHelpers();
 
-        InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@ViewData["FacebookFanPage"]', @Model.IsAdmin.ToString().ToLower() );
+        InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]');
 
         @if (Model.ShowPlayerInterview)
         {
             <text>
-            InitPlayerSurveySpotlightViewModel(@Model.AccountId);
-            </text>
+        InitPlayerSurveySpotlightViewModel(@Model.AccountId);
+        </text>
         }
 
         @if (Model.ShowPhotoGallery)
         {
             <text>
-            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowWelcomeMessages)
         {
             <text>
-            initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initWelcomesViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowAnnouncements)
         {
             <text>
-            initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initAnnouncementsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowUserPoll)
         {
             <text>
-            initUserPollViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
-            </text>
+        initUserPollViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.ContactId);
+        </text>
         }
 
 
         @if (Model.ShowScoreboard)
         {
             <text>
-            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowLeagueLeaders)
         {
             <text>
-            initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
         @if (Model.ShowSponsors)
         {
             <text>
-            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            </text>
+        initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        </text>
         }
 
 
         @if (Model.ShowHandouts)
         {
             <text>
-            var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            ko.applyBindings(handoutData, document.getElementById("handouts"));
-            </text>
+        var handoutData = new HandoutViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        ko.applyBindings(handoutData, document.getElementById("handouts"));
+        </text>
         }
 
         @if (Model.ShowWorkouts)
         {
             <text>
-            var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
-            ko.applyBindings(workoutsData, document.getElementById("workouts"));
-            </text>
+        var workoutsData = new WorkoutsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+        ko.applyBindings(workoutsData, document.getElementById("workouts"));
+        </text>
         }
 
         @if (Model.VideosEnabled && Model.ShowVideos)
@@ -504,6 +465,21 @@ else
             initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId');
             </text>
         }
+
+        @if (Model.TwitterEnabled)
+        {
+            <text>
+            initTwitterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+
+        @if (Model.FacebookEnabled)
+        {
+            <text>
+            initFacebookViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            </text>
+        }
+
 
         $("#_yearEst").selectpicker();
     });

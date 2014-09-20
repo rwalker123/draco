@@ -1,0 +1,25 @@
+﻿@model SportsManager.ViewModels.AccountViewModel
+
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title">Facebook</h3>
+    </div>
+    <div class="panel-body">
+        @if (Model.IsAdmin)
+        {
+            <form class="form-horizontal" role="form">
+                <label class="control-label col-sm-3">Facebook Fan Page:</label>
+                <div class="col-sm-9">
+                    <div class="input-group">
+                        <input type="text" class="form-control" data-bind="value: editFanPage" placeholder="enter Facebook Fan Page" />
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-primary" data-bind="click: saveFanPage">save</button>
+                            <button type="button" class="btn btn-danger" data-bind="click: cancelSaveFanPage">reset</button><br />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        }
+        <div class="fb-like-box" data-bind="attr: { 'data-href': fanPageUrl }" data-width="500" data-show-faces="true" data-stream="true" data-header="true"></div>
+    </div>
+</div>

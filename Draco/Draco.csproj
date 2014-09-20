@@ -620,6 +620,7 @@
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\TeamAddressListTemplate.xlsx" />
+    <Content Include="Scripts\facebook.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\halloffame.js" />
     <Content Include="Areas\Baseball\Views\PlayerClassified\Index.cshtml" />
@@ -660,6 +661,7 @@
     <Content Include="Scripts\tinymce\plugins\visualblocks\img\dl.gif" />
     <Content Include="Scripts\tinymce\skins\lightgray\Content.inline.min.css" />
     <Content Include="Scripts\tinymce\skins\lightgray\Content.min.css" />
+    <Content Include="Scripts\twitter.js" />
     <Content Include="Scripts\typeahead.bundle.js" />
     <Content Include="Scripts\typeahead.bundle.min.js" />
     <Content Include="Scripts\typeahead.jquery.js" />
@@ -1120,6 +1122,8 @@
     <Content Include="Views\LeagueFAQ\Index.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
     <Content Include="Views\Shared\VideosView.cshtml" />
+    <Content Include="Views\Shared\TwitterView.cshtml" />
+    <Content Include="Views\Shared\FacebookView.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
