@@ -160,5 +160,11 @@ var youTubeViewModel = function (accountId, isAdmin, id, teamId) {
         self.userId(self.savedId);
         self.viewMode(true);
     }
+
+    self.showHelp = ko.observable(false);
+
+    self.toggleShowHelp = function () {
+        self.showHelp(!self.showHelp());
+    }
 }
 
