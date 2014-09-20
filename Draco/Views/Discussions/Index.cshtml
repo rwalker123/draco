@@ -39,10 +39,10 @@
         </div>
     }
 
-    @if (ViewData["AccountUrl"] != null)
+    @if (Model.ShowFacebookLike && ViewData["AccountUrl"] != null)
     {
         <div class="row">
-            <div class="fb-like" data-href='@ViewData["AccountUrl"]' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
+            <div class="fb-like" data-href='detroitmsbl' data-send="false" data-layout="button_count" data-width="100" data-show-faces="true" data-font="segoe ui"></div>
         </div>
     }
 
