@@ -216,7 +216,9 @@ namespace DataAccess
                                                          FirstName = c.FirstName,
                                                          MiddleName = c.MiddleName,
                                                          LastName = c.LastName,
-                                                         PhotoURL = Contact.GetPhotoURL(c.Id)
+                                                         PhotoURL = Contact.GetPhotoURL(c.Id),
+                                                         FirstYear = c.FirstYear.GetValueOrDefault(),
+                                                         Zip = c.Zip
                                                      });
         }
 

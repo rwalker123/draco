@@ -20,6 +20,8 @@ namespace ModelObjects
         public string LastName { get; set; }
         public string MiddleName { get; set; }
         public string PhotoURL { get; set; }
+        public int FirstYear { get; set; }
+        public string Zip { get; set; }
     }
 
     public class ContactNameRole : ContactName
