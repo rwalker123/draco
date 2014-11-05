@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using BasicAuthentication.Filters;
+using Microsoft.Owin.Security.OAuth;
+using System.Linq;
 using System.Web.Http;
 using System.Web.Http.OData.Builder;
 using System.Web.Http.OData.Extensions;
@@ -10,6 +12,12 @@ namespace SportsManager
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
+            config.Filters.Add(new IdentityBasicAuthenticationAttribute());
+            
+            // Web API configuration and services
+            // Configure Web API to use only bearer token authentication.
+            //config.SuppressDefaultHostAuthentication();
+            //config.Filters.Add(new HostAuthenticationFilter(OAuthDefaults.AuthenticationType));
 
             // Web API routes
             config.MapHttpAttributeRoutes();

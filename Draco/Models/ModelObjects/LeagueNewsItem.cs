@@ -24,16 +24,6 @@ namespace ModelObjects
 			SpecialAnnounce = specialAnnounce;
 		}
 
-        public void CopyTo(SportsManager.Model.LeagueNew copy)
-        {
-            copy.Id = Id;
-            copy.AccountId = AccountId;
-            copy.Date = Date;
-            copy.Title = Title;
-            copy.Text = Text;
-            copy.SpecialAnnounce = SpecialAnnounce;
-        }
-
 		public long Id { get; set; }
 		public long AccountId { get; set; }
 		public DateTime Date { get; set; }
