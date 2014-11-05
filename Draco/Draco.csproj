@@ -80,13 +80,13 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\JSNLog.2.7.5.0\lib\net40\JSNLog.dll</HintPath>
     </Reference>
-    <Reference Include="LinqToTwitter.AspNet, Version=3.0.2.30107, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="LinqToTwitter.AspNet, Version=3.1.0.13734, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\linqtotwitter.3.0.4\lib\net45\LinqToTwitter.AspNet.dll</HintPath>
+      <HintPath>..\packages\linqtotwitter.3.1.0\lib\net45\LinqToTwitter.AspNet.dll</HintPath>
     </Reference>
-    <Reference Include="LinqToTwitterPcl, Version=3.0.4.30106, Culture=neutral, PublicKeyToken=957107be965c25d9, processorArchitecture=MSIL">
+    <Reference Include="LinqToTwitterPcl, Version=3.1.0.13733, Culture=neutral, PublicKeyToken=957107be965c25d9, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\linqtotwitter.3.0.4\lib\net45\LinqToTwitterPcl.dll</HintPath>
+      <HintPath>..\packages\linqtotwitter.3.1.0\lib\net45\LinqToTwitterPcl.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -101,13 +101,13 @@
       <HintPath>..\packages\Microsoft.AspNet.Identity.Owin.2.1.0\lib\net45\Microsoft.AspNet.Identity.Owin.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Data.Edm, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Data.Edm.5.6.2\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Data.Edm.5.6.3\lib\net40\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Data.OData, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Data.OData.5.6.2\lib\net40\Microsoft.Data.OData.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Data.OData.5.6.3\lib\net40\Microsoft.Data.OData.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Owin, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -147,7 +147,7 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.5\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -168,9 +168,21 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
-    <Reference Include="System.Spatial, Version=5.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Spatial, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\System.Spatial.5.6.2\lib\net40\System.Spatial.dll</HintPath>
+      <HintPath>..\packages\System.Spatial.5.6.3\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web.DynamicData" />
@@ -187,9 +199,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.2\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http.OData, Version=5.3.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Http.OData, Version=5.3.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.3.0\lib\net45\System.Web.Http.OData.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.3.1\lib\net45\System.Web.Http.OData.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Http.Owin, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -669,7 +681,6 @@
     <Content Include="Scripts\tinymce\plugins\colorpicker\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
     <Content Include="Scripts\tinymce\plugins\example\dialog.html" />
-    <Content Include="Scripts\tinymce\plugins\table\classes\Dialogs.js" />
     <Content Include="Scripts\tinymce\plugins\textpattern\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\textpattern\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\visualblocks\img\dl.gif" />
@@ -843,7 +854,6 @@
     <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
     <Content Include="Scripts\knockout.mapping-latest.debug.js" />
     <Content Include="Scripts\knockout.mapping-latest.js" />
-    <Content Include="Scripts\knockout.validation.debug.js" />
     <Content Include="Scripts\knockout.validation.js" />
     <Content Include="Scripts\knockout.validation.min.js" />
     <Content Include="Scripts\knockout.viewmodel.2.0.3.js" />
@@ -993,12 +1003,6 @@
     <Content Include="Scripts\tinymce\plugins\noneditable\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\classes\Clipboard.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\classes\Plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\classes\Quirks.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\classes\Utils.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\classes\WordFilter.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\plugin.dev.js" />
     <Content Include="Scripts\tinymce\plugins\paste\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\paste\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\preview\plugin.js" />
@@ -1009,18 +1013,10 @@
     <Content Include="Scripts\tinymce\plugins\save\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\spellchecker\classes\DomTextMatcher.js" />
-    <Content Include="Scripts\tinymce\plugins\spellchecker\classes\Plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.dev.js" />
     <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\table\classes\CellSelection.js" />
-    <Content Include="Scripts\tinymce\plugins\table\classes\Plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\table\classes\Quirks.js" />
-    <Content Include="Scripts\tinymce\plugins\table\classes\TableGrid.js" />
-    <Content Include="Scripts\tinymce\plugins\table\plugin.dev.js" />
     <Content Include="Scripts\tinymce\plugins\table\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\table\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\template\plugin.js" />
