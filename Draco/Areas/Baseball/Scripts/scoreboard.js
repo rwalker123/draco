@@ -241,6 +241,8 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
             });
         });
 
+        $("#newGameStatus").selectpicker("refresh");
+
         $("#gameResultsModal").modal("show");
     };
 

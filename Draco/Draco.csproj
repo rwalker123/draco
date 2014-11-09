@@ -47,11 +47,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Common.Logging">
-      <HintPath>..\packages\Common.Logging.2.1.2\lib\net40\Common.Logging.dll</HintPath>
+    <Reference Include="Common.Logging, Version=2.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Common.Logging.2.3.1\lib\net40\Common.Logging.dll</HintPath>
     </Reference>
-    <Reference Include="Common.Logging.Elmah">
-      <HintPath>..\packages\Common.Logging.Elmah.1.2.1\lib\net40\Common.Logging.Elmah.dll</HintPath>
+    <Reference Include="Common.Logging.Elmah.v2">
+      <HintPath>..\packages\Common.Logging.Elmah.v2.1.0.0\lib\net45\Common.Logging.Elmah.v2.dll</HintPath>
     </Reference>
     <Reference Include="DocumentFormat.OpenXml, Version=2.5.5631.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
@@ -76,9 +77,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Bin\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
-    <Reference Include="JSNLog, Version=2.7.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="JSNLog, Version=2.7.6.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\JSNLog.2.7.5.0\lib\net40\JSNLog.dll</HintPath>
+      <HintPath>..\packages\JSNLog.2.7.6.0\lib\net40\JSNLog.dll</HintPath>
     </Reference>
     <Reference Include="LinqToTwitter.AspNet, Version=3.1.0.13734, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -647,6 +648,36 @@
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\TeamAddressListTemplate.xlsx" />
     <Content Include="Scripts\facebook.js" />
+    <Content Include="Scripts\i18n\defaults-cs_CZ.js" />
+    <Content Include="Scripts\i18n\defaults-cs_CZ.min.js" />
+    <Content Include="Scripts\i18n\defaults-de_DE.js" />
+    <Content Include="Scripts\i18n\defaults-de_DE.min.js" />
+    <Content Include="Scripts\i18n\defaults-en_US.js" />
+    <Content Include="Scripts\i18n\defaults-en_US.min.js" />
+    <Content Include="Scripts\i18n\defaults-es_CL.js" />
+    <Content Include="Scripts\i18n\defaults-es_CL.min.js" />
+    <Content Include="Scripts\i18n\defaults-eu.js" />
+    <Content Include="Scripts\i18n\defaults-eu.min.js" />
+    <Content Include="Scripts\i18n\defaults-fr_FR.js" />
+    <Content Include="Scripts\i18n\defaults-fr_FR.min.js" />
+    <Content Include="Scripts\i18n\defaults-it_IT.js" />
+    <Content Include="Scripts\i18n\defaults-it_IT.min.js" />
+    <Content Include="Scripts\i18n\defaults-nl_NL.js" />
+    <Content Include="Scripts\i18n\defaults-nl_NL.min.js" />
+    <Content Include="Scripts\i18n\defaults-pl_PL.js" />
+    <Content Include="Scripts\i18n\defaults-pl_PL.min.js" />
+    <Content Include="Scripts\i18n\defaults-pt_BR.js" />
+    <Content Include="Scripts\i18n\defaults-pt_BR.min.js" />
+    <Content Include="Scripts\i18n\defaults-ro_RO.js" />
+    <Content Include="Scripts\i18n\defaults-ro_RO.min.js" />
+    <Content Include="Scripts\i18n\defaults-ru_RU.js" />
+    <Content Include="Scripts\i18n\defaults-ru_RU.min.js" />
+    <Content Include="Scripts\i18n\defaults-ua_UA.js" />
+    <Content Include="Scripts\i18n\defaults-ua_UA.min.js" />
+    <Content Include="Scripts\i18n\defaults-zh_CN.js" />
+    <Content Include="Scripts\i18n\defaults-zh_CN.min.js" />
+    <Content Include="Scripts\i18n\defaults-zh_TW.js" />
+    <Content Include="Scripts\i18n\defaults-zh_TW.min.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\halloffame.js" />
     <Content Include="Areas\Baseball\Views\PlayerClassified\Index.cshtml" />

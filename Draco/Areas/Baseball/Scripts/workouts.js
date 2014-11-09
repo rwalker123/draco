@@ -465,6 +465,7 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
         tinymce.get('workoutEditor').setContent(self.currentEditWorkout().Comments());
         self.editWorkoutMode(true);
         self.viewMode(false);
+        $("#WorkoutField").selectpicker("refresh");
     }
 
     self.cancelEditMode = function () {

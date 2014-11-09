@@ -421,6 +421,8 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         self.viewMode(false);
         self.addGameMode(true);
         self.isEditMode(true);
+        $("#newGameAwayTeam").selectpicker("refresh");
+        $("#newGameHomeTeam").selectpicker("refresh");
     }
 
     self.deleteGame = function (game) {
@@ -458,6 +460,7 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
         });
 
         self.editingGameResults().Id.showResultsForm(true);
+        $("#newGameStatus").selectpicker("refresh");
     }
 
     self.updateGameResult = function (editGame) {
