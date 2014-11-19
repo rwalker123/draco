@@ -1,12 +1,9 @@
 using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager;
+using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Data.SqlClient;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -294,43 +291,59 @@ namespace DataAccess
 
         static public async Task<bool> RemoveAccount(Account account)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
             await Seasons.RemoveAccountSeasons(account.Id);
 
             string accountName = Accounts.GetAccountName(account.Id);
 
-            try
+            var messageCategories = (from mc in db.MessageCategories
+                                     where mc.isTeam == false && mc.AccountId == account.Id
+                                     select mc);
+            db.MessageCategories.DeleteAllOnSubmit(messageCategories);
+
+            var workoutAnnouncments = (from wa in db.WorkoutAnnouncements
+                                       where wa.AccountId == account.Id
+                                       select wa);
+            db.WorkoutAnnouncements.DeleteAllOnSubmit(workoutAnnouncments);
+
+            var profileCats = (from pc in db.ProfileCategories
+                               where pc.AccountId == account.Id
+                               select pc);
+            db.ProfileCategories.DeleteAllOnSubmit(profileCats);
+
+            var curSeason = (from cs in db.CurrentSeasons
+                             where cs.AccountId == account.Id
+                             select cs);
+            db.CurrentSeasons.DeleteAllOnSubmit(curSeason);
+
+            var rosters = (from r in db.Rosters
+                           where r.AccountId == account.Id
+                           select r);
+            db.Rosters.DeleteAllOnSubmit(rosters);
+
+            var leagues = (from l in db.Leagues
+                           where l.AccountId == account.Id
+                           select l);
+            db.Leagues.DeleteAllOnSubmit(leagues);
+
+            var accounts = (from a in db.Accounts
+                            where a.Id == account.Id
+                            select a);
+            db.Accounts.DeleteAllOnSubmit(accounts);
+
+            //Exec RemoveUnusedContacts @Id
+
+            db.SubmitChanges();
+
+            // remove uploads directory for account
+            System.Web.HttpContext context = System.Web.HttpContext.Current;
+            if (context != null)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteAccount", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = account.Id;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-
-                    // remove uploads directory for account
-                    System.Web.HttpContext context = System.Web.HttpContext.Current;
-                    if (context != null)
-                    {
-                        string dirToRemove = context.Server.MapPath(ConfigurationManager.AppSettings["UploadDir"]) + account.Id;
-                        DirectoryInfo di = new DirectoryInfo(dirToRemove);
-                        if (di.Exists)
-                            di.Delete(true);
-                    }
-
-                    // delete configuration data for account
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
+                await Storage.Provider.DeleteDirectory(Globals.UploadDirRoot + "Accounts/" + account.Id);
             }
 
-            return (rowCount > 0);
+            return true;
         }
 
         static public IQueryable<AccountWelcome> GetAccountWelcomeTextHeaders(long accountId)

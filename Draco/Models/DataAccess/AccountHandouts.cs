@@ -1,7 +1,3 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
 using System.Linq;
 using SportsManager;
@@ -14,11 +10,6 @@ namespace DataAccess
 	/// </summary>
 	static public class AccountHandouts
 	{
-		static private AccountHandout CreateHandout(SqlDataReader dr)
-		{
-			return new AccountHandout(dr.GetInt64(0), dr.GetString(1), dr.GetString(2), dr.GetInt64(3));
-		}
-
 		static public AccountHandout GetHandout(long id)
 		{
             DB db = DBConnection.GetContext();

@@ -1,12 +1,9 @@
 using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.EntityFramework;
 using ModelObjects;
 using SportsManager;
 using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
