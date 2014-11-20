@@ -1,8 +1,5 @@
 using ModelObjects;
 using SportsManager;
-using System.Collections;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 
 namespace DataAccess
@@ -75,32 +72,22 @@ namespace DataAccess
 
 		static public bool ModifyNews(LeagueNewsItem newsItem)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.UpdateNewsItem", myConnection);
-					myCommand.Parameters.Add("@newsDate", SqlDbType.SmallDateTime).Value = newsItem.Date;
-					myCommand.Parameters.Add("@newsTitle", SqlDbType.VarChar, 100).Value = newsItem.Title;
-					myCommand.Parameters.Add("@newsText", SqlDbType.Text).Value = newsItem.Text;
-					myCommand.Parameters.Add("@specialAnnounce", SqlDbType.Bit).Value = newsItem.SpecialAnnounce;
-					myCommand.Parameters.Add("@newsId", SqlDbType.BigInt).Value = newsItem.Id;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbNewsItem = (from n in db.LeagueNews
+                              where n.Id == newsItem.Id
+                              select n).SingleOrDefault();
+            if (dbNewsItem == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            dbNewsItem.Date = newsItem.Date;
+            dbNewsItem.Text = newsItem.Text;
+            dbNewsItem.Title = newsItem.Title;
+            dbNewsItem.SpecialAnnounce = newsItem.SpecialAnnounce;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            db.SubmitChanges();
 
-			return (rowCount <= 0) ? false : true;
+            return true;
 		}
 
 		static public void AddNews(LeagueNewsItem newsItem)
@@ -117,29 +104,18 @@ namespace DataAccess
 
 		static public bool RemoveNews(long newsId)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteNewsItem", myConnection);
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = newsId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbNewsItem = (from n in db.LeagueNews
+                              where n.Id == newsId
+                              select n).SingleOrDefault();
+            if (dbNewsItem == null)
+                return false;
 
-					myConnection.Open();
-					myCommand.Prepare();
+            db.LeagueNews.DeleteOnSubmit(dbNewsItem);
+            db.SubmitChanges();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				rowCount = 0;
-			}
-
-			return (rowCount <= 0) ? false : true;
-		}
+            return true;
+        }
 	}
 }

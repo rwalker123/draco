@@ -1,10 +1,6 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Data.SqlClient;
 using ModelObjects;
-using System.Collections.Generic;
-using System.Web;
+using SportsManager;
+using System.Linq;
 
 
 namespace DataAccess
@@ -14,161 +10,81 @@ namespace DataAccess
     /// </summary>
     public static class GameEjections
     {
-        static private GameEjection CreateGameEjection(SqlDataReader dr)
-        {
-            string comments = System.Web.HttpContext.Current.Server.HtmlDecode(dr.GetString(5));
-
-            return new GameEjection(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetInt64(3), dr.GetInt64(4), comments);
-        }
-
         static public GameEjection GetGameEjection(long id)
         {
-            GameEjection ge = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetGameEjection", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        ge = CreateGameEjection(dr);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return ge;
+            return (from ge in db.GameEjections
+                    where ge.Id == id
+                    select new GameEjection(ge.Id, ge.leagueSeasonId, ge.gameId, ge.playerSeasonId, ge.umpireId, ge.comments)).SingleOrDefault();
         }
 
 
-        static public List<GameEjection> GetGameEjections(long leagueSeasonId)
+        static public IQueryable<GameEjection> GetGameEjections(long leagueSeasonId)
         {
-            List<GameEjection> gameEjections = new List<GameEjection>();
+            DB db = DBConnection.GetContext();
 
             if (leagueSeasonId == 0)
                 leagueSeasonId = DataAccess.Leagues.GetCurrentLeague();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetGameEjections", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@leagueSeasonId", SqlDbType.BigInt).Value = leagueSeasonId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        gameEjections.Add(CreateGameEjection(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return gameEjections;
+            return (from ge in db.GameEjections
+                    where ge.leagueSeasonId == leagueSeasonId
+                    select new GameEjection(ge.Id, ge.leagueSeasonId, ge.gameId, ge.playerSeasonId, ge.umpireId, ge.comments));
         }
 
-        static public bool ModifyGameEjection(GameEjection ge)
+        static public bool ModifyGameEjection(GameEjection gameEjection)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            ge.Comments = System.Web.HttpContext.Current.Server.HtmlEncode(ge.Comments);
+            var dbEjection = (from ge in db.GameEjections
+                              where ge.Id == gameEjection.Id
+                              select ge).SingleOrDefault();
+            if (dbEjection == null)
+                return false;
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.ModifyGameEjection", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = ge.Id;
-                    myCommand.Parameters.Add("@umpireId", SqlDbType.BigInt).Value = ge.UmpireId;
-                    myCommand.Parameters.Add("@comments", SqlDbType.NText).Value = ge.Comments;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbEjection.umpireId = gameEjection.UmpireId;
+            dbEjection.comments = gameEjection.Comments;
+            db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
-
-            return rowCount > 0;
+            return true;
         }
 
         static public bool AddGameEjection(GameEjection ge)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            ge.Comments = System.Web.HttpContext.Current.Server.HtmlEncode(ge.Comments);
-
-            try
+            var dbEjection = new SportsManager.Model.GameEjection()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.AddGameEjection", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = ge.GameId;
-                    myCommand.Parameters.Add("@leagueSeasonId", SqlDbType.BigInt).Value = ge.LeagueSeasonId;
-                    myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = ge.PlayerSeasonId;
-                    myCommand.Parameters.Add("@umpireId", SqlDbType.BigInt).Value = ge.UmpireId;
-                    myCommand.Parameters.Add("@comments", SqlDbType.NText).Value = ge.Comments;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                comments = ge.Comments,
+                gameId = ge.GameId,
+                umpireId = ge.UmpireId,
+                leagueSeasonId = ge.LeagueSeasonId,
+                playerSeasonId = ge.PlayerSeasonId
+            };
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            db.GameEjections.InsertOnSubmit(dbEjection);
+            db.SubmitChanges();
 
-            return rowCount > 0;
+            ge.Id = dbEjection.Id;
+
+            return true;
         }
 
         static public bool RemoveGameEjection(GameEjection ge)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteGameEjection", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = ge.Id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbGameEjection = (from g in db.GameEjections
+                                  where g.Id == ge.Id
+                                  select g).SingleOrDefault();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
+            if (dbGameEjection == null)
+                return false;
 
-            return rowCount > 0;
+            db.GameEjections.DeleteOnSubmit(dbGameEjection);
+            db.SubmitChanges();
+
+            return true;
         }
     }
 }
