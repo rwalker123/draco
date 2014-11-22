@@ -641,11 +641,6 @@
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\EnterGameResults.cshtml" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap-theme.css.map" />
-    <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\TeamAddressListTemplate.xlsx" />
     <Content Include="Scripts\facebook.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.js" />
@@ -687,6 +682,11 @@
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Scripts\bootstrap-select.js.map" />
     <Content Include="Content\bootstrap-select.css.map" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
@@ -704,6 +704,7 @@
     <Content Include="Scripts\moment-with-locales.min.js" />
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
+    <Content Include="Scripts\npm.js" />
     <Content Include="Scripts\playersurvey.js" />
     <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
