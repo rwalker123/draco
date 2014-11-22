@@ -1,12 +1,8 @@
-using System;
-using System.Configuration;
-using System.Data;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Web.SessionState;
-using System.Web.UI.WebControls;
-
 using ModelObjects;
+using SportsManager;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -16,726 +12,438 @@ namespace DataAccess
     /// </summary>
     static public class Playoffs
     {
-        static public long GetCurrentPlayoff()
+        static public List<KeyValuePair<String, String>> GetTeamPlayoffType()
         {
-            long aId = 0;
+            var li = new List<KeyValuePair<String, String>>(2);
 
-            System.Web.HttpContext context = System.Web.HttpContext.Current;
-            if (context != null)
-            {
-                aId = DataAccess.Playoffs.GetCurrentPlayoff(context.Session);
-            }
-
-            return aId;
-        }
-
-        static public long GetCurrentPlayoff(HttpSessionState s)
-        {
-            return s["AdminCurrentPlayoff"] != null ? Int32.Parse((string)s["AdminCurrentPlayoff"]) : 0;
-        }
-
-        static public List<ListItem> GetTeamPlayoffType()
-        {
-            List<ListItem> li = new List<ListItem>(2);
-
-            li.Add(new ListItem("Seed #", "SEED"));
-            li.Add(new ListItem("Bye", "BYE"));
+            li.Add(new KeyValuePair<String, String>("SEED", "Seed #"));
+            li.Add(new KeyValuePair<String, String>("BYE", "Bye"));
 
             return li;
         }
 
         static public string GetPlayoffName(long id)
         {
-            string playoffName = String.Empty;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffName", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = id;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffName = dr.GetString(0);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffName;
+            DB db = DBConnection.GetContext();
+            return (from p in db.PlayoffSetups
+                    where p.Id == id
+                    select p.Description).SingleOrDefault();
         }
 
-        static public List<PlayoffSetup> GetPlayoffs(long seasonId, bool onlyActive)
+        static public IQueryable<PlayoffSetup> GetPlayoffs(long seasonId, bool onlyActive)
         {
-            List<PlayoffSetup> playoffs = new List<PlayoffSetup>();
-
-            if (seasonId == 0)
-                return playoffs;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffs", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@seasonId", SqlDbType.BigInt).Value = seasonId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        bool isActive = dr.GetBoolean(4);
-                        if ((onlyActive && isActive) || !onlyActive)
-                            playoffs.Add(new PlayoffSetup(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt32(2), dr.GetString(3), isActive));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffs;
+            //SELECT PlayoffSetup.* 
+            //FROM PlayoffSetup LEFT JOIN LeagueSeason ON PlayoffSetup.LeagueSeasonId = LeagueSeason.Id 
+            //                  LEFT JOIN League ON LeagueSeason.LeagueId = League.Id
+            //WHERE LeagueSeason.SeasonId = @seasonId
+            DB db = DBConnection.GetContext();
+            return (from ps in db.PlayoffSetups
+                    join ls in db.LeagueSeasons on ps.LeagueSeasonId equals ls.Id
+                    join l in db.Leagues on ls.LeagueId equals l.Id
+                    where ls.SeasonId == seasonId && ((onlyActive && ps.Active) || !onlyActive)
+                    select new PlayoffSetup(ps.Id, ps.LeagueSeasonId, ps.NumTeams, ps.Description, ps.Active));
         }
 
         static public PlayoffSetup GetPlayoffSetup(long playoffId)
         {
-            PlayoffSetup playoffs = null;
+            //SELECT PlayoffSetup.* 
+            //FROM PlayoffSetup LEFT JOIN LeagueSeason ON PlayoffSetup.LeagueSeasonID = LeagueSeason.ID 
+            //                  LEFT JOIN CurrentSeason ON LeagueSeason.SeasonID = CurrentSeason.SeasonId 
+            //WHERE PlayoffSetup.Id = @playoffId
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffSetup", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffs = new PlayoffSetup(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt32(2), dr.GetString(3), dr.GetBoolean(4));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffs;
+            return (from ps in db.PlayoffSetups
+                    join ls in db.LeagueSeasons on ps.LeagueSeasonId equals ls.Id
+                    join cs in db.CurrentSeasons on ls.SeasonId equals cs.SeasonId
+                    where ps.Id == playoffId
+                    select new PlayoffSetup(ps.Id, ps.LeagueSeasonId, ps.NumTeams, ps.Description, ps.Active)).SingleOrDefault();
         }
 
         static public bool ModifyPlayoff(PlayoffSetup p)
         {
-            int rowCount = 0;
+            //DECLARE @prevNumTeams int
+            //SET @prevNumTeams = (SELECT NumTeams FROM PlayoffSetup WHERE Id = @id)
+	
+            //Update PlayoffSetup 
+            //SET LeagueSeasonId = @leagueId, NumTeams = @numTeams, Description = @description, Active = @active
+            //WHERE Id = @id	
 
-            try
+            //IF @prevNumTeams > @numTeams
+            //    DELETE FROM PlayoffSeeds WHERE PlayoffId = @id AND SeedNo > @numTeams 
+            //ELSE
+            //    WHILE @prevNumTeams < @numTeams
+            //    BEGIN
+            //        SET @prevNumTeams = @prevNumTeams + 1
+            //        INSERT INTO PlayoffSeeds VALUES(@id, 0, @prevNumTeams)
+            //    END
+            DB db = DBConnection.GetContext();
+
+            var dbPlayoff = (from ps in db.PlayoffSetups
+                             where ps.Id == p.Id
+                             select ps).SingleOrDefault();
+            if (dbPlayoff == null)
+                return false;
+
+            var prevNumTeams = dbPlayoff.NumTeams;
+
+            dbPlayoff.LeagueSeasonId = p.LeagueId;
+            dbPlayoff.NumTeams = p.NumTeams;
+            dbPlayoff.Description = p.Description;
+            dbPlayoff.Active = p.Active;
+            
+            if (prevNumTeams > p.NumTeams)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
+                var deleteSeeds = (from ps in db.PlayoffSeeds
+                                   where ps.PlayoffId == p.Id && ps.SeedNo > p.NumTeams
+                                   select ps);
+                db.PlayoffSeeds.DeleteAllOnSubmit(deleteSeeds);
+            }
+            else
+            {
+                while (prevNumTeams < p.NumTeams)
                 {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayoff", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = p.Id;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = p.LeagueId;
-                    myCommand.Parameters.Add("@numTeams", SqlDbType.Int).Value = p.NumTeams;
-                    myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = p.Description;
-                    myCommand.Parameters.Add("@active", SqlDbType.Bit).Value = p.Active;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
+                    prevNumTeams++;
+                    db.PlayoffSeeds.InsertOnSubmit(new SportsManager.Model.PlayoffSeed()
+                        {
+                            PlayoffId = p.Id,
+                            SeedNo = prevNumTeams,
+                            TeamId = 0
+                        });
                 }
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
 
-            return (rowCount <= 0) ? false : true;
+            db.SubmitChanges();
+
+            return true;
         }
 
         static public bool AddPlayoff(PlayoffSetup p)
         {
-            int rowCount = 0;
+            //INSERT INTO PlayoffSetup VALUES(@leagueId, @numTeams, @description, @active)
 
-            try
+            //DECLARE @id bigint
+            //SET @id = @@IDENTITY
+	
+            //DECLARE @seedNo int
+            //SET @seedNo = 1
+	
+            //WHILE @seedNo <= @numTeams
+            //BEGIN
+            //    INSERT INTO PlayoffSeeds VALUES(@id, 0, @seedNo)
+            //    SET @seedNo = @seedNo + 1
+            //END
+            DB db = DBConnection.GetContext();
+
+            var dbPlayoffSetup = new SportsManager.Model.PlayoffSetup()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreatePlayoff", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = p.LeagueId;
-                    myCommand.Parameters.Add("@numTeams", SqlDbType.Int).Value = p.NumTeams;
-                    myCommand.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = p.Description;
-                    myCommand.Parameters.Add("@active", SqlDbType.Bit).Value = p.Active;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                Active = p.Active,
+                Description = p.Description,
+                LeagueSeasonId = p.LeagueId,
+                NumTeams = p.NumTeams
+            };
+            db.PlayoffSetups.InsertOnSubmit(dbPlayoffSetup);
+            db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
+            p.Id = dbPlayoffSetup.Id;
+
+            for (int seedNo = 1; seedNo < p.NumTeams; ++seedNo)
             {
-                Globals.LogException(ex);
+                db.PlayoffSeeds.InsertOnSubmit(new SportsManager.Model.PlayoffSeed()
+                    {
+                        PlayoffId = dbPlayoffSetup.Id,
+                        SeedNo = seedNo,
+                        TeamId = 0
+                    });
             }
 
-            return (rowCount <= 0) ? false : true;
+            db.SubmitChanges();
+
+            return true;
         }
 
         static public bool RemovePlayoff(PlayoffSetup p)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeletePlayoff", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = p.Id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbPlayoffSetup = (from ps in db.PlayoffSetups
+                                  where ps.Id == p.Id
+                                  select ps).SingleOrDefault();
+            if (dbPlayoffSetup == null)
+                return false;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-
-                    string baseFileName = ConfigurationManager.AppSettings["UploadDir"];
-
-                    try
-                    {
-                        System.IO.File.Delete(baseFileName + "tn-" + p.Id.ToString() + "playoff.svg");
-                    }
-                    catch (Exception)
-                    {
-                    }
-
-                    try
-                    {
-                        System.IO.File.Delete(baseFileName + p.Id.ToString() + "playoff.svg");
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount <= 0) ? false : true;
+            db.PlayoffSetups.DeleteOnSubmit(dbPlayoffSetup);
+            db.SubmitChanges();
+            return true;
         }
 
-        static public List<PlayoffSeed> GetPlayoffSeeds(long playoffId)
+        static public IQueryable<PlayoffSeed> GetPlayoffSeeds(long playoffId)
         {
-            List<PlayoffSeed> playoffs = new List<PlayoffSeed>();
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffSeeds", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = playoffId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        playoffs.Add(new PlayoffSeed(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetInt32(3)));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffs;
+            //SELECT * 
+            //FROM PlayoffSeeds 
+            //WHERE PlayoffId = @Id ORDER BY SeedNo ASC
+            DB db = DBConnection.GetContext();
+            return (from ps in db.PlayoffSeeds
+                    where ps.PlayoffId == playoffId
+                    orderby ps.SeedNo ascending
+                    select new PlayoffSeed(ps.Id, ps.PlayoffId, ps.TeamId, ps.SeedNo));
         }
 
-        static public bool ModifyPlayoffSeeds(long playoffId, long[] seedIds, long[] seedTeamIds)
+        static public bool ModifyPlayoffSeeds(long playoffId, IList<long> seedIds, IList<long> seedTeamIds)
         {
-            int rowCount = 0;
-
-            try
+            int i = 0;
+            foreach (int seedId in seedIds)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
+                if (seedId > 0)
                 {
-
-                    SqlCommand updateCommand = new SqlCommand("dbo.UpdatePlayoffSeed", myConnection);
-                    updateCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    SqlParameter idParam = updateCommand.Parameters.Add("@id", SqlDbType.BigInt);
-                    updateCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-                    SqlParameter teamIdParam = updateCommand.Parameters.Add("@teamId", SqlDbType.BigInt);
-                    SqlParameter seedNoParam = updateCommand.Parameters.Add("@seedNo", SqlDbType.Int);
-
-
-                    SqlCommand insertCommand = new SqlCommand("dbo.CreatePlayoffSeed", myConnection);
-                    insertCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    insertCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-                    SqlParameter teamId2Param = insertCommand.Parameters.Add("@teamId", SqlDbType.BigInt);
-                    SqlParameter seedNo2Param = insertCommand.Parameters.Add("@seedNo", SqlDbType.Int);
-
-                    myConnection.Open();
-                    updateCommand.Prepare();
-                    insertCommand.Prepare();
-
-                    int i = 0;
-                    foreach (int seedId in seedIds)
-                    {
-                        if (seedId > 0)
-                        {
-                            teamIdParam.Value = seedTeamIds[i];
-                            seedNoParam.Value = i + 1;
-                            idParam.Value = seedId;
-
-                            updateCommand.ExecuteNonQuery();
-                        }
-                        else
-                        {
-                            teamId2Param.Value = seedTeamIds[i];
-                            seedNo2Param.Value = i + 1;
-
-                            insertCommand.ExecuteNonQuery();
-                        }
-
-                        i++;
-                    }
+                    ModifyPlayoffSeed(new PlayoffSeed(seedId, playoffId, seedTeamIds[i], i + 1));
+                }
+                else
+                {
+                    CreatePlayoffSeed(new PlayoffSeed(0, playoffId, seedTeamIds[i], i + 1));
                 }
 
-                rowCount = 1;
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
+                i++;
             }
 
-            return (rowCount <= 0) ? false : true;
+            return true;
         }
 
+        static public bool CreatePlayoffSeed(PlayoffSeed ps)
+        {
+            //CREATE PROCEDURE dbo.CreatePlayoffSeed(@playoffId bigint, @teamId bigint, @seedNo int)
+            //AS
+
+            //    INSERT INTO PlayoffSeeds VALUES(@playoffId, @teamId, @seedNo)
+            DB db = DBConnection.GetContext();
+
+            var dbPlayoffSeed = new SportsManager.Model.PlayoffSeed()
+            {
+                PlayoffId = ps.PlayoffId,
+                SeedNo = ps.SeedNo,
+                TeamId = ps.TeamId
+            };
+
+            db.PlayoffSeeds.InsertOnSubmit(dbPlayoffSeed);
+            db.SubmitChanges();
+
+            return true;
+        }
         static public bool ModifyPlayoffSeed(PlayoffSeed ps)
         {
-            int rowCount = 0;
+            //CREATE PROCEDURE dbo.UpdatePlayoffSeed( @id bigint, @playoffId bigint, @teamId bigint, @seedNo int)
+            //UPDATE PlayoffSeeds 
+            //SET PlayoffId = @playoffId, TeamId = @teamId, SeedNo = @seedNo 
+            //WHERE Id = @id
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
+            var dbPlayoffSeed = (from p in db.PlayoffSeeds
+                                 where ps.Id == p.Id
+                                 select p).SingleOrDefault();
+            if (dbPlayoffSeed == null)
+                return false;
 
-                    SqlCommand updateCommand = new SqlCommand("dbo.UpdatePlayoffSeed", myConnection);
-                    updateCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    updateCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = ps.Id;
-                    updateCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = ps.PlayoffId;
-                    updateCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = ps.TeamId;
-                    updateCommand.Parameters.Add("@seedNo", SqlDbType.Int).Value = ps.SeedNo;
+            dbPlayoffSeed.PlayoffId = ps.PlayoffId;
+            dbPlayoffSeed.TeamId = ps.TeamId;
+            dbPlayoffSeed.SeedNo = ps.SeedNo;
 
-                    myConnection.Open();
-                    updateCommand.Prepare();
+            db.SubmitChanges();
 
-                    rowCount = updateCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount > 0);
+            return true;
         }
 
-        static public List<PlayoffBracket> GetPlayoffBrackets(long playoffId)
+        static public IQueryable<PlayoffBracket> GetPlayoffBrackets(long playoffId)
         {
-            List<PlayoffBracket> playoffBrackets = new List<PlayoffBracket>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffBrackets", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                        playoffBrackets.Add(new PlayoffBracket(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetString(3), dr.GetInt64(4), dr.GetString(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8)));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-
-            return playoffBrackets;
+            return (from pb in db.PlayoffBrackets
+                    where pb.PlayoffId == playoffId
+                    select new PlayoffBracket(pb.Id, pb.PlayoffId, pb.Team1Id, pb.Team1IdType, pb.Team2Id, pb.Team2IdType, pb.GameNo, pb.RoundNo, pb.NumGamesInSeries));
         }
 
         static public PlayoffBracket GetPlayoffBracket(long playoffId, int roundNo, int gameNo)
         {
-            PlayoffBracket playoffBracket = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffBracketByRound", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-                    myCommand.Parameters.Add("@roundNo", SqlDbType.BigInt).Value = roundNo;
-                    myCommand.Parameters.Add("@gameNo", SqlDbType.BigInt).Value = gameNo;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffBracket = new PlayoffBracket(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetString(3), dr.GetInt64(4), dr.GetString(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffBracket;
+            return (from pb in db.PlayoffBrackets
+                    where pb.PlayoffId == playoffId && pb.RoundNo == roundNo && pb.GameNo == gameNo
+                    select new PlayoffBracket(pb.Id, pb.PlayoffId, pb.Team1Id, pb.Team1IdType, pb.Team2Id, pb.Team2IdType, pb.GameNo, pb.RoundNo, pb.NumGamesInSeries)).SingleOrDefault();
         }
 
         static public PlayoffBracket GetPlayoffBracket(long id)
         {
-            PlayoffBracket playoffBracket = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffBracket", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffBracket = new PlayoffBracket(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetString(3), dr.GetInt64(4), dr.GetString(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffBracket;
+            return (from pb in db.PlayoffBrackets
+                    where pb.Id == id
+                    select new PlayoffBracket(pb.Id, pb.PlayoffId, pb.Team1Id, pb.Team1IdType, pb.Team2Id, pb.Team2IdType, pb.GameNo, pb.RoundNo, pb.NumGamesInSeries)).SingleOrDefault();
         }
 
         static public bool RemovePlayoffBracket(PlayoffBracket p)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeletePlayoffBracket", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
+            var dbPlayoffBracket = (from pb in db.PlayoffBrackets
+                                    where pb.Id == p.Id
+                                    select pb).SingleOrDefault();
+            if (dbPlayoffBracket == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.PlayoffBrackets.DeleteOnSubmit(dbPlayoffBracket);
+            db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-
-            return rowCount > 0;
+            return true;
         }
 
 
         static public bool ModifyPlayoffBracket(PlayoffBracket p)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayoffBracket", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@team1Id", SqlDbType.Int).Value = p.Team1Id;
-                    myCommand.Parameters.Add("@team1IdType", SqlDbType.VarChar, 5).Value = p.Team1IdType;
-                    myCommand.Parameters.Add("@team2Id", SqlDbType.Int).Value = p.Team2Id;
-                    myCommand.Parameters.Add("@team2IdType", SqlDbType.VarChar, 5).Value = p.Team2IdType;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
-                    myCommand.Parameters.Add("@numGamesInSeries", SqlDbType.BigInt).Value = p.NumGamesInSeries;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbPlayoffBracket = (from pb in db.PlayoffBrackets
+                                    where pb.Id == p.Id
+                                    select pb).SingleOrDefault();
+            if (dbPlayoffBracket == null)
+                return false;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            dbPlayoffBracket.Team1Id = p.Team1Id;
+            dbPlayoffBracket.Team1IdType = p.Team1IdType;
+            dbPlayoffBracket.Team2Id = p.Team2Id;
+            dbPlayoffBracket.Team2IdType = p.Team2IdType;
+            dbPlayoffBracket.NumGamesInSeries = p.NumGamesInSeries;
 
-            return (rowCount > 0);
+            db.SubmitChanges();
+
+            return true;
         }
 
-        static public long AddPlayoffBracket(PlayoffBracket p)
+        static public bool AddPlayoffBracket(PlayoffBracket p)
         {
-            long id = 0;
+            DB db = DBConnection.GetContext();
 
-            if (p.PlayoffId == 0)
+            var dbPlayoffBracket = new SportsManager.Model.PlayoffBracket()
             {
-                p.PlayoffId = Playoffs.GetCurrentPlayoff();
-            }
+                Team1Id = p.Team1Id,
+                Team1IdType = p.Team1IdType,
+                Team2Id = p.Team2Id,
+                Team2IdType = p.Team2IdType,
+                NumGamesInSeries = p.NumGamesInSeries,
+                GameNo = p.GameNo,
+                RoundNo = p.RoundNo,
+                PlayoffId = p.PlayoffId
+            };
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreatePlayoffBracket", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@team1Id", SqlDbType.Int).Value = p.Team1Id;
-                    myCommand.Parameters.Add("@team1IdType", SqlDbType.VarChar, 5).Value = p.Team1IdType;
-                    myCommand.Parameters.Add("@team2Id", SqlDbType.Int).Value = p.Team2Id;
-                    myCommand.Parameters.Add("@team2IdType", SqlDbType.VarChar, 5).Value = p.Team2IdType;
-                    myCommand.Parameters.Add("@gameNo", SqlDbType.Int).Value = p.GameNo;
-                    myCommand.Parameters.Add("@roundNo", SqlDbType.Int).Value = p.RoundNo;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = p.PlayoffId;
-                    myCommand.Parameters.Add("@numGamesInSeries", SqlDbType.BigInt).Value = p.NumGamesInSeries;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.PlayoffBrackets.InsertOnSubmit(dbPlayoffBracket);
+            db.SubmitChanges();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                        id = dr.GetInt64(0);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return id;
+            p.Id = dbPlayoffBracket.Id;
+            return true;
         }
 
 
-        static public List<PlayoffGame> GetPlayoffGames(long bracketId)
+        static public IQueryable<PlayoffGame> GetPlayoffGames(long bracketId)
         {
-            List<PlayoffGame> playoffGames = new List<PlayoffGame>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffGames", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@bracketId", SqlDbType.BigInt).Value = bracketId;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                        playoffGames.Add(new PlayoffGame(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetDateTime(3), dr.GetDateTime(4), dr.GetInt64(5), dr.GetInt64(6),
-                            dr.GetInt32(7), dr.GetBoolean(8)));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffGames;
+            return (from pg in db.PlayoffGames
+                    where pg.BracketId == bracketId
+                    select new PlayoffGame()
+                    {
+                        Id = pg.Id,
+                        PlayoffId = pg.PlayoffId,
+                        BracketId = pg.BracketId,
+                        FieldId = pg.FieldId,
+                        GameId = pg.GameId,
+                        GameDate = pg.gameDate,
+                        GameTime = pg.gameTime,
+                        Team1HomeTeam = pg.Team1HomeTeam,
+                        SeriesGameNo = pg.SeriesGameNo
+                    });
         }
 
         static public PlayoffGame GetPlayoffGameFromGameNumber(long bracketId, int gameNo)
         {
-            PlayoffGame playoffGame = null;
+            //SELECT * 
+            //    FROM PlayoffGame 
+            //    WHERE BracketId = @bracketId AND SeriesGameNo = @gameNo
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffGameFromGameNumber", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@bracketId", SqlDbType.BigInt).Value = bracketId;
-                    myCommand.Parameters.Add("@gameNo", SqlDbType.Int).Value = gameNo;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffGame = new PlayoffGame(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetDateTime(3), dr.GetDateTime(4), dr.GetInt64(5), dr.GetInt64(6),
-                            dr.GetInt32(7), dr.GetBoolean(8));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffGame;
+            return (from pg in db.PlayoffGames
+                    where pg.BracketId == bracketId && pg.SeriesGameNo == gameNo
+                    select new PlayoffGame(pg.Id, pg.BracketId, pg.FieldId, pg.gameDate, pg.gameTime, pg.GameId, pg.PlayoffId, pg.SeriesGameNo, pg.Team1HomeTeam)).SingleOrDefault();
         }
 
         static public PlayoffGame GetPlayoffGame(long id)
         {
-            PlayoffGame playoffGame = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPlayoffGame", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = id;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                        playoffGame = new PlayoffGame(dr.GetInt64(0), dr.GetInt64(1), dr.GetInt64(2), dr.GetDateTime(3), dr.GetDateTime(4), dr.GetInt64(5), dr.GetInt64(6),
-                            dr.GetInt32(7), dr.GetBoolean(8));
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return playoffGame;
+            return (from pg in db.PlayoffGames
+                    where pg.Id == id
+                    select new PlayoffGame(pg.Id, pg.BracketId, pg.FieldId, pg.gameDate, pg.gameTime, pg.GameId, pg.PlayoffId, pg.SeriesGameNo, pg.Team1HomeTeam)).SingleOrDefault();
         }
 
         static public bool RemovePlayoffGame(PlayoffGame p)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeletePlayoffGame", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
+            var dbPlayoffGame = (from pg in db.PlayoffGames
+                                    where pg.Id == p.Id
+                                    select pg).SingleOrDefault();
+            if (dbPlayoffGame == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-
-            return (rowCount > 0);
+            db.PlayoffGames.DeleteOnSubmit(dbPlayoffGame);
+            db.SubmitChanges();
+            return true;
         }
 
 
         static public bool ModifyPlayoffGame(PlayoffGame p)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdatePlayoffGame", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = p.FieldId;
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = p.GameDate;
-                    myCommand.Parameters.Add("@gameTime", SqlDbType.SmallDateTime).Value = p.GameTime;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = p.GameId;
-                    myCommand.Parameters.Add("@team1HomeTeam", SqlDbType.Bit).Value = p.Team1HomeTeam;
-                    myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
-                    myConnection.Open();
-                    myCommand.Prepare();
+            var dbPlayoffGame = (from pg in db.PlayoffGames
+                                 where pg.Id == p.Id
+                                 select pg).SingleOrDefault();
+            if (dbPlayoffGame == null)
+                return false;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            dbPlayoffGame.FieldId = p.FieldId;
+            dbPlayoffGame.gameDate = p.GameDate;
+            dbPlayoffGame.gameTime = p.GameTime;
+            dbPlayoffGame.GameId = p.GameId;
+            dbPlayoffGame.Team1HomeTeam = p.Team1HomeTeam;
 
-            return (rowCount > 0);
+            db.SubmitChanges();
+            return true;
         }
 
-        static public long AddPlayoffGame(PlayoffGame p)
+        static public bool AddPlayoffGame(PlayoffGame p)
         {
-            long id = 0;
+            DB db = DBConnection.GetContext();
 
-            if (p.PlayoffId == 0)
+            var dbPlayoffGame = new SportsManager.Model.PlayoffGame()
             {
-                p.PlayoffId = Playoffs.GetCurrentPlayoff();
-            }
+                FieldId = p.FieldId,
+                gameDate = p.GameDate,
+                gameTime = p.GameTime,
+                GameId = p.GameId,
+                PlayoffId = p.PlayoffId,
+                Team1HomeTeam = p.Team1HomeTeam,
+                SeriesGameNo = p.SeriesGameNo,
+                BracketId = p.BracketId
+            };
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreatePlayoffGame", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@fieldId", SqlDbType.BigInt).Value = p.FieldId;
-                    myCommand.Parameters.Add("@gameDate", SqlDbType.SmallDateTime).Value = p.GameDate;
-                    myCommand.Parameters.Add("@gameTime", SqlDbType.SmallDateTime).Value = p.GameTime;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = p.GameId;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = p.PlayoffId;
-                    myCommand.Parameters.Add("@team1HomeTeam", SqlDbType.Bit).Value = p.Team1HomeTeam;
-                    myCommand.Parameters.Add("@seriesGameNo", SqlDbType.Int).Value = p.SeriesGameNo;
-                    myCommand.Parameters.Add("@bracketId", SqlDbType.Int).Value = p.BracketId;
-                    
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.PlayoffGames.InsertOnSubmit(dbPlayoffGame);
+            db.SubmitChanges();
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                        id = dr.GetInt64(0);
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return id;
+            return true;
         }
 
-        static public List<Team> GetPlayoffTeams(ModelObjects.PlayoffBracket pg, bool onlyRealTeams)
+        static public IEnumerable<Team> GetPlayoffTeams(ModelObjects.PlayoffBracket pg, bool onlyRealTeams)
         {
             List<Team> t = new List<Team>(2);
 
-            List<PlayoffSeed> seeds = DataAccess.Playoffs.GetPlayoffSeeds(pg.PlayoffId);
+            var seeds = DataAccess.Playoffs.GetPlayoffSeeds(pg.PlayoffId);
 
             t.Add(GetPlayoffTeam(seeds, pg.PlayoffId, pg.Team1IdType, pg.Team1Id, pg.RoundNo, pg.GameNo, -1, onlyRealTeams));
 
@@ -744,7 +452,7 @@ namespace DataAccess
             return t;
         }
 
-        static private Team GetPlayoffTeam(List<PlayoffSeed> seeds, long playoffId, string idType, long teamId, int roundNo, int gameNo, int modifier, bool onlyRealTeams)
+        static private Team GetPlayoffTeam(IEnumerable<PlayoffSeed> seeds, long playoffId, string idType, long teamId, int roundNo, int gameNo, int modifier, bool onlyRealTeams)
         {
             Team t = null;
 
@@ -778,46 +486,31 @@ namespace DataAccess
 
         static public bool SchedulePlayoffGame(long playoffGameId, long playoffId, Game game)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
+            //SELECT LeagueSeasonId FROM PlayoffSetup WHERE Id = @playoffId
+
+            game.LeagueId = (from ps in db.PlayoffSetups
+                             where ps.Id == playoffId
+                             select ps.LeagueSeasonId).SingleOrDefault();
+            if (game.LeagueId > 0)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
+                var newGame = Schedule.AddGame(game);
+                if (newGame.Id > 0)
                 {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLeagueIdFromPlayoffSetup", myConnection);
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffId;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
+                    var dbPlayoffGame = (from pg in db.PlayoffGames
+                                         where pg.PlayoffId == playoffGameId
+                                         select pg).SingleOrDefault();
+                    if (dbPlayoffGame != null)
                     {
-                        game.LeagueId = dr.GetInt32(0);
-
-                        dr.Close();
-
-                        var newGame = Schedule.AddGame(game);
-                        if (newGame.Id > 0)
-                        {
-                            myCommand = new SqlCommand("dbo.UpdatePlayoffGameId", myConnection);
-                            myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = newGame.Id;
-                            myCommand.Parameters.Add("@playoffId", SqlDbType.BigInt).Value = playoffGameId;
-                            myCommand.Prepare();
-
-                            rowCount = myCommand.ExecuteNonQuery();
-                        }
+                        dbPlayoffGame.GameId = newGame.Id;
+                        db.SubmitChanges();
+                        return true;
                     }
                 }
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
 
-            return (rowCount <= 0) ? false : true;
+            return false;
         }
 
         static public Team GetBracketWinner(long playoffId, int roundNo, int gameNo)
@@ -828,25 +521,25 @@ namespace DataAccess
             if (playoffBracket == null)
                 return team;
 
-            List<Team> teams = DataAccess.Playoffs.GetPlayoffTeams(playoffBracket, true);
+            IEnumerable<Team> teams = DataAccess.Playoffs.GetPlayoffTeams(playoffBracket, true);
 
             if (playoffBracket.Team1IdType == "BYE" || playoffBracket.Team2IdType == "BYE")
             {
-                if (teams.Count > 1)
+                if (teams.Count() > 1)
                 {
                     if (playoffBracket.Team2IdType == "SEED")
                     {
-                        team = teams[1];
+                        team = teams.Last();
                     }
                     else if (playoffBracket.Team1IdType == "SEED")
                     {
-                        team = teams[0];
+                        team = teams.First();
                     }
                 }
             }
-            else if (teams.Count == 2 && teams[0] != null && teams[1] != null)
+            else if (teams.Count() == 2 && teams.First() != null && teams.Last() != null)
             {
-                List<PlayoffGame> games = GetPlayoffGames(playoffBracket.Id);
+                var games = GetPlayoffGames(playoffBracket.Id);
 
                 int numRequiredWins = (playoffBracket.NumGamesInSeries / 2) + 1;
                 int team1Wins = 0;
@@ -857,17 +550,17 @@ namespace DataAccess
                     Game g = DataAccess.Schedule.GetGame(pg.GameId);
                     if (g != null && g.GameWinner > 0)
                     {
-                        if (g.GameWinner == teams[0].Id)
+                        if (g.GameWinner == teams.First().Id)
                             team1Wins++;
-                        else if (g.GameWinner == teams[1].Id)
+                        else if (g.GameWinner == teams.Last().Id)
                             team2Wins++;
                     }
                 }
 
                 if (team1Wins == numRequiredWins)
-                    team = teams[0];
+                    team = teams.First();
                 else if (team2Wins == numRequiredWins)
-                    team = teams[1];
+                    team = teams.Last();
             }
 
             return team;

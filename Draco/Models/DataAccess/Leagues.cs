@@ -328,21 +328,7 @@ namespace DataAccess
 
                         //    -- copy managers.                                        
                         //    EXEC dbo.CopySeasonManager @teamSeasonId, @oldTeamSeasonId
-                        var managers = (from tsm in db.TeamSeasonManagers
-                                        where tsm.TeamSeasonId == team.Id
-                                        select tsm);
-
-                        foreach (var manager in managers)
-                        {
-                            var newManager = new SportsManager.Model.TeamSeasonManager()
-                            {
-                                TeamSeasonId = newTeam.Id,
-                                ContactId = manager.ContactId
-                            };
-
-                            db.TeamSeasonManagers.InsertOnSubmit(newManager);
-                        }
-
+                        CopySeasonManager(db, newTeam.Id, team.Id);
                         db.SubmitChanges();
                     }
                 }
@@ -351,6 +337,24 @@ namespace DataAccess
             }
 
             return true;
+        }
+
+        static public void CopySeasonManager(DB db, long newTeamSeasonId, long oldTeamSeasonId)
+        {
+            var managers = (from tsm in db.TeamSeasonManagers
+                            where tsm.TeamSeasonId == oldTeamSeasonId
+                            select tsm);
+
+            foreach (var manager in managers)
+            {
+                var newManager = new SportsManager.Model.TeamSeasonManager()
+                {
+                    TeamSeasonId = newTeamSeasonId,
+                    ContactId = manager.ContactId
+                };
+
+                db.TeamSeasonManagers.InsertOnSubmit(newManager);
+            }
         }
 
         static public IQueryable<Contact> GetLeagueContacts(long leagueSeasonId)

@@ -2,12 +2,8 @@ using ModelObjects;
 using SportsManager;
 using SportsManager.Models.Utils;
 using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace DataAccess
 {
@@ -263,7 +259,5 @@ namespace DataAccess
 
             return false;
 		}
-
-
 	}
 }

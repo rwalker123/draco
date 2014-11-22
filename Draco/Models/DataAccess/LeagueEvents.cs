@@ -1,9 +1,6 @@
-using System;
-using System.Data;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using ModelObjects;
+using SportsManager;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -13,133 +10,53 @@ namespace DataAccess
     /// </summary>
     static public class LeagueEvents
     {
-        static LeagueEvent CreateEvent(SqlDataReader dr)
-        {
-            return new LeagueEvent(dr.GetInt64(0), dr.GetInt64(1), dr.GetDateTime(2), dr.GetString(3));
-        }
-
         static public LeagueEvent GetEvent(long eventId)
         {
-            LeagueEvent e = null;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLeagueEvent", myConnection);
-                    myCommand.Parameters.Add("@eventId", SqlDbType.BigInt).Value = eventId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        e = CreateEvent(dr);
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return e;
+            return (from le in db.LeagueEvents
+                    where le.Id == eventId
+                    select new LeagueEvent(le.Id, le.LeagueSeasonId, le.EventDate, le.Description)).SingleOrDefault();
         }
 
-        static public List<LeagueEvent> GetEvents(long leagueSeasonId)
+        static public IQueryable<LeagueEvent> GetEvents(long leagueSeasonId)
         {
-            List<LeagueEvent> leagueEvents = new List<LeagueEvent>();
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLeagueEvents", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueSeasonId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        leagueEvents.Add(CreateEvent(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return leagueEvents;
+            return (from le in db.LeagueEvents
+                    where le.LeagueSeasonId == leagueSeasonId
+                    orderby le.EventDate
+                    select new LeagueEvent(le.Id, le.LeagueSeasonId, le.EventDate, le.Description));
         }
 
-        static public List<LeagueEvent> GetEvents(long leagueSeasonId, int month)
+        static public IQueryable<LeagueEvent> GetEvents(long leagueSeasonId, int month)
         {
-            List<LeagueEvent> leagueEvents = new List<LeagueEvent>();
+            //SELECT Id, LeagueSeasonId, EventDate, Description 
+            //From LeagueEvents 
+            //Where LeagueSeasonId = @leagueId AND MONTH(EventDate) = @month
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetLeagueEventsMonth", myConnection);
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = leagueSeasonId;
-                    myCommand.Parameters.Add("@month", SqlDbType.Int).Value = month;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        leagueEvents.Add(CreateEvent(dr));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return leagueEvents;
+            return (from le in db.LeagueEvents
+                    where le.LeagueSeasonId == leagueSeasonId && le.EventDate.Month == month
+                    orderby le.EventDate
+                    select new LeagueEvent(le.Id, le.LeagueSeasonId, le.EventDate, le.Description));
         }
 
         static public bool ModifyEvent(LeagueEvent e)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateLeagueEvent", myConnection);
-                    myCommand.Parameters.Add("@eventId", SqlDbType.BigInt).Value = e.Id;
-                    myCommand.Parameters.Add("@eventDate", SqlDbType.SmallDateTime).Value = e.EventDate;
-                    myCommand.Parameters.Add("@eventDescription", SqlDbType.VarChar, 25).Value = e.Description;
+            var dbEvent = (from le in db.LeagueEvents
+                           where le.Id == e.Id
+                           select le).SingleOrDefault();
+            if (dbEvent == null)
+                return false;
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            dbEvent.EventDate = e.EventDate;
+            dbEvent.Description = e.Description;
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
-
-            return (rowCount <= 0) ? false : true;
+            return true;
         }
 
         static public bool AddEvent(LeagueEvent e)
@@ -147,57 +64,37 @@ namespace DataAccess
             if (e.LeagueId <= 0)
                 e.LeagueId = Leagues.GetCurrentLeague();
 
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
+            var dbEvent = new SportsManager.Model.LeagueEvent()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.CreateLeagueEvent", myConnection);
-                    myCommand.Parameters.Add("@eventDate", SqlDbType.SmallDateTime).Value = e.EventDate;
-                    myCommand.Parameters.Add("@eventDescription", SqlDbType.VarChar, 255).Value = e.Description;
-                    myCommand.Parameters.Add("@leagueId", SqlDbType.BigInt).Value = e.LeagueId;
+                EventDate = e.EventDate,
+                Description = e.Description,
+                LeagueSeasonId = e.LeagueId
+            };
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.LeagueEvents.InsertOnSubmit(dbEvent);
+            db.SubmitChanges();
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            e.Id = dbEvent.Id;
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount <= 0) ? false : true;
+            return true;
         }
 
         static public bool RemoveEvent(LeagueEvent e)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeleteLeagueEvent", myConnection);
-                    myCommand.Parameters.Add("@eventId", SqlDbType.BigInt).Value = e.Id;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbEvent = (from le in db.LeagueEvents
+                           where le.Id == e.Id
+                           select le).SingleOrDefault();
+            if (dbEvent == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.LeagueEvents.DeleteOnSubmit(dbEvent);
+            db.SubmitChanges();
 
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount <= 0) ? false : true;
+            return true;
         }
     }
 }

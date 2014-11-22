@@ -1,8 +1,6 @@
 using ModelObjects;
 using SportsManager;
-using System;
-using System.Data;
-using System.Data.SqlClient;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DataAccess
@@ -12,34 +10,6 @@ namespace DataAccess
 	/// </summary>
 	static public class Divisions
 	{
-		static public string GetDivisionName(long divisionSeasonId)
-		{
-			string name = String.Empty;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetDivisionName", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@divisionSeasonId", SqlDbType.BigInt).Value = divisionSeasonId;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-						name = dr.GetString(0);
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return name;
-		}
-
         static public IQueryable<Division> GetDivisions(long leagueId)
         {
             DB db = DBConnection.GetContext();
@@ -52,29 +22,35 @@ namespace DataAccess
 
 		static public bool ModifyDivision(Division division)
 		{
-			int rowCount = 0;
+            //DECLARE @divisionId bigint
+            //SET @divisionId = (SELECT DivisionID From DivisionSeason WHERE DivisionSeason.ID = @divisionSeasonId)
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.ModifyDivision", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@divisionSeasonId", SqlDbType.BigInt).Value = division.Id;
-					myCommand.Parameters.Add("@divisionName", SqlDbType.VarChar, 25).Value = division.Name;
-					myCommand.Parameters.Add("@priority", SqlDbType.Int).Value = division.Priority;
-					myConnection.Open();
-					myCommand.Prepare();
+            //Update DivisionSeason SET Priority = @priority WHERE ID = @divisionSeasonId
+            //Update DivisionDefs SET Name = @divisionName WHERE ID = @divisionId
+            DB db = DBConnection.GetContext();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            var divisionId = (from ds in db.DivisionSeasons
+                              where ds.Id == division.Id
+                              select ds.DivisionId).SingleOrDefault();
 
-			return (rowCount > 0);
+            var dbDivSeason = (from ds in db.DivisionSeasons
+                               where ds.Id == division.Id
+                               select ds).SingleOrDefault();
+            if (dbDivSeason != null)
+            {
+                dbDivSeason.Priority = division.Priority;
+            }
+
+            var dbDivDef = (from dd in db.DivisionDefs
+                            where dd.Id == division.Id
+                            select dd).SingleOrDefault();
+            if (dbDivDef != null)
+            {
+                dbDivDef.Name = division.Name;
+            }
+
+            db.SubmitChanges();
+            return true;
 		}
 
 		static public long AddDivision(Division d)
@@ -117,29 +93,48 @@ namespace DataAccess
 			}
 		}
 
-		static public bool RemoveDivision(long divisionId)
+		static public bool RemoveDivision(long divisionSeasonId)
 		{
-			int rowCount = 0;
+            //DECLARE @divisionId bigint
+            //SET @divisionId = (SELECT DivisionId FROM DivisionSeason WHERE Id = @divisionSeasonId)
+	
+            //DELETE FROM DivisionSeason WHERE Id = @divisionSeasonId
+            //UPDATE TeamsSeason SET DivisionSeasonId=0 WHERE DivisionSeasonId = @divisionSeasonId
+	
+            //DECLARE @divCount int
+            //SET @divCount = (SELECT Count(*) FROM DivisionSeason WHERE DivisionId = @divisionId)
+	
+            //IF @divCount = 0
+            //    DELETE FROM DivisionDefs WHERE ID = @divisionId
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteDivision", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@divisionSeasonId", SqlDbType.BigInt).Value = divisionId;
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            var divSeason = (from ds in db.DivisionSeasons
+                              where ds.Id == divisionSeasonId
+                              select ds).SingleOrDefault();
+            if (divSeason == null)
+                return false;
 
-			return (rowCount > 0);
+            db.DivisionSeasons.DeleteOnSubmit(divSeason);
+
+            var teamSeasons = (from ts in db.TeamsSeasons
+                               where ts.DivisionSeasonId == divisionSeasonId
+                               select ts);
+            foreach (var teamSeason in teamSeasons)
+            {
+                teamSeason.DivisionSeasonId = 0;
+            }
+
+            bool divisionInUse = (from ds in db.DivisionSeasons
+                                  where ds.DivisionId == divisionSeasonId
+                                  select ds).Any();
+            if (!divisionInUse)
+            {
+                db.DivisionDefs.DeleteOnSubmit(db.DivisionDefs.Where(dd => dd.Id == divSeason.DivisionId).SingleOrDefault());
+            }
+
+            db.SubmitChanges();
+            return true;
 		}
 
 		static public bool RemoveUnusedDivisions(long accountId)
@@ -160,60 +155,26 @@ namespace DataAccess
 
 		static public bool CopySeasonDivision(long leagueSeasonId, long copyLeagueSeasonId)
 		{
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CopySeasonDivision", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@leagueSeasonIdCopyTo", SqlDbType.BigInt).Value = leagueSeasonId;
-					myCommand.Parameters.Add("@leagueSeasonIdCopyFrom", SqlDbType.BigInt).Value = copyLeagueSeasonId;
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-				return false;
-			}
+            var divisions = (from ds in db.DivisionSeasons
+                             where ds.LeagueSeasonId == copyLeagueSeasonId
+                             select ds);
+            List<SportsManager.Model.DivisionSeason> newDivSeasons = new List<SportsManager.Model.DivisionSeason>();
+            foreach (var div in divisions)
+            {
+                newDivSeasons.Add(new SportsManager.Model.DivisionSeason()
+                    {
+                        DivisionId = div.DivisionId,
+                        LeagueSeasonId = leagueSeasonId,
+                        Priority = div.Priority
+                    });
+            }
+
+            db.DivisionSeasons.InsertAllOnSubmit(newDivSeasons);
+            db.SubmitChanges();
 
 			return true;
-		}
-
-		// this method retrieves the division season id for the new league given the old
-		// division season id.
-		static public long GetNewTeamDivision(long oldDivisionSeasonId, long newLeagueSeasonId)
-		{
-			long divisionId = 0;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetNewTeamDivision", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@oldDivisionSeasonId", SqlDbType.BigInt).Value = oldDivisionSeasonId;
-					myCommand.Parameters.Add("@newLeagueSeasonId", SqlDbType.BigInt).Value = newLeagueSeasonId;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						divisionId = dr.GetInt64(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return divisionId;
 		}
 	}
 }

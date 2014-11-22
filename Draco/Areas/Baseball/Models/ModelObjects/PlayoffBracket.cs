@@ -209,7 +209,7 @@ namespace ModelObjects
 
             if (idType == "SEED")
             {
-                List<PlayoffSeed> seeds = DataAccess.Playoffs.GetPlayoffSeeds(m_playoffId);
+                var seeds = DataAccess.Playoffs.GetPlayoffSeeds(m_playoffId);
                 foreach (PlayoffSeed s in seeds)
                 {
                     if (s.SeedNo == teamId)

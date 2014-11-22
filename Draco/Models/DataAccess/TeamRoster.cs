@@ -1,11 +1,8 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
 using ModelObjects;
 using SportsManager;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -498,105 +495,53 @@ namespace DataAccess
             return null;
 		}
 
-		static public bool CopySeasonRoster(int teamSeasonId, int copyTeamSeasonId)
+		static public bool CopySeasonRoster(long teamSeasonId, long copyTeamSeasonId)
 		{
-			int rowCount = 0;
+            //DECLARE @playerId bigint
+            //DECLARE @playerNumber int
+            //DECLARE @dateAdded DateTime
+	
+            //DECLARE rosterIter CURSOR LOCAL FOR SELECT PlayerId, PlayerNumber, DateAdded FROM RosterSeason WHERE TeamSeasonId = @copyTeamSeasonId AND Inactive = 0
+            //OPEN rosterIter
+            //FETCH NEXT FROM rosterIter INTO @playerId, @playerNumber, @dateAdded
+            //WHILE (@@FETCH_STATUS = 0)
+            //BEGIN
+            //    INSERT INTO RosterSeason VALUES(@playerId, @teamSeasonId, @playerNumber, 0, 0, @dateAdded)
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CopySeasonRoster", myConnection);
-					myCommand.Parameters.Add("@copyTeamSeasonId", SqlDbType.BigInt).Value = copyTeamSeasonId;
-					myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            //    FETCH NEXT FROM rosterIter INTO @playerId, @playerNumber, @dateAdded
+            //END
 
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					rowCount = myCommand.ExecuteNonQuery();
+            var copyRoster = (from rs in db.RosterSeasons
+                              where rs.TeamSeasonId == copyTeamSeasonId && rs.Inactive == false
+                              select rs);
 
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            List<SportsManager.Model.RosterSeason> newRosters = new List<SportsManager.Model.RosterSeason>();
 
-			return (rowCount <= 0) ? false : true;
+            foreach(var r in copyRoster)
+            {
+                newRosters.Add(new SportsManager.Model.RosterSeason()
+                {
+                    PlayerId = r.PlayerId,
+                    TeamSeasonId = teamSeasonId,
+                    PlayerNumber = r.PlayerNumber,
+                    Inactive = r.Inactive,
+                    SubmittedWaiver = false,
+                    DateAdded = r.DateAdded
+                });
+
+            }
+            db.RosterSeasons.InsertAllOnSubmit(newRosters);
+
+            db.SubmitChanges();
+
+            return true;
 		}
 
 		static public bool PlayerNameExists(long accountId, long contactId, String firstName, String lastName, String middleName)
 		{
 			return Contacts.DoesContactExist(accountId, contactId, firstName, middleName, lastName);
-		}
-
-		static public Player GetPlayerFromName(long accountId, string firstName, string lastName, string middleName)
-		{
-			Player p = null;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetPlayerFromName", myConnection);
-					myCommand.Parameters.Add("@accountId", SqlDbType.BigInt).Value = accountId;
-					myCommand.Parameters.Add("@firstName", SqlDbType.VarChar, 25).Value = firstName;
-					myCommand.Parameters.Add("@lastName", SqlDbType.VarChar, 25).Value = lastName;
-					myCommand.Parameters.Add("@middleName", SqlDbType.VarChar, 25).Value = middleName;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						Contact contactInfo = Contacts.GetContact(dr.GetInt64(2));
-						p = new Player(dr.GetInt64(0), 0, -1, contactInfo, false, dr.GetBoolean(3), dr.GetInt64(1), DateTime.Now, string.Empty);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return p;
-		}
-
-		static public bool PlayerNameExists(String firstName, String lastName, String middleName, long playerSeasonId)
-		{
-			bool rc = false;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.PlayerNameExistsInCurrentSeason", myConnection);
-					myCommand.Parameters.Add("@firstName", SqlDbType.VarChar, 25).Value = firstName;
-					myCommand.Parameters.Add("@lastName", SqlDbType.VarChar, 25).Value = lastName;
-					myCommand.Parameters.Add("@middleName", SqlDbType.VarChar, 25).Value = middleName;
-					myCommand.Parameters.Add("@playerSeasonId", SqlDbType.BigInt).Value = playerSeasonId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-					if (dr.Read() && dr.GetInt64(0) > 0)
-					{
-						rc = true;
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return rc;
 		}
 
         static public IQueryable<ContactName> GetAllBirthdayBoys(long accountId)

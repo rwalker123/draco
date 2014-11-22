@@ -1,7 +1,5 @@
-using System;
-using System.Data.SqlClient;
-using System.Configuration;
 using SportsManager;
+using System;
 using System.Web;
 
 namespace DataAccess
@@ -11,13 +9,6 @@ namespace DataAccess
 	/// </summary>
     static public class DBConnection
     {
-        static public SqlConnection GetSqlConnection()
-        {
-            ConnectionStringSettings sqlConnectionString = ConfigurationManager.ConnectionStrings["webDBConnection"];
-
-            return new SqlConnection(sqlConnectionString.ConnectionString);
-        }
-
         private const string ObjectContextKey = "ObjectContext";
 
         static public DB GetContext()

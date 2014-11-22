@@ -1,8 +1,7 @@
 using ModelObjects;
+using SportsManager;
 using System;
-using System.Collections;
-using System.Data;
-using System.Data.SqlClient;
+using System.Linq;
 
 
 namespace DataAccess
@@ -12,32 +11,11 @@ namespace DataAccess
 	/// </summary>
 	static public class Affiliations
 	{
-		static public Affiliation[] GetAffiliations()
+		static public IQueryable<Affiliation> GetAffiliations()
 		{
-			ArrayList affiliations = new ArrayList();
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetAffiliations", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myConnection.Open();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					while (dr.Read())
-					{
-						affiliations.Add( new Affiliation( dr.GetInt64(0), dr.GetString(1) ) );
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return (Affiliation[])affiliations.ToArray(typeof(Affiliation));
+            DB db = DBConnection.GetContext();
+            return (from a in db.Affiliations
+                    select new Affiliation(a.Id, a.Name));
 		}
 
 		static public bool IsValidName(string organizationName)
@@ -50,7 +28,7 @@ namespace DataAccess
 
 			compareOrganization = compareOrganization.Replace(" ", String.Empty);
 
-			Affiliation[] organizations = GetAffiliations();
+			var organizations = GetAffiliations();
 			foreach (Affiliation org in organizations)
 			{
 				string compareWithOrganization = org.Name.ToLower();
@@ -68,109 +46,59 @@ namespace DataAccess
 
 		static public bool ModifyAffiliation(Affiliation affiliation)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.ModifyAffiliation", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = affiliation.Id;
-					myCommand.Parameters.Add("@Name", SqlDbType.VarChar, 75).Value = affiliation.Name;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbAff = (from a in db.Affiliations
+                         where a.Id == affiliation.Id
+                         select a).SingleOrDefault();
+            if (dbAff == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            dbAff.Name = affiliation.Name;
+            db.SubmitChanges();
 
-			return (rowCount > 0);
+            return true;
 		}
 
 		static public bool AddAffiliation(Affiliation affiliation)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CreateAffiliation", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@name", SqlDbType.VarChar, 75).Value = affiliation.Name;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbAff = new SportsManager.Model.Affiliation()
+            {
+                Name = affiliation.Name
+            };
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            db.Affiliations.InsertOnSubmit(dbAff);
+            db.SubmitChanges();
 
-			return (rowCount > 0);
-		}
+            affiliation.Id = dbAff.Id;
+            return true;
+        }
 
 		static public bool RemoveAffiliation(Affiliation affiliation)
 		{
-			int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeleteAffiliation", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = affiliation.Id;
-					myConnection.Open();
-					myCommand.Prepare();
+            var dbAff = (from a in db.Affiliations
+                         where a.Id == affiliation.Id
+                         select a).SingleOrDefault();
+            if (dbAff == null)
+                return false;
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
+            db.Affiliations.DeleteOnSubmit(dbAff);
+            db.SubmitChanges();
 
-			return (rowCount > 0);
-		}
+            return true;
+        }
 
 		static public string GetAffiliationNameFromId(long id)
 		{
-			string affiliationName = string.Empty;
+            DB db = DBConnection.GetContext();
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetAffiliationName", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = id;
-					myConnection.Open();
-					myCommand.Prepare();
-
-					SqlDataReader dr = myCommand.ExecuteReader();
-
-					if (dr.Read())
-					{
-						affiliationName = dr.GetString(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-                Globals.LogException(ex);
-			}
-
-			return affiliationName;
+            return (from a in db.Affiliations
+                    where a.Id == id
+                    select a.Name).SingleOrDefault();
 		}
-
 	}
 }

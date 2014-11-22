@@ -1,12 +1,8 @@
-using System;
-using System.Configuration;
-using System.Data;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data.SqlClient;
 using ModelObjects;
-using System.Linq;
 using SportsManager;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace DataAccess
 {
@@ -237,70 +233,6 @@ namespace DataAccess
                     PhotoUrl = Contact.GetPhotoURL(c.Id)
                 }).Distinct().OrderBy(x => x.LastName).ThenBy(x => x.FirstName);
 		}
-
-		static public bool RemovePlayerProfile(PlayerProfile playerProfile)
-		{
-			int rowCount = 0;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.DeletePlayerProfile", myConnection);
-					myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerProfile.PlayerId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
-		}
-
-        static private bool RemoveEmptyAnswers(PlayerProfile item, Dictionary<long, string> answers)
-        {
-            int rowCount = 1;
-
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    // remove question command
-                    SqlCommand quesCommand = new SqlCommand("dbo.DeletePlayerProfileQuestion", myConnection);
-                    quesCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = item.PlayerId;
-                    SqlParameter quesIdParam = quesCommand.Parameters.Add("@answerId", SqlDbType.BigInt);
-                    quesCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-
-                    foreach (KeyValuePair<long, string> de in answers)
-                    {
-
-                        if (String.IsNullOrEmpty(de.Value))
-                        {
-                            quesIdParam.Value = de.Key;
-
-                            quesCommand.Prepare();
-                            quesCommand.ExecuteNonQuery();
-                        }
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                rowCount = 0;
-            }
-
-            return (rowCount <= 0) ? false : true;
-        }
 
         static public bool UpdatePlayerQuestionAnswer(long accountId, ProfileQuestionAnswer answer)
         {

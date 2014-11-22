@@ -4,8 +4,6 @@ using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -249,35 +247,6 @@ namespace DataAccess
             }
 
             return false;
-		}
-
-		public static bool ModifyPhotoAlbum(PhotoGalleryAlbum p)
-		{
-			int rowCount = 0;
-
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-
-					SqlCommand myCommand = new SqlCommand("dbo.UpdatePhotoGalleryAlbum", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@title", SqlDbType.VarChar, 25).Value = p.Title;
-					myCommand.Parameters.Add("@parentAlbumId", SqlDbType.BigInt).Value = p.ParentAlbumId;
-					myCommand.Parameters.Add("@id", SqlDbType.BigInt).Value = p.Id;
-
-					myConnection.Open();
-					myCommand.Prepare();
-
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
-
-			return (rowCount <= 0) ? false : true;
 		}
 
 		public static bool ModifyPhoto(PhotoGalleryItem p)

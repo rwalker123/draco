@@ -3,8 +3,6 @@ using SportsManager;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Dynamic;
 
@@ -21,8 +19,8 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             var x = (from bs in db.batstatsums
-                         where bs.GameId == gameId && bs.TeamId == teamSeasonId
-                         select bs.PlayerId);
+                     where bs.GameId == gameId && bs.TeamId == teamSeasonId
+                     select bs.PlayerId);
 
             return (from rs in db.RosterSeasons
                     join r in db.Rosters on rs.PlayerId equals r.Id
@@ -129,282 +127,607 @@ namespace DataAccess
 
         static public GameBatStats GetBatTeamTotals(long teamId, int filter, long filterData)
         {
-            GameBatStats stats = null;
-
-            try
+            DB db = DBConnection.GetContext();
+            switch (filter)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
-
-                    switch (filter)
-                    {
-                        case 2: // vs. Team
-                            myCommand = new SqlCommand("dbo.GetBatTeamTotalsVsTeam", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 3: // vs. Division
-                            myCommand = new SqlCommand("dbo.GetBatTeamTotalsVsDivision", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 4: // Single Game
-                            myCommand = new SqlCommand("dbo.GetBatTeamTotalsByGame", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 1: // No Filter
-                        default:
-                            myCommand = new SqlCommand("dbo.GetBatTeamTotals", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            break;
-                    }
-
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-                    if (dr.Read())
-                    {
-                        stats = new GameBatStats(0, 0, 0, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16));
-                    }
-
-                }
+                case 2: // vs. Team
+                    //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                    //FROM batstatsum LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id
+                    //WHERE ((HTeamId = @teamId AND VTeamId = @vsTeamId) OR (HTeamId = @vsTeamId AND VTeamId = @teamId)) AND batstatsum.TeamID = @teamId AND GameStatus = 1
+                    return (from bss in db.batstatsums
+                            join ls in db.LeagueSchedules on bss.GameId equals ls.Id
+                            where ((ls.HTeamId == teamId && ls.VTeamId == filterData) || (ls.HTeamId == filterData && ls.VTeamId == teamId)) &&
+                            bss.TeamId == teamId && ls.GameStatus == 1
+                            group bss by 1 into g
+                            let ab = g.Sum(b => b.AB)
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sh = g.Sum(b => b.SH)
+                            let sf = g.Sum(b => b.SF)
+                            let intr = g.Sum(b => b.INTR)
+                            let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            select new GameBatStats
+                            {
+                                TeamId = teamId,
+                                AB = ab,
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                RBI = g.Sum(b => b.RBI),
+                                SO = g.Sum(b => b.SO),
+                                BB = bb,
+                                RE = g.Sum(b => b.RE),
+                                HBP = hbp,
+                                INTR = intr,
+                                SF = sf,
+                                SH = sh,
+                                SB = g.Sum(b => b.SB),
+                                CS = g.Sum(b => b.CS),
+                                LOB = g.Sum(b => b.LOB),
+                                AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                OBA = oba,
+                                OPS = slg + oba,
+                                PA = ab + bb + hbp + sh + sf + intr,
+                                SLG = slg,
+                                TB = tb
+                            }).SingleOrDefault();
+                case 3: // vs. Division
+                    //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                    //FROM LeagueSchedule, TeamsSeason, batstatsum 
+                    //WHERE ((LeagueSchedule.HTeamId = @teamId AND LeagueSchedule.VTeamId = TeamsSeason.Id) OR (LeagueSchedule.VTeamId = @teamId AND LeagueSchedule.HTeamId = TeamsSeason.Id)) AND 
+                    // batstatsum.GameId = LeagueSchedule.Id AND batstatsum.TeamId = @teamId AND LeagueSchedule.GameStatus = 1 AND TeamsSeason.DivisionSeasonId = @vsDivisionId
+                    return (from bss in db.batstatsums
+                            join ls in db.LeagueSchedules on bss.GameId equals ls.Id
+                            join ts in db.TeamsSeasons on bss.TeamId equals ts.TeamId
+                            where ((ls.HTeamId == teamId && ls.VTeamId == ts.Id) || (ls.VTeamId == teamId && ls.HTeamId == ts.Id)) &&
+                            ls.GameStatus == 1 && ts.DivisionSeasonId == filterData
+                            group bss by 1 into g
+                            let ab = g.Sum(b => b.AB)
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sh = g.Sum(b => b.SH)
+                            let sf = g.Sum(b => b.SF)
+                            let intr = g.Sum(b => b.INTR)
+                            let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            select new GameBatStats
+                            {
+                                TeamId = teamId,
+                                AB = ab,
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                RBI = g.Sum(b => b.RBI),
+                                SO = g.Sum(b => b.SO),
+                                BB = bb,
+                                RE = g.Sum(b => b.RE),
+                                HBP = hbp,
+                                INTR = intr,
+                                SF = sf,
+                                SH = sh,
+                                SB = g.Sum(b => b.SB),
+                                CS = g.Sum(b => b.CS),
+                                LOB = g.Sum(b => b.LOB),
+                                AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                OBA = oba,
+                                OPS = slg + oba,
+                                PA = ab + bb + hbp + sh + sf + intr,
+                                SLG = slg,
+                                TB = tb
+                            }).SingleOrDefault();
+                    break;
+                case 4: // Single Game
+                    //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                    //FROM batstatsum 
+                    //WHERE TeamId = @teamId AND GameId = @gameId
+                    return (from bss in db.batstatsums
+                            where bss.TeamId == teamId && bss.GameId == filterData
+                            group bss by 1 into g
+                            let ab = g.Sum(b => b.AB)
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sh = g.Sum(b => b.SH)
+                            let sf = g.Sum(b => b.SF)
+                            let intr = g.Sum(b => b.INTR)
+                            let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            select new GameBatStats
+                            {
+                                TeamId = teamId,
+                                AB = ab,
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                RBI = g.Sum(b => b.RBI),
+                                SO = g.Sum(b => b.SO),
+                                BB = bb,
+                                RE = g.Sum(b => b.RE),
+                                HBP = hbp,
+                                INTR = intr,
+                                SF = sf,
+                                SH = sh,
+                                SB = g.Sum(b => b.SB),
+                                CS = g.Sum(b => b.CS),
+                                LOB = g.Sum(b => b.LOB),
+                                AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                OBA = oba,
+                                OPS = slg + oba,
+                                PA = ab + bb + hbp + sh + sf + intr,
+                                SLG = slg,
+                                TB = tb
+                            }).SingleOrDefault();
+                case 1: // No Filter
+                default:
+                    //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                    //FROM batstatsum 
+                    //WHERE TeamId = @teamId
+                    return (from bss in db.batstatsums
+                            where bss.TeamId == teamId
+                            group bss by 1 into g
+                            let ab = g.Sum(b => b.AB)
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sh = g.Sum(b => b.SH)
+                            let sf = g.Sum(b => b.SF)
+                            let intr = g.Sum(b => b.INTR)
+                            let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            select new GameBatStats
+                            {
+                                TeamId = teamId,
+                                AB = ab,
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                RBI = g.Sum(b => b.RBI),
+                                SO = g.Sum(b => b.SO),
+                                BB = bb,
+                                RE = g.Sum(b => b.RE),
+                                HBP = hbp,
+                                INTR = intr,
+                                SF = sf,
+                                SH = sh,
+                                SB = g.Sum(b => b.SB),
+                                CS = g.Sum(b => b.CS),
+                                LOB = g.Sum(b => b.LOB),
+                                AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                                OBA = oba,
+                                OPS = slg + oba,
+                                PA = ab + bb + hbp + sh + sf + intr,
+                                SLG = slg,
+                                TB = tb
+                            }).SingleOrDefault();
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
 
-            return stats;
         }
 
         static public GamePitchStats GetPitchTeamTotals(long teamId, int filter, long filterData)
         {
-            GamePitchStats stats = null;
+            DB db = DBConnection.GetContext();
 
-
-            try
+            switch (filter)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
-
-                    switch (filter)
-                    {
-                        case 2: // vs. Team
-                            myCommand = new SqlCommand("dbo.GetPitchTeamTotalsVsTeam", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 3: // vs. Division
-                            myCommand = new SqlCommand("dbo.GetPitchTeamTotalsVsDivision", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 4: // Single Game
-                            myCommand = new SqlCommand("dbo.GetPitchTeamTotalsByGame", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 1: // No Filter
-                        default:
-                            myCommand = new SqlCommand("dbo.GetPitchTeamTotals", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            break;
-                    }
-
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        stats = new GamePitchStats(0, 0, 0, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17));
-                    }
-                }
+                case 2: // vs. Team
+                    return (from pss in db.pitchstatsums
+                            join ls in db.LeagueSchedules on pss.GameId equals ls.Id
+                            where ((ls.HTeamId == teamId && ls.VTeamId == filterData) || (ls.HTeamId == filterData && ls.VTeamId == teamId)) &&
+                            pss.TeamId == teamId && ls.GameStatus == 1
+                            group pss by 1 into g
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sc = g.Sum(b => b.SC)
+                            let bf = g.Sum(b => b.BF)
+                            let ip = g.Sum(b => b.IP)
+                            let ip2 = g.Sum(b => b.IP2)
+                            let er = g.Sum(b => b.ER)
+                            let so = g.Sum(b => b.SO)
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let ab = bf - bb - hbp - sc
+                            let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                            let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                            select new GamePitchStats
+                            {
+                                TeamId = teamId,
+                                IP = ip,
+                                IP2 = ip2,
+                                BF = bf,
+                                W = g.Sum(b => b.W),
+                                L = g.Sum(b => b.L),
+                                S = g.Sum(b => b.S),
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                ER = er,
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                SO = so,
+                                BB = bb,
+                                WP = g.Sum(b => b.WP),
+                                HBP = hbp,
+                                BK = g.Sum(b => b.BK),
+                                SC = sc,
+                                ERA = era,
+                                AB = ab,
+                                BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                IPDecimal = ipdecimal,
+                                WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                TB = tb,
+                                K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                OBA = oba,
+                                SLG = slg
+                            }).SingleOrDefault();
+                case 3: // vs. Division
+                    return (from pss in db.pitchstatsums
+                            join ls in db.LeagueSchedules on pss.GameId equals ls.Id
+                            join ts in db.TeamsSeasons on pss.TeamId equals ts.TeamId
+                            where ((ls.HTeamId == teamId && ls.VTeamId == ts.Id) || (ls.VTeamId == teamId && ls.HTeamId == ts.Id)) &&
+                            ls.GameStatus == 1 && ts.DivisionSeasonId == filterData
+                            group pss by 1 into g
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sc = g.Sum(b => b.SC)
+                            let bf = g.Sum(b => b.BF)
+                            let ip = g.Sum(b => b.IP)
+                            let ip2 = g.Sum(b => b.IP2)
+                            let er = g.Sum(b => b.ER)
+                            let so = g.Sum(b => b.SO)
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let ab = bf - bb - hbp - sc
+                            let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                            let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                            select new GamePitchStats
+                            {
+                                TeamId = teamId,
+                                IP = ip,
+                                IP2 = ip2,
+                                BF = bf,
+                                W = g.Sum(b => b.W),
+                                L = g.Sum(b => b.L),
+                                S = g.Sum(b => b.S),
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                ER = er,
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                SO = so,
+                                BB = bb,
+                                WP = g.Sum(b => b.WP),
+                                HBP = hbp,
+                                BK = g.Sum(b => b.BK),
+                                SC = sc,
+                                ERA = era,
+                                AB = ab,
+                                BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                IPDecimal = ipdecimal,
+                                WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                TB = tb,
+                                K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                OBA = oba,
+                                SLG = slg
+                            }).SingleOrDefault();
+                case 4: // Single Game
+                    return (from pss in db.pitchstatsums
+                            where pss.TeamId == teamId && pss.GameId == filterData
+                            group pss by 1 into g
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sc = g.Sum(b => b.SC)
+                            let bf = g.Sum(b => b.BF)
+                            let ip = g.Sum(b => b.IP)
+                            let ip2 = g.Sum(b => b.IP2)
+                            let er = g.Sum(b => b.ER)
+                            let so = g.Sum(b => b.SO)
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let ab = bf - bb - hbp - sc
+                            let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                            let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                            select new GamePitchStats
+                            {
+                                TeamId = teamId,
+                                IP = ip,
+                                IP2 = ip2,
+                                BF = bf,
+                                W = g.Sum(b => b.W),
+                                L = g.Sum(b => b.L),
+                                S = g.Sum(b => b.S),
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                ER = er,
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                SO = so,
+                                BB = bb,
+                                WP = g.Sum(b => b.WP),
+                                HBP = hbp,
+                                BK = g.Sum(b => b.BK),
+                                SC = sc,
+                                ERA = era,
+                                AB = ab,
+                                BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                IPDecimal = ipdecimal,
+                                WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                TB = tb,
+                                K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                OBA = oba,
+                                SLG = slg
+                            }).SingleOrDefault();
+                case 1: // No Filter
+                default:
+                    return (from pss in db.pitchstatsums
+                            where pss.TeamId == teamId
+                            group pss by 1 into g
+                            let h = g.Sum(b => b.H)
+                            let bb = g.Sum(b => b.BB)
+                            let hbp = g.Sum(b => b.HBP)
+                            let d = g.Sum(b => b._2B)
+                            let t = g.Sum(b => b._3B)
+                            let hr = g.Sum(b => b.HR)
+                            let sc = g.Sum(b => b.SC)
+                            let bf = g.Sum(b => b.BF)
+                            let ip = g.Sum(b => b.IP)
+                            let ip2 = g.Sum(b => b.IP2)
+                            let er = g.Sum(b => b.ER)
+                            let so = g.Sum(b => b.SO)
+                            let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                            let ab = bf - bb - hbp - sc
+                            let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                            let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                            let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                            let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                            select new GamePitchStats
+                            {
+                                TeamId = teamId,
+                                IP = ip,
+                                IP2 = ip2,
+                                BF = bf,
+                                W = g.Sum(b => b.W),
+                                L = g.Sum(b => b.L),
+                                S = g.Sum(b => b.S),
+                                H = h,
+                                R = g.Sum(b => b.R),
+                                ER = er,
+                                D = d,
+                                T = t,
+                                HR = hr,
+                                SO = so,
+                                BB = bb,
+                                WP = g.Sum(b => b.WP),
+                                HBP = hbp,
+                                BK = g.Sum(b => b.BK),
+                                SC = sc,
+                                ERA = era,
+                                AB = ab,
+                                BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                                IPDecimal = ipdecimal,
+                                WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                                TB = tb,
+                                K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                                OBA = oba,
+                                SLG = slg
+                            }).SingleOrDefault();
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return stats;
         }
 
         static public GameFieldStats GetFieldTeamTotalsByPos(long teamId, int pos, int filter, long filterData)
         {
-            GameFieldStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            switch (filter)
             {
+                case 2: // vs. Team
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsTeamByPos( @teamId bigint, @vsTeamId bigint, @pos int )
+                    //AS
 
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
+                    //    SELECT POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum LEFT JOIN LeagueSchedule ON fieldstatsum.GameId = LeagueSchedule.Id 
+                    //    WHERE ((HTeamId = @teamId AND VTeamId = @vsTeamId) OR (HTeamId = @vsTeamId AND VTeamId = @teamId)) AND fieldstatsum.TeamId = @teamId AND POS = @pos AND GameStatus = 1 GROUP BY POS
 
-                    switch (filter)
-                    {
-                        case 2: // vs. team
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeamByPos", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
-                            break;
-                        case 3: // vs. division
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivisionByPos", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
-                            break;
-                        case 4: // single game
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGameByPos", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
-                            break;
-                        case 1:
-                        default:
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByPos", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
-                            break;
-                    }
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeamByPos", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
+                    return null;
+                case 3: // vs. Division
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsDivisionByPos( @teamId bigint, @vsDivisionId bigint, @pos int )
+                    //AS
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                    //    SELECT POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM LeagueSchedule, TeamsSeason, fieldstatsum 
+                    //    WHERE ((LeagueSchedule.HTeamId = @teamId AND LeagueSchedule.VTeamId = TeamsSeason.Id) OR (LeagueSchedule.VTeamId = @teamId AND LeagueSchedule.HTeamId = TeamsSeason.Id)) AND fieldstatsum.GameId = LeagueSchedule.Id AND LeagueSchedule.GameStatus = 1 AND fieldstatsum.TeamId = @teamId AND TeamsSeason.DivisionSeasonId = @vsDivisionId AND POS = @pos GROUP BY POS
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivisionByPos", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
+                    return null;
+                case 4: // Single Game
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsByGameByPos( @teamId bigint, @gameId bigint, @pos int )
+                    //AS
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+                    //    SELECT POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND GameId = @gameId AND POS = @pos GROUP BY POS
 
-                    if (dr.Read())
-                    {
-                        stats = new GameFieldStats(0, 0, 0, teamId, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8));
-                    }
-                }
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGameByPos", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
+                    return null;
+                case 1: // No Filter
+                default:
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsByPos( @teamId bigint, @pos int )
+                    //AS
+
+                    //    SELECT POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND POS = @pos GROUP BY POS
+
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByPos", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = pos;
+                    return null;
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return stats;
         }
 
         static public GameFieldStats getFieldTeamTotalsByPlayer(long teamId, long playerId, int filter, long filterData)
         {
-            GameFieldStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            switch (filter)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
+                case 2: // vs. team
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsTeamByPlayer( @teamId bigint, @vsTeamId bigint, @playerId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum LEFT JOIN LeagueSchedule ON fieldstatsum.GameId = LeagueSchedule.Id 
+                    //    WHERE ((HTeamId = @teamId AND VTeamId = @vsTeamId) OR (HTeamId = @vsTeamId AND VTeamId = @teamId)) AND fieldstatsum.TeamId = @teamId AND fieldstatsum.PlayerId = @playerId AND GameStatus = 1
 
-                    switch (filter)
-                    {
-                        case 2: // vs. team
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeamByPlayer", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-                            break;
-                        case 3: // vs. division
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivisionByPlayer", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-                            break;
-                        case 4: // single game
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGameByPlayer", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-                            break;
-                        case 1:
-                        default:
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByPlayer", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
-                            break;
-                    }
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeamByPlayer", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
+                    return null;
+                case 3: // vs. division
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsDivisionByPlayer( @teamId bigint, @vsDivisionId bigint, @playerId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM LeagueSchedule, TeamsSeason, fieldstatsum 
+                    //    WHERE ((LeagueSchedule.HTeamId = @teamId AND LeagueSchedule.VTeamId = TeamsSeason.Id) OR (LeagueSchedule.VTeamId = @teamId AND LeagueSchedule.HTeamId = TeamsSeason.Id)) AND fieldstatsum.GameId = LeagueSchedule.Id AND LeagueSchedule.GameStatus = 1 AND fieldstatsum.TeamId = @teamId AND TeamsSeason.DivisionSeasonId = @vsDivisionId AND fieldstatsum.PlayerId = @playerId
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivisionByPlayer", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
+                    return null;
+                case 4: // single game
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsByGameByPlayer( @teamId bigint, @gameId bigint, @playerId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND GameId = @gameId AND fieldstatsum.PlayerId = @playerId
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGameByPlayer", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
+                    //myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
+                    return null;
+                case 1:
+                default:
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsByPlayer( @teamId bigint, @playerId bigint )
+                    //AS
 
-                    if (dr.Read())
-                    {
-                        stats = new GameFieldStats(0, 0, 0, teamId, 0, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7));
-                    }
-                }
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND fieldstatsum.PlayerId = @playerId
+
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByPlayer", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = playerId;
+                    return null;
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return stats;
         }
 
         static public GameFieldStats getFieldTeamTotals(long teamId, int filter, long filterData)
         {
-            GameFieldStats stats = null;
+            DB db = DBConnection.GetContext();
 
-            try
+            switch (filter)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
-                    switch (filter)
-                    {
-                        case 2: // vs. team
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeam", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 3: // vs. division
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivision", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 4: // single game
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGame", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 1:
-                        default:
-                            myCommand = new SqlCommand("dbo.GetFieldTeamTotals", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            break;
-                    }
+                case 2: // vs. team
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsTeam( @teamId bigint, @vsTeamId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum LEFT JOIN LeagueSchedule ON fieldstatsum.GameId = LeagueSchedule.Id
+                    //    WHERE ((HTeamId = @teamId AND VTeamId = @vsTeamId) OR (HTeamId = @vsTeamId AND VTeamId = @teamId)) AND fieldstatsum.TeamId = @teamId AND GameStatus = 1
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsTeam", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
+                    return null;
+                case 3: // vs. division
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsVsDivision( @teamId bigint, @vsDivisionId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM LeagueSchedule, TeamsSeason, fieldstatsum 
+                    //    WHERE ((LeagueSchedule.HTeamId = @teamId AND LeagueSchedule.VTeamId = TeamsSeason.Id) OR (LeagueSchedule.VTeamId = @teamId AND LeagueSchedule.HTeamId = TeamsSeason.Id)) AND fieldstatsum.GameId = LeagueSchedule.Id AND LeagueSchedule.GameStatus = 1 AND fieldstatsum.TeamId = @teamId AND TeamsSeason.DivisionSeasonId = @vsDivisionId
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsVsDivision", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
+                    return null;
+                case 4: // single game
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotalsByGame( @teamId bigint, @gameId bigint )
+                    //AS
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND GameId = @gameId
 
-                    if (dr.Read())
-                    {
-                        stats = new GameFieldStats(0, 0, 0, teamId, 0, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7));
-                    }
-                }
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotalsByGame", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
+                    return null;
+                case 1:
+                default:
+                    //CREATE PROCEDURE dbo.GetFieldTeamTotals( @teamId bigint )
+                    //AS
+
+                    //    SELECT SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId
+
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamTotals", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    return null;
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return stats;
         }
 
         /// <summary>
@@ -525,7 +848,7 @@ namespace DataAccess
                             SB = g.Sum(b => b.SB),
                             CS = g.Sum(b => b.CS),
                             LOB = g.Sum(b => b.LOB),
-                            AVG =  ab > 0 ? (double)h / (double)ab : 0.000,
+                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
                             OBA = oba,
                             OPS = slg + oba,
                             PA = ab + bb + hbp + sh + sf + intr,
@@ -618,42 +941,134 @@ namespace DataAccess
         }
 
 
-        static public List<GameBatStats> GetBatTeamPlayerSeasonTotals(long teamSeasonId, long seasonId, String sortExpression)
+        static public IQueryable<GameBatStats> GetBatTeamPlayerSeasonTotals(long teamSeasonId, long seasonId, String sortField, String sortOrder)
         {
-            List<GameBatStats> stats = new List<GameBatStats>();
+            DB db = DBConnection.GetContext();
 
-            try
+            var teamId = (from ts in db.TeamsSeasons
+                          where ts.Id == teamSeasonId
+                          select ts.TeamId).SingleOrDefault();
+
+            if (teamId == 0)
+                return null;
+
+            if (seasonId == 0)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetBatTeamPlayerSeasonTotals", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamSeasonId;
-                    myCommand.Parameters.Add("@seasonId", SqlDbType.BigInt).Value = seasonId;
-
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameBatStats(0, dr.GetInt64(0), 0, teamSeasonId, dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17)));
-                    }
-
-                    if (sortExpression == String.Empty)
-                        sortExpression = "AVG";
-
-                    GameBatStatsComparer statsComparer = new GameBatStatsComparer(sortExpression);
-                    stats.Sort(statsComparer);
-                }
+                //    SELECT Roster.Id, SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                //    FROM batstatsum 
+                //      LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
+                //      LEFT JOIN Teams ON Teams.Id = TeamsSeason.TeamId 
+                //      LEFT JOIN RosterSeason ON RosterSeason.Id = batstatsum.PlayerId 
+                //      LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id 
+                //    WHERE Teams.Id = @teamId Group By Roster.Id
+                return (from bss in db.batstatsums
+                        join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
+                        join r in db.Rosters on rs.PlayerId equals r.Id
+                        where t.Id == teamId
+                        group bss by r.Id into g
+                        let ab = g.Sum(b => b.AB)
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sh = g.Sum(b => b.SH)
+                        let sf = g.Sum(b => b.SF)
+                        let intr = g.Sum(b => b.INTR)
+                        let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        select new GameBatStats
+                        {
+                            PlayerId = g.Key,
+                            TeamId = teamId,
+                            AB = ab,
+                            H = h,
+                            R = g.Sum(b => b.R),
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            RBI = g.Sum(b => b.RBI),
+                            SO = g.Sum(b => b.SO),
+                            BB = bb,
+                            RE = g.Sum(b => b.RE),
+                            HBP = hbp,
+                            INTR = intr,
+                            SF = sf,
+                            SH = sh,
+                            SB = g.Sum(b => b.SB),
+                            CS = g.Sum(b => b.CS),
+                            LOB = g.Sum(b => b.LOB),
+                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                            OBA = oba,
+                            OPS = slg + oba,
+                            PA = ab + bb + hbp + sh + sf + intr,
+                            SLG = slg,
+                            TB = tb
+                        }).OrderBy(sortField + " " + sortOrder);
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                //    SELECT Roster.Id, SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
+                //    FROM batstatsum LEFT JOIN TeamsSeason ON batstatsum.TeamId = TeamsSeason.Id 
+                //                    LEFT JOIN Teams ON Teams.Id = TeamsSeason.TeamId 
+                //                    LEFT JOIN RosterSeason on RosterSeason.Id = batstatsum.PlayerId 
+                //                    LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id 
+                //                    LEFT JOIN LeagueSeason ON TeamsSeason.LeagueSeasonId = LeagueSeason.Id 
+                //    WHERE Teams.Id = @teamId AND LeagueSeason.SeasonId = @seasonId Group By Roster.Id
+                return (from bss in db.batstatsums
+                        join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
+                        join r in db.Rosters on rs.PlayerId equals r.Id
+                        join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                        where t.Id == teamId && ls.SeasonId == seasonId
+                        group bss by r.Id into g
+                        let ab = g.Sum(b => b.AB)
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sh = g.Sum(b => b.SH)
+                        let sf = g.Sum(b => b.SF)
+                        let intr = g.Sum(b => b.INTR)
+                        let oba = (ab + bb + hbp) > 0 ? (double)(h + bb + hbp) / (double)(ab + bb + hbp) : 0.00
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        select new GameBatStats
+                        {
+                            PlayerId = g.Key,
+                            TeamId = teamSeasonId,
+                            AB = ab,
+                            H = h,
+                            R = g.Sum(b => b.R),
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            RBI = g.Sum(b => b.RBI),
+                            SO = g.Sum(b => b.SO),
+                            BB = bb,
+                            RE = g.Sum(b => b.RE),
+                            HBP = hbp,
+                            INTR = intr,
+                            SF = sf,
+                            SH = sh,
+                            SB = g.Sum(b => b.SB),
+                            CS = g.Sum(b => b.CS),
+                            LOB = g.Sum(b => b.LOB),
+                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
+                            OBA = oba,
+                            OPS = slg + oba,
+                            PA = ab + bb + hbp + sh + sf + intr,
+                            SLG = slg,
+                            TB = tb
+                        }).OrderBy(sortField + " " + sortOrder);
             }
-
-            return stats;
         }
 
         static public IQueryable<GameBatStats> GetBatLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats) //, out int totalRecords)
@@ -970,42 +1385,144 @@ namespace DataAccess
 
         }
 
-        static public List<GamePitchStats> GetPitchTeamPlayerSeasonTotals(long teamId, long seasonId, String sortExpression)
+        static public IQueryable<GamePitchStats> GetPitchTeamPlayerSeasonTotals(long teamSeasonId, long seasonId, String sortField, String sortOrder)
         {
-            List<GamePitchStats> stats = new List<GamePitchStats>();
+            DB db = DBConnection.GetContext();
 
-            try
+            var teamId = (from ts in db.TeamsSeasons
+                          where ts.Id == teamSeasonId
+                          select ts.TeamId).SingleOrDefault();
+
+            if (teamId == 0)
+                return null;
+
+            if (seasonId == 0)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetPitchTeamPlayerSeasonTotals", myConnection);
-                    myCommand.Parameters.Add("@teamSeasonId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@seasonId", SqlDbType.BigInt).Value = seasonId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    while (dr.Read())
-                    {
-                        stats.Add(new GamePitchStats(0, dr.GetInt64(0), 0, teamId, dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9), dr.GetInt32(10), dr.GetInt32(11), dr.GetInt32(12), dr.GetInt32(13), dr.GetInt32(14), dr.GetInt32(15), dr.GetInt32(16), dr.GetInt32(17), dr.GetInt32(18)));
-                    }
-
-                    if (sortExpression == string.Empty)
-                        sortExpression = "ERA DESC";
-
-                    GamePitchStatsComparer statsComparer = new GamePitchStatsComparer(sortExpression);
-                    stats.Sort(statsComparer);
-                }
+                //    SELECT Roster.Id, SUM(IP) as IP, SUM(IP2) as IP2, SUM(BF) as BF, SUM(W) as W, SUM(L) as L, SUM(S) as S, SUM(H) as H, SUM(R) as R, SUM(ER) as ER, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(SO) as SO, SUM(BB) as BB, SUM(WP) as WP, SUM(HBP) as HBP, SUM(BK) as BK, SUM(SC) as SC
+                //    FROM pitchstatsum LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id LEFT JOIN Teams ON Teams.Id = TeamsSeason.TeamId LEFT JOIN RosterSeason ON RosterSeason.Id = pitchstatsum.PlayerId LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id 
+                //    WHERE Teams.Id = @teamId Group By Roster.Id
+                return (from pss in db.pitchstatsums
+                        join ts in db.TeamsSeasons on pss.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join rs in db.RosterSeasons on pss.PlayerId equals rs.Id
+                        join r in db.Rosters on rs.PlayerId equals r.Id
+                        where t.Id == teamId
+                        group pss by r.Id into g
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sc = g.Sum(b => b.SC)
+                        let bf = g.Sum(b => b.BF)
+                        let ip = g.Sum(b => b.IP)
+                        let ip2 = g.Sum(b => b.IP2)
+                        let er = g.Sum(b => b.ER)
+                        let so = g.Sum(b => b.SO)
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let ab = bf - bb - hbp - sc
+                        let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                        let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                        select new GamePitchStats
+                        {
+                            PlayerId = g.Key,
+                            TeamId = teamId,
+                            IP = ip,
+                            IP2 = ip2,
+                            BF = bf,
+                            W = g.Sum(b => b.W),
+                            L = g.Sum(b => b.L),
+                            S = g.Sum(b => b.S),
+                            H = h,
+                            R = g.Sum(b => b.R),
+                            ER = er,
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            SO = so,
+                            BB = bb,
+                            WP = g.Sum(b => b.WP),
+                            HBP = hbp,
+                            BK = g.Sum(b => b.BK),
+                            SC = sc,
+                            ERA = era,
+                            AB = ab,
+                            BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                            IPDecimal = ipdecimal,
+                            WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                            TB = tb,
+                            K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                            OBA = oba,
+                            SLG = slg
+                        }).OrderBy(sortField + " " + sortOrder);
             }
-            catch (SqlException ex)
+            else
             {
-                Globals.LogException(ex);
+                //    SELECT Roster.Id, SUM(IP) as IP, SUM(IP2) as IP2, SUM(BF) as BF, SUM(W) as W, SUM(L) as L, SUM(S) as S, SUM(H) as H, SUM(R) as R, SUM(ER) as ER, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(SO) as SO, SUM(BB) as BB, SUM(WP) as WP, SUM(HBP) as HBP, SUM(BK) as BK, SUM(SC) as SC
+                //    FROM pitchstatsum LEFT JOIN TeamsSeason ON pitchstatsum.TeamId = TeamsSeason.Id LEFT JOIN Teams ON Teams.Id = TeamsSeason.TeamId LEFT JOIN RosterSeason on RosterSeason.Id = pitchstatsum.PlayerId LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id LEFT JOIN LeagueSeason ON TeamsSeason.LeagueSeasonId = LeagueSeason.Id 
+                //    WHERE Teams.Id = @teamId AND LeagueSeason.SeasonId = @seasonId Group By Roster.Id
+                return (from pss in db.pitchstatsums
+                        join ts in db.TeamsSeasons on pss.TeamId equals ts.Id
+                        join t in db.Teams on ts.TeamId equals t.Id
+                        join rs in db.RosterSeasons on pss.PlayerId equals rs.Id
+                        join r in db.Rosters on rs.PlayerId equals r.Id
+                        join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                        where t.Id == teamId && ls.SeasonId == seasonId
+                        group pss by r.Id into g
+                        let h = g.Sum(b => b.H)
+                        let bb = g.Sum(b => b.BB)
+                        let hbp = g.Sum(b => b.HBP)
+                        let d = g.Sum(b => b._2B)
+                        let t = g.Sum(b => b._3B)
+                        let hr = g.Sum(b => b.HR)
+                        let sc = g.Sum(b => b.SC)
+                        let bf = g.Sum(b => b.BF)
+                        let ip = g.Sum(b => b.IP)
+                        let ip2 = g.Sum(b => b.IP2)
+                        let er = g.Sum(b => b.ER)
+                        let so = g.Sum(b => b.SO)
+                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
+                        let ab = bf - bb - hbp - sc
+                        let oba = ab > 0 ? (double)h / (double)ab : 0.00
+                        let slg = ab > 0 ? (double)tb / (double)ab : 0.000
+                        let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
+                        let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
+                        select new GamePitchStats
+                        {
+                            PlayerId = g.Key,
+                            TeamId = teamSeasonId,
+                            IP = ip,
+                            IP2 = ip2,
+                            BF = bf,
+                            W = g.Sum(b => b.W),
+                            L = g.Sum(b => b.L),
+                            S = g.Sum(b => b.S),
+                            H = h,
+                            R = g.Sum(b => b.R),
+                            ER = er,
+                            D = d,
+                            T = t,
+                            HR = hr,
+                            SO = so,
+                            BB = bb,
+                            WP = g.Sum(b => b.WP),
+                            HBP = hbp,
+                            BK = g.Sum(b => b.BK),
+                            SC = sc,
+                            ERA = era,
+                            AB = ab,
+                            BB9 = (ipdecimal > 0.0) ? (double)bb / ipdecimal * 9.0 : 0.0,
+                            IPDecimal = ipdecimal,
+                            WHIP = (ipdecimal > 0.0) ? (double)(h + bb) / ipdecimal : 0.0,
+                            TB = tb,
+                            K9 = (ipdecimal > 0.0) ? (double)so / ipdecimal * 9.0 : 0.0,
+                            OBA = oba,
+                            SLG = slg
+                        }).OrderBy(sortField + " " + sortOrder);
             }
-
-            return stats;
         }
 
         static public GamePitchStats GetPitchTeamSeasonTotals(long teamSeasonId, long seasonId)
@@ -1023,7 +1540,7 @@ namespace DataAccess
                         join t in db.Teams on ts.TeamId equals t.Id
                         where t.Id == teamId
                         group bs by t.Id into g
-                        select new GamePitchStats() 
+                        select new GamePitchStats()
                         {
                             TeamId = teamId,
                             W = g.Sum(s => s.W),
@@ -1231,7 +1748,7 @@ namespace DataAccess
 
             return (from pss in db.pitchstatsums
                     join ls in db.LeagueSchedules on pss.GameId equals ls.Id
-                    join ts in db.TeamsSeasons on pss.TeamId equals ts.Id 
+                    join ts in db.TeamsSeasons on pss.TeamId equals ts.Id
                     where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
                     group pss by pss.PlayerId into g
                     let h = g.Sum(b => b.H)
@@ -1285,57 +1802,58 @@ namespace DataAccess
                     }).OrderBy(sortField + " " + sortOrder);
         }
 
-        static public GameFieldStats[] GetFieldTeamPlayerTotals(long teamId, int filter, long filterData)
+        static public IQueryable<GameFieldStats> GetFieldTeamPlayerTotals(long teamId, int filter, long filterData)
         {
-            ArrayList stats = new ArrayList();
-
-            try
+            switch (filter)
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand;
-                    switch (filter)
-                    {
-                        case 2: // vs. team
-                            myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsVsTeam", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 3: // vs. division
-                            myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsVsDivision", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 4: // single game
-                            myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsByGame", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
-                            break;
-                        case 1:
-                        default:
-                            myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotals", myConnection);
-                            myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                            break;
-                    }
+                case 2: // vs. team
+                    //CREATE PROCEDURE dbo.GetFieldTeamPlayerTotalsVsTeam( @teamId bigint, @vsTeamId bigint )
+                    //AS
+                    //    SELECT PlayerId, POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum LEFT JOIN LeagueSchedule ON fieldstatsum.GameId = LeagueSchedule.Id 
+                    //    WHERE ((HTeamId = @teamId AND VTeamId = @vsTeamId) OR (HTeamId = @vsTeamId AND VTeamId = @teamId)) AND fieldstatsum.TeamId = @teamId AND GameStatus = 1 GROUP BY fieldstatsum.PlayerId, POS
 
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-                    myConnection.Open();
-                    myCommand.Prepare();
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsVsTeam", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsTeamId", SqlDbType.BigInt).Value = filterData;
+                    return null;
 
-                    SqlDataReader dr = myCommand.ExecuteReader();
+                case 3: // vs. division
+                    //CREATE PROCEDURE dbo.GetFieldTeamPlayerTotalsVsDivision( @teamId bigint, @vsDivisionId bigint )
+                    //AS
+                    //    SELECT PlayerId, POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM LeagueSchedule, TeamsSeason, fieldstatsum 
+                    //    WHERE ((LeagueSchedule.HTeamId = @teamId AND LeagueSchedule.VTeamId = TeamsSeason.Id) OR (LeagueSchedule.VTeamId = @teamId AND LeagueSchedule.HTeamId = TeamsSeason.Id)) AND fieldstatsum.GameId = LeagueSchedule.Id  AND LeagueSchedule.GameStatus = 1 AND fieldstatsum.TeamId = @teamId AND TeamsSeason.DivisionSeasonId = @vsDivisionId GROUP BY fieldstatsum.PlayerId, POS
 
-                    while (dr.Read())
-                    {
-                        stats.Add(new GameFieldStats(0, dr.GetInt64(0), 0, teamId, dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7), dr.GetInt32(8), dr.GetInt32(9)));
-                    }
-                }
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsVsDivision", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@vsDivisionId", SqlDbType.BigInt).Value = filterData;
+                    return null;
+
+                case 4: // single game
+                    //CREATE PROCEDURE dbo.GetFieldTeamPlayerTotalsByGame( @teamId bigint, @gameId bigint )
+                    //AS
+                    //    SELECT PlayerId, POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId AND GameId = @gameId GROUP BY PlayerId, POS
+
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotalsByGame", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    //myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
+                    return null;
+
+                case 1:
+                default:
+                    //CREATE PROCEDURE dbo.GetFieldTeamPlayerTotals( @teamId bigint )
+                    //AS
+                    //    SELECT PlayerId, POS, SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS
+                    //    FROM fieldstatsum 
+                    //    WHERE TeamId = @teamId GROUP BY PlayerId, POS
+
+                    //myCommand = new SqlCommand("dbo.GetFieldTeamPlayerTotals", myConnection);
+                    //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+                    return null;
             }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (GameFieldStats[])stats.ToArray(typeof(GameFieldStats));
         }
 
         static public GameBatStats GetBatGameTotals(long gameId, long teamId)
@@ -1419,34 +1937,18 @@ namespace DataAccess
 
         static public GameFieldStats GetFieldGameTotals(long gameId, long teamId)
         {
-            GameFieldStats stats = null;
+            //CREATE PROCEDURE dbo.GetFieldGameTotals( @teamId bigint, @gameId bigint )
+            //AS
+            //    SELECT  SUM(IP) as IP, SUM(IP2) as IP2, SUM(PO) as PO, SUM(A) as A, SUM(E) as E, SUM(PB) as PB, SUM(SB) as SB, SUM(CS) as CS 
+            //    FROM fieldstatsum 
+            //    WHERE GameId = @gameId AND TeamId = @teamId
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.GetFieldGameTotals", myConnection);
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            //SqlCommand myCommand = new SqlCommand("dbo.GetFieldGameTotals", myConnection);
+            //myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+            //myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
+            //myCommand.CommandType = System.Data.CommandType.StoredProcedure;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read())
-                    {
-                        stats = new GameFieldStats(0, 0, gameId, teamId, 0, dr.GetInt32(0), dr.GetInt32(1), dr.GetInt32(2), dr.GetInt32(3), dr.GetInt32(4), dr.GetInt32(5), dr.GetInt32(6), dr.GetInt32(7));
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return stats;
+            return null;
         }
 
         static public IQueryable<GameBatStats> GetBatGameStats(long gameId, long teamId)
@@ -1603,76 +2105,59 @@ namespace DataAccess
             return dbStats.Id;
         }
 
-        static public int UpdateFieldingGameStats(GameFieldStats g)
+        static public bool UpdateFieldingGameStats(GameFieldStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.UpdateFieldingGameStats", myConnection);
-                    myCommand.Parameters.Add("@Id", SqlDbType.BigInt).Value = g.Id;
-                    myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = g.POS;
-                    myCommand.Parameters.Add("@ip", SqlDbType.Int).Value = g.IP;
-                    myCommand.Parameters.Add("@ip2", SqlDbType.Int).Value = g.IP2;
-                    myCommand.Parameters.Add("@po", SqlDbType.Int).Value = g.PO;
-                    myCommand.Parameters.Add("@a", SqlDbType.Int).Value = g.A;
-                    myCommand.Parameters.Add("@e", SqlDbType.Int).Value = g.E;
-                    myCommand.Parameters.Add("@pb", SqlDbType.Int).Value = g.PB;
-                    myCommand.Parameters.Add("@sb", SqlDbType.Int).Value = g.SB;
-                    myCommand.Parameters.Add("@cs", SqlDbType.Int).Value = g.CS;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            var dbStats = (from f in db.fieldstatsums
+                           where f.Id == g.Id
+                           select f).SingleOrDefault();
+            if (dbStats == null)
+                return false;
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            dbStats.GameId = g.GameId;
+            dbStats.TeamId = g.TeamId;
+            dbStats.PlayerId = g.PlayerId;
+            dbStats.POS = g.POS;
+            dbStats.IP = g.IP;
+            dbStats.IP2 = g.IP2;
+            dbStats.PO = g.PO;
+            dbStats.A = g.A;
+            dbStats.E = g.E;
+            dbStats.PB = g.PB;
+            dbStats.SB = g.SB;
+            dbStats.CS = g.CS;
 
-                    rc = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
+            db.SubmitChanges();
 
-            return (rc);
+            return true;
         }
 
-        static public int AddFieldingGameStats(GameFieldStats g)
+        static public bool AddFieldingGameStats(GameFieldStats g)
         {
-            int rc = 0;
+            DB db = DBConnection.GetContext();
 
-            try
+            var dbStats = new SportsManager.Model.fieldstatsum()
             {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.InsertFieldingGameStats", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = g.GameId;
-                    myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = g.TeamId;
-                    myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = g.PlayerId;
-                    myCommand.Parameters.Add("@pos", SqlDbType.Int).Value = g.POS;
-                    myCommand.Parameters.Add("@ip", SqlDbType.Int).Value = g.IP;
-                    myCommand.Parameters.Add("@ip2", SqlDbType.Int).Value = g.IP2;
-                    myCommand.Parameters.Add("@po", SqlDbType.Int).Value = g.PO;
-                    myCommand.Parameters.Add("@a", SqlDbType.Int).Value = g.A;
-                    myCommand.Parameters.Add("@e", SqlDbType.Int).Value = g.E;
-                    myCommand.Parameters.Add("@pb", SqlDbType.Int).Value = g.PB;
-                    myCommand.Parameters.Add("@sb", SqlDbType.Int).Value = g.SB;
-                    myCommand.Parameters.Add("@cs", SqlDbType.Int).Value = g.CS;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+                GameId = g.GameId,
+                TeamId = g.TeamId,
+                PlayerId = g.PlayerId,
+                POS = g.POS,
+                IP = g.IP,
+                IP2 = g.IP2,
+                PO = g.PO,
+                A = g.A,
+                E = g.E,
+                PB = g.PB,
+                SB = g.SB,
+                CS = g.CS
+            };
 
-                    myConnection.Open();
-                    myCommand.Prepare();
+            db.fieldstatsums.InsertOnSubmit(dbStats);
+            db.SubmitChanges();
 
-                    rc = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rc);
+            g.Id = dbStats.Id;
+            return true;
         }
 
         static public bool RemoveGameBatStats(GameBatStats g)
@@ -1728,28 +2213,14 @@ namespace DataAccess
 
         static public bool RemovePlayerStats(long id)
         {
-            int rowCount = 0;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.DeletePlayerStats", myConnection);
-                    myCommand.Parameters.Add("@playerId", SqlDbType.BigInt).Value = id;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            db.pitchstatsums.DeleteAllOnSubmit(db.pitchstatsums.Where(stat => stat.PlayerId == id));
+            db.batstatsums.DeleteAllOnSubmit(db.batstatsums.Where(stat => stat.PlayerId == id));
+            db.fieldstatsums.DeleteAllOnSubmit(db.fieldstatsums.Where(stat => stat.PlayerId == id));
 
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    rowCount = myCommand.ExecuteNonQuery();
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-            }
-
-            return (rowCount > 0);
+            db.SubmitChanges();
+            return true;
         }
 
         static public bool ValidateStats(long gameId)
@@ -1854,34 +2325,11 @@ namespace DataAccess
 
         static public bool HasGameRecap(long gameId)
         {
-            bool hasRecap = false;
+            DB db = DBConnection.GetContext();
 
-            try
-            {
-                using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-                {
-                    SqlCommand myCommand = new SqlCommand("dbo.HasGameRecap", myConnection);
-                    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = gameId;
-                    myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-
-                    myConnection.Open();
-                    myCommand.Prepare();
-
-                    SqlDataReader dr = myCommand.ExecuteReader();
-
-                    if (dr.Read() && dr.GetInt32(0) > 0)
-                    {
-                        hasRecap = true;
-                    }
-                }
-            }
-            catch (SqlException ex)
-            {
-                Globals.LogException(ex);
-                hasRecap = false;
-            }
-
-            return hasRecap;
+            return (from gr in db.GameRecaps
+                    where gr.GameId == gameId
+                    select gr).Any();
         }
 
         static public GameRecap GetGameRecap(long gameId, long teamId)
@@ -1901,7 +2349,7 @@ namespace DataAccess
         static public bool UpdateGameRecap(GameRecap recap)
         {
             DB db = DBConnection.GetContext();
-            
+
             bool update = true;
 
             var dbGameRecap = (from gr in db.GameRecaps
@@ -1909,7 +2357,7 @@ namespace DataAccess
                                select gr).SingleOrDefault();
             if (dbGameRecap == null)
             {
-                update = false;    
+                update = false;
                 dbGameRecap = new SportsManager.Model.GameRecap();
             }
 
@@ -2231,8 +2679,8 @@ namespace DataAccess
             double curMin = 0.0f;
 
             var numGames = (from ls in db.LeagueSchedules
-                              where (ls.HTeamId == teamSeasonId || ls.VTeamId == teamSeasonId) && ls.GameType == 0 && (ls.GameStatus == 1 || ls.GameStatus == 4 || ls.GameStatus == 5)
-                              select ls).Count();
+                            where (ls.HTeamId == teamSeasonId || ls.VTeamId == teamSeasonId) && ls.GameType == 0 && (ls.GameStatus == 1 || ls.GameStatus == 4 || ls.GameStatus == 5)
+                            select ls).Count();
 
             curMin = (double)numGames * (double)minNum;
 
@@ -2323,7 +2771,7 @@ namespace DataAccess
 
             int numRecords = 0;
 
-            foreach(LeaderStatRecord batStat in batStats)
+            foreach (LeaderStatRecord batStat in batStats)
             {
                 if (batStat.FieldTotal.HasValue && (!checkMin || (checkMin && ((int)batStat.CheckField) >= minVal)))
                 {
@@ -2415,7 +2863,7 @@ namespace DataAccess
 
         static private bool NeedABCheck(String fieldName)
         {
-            return (fieldName == "AVG" || fieldName == "SLG" || fieldName == "OBP" || fieldName == "OPS"); 
+            return (fieldName == "AVG" || fieldName == "SLG" || fieldName == "OBP" || fieldName == "OPS");
         }
 
         static private String GetBatLeagueLeadersQueryString(long leagueId, long divisionId, string fieldName, bool allTimeLeaders)
@@ -2801,7 +3249,7 @@ namespace DataAccess
         {
             if (isBatLeader)
             {
-                foreach(var lc in m_batCats)
+                foreach (var lc in m_batCats)
                 {
                     if (lc.Name == name)
                         return lc;
@@ -2851,7 +3299,7 @@ namespace DataAccess
             if (cat == null)
                 return true;
 
-            foreach(var lc in cat)
+            foreach (var lc in cat)
             {
                 db.DisplayLeagueLeaders.InsertOnSubmit(new SportsManager.Model.DisplayLeagueLeader()
                 {

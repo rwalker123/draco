@@ -4,8 +4,6 @@ using SportsManager;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -100,33 +98,35 @@ namespace DataAccess
 
 		static public long GetTeamSeasonIdFromId(long teamId)
 		{
-			long teamSeasonId = 0;
+            //DECLARE @accountId bigint
+            //DECLARE @currentSeasonId bigint
+	
+            //SET @accountId = (SELECT AccountId FROM Teams WHERE Teams.Id = @teamId)
+            //SET @currentSeasonId = (SELECT SeasonId FROM CurrentSeason WHERE AccountId = @accountId)
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.GetTeamSeasonIdFromId", myConnection);
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
-					myCommand.Parameters.Add("@teamId", SqlDbType.BigInt).Value = teamId;
+            //SELECT TeamsSeason.Id
+            //FROM LeagueSeason LEFT JOIN TeamsSeason ON TeamsSeason.LeagueSeasonId = LeagueSeason.Id
+            //WHERE LeagueSeason.SeasonId = @currentSeasonId AND TeamsSeason.TeamId = @teamId
 
-					myConnection.Open();
-					myCommand.Prepare();
+            DB db = DBConnection.GetContext();
 
-					SqlDataReader dr = myCommand.ExecuteReader();
+            long accountId = (from t in db.Teams
+                              where t.Id == teamId
+                              select t.AccountId).SingleOrDefault();
+            if (accountId == 0)
+                return 0;
 
-					if (dr.Read())
-					{
-						teamSeasonId = dr.GetInt64(0);
-					}
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            long currentSeasonId = (from cs in db.CurrentSeasons
+                                    where cs.AccountId == accountId
+                                    select cs.AccountId).SingleOrDefault();
 
-			return teamSeasonId;
+            if (currentSeasonId == 0)
+                return 0;
+
+            return (from ls in db.LeagueSeasons
+                    join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    where ls.SeasonId == currentSeasonId && ts.TeamId == teamId
+                    select ts.Id).SingleOrDefault();
 		}
 
 		static public IQueryable<Team> GetTeams(long leagueId)
@@ -438,29 +438,66 @@ namespace DataAccess
 
 		static public bool CopySeasonTeams(long leagueSeasonId, long copyLeagueSeasonId)
 		{
-			int rowCount = 0;
+            //DECLARE @divId bigint
+            //DECLARE @oldTeamSeasonId bigint
+            //DECLARE @teamId bigint
+            //DECLARE @oldDivisionId bigint
+            //DECLARE @divisionSeasonId bigint
+            //DECLARE @teamSeasonId bigint
+            //DECLARE @teamName varchar(25)
+	
 
-			try
-			{
-				using (SqlConnection myConnection = DBConnection.GetSqlConnection())
-				{
-					SqlCommand myCommand = new SqlCommand("dbo.CopySeasonTeams", myConnection);
-					myCommand.Parameters.Add("@leagueSeasonId", SqlDbType.BigInt).Value = leagueSeasonId;
-					myCommand.Parameters.Add("@copyLeagueSeasonId", SqlDbType.BigInt).Value = copyLeagueSeasonId;
-					myCommand.CommandType = System.Data.CommandType.StoredProcedure;
+            //DECLARE teams CURSOR LOCAL FOR SELECT Id, TeamId, Name, DivisionSeasonId FROM TeamsSeason WHERE LeagueSeasonId = @copyLeagueSeasonId
+            //OPEN teams
+            //FETCH NEXT FROM teams INTO @oldTeamSeasonId, @teamId, @teamName, @oldDivisionId
+            //WHILE (@@FETCH_STATUS = 0)
+            //BEGIN
 
-					myConnection.Open();
-					myCommand.Prepare();
+            //    SET @divId = (SELECT DivisionId FROM DivisionSeason WHERE Id = @oldDivisionId)
+            //    SET @divisionSeasonId = (SELECT Id FROM DivisionSeason WHERE DivisionId = @divId AND LeagueSeasonID = @leagueSeasonId)
 
-					rowCount = myCommand.ExecuteNonQuery();
-				}
-			}
-			catch (SqlException ex)
-			{
-				Globals.LogException(ex);
-			}
+            //    INSERT INTO TeamsSeason VALUES(@leagueSeasonId, @teamId, @teamName, @divisionSeasonId)
+            //    SET @teamSeasonId = @@IDENTITY
 
-			return (rowCount <= 0) ? false : true;
+            //    -- copy roster.                
+            //    EXEC dbo.CopySeasonRoster @teamSeasonId, @oldTeamSeasonId
+
+            //    -- copy managers.                                        
+            //    EXEC dbo.CopySeasonManager @teamSeasonId, @oldTeamSeasonId
+        
+            //    FETCH NEXT FROM teams INTO @oldTeamSeasonId, @teamId, @teamName, @oldDivisionId
+            //END
+            DB db = DBConnection.GetContext();
+            var teams = (from ts in db.TeamsSeasons
+                         where ts.LeagueSeasonId == copyLeagueSeasonId
+                         select ts);
+
+            foreach(var t in teams)
+            {
+                var divId = (from ds in db.DivisionSeasons
+                             where ds.Id == t.DivisionSeasonId
+                             select ds.DivisionId).SingleOrDefault();
+
+                var divisionSeasonId = (from ds in db.DivisionSeasons
+                                        where ds.DivisionId == divId && ds.LeagueSeasonId == leagueSeasonId
+                                        select ds.Id).SingleOrDefault();
+
+                var ts = new SportsManager.Model.TeamsSeason()
+                {
+                    LeagueSeasonId = leagueSeasonId,
+                    TeamId = t.TeamId,
+                    Name = t.Name,
+                    DivisionSeasonId = divisionSeasonId
+                };
+                db.TeamsSeasons.InsertOnSubmit(ts);
+                db.SubmitChanges();
+
+                TeamRoster.CopySeasonRoster(ts.Id, t.Id);
+                Leagues.CopySeasonManager(db, ts.Id, t.Id);
+                db.SubmitChanges();
+            }
+
+            return true;
 		}
 
         /// <summary>
