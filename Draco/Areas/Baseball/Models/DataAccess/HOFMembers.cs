@@ -108,7 +108,7 @@ namespace DataAccess
             var dbHof = new SportsManager.Model.hof();
             dbHof.AccountId = h.AccountId;
             dbHof.ContactId = h.ContactId;
-            dbHof.Bio = h.Biography;
+            dbHof.Bio = h.Biography ?? String.Empty;
             dbHof.YearInducted = h.YearInducted;
 
             db.hofs.InsertOnSubmit(dbHof);
