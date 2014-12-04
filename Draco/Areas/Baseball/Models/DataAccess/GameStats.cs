@@ -230,7 +230,6 @@ namespace DataAccess
                                 SLG = slg,
                                 TB = tb
                             }).SingleOrDefault();
-                    break;
                 case 4: // Single Game
                     //SELECT SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as [2B], SUM([3B]) as [3B], SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB
                     //FROM batstatsum 
