@@ -334,7 +334,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.initFirstYear();
 
-    $('#accordion').on('show.bs.collapse', function () {
+    $('#accordion').on('shown.bs.collapse', function () {
 
         //get the anchor of the accordian that does not has the class "collapsed"
         var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');

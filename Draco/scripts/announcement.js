@@ -257,7 +257,7 @@ var AnnouncementClass = function (accountId, isAdmin, teamId) {
         });
     }
 
-    $('#otherNewsSection').on('show.bs.collapse', function () {
+    $('#otherNewsSection').on('shown.bs.collapse', function () {
 
         //get the anchor of the accordian that does not has the class "collapsed"
         var openAnchor = $(this).find('a[data-toggle=collapse]:not(.collapsed)');

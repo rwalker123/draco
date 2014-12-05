@@ -518,7 +518,7 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
 
     self.loadQuestions();
 
-    $('#accordion, #accordion1').on('show.bs.collapse', function (item) {
+    $('#accordion, #accordion1').on('shown.bs.collapse', function (item) {
         self.getPlayerAnswers(item.target.id);
     })
 }
