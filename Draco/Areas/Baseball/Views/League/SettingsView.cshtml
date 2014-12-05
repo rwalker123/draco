@@ -42,6 +42,7 @@
                     <div><label><input type="checkbox" data-bind="checked: showPlayerClassified" />Show Player Classified (team needs player/player needs team)</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerSurvey" />Show Player Survey</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showFacebookLike" />Show Facebook Like</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showHOF" />Show Hall Of Fame</label></div>
                 </div>
             </div>
         </div>
@@ -130,6 +131,10 @@
             self.showFacebookLike.subscribe(function (newValue) {
                 self.settingChanged('ShowFacebookLike', newValue);
             });
+            self.showHOF = ko.observable();
+            self.showHOF.subscribe(function (newValue) {
+                self.settingChanged('ShowHOF', newValue);
+            });
             self.playerWaiver = ko.observable();
             self.playerWaiver.subscribe(function (newValue) {
                 self.settingChanged('TrackWaiver', newValue);
@@ -195,6 +200,9 @@
                 }
                 else if (settingKey == "ShowFacebookLike") {
                     self.showFacebookLike(value);
+                }
+                else if (settingKey == "ShowHOF") {
+                    self.showHOF(value);
                 }
                 else if (settingKey == "TrackWaiver") {
                     self.playerWaiver(value);

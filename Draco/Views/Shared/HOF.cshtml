@@ -1,0 +1,19 @@
+﻿@model SportsManager.ViewModels.HOFOfDayViewModel
+
+<div class="panel panel-default" id="hofView">
+    <div class="panel-heading">
+        <h3 class="panel-title">HOF Spotlight on...</h3>
+    </div>
+
+    <div class="panel-body" style="text-align: center" data-bind="with: hofMember">
+        <!-- ko if: $root.isLoading -->
+            <img src="/Images/busy.gif" />Loading...
+        <!-- /ko -->
+        <!-- ko ifnot: $root.isLoading -->
+        <h3 data-bind="html: Name"></h3>
+        <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" />
+        <h4>Year Inducted: <span data-bind="html: YearInducted"></span></h4>
+        <!-- /ko -->
+        <p>View all HOF Members @Html.ActionLink("here", "Index", "HallOfFame", new { area = "", accountId = Model.AccountId }, new { @class = "btn btn-default" })</p>
+    </div>
+</div>

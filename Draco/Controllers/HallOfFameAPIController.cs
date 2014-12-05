@@ -1,5 +1,6 @@
 ﻿using ModelObjects;
 using SportsManager.Models;
+using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -103,6 +104,24 @@ namespace SportsManager.Controllers
             return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, contactNames);
         }
 
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("randommember")]
+        public HttpResponseMessage GetRandomHOFMember(long accountId)
+        {
+            var hofMembers = DataAccess.HOFMembers.GetMembers(accountId);
+            if (hofMembers != null)
+            {
+                int count = hofMembers.Count();
+                int index = new Random().Next(count);
+                var hofMember = hofMembers.Skip(index).FirstOrDefault();
+                if (hofMember != null)
+                {
+                    return Request.CreateResponse<ModelObjects.HOFMember>(HttpStatusCode.OK, hofMember);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
 
     }
 }

@@ -31,6 +31,11 @@ namespace SportsManager.Baseball.ViewModels
             var showPlayerSurvey = false;
             bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
             ShowPlayerInterview = showPlayerSurvey && DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId).Any();
+
+            var showHOF = false;
+            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
+            ShowHOF = showHOF && DataAccess.HOFMembers.GetMembers(accountId).Any();
+
             ShowLeagueLeaders = IsAdmin || DataAccess.GameStats.HasLeaderCategories(accountId, 0);
             ShowAnnouncements = true;
             ShowBirthdays = true;
@@ -76,6 +81,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowBirthdays
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowHOF
         {
             get;
             private set;

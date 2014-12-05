@@ -552,6 +552,7 @@
     <Compile Include="Models\ViewModels\AccountViewModel.cs" />
     <Compile Include="Models\ViewModels\AnnouncementsViewModel.cs" />
     <Compile Include="Models\ViewModels\CreateSeasonViewModel.cs" />
+    <Compile Include="Models\ViewModels\HOFOfDayViewModel.cs" />
     <Compile Include="Models\ViewModels\VideoViewModel.cs" />
     <Compile Include="Models\ViewModels\UserPollViewModel.cs" />
     <Compile Include="Models\ViewModels\PlayerSurveyViewModel.cs" />
@@ -706,6 +707,7 @@
     <Content Include="Scripts\moment.min.js" />
     <Content Include="Scripts\npm.js" />
     <Content Include="Scripts\playersurvey.js" />
+    <Content Include="Scripts\hofspotlight.js" />
     <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
@@ -1166,6 +1168,7 @@
     <Content Include="Views\Shared\TwitterView.cshtml" />
     <Content Include="Views\Shared\FacebookView.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Views\Shared\HOF.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

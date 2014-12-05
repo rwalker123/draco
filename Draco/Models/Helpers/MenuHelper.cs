@@ -141,7 +141,14 @@ namespace SportsManager.Models.Helpers
 
                 var leagueMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(standingsurl, "Standings", "League");
                 leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(statsurl, "Statistics", "Statistics Page"));
-                leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
+
+
+                var showHOF = false;
+                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
+                if (showHOF)
+                {
+                    leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
+                }
 
                 if (DataAccess.LeagueFAQ.GetFAQ(accountId).Any())
                 {
