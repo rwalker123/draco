@@ -280,6 +280,7 @@
     <Compile Include="App_Start\TypeaheadBundleConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Areas\Baseball\BaseballAreaRegistration.cs" />
+    <Compile Include="Areas\Baseball\Controllers\AffiliationsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballController.cs" />
     <Compile Include="Areas\Baseball\Controllers\PlayerClassifiedAPIController.cs" />
@@ -293,6 +294,7 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayersWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\AffiliationHomeViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\EnterGameResults.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerClassifiedViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
@@ -688,6 +690,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Areas\Baseball\Views\Affiliations\Home.cshtml" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />

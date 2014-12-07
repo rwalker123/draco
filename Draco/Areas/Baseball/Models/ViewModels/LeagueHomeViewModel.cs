@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Web.Mvc;
 using SportsManager.ViewModels;
+using ModelObjects;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -48,6 +49,14 @@ namespace SportsManager.Baseball.ViewModels
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = true;
+
+            Affiliation = DataAccess.Affiliations.GetAffiliation(Account.AffiliationId);
+        }
+
+        public Affiliation Affiliation
+        {
+            get;
+            private set;
         }
 
         public IQueryable<ModelObjects.Team> UserTeams

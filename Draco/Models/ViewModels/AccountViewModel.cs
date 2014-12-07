@@ -42,7 +42,7 @@ namespace SportsManager.ViewModels
         public int FirstYear { get; set; }
 
         [ScaffoldColumn(false)]
-        protected ModelObjects.Account Account
+        public ModelObjects.Account Account
         {
             get { return m_account; }
         }
