@@ -20,16 +20,7 @@ namespace ModelObjects
 			m_name = name;
 		}
 
-		public long Id
-		{
-			get { return m_id; }
-			set { m_id = value; }
-		}
-
-		public string Name
-		{
-			get { return m_name; }
-			set { m_name = value; }
-		}
+		public long Id { get; set; }
+		public string Name { get; set;}
 	}
 }

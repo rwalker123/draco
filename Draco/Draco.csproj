@@ -152,6 +152,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Data.Services.Client" />
     <Reference Include="System.Drawing" />
@@ -463,6 +464,7 @@
     <Compile Include="Models\DataAccess\Affiliations.cs" />
     <Compile Include="Models\DataAccess\ContactRoles.cs" />
     <Compile Include="Models\DataAccess\Contacts.cs" />
+    <Compile Include="Models\DataAccess\DB.cs" />
     <Compile Include="Models\DataAccess\DBConnection.cs" />
     <Compile Include="Models\DataAccess\Divisions.cs" />
     <Compile Include="Models\DataAccess\LeagueEvents.cs" />
@@ -480,14 +482,6 @@
     <Compile Include="Models\DataAccess\TeamRoster.cs" />
     <Compile Include="Models\DataAccess\Teams.cs" />
     <Compile Include="Models\DataAccess\Votes.cs" />
-    <Compile Include="Models\DataClasses.cs">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-    </Compile>
-    <Compile Include="Models\DataClasses.designer.cs">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
     <Compile Include="Models\Filters\BasicAuthenticationAttribute.cs" />
     <Compile Include="Models\Filters\HttpAuthenticationChallengeContextExtensions.cs" />
     <Compile Include="Models\Filters\IdentityBasicAuthenticationAttribute.cs" />
@@ -620,11 +614,6 @@
     <Content Include="Images\youtube\youtube2.png" />
     <Content Include="Images\youtube\youtube3.PNG" />
     <Content Include="Images\youtube\youtube4.PNG" />
-    <Content Include="Models\DataClasses.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <SubType>Designer</SubType>
-      <LastGenOutput>DataClasses.designer.cs</LastGenOutput>
-    </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="NuGet\readme.txt" />
     <Content Include="Scripts\bloodhound.js" />
@@ -1180,11 +1169,6 @@
       <SubType>Designer</SubType>
     </Content>
     <None Include="Project_Readme.html" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Models\DataClasses.dbml.layout">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />

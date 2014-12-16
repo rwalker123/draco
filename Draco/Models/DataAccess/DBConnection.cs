@@ -11,7 +11,7 @@ namespace DataAccess
     {
         private const string ObjectContextKey = "ObjectContext";
 
-        static public DB GetContext()
+        static internal DB GetContext()
         {
             HttpContext httpContext = HttpContext.Current;
             if (httpContext != null)

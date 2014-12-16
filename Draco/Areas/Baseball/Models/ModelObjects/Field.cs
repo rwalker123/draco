@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Data.Spatial;
 
 namespace ModelObjects
 {
@@ -33,8 +34,7 @@ namespace ModelObjects
 			Directions = directions;
 			RainoutNumber = rainoutNumber;
 
-			Latitude = latitude;
-			Longitude = longitude;
+            LocationGeo = DbGeography.PointFromText("POINT(" + longitude + " " + latitude + ")", 4326);
 		}
 
 		public long Id { get; set; }
@@ -42,17 +42,16 @@ namespace ModelObjects
 
 		public string Name { get; set; }
 		public string ShortName { get; set; }
-		public string Address { get; set; }
+        public string Comment { get; set; }
+        public string Address { get; set; }
 		public string City { get; set; }
 		public string State { get; set; }
 		public string ZipCode { get; set; }
-		public string RainoutNumber { get; set; }
 		public string Directions { get; set; }
-		public string Comment { get; set; }
+        public string RainoutNumber { get; set; }
 
-		public string Latitude { get; set; }
-		public string Longitude { get; set; }
+		public DbGeography LocationGeo { get; set; }
 
-		public IList<FieldContact> Contacts { get; set; }
+		virtual public ICollection<FieldContact> FieldContacts { get; set; }
 	}
 }

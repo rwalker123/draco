@@ -36,7 +36,7 @@ namespace DataAccess
             {
                 AccountType accountType = GetAccountType(acc.AccountTypeId);
                 if (accountType != null)
-                    return accountType.HomePageFilePath;
+                    return accountType.FilePath;
             }
 
             return String.Empty;
@@ -82,19 +82,7 @@ namespace DataAccess
 
             return (from a in db.Accounts
                     where a.Id == accountId
-                    select new Account()
-                    {
-                        Id = a.Id,
-                        AccountTypeId = a.AccountTypeId,
-                        AffiliationId = a.AffiliationId,
-                        AccountName = a.Name,
-                        AccountURL = a.URL,
-                        FirstYear = a.FirstYear,
-                        TimeZoneId = a.TimeZoneId,
-                        OwnerContactId = a.OwnerId,
-                        YouTubeUserId = a.YouTubeUserId,
-                        TwitterAccountName = a.TwitterAccountName
-                    }).SingleOrDefault();
+                    select a).SingleOrDefault();
         }
 
         static public bool IsValidAccountName(long accountId, string accountName)
@@ -121,7 +109,7 @@ namespace DataAccess
             IEnumerable<Account> accounts = GetAccounts();
             foreach (Account a in accounts)
             {
-                string compareWithAccount = a.AccountName.ToLower();
+                string compareWithAccount = a.Name.ToLower();
                 compareWithAccount = compareWithAccount.Replace(" ", String.Empty);
 
                 if (compareAccount == compareWithAccount && a.Id != accountId)
@@ -147,7 +135,7 @@ namespace DataAccess
                                  where c.UserId == userId
                                  select c.Id).SingleOrDefault();
 
-                return (account.OwnerContactId == contactId);
+                return (account.OwnerId == contactId);
             }
 
             return false;
@@ -208,28 +196,17 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from a in db.Accounts
-                    select new Account()
-                    {
-                        Id = a.Id,
-                        AccountTypeId = a.AccountTypeId,
-                        AffiliationId = a.AffiliationId,
-                        AccountName = a.Name,
-                        AccountURL = a.URL,
-                        FirstYear = a.FirstYear,
-                        TimeZoneId = a.TimeZoneId,
-                        OwnerContactId = a.OwnerId,
-                        TwitterAccountName = a.TwitterAccountName
-                    });
+                    select a);
         }
 
 
         static public bool ModifyAccount(Account account)
         {
             // verify account name is good.
-            long id = GetAccountIdFromName(account.AccountName);
+            long id = GetAccountIdFromName(account.Name);
             if (id == 0)
             {
-                if (!IsValidAccountName(account.Id, account.AccountName))
+                if (!IsValidAccountName(account.Id, account.Name))
                     throw new Exception("Invalid account name");
             }
             else if (id != account.Id)
@@ -238,54 +215,21 @@ namespace DataAccess
             }
 
             DB db = DBConnection.GetContext();
-            SportsManager.Model.Account dbAccount = (from a in db.Accounts
-                                                     where a.Id == account.Id
-                                                     select a).SingleOrDefault();
-            if (dbAccount != null)
-            {
-                dbAccount.OwnerId = account.OwnerContactId;
-                dbAccount.Name = account.AccountName;
-                dbAccount.URL = account.AccountURL;
-                dbAccount.FirstYear = account.FirstYear;
-                dbAccount.AffiliationId = account.AffiliationId;
-                dbAccount.TimeZoneId = account.TimeZoneId;
-                dbAccount.YouTubeUserId = account.YouTubeUserId;
-                dbAccount.TwitterAccountName = account.TwitterAccountName;
-
-                db.SubmitChanges();
-
-                return true;
-            }
-
-            return false;
+            db.Accounts.Attach(account);
+            db.Entry(account).State = System.Data.Entity.EntityState.Modified;
+            db.SaveChanges();
+            return true;
         }
 
         static public long AddAccount(Account account)
         {
-            if (account.OwnerContactId <= 0)
+            if (account.OwnerId <= 0)
                 throw new ArgumentException("OwnerContactId");
 
             DB db = DBConnection.GetContext();
+            db.Accounts.Add(account);
+            db.SaveChanges();
 
-            SportsManager.Model.Account dbAccount = new SportsManager.Model.Account()
-            {
-                OwnerId = account.OwnerContactId,
-                Name = account.AccountName,
-                URL = account.AccountURL,
-                FirstYear = account.FirstYear,
-                AccountTypeId = account.AccountTypeId,
-                AffiliationId = account.AffiliationId,
-                TimeZoneId = account.TimeZoneId,
-                TwitterAccountName = String.Empty,
-                FacebookFanPage = String.Empty,
-                TwitterOauthSecretKey = String.Empty,
-                TwitterOauthToken = String.Empty
-            };
-
-            db.Accounts.InsertOnSubmit(dbAccount);
-            db.SubmitChanges();
-
-            account.Id = dbAccount.Id;
             return account.Id;
         }
 
@@ -297,44 +241,44 @@ namespace DataAccess
 
             string accountName = Accounts.GetAccountName(account.Id);
 
-            var messageCategories = (from mc in db.MessageCategories
-                                     where mc.isTeam == false && mc.AccountId == account.Id
+            var messageCategories = (from mc in db.MessageCategory
+                                     where mc.IsTeam == false && mc.AccountId == account.Id
                                      select mc);
-            db.MessageCategories.DeleteAllOnSubmit(messageCategories);
+            db.MessageCategory.RemoveRange(messageCategories);
 
-            var workoutAnnouncments = (from wa in db.WorkoutAnnouncements
+            var workoutAnnouncments = (from wa in db.WorkoutAnnouncement
                                        where wa.AccountId == account.Id
                                        select wa);
-            db.WorkoutAnnouncements.DeleteAllOnSubmit(workoutAnnouncments);
+            db.WorkoutAnnouncement.RemoveRange(workoutAnnouncments);
 
-            var profileCats = (from pc in db.ProfileCategories
+            var profileCats = (from pc in db.ProfileCategory
                                where pc.AccountId == account.Id
                                select pc);
-            db.ProfileCategories.DeleteAllOnSubmit(profileCats);
+            db.ProfileCategory.RemoveRange(profileCats);
 
-            var curSeason = (from cs in db.CurrentSeasons
+            var curSeason = (from cs in db.CurrentSeason
                              where cs.AccountId == account.Id
                              select cs);
-            db.CurrentSeasons.DeleteAllOnSubmit(curSeason);
+            db.CurrentSeason.RemoveRange(curSeason);
 
-            var rosters = (from r in db.Rosters
+            var rosters = (from r in db.Roster
                            where r.AccountId == account.Id
                            select r);
-            db.Rosters.DeleteAllOnSubmit(rosters);
+            db.Roster.RemoveRange(rosters);
 
-            var leagues = (from l in db.Leagues
+            var leagues = (from l in db.League
                            where l.AccountId == account.Id
                            select l);
-            db.Leagues.DeleteAllOnSubmit(leagues);
+            db.League.RemoveRange(leagues);
 
             var accounts = (from a in db.Accounts
                             where a.Id == account.Id
                             select a);
-            db.Accounts.DeleteAllOnSubmit(accounts);
+            db.Accounts.RemoveRange(accounts);
 
             //Exec RemoveUnusedContacts @Id
 
-            db.SubmitChanges();
+            db.SaveChanges();
 
             // remove uploads directory for account
             System.Web.HttpContext context = System.Web.HttpContext.Current;
@@ -349,44 +293,28 @@ namespace DataAccess
         static public IQueryable<AccountWelcome> GetAccountWelcomeTextHeaders(long accountId)
         {
             DB db = DBConnection.GetContext();
-            return (from aw in db.AccountWelcomes
+            return (from aw in db.AccountWelcome
                     where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
                     orderby aw.OrderNo
-                    select new AccountWelcome()
-                    {
-                        Id = aw.Id,
-                        AccountId = accountId,
-                        TeamId = 0,
-                        CaptionText = aw.CaptionMenu,
-                        OrderNo = aw.OrderNo,
-                        WelcomeText = "" // don't return text.
-                    });
+                    select aw);
         }
 
         static public IQueryable<AccountWelcome> GetAccountWelcomeText(long accountId)
         {
             DB db = DBConnection.GetContext();
-            return (from aw in db.AccountWelcomes
+            return (from aw in db.AccountWelcome
                     where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
                     orderby aw.OrderNo
-                    select new AccountWelcome()
-                    {
-                        Id = aw.Id,
-                        AccountId = accountId,
-                        TeamId = 0,
-                        CaptionText = aw.CaptionMenu,
-                        OrderNo = aw.OrderNo,
-                        WelcomeText = aw.WelcomeText
-                    });
+                    select aw);
         }
 
         static public AccountWelcome GetWelcomeText(long id)
         {
             DB db = DBConnection.GetContext();
 
-            return (from aw in db.AccountWelcomes
+            return (from aw in db.AccountWelcome
                     where aw.Id == id
-                    select new AccountWelcome(aw.Id, aw.AccountId, aw.OrderNo, aw.CaptionMenu, aw.WelcomeText)).SingleOrDefault();
+                    select aw).SingleOrDefault();
         }
 
         static public bool ModifyWelcomeText(AccountWelcome accountWelcome)

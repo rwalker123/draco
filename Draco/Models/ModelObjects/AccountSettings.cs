@@ -4,6 +4,13 @@ using System.Collections.Generic;
 
 namespace ModelObjects
 {
+    public class AccountSetting
+    {
+        public long AccountId { get; set; }
+        public string SettingKey { get; set; }
+        public string SettingValue { get; set; }
+    }
+
     /// <summary>
     /// Summary description for AccountSettings
     /// </summary>

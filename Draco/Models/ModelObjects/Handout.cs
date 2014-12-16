@@ -12,18 +12,16 @@ namespace ModelObjects
 		{
 		}
 
-		public Handout(long id, string description, string filename, long referenceId)
+		public Handout(long id, string description, string filename)
 		{
 			Id = id;
 			Description = description;
 			FileName = filename;
-			ReferenceId = referenceId;
 		}
 
         public long Id { get; set; }
 		public string Description { get; set; }
 		public string FileName { get; set; }
-		public long ReferenceId { get; set; }
 		abstract protected string HandoutDir { get; }
 
 		public string HandoutURL
@@ -43,17 +41,21 @@ namespace ModelObjects
 		}
 
 		public TeamHandout(long id, string description, string filename, long referenceId)
-			: base(id, description, filename, referenceId)
+			: base(id, description, filename)
 		{
+            TeamId = referenceId;
 		}
 
 		protected override string  HandoutDir
 		{
 			get 
 			{ 
-				return Globals.UploadDirRoot + "Teams/" + ReferenceId + "/Handouts/"; 
+				return Globals.UploadDirRoot + "Teams/" + TeamId + "/Handouts/"; 
 			}
 		}
+
+        public long TeamId { get; set; }
+
 	}
 
 	public class AccountHandout : Handout
@@ -63,16 +65,20 @@ namespace ModelObjects
 		}
 
 		public AccountHandout(long id, string description, string filename, long referenceId)
-			: base(id, description, filename, referenceId)
+			: base(id, description, filename)
 		{
+            AccountId = referenceId;
 		}
 
 		protected override string HandoutDir
 		{
 			get
 			{
-				return Globals.UploadDirRoot + "Accounts/" + ReferenceId + "/Handouts/";
+				return Globals.UploadDirRoot + "Accounts/" + AccountId + "/Handouts/";
 			}
 		}
+
+        public long AccountId { get; set; }
+
 	}
 }

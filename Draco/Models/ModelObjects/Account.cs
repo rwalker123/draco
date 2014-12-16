@@ -1,5 +1,7 @@
 using SportsManager.Models.Utils;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ModelObjects
 {
@@ -29,10 +31,10 @@ namespace ModelObjects
 						int firstYear, long accountTypeId, long affiliationId, string timeZoneId)
 		{
 			Id = id;
-			AccountName = accountName;
-			AccountURL = accountURL;
+			Name = accountName;
+			URL = accountURL;
 			FirstYear = firstYear;
-			OwnerContactId = ownerContactId;
+			OwnerId = ownerContactId;
 
 			AccountTypeId = accountTypeId;
 			AffiliationId = affiliationId;
@@ -44,15 +46,19 @@ namespace ModelObjects
 		}
 
 		public long Id { get; set; }
-		public long AccountTypeId { get; set; }
+        public long OwnerId { get; set; }
+        public string Name { get; set; }
+        public string URL { get; set; }
+        public int FirstYear { get; set; }
+        public long AccountTypeId { get; set; }
 		public long AffiliationId { get; set; }
-		public string AccountName { get; set; }
-		public string AccountURL { get; set; }
-		public int FirstYear { get; set; }
 		public string TimeZoneId { get; set; }
-		public long OwnerContactId { get; set; }
-        public string YouTubeUserId { get; set; }
         public string TwitterAccountName { get; set; }
+        public string TwitterOauthToken { get; set; }
+        public string TwitterOauthSecretKey { get; set; }
+        public string YouTubeUserId { get; set; }
+        public string FacebookFanPage { get; set; }
+        public string TwitterWidgetScript { get; set; }
 
 		public TimeZoneInfo TimeZoneInfo
 		{
