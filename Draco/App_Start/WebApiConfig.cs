@@ -23,6 +23,12 @@ namespace SportsManager
             config.MapHttpAttributeRoutes();
 
             config.Routes.MapHttpRoute(
+                name: "NoAccountIdAPI",
+                routeTemplate: "api/{controller}/{action}"
+            );
+
+
+            config.Routes.MapHttpRoute(
                 name: "TeamGameApi",
                 routeTemplate: "api/{controller}/{accountId}/Team/{teamSeasonId}/Game/{gameId}/{action}/{playerId}"
             );
@@ -67,6 +73,7 @@ namespace SportsManager
                 routeTemplate: "api/{controller}/{accountId}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
 
             ODataModelBuilder modelBuilder = new ODataConventionModelBuilder();
             modelBuilder.EntitySet<ModelObjects.ContactName>("ContactsOData");

@@ -9,13 +9,21 @@ namespace DataAccess
 /// </summary>
 	static public class LeagueNews
 	{
-		static public SportsManager.Model.LeagueNew GetNewsItem(long newsId)
+		static public LeagueNewsItem GetNewsItem(long newsId)
 		{
             //	SELECT * FROM LeagueNews WHERE Id = @id
             DB db = DBConnection.GetContext();
             return (from ln in db.LeagueNews
                     where ln.Id == newsId
-                    select ln).SingleOrDefault();
+                    select new LeagueNewsItem()
+                    {
+                        Id = ln.Id,
+                        AccountId = ln.AccountId,
+                        Date = ln.Date,
+                        SpecialAnnounce = ln.SpecialAnnounce,
+                        Text = ln.Text,
+                        Title = ln.Title
+                    }).SingleOrDefault();
         }
 
 		static public IQueryable<SportsManager.Model.LeagueNew> GetNewsHeadlines(long accountId)

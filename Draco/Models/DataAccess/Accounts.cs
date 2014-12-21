@@ -203,7 +203,7 @@ namespace DataAccess
                     select new AccountType(at.Id, at.Name, at.FilePath)).SingleOrDefault();
         }
 
-        static public IEnumerable<Account> GetAccounts()
+        static public IQueryable<Account> GetAccounts()
         {
             DB db = DBConnection.GetContext();
 

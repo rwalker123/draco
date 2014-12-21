@@ -28,6 +28,17 @@ namespace SportsManager.Controllers
 
         #region Account Methods
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("Accounts")]
+        public HttpResponseMessage GetAccounts()
+        {
+            var a = DataAccess.Accounts.GetAccounts();
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            return Request.CreateResponse<IQueryable<Account>>(HttpStatusCode.OK, a);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
         [ActionName("AccountInfo")]
         public HttpResponseMessage GetAccountInfo(long accountId)
         {

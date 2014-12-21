@@ -16,14 +16,15 @@ namespace SportsManager.Controllers
             var welcomeText = DataAccess.Accounts.GetWelcomeText(id);
             if (welcomeText != null)
             {
-                // 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(welcomeText.WelcomeText)
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "WelcomeText", id = welcomeText.Id, accountId = accountId }));
-                return response;
+                return Request.CreateResponse<String>(HttpStatusCode.OK, welcomeText.WelcomeText);
+                //// 
+                //var response = new HttpResponseMessage(HttpStatusCode.OK)
+                //{
+                //    Content = new StringContent(welcomeText.WelcomeText)
+                //};
+                //response.Headers.Location =
+                //    new Uri(Url.Link("ActionApi", new { action = "WelcomeText", id = welcomeText.Id, accountId = accountId }));
+                //return response;
             }
             else
             {

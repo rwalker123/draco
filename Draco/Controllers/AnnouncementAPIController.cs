@@ -70,14 +70,7 @@ namespace SportsManager.Controllers
             var newsItem = DataAccess.LeagueNews.GetNewsItem(id);
             if (newsItem != null)
             {
-                // 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(newsItem.Text)
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", id = newsItem.Id, accountId = accountId }));
-                return response;
+                return Request.CreateResponse<LeagueNewsItem>(HttpStatusCode.OK, newsItem);
             }
             else
             {
@@ -92,14 +85,7 @@ namespace SportsManager.Controllers
             var newsItem = DataAccess.TeamNews.GetTeamAnnouncement(id);
             if (newsItem != null)
             {
-                // 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(newsItem.Text)
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", id = newsItem.Id, accountId = accountId }));
-                return response;
+                return Request.CreateResponse<LeagueNewsItem>(HttpStatusCode.OK, newsItem);
             }
             else
             {
