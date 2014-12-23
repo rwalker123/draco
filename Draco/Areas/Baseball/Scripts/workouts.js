@@ -302,7 +302,7 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     self.getAvailableFields = function () {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/fields',
             success: function (fields) {
                 var mappedFields = $.map(fields, function (field) {
                     return {

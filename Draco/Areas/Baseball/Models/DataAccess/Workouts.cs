@@ -101,7 +101,8 @@ namespace DataAccess
                         Comments = wa.Comments,
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
-                        WorkoutLocation = wa.FieldId
+                        WorkoutLocation = wa.FieldId,
+                        FieldName = wa.AvailableField.Name
                     });
         }
 

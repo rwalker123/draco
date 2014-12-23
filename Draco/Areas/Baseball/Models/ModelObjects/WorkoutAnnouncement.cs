@@ -59,6 +59,12 @@ namespace ModelObjects
             set;
         }
 
+        public string FieldName
+        {
+            get;
+            set;
+        }
+
         public int NumRegistered
         {
             get;
