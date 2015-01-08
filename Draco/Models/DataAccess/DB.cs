@@ -16,6 +16,21 @@ namespace DataAccess
         {
         }
 
+        protected override void OnModelCreating(DbModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DivisionSeason>().HasRequired(current => current.DivisionDefinition)
+                .WithMany(c=>c.DivisionSeasons)
+                .HasForeignKey(c => c.DivisionId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<LeagueSeason>().HasRequired(current => current.LeagueDefinition)
+                .WithMany(c => c.LeagueSeasons)
+                .HasForeignKey(c => c.LeagueId)
+                .WillCascadeOnDelete(true);
+
+            base.OnModelCreating(modelBuilder);
+        }
+
         public DbSet<AccountHandout> AccountHandouts { get; set; }
         public DbSet<Account> Accounts { get; set; }
         public DbSet<AccountSetting> AccountSettings { get; set; }
@@ -27,14 +42,11 @@ namespace DataAccess
         public DbSet<GameBatStats> batstatsum { get; set; }
         public DbSet<ContactRole> ContactRoles { get; set; }
         public DbSet<Contact> Contacts { get; set; }
-        // TODO: Cross check with DB
-        public DbSet<CurrentSeasonInfo> CurrentSeason { get; set; }
+        public DbSet<CurrentSeason> CurrentSeason { get; set; }
         public DbSet<DisplayLeagueLeader> DisplayLeagueLeaders { get; set; }
-
-        // TODO: Make DivisionDefinition and DivisionSeason, with virutal ICollection<DivisionSeason> 
-        // for def and virtual DivisionDefinition for DivisionSeason.
         public DbSet<DivisionDefinition> DivisionDefs { get; set; }
         public DbSet<DivisionSeason> DivisionSeason { get; set; }
+
         public DbSet<FieldContact> FieldContacts { get; set; }
         public DbSet<GameFieldStats> fieldstatsum { get; set; }
         public DbSet<GameEjection> GameEjections { get; set; }
@@ -42,9 +54,10 @@ namespace DataAccess
         public DbSet<HOFMember> hof { get; set; }
         public DbSet<HOFNomination> HOFNomination { get; set; }
         public DbSet<HOFNominationSetup> HOFNominationSetup { get; set; }
-        // TODO: contrust correctly with virtual connection..
-        public DbSet<League> League { get; set; }
+        public DbSet<LeagueDefinition> League { get; set; }
         public DbSet<LeagueSeason> LeagueSeason { get; set; }
+
+        // validate with DB
         public DbSet<LeagueEvent> LeagueEvents { get; set; }
         public DbSet<LeagueFAQItem> LeagueFAQ { get; set; }
         public DbSet<LeagueNewsItem> LeagueNews { get; set; }
@@ -74,9 +87,10 @@ namespace DataAccess
         public DbSet<Sponsor> Sponsors { get; set; }
         public DbSet<TeamHandout> TeamHandouts { get; set; }
         public DbSet<TeamNewsItem> TeamNews { get; set; }
+        // TODO: contruct correctly with virtual connection..
         public DbSet<Team> Teams { get; set; }
-        public DbSet<TeamManager> TeamSeasonManager { get; set; }
         public DbSet<TeamSeason> TeamsSeason { get; set; }
+        public DbSet<TeamManager> TeamSeasonManager { get; set; }
         public DbSet<TeamsWantedClassified> TeamsWantedClassified { get; set; }
         public DbSet<VoteResults> VoteAnswers { get; set; }
         public DbSet<VoteOption> VoteOptions { get; set; }

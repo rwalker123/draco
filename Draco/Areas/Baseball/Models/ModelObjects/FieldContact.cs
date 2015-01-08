@@ -42,44 +42,8 @@ namespace ModelObjects
 			set { m_contactId = value; }
 		}
 
-		public string FieldName
-		{
-			get { return Field.Name; }
-		}
+		public virtual Contact Contact;
 
-		public string ContactFullName
-		{
-			get { return Contact.FullNameFirst; }
-		}
-
-		private Contact Contact
-		{
-			get
-			{
-				if (m_contact == null)
-				{
-					m_contact = DataAccess.Contacts.GetContact(m_contactId);
-					if (m_contact == null)
-						m_contact = new Contact();
-				}
-
-				return m_contact;
-			}
-		}
-
-		private Field Field
-		{
-			get
-			{
-				if (m_field == null)
-				{
-					m_field = DataAccess.Fields.GetField(m_fieldId);
-					if (m_field == null)
-						m_field = new Field();
-				}
-
-				return m_field;
-			}
-		}
+        public virtual Field Field;
 	}
 }
