@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using SportsManager.Models;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
@@ -11,6 +10,7 @@ namespace SportsManager.Areas.Baseball.Controllers
     {
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("teamname")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage Put(long accountId, long teamSeasonId, ModelObjects.Team t)
         {
             var team = DataAccess.Teams.GetTeam(t.Id);
