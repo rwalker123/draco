@@ -168,7 +168,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ""
+                            RoleDataText = "",
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         });
             }
             else if (roleId == GetLeagueAdminId())
@@ -189,7 +192,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ls.League.Name
+                            RoleDataText = ls.League.Name,
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         });
             }
             else if (roleId == GetTeamAdminId() || roleId == GetTeamPhotoAdminId())
@@ -211,7 +217,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ls.League.Name + " " + ts.Name
+                            RoleDataText = ls.League.Name + " " + ts.Name,
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         });
 
             }
@@ -239,7 +248,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ""
+                            RoleDataText = "",
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         }).SingleOrDefault();
             }
             else if (roleId == GetLeagueAdminId())
@@ -261,7 +273,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ls.League.Name
+                            RoleDataText = ls.League.Name,
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         }).SingleOrDefault();
             }
             else if (roleId == GetTeamAdminId() || roleId == GetTeamPhotoAdminId())
@@ -284,7 +299,10 @@ namespace DataAccess
                             PhotoURL = Contact.GetPhotoURL(c.Id),
                             RoleData = cr.RoleData,
                             RoleId = cr.RoleId,
-                            RoleDataText = ls.League.Name + " " + ts.Name
+                            RoleDataText = ls.League.Name + " " + ts.Name,
+                            BirthDate = c.DateOfBirth,
+                            Zip = c.Zip,
+                            FirstYear = c.FirstYear.GetValueOrDefault(0)
                         }).SingleOrDefault();
 
             }

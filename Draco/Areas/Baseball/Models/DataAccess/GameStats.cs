@@ -27,7 +27,7 @@ namespace DataAccess
                     where rs.TeamSeasonId == teamSeasonId && !rs.Inactive
                     && !x.Contains(rs.Id)
                     orderby r.Contact.LastName, r.Contact.FirstName
-                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id)));
+                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id), r.Contact.DateOfBirth));
         }
 
         static public GameBatStats GetPlayerGameBatStats(long gameId, long playerId)
@@ -80,7 +80,7 @@ namespace DataAccess
                     where rs.TeamSeasonId == teamSeasonId && !rs.Inactive
                     && !x.Contains(rs.Id)
                     orderby r.Contact.LastName, r.Contact.FirstName
-                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id)));
+                    select new ContactName(rs.Id, r.Contact.FirstName, r.Contact.LastName, r.Contact.MiddleName, Contact.GetPhotoURL(r.Contact.Id), r.Contact.DateOfBirth));
         }
 
         static public GamePitchStats GetPlayerGamePitchStats(long gameId, long playerId)

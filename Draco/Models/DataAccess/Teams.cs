@@ -376,7 +376,8 @@ namespace DataAccess
                         Email = c.Email,
                         Phone1 = c.Phone1,
                         Phone2 = c.Phone2,
-                        Phone3 = c.Phone3
+                        Phone3 = c.Phone3,
+                        BirthDate = c.DateOfBirth
                     });
         }
 
@@ -406,7 +407,8 @@ namespace DataAccess
                         Email = c.Email,
                         Phone1 = c.Phone1,
                         Phone2 = c.Phone2,
-                        Phone3 = c.Phone3
+                        Phone3 = c.Phone3,
+                        BirthDate = c.DateOfBirth
                     }).SingleOrDefault();
 		}
 

@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace ModelObjects
 {
     public class ContactName
@@ -7,13 +8,14 @@ namespace ModelObjects
         {
         }
 
-        public ContactName(long id, string firstName, string lastName, string middleName, string photoUrl)
+        public ContactName(long id, string firstName, string lastName, string middleName, string photoUrl, DateTime birthDate)
         {
             Id = id;
             FirstName = firstName;
             LastName = lastName;
             MiddleName = middleName;
             PhotoURL = photoUrl;
+            BirthDate = birthDate;
         }
         public long Id { get; set; }
         public string FirstName { get; set; }
@@ -22,6 +24,7 @@ namespace ModelObjects
         public string PhotoURL { get; set; }
         public int FirstYear { get; set; }
         public string Zip { get; set; }
+        public DateTime BirthDate { get; set; }
     }
 
     public class ContactNameRole : ContactName
