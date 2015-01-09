@@ -52,7 +52,7 @@ namespace SportsManager
             bundles.Add(new StyleBundle("~/Content/bootstrap").Include(
                       "~/Content/bootstrap.css",
                       "~/Content/bootstrap-select.css",
-                      "~/Content/bootstrap-datepicker3.css",
+                      "~/Content/datepicker3.css",
                       "~/Content/bootstrap-timepicker/bootstrap-timepicker.css"));
         }
     }
