@@ -30,12 +30,8 @@
                 </form>
             </div>
             <div class="row" style="display:none" data-bind="visible: !viewMode()">
-                <div class="help-block">
-                    If you don't find the manager in your search:
-                    <ol>
-                        <li>Ensure the manager is not already on another team in the league.</li>
-                        <li>Ensure the manager exists as a user, you can add new <a class="btn btn-success" href="@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)">Users &raquo;</a>.</li>
-                    </ol>
+                <div class="col-sm-12 help-block">
+                    Manager must be on the teams roster to be added.
                 </div>
             </div>
         }
