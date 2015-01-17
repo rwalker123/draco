@@ -295,6 +295,7 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\EnterGameResults.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerClassifiedViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\UserAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
@@ -689,6 +690,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Content\UserAddressListTemplate.xlsx" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />

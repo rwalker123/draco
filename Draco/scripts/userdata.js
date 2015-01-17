@@ -347,6 +347,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
 
     self.initFirstYear();
 
+    // Keep in sync with exportToExcel
     self.availableFilters = ko.observableArray([
         { id: 'LastName', name: "Last Name", isNumber: false },
         { id: 'FirstName', name: "First Name", isNumber: false },
@@ -593,6 +594,34 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         self.populateUsers(null, null, true);
     }
 
+    self.exportToExcel = function () {
+        var selectedField = ko.utils.arrayFirst(self.availableFilters(), function (item) {
+            return item.id == self.filterField();
+        });
+        var isNumberField = selectedField.isNumber;
+        var isDateField = selectedField.isDate;
+
+        url = window.config.rootUri + '/Account/exportaddresslist/' + self.accountId;
+        url += '?order=' + self.filterSort();
+        if (self.filterOp() == 'startswith' ||
+            self.filterOp() == 'endswith') {
+            if (!isNumberField && !isDateField) // only strings for this type.
+                url += '&filter=' + self.filterField() + "," + self.filterOp() + ",'" + self.filterValue() + "'";
+        }
+        else {
+            if (isDateField)
+                url += '&filter=' + self.filterField() + ',' + self.filterOp();
+            else
+                url += '&filter=' + self.filterField() + ',' + self.filterOp();
+
+            if (isNumberField || isDateField)
+                url += "," + self.filterValue();
+            else
+                url += ",'" + self.filterValue() + "'";
+        }
+
+        window.location.href = url;
+    }
 
     self.populateUsers = function (url, isPrev, isFilter) {
         var data, calculatePages, updateNavigation = true;
