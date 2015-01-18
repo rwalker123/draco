@@ -133,9 +133,7 @@
         $(document).ready(function () {
             window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
 
-                // Send object with all data to server side log, using severity fatal, 
-                // from logger "onerrorLogger"
-                JL("onerrorLogger").fatalException({
+                JL().fatalException({
                     "msg": "Exception!",
                     "errorMsg": errorMsg, "url": url,
                     "line number": lineNumber, "column": column
