@@ -604,8 +604,8 @@
     <Content Include="Content\bootstrap-select.min.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
-    <Content Include="Content\bootstrap-timepicker\bootstrap-timepicker.css" />
-    <Content Include="Content\bootstrap-timepicker\bootstrap-timepicker.min.css" />
+    <Content Include="Content\bootstrap-timepicker.css" />
+    <Content Include="Content\bootstrap-timepicker.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\datepicker.css" />
@@ -637,6 +637,8 @@
     <Content Include="Scripts\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap-select.js" />
     <Content Include="Scripts\bootstrap-select.min.js" />
+    <Content Include="Scripts\bootstrap-timepicker.js" />
+    <Content Include="Scripts\bootstrap-timepicker.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\discussions.js" />
@@ -879,8 +881,6 @@
     <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
     <Content Include="Areas\Baseball\Views\Team\Statistics.cshtml" />
-    <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.js" />
-    <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.min.js" />
     <Content Include="Scripts\handouts.js" />
     <None Include="Properties\PublishProfiles\Local IIS.pubxml" />
     <None Include="Properties\PublishProfiles\walkerhome.org - FTP.pubxml" />
