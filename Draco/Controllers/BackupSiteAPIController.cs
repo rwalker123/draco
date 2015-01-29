@@ -20,6 +20,7 @@ namespace SportsManager.Controllers
 
         //[SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("backup")]
         public async Task<HttpResponseMessage> BackupSite()
         {
             Task<bool> dbResult = BackupDatabase();
