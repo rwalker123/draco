@@ -192,7 +192,7 @@ namespace ModelObjects
                 if (GameId > 0)
                 {
                     ModelObjects.Game game = DataAccess.Schedule.GetGame(GameId);
-                    if (game != null && game.IsGameComplete())
+                    if (game != null && game.IsGameComplete)
                         return true;
                 }
 
@@ -209,7 +209,7 @@ namespace ModelObjects
                 if (GameId > 0)
                 {
                     Game game = DataAccess.Schedule.GetGame(GameId);
-                    if (game != null && game.IsGameComplete())
+                    if (game != null && game.IsGameComplete)
                     {
                         if (Team1HomeTeam)
                             return game.HomeScore;
@@ -231,7 +231,7 @@ namespace ModelObjects
                 if (GameId > 0)
                 {
                     Game game = DataAccess.Schedule.GetGame(GameId);
-                    if (game != null && game.IsGameComplete())
+                    if (game != null && game.IsGameComplete)
                     {
                         if (Team1HomeTeam)
                             return game.AwayScore;

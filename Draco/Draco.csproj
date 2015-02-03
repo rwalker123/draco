@@ -706,6 +706,8 @@
     <Content Include="Scripts\jsnlog.min.js" />
     <Content Include="Scripts\knockout-3.2.0.debug.js" />
     <Content Include="Scripts\knockout-3.2.0.js" />
+    <Content Include="Scripts\knockout.validation-2.0.0.js" />
+    <Content Include="Scripts\knockout.validation-2.0.0.min.js" />
     <Content Include="Scripts\leaguefaq.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.ar.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.az.js" />
@@ -1185,6 +1187,7 @@
     <Content Include="Views\Shared\FacebookView.cshtml" />
     <Content Include="Views\Shared\HOF.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Scripts\knockout.validation-2.0.0.min.js.map" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
