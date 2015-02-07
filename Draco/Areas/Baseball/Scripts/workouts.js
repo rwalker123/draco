@@ -18,10 +18,6 @@
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.removeRegistrant = function () {
-        alert('not implemented');
-    }
-
     self.editRegistrant = function () {
         alert('not implemented');
     }
@@ -138,6 +134,29 @@ var WorkoutViewModel = function (data, parent) {
         });
 
     }
+
+    self.removeRegistrant = function (workoutReg) {
+
+        $("#deleteWorkoutRegModal").modal("show");
+
+        $("#confirmWorkoutRegDeleteBtn").one("click", function () {
+            self.makeWorkoutRegistrantDeleteCall(workoutReg)
+        });
+    }
+
+
+    self.makeWorkoutRegistrantDeleteCall = function (workoutReg) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/registrants/' + workoutReg.Id(),
+            success: function () {
+                self.workoutRegistrants.remove(workoutReg);
+                self.NumRegistered(self.NumRegistered() - 1);
+            }
+        });
+
+    }
+
 
     self.cancelSendEmail = function () {
         self.sendEmail(false);

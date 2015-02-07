@@ -109,12 +109,12 @@ namespace DataAccess
             return true;
 		}
 
-		static public bool RemoveWorkoutRegistrant(WorkoutRegistrant wr)
+		static public bool RemoveWorkoutRegistrant(long id)
 		{
             DB db = DBConnection.GetContext();
 
             var dbWr = (from w in db.WorkoutRegistrations
-                        where w.Id == wr.Id
+                        where w.Id == id
                         select w).SingleOrDefault();
 
             if (dbWr != null)

@@ -85,6 +85,18 @@ namespace SportsManager.Baseball.Controllers
             }
         }
 
+        [AcceptVerbs("DELETE"), HttpPost]
+        [ActionName("registrants")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteWorkoutRegistrant(long accountId, long id)
+        {
+            if (DataAccess.WorkoutRegistrants.RemoveWorkoutRegistrant(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("register")]
