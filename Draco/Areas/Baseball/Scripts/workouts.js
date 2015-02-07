@@ -18,10 +18,6 @@
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.editRegistrant = function () {
-        alert('not implemented');
-    }
-
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
     }
@@ -144,6 +140,12 @@ var WorkoutViewModel = function (data, parent) {
         });
     }
 
+    self.editRegistrant = function (workoutReg) {
+
+        var data = workoutReg.toJS();
+        self.registerData.update(data);
+        self.registerForWorkout(true);
+    }
 
     self.makeWorkoutRegistrantDeleteCall = function (workoutReg) {
         $.ajax({
@@ -212,20 +214,32 @@ var WorkoutViewModel = function (data, parent) {
 
         var data = w.toJS();
 
+        var type = (w.Id() > 0) ? "PUT" : "POST";
+
         $.ajax({
-            type: "POST",
+            type: type,
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/register/' + w.WorkoutId(),
             data: data,
             success: function (workoutId) {
                 self.registerForWorkout(false);
-                alert('You are now registered for the workout.');
+                if (w.Id() == 0)
+                    alert('You are now registered for the workout.');
+                else {
+                    var theWorkoutReg = ko.utils.arrayFirst(self.workoutRegistrants(), function (workout) {
+                        return (workout.Id() == w.Id())
+                    });
+
+                    if (theWorkoutReg) {
+                        theWorkoutReg.update(w.toJS());
+                    }
+                }
             }
         });
 
     }
 
     self.endRegisterForWorkout = function () {
-        this.registerForWorkout(false);
+        self.registerForWorkout(false);
     }
 
     self.update = function (data) {

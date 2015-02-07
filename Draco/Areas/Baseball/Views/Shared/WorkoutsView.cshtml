@@ -182,7 +182,7 @@
                                     <td data-bind="html: Positions"></td>
                                     <td data-bind="html: WhereHeard"></td>
                                     <td>
-                                        <button class="btn btn-default btn-sm" data-bind="click: editRegistrant" title="edit registrant"><span class="glyphicon glyphicon-edit"></span></button>
+                                        <button class="btn btn-default btn-sm" data-bind="click: $parent.editRegistrant" title="edit registrant"><span class="glyphicon glyphicon-edit"></span></button>
                                         <button class="btn btn-danger btn-sm" data-bind="click: $parent.removeRegistrant" title="permantly delete registrant"><span class="glyphicon glyphicon-remove"></span></button>
                                     </td>
                                 </tr>
@@ -203,58 +203,57 @@
                     <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteWorkout" title="permantly delete workout"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
             }
-            else
-            {
-                <form class="form-horizontal" data-bind="visible: registerForWorkout, with: registerData">
-                    <h3>Register for <span data-bind="html: $parent.Description"></span></h3>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">name</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
-                        </div>
+            <form class="form-horizontal" data-bind="visible: registerForWorkout, with: registerData">
+                <h3>Register for <span data-bind="html: $parent.Description"></span></h3>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">name</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">age</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Age" type="number" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">age</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Age" type="number" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">positions</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Positions" type="text" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">positions</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Positions" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">phone</label>
-                        <div class="col-sm-10">
-                            <input data-bind="phoneNumber: Phone1, uniqueId: $parent.Id" type="text" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">phone</label>
+                    <div class="col-sm-10">
+                        <input data-bind="phoneNumber: Phone1, uniqueId: $parent.Id" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">email</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Email" type="email" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">email</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Email" type="email" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">where heard</label>
-                        <div class="col-sm-10">
-                            <select data-bind="uniqueId: $parent.Id, selectPicker: WhereHeard, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">where heard</label>
+                    <div class="col-sm-10">
+                        <select data-bind="uniqueId: $parent.Id, selectPicker: WhereHeard, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
                     </div>
-                    <div class="form-group">
-                        <div class="col-sm-2">
-                        </div>
-                        <div class="col-sm-10">
-                            <label class="control-label"><input type="checkbox" data-bind="checked: WantToManage" /> interested in managing</label>
-                        </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
                     </div>
+                    <div class="col-sm-10">
+                        <label class="control-label"><input type="checkbox" data-bind="checked: WantToManage" /> interested in managing</label>
+                    </div>
+                </div>
                                         
-                    <button type="button" class="btn btn-success" data-bind="click: $parent.registerWorkoutData" title="save changes"><span class="glyphicon glyphicon-ok"></span></button> 
-                    <button type="button" class="btn btn-danger" data-bind="click: $parent.endRegisterForWorkout($parent)" title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
-                </form>
-                
+                <button type="button" class="btn btn-success" data-bind="click: $parent.registerWorkoutData" title="save changes"><span class="glyphicon glyphicon-ok"></span></button> 
+                <button type="button" class="btn btn-danger" data-bind="click: $parent.endRegisterForWorkout" title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
+            </form>
+            @if (!Model.IsAdmin)
+            {
                 <button type="button" data-bind="visible: !registerForWorkout(), click: startRegisterForWorkout" class="btn btn-success">Register for <span data-bind="html: Description"></span></button>
             }
         </li>

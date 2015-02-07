@@ -53,15 +53,15 @@ namespace DataAccess
                 wr.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone3));
 
                 dbRegistrant.Name = wr.Name;
-                dbRegistrant.EMail = wr.Email;
+                dbRegistrant.EMail = wr.Email ?? String.Empty;
                 dbRegistrant.Age = wr.Age;
-                dbRegistrant.Phone1 = wr.Phone1;
-                dbRegistrant.Phone2 = wr.Phone2;
-                dbRegistrant.Phone3 = wr.Phone3;
-                dbRegistrant.Phone4 = wr.Phone4;
-                dbRegistrant.Positions = wr.Positions;
+                dbRegistrant.Phone1 = wr.Phone1 ?? String.Empty;
+                dbRegistrant.Phone2 = wr.Phone2 ?? String.Empty;
+                dbRegistrant.Phone3 = wr.Phone3 ?? String.Empty;
+                dbRegistrant.Phone4 = wr.Phone4 ?? String.Empty;
+                dbRegistrant.Positions = wr.Positions ?? String.Empty;
                 dbRegistrant.IsManager = wr.WantToManage;
-                dbRegistrant.WhereHeard = wr.WhereHeard;
+                dbRegistrant.WhereHeard = wr.WhereHeard ?? String.Empty;
 
                 db.SubmitChanges();
                 return true;
