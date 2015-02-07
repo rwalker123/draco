@@ -102,7 +102,8 @@ namespace DataAccess
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
                         WorkoutLocation = wa.FieldId,
-                        FieldName = wa.AvailableField.Name
+                        FieldName = wa.AvailableField.Name,
+                        NumRegistered = wa.WorkoutRegistrations.Count()
                     });
         }
 
@@ -111,7 +112,6 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from wa in db.WorkoutAnnouncements
-                 join wr in db.WorkoutRegistrations on wa.Id equals wr.WorkoutId into regsInWorkout
                  orderby wa.WorkoutDate
                     select new WorkoutAnnouncement()
                     {
@@ -121,7 +121,7 @@ namespace DataAccess
                         Description = wa.WorkoutDesc,
                         WorkoutDate = wa.WorkoutDate,
                         WorkoutLocation = wa.FieldId,
-                        NumRegistered = regsInWorkout.Count()
+                        NumRegistered = wa.WorkoutRegistrations.Count()
                     });
         }
 
