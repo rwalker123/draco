@@ -38,7 +38,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             FileStream strm = vm.ExportToExcel();
             this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            fs.FileDownloadName = vm.AccountLogoUrl + "AddressList.xlsx";
+            fs.FileDownloadName = vm.AccountName + "AddressList.xlsx";
             return fs;
         }
     }
