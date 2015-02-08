@@ -14,7 +14,8 @@
     @Header.DisplayHeader("Teams", Model.AccountName, Model.AccountLogoUrl)
     @if (Model.IsAdmin)
     { 
-        <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId' title="export address list to excel"><span class="glyphicon glyphicon-export"></span></a>
+        <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId' title="export address list to excel"><span class="glyphicon glyphicon-export">Rosters</span></a>
+        <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId?m=1' title="export managers address list to excel"><span class="glyphicon glyphicon-export">Managers</span></a>
     }
 </div>
 

@@ -381,6 +381,29 @@ namespace DataAccess
                     });
         }
 
+        static public IQueryable<Player> GetTeamManagersAsPlayer(long teamId)
+        {
+            DB db = DBConnection.GetContext();
+            return (from tsm in db.TeamSeasonManagers
+                    join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
+                    join t in db.Teams on ts.TeamId equals t.Id
+                    join c in db.Contacts on tsm.ContactId equals c.Id
+                    where tsm.TeamSeasonId == teamId
+                    select new Player()
+                    {
+                        Id = tsm.Id,
+                        TeamId = tsm.TeamSeasonId,
+                        PlayerNumber = 0,
+                        SubmittedWaiver = false,
+                        AccountId = t.AccountId,
+                        Contact = new Contact(tsm.Contact.Id, tsm.Contact.Email, tsm.Contact.LastName, tsm.Contact.FirstName, tsm.Contact.MiddleName, tsm.Contact.Phone1, tsm.Contact.Phone2, tsm.Contact.Phone3, tsm.Contact.CreatorAccountId, tsm.Contact.StreetAddress, tsm.Contact.City, tsm.Contact.State, tsm.Contact.Zip, tsm.Contact.FirstYear.GetValueOrDefault(), tsm.Contact.DateOfBirth, tsm.Contact.UserId),
+                        SubmittedDriversLicense = false,
+                        DateAdded = DateTime.MinValue,
+                        AffiliationDuesPaid = String.Empty,
+                        GamesPlayed = 0
+                    });
+        }
+
 		static public TeamManager GetManager(long managerId)
 		{
             //SELECT TeamSeasonManager.Id, Teams.AccountId, TeamSeasonManager.ContactId, TeamsSeason.Id

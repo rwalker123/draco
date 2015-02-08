@@ -34,11 +34,15 @@ namespace SportsManager.Areas.Baseball.Controllers
         [DeleteTempFile]
         public FileStreamResult ExportAddressList(long accountId)
         {
+            bool onlyManagers = !String.IsNullOrEmpty(Request.QueryString.Get("m"));
             var vm = new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId);
-            FileStream strm = vm.ExportToExcel();
+            FileStream strm = vm.ExportToExcel(onlyManagers);
             this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            fs.FileDownloadName = vm.AccountName + "AddressList.xlsx";
+            fs.FileDownloadName = vm.AccountName;
+            if (onlyManagers)
+                fs.FileDownloadName += "Managers";
+            fs.FileDownloadName += "AddressList.xlsx";
             return fs;
         }
     }
