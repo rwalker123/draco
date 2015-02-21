@@ -91,7 +91,7 @@ namespace SportsManager.Baseball.ViewModels
 
                 allPlayers = allPlayers.OrderBy(x => x.Contact.FullName);
 
-                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData);
+                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData, onlyManagers);
 
                 // save
                 worksheetPart.Worksheet.Save();

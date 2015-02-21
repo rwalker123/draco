@@ -210,7 +210,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.savePlayer = function (player) {
 
-        if (!self.currentEditPlayer().isValid())
+        if (!self.currentEditPlayer() && !self.currentEditPlayer().isValid())
             return;
 
         var data = self.currentEditPlayer().toJS();

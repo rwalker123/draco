@@ -58,7 +58,7 @@ namespace SportsManager.Baseball.ViewModels
             return new FileStream(destinationFile, FileMode.Open);
         }
 
-        public static void ExportRosterToExcel(IQueryable<Player> Roster, SheetData sheetData)
+        public static void ExportRosterToExcel(IQueryable<Player> Roster, SheetData sheetData, bool includePhone = false)
         {
             // Begining Row pointer                       
             int index = 4;
@@ -73,11 +73,25 @@ namespace SportsManager.Baseball.ViewModels
                     // New Cell
                     CreateCell(row, "A" + index, player.Contact.FullName);
                     CreateCell(row, "B" + index, player.Contact.Email);
-                    CreateCell(row, "C" + index, player.Contact.StreetAddress);
-                    CreateCell(row, "D" + index, player.Contact.City);
-                    CreateCell(row, "E" + index, player.Contact.State);
-                    CreateCell(row, "F" + index, player.Contact.Zip);
-                    CreateCell(row, "G" + index, player.AffiliationDuesPaid);
+                    if (includePhone)
+                    {
+                        CreateCell(row, "C" + index, player.Contact.Phone2);
+                        CreateCell(row, "D" + index, player.Contact.Phone3);
+                        CreateCell(row, "E" + index, player.Contact.Phone1);
+                        CreateCell(row, "F" + index, player.Contact.StreetAddress);
+                        CreateCell(row, "G" + index, player.Contact.City);
+                        CreateCell(row, "H" + index, player.Contact.State);
+                        CreateCell(row, "I" + index, player.Contact.Zip);
+                        CreateCell(row, "J" + index, player.AffiliationDuesPaid);
+                    }
+                    else
+                    {
+                        CreateCell(row, "C" + index, player.Contact.StreetAddress);
+                        CreateCell(row, "D" + index, player.Contact.City);
+                        CreateCell(row, "E" + index, player.Contact.State);
+                        CreateCell(row, "F" + index, player.Contact.Zip);
+                        CreateCell(row, "G" + index, player.AffiliationDuesPaid);
+                    }
 
                     // Append Row to SheetData
                     sheetData.AppendChild(row);
