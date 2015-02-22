@@ -41,15 +41,23 @@ namespace SportsManager
     /// </summary>
     public class DomainRoute : RouteBase
     {
+        readonly char[] slashSep = new char[] { '/' };
+
         public override RouteData GetRouteData(HttpContextBase httpContext)
         {
             string url = httpContext.Request.Headers["HOST"];
             long accountId = DataAccess.Accounts.GetAccountIdFromUrl(url);
 
+            String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(slashSep);
+
             if (accountId == 0)
             {
+                // does the url contain ezbaseballleague and point to the root:
+                // ex: www.ezbaseballleague.com
+                //     ezbaseballleague.azure.websites.com
+                // but not: ezbaseballleague.com/Accounts/Logoff/1
                 if (url.IndexOf("ezbaseballleague", StringComparison.InvariantCultureIgnoreCase) >= 0 &&
-                    (String.IsNullOrEmpty(httpContext.Request.ApplicationPath) || httpContext.Request.ApplicationPath == "/"))
+                    httpContext.Request.FilePath.TrimEnd(slashSep).Equals(virtualPath, StringComparison.InvariantCultureIgnoreCase))
                 {
                     // route to the "base" url of baseball leagues.
                     var routeData = new RouteData(this, new MvcRouteHandler());
@@ -63,8 +71,6 @@ namespace SportsManager
                 return null;
             }
             // let login/logoff process normally
-
-            String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(new char[] { '/' });
 
             // must add "common" pages here, otherwise code below will set defaults to specific league type.
             if (httpContext.Request.FilePath.StartsWith(virtualPath + "/Account", System.StringComparison.InvariantCultureIgnoreCase) ||
