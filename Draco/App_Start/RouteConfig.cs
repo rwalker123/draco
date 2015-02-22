@@ -47,8 +47,21 @@ namespace SportsManager
             long accountId = DataAccess.Accounts.GetAccountIdFromUrl(url);
 
             if (accountId == 0)
-                return null;
+            {
+                if (url.IndexOf("ezbaseballleague", StringComparison.InvariantCultureIgnoreCase) >= 0 &&
+                    (String.IsNullOrEmpty(httpContext.Request.ApplicationPath) || httpContext.Request.ApplicationPath == "/"))
+                {
+                    // route to the "base" url of baseball leagues.
+                    var routeData = new RouteData(this, new MvcRouteHandler());
+                    routeData.Values["controller"] = "League";
+                    routeData.Values["action"] = "Index";
 
+                    routeData.DataTokens["area"] = "Baseball";
+                    routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Baseball.Controllers" };
+                    return routeData;
+                }
+                return null;
+            }
             // let login/logoff process normally
 
             String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(new char[] { '/' });

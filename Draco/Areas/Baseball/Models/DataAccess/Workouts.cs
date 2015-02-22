@@ -39,17 +39,12 @@ namespace DataAccess
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(WorkoutWhereHeard));
 
-                Stream fileText = await Storage.Provider.GetFileAsText(WorkoutWhereHeard.FileUri(accountId));
-                if (fileText != null)
+                using (Stream fileText = await Storage.Provider.GetFileAsText(WorkoutWhereHeard.FileUri(accountId)))
                 {
-                    try
+                    if (fileText != null)
                     {
                         WorkoutWhereHeard wwh = (WorkoutWhereHeard)serializer.Deserialize(fileText);
                         whereHeardList = wwh.WhereHeardList;
-                    }
-                    catch(Exception)
-                    {
-                        // todo.
                     }
                 }
             }
@@ -65,14 +60,13 @@ namespace DataAccess
                 wwh.WhereHeardList = whereHeardOptions;
 
                 XmlSerializer serializer = new XmlSerializer(typeof(WorkoutWhereHeard));
-                string fileName = Storage.Provider.GetLocalPath(WorkoutWhereHeard.FileUri(accountId));
-                System.IO.DirectoryInfo di = new DirectoryInfo(System.IO.Path.GetDirectoryName(fileName));
-                if (!di.Exists)
-                    System.IO.Directory.CreateDirectory(di.FullName);
 
-                using (TextWriter tw = new StreamWriter(fileName, false))
+                using (StringWriter tw = new StringWriter())
                 {
-                    serializer.Serialize(tw, wwh);
+                    var ms = new MemoryStream();
+                    serializer.Serialize(ms, wwh);
+                    ms.Position = 0;
+                    Storage.Provider.Save(ms, WorkoutWhereHeard.FileUri(accountId));
                 }
             }
         }
