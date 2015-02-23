@@ -150,6 +150,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Owin.Security.Twitter.3.0.1\lib\net45\Microsoft.Owin.Security.Twitter.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.ServiceBus">
+      <HintPath>..\packages\WindowsAzure.ServiceBus.2.6.1\lib\net40-full\Microsoft.ServiceBus.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Web.RedisSessionStateProvider">
       <HintPath>..\packages\Microsoft.Web.RedisSessionStateProvider.1.6.0\lib\net40\Microsoft.Web.RedisSessionStateProvider.dll</HintPath>
     </Reference>
@@ -197,6 +200,8 @@
     <Reference Include="System.Reactive.PlatformServices">
       <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Spatial, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\System.Spatial.5.6.3\lib\net40\System.Spatial.dll</HintPath>
@@ -552,6 +557,7 @@
     <Compile Include="Models\ModelObjects\VoteOption.cs" />
     <Compile Include="Models\ModelObjects\VoteQuestion.cs" />
     <Compile Include="Models\ModelObjects\VoteResults.cs" />
+    <Compile Include="Models\PushNotifications.cs" />
     <Compile Include="Models\RandomPassword.cs" />
     <Compile Include="Models\Results\AddChallengeOnUnauthorizedResult.cs" />
     <Compile Include="Models\Results\AuthenticationFailureResult.cs" />

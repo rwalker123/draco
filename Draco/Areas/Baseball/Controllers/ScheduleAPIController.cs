@@ -1,6 +1,8 @@
 ﻿using LinqToTwitter;
+using Microsoft.ServiceBus.Notifications;
 using SportsManager.Models;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
@@ -72,6 +74,14 @@ namespace SportsManager.Areas.Baseball.Controllers
                 bool found = DataAccess.Schedule.UpdateGameScore(game, emailResult);
                 if (found)
                 {
+                    if (game.IsGameComplete)
+                    {
+                        // send out push notification
+                        //String notificationMessage = LeagueScheduleController.GetGameResultNotificationText(game);
+                        //var n = new GcmNotification("{\"data\":{\"message\":\"" + notificationMessage + "\"}}");
+                        //NotificationOutcome o = PushNotifications.Instance.Hub.SendNotificationAsync(n).Result;
+                    }
+
                     return Request.CreateResponse<ModelObjects.Game>(HttpStatusCode.OK, game);
                 }
                 else
