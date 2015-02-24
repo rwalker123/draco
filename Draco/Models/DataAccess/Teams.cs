@@ -197,6 +197,9 @@ namespace DataAccess
 
 		static public bool ModifyTeam(Team team)
 		{
+            if (String.IsNullOrWhiteSpace(team.Name))
+                return false;
+
             DB db = DBConnection.GetContext();
 
 			SportsManager.Model.TeamsSeason dbTeamSeason = (from ts in db.TeamsSeasons
@@ -204,7 +207,7 @@ namespace DataAccess
 															select ts).Single();
 
 			dbTeamSeason.DivisionSeasonId = team.DivisionId;
-			dbTeamSeason.Name = team.Name;
+			dbTeamSeason.Name = team.Name.Trim();
 
 			db.SubmitChanges();
 
@@ -241,6 +244,8 @@ namespace DataAccess
 			db.SubmitChanges();
 
             int nameLength = 25;
+
+            t.Name = t.Name.Trim();
 
 			SportsManager.Model.TeamsSeason dbTeamSeason = new SportsManager.Model.TeamsSeason()
 			{
