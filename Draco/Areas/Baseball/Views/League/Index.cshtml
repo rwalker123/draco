@@ -1,38 +1,198 @@
 ﻿ @model SportsManager.Baseball.ViewModels.LeagueIndexViewModel
 
 @{
-    ViewBag.Title = "Baseball League";
+    ViewBag.Title = "ezBaseballLeague.com";
 }
-<div class="jumbotron">
-    <h1>@ViewBag.Title.</h1>
-    <p>Select a league.</p>
+<div class="jumbotron" style="background: url('/Images/baseball/leaguebackground.jpg') no-repeat #000000; background-size: auto; background-position: right">
+    <h1>ezBaseballLeague.com</h1>
+    <h2>Baseball League Management made easy.</h2>
+    <p>@Html.ActionLink("Get Started Today!", "CreateAccount", "League", new { area = "baseball" }, new { @class = "btn btn-primary" })</p>
 </div>
 
-<p>Note: to create an account you must log in.</p>
-<p>@Html.ActionLink("Create Account", "CreateAccount", "League", new { area = "baseball" }, new { @class = "btn btn-primary" })</p>
 
-<div class="list-group">
-    <h4>Select a league to visit:</h4>
-    @foreach (var l in Model.GetBaseballLeagues())
-    {
-        int accountId;
-        if (int.TryParse(l.Value, out accountId))
-        {
-            <a href="javascript:visitLeague(@accountId)" class="list-group-item">@l.Text</a>
-        }
-        else
-        { 
-            <a href="@l.Value" class="list-group-item">@l.Text</a>
-        }
-    }
-</div>
+<div class="container-fluid">
+    <div class="row center-block text-center">
+        <div class="col-sm-12">
+            <form style="margin-bottom: 20px">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="find a league..." />
+                    <span class="input-group-btn">
+                        <button class="btn btn-success">Go...</button>
+                    </span>
+                </div>
+            </form>
+        </div>
+    </div>
 
-@section scripts
+    <div class="row center-block text-center">
+        <div class="col-sm-12">
+            <div class="alert alert-info">
+                <h3>About ezBaseballLeague</h3>
+                <p>We are a site for managing your baseball (or softball) league. Our emphasis is on the league and players. All features of the site are
+                completely free.</p>
+                <p> We strive for a clean user experience that works equally well on 
+                mobile phones, is integrated into your social sites and promotes growing your league membership.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row center-block text-center">
+        <div class="col-sm-12">
+            <div class="alert alert-success" style="background: url('/Images/baseball/baseballair.jpg') no-repeat #000000; background-size: auto; background-position: right">
+                <h3><b>Signing up</b> is easy and best of all it is FREE!</h3>
+                <h4>Click @Html.ActionLink("here", "CreateAccount", "League", new { area = "baseball" }, new { @class = "btn btn-success" }) to get started!</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- column 1-->
+            <div class="col-md-12">
+                <div class="panel panel-success">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">What can you do?</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <h4 class="list-group-item-heading">Full administration control</h4>
+                                <p class="list-group-item-text">Select only the features you want to enable. Use as little or as much as you want. The image below is a 
+                                sample of the easy to use interface that allows you to selectively enable features.</p>
+                                <img src="~/Images/Baseball/settings.png" class="img-responsive" />
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Sponsors</h4>
+                                <p class="list-group-item-text">
+                                    Business who support your league have a special place on your site. League and Team
+                                    sponsors are allowed and displayed appropriately. In addition, for adult leagues, each active member can advertise their business.
+                                </p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Mobile device friendly</h4>
+                                <p class="list-group-item-text">Responsive layout means your page will resize to fit the device viewing it.
+                                No tiny text or bad scrolling behaviour when you view the site on your phone.</p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Statistics</h4>
+                                <p class="list-group-item-text">
+                                    What is baseball without statistics? We support multiple seasons, including historical and season stastics.
+                                    Each Team Administrator (Manager) has the ability to enter statistics for their team.
+                                </p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Keep league members informed</h4>
+                                <p class="list-group-item-text">
+                                    We have league-wide and team discussion boards, announcements, information, and handouts. Announcements are
+                                    used to inform users of time based events and notifications. You can enter permanant information like league rules, a welcome message, etc.
+                                    Finally, you have to ability to upload important forms that can be downloaded.
+                                </p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Multimedia content</h4>
+                                <p class="list-group-item-text">Upload photos, you tube integration </p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Recruit New Members</h4>
+                                <p class="list-group-item-text">
+                                    FAQ, Player classified, workouts (with twitter integration)
+                                </p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Engagement</h4>
+                                <p class="list-group-item-text">Player survey, user polls, photos, birthday announcments</p>
+                            </div>
+                            <div class="list-group-item">
+                                <h4>Hall of Fame</h4>
+                                <p class="list-group-item-text">
+                                    Have people in your league that you want to recognize for their contributions? Use the Hall of Fame.
+                                    Along with a dedicated page for HOF members, your home page will randomly pick a HOF member to display.
+                                </p>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- second column -->
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Incredibly Simple!</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        <p>
+                            Easy to use interface allows full control of the features you want. Simple "edit page" mode
+                            allows adding content inline on the page. For example, clicking on the plus icon
+                            will display an easy to use form for adding data. Most content on the site is added this way.
+                        </p>
+                        <img class="img-responsive" src="~/Images/Baseball/userpoll.png" />
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Team Pages</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        <p>Each team in the league will have their own page to communicate with players on the roster. </p>
+                        <p>Teams can have their own <i>announcements, messages, discussions, photos and videos</i>.
+                            Most of what is done at the league level is also supported for a team.</p>
+                        <p>Managers or League administrators enter statistics for the team when games
+                           are completed.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">League Spotlight</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        Want to see for yourself? visit one of our leagues today and see a live site.
+                        <h3><a href="http://www.detroitmsbl.com" target="newwindow">Detroit MSBL</a></h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <h3 class="panel-title" style="float: left;">Have Questions?</h3>
+                        <div style="clear:both"></div>
+                    </div>
+
+                    <div class="panel-body">
+                        If you have any questions or suggestions for the site, please send us an email:
+                        <p><a href="emailto:support@ezbaseballleague.com">support@ezbaseballleague.com</a></p>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- end second column -->
+
+                </div> <!-- end main single row -->
+            </div>
+
+            @section scripts
 {
-<script type="text/javascript">
-    function visitLeague(leagueId) {
-        window.location = window.config.rootUri + '/baseball/league/index/' + leagueId;
-    }
-</script>
-}
+                <script type="text/javascript">
+                    //function visitLeague(leagueId) {
+                    //    window.location = window.config.rootUri + '/baseball/league/index/' + leagueId;
+                    //}
+                </script>
+            }
 

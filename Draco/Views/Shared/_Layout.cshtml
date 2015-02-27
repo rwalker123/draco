@@ -18,7 +18,7 @@
         m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
     })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
 
-    ga('create', 'UA-51286344-1', 'detroitmsbl.com');
+    ga('create', 'UA-51286344-1', 'ezbaseballleague.com');
     ga('send', 'pageview');
 
     </script>
@@ -39,41 +39,40 @@
     @RenderSection("head", required: false)
 </head>
 <body>
-    @RenderSection("facebooklike", required: false)
-    <div class="navbar navbar-default navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-menu">
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                @if (String.IsNullOrEmpty((String)ViewData["AccountName"]))
-                {
-                    ViewData["AccountName"] = "ezRecSports.com";
-                    @Html.ActionLink((String)ViewData["AccountName"], "Index", "Home", null, new { @class = "navbar-brand" });
-                }
-                else {
-                    @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = "Baseball", accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
-                }
-            </div>
-            <div class="navbar-menu navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    @if (ViewData["AccountId"] != null)
+    @if (ViewData["AccountId"] != null)
+    {
+        @RenderSection("facebooklike", required: false)
+        <div class="navbar navbar-default navbar-fixed-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-menu">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    @if (!String.IsNullOrEmpty((String)ViewData["AccountName"]))
                     {
-                        Html.RenderPartial("AccountMenu", ViewData["AccountId"]);
+                        @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = "Baseball", accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
                     }
-                    else
-                    {
-                        <li>@Html.ActionLink("Home", "Index", "Home")</li>
-                        <li>@Html.ActionLink("About", "About", "Home")</li>
-                        <li>@Html.ActionLink("Contact", "Contact", "Home")</li>
-                    }
-                </ul>
-                @Html.Partial("_LoginPartial")
+                </div>
+                <div class="navbar-menu navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        @if (ViewData["AccountId"] != null)
+                        {
+                            Html.RenderPartial("AccountMenu", ViewData["AccountId"]);
+                        }
+                    </ul>
+                    @Html.Partial("_LoginPartial")
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else
+    { 
+        ViewData["AccountName"] = "ezBaseballLeague.com";
+    }
+
+
 @if (ViewData["AccountId"] != null && ViewData["IsAdmin"] != null && ViewData.Model.IsAdmin)
 {
     <div class="navbar navbar-inverse navbar-fixed-bottom" >
