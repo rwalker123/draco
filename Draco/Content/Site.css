@@ -1,6 +1,9 @@
 ﻿body {
     padding-top: 50px;
     padding-bottom: 20px;
+}
+
+.gradbackground {
     background: -webkit-linear-gradient(white, lightgray); /* For Safari 5.1 to 6.0 */
     background: -o-linear-gradient(white, lightgray); /* For Opera 11.1 to 12.0 */
     background: -moz-linear-gradient(white, lightgray); /* For Firefox 3.6 to 15 */

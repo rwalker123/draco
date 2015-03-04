@@ -372,6 +372,7 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
             }
         }
@@ -385,6 +386,7 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
             }
         }
@@ -397,6 +399,11 @@ namespace SportsManager.Controllers
             {
                 String fileExt = Path.GetExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' })).ToLowerInvariant();
                 string imageExtensions = ConfigurationManager.AppSettings["ImageExtensions"];
+                if (imageExtensions == null)
+                {
+                    throw new Exception("imageExtensions is null, check ImageExtensions AppSetting");
+                }
+
                 if (!imageExtensions.Contains(fileExt) || !IsImageFile(file.LocalFileName))
                 {
                     File.Delete(file.LocalFileName);
@@ -463,6 +470,8 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
+
                 if (File.Exists(file.LocalFileName))
                     File.Delete(file.LocalFileName);
 
@@ -499,8 +508,9 @@ namespace SportsManager.Controllers
                     return true;
                 }
             }
-            catch
+            catch(Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
             }
 
             return false;

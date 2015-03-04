@@ -99,8 +99,8 @@ static public class Globals
 		catch (Exception ex)
 		{
 			sentMsg = false;
-			LogException(ex);
-		}
+            Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+        }
 
 		return sentMsg;
 	}
@@ -151,8 +151,8 @@ static public class Globals
 		}
 		catch (Exception ex)
 		{
-			LogException(ex);
-		}
+            Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+        }
 
 		return failedSends;
 	}
@@ -172,33 +172,6 @@ static public class Globals
 
 			errorLabel.Text = sb.ToString();
 			errorLabel.Visible = true;
-		}
-	}
-
-	public static void LogException(Exception ex)
-	{
-		System.Web.HttpContext context = System.Web.HttpContext.Current;
-		if (context == null)
-			return;
-
-		String logPath = context.Server.MapPath(Globals.LogFile);
-		string logDir = System.IO.Path.GetDirectoryName(logPath);
-		if (!System.IO.Directory.Exists(logDir))
-			System.IO.Directory.CreateDirectory(logDir);
-
-		// prepend date to log file            
-		string logFile = logDir + "\\" + DateTime.Today.ToString("MM-dd-yy.") + System.IO.Path.GetFileName(logPath);
-		using (System.IO.TextWriter tw = System.IO.File.AppendText(logFile))
-		{
-			StringBuilder sb = new StringBuilder();
-
-            String userName = System.Web.HttpContext.Current.User != null ? Globals.GetCurrentUserName() : "";
-
-            sb.AppendLine(String.Format("{0} User: {1}", DateTime.Now, userName));
-			sb.AppendLine(ex.ToString());
-
-			Globals.LastException = sb.ToString();
-			tw.WriteLine(Globals.LastException);
 		}
 	}
 

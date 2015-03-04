@@ -639,10 +639,15 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Images\Baseball\announcementsample.png" />
+    <Content Include="Images\Baseball\announcementviewsample.png" />
     <Content Include="Images\Baseball\baseballair.jpg" />
     <Content Include="Images\Baseball\leaguebackground.jpg" />
+    <Content Include="Images\Baseball\samplesponsor.png" />
+    <Content Include="Images\Baseball\samplestats.png" />
     <Content Include="Images\Baseball\settings.png" />
     <Content Include="Images\Baseball\userpoll.png" />
+    <Content Include="Images\Baseball\workoutsample.png" />
     <Content Include="Images\busy.gif" />
     <Content Include="Images\youtube\youtube1.PNG" />
     <Content Include="Images\youtube\youtube2.png" />
