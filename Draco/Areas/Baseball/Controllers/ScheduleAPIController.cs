@@ -85,7 +85,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                             {
                                 { "message", notificationMessage }
                             });
-                            NotificationOutcome o = PushNotifications.Instance.Hub.SendNotificationAsync(t).Result;
+                            NotificationOutcome o = PushNotifications.Instance.Hub.SendNotificationAsync(t, "GameResults_" + accountId.ToString()).Result;
 
                             // samples of specific service calls, use template method above:
                             //var gcm = new GcmNotification("{\"data\":{\"message\":\"" + notificationMessage + "\"}}");
