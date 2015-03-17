@@ -124,6 +124,8 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.editPlayer = function (player) {        
         self.currentEditPlayer().update(player.toJS());
+        $("#FirstYearSelect").selectpicker("refresh");
+        $("#GenderSelect").selectpicker("refresh");
     }
 
     self.cancelEditPlayer = function (player) {
