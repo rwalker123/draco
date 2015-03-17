@@ -175,7 +175,23 @@ var LeagueViewModel = function (data, accountId) {
     }
 
     self.removeTeamFromDivision = function (teamVM) {
+
+        $("#releasePlayersModal").modal("show");
+
+        $("#confirmReleaseBtn").one("click", function () {
+            self.doRemoveTeamFromDivision(teamVM, true);
+        });
+        $("#confirmKeepBtn").one("click", function () {
+            self.doRemoveTeamFromDivision(teamVM, false);
+        });
+    }
+
+    self.doRemoveTeamFromDivision = function(teamVM, releasePlayers) {
         var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionTeams/' + teamVM.Id();
+
+        if (releasePlayers)
+            url = url + "?r=t";
+
         $.ajax({
             type: "DELETE",
             url: url,

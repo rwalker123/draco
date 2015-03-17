@@ -602,7 +602,6 @@
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Readme\Elmah.txt" />
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
     <Content Include="Areas\Baseball\Scripts\entergameresults.js" />
     <Content Include="Areas\Baseball\Scripts\leaders.js" />
@@ -660,7 +659,6 @@
       <LastGenOutput>DataClasses.designer.cs</LastGenOutput>
     </Content>
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
-    <Content Include="NuGet\readme.txt" />
     <Content Include="Scripts\bloodhound.js" />
     <Content Include="Scripts\bloodhound.min.js" />
     <Content Include="Scripts\bootstrap-datepicker.js" />

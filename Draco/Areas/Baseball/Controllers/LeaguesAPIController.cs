@@ -87,6 +87,11 @@ namespace SportsManager.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage RemoveDivisionTeams(long accountId, long id)
         {
+            var queryValues = Request.RequestUri.ParseQueryString();
+            String strReleasePlayers = queryValues["r"] ?? "f";
+
+            bool releasePlayers = strReleasePlayers.Equals("t");
+
             var team = DataAccess.Teams.GetTeam(id);
             if (team != null)
             {
@@ -94,6 +99,12 @@ namespace SportsManager.Baseball.Controllers
                 team.DivisionId = 0;
                 if (DataAccess.Teams.ModifyTeam(team))
                 {
+                    if (releasePlayers)
+                    {
+                        DataAccess.TeamRoster.ReleaseAllPlayers(team.Id);
+                        DataAccess.Teams.RemoveManagers(team.Id);
+                    }
+
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent(prevDivisionId.ToString())

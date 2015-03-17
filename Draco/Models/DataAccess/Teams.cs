@@ -278,12 +278,7 @@ namespace DataAccess
 		static public async Task<bool> RemoveTeam(Team t)
 		{
 			TeamRoster.RemoveTeamPlayers(t.Id);
-			IQueryable<TeamManager> managers = Teams.GetTeamManagers(t.Id);
-
-			foreach (TeamManager tm in managers)
-			{
-				Teams.RemoveManager(tm.MgrSeasonId);
-			}
+            Teams.RemoveManagers(t.Id);
 
 			var items = DataAccess.PhotoGallery.GetTeamPhotos(t.TeamId);
 			foreach (ModelObjects.PhotoGalleryItem item in items)
@@ -341,6 +336,18 @@ namespace DataAccess
 
 			return true;
 		}
+
+        static public bool RemoveManagers(long teamId)
+        {
+            IQueryable<TeamManager> managers = Teams.GetTeamManagers(teamId);
+
+            foreach (TeamManager tm in managers)
+            {
+                Teams.RemoveManager(tm.MgrSeasonId);
+            }
+
+            return true;
+        }
 
 		static public bool RemoveManager(long mgrId)
 		{

@@ -409,6 +409,21 @@ namespace DataAccess
             return true;
 		}
 
+        static public bool ReleaseAllPlayers(long teamSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var dbPlayers = (from rs in db.RosterSeasons
+                            where rs.TeamSeasonId == teamSeasonId
+                            select rs);
+
+            foreach(var p in dbPlayers)
+                p.Inactive = true;
+
+            db.SubmitChanges();
+            return true;
+        }
+
 		static public bool ReleasePlayer(long playerSeasonId)
 		{
             DB db = DBConnection.GetContext();
