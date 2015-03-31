@@ -93,7 +93,9 @@ namespace DataAccess
                         TimeZoneId = a.TimeZoneId,
                         OwnerContactId = a.OwnerId,
                         YouTubeUserId = a.YouTubeUserId,
-                        TwitterAccountName = a.TwitterAccountName
+                        TwitterAccountName = a.TwitterAccountName,
+                        DefaultVideo = a.DefaultVideo,
+                        AutoPlayVideo = a.AutoPlayVideo
                     }).SingleOrDefault();
         }
 
@@ -251,6 +253,8 @@ namespace DataAccess
                 dbAccount.TimeZoneId = account.TimeZoneId;
                 dbAccount.YouTubeUserId = account.YouTubeUserId;
                 dbAccount.TwitterAccountName = account.TwitterAccountName;
+                dbAccount.DefaultVideo = account.DefaultVideo ?? String.Empty;
+                dbAccount.AutoPlayVideo = account.AutoPlayVideo;
 
                 db.SubmitChanges();
 

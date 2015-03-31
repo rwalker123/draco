@@ -18,7 +18,7 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
             var team = (from t in db.Teams
-                     where t.Id == teamId
+                     where t.id == teamId
                      select t).SingleOrDefault();
 
             if (team == null)
@@ -30,13 +30,13 @@ namespace DataAccess
                                   select ls.Id);
 
             var teamSeason = (from ts in db.TeamsSeasons
-                              where ts.TeamId == team.Id && currentLeagues.Contains(ts.LeagueSeasonId)
+                              where ts.TeamId == team.id && currentLeagues.Contains(ts.LeagueSeasonId)
                               select ts).SingleOrDefault();
 
             if (teamSeason == null)
                 return null;
 
-            return new Team(teamSeason.Id, teamSeason.LeagueSeasonId, teamSeason.Name, teamSeason.DivisionSeasonId, team.Id, team.AccountId);
+            return new Team(teamSeason.Id, teamSeason.LeagueSeasonId, teamSeason.Name, teamSeason.DivisionSeasonId, team.id, team.AccountId);
         }
 
 		static public string GetTeamNameFromTeamId(long teamId, bool includeLeague)
@@ -82,17 +82,19 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from ts in db.TeamsSeasons
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     where ts.Id == teamId
                     select new Team()
                     {
                         Id = ts.Id,
-                        TeamId = t.Id,
+                        TeamId = t.id,
                         AccountId = t.AccountId,
                         DivisionId = ts.DivisionSeasonId,
                         LeagueId = ts.LeagueSeasonId,
                         YouTubeUserId = t.YouTubeUserId,
-                        Name = ts.Name
+                        Name = ts.Name,
+                        DefaultVideo = t.DefaultVideo,
+                        AutoPlayVideo = t.AutoPlayVideo
                     }).SingleOrDefault();
 		}
 
@@ -111,7 +113,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             long accountId = (from t in db.Teams
-                              where t.Id == teamId
+                              where t.id == teamId
                               select t.AccountId).SingleOrDefault();
             if (accountId == 0)
                 return 0;
@@ -134,7 +136,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
 			return (from ts in db.TeamsSeasons
-					join t in db.Teams on ts.TeamId equals t.Id
+					join t in db.Teams on ts.TeamId equals t.id
 					where ts.LeagueSeasonId == leagueId
 					orderby ts.DivisionSeasonId
 					select new Team(ts.Id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
@@ -145,7 +147,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             return (from ts in db.TeamsSeasons
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     where ts.LeagueSeasonId == leagueId && ts.DivisionSeasonId == 0
                     orderby ts.DivisionSeasonId
                     select new Team(ts.Id, ts.LeagueSeasonId, ts.Name, ts.DivisionSeasonId, ts.TeamId, t.AccountId));
@@ -160,7 +162,7 @@ namespace DataAccess
                             select s.SeasonId).SingleOrDefault();
 
             return (from ts in db.TeamsSeasons
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     join l in db.Leagues on ls.LeagueId equals l.Id
                     where t.AccountId == accountId && ls.SeasonId == seasonId
@@ -168,7 +170,7 @@ namespace DataAccess
                     select new Team()
                     {
                         Id = ts.Id,
-                        TeamId = t.Id,
+                        TeamId = t.id,
                         Name = l.Name + " " + ts.Name,
                         DivisionId = ts.DivisionSeasonId,
                         LeagueId = ts.LeagueSeasonId,
@@ -219,10 +221,40 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
 
             SportsManager.Model.Team dbTeam = (from ts in db.Teams
-                                                            where ts.Id == team.TeamId
+                                                            where ts.id == team.TeamId
                                                             select ts).Single();
 
             dbTeam.YouTubeUserId = team.YouTubeUserId;
+
+            db.SubmitChanges();
+
+            return true;
+        }
+
+        static public bool ModifyDefaultVideo(Team team)
+        {
+            DB db = DBConnection.GetContext();
+
+            SportsManager.Model.Team dbTeam = (from ts in db.Teams
+                                               where ts.id == team.TeamId
+                                               select ts).Single();
+
+            dbTeam.DefaultVideo = team.DefaultVideo ?? String.Empty;
+
+            db.SubmitChanges();
+
+            return true;
+        }
+
+        static public bool ModifyAutoPlayVideo(Team team)
+        {
+            DB db = DBConnection.GetContext();
+
+            SportsManager.Model.Team dbTeam = (from ts in db.Teams
+                                               where ts.id == team.TeamId
+                                               select ts).Single();
+
+            dbTeam.AutoPlayVideo = team.AutoPlayVideo;
 
             db.SubmitChanges();
 
@@ -250,7 +282,7 @@ namespace DataAccess
 			SportsManager.Model.TeamsSeason dbTeamSeason = new SportsManager.Model.TeamsSeason()
 			{
 				LeagueSeasonId = t.LeagueId,
-				TeamId = dbTeam.Id,
+				TeamId = dbTeam.id,
 				DivisionSeasonId = t.DivisionId,
 				Name = t.Name.Length <= nameLength ? t.Name : t.Name.Substring(0, nameLength)
 			};
@@ -324,7 +356,7 @@ namespace DataAccess
 													   select mc);
 
 				db.Teams.DeleteOnSubmit((from t2 in db.Teams
-										 where t2.Id == teamId
+										 where t2.id == teamId
 										 select t2).Single());
 
 				db.SubmitChanges();
@@ -372,7 +404,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from tsm in db.TeamSeasonManagers
                     join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join c in db.Contacts on tsm.ContactId equals c.Id
                     where tsm.TeamSeasonId == teamId
                     select new TeamManager()
@@ -398,7 +430,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from tsm in db.TeamSeasonManagers
                     join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join c in db.Contacts on tsm.ContactId equals c.Id
                     where tsm.TeamSeasonId == teamId
                     select new Player()
@@ -427,7 +459,7 @@ namespace DataAccess
             DB db = DBConnection.GetContext();
             return (from tsm in db.TeamSeasonManagers
                     join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join c in db.Contacts on tsm.ContactId equals c.Id
                     where tsm.Id == managerId
                     select new TeamManager() {
@@ -453,7 +485,7 @@ namespace DataAccess
 
             var isManager = (from tsm in db.TeamSeasonManagers
                              join ts in db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
-                             join t in db.Teams on ts.TeamId equals t.Id
+                             join t in db.Teams on ts.TeamId equals t.id
                              join c in db.Contacts on tsm.ContactId equals c.Id
                              where c.Id == m.Id && tsm.TeamSeasonId == m.TeamId
                              select tsm.Id).SingleOrDefault();

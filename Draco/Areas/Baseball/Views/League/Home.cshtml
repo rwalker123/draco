@@ -481,7 +481,7 @@ else
         @if (Model.VideosEnabled && Model.ShowVideos)
         {
             <text>
-            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId');
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', '@Model.DefaultVideo', @Model.AutoPlayVideo.ToString().ToLower());
             </text>
         }
 

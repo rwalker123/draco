@@ -15,6 +15,11 @@ namespace SportsManager.Baseball.ViewModels
             {
                 FirstYear = (Account.FirstYear == 0) ? DateTime.Now.Year : Account.FirstYear;
                 YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
+                if (!String.IsNullOrEmpty(YouTubeUserId))
+                {
+                    DefaultVideo = Account.DefaultVideo;
+                    AutoPlayVideo = Account.AutoPlayVideo;
+                }
             }
             ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
             ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
@@ -157,6 +162,18 @@ namespace SportsManager.Baseball.ViewModels
         {
             get;
             private set;
+        }
+
+        public string DefaultVideo 
+        { 
+            get; 
+            private set; 
+        }
+
+        public bool AutoPlayVideo 
+        { 
+            get; 
+            private set; 
         }
 
         public bool ShowPhotoGallery

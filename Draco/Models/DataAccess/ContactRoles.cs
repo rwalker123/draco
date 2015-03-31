@@ -340,7 +340,7 @@ namespace DataAccess
             {
                 var teamIds = (from t in db.Teams
                                where t.AccountId == accountId
-                               select t.Id);
+                               select t.id);
 
                 return (from cr in db.ContactRoles
                         where cr.RoleId == roleId && cr.AccountId == accountId &&
@@ -351,7 +351,7 @@ namespace DataAccess
             {
                 var teamIds = (from t in db.Teams
                                where t.AccountId == accountId
-                               select t.Id);
+                               select t.id);
 
                 return (from cr in db.ContactRoles
                         where cr.RoleId == roleId && cr.AccountId == accountId &&

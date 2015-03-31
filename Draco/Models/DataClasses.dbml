@@ -9,50 +9,6 @@
       <Association Name="Account_AccountHandout" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
-  <Table Name="dbo.Accounts" Member="Accounts">
-    <Type Name="Account">
-      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
-      <Column Name="OwnerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="Name" Type="System.String" DbType="VarChar(75) NOT NULL" CanBeNull="false" />
-      <Column Name="URL" Type="System.String" DbType="VarChar(200) NOT NULL" CanBeNull="false" />
-      <Column Name="FirstYear" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
-      <Column Name="AccountTypeId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="AffiliationId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Column Name="TimeZoneId" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="TwitterAccountName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="TwitterOauthToken" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="TwitterOauthSecretKey" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Column Name="YouTubeUserId" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
-      <Column Name="FacebookFanPage" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
-      <Column Name="TwitterWidgetScript" Type="System.String" DbType="VarChar(512)" CanBeNull="true" />
-      <Association Name="Account_AccountHandout" Member="AccountHandouts" ThisKey="Id" OtherKey="AccountId" Type="AccountHandout" />
-      <Association Name="Account_AccountSetting" Member="AccountSettings" ThisKey="Id" OtherKey="AccountId" Type="AccountSetting" />
-      <Association Name="Account_AvailableField" Member="AvailableFields" ThisKey="Id" OtherKey="AccountId" Type="AvailableField" />
-      <Association Name="Account_CurrentSeason" Member="CurrentSeason" ThisKey="Id" OtherKey="AccountId" Type="CurrentSeason" Cardinality="One" />
-      <Association Name="Account_DivisionDef" Member="DivisionDefs" ThisKey="Id" OtherKey="AccountId" Type="DivisionDef" />
-      <Association Name="Account_GolfLeagueCourse" Member="GolfLeagueCourses" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueCourse" />
-      <Association Name="Account_GolfLeagueSetup" Member="GolfLeagueSetups" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueSetup" />
-      <Association Name="Account_League" Member="Leagues" ThisKey="Id" OtherKey="AccountId" Type="League" />
-      <Association Name="Account_LeagueUmpire" Member="LeagueUmpires" ThisKey="Id" OtherKey="AccountId" Type="LeagueUmpire" />
-      <Association Name="Account_PhotoGallery" Member="PhotoGalleries" ThisKey="Id" OtherKey="AccountId" Type="PhotoGallery" />
-      <Association Name="Account_ProfileCategory" Member="ProfileCategories" ThisKey="Id" OtherKey="AccountId" Type="ProfileCategory" />
-      <Association Name="Account_Roster" Member="Rosters" ThisKey="Id" OtherKey="AccountId" Type="Roster" />
-      <Association Name="Account_Season" Member="Seasons" ThisKey="Id" OtherKey="AccountId" Type="Season" />
-      <Association Name="Account_VoteQuestion" Member="VoteQuestions" ThisKey="Id" OtherKey="AccountId" Type="VoteQuestion" />
-      <Association Name="Account_WorkoutAnnouncement" Member="WorkoutAnnouncements" ThisKey="Id" OtherKey="AccountId" Type="WorkoutAnnouncement" />
-      <Association Name="Account_LeagueFAQ" Member="LeagueFAQs" ThisKey="Id" OtherKey="AccountId" Type="LeagueFAQ" />
-      <Association Name="Account_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="AccountId" Type="AccountWelcome" />
-      <Association Name="Account_LeagueNew" Member="LeagueNews" ThisKey="Id" OtherKey="AccountId" Type="LeagueNew" />
-      <Association Name="Account_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="AccountId" Type="Sponsor" />
-      <Association Name="Account_hof" Member="hofs" ThisKey="Id" OtherKey="AccountId" Type="hof" />
-      <Association Name="Account_HOFNomination" Member="HOFNominations" ThisKey="Id" OtherKey="AccountId" Type="HOFNomination" />
-      <Association Name="Account_PlayersWantedClassified" Member="PlayersWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="PlayersWantedClassified" />
-      <Association Name="Account_TeamsWantedClassified" Member="TeamsWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="TeamsWantedClassified" />
-      <Association Name="Account_Team" Member="Teams" ThisKey="Id" OtherKey="AccountId" Type="Team" />
-      <Association Name="AccountType_Account" Member="AccountType" ThisKey="AccountTypeId" OtherKey="Id" Type="AccountType" IsForeignKey="true" />
-      <Association Name="Affiliation_Account" Member="Affiliation" ThisKey="AffiliationId" OtherKey="Id" Type="Affiliation" IsForeignKey="true" />
-    </Type>
-  </Table>
   <Table Name="dbo.AccountSettings" Member="AccountSettings">
     <Type Name="AccountSetting">
       <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
@@ -430,8 +386,8 @@
       <Column Name="CourseId" Type="System.Int64" DbType="BigInt NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
       <Column Name="DefaultMensTee" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
       <Column Name="DefaultWomansTee" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
-      <Association Name="Account_GolfLeagueCourse" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="GolfCourse_GolfLeagueCourse" Member="GolfCourse" ThisKey="CourseId" OtherKey="Id" Type="GolfCourse" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Account_GolfLeagueCourse" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.GolfLeagueSetup" Member="GolfLeagueSetups">
@@ -474,11 +430,11 @@
       <Column Name="TeamActBestBallPerHolePts" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
       <Column Name="UseTeamScoring" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
       <Column Name="UseIndividualScoring" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Association Name="Account_GolfLeagueSetup" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
       <Association Name="Contact_GolfLeagueSetup" Member="Contact" ThisKey="PresidentId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
       <Association Name="Contact_GolfLeagueSetup1" Member="Contact1" ThisKey="VicePresidentId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
       <Association Name="Contact_GolfLeagueSetup2" Member="Contact2" ThisKey="SecretaryId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
       <Association Name="Contact_GolfLeagueSetup3" Member="Contact3" ThisKey="TreasurerId" OtherKey="Id" Type="Contact" IsForeignKey="true" />
+      <Association Name="Account_GolfLeagueSetup" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
     </Type>
   </Table>
   <Table Name="dbo.GolfMatch" Member="GolfMatches">
@@ -684,8 +640,8 @@
       <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Association Name="LeagueUmpire_GameEjection" Member="GameEjections" ThisKey="Id" OtherKey="umpireId" Type="GameEjection" />
-      <Association Name="Account_LeagueUmpire" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="Contact_LeagueUmpire" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Account_LeagueUmpire" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.MessageCategory" Member="MessageCategories">
@@ -723,8 +679,8 @@
       <Column Name="Title" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
       <Column Name="Caption" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
       <Column Name="AlbumId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="Account_PhotoGallery" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="PhotoGalleryAlbum_PhotoGallery" Member="PhotoGalleryAlbum" ThisKey="AlbumId" OtherKey="Id" Type="PhotoGalleryAlbum" IsForeignKey="true" />
+      <Association Name="Account_PhotoGallery" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.PhotoGalleryAlbum" Member="PhotoGalleryAlbums">
@@ -867,8 +823,8 @@
       <Column Name="SubmittedDriversLicense" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
       <Association Name="Roster_PlayerSeasonAffiliationDue" Member="PlayerSeasonAffiliationDues" ThisKey="Id" OtherKey="PlayerId" Type="PlayerSeasonAffiliationDue" />
       <Association Name="Roster_RosterSeason" Member="RosterSeasons" ThisKey="Id" OtherKey="PlayerId" Type="RosterSeason" />
-      <Association Name="Account_Roster" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
       <Association Name="Contact_Roster" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Account_Roster" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
     </Type>
   </Table>
   <Table Name="dbo.RosterSeason" Member="RosterSeasons">
@@ -904,7 +860,7 @@
       <Column Name="Description" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
       <Column Name="FileName" Type="System.String" DbType="VarChar(255) NOT NULL" CanBeNull="false" />
       <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
-      <Association Name="Team_TeamHandout" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Team_TeamHandout" Member="Team" ThisKey="TeamId" OtherKey="id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.TeamSeasonManager" Member="TeamSeasonManagers">
@@ -934,7 +890,7 @@
       <Association Name="TeamsSeason_TeamSeasonManager" Member="TeamSeasonManagers" ThisKey="Id" OtherKey="TeamSeasonId" Type="TeamSeasonManager" />
       <Association Name="TeamsSeason_GameRecap" Member="GameRecaps" ThisKey="Id" OtherKey="TeamId" Type="GameRecap" />
       <Association Name="LeagueSeason_TeamsSeason" Member="LeagueSeason" ThisKey="LeagueSeasonId" OtherKey="Id" Type="LeagueSeason" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="Team_TeamsSeason" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Team_TeamsSeason" Member="Team" ThisKey="TeamId" OtherKey="id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.VoteAnswers" Member="VoteAnswers">
@@ -1006,8 +962,8 @@
       <Column Name="FieldId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Comments" Type="System.String" DbType="Text NOT NULL" CanBeNull="false" UpdateCheck="Never" />
       <Association Name="WorkoutAnnouncement_WorkoutRegistration" Member="WorkoutRegistrations" ThisKey="Id" OtherKey="WorkoutId" Type="WorkoutRegistration" />
-      <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="AvailableField_WorkoutAnnouncement" Member="AvailableField" ThisKey="FieldId" OtherKey="Id" Type="AvailableField" IsForeignKey="true" />
+      <Association Name="Account_WorkoutAnnouncement" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.TeamNews" Member="TeamNews">
@@ -1018,7 +974,7 @@
       <Column Name="Text" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
       <Column Name="Title" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
       <Column Name="SpecialAnnounce" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
-      <Association Name="Team_TeamNew" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Team_TeamNew" Member="Team" ThisKey="TeamId" OtherKey="id" Type="Team" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.LeagueFAQ" Member="LeagueFAQs">
@@ -1039,7 +995,7 @@
       <Column Name="WelcomeText" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
       <Column Name="TeamId" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
       <Association Name="Account_AccountWelcome" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
-      <Association Name="Team_AccountWelcome" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
+      <Association Name="Team_AccountWelcome" Member="Team" ThisKey="TeamId" OtherKey="id" Type="Team" IsForeignKey="true" />
     </Type>
   </Table>
   <Table Name="dbo.GameRecap" Member="GameRecaps">
@@ -1076,7 +1032,7 @@
       <Column Name="WebSite" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
       <Column Name="TeamId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Association Name="Account_Sponsor" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" />
-      <Association Name="Team_Sponsor" Member="Team" ThisKey="TeamId" OtherKey="Id" Type="Team" IsForeignKey="true" />
+      <Association Name="Team_Sponsor" Member="Team" ThisKey="TeamId" OtherKey="id" Type="Team" IsForeignKey="true" />
     </Type>
   </Table>
   <Table Name="dbo.MemberBusiness" Member="MemberBusinesses">
@@ -1101,8 +1057,8 @@
       <Column Name="YearInducted" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
       <Column Name="ContactId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="Bio" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
-      <Association Name="Account_hof" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="Contact_hof" Member="Contact" ThisKey="ContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Account_hof" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.HOFNomination" Member="HOFNominations">
@@ -1151,8 +1107,8 @@
       <Column Name="TeamEventName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
       <Column Name="Description" Type="System.String" DbType="VarChar(MAX) NOT NULL" CanBeNull="false" />
       <Column Name="PositionsNeeded" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
-      <Association Name="Account_PlayersWantedClassified" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
       <Association Name="Contact_PlayersWantedClassified" Member="Contact" ThisKey="CreatedByContactId" OtherKey="Id" Type="Contact" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
+      <Association Name="Account_PlayersWantedClassified" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
   <Table Name="dbo.TeamsWantedClassified" Member="TeamsWantedClassifieds">
@@ -1170,17 +1126,65 @@
       <Association Name="Account_TeamsWantedClassified" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>
+  <Table Name="dbo.Accounts" Member="Accounts">
+    <Type Name="Account">
+      <Column Name="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="OwnerId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(75) NOT NULL" CanBeNull="false" />
+      <Column Name="URL" Type="System.String" DbType="VarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="FirstYear" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="AccountTypeId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="AffiliationId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="TimeZoneId" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="TwitterAccountName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="TwitterOauthToken" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="TwitterOauthSecretKey" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="YouTubeUserId" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="FacebookFanPage" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="TwitterWidgetScript" Type="System.String" DbType="VarChar(512)" CanBeNull="true" />
+      <Column Name="DefaultVideo" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="AutoPlayVideo" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Account_AccountHandout" Member="AccountHandouts" ThisKey="Id" OtherKey="AccountId" Type="AccountHandout" />
+      <Association Name="Account_AccountSetting" Member="AccountSettings" ThisKey="Id" OtherKey="AccountId" Type="AccountSetting" />
+      <Association Name="Account_AvailableField" Member="AvailableFields" ThisKey="Id" OtherKey="AccountId" Type="AvailableField" />
+      <Association Name="Account_CurrentSeason" Member="CurrentSeason" ThisKey="Id" OtherKey="AccountId" Type="CurrentSeason" Cardinality="One" />
+      <Association Name="Account_DivisionDef" Member="DivisionDefs" ThisKey="Id" OtherKey="AccountId" Type="DivisionDef" />
+      <Association Name="Account_GolfLeagueCourse" Member="GolfLeagueCourses" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueCourse" />
+      <Association Name="Account_GolfLeagueSetup" Member="GolfLeagueSetups" ThisKey="Id" OtherKey="AccountId" Type="GolfLeagueSetup" />
+      <Association Name="Account_League" Member="Leagues" ThisKey="Id" OtherKey="AccountId" Type="League" />
+      <Association Name="Account_LeagueUmpire" Member="LeagueUmpires" ThisKey="Id" OtherKey="AccountId" Type="LeagueUmpire" />
+      <Association Name="Account_PhotoGallery" Member="PhotoGalleries" ThisKey="Id" OtherKey="AccountId" Type="PhotoGallery" />
+      <Association Name="Account_ProfileCategory" Member="ProfileCategories" ThisKey="Id" OtherKey="AccountId" Type="ProfileCategory" />
+      <Association Name="Account_Roster" Member="Rosters" ThisKey="Id" OtherKey="AccountId" Type="Roster" />
+      <Association Name="Account_Season" Member="Seasons" ThisKey="Id" OtherKey="AccountId" Type="Season" />
+      <Association Name="Account_VoteQuestion" Member="VoteQuestions" ThisKey="Id" OtherKey="AccountId" Type="VoteQuestion" />
+      <Association Name="Account_WorkoutAnnouncement" Member="WorkoutAnnouncements" ThisKey="Id" OtherKey="AccountId" Type="WorkoutAnnouncement" />
+      <Association Name="Account_LeagueFAQ" Member="LeagueFAQs" ThisKey="Id" OtherKey="AccountId" Type="LeagueFAQ" />
+      <Association Name="Account_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="AccountId" Type="AccountWelcome" />
+      <Association Name="Account_LeagueNew" Member="LeagueNews" ThisKey="Id" OtherKey="AccountId" Type="LeagueNew" />
+      <Association Name="Account_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="AccountId" Type="Sponsor" />
+      <Association Name="Account_hof" Member="hofs" ThisKey="Id" OtherKey="AccountId" Type="hof" />
+      <Association Name="Account_HOFNomination" Member="HOFNominations" ThisKey="Id" OtherKey="AccountId" Type="HOFNomination" />
+      <Association Name="Account_PlayersWantedClassified" Member="PlayersWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="PlayersWantedClassified" />
+      <Association Name="Account_TeamsWantedClassified" Member="TeamsWantedClassifieds" ThisKey="Id" OtherKey="AccountId" Type="TeamsWantedClassified" />
+      <Association Name="Account_Team" Member="Teams" ThisKey="Id" OtherKey="AccountId" Type="Team" />
+      <Association Name="AccountType_Account" Member="AccountType" ThisKey="AccountTypeId" OtherKey="Id" Type="AccountType" IsForeignKey="true" />
+      <Association Name="Affiliation_Account" Member="Affiliation" ThisKey="AffiliationId" OtherKey="Id" Type="Affiliation" IsForeignKey="true" />
+    </Type>
+  </Table>
   <Table Name="dbo.Teams" Member="Teams">
     <Type Name="Team">
-      <Column Name="id" Member="Id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="id" Type="System.Int64" DbType="BigInt NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
       <Column Name="AccountId" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
       <Column Name="WebAddress" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
       <Column Name="YouTubeUserId" Type="System.String" DbType="VarChar(100)" CanBeNull="true" />
-      <Association Name="Team_TeamHandout" Member="TeamHandouts" ThisKey="Id" OtherKey="TeamId" Type="TeamHandout" />
-      <Association Name="Team_TeamsSeason" Member="TeamsSeasons" ThisKey="Id" OtherKey="TeamId" Type="TeamsSeason" />
-      <Association Name="Team_TeamNew" Member="TeamNews" ThisKey="Id" OtherKey="TeamId" Type="TeamNew" />
-      <Association Name="Team_AccountWelcome" Member="AccountWelcomes" ThisKey="Id" OtherKey="TeamId" Type="AccountWelcome" />
-      <Association Name="Team_Sponsor" Member="Sponsors" ThisKey="Id" OtherKey="TeamId" Type="Sponsor" />
+      <Column Name="DefaultVideo" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="AutoPlayVideo" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Association Name="Team_TeamHandout" Member="TeamHandouts" ThisKey="id" OtherKey="TeamId" Type="TeamHandout" />
+      <Association Name="Team_TeamsSeason" Member="TeamsSeasons" ThisKey="id" OtherKey="TeamId" Type="TeamsSeason" />
+      <Association Name="Team_TeamNew" Member="TeamNews" ThisKey="id" OtherKey="TeamId" Type="TeamNew" />
+      <Association Name="Team_AccountWelcome" Member="AccountWelcomes" ThisKey="id" OtherKey="TeamId" Type="AccountWelcome" />
+      <Association Name="Team_Sponsor" Member="Sponsors" ThisKey="id" OtherKey="TeamId" Type="Sponsor" />
       <Association Name="Account_Team" Member="Account" ThisKey="AccountId" OtherKey="Id" Type="Account" IsForeignKey="true" DeleteRule="CASCADE" DeleteOnNull="true" />
     </Type>
   </Table>

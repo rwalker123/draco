@@ -210,6 +210,107 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        public HttpResponseMessage DefaultVideo(long accountId, IdData defaultVideo)
+        {
+            var account = DataAccess.Accounts.GetAccount(accountId);
+            if (account != null)
+            {
+                account.DefaultVideo = defaultVideo.Id;
+                if (DataAccess.Accounts.ModifyAccount(account))
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(defaultVideo.Id ?? String.Empty)
+                    };
+                    return response;
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        public HttpResponseMessage DefaultVideo(long accountId, long teamSeasonId, IdData defaultVideo)
+        {
+            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (account != null)
+            {
+                account.DefaultVideo = defaultVideo.Id;
+                if (DataAccess.Teams.ModifyDefaultVideo(account))
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(defaultVideo.Id ?? String.Empty)
+                    };
+                    return response;
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        public HttpResponseMessage AutoPlayVideo(long accountId, IdData autoPlay)
+        {
+            var account = DataAccess.Accounts.GetAccount(accountId);
+            if (account != null)
+            {
+                account.AutoPlayVideo = autoPlay.Id.Equals("1");
+                if (DataAccess.Accounts.ModifyAccount(account))
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(autoPlay.Id ?? String.Empty)
+                    };
+                    return response;
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        public HttpResponseMessage AutoPlayVideo(long accountId, long teamSeasonId, IdData autoPlay)
+        {
+            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            if (account != null)
+            {
+                account.AutoPlayVideo = autoPlay.Id.Equals("1");
+                if (DataAccess.Teams.ModifyAutoPlayVideo(account))
+                {
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(autoPlay.Id ?? String.Empty)
+                    };
+                    return response;
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage TwitterScript(long accountId)
         {

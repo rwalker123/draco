@@ -53,6 +53,8 @@ namespace ModelObjects
 		public long OwnerContactId { get; set; }
         public string YouTubeUserId { get; set; }
         public string TwitterAccountName { get; set; }
+        public string DefaultVideo { get; set; }
+        public bool AutoPlayVideo { get; set; }
 
 		public TimeZoneInfo TimeZoneInfo
 		{

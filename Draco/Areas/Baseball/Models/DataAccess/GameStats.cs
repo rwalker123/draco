@@ -870,9 +870,9 @@ namespace DataAccess
             {
                 return (from bs in db.batstatsums
                         join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
-                        where t.Id == teamId
-                        group bs by t.Id into g
+                        join t in db.Teams on ts.TeamId equals t.id
+                        where t.id == teamId
+                        group bs by t.id into g
                         select new GameBatStats()
                         {
                             TeamId = teamId,
@@ -905,10 +905,10 @@ namespace DataAccess
             {
                 return (from bs in db.batstatsums
                         join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                        where t.Id == teamId && ls.SeasonId == seasonId
-                        group bs by new { t.Id, ls.SeasonId } into g
+                        where t.id == teamId && ls.SeasonId == seasonId
+                        group bs by new { t.id, ls.SeasonId } into g
                         select new GameBatStats()
                         {
                             TeamId = teamId,
@@ -962,10 +962,10 @@ namespace DataAccess
                 //    WHERE Teams.Id = @teamId Group By Roster.Id
                 return (from bss in db.batstatsums
                         join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
                         join r in db.Rosters on rs.PlayerId equals r.Id
-                        where t.Id == teamId
+                        where t.id == teamId
                         group bss by r.Id into g
                         let ab = g.Sum(b => b.AB)
                         let h = g.Sum(b => b.H)
@@ -1020,11 +1020,11 @@ namespace DataAccess
                 //    WHERE Teams.Id = @teamId AND LeagueSeason.SeasonId = @seasonId Group By Roster.Id
                 return (from bss in db.batstatsums
                         join ts in db.TeamsSeasons on bss.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join rs in db.RosterSeasons on bss.PlayerId equals rs.Id
                         join r in db.Rosters on rs.PlayerId equals r.Id
                         join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                        where t.Id == teamId && ls.SeasonId == seasonId
+                        where t.id == teamId && ls.SeasonId == seasonId
                         group bss by r.Id into g
                         let ab = g.Sum(b => b.AB)
                         let h = g.Sum(b => b.H)
@@ -1402,10 +1402,10 @@ namespace DataAccess
                 //    WHERE Teams.Id = @teamId Group By Roster.Id
                 return (from pss in db.pitchstatsums
                         join ts in db.TeamsSeasons on pss.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join rs in db.RosterSeasons on pss.PlayerId equals rs.Id
                         join r in db.Rosters on rs.PlayerId equals r.Id
-                        where t.Id == teamId
+                        where t.id == teamId
                         group pss by r.Id into g
                         let h = g.Sum(b => b.H)
                         let bb = g.Sum(b => b.BB)
@@ -1465,11 +1465,11 @@ namespace DataAccess
                 //    WHERE Teams.Id = @teamId AND LeagueSeason.SeasonId = @seasonId Group By Roster.Id
                 return (from pss in db.pitchstatsums
                         join ts in db.TeamsSeasons on pss.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join rs in db.RosterSeasons on pss.PlayerId equals rs.Id
                         join r in db.Rosters on rs.PlayerId equals r.Id
                         join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                        where t.Id == teamId && ls.SeasonId == seasonId
+                        where t.id == teamId && ls.SeasonId == seasonId
                         group pss by r.Id into g
                         let h = g.Sum(b => b.H)
                         let bb = g.Sum(b => b.BB)
@@ -1536,9 +1536,9 @@ namespace DataAccess
             {
                 return (from bs in db.pitchstatsums
                         join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
-                        where t.Id == teamId
-                        group bs by t.Id into g
+                        join t in db.Teams on ts.TeamId equals t.id
+                        where t.id == teamId
+                        group bs by t.id into g
                         select new GamePitchStats()
                         {
                             TeamId = teamId,
@@ -1574,10 +1574,10 @@ namespace DataAccess
             {
                 return (from bs in db.pitchstatsums
                         join ts in db.TeamsSeasons on bs.TeamId equals ts.Id
-                        join t in db.Teams on ts.TeamId equals t.Id
+                        join t in db.Teams on ts.TeamId equals t.id
                         join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                        where t.Id == teamId && ls.SeasonId == seasonId
-                        group bs by new { t.Id, ls.SeasonId } into g
+                        where t.id == teamId && ls.SeasonId == seasonId
+                        group bs by new { t.id, ls.SeasonId } into g
                         select new GamePitchStats()
                         {
                             TeamId = teamId,
@@ -2419,7 +2419,7 @@ namespace DataAccess
 
             return (from rs in db.RosterSeasons
                     join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     join s in db.Seasons on ls.SeasonId equals s.Id
                     join l in db.Leagues on ls.LeagueId equals l.Id
@@ -2533,7 +2533,7 @@ namespace DataAccess
 
             return (from rs in db.RosterSeasons
                     join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join t in db.Teams on ts.TeamId equals t.Id
+                    join t in db.Teams on ts.TeamId equals t.id
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     join s in db.Seasons on ls.SeasonId equals s.Id
                     join l in db.Leagues on ls.LeagueId equals l.Id
