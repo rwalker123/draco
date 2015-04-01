@@ -1,12 +1,10 @@
-﻿using System;
-using System.Configuration;
-using System.IO;
-using System.Threading.Tasks;
-using System.Web;
-using Microsoft.WindowsAzure;
+﻿using Microsoft.Azure;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SportsManager.Models.Utils
 {
