@@ -735,6 +735,7 @@
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\bootstrap-select.css.map" />
+    <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
     <Content Include="Scripts\bootstrap-select.js.map" />

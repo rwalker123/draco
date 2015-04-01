@@ -193,6 +193,7 @@
                 
                 <div data-bind="visible: viewMode">
                     <button type="button" class="btn btn-info" data-bind="click: sendEmailMode, visible: NumRegistered() > 0" title="send email to registrants"><span class="fa fa-envelope"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: exportRegistrants, visible: NumRegistered() > 0" title="export registrant list to excel"><span class="glyphicon glyphicon-export"></span></button>
 
                     @if (!String.IsNullOrEmpty((String)ViewData["TwitterAccountName"]))
                     {

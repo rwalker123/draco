@@ -105,6 +105,10 @@ var WorkoutViewModel = function (data, parent) {
         self.viewMode(true);
     }
 
+    self.exportRegistrants = function (workout) {
+        window.location.href = window.config.rootUri + '/baseball/workouts/ExportRegistrants/' + self.accountId + '/' + workout.Id();
+    }
+
     self.editRegistrants = function () {
         if (self.editRegistrantsMode())
             return;

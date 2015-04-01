@@ -63,41 +63,41 @@ namespace SportsManager.Baseball.ViewModels
             // Begining Row pointer                       
             int index = 4;
 
-                // For each item in the database, add a Row to SheetData.
-                foreach (var player in Roster)
+            // For each item in the database, add a Row to SheetData.
+            foreach (var player in Roster)
+            {
+                // New Row
+                Row row = new Row();
+                row.RowIndex = (UInt32)index;
+
+                // New Cell
+                CreateCell(row, "A" + index, player.Contact.FullName);
+                CreateCell(row, "B" + index, player.Contact.Email);
+                if (includePhone)
                 {
-                    // New Row
-                    Row row = new Row();
-                    row.RowIndex = (UInt32)index;
+                    CreateCell(row, "C" + index, player.Contact.Phone2);
+                    CreateCell(row, "D" + index, player.Contact.Phone3);
+                    CreateCell(row, "E" + index, player.Contact.Phone1);
+                    CreateCell(row, "F" + index, player.Contact.StreetAddress);
+                    CreateCell(row, "G" + index, player.Contact.City);
+                    CreateCell(row, "H" + index, player.Contact.State);
+                    CreateCell(row, "I" + index, player.Contact.Zip);
+                    CreateCell(row, "J" + index, player.AffiliationDuesPaid);
+                }
+                else
+                {
+                    CreateCell(row, "C" + index, player.Contact.StreetAddress);
+                    CreateCell(row, "D" + index, player.Contact.City);
+                    CreateCell(row, "E" + index, player.Contact.State);
+                    CreateCell(row, "F" + index, player.Contact.Zip);
+                    CreateCell(row, "G" + index, player.AffiliationDuesPaid);
+                }
 
-                    // New Cell
-                    CreateCell(row, "A" + index, player.Contact.FullName);
-                    CreateCell(row, "B" + index, player.Contact.Email);
-                    if (includePhone)
-                    {
-                        CreateCell(row, "C" + index, player.Contact.Phone2);
-                        CreateCell(row, "D" + index, player.Contact.Phone3);
-                        CreateCell(row, "E" + index, player.Contact.Phone1);
-                        CreateCell(row, "F" + index, player.Contact.StreetAddress);
-                        CreateCell(row, "G" + index, player.Contact.City);
-                        CreateCell(row, "H" + index, player.Contact.State);
-                        CreateCell(row, "I" + index, player.Contact.Zip);
-                        CreateCell(row, "J" + index, player.AffiliationDuesPaid);
-                    }
-                    else
-                    {
-                        CreateCell(row, "C" + index, player.Contact.StreetAddress);
-                        CreateCell(row, "D" + index, player.Contact.City);
-                        CreateCell(row, "E" + index, player.Contact.State);
-                        CreateCell(row, "F" + index, player.Contact.Zip);
-                        CreateCell(row, "G" + index, player.AffiliationDuesPaid);
-                    }
+                // Append Row to SheetData
+                sheetData.AppendChild(row);
 
-                    // Append Row to SheetData
-                    sheetData.AppendChild(row);
-
-                    // increase row pointer
-                    index++;
+                // increase row pointer
+                index++;
 
             }
         }
