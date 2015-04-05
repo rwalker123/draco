@@ -28,6 +28,11 @@ namespace DataAccess
 				// only count regular season games
 				if (g.GameType == 0)
 				{
+                    // one team has been removed from the season, this is a strange case
+                    // especially if the team has completed games.
+                    if (!teams.ContainsKey(g.HomeTeamId) || !teams.ContainsKey(g.AwayTeamId))
+                        continue;
+
 					TeamStanding homeTeam = (TeamStanding)teams[g.HomeTeamId];
 					TeamStanding awayTeam = (TeamStanding)teams[g.AwayTeamId];
 
