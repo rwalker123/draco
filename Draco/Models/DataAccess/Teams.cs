@@ -269,7 +269,8 @@ namespace DataAccess
 			{
 				AccountId = t.AccountId,
 				WebAddress = String.Empty,
-                YouTubeUserId = String.Empty
+                YouTubeUserId = String.Empty,
+                DefaultVideo = String.Empty
 			};
 
 			db.Teams.InsertOnSubmit(dbTeam);
