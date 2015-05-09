@@ -70,6 +70,9 @@ namespace ModelObjects
             set;
         }
 
+        public string DefaultVideo { get; set; }
+        public bool AutoPlayVideo { get; set; }
+
 		private string TeamDir
 		{
 			get

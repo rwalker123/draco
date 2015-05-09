@@ -219,7 +219,7 @@ var StatisticsViewModel = function (accountId, isAdmin) {
 
 
     self.gotoPitchStatsPrev = function () {
-        self.pitchtStatsPageNumber(self.pitchStatsPageNumber() - 1);
+        self.pitchStatsPageNumber(self.pitchStatsPageNumber() - 1);
         self.populateLeaguePitchStats(self.pitchStatsPageNumber(), self.pageSize, self.pitchStatsSortField(), self.pitchStatsSortOrder());
     }
 

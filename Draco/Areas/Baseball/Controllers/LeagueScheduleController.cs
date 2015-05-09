@@ -54,16 +54,10 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             return View();
         }
-
-        static internal String GetGameResultTweetText(Game g)
+        static internal String GetGameResultNotificationText(Game g)
         {
             string homeTeam = DataAccess.Teams.GetTeamName(g.HomeTeamId);
             string awayTeam = DataAccess.Teams.GetTeamName(g.AwayTeamId);
-
-            // 25+ Wood Bat Final Apr 2: Tigers over Redsox 5 - 4 - http://www.detroitmsbl.com
-            // 25+ Final Jun 4: Tigers Tie Redsox 4 - 4
-            // 25+ Rainout Jul 5: Tigers @ Redsox 
-            // 25+ Postponed Aug 5: Tigers @ Redsox
 
             string tweetText = String.Empty;
 
@@ -93,8 +87,13 @@ namespace SportsManager.Areas.Baseball.Controllers
                 tweetText = String.Format(nonFinalFmt, leagueName, g.GameStatusLongText, g.GameDate.ToString(dateFmt), awayTeam, homeTeam);
             }
 
-            string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request);
+            return tweetText;
+        }
 
+        static internal String GetGameResultTweetText(Game g)
+        {
+            String tweetText = GetGameResultNotificationText(g);
+            string uri = Globals.GetURLFromRequest(System.Web.HttpContext.Current.Request);
             return String.Format("{0} http://{1}", tweetText, uri);
         }
 	}

@@ -1,5 +1,5 @@
-﻿function InitViewModels(accountId, accountName, firstYear, twitterAccountName) {
-    var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear, twitterAccountName);
+﻿function InitViewModels(accountId, accountName, firstYear, twitterAccountName, accountLogoUrl) {
+    var editAccountVM = new EditAccountNameViewModel(accountId, accountName, firstYear, twitterAccountName, accountLogoUrl);
     ko.applyBindings(editAccountVM, document.getElementById("accountName"));
 }
 
@@ -42,7 +42,7 @@ var AccountViewModel = function (data) {
 }
 
 // edit account name
-var EditAccountNameViewModel = function (accountId, accountName, firstYear, twitterAccountName) {
+var EditAccountNameViewModel = function (accountId, accountName, firstYear, twitterAccountName, accountLogoUrl) {
     var self = this;
     self.accountId = accountId;
 
@@ -51,7 +51,7 @@ var EditAccountNameViewModel = function (accountId, accountName, firstYear, twit
         AccountName: accountName,
         FirstYear: firstYear,
         TwitterAccountName: twitterAccountName,
-        LargeLogoURL: window.config.rootUri + "/Uploads/Accounts/" + self.accountId + "/Logo/LargeLogo.png"
+        LargeLogoURL: accountLogoUrl
     }));
 
     self.editAccountInfo = ko.observable(new AccountViewModel(self.accountViewModel().toJS()));

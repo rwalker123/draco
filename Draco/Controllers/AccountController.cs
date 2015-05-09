@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using SportsManager.ViewModels;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -39,6 +42,29 @@ namespace SportsManager.Controllers
         public ActionResult Users(long accountId)
         {
             return View(new UsersViewModel(this, accountId));
+        }
+
+        //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("exportaddresslist")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [DeleteTempFile]
+        public FileStreamResult ExportAddressList(long accountId)
+        {
+            var vm = new UserAddressViewModel(this, accountId);
+            // order
+            // filter
+            string order = Request.QueryString.Get("order");
+            string filter = Request.QueryString.Get("filter");
+
+            FileStream strm = vm.ExportToExcel(order, filter);
+
+            this.TempData["tempFileName"] = strm.Name;
+            var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fs.FileDownloadName = vm.AccountName + "AddressList.xlsx";
+            return fs;
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

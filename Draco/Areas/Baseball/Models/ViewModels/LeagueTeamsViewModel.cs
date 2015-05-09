@@ -36,11 +36,14 @@ namespace SportsManager.Baseball.ViewModels
             return DataAccess.Teams.GetDivisionTeams(divisionId);
         }
 
-        public FileStream ExportToExcel()
+        public FileStream ExportToExcel(bool onlyManagers)
         {
             Guid guid = Guid.NewGuid();
             var destinationFile = Controller.Server.MapPath("~/Uploads/Temp/" + guid.ToString() + ".xlsx");
-            File.Copy(Controller.Server.MapPath("~/Content/TeamAddressListTemplate.xlsx"), destinationFile);
+            if (onlyManagers)
+                File.Copy(Controller.Server.MapPath("~/Content/ManagerAddressListTemplate.xlsx"), destinationFile);
+            else
+                File.Copy(Controller.Server.MapPath("~/Content/TeamAddressListTemplate.xlsx"), destinationFile);
 
             // Open the copied template workbook. 
             using (SpreadsheetDocument myWorkbook = SpreadsheetDocument.Open(destinationFile, true))
@@ -59,13 +62,36 @@ namespace SportsManager.Baseball.ViewModels
 
                 var teamNameRow = worksheetPart.Worksheet.Descendants<Row>().First();
                 var teamNameCol = teamNameRow.Descendants<Cell>().First();
-                teamNameCol.CellValue = new CellValue(AccountName);
+                if (onlyManagers)
+                    teamNameCol.CellValue = new CellValue(AccountName + " Managers");
+                else
+                    teamNameCol.CellValue = new CellValue(AccountName);
+
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                var allPlayers = DataAccess.TeamRoster.GetAllActivePlayers(AccountId).AsEnumerable();
+                IEnumerable<Player> allPlayers;
+                if (onlyManagers)
+                {
+                    List<Player> allManagers = new List<Player>();
+
+                    var leagueTeamManagers = new List<ModelObjects.TeamManager>();
+
+                    var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(AccountId);
+                    foreach (var lt in leagueTeams)
+                    {
+                        var tms = DataAccess.Teams.GetTeamManagersAsPlayer(lt.Id).ToList();
+                        tms.ForEach(tm => tm.AffiliationDuesPaid = lt.Name);
+                        allManagers.AddRange(tms);
+                    }
+
+                    allPlayers = allManagers;
+                }
+                else
+                    allPlayers = DataAccess.TeamRoster.GetAllActivePlayers(AccountId).AsEnumerable();
+
                 allPlayers = allPlayers.OrderBy(x => x.Contact.FullName);
 
-                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData);
+                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData, onlyManagers);
 
                 // save
                 worksheetPart.Worksheet.Save();

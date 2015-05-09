@@ -448,9 +448,12 @@ var ScheduleViewModel = function (accountId, isAdmin, allUmps) {
     }
 
     self.enterGameResults = function (game) {
-        self.viewMode(false);
         var data = game.toJS();
         self.editingGameResults().update(data);
+        if (self.editingGameResults.isValid && !self.editingGameResults.isValid())
+            return;
+
+        self.viewMode(false);
 
         self.getRoster(self.editingGameResults().HomeTeamId(), function (players) {
             self.editingGameResults().HomeTeamId.roster(players);

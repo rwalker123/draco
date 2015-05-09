@@ -49,6 +49,26 @@
         </div>
     </div>
 
+    <div class="modal fade" id="releasePlayersModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Release Players</h4>
+                </div>
+                <div class="modal-body" id="deleteModalBody">
+                    <p>Would you like to release all players from the team?</p>
+                    <p>Releasing all the players will make them available to sign to other teams. Release the players if the team is not part of the season.</p>
+                    <p>Don't release the players if you later plan to add this team back into the league.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmReleaseBtn">Release</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="confirmKeepBtn">Don't Release</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="copySeasonModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

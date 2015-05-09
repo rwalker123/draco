@@ -11,6 +11,7 @@ namespace SportsManager.Baseball.Controllers
     public class FieldsAPIController : ApiController
     {
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("fields")]
         public HttpResponseMessage GetFields(long accountId)
         {
             var fields = DataAccess.Fields.GetFields(accountId);
@@ -26,6 +27,7 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("fields")]
         public HttpResponseMessage PostField(long accountId, ModelObjects.Field f)
         {
             f.AccountId = accountId;
@@ -47,6 +49,7 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("fields")]
         public HttpResponseMessage PutField(long accountId, ModelObjects.Field f)
         {
             f.AccountId = accountId;
@@ -72,7 +75,7 @@ namespace SportsManager.Baseball.Controllers
         // with FieldsAPI/accountId/Id even though WebApiConfig
         // has a route for it. I think because of "default" id
         // it was matching the action route.
-        [ActionName("field")]
+        [ActionName("fields")]
         public HttpResponseMessage DeleteField(long accountId, long id)
         {
             var success = DataAccess.Fields.RemoveField(id);

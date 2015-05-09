@@ -12,8 +12,8 @@ namespace ModelObjects
 		}
 
 		public TeamManager(long contactId, string firstName, string lastName, string middleName, string photoUrl,
-                            long mgrSeasonId, long teamId, long accountId)
-            : base(contactId, firstName, lastName, middleName, photoUrl)
+                            long mgrSeasonId, long teamId, long accountId, DateTime birthDate)
+            : base(contactId, firstName, lastName, middleName, photoUrl, birthDate)
 		{
 			MgrSeasonId = mgrSeasonId;
 			TeamId = teamId;

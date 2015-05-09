@@ -85,6 +85,18 @@ namespace SportsManager.Baseball.Controllers
             }
         }
 
+        [AcceptVerbs("DELETE"), HttpPost]
+        [ActionName("registrants")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public HttpResponseMessage DeleteWorkoutRegistrant(long accountId, long id)
+        {
+            if (DataAccess.WorkoutRegistrants.RemoveWorkoutRegistrant(id))
+                return Request.CreateResponse(HttpStatusCode.OK);
+            else
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("register")]
@@ -112,6 +124,34 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
             }
         }
+
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("register")]
+        public HttpResponseMessage UpdateWorkoutReg(long accountId, long id, ModelObjects.WorkoutRegistrant workoutData)
+        {
+            workoutData.WorkoutId = id;
+
+            if (ModelState.IsValid && workoutData != null)
+            {
+                bool success = DataAccess.WorkoutRegistrants.ModifyWorkoutRegistrant(workoutData);
+                if (!success)
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+                // Create a 201 response.
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(workoutData.Id.ToString())
+                };
+                response.Headers.Location =
+                    new Uri(Url.Link("ActionApi", new { action = "registereduser", accountId = accountId, id = workoutData.Id }));
+                return response;
+            }
+            else
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
+        }
+
 
         public class EmailData
         {

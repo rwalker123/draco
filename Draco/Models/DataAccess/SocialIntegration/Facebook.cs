@@ -53,7 +53,7 @@ namespace DataAccess.SocialIntegration
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return apiKey;
@@ -73,7 +73,7 @@ namespace DataAccess.SocialIntegration
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return secretKey;

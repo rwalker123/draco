@@ -732,7 +732,7 @@ namespace DataAccess
             //--- Delete all team expired messages
             var teamExpiredPosts = (from mc in db.MessageCategories
                                     join mp in db.MessagePosts on mc.Id equals mp.CategoryId
-                                    join t in db.Teams on mc.AccountId equals t.Id
+                                    join t in db.Teams on mc.AccountId equals t.id
                                     where t.AccountId == accountId &&
                                     mp.EditDate < minPostDate &&
                                     mp.Id != 0 &&

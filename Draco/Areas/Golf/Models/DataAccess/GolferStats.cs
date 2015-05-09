@@ -31,7 +31,7 @@ namespace DataAccess.Golf
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return gs.Id;
@@ -61,7 +61,7 @@ namespace DataAccess.Golf
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return true;
@@ -82,7 +82,7 @@ namespace DataAccess.Golf
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return true;
@@ -140,7 +140,7 @@ namespace DataAccess.Golf
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return newId;

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
+using System.Linq;
 
 namespace SportsManager.Controllers
 {
@@ -20,13 +21,35 @@ namespace SportsManager.Controllers
 
         //[SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("backup")]
         public async Task<HttpResponseMessage> BackupSite()
         {
             Task<bool> dbResult = BackupDatabase();
             Task<bool> uploadsResult = BackupUploads();
-            bool result = await dbResult && await uploadsResult;
+            bool removeLogsResult = RemoveOldLogs();
+            bool result = await dbResult && await uploadsResult && removeLogsResult;
 
             return Request.CreateResponse(HttpStatusCode.OK);
+        }
+
+        private bool RemoveOldLogs()
+        {
+            var basePath = HttpContext.Current.Server.MapPath("~/Logs");
+            if (!Directory.Exists(basePath))
+                return false;
+
+            DirectoryInfo dir = new DirectoryInfo(basePath);
+            // skip 50 most recent
+            var files = (from file in dir.EnumerateFiles()
+                        orderby file.CreationTime descending
+                        select file.FullName).Skip(50).Distinct(); // Don't need <string> here, since it's implied
+            
+            foreach(var f in files)
+            {
+                File.Delete(f);
+            }
+
+            return true;
         }
 
         private async Task<bool> BackupUploads()

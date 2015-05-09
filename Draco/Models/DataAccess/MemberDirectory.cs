@@ -127,7 +127,7 @@ namespace DataAccess
                            join r in db.Rosters on rs.PlayerId equals r.Id
                            join c in db.Contacts on r.ContactId equals c.Id
                            join mbu in db.MemberBusinesses on c.Id equals mbu.ContactId
-                           where cs.AccountId == accountId && !rs.Inactive && mbu.Id != null &&
+                           where cs.AccountId == accountId && !rs.Inactive && mbu.Id != 0 &&
                            c.CreatorAccountId == accountId
                            select mbu);
 

@@ -251,7 +251,7 @@ var AnnouncementClass = function (accountId, isAdmin, teamId) {
             type: 'GET',
             url: url,
             success: function (announcement) {
-                vm.Text(announcement);
+                vm.Text(announcement.Text);
                 vm.Id.isLoaded(true);
             }
         });

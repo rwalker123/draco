@@ -12,13 +12,16 @@
 
                 <div class="panel-body">
                     <form class="form-horizontal" role="form">
-                        <div class="form-group">
-                            <label class="control-label col-sm-3">select video</label>
-                            <div class="col-sm-9">
-                                <select data-container="body" class="form-control" data-bind="selectPicker: selectedVideo, selectPickerOptions: { optionsArray: videoEntries }, optionsText: 'title', optionsCaption: 'select a video...'"></select>
+                        @if (!Model.IsAdmin)
+                        { 
+                            <div class="form-group">
+                                <label class="control-label col-sm-3">select video</label>
+                                <div class="col-sm-9">
+                                    <select data-container="body" class="form-control videoPicker" data-bind="selectPicker: selectedVideo, selectPickerOptions: { optionsArray: videoEntries }, optionsText: 'title', optionsCaption: 'select a video...'"></select>
+                                </div>
                             </div>
-                        </div>
-
+                        }
+                        
                         @if (Model.IsAdmin)
                         {
                             <div class="form-group">
@@ -42,6 +45,18 @@
                                 <img class="img-responsive" src="~/Images/youtube/youtube3.png" />
                                 <h3>Step 4: Copy and Paste your YouTube account id above.</h3>
                                 <img class="img-responsive" src="~/Images/youtube/youtube4.png" />
+                            </div>
+                            
+                            <div class="input-group">
+                                <label class="sr-only">select video</label>
+                                <select data-container="body" class="form-control videoPicker" data-bind="selectPicker: selectedVideo, selectPickerOptions: { optionsArray: videoEntries }, optionsText: 'title', optionsCaption: 'select a video...'"></select>
+                                <div class="input-group-btn">
+                                    <button type="button" class="btn btn-success" data-bind="enable: videoEntries().length, click: makeDefaultSelection" title="Make selected video the default">Make Default</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <div style="margin-left: 5px"><label class="control-label"><input style="margin:10px" data-bind="checked: autoPlay" type="checkbox" />Autoplay Default Video</label></div>
                             </div>
                         }
                     </form>

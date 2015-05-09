@@ -317,10 +317,10 @@
                                 <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone1" placeholder="home phone" />
                             </td>
                             <td colspan="2">
-                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth"/>
-                                <select data-container="body" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" />
+                                <select data-container="body" id="FirstYearSelect" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
 
-                                <select data-container="body" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+                                <select data-container="body" id="GenderSelect" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
 
                             </td>
                         </tr>

@@ -43,7 +43,7 @@ namespace SportsManager
                       "~/Scripts/bootstrap.js",
                       "~/Scripts/bootstrap-select.js",
                       "~/Scripts/bootstrap-datepicker.js",
-                      "~/Scripts/bootstrap-timepicker/bootstrap-timepicker.js",
+                      "~/Scripts/bootstrap-timepicker.js",
                       "~/Scripts/respond.js"));
 
             bundles.Add(new StyleBundle("~/Content/css").Include(
@@ -53,7 +53,7 @@ namespace SportsManager
                       "~/Content/bootstrap.css",
                       "~/Content/bootstrap-select.css",
                       "~/Content/bootstrap-datepicker3.css",
-                      "~/Content/bootstrap-timepicker/bootstrap-timepicker.css"));
+                      "~/Content/bootstrap-timepicker.css"));
         }
     }
 }

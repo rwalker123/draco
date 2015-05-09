@@ -102,6 +102,11 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
+
+            set
+            {
+
+            }
 		}
 
 		public string GameStatusLongText
@@ -126,7 +131,11 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
-		}
+            set
+            {
+
+            }
+        }
 
 		public long GameWinner
 		{
@@ -134,7 +143,7 @@ namespace ModelObjects
 			{
 				long ret = -1;
 
-				if (IsGameComplete())
+				if (IsGameComplete)
 				{
 					if (HomeScore > AwayScore)
 						ret = HomeTeamId;
@@ -146,11 +155,22 @@ namespace ModelObjects
 
 				return ret;
 			}
-		}
+            set
+            {
 
-		public bool IsGameComplete()
+            }
+        }
+
+		public bool IsGameComplete
 		{
-			return (GameStatus == 1 || GameStatus == 4);
-		}
+            get
+            {
+                return (GameStatus == 1 || GameStatus == 4);
+            }
+            set
+            {
+
+            }
+        }
 	}
 }

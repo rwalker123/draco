@@ -191,7 +191,7 @@ namespace DataAccess
                     select new AccountType(at.Id, at.Name, at.FilePath)).SingleOrDefault();
         }
 
-        static public IEnumerable<Account> GetAccounts()
+        static public IQueryable<Account> GetAccounts()
         {
             DB db = DBConnection.GetContext();
 
@@ -218,8 +218,8 @@ namespace DataAccess
             db.Accounts.Attach(account);
             db.Entry(account).State = System.Data.Entity.EntityState.Modified;
             db.SaveChanges();
-            return true;
-        }
+                return true;
+            }
 
         static public long AddAccount(Account account)
         {

@@ -10,6 +10,7 @@ namespace SportsManager.Controllers
     public class SponsorsAPIController : ApiController
     {
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("sponsors")]
         public HttpResponseMessage GetSponsors(long accountId)
         {
             var sponsors = DataAccess.Sponsors.GetSponsors(accountId);
@@ -40,7 +41,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        [ActionName("sponsor")]
+        [ActionName("sponsors")]
         public HttpResponseMessage PutSponsors(long accountId, long id, ModelObjects.Sponsor sponsor)
         {
             if (ModelState.IsValid && sponsor != null)
@@ -61,6 +62,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [ActionName("sponsors")]
         public HttpResponseMessage PostSponsors(long accountId, ModelObjects.Sponsor sponsor)
         {
             if (ModelState.IsValid && sponsor != null)
@@ -82,7 +84,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        [ActionName("sponsor")]
+        [ActionName("sponsors")]
         public async Task<HttpResponseMessage> DeleteSponsors(long accountId, long id)
         {
             var sponsor = DataAccess.Sponsors.GetSponsor(id);

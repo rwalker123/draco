@@ -1,6 +1,8 @@
 ﻿using LinqToTwitter;
+using Microsoft.ServiceBus.Notifications;
 using SportsManager.Models;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
@@ -72,6 +74,28 @@ namespace SportsManager.Areas.Baseball.Controllers
                 bool found = DataAccess.Schedule.UpdateGameScore(game, emailResult);
                 if (found)
                 {
+                    if (game.GameStatus >= 1)
+                    {
+                        // send out push notification
+                        if (ConfigurationManager.AppSettings["AzureDeployed"] != null)
+                        {
+                            String notificationMessage = LeagueScheduleController.GetGameResultNotificationText(game);
+
+                            var t = new TemplateNotification(new Dictionary<String, String>()
+                            {
+                                { "message", notificationMessage }
+                            });
+                            NotificationOutcome o = PushNotifications.Instance.Hub.SendNotificationAsync(t, "GameResults_" + accountId.ToString()).Result;
+
+                            // samples of specific service calls, use template method above:
+                            //var gcm = new GcmNotification("{\"data\":{\"message\":\"" + notificationMessage + "\"}}");
+                            //NotificationOutcome o = PushNotifications.Instance.Hub.SendNotificationAsync(gcm).Result;
+
+                            //var apple = new AppleNotification("{\"aps\":{\"alert\":\"" + notificationMessage + "\"}}");
+                            //PushNotifications.Instance.Hub.SendAppleNativeNotification(apple);
+                        }
+                    }
+
                     return Request.CreateResponse<ModelObjects.Game>(HttpStatusCode.OK, game);
                 }
                 else

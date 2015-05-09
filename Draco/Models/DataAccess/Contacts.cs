@@ -89,7 +89,8 @@ namespace DataAccess
                         FirstName = c.FirstName,
                         LastName = c.LastName,
                         MiddleName = c.MiddleName,
-                        PhotoURL = Contact.GetPhotoURL(c.Id)
+                        PhotoURL = Contact.GetPhotoURL(c.Id),
+                        BirthDate = c.DateOfBirth
                     });
         }
 
@@ -192,7 +193,7 @@ namespace DataAccess
                             IsFemale = c.IsFemale.GetValueOrDefault()
                         }).SingleOrDefault();
         }
-       
+
         static public IQueryable<ModelObjects.ContactName> GetContactNames(long accountId)
         {
             DB db = DBConnection.GetContext();
@@ -207,16 +208,17 @@ namespace DataAccess
 
             return (from c in db.Contacts
                     where affiliationAccounts.Contains(c.CreatorAccountId)
-                    select new ModelObjects.ContactName()
-                                                     {
-                                                         Id = c.Id,
-                                                         FirstName = c.FirstName,
-                                                         MiddleName = c.MiddleName,
-                                                         LastName = c.LastName,
-                                                         PhotoURL = Contact.GetPhotoURL(c.Id),
-                                                         FirstYear = c.FirstYear.GetValueOrDefault(),
-                                                         Zip = c.Zip
-                                                     });
+                    select new ContactName()
+                    {
+                        Id = c.Id,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName,
+                        LastName = c.LastName,
+                        PhotoURL = Contact.GetPhotoURL(c.Id),
+                        FirstYear = c.FirstYear.GetValueOrDefault(),
+                        Zip = c.Zip,
+                        BirthDate = c.DateOfBirth
+                    });
         }
 
 

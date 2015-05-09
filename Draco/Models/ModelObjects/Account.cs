@@ -50,7 +50,7 @@ namespace ModelObjects
         public string Name { get; set; }
         public string URL { get; set; }
         public int FirstYear { get; set; }
-        public long AccountTypeId { get; set; }
+		public long AccountTypeId { get; set; }
 		public long AffiliationId { get; set; }
 		public string TimeZoneId { get; set; }
         public string TwitterAccountName { get; set; }
@@ -59,6 +59,9 @@ namespace ModelObjects
         public string YouTubeUserId { get; set; }
         public string FacebookFanPage { get; set; }
         public string TwitterWidgetScript { get; set; }
+        public string DefaultVideo { get; set; }
+        public bool AutoPlayVideo { get; set; }
+
 
 		public TimeZoneInfo TimeZoneInfo
 		{

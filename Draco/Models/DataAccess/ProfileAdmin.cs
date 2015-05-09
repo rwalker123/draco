@@ -195,7 +195,7 @@ namespace DataAccess
                     join ts in db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                     join ls in db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
-                    ts.Id == teamSeasonId
+                    ts.Id == teamSeasonId && !rs.Inactive
                     select new PlayerProfile()
                     {
                         PlayerId = pp.PlayerId,
