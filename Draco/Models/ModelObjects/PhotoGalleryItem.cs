@@ -56,6 +56,9 @@ namespace ModelObjects
             set;
         }
 
+        public virtual Account Account { get; set; }
+        public virtual PhotoGalleryAlbum Album { get; set; }
+
 		public string PhotoURL
 		{
 			get 

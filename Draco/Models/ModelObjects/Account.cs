@@ -1,6 +1,7 @@
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace ModelObjects
@@ -25,10 +26,13 @@ namespace ModelObjects
 
 		public Account()
 		{
+            Photos = new Collection<PhotoGalleryItem>();
+            PhotoAlbums = new Collection<PhotoGalleryAlbum>();
 		}
 
 		public Account(long id, string accountName, string accountURL, long ownerContactId,
 						int firstYear, long accountTypeId, long affiliationId, string timeZoneId)
+            : this()
 		{
 			Id = id;
 			Name = accountName;
@@ -117,5 +121,8 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + Id + "/Logo/" + m_smallLogoName);
 			}
 		}
+
+        public virtual ICollection<PhotoGalleryItem> Photos { get; set; }
+        public virtual ICollection<PhotoGalleryAlbum> PhotoAlbums { get; set; }
 	}
 }

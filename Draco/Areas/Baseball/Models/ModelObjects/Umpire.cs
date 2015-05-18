@@ -5,27 +5,16 @@ namespace ModelObjects
 	/// <summary>
 	/// Summary description for TeamManager
 	/// </summary>
-	public class Umpire : ContactName
+	public class Umpire
 	{
 		public Umpire()
 		{
 		}
 
-		public Umpire(long id, long accountId)
-		{
-            Id = id;
-            AccountId = accountId;
-		}
-
+        public long Id { get; set; }
 		public long AccountId { get; set; }
         public long ContactId { get; set; }
-        public String FullName
-        {
-            get
-            {
-                string fullName = LastName + ", " + FirstName + " " + MiddleName;
-                return fullName.Trim();
-            }
-        }
+
+        public virtual Contact Contact { get; set; }
 	}
 }

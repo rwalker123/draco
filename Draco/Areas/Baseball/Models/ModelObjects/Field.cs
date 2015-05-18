@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data.Spatial;
 
 namespace ModelObjects
@@ -13,6 +14,7 @@ namespace ModelObjects
 		}
 
 		public Field(long fieldId)
+            : this()
 		{
 			Id = fieldId;
 		}
@@ -20,6 +22,7 @@ namespace ModelObjects
 		public Field(long fieldId, long accountId, string fieldName, string shortName,
 					string fieldComment, string address, string city, string state, string zipCode,
 					string directions, string rainoutNumber, string latitude, string longitude)
+            : this()
 		{
 			AccountId = accountId;
 			Id = fieldId;

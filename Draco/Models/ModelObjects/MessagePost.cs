@@ -11,21 +11,6 @@ namespace ModelObjects
         {
         }
 
-        public MessagePost(long id, long topicId, int postOrder, long creatorContactId, 
-                            DateTime postDate, string postText, DateTime editDate,
-                            string subject, long catId)
-        {
-            Id = id;
-            TopicId = topicId;
-            Order = postOrder;
-            CreatorContactId = creatorContactId;
-            CreateDate = postDate;
-            Text = postText;
-            EditDate = editDate;
-            Subject = subject;
-            CategoryId = catId;
-        }
-
         public long Id
         {
             get;
@@ -48,20 +33,6 @@ namespace ModelObjects
         {
             get;
             set;
-        }
-
-        public String CreatorName
-        {
-            get;
-            set;
-        }
-
-        public String PhotoUrl
-        {
-            get
-            {
-                return ModelObjects.Contact.GetPhotoURL(CreatorContactId);
-            }
         }
 
         public DateTime CreateDate
@@ -88,10 +59,7 @@ namespace ModelObjects
             set;
         }
 
-        public long CategoryId
-        {
-            get;
-            set;
-        }
+        public virtual Contact Creator { get; set; }
+        public virtual MessageTopic Topic { get; set; }
     }
 }

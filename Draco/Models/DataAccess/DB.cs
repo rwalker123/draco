@@ -1,6 +1,7 @@
 ﻿using ModelObjects;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
@@ -18,6 +19,8 @@ namespace DataAccess
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
+            // TODO: Add Account, League, and Contacts Relationships...Alot of them
+
             modelBuilder.Entity<DivisionSeason>().HasRequired(current => current.DivisionDefinition)
                 .WithMany(c=>c.DivisionSeasons)
                 .HasForeignKey(c => c.DivisionId)
@@ -27,6 +30,115 @@ namespace DataAccess
                 .WithMany(c => c.LeagueSeasons)
                 .HasForeignKey(c => c.LeagueId)
                 .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<Game>().HasRequired(c => c.LeagueSeason)
+                .WithMany(c => c.Games)
+                .HasForeignKey(c => c.LeagueId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<GameRecap>().HasRequired(c => c.Game)
+                .WithMany(c => c.GameRecaps)
+                .HasForeignKey(c => c.GameId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<Game>().HasOptional(c => c.Field)
+                .WithMany()
+                .HasForeignKey(c => c.FieldId);
+
+            modelBuilder.Entity<Game>().HasRequired(c => c.HomeTeam)
+                .WithMany(c => c.Games)
+                .HasForeignKey(c => c.HomeTeamId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<Game>().HasRequired(c => c.AwayTeam)
+                .WithMany(c => c.Games)
+                .HasForeignKey(c => c.AwayTeamId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<Umpire>().HasRequired(u => u.Contact)
+                .WithMany()
+                .HasForeignKey(u => u.ContactId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<MemberBusiness>().HasRequired(m => m.Contact)
+                .WithOptional(m => m.MemberBusiness)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PhotoGalleryItem>().HasRequired(p => p.Account)
+                .WithMany(a => a.Photos)
+                .HasForeignKey(p => p.AccountId)
+                .WillCascadeOnDelete(false);
+
+            modelBuilder.Entity<PhotoGalleryItem>().HasRequired(p => p.Album)
+                .WithMany(a => a.Photos)
+                .HasForeignKey(p => p.AlbumId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PhotoGalleryAlbum>().HasRequired(p => p.Account)
+                .WithMany(a => a.PhotoAlbums)
+                .HasForeignKey(p => p.AccountId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PlayerProfile>()
+                .HasRequired(e => e.Contact)
+                .WithMany(e => e.Profiles)
+                .HasForeignKey(e => e.PlayerId)
+                .WillCascadeOnDelete(true);
+
+            modelBuilder.Entity<PlayerProfile>()
+                .HasRequired(e => e.Question)
+                .WithMany(e => e.PlayerAnswers)
+                .HasForeignKey(e => e.QuestionId)
+                .WillCascadeOnDelete(true);
+
+            // TODO: Add Column order?
+            //[Column(Order = 2)]
+            //[DatabaseGenerated(DatabaseGeneratedOption.None)]
+            modelBuilder.Entity<PlayerRecap>()
+                .HasKey(p => p.PlayerId)
+                .HasKey(p => p.TeamId)
+                .HasKey(p => p.GameId);
+
+            // rename some columns to match data model.
+            modelBuilder.Entity<Game>()
+                .Property(p => p.HomeTeamId)
+                .HasColumnName("HTeamId");
+
+            modelBuilder.Entity<Game>()
+                .Property(p => p.AwayTeamId)
+                .HasColumnName("VTeamId");
+
+            modelBuilder.Entity<Game>()
+                .Property(p => p.HomeScore)
+                .HasColumnName("HScore");
+
+            modelBuilder.Entity<Game>()
+                .Property(p => p.AwayScore)
+                .HasColumnName("VScore");
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.D)
+                .HasColumnName("2B");
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.T)
+                .HasColumnName("3B");
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.AB)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.TB)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.WHIPNumerator)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+
+            modelBuilder.Entity<GamePitchStats>()
+                .Property(p => p.IPNumerator)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
 
             base.OnModelCreating(modelBuilder);
         }
@@ -57,22 +169,30 @@ namespace DataAccess
         public DbSet<LeagueDefinition> League { get; set; }
         public DbSet<LeagueSeason> LeagueSeason { get; set; }
 
-        // validate with DB
         public DbSet<LeagueEvent> LeagueEvents { get; set; }
         public DbSet<LeagueFAQItem> LeagueFAQ { get; set; }
         public DbSet<LeagueNewsItem> LeagueNews { get; set; }
         public DbSet<Game> LeagueSchedule { get; set; }
+
         public DbSet<Umpire> LeagueUmpires { get; set; }
-        public DbSet<Sponsor> MemberBusiness { get; set; }
+
+        public DbSet<MemberBusiness> MemberBusiness { get; set; }
+
         public DbSet<MessageCategory> MessageCategory { get; set; }
         public DbSet<MessagePost> MessagePost { get; set; }
         public DbSet<MessageTopic> MessageTopic { get; set; }
+
         public DbSet<PhotoGalleryItem> PhotoGallery { get; set; }
         public DbSet<PhotoGalleryAlbum> PhotoGalleryAlbum { get; set; }
         public DbSet<GamePitchStats> pitchstatsum { get; set; }
+
         public DbSet<PlayerProfile> PlayerProfile { get; set; }
+
         public DbSet<PlayerRecap> PlayerRecap { get; set; }
+
         public DbSet<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; }
+
+        // validate with DB
         public DbSet<PlayersWantedClassified> PlayersWantedClassified { get; set; }
         public DbSet<PlayoffBracket> PlayoffBracket { get; set; }
         public DbSet<PlayoffGame> PlayoffGame { get; set; }

@@ -1,5 +1,7 @@
 using SportsManager.Models.Utils;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace ModelObjects
@@ -16,9 +18,11 @@ namespace ModelObjects
 
 		public Team()
 		{
+            Games = new Collection<Game>();
 		}
 
 		public Team(long teamSeasonId, long leagueId, string teamName, long divisionId, long teamId, long accountId)
+            :this()
 		{
 			LeagueId = leagueId;
 			AccountId = accountId;
@@ -113,6 +117,7 @@ namespace ModelObjects
 			}
 		}
 
+        virtual public ICollection<Game> Games { get; set; }
 
 		#region IComparable<Team> Members
 

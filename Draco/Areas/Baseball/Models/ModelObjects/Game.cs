@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -28,32 +29,7 @@ namespace ModelObjects
 		{
             AwayPlayersPresent = new List<long>();
             HomePlayersPresent = new List<long>();
-		}
-
-		public Game(long leagueId, long gameId, DateTime gameDate, 
-			long hTeamId, long vTeamId, int hScore, int vScore, string comment,
-			long fieldId, int gameStatus, long gameType,
-			long umpire1, long umpire2, long umpire3, long umpire4)
-		{
-            AwayPlayersPresent = new List<long>();
-            HomePlayersPresent = new List<long>();
-            
-            Id = gameId;
-			LeagueId = leagueId;
-			GameDate = gameDate; // .ToString("d");
-			HomeTeamId = hTeamId;
-			AwayTeamId = vTeamId;
-			AwayScore = vScore;
-			HomeScore = hScore;
-			FieldId = fieldId;
-			GameStatus = gameStatus;
-			Comment = comment;
-			GameType = gameType;
-
-			Umpire1 = umpire1;
-			Umpire2 = umpire2;
-			Umpire3 = umpire3;
-			Umpire4 = umpire4;
+            GameRecaps = new Collection<GameRecap>();
 		}
 
 		public long Id { get; set; }
@@ -71,12 +47,13 @@ namespace ModelObjects
 		public long Umpire2 { get; set; }
 		public long Umpire3 { get; set; }
 		public long Umpire4 { get; set; }
-        public bool HasGameRecap { get; set; }
 
-        public string HomeTeamName { get; set; }
-        public string AwayTeamName { get; set; }
-        public string FieldName { get; set; }
-        public string LeagueName { get; set; }
+        public virtual ICollection<GameRecap> GameRecaps { get; set; }
+        public virtual Field Field { get; set; }
+        public virtual LeagueSeason LeagueSeason { get; set; }
+        public virtual Team HomeTeam { get; set; }
+        public virtual Team AwayTeam { get; set; }
+
         public IEnumerable<long> HomePlayersPresent { get; set; }
         public IEnumerable<long> AwayPlayersPresent { get; set; }
 

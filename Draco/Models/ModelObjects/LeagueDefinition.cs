@@ -32,6 +32,6 @@ namespace ModelObjects
             set;
         }
 
-        public virtual ICollection<LeagueSeason> LeagueSeasons;
+        public virtual ICollection<LeagueSeason> LeagueSeasons { get; set; }
 	}
 }

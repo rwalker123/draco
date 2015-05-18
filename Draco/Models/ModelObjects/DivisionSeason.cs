@@ -35,6 +35,6 @@ namespace ModelObjects
             set;
         }
 
-        public virtual DivisionDefinition DivisionDefinition;
+        public virtual DivisionDefinition DivisionDefinition { get; set; }
     }
 }

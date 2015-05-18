@@ -153,29 +153,14 @@ namespace ModelObjects
 
 		public int TB
 		{
-			get
-            {
-                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
-
-            }
-
-            set
-            {
-                // make linq happy
-            }
+			get;
+            set;
         }
 
-		public double AVG
-		{
-			get
-            {
-                return AB > 0 ? (double)H / (double)AB : 0.000;
-            }
-
-            set
-            {
-                // make linq happy
-            }
+        public double AVG
+        {
+            get;
+            set;
         }
 
 		public double SLG

@@ -1,5 +1,7 @@
 using SportsManager.Models.Utils;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -31,32 +33,14 @@ namespace ModelObjects
 
         public Contact()
         {
+            MessageBoardTopics = new Collection<MessageTopic>();
         }
 
-        public void Copy(SportsManager.Model.Contact copyTo, bool updateUserId = false)
-        {
-            copyTo.Email = Email;
-            copyTo.FirstName = FirstName;
-            copyTo.LastName = LastName;
-            copyTo.MiddleName = MiddleName;
-            copyTo.Phone1 = Phone1;
-            copyTo.Phone2 = Phone2;
-            copyTo.Phone3 = Phone3;
-            copyTo.CreatorAccountId = CreatorAccountId;
-            copyTo.StreetAddress = StreetAddress;
-            copyTo.City = City;
-            copyTo.State = State;
-            copyTo.Zip = Zip;
-            copyTo.FirstYear = FirstYear;
-            copyTo.DateOfBirth = DateOfBirth;
-            if (updateUserId)
-                copyTo.UserId = UserId;
-        }
-        
         public Contact(long id, string email, string lastName, string firstName, string middleName,
                     string phone1, string phone2, string phone3, long creatorAccountId, 
                     string streetAddress, string city, string state, string zip, int fy, 
                     DateTime dob, string userId)
+            : this()
         {
             Id = id;
             Email = email;
@@ -174,6 +158,10 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
             }
         }
+
+        virtual public MemberBusiness MemberBusiness { get; set; }
+        virtual public ICollection<MessageTopic> MessageBoardTopics { get; set; }
+        virtual public ICollection<PlayerProfile> Profiles { get; set; }
 
         #region IComparable Members
 

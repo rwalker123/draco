@@ -11,14 +11,6 @@ namespace ModelObjects
 		{
 		}
 
-		public LeagueFAQItem(long faqId, string faqQuestion, string faqAnswer, long accountId)
-		{
-			AccountId = accountId;
-		    Id = faqId;
-			Question = faqQuestion;
-			Answer = faqAnswer;
-		}
-
 		public long Id
 		{
             get;

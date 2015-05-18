@@ -10,39 +10,16 @@ namespace ModelObjects
 		{
 		}
 
-		public PlayerProfile(long playerId)
-		{
-		    PlayerId = playerId;
-		}
+        public long Id { get; set; }
 
-        public long PlayerId
-		{
-			get;
-			set;
-		}
+        public long PlayerId { get; set; }
 
-        public string LastName
-        {
-            get;
-            set;
-        }
+        public long QuestionId { get; set; }
 
-        public string FirstName
-        {
-            get;
-            set;
-        }
+        public string Answer { get; set; }
 
-        public string MiddleName
-        {
-            get;
-            set;
-        }
+        public virtual Contact Contact { get; set; }
+        public virtual ProfileQuestionItem Question { get; set; }
 
-        public string PhotoUrl
-        {
-            get;
-            set;
-        }
-	}
+    }
 }

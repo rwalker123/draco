@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -9,17 +11,7 @@ namespace ModelObjects
     {
         public MessageTopic()
         {
-        }
-
-        public MessageTopic(long id, long categoryId, long creatorContactId, DateTime createDate, string topicTitle, bool stickyTopic, long numberOfViews)
-        {
-            Id = id;
-            CategoryId = categoryId;
-            CreatorContactId = creatorContactId;
-            CreateDate = createDate;
-            TopicTitle = topicTitle;
-            StickyTopic = stickyTopic;
-            NumberOfViews = numberOfViews;
+            Posts = new Collection<MessagePost>();
         }
 
         public long Id
@@ -38,20 +30,6 @@ namespace ModelObjects
         {
             get;
             set;
-        }
-
-        public String CreatorName
-        {
-            get;
-            set;
-        }
-
-        public String PhotoUrl
-        {
-            get
-            {
-                return ModelObjects.Contact.GetPhotoURL(CreatorContactId);
-            }
         }
 
         public DateTime CreateDate
@@ -78,58 +56,8 @@ namespace ModelObjects
             set;
         }
 
-        public MessagePost LastPost
-        {
-            get;
-            set;
-        }
-
-        public int NumberOfReplies
-        {
-            get;
-            set;
-        }
-
-        public static int CompareMessageTopicByLastPostDate(MessageTopic topic1, MessageTopic topic2)
-        {
-            if (topic1 == null || topic1.LastPost == null)
-            {
-                if (topic2 == null || topic2.LastPost == null)
-                {
-                    // If topic1 is null and topic2 is null, they're
-                    // equal. 
-                    return 0;
-                }
-                else
-                {
-                    // If topic1 is null and topic2 is not null, topic2
-                    // is greater. 
-                    return 1;
-                }
-            }
-            else
-            {
-                // If topic1 is not null...
-                //
-                if (topic2 == null || topic2.LastPost == null)
-                // ...and topic2 is null, topic1 is greater.
-                {
-                    return -1;
-                }
-                else
-                {
-                    // ...and topic2 is not null, compare the 
-                    // lengths of the two strings.
-                    //
-                    int retVal = topic1.LastPost.CreateDate.CompareTo(topic2.LastPost.CreateDate);
-                    if (retVal == 1)
-                        retVal = -1;
-                    else if (retVal == -1)
-                        retVal = 1;
-
-                    return retVal;
-                }
-            }
-        }
+        // TODO: LastPost can be retrieved by sorting
+        public virtual ICollection<MessagePost> Posts { get; set; }
+        public virtual MessageCategory Category { get; set; }
     }
 }

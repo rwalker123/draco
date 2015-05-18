@@ -227,7 +227,6 @@ namespace SportsManager.Controllers
             PhotoGalleryAlbum album = new PhotoGalleryAlbum()
             {
                 Title = name.Id,
-                ParentAlbumId = 0,
                 AccountId = accountId,
                 TeamId = 0
             };

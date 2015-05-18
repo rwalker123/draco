@@ -1,10 +1,13 @@
-﻿
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
 namespace ModelObjects
 {
-    class LeagueSeason
+    public class LeagueSeason
     {
         public LeagueSeason()
         {
+            Games = new Collection<Game>();
         }
 
         public long Id { get; set; }
@@ -12,5 +15,6 @@ namespace ModelObjects
         public long SeasonId { get; set; }
 
         public virtual LeagueDefinition LeagueDefinition { get; set; }
+        public virtual ICollection<Game> Games { get; set; }
     }
 }

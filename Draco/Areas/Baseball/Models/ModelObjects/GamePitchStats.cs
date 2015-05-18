@@ -154,54 +154,38 @@ namespace ModelObjects
 
         public int TB
         {
-            get
-            {
-                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
-            }
-
-            set
-            {
-                // to may linq happy.
-            }
+            get;
+            set;
         }
 
         public int AB
         {
-            get
-            {
-                return BF - BB - HBP - SC;
-            }
+            get;
+            set;
+        }
 
-            set
-            {
-                // to may linq happy.
-            }
+        public int WHIPNumerator
+        {
+            get;
+            set;
+        }
+
+        public int IPNumerator
+        {
+            get;
+            set;
         }
 
         public double OBA
         {
-            get
-            {
-                return AB > 0 ? (double)H / (double)AB : 0.00;
-            }
-
-            set
-            {
-                // to may linq happy.
-            }
+            get;
+            set;
         }
 
         public double SLG
         {
-            get
-            {
-                return AB > 0 ? (double)TB / (double)AB : 0.00;
-            }
-
-            set
-            {
-                // to may linq happy.
-            }
+            get;
+            set;
         }
 
         public double IPDecimal
