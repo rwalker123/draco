@@ -8,23 +8,13 @@ namespace ModelObjects
     /// </summary>
     public class ContactRole
     {
-        public long Id { get; set; }
-        public long ContactId { get; set; }
-        public String RoleId { get; set; }
-        public long RoleData { get; set; }
-        public long AccountId { get; set; }
+        public long Id { get; set; } // Id (Primary key)
+        public long ContactId { get; set; } // ContactId
+        public string RoleId { get; set; } // RoleId
+        public long RoleData { get; set; } // RoleData
+        public long AccountId { get; set; } // AccountId
 
-        public ContactRole()
-        {
-        }
-
-        public ContactRole(long id, long contactId, long accountId, String roleId, long roleData)
-        {
-            Id = id;
-            ContactId = contactId;
-            RoleId = roleId;
-            RoleData = roleData;
-            AccountId = accountId;
-        }
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_ContactRoles_Contacts
     }
 }

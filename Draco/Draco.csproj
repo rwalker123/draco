@@ -519,7 +519,8 @@
     <Compile Include="Models\Helpers\MenuHelper.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ModelObjects\Account.cs" />
-    <Compile Include="Models\ModelObjects\AccountSettings.cs" />
+    <Compile Include="Models\ModelObjects\AccountHandout.cs" />
+    <Compile Include="Models\ModelObjects\AccountSetting.cs" />
     <Compile Include="Models\ModelObjects\AccountType.cs" />
     <Compile Include="Models\ModelObjects\AccountWelcome.cs" />
     <Compile Include="Models\ModelObjects\Affiliation.cs" />

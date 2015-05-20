@@ -19,205 +19,130 @@ namespace DataAccess
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
-            // TODO: Add Account, League, and Contacts Relationships...Alot of them
-
-            modelBuilder.Entity<DivisionSeason>().HasRequired(current => current.DivisionDefinition)
-                .WithMany(c=>c.DivisionSeasons)
-                .HasForeignKey(c => c.DivisionId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<LeagueSeason>().HasRequired(current => current.LeagueDefinition)
-                .WithMany(c => c.LeagueSeasons)
-                .HasForeignKey(c => c.LeagueId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<Game>().HasRequired(c => c.LeagueSeason)
-                .WithMany(c => c.Games)
-                .HasForeignKey(c => c.LeagueId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<GameRecap>().HasRequired(c => c.Game)
-                .WithMany(c => c.GameRecaps)
-                .HasForeignKey(c => c.GameId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<Game>().HasOptional(c => c.Field)
-                .WithMany()
-                .HasForeignKey(c => c.FieldId);
-
-            modelBuilder.Entity<Game>().HasRequired(c => c.HomeTeam)
-                .WithMany(c => c.Games)
-                .HasForeignKey(c => c.HomeTeamId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<Game>().HasRequired(c => c.AwayTeam)
-                .WithMany(c => c.Games)
-                .HasForeignKey(c => c.AwayTeamId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<Umpire>().HasRequired(u => u.Contact)
-                .WithMany()
-                .HasForeignKey(u => u.ContactId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<MemberBusiness>().HasRequired(m => m.Contact)
-                .WithOptional(m => m.MemberBusiness)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<PhotoGalleryItem>().HasRequired(p => p.Account)
-                .WithMany(a => a.Photos)
-                .HasForeignKey(p => p.AccountId)
-                .WillCascadeOnDelete(false);
-
-            modelBuilder.Entity<PhotoGalleryItem>().HasRequired(p => p.Album)
-                .WithMany(a => a.Photos)
-                .HasForeignKey(p => p.AlbumId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<PhotoGalleryAlbum>().HasRequired(p => p.Account)
-                .WithMany(a => a.PhotoAlbums)
-                .HasForeignKey(p => p.AccountId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<PlayerProfile>()
-                .HasRequired(e => e.Contact)
-                .WithMany(e => e.Profiles)
-                .HasForeignKey(e => e.PlayerId)
-                .WillCascadeOnDelete(true);
-
-            modelBuilder.Entity<PlayerProfile>()
-                .HasRequired(e => e.Question)
-                .WithMany(e => e.PlayerAnswers)
-                .HasForeignKey(e => e.QuestionId)
-                .WillCascadeOnDelete(true);
-
-            // TODO: Add Column order?
-            //[Column(Order = 2)]
-            //[DatabaseGenerated(DatabaseGeneratedOption.None)]
-            modelBuilder.Entity<PlayerRecap>()
-                .HasKey(p => p.PlayerId)
-                .HasKey(p => p.TeamId)
-                .HasKey(p => p.GameId);
-
-            // rename some columns to match data model.
-            modelBuilder.Entity<Game>()
-                .Property(p => p.HomeTeamId)
-                .HasColumnName("HTeamId");
-
-            modelBuilder.Entity<Game>()
-                .Property(p => p.AwayTeamId)
-                .HasColumnName("VTeamId");
-
-            modelBuilder.Entity<Game>()
-                .Property(p => p.HomeScore)
-                .HasColumnName("HScore");
-
-            modelBuilder.Entity<Game>()
-                .Property(p => p.AwayScore)
-                .HasColumnName("VScore");
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.D)
-                .HasColumnName("2B");
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.T)
-                .HasColumnName("3B");
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.AB)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.TB)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.WHIPNumerator)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-
-            modelBuilder.Entity<GamePitchStats>()
-                .Property(p => p.IPNumerator)
-                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Configurations.Add(new AccountConfiguration());
+            modelBuilder.Configurations.Add(new AccountHandoutConfiguration());
+            modelBuilder.Configurations.Add(new AccountSettingConfiguration());
+            modelBuilder.Configurations.Add(new AccountTypeConfiguration());
+            modelBuilder.Configurations.Add(new AccountWelcomeConfiguration());
+            modelBuilder.Configurations.Add(new AffiliationConfiguration());
+            modelBuilder.Configurations.Add(new AvailableFieldConfiguration());
+            modelBuilder.Configurations.Add(new BatstatsumConfiguration());
+            modelBuilder.Configurations.Add(new ContactConfiguration());
+            modelBuilder.Configurations.Add(new ContactRoleConfiguration());
+            modelBuilder.Configurations.Add(new CurrentSeasonConfiguration());
+            modelBuilder.Configurations.Add(new DisplayLeagueLeaderConfiguration());
+            modelBuilder.Configurations.Add(new DivisionDefConfiguration());
+            modelBuilder.Configurations.Add(new DivisionSeasonConfiguration());
+            modelBuilder.Configurations.Add(new FieldContactConfiguration());
+            modelBuilder.Configurations.Add(new FieldstatsumConfiguration());
+            modelBuilder.Configurations.Add(new GameEjectionConfiguration());
+            modelBuilder.Configurations.Add(new GameRecapConfiguration());
+            modelBuilder.Configurations.Add(new HofConfiguration());
+            modelBuilder.Configurations.Add(new HofNominationConfiguration());
+            modelBuilder.Configurations.Add(new HofNominationSetupConfiguration());
+            modelBuilder.Configurations.Add(new LeagueConfiguration());
+            modelBuilder.Configurations.Add(new LeagueEventConfiguration());
+            modelBuilder.Configurations.Add(new LeagueFaqConfiguration());
+            modelBuilder.Configurations.Add(new LeagueNewConfiguration());
+            modelBuilder.Configurations.Add(new LeagueScheduleConfiguration());
+            modelBuilder.Configurations.Add(new LeagueSeasonConfiguration());
+            modelBuilder.Configurations.Add(new LeagueUmpireConfiguration());
+            modelBuilder.Configurations.Add(new MemberBusinessConfiguration());
+            modelBuilder.Configurations.Add(new MessageCategoryConfiguration());
+            modelBuilder.Configurations.Add(new MessagePostConfiguration());
+            modelBuilder.Configurations.Add(new MessageTopicConfiguration());
+            modelBuilder.Configurations.Add(new PhotoGalleryConfiguration());
+            modelBuilder.Configurations.Add(new PhotoGalleryAlbumConfiguration());
+            modelBuilder.Configurations.Add(new PitchstatsumConfiguration());
+            modelBuilder.Configurations.Add(new PlayerProfileConfiguration());
+            modelBuilder.Configurations.Add(new PlayerRecapConfiguration());
+            modelBuilder.Configurations.Add(new PlayerSeasonAffiliationDueConfiguration());
+            modelBuilder.Configurations.Add(new PlayersWantedClassifiedConfiguration());
+            modelBuilder.Configurations.Add(new PlayoffBracketConfiguration());
+            modelBuilder.Configurations.Add(new PlayoffGameConfiguration());
+            modelBuilder.Configurations.Add(new PlayoffSeedConfiguration());
+            modelBuilder.Configurations.Add(new PlayoffSetupConfiguration());
+            modelBuilder.Configurations.Add(new ProfileCategoryConfiguration());
+            modelBuilder.Configurations.Add(new ProfileQuestionConfiguration());
+            modelBuilder.Configurations.Add(new RosterConfiguration());
+            modelBuilder.Configurations.Add(new RosterSeasonConfiguration());
+            modelBuilder.Configurations.Add(new SeasonConfiguration());
+            modelBuilder.Configurations.Add(new SponsorConfiguration());
+            modelBuilder.Configurations.Add(new TeamConfiguration());
+            modelBuilder.Configurations.Add(new TeamHandoutConfiguration());
+            modelBuilder.Configurations.Add(new TeamNewConfiguration());
+            modelBuilder.Configurations.Add(new TeamSeasonManagerConfiguration());
+            modelBuilder.Configurations.Add(new TeamsSeasonConfiguration());
+            modelBuilder.Configurations.Add(new TeamsWantedClassifiedConfiguration());
+            modelBuilder.Configurations.Add(new VoteAnswerConfiguration());
+            modelBuilder.Configurations.Add(new VoteOptionConfiguration());
+            modelBuilder.Configurations.Add(new VoteQuestionConfiguration());
+            modelBuilder.Configurations.Add(new WorkoutAnnouncementConfiguration());
+            modelBuilder.Configurations.Add(new WorkoutRegistrationConfiguration());
         }
 
-        public DbSet<AccountHandout> AccountHandouts { get; set; }
-        public DbSet<Account> Accounts { get; set; }
-        public DbSet<AccountSetting> AccountSettings { get; set; }
-        public DbSet<AccountType> AccountTypes { get; set; }
-        public DbSet<AccountWelcome> AccountWelcome { get; set; }
-        public DbSet<Affiliation> Affiliations { get; set; }
-        public DbSet<Field> AvailableFields { get; set; }
-
-        public DbSet<GameBatStats> batstatsum { get; set; }
-        public DbSet<ContactRole> ContactRoles { get; set; }
-        public DbSet<Contact> Contacts { get; set; }
-        public DbSet<CurrentSeason> CurrentSeason { get; set; }
-        public DbSet<DisplayLeagueLeader> DisplayLeagueLeaders { get; set; }
-        public DbSet<DivisionDefinition> DivisionDefs { get; set; }
-        public DbSet<DivisionSeason> DivisionSeason { get; set; }
-
-        public DbSet<FieldContact> FieldContacts { get; set; }
-        public DbSet<GameFieldStats> fieldstatsum { get; set; }
-        public DbSet<GameEjection> GameEjections { get; set; }
-        public DbSet<GameRecap> GameRecap { get; set; }
-        public DbSet<HOFMember> hof { get; set; }
-        public DbSet<HOFNomination> HOFNomination { get; set; }
-        public DbSet<HOFNominationSetup> HOFNominationSetup { get; set; }
-        public DbSet<LeagueDefinition> League { get; set; }
-        public DbSet<LeagueSeason> LeagueSeason { get; set; }
-
-        public DbSet<LeagueEvent> LeagueEvents { get; set; }
-        public DbSet<LeagueFAQItem> LeagueFAQ { get; set; }
-        public DbSet<LeagueNewsItem> LeagueNews { get; set; }
-        public DbSet<Game> LeagueSchedule { get; set; }
-
-        public DbSet<Umpire> LeagueUmpires { get; set; }
-
-        public DbSet<MemberBusiness> MemberBusiness { get; set; }
-
-        public DbSet<MessageCategory> MessageCategory { get; set; }
-        public DbSet<MessagePost> MessagePost { get; set; }
-        public DbSet<MessageTopic> MessageTopic { get; set; }
-
-        public DbSet<PhotoGalleryItem> PhotoGallery { get; set; }
-        public DbSet<PhotoGalleryAlbum> PhotoGalleryAlbum { get; set; }
-        public DbSet<GamePitchStats> pitchstatsum { get; set; }
-
-        public DbSet<PlayerProfile> PlayerProfile { get; set; }
-
-        public DbSet<PlayerRecap> PlayerRecap { get; set; }
-
-        public DbSet<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; }
-
-        // validate with DB
-        public DbSet<PlayersWantedClassified> PlayersWantedClassified { get; set; }
-        public DbSet<PlayoffBracket> PlayoffBracket { get; set; }
-        public DbSet<PlayoffGame> PlayoffGame { get; set; }
-        public DbSet<PlayoffSeed> PlayoffSeeds { get; set; }
-        public DbSet<PlayoffSetup> PlayoffSetup { get; set; }
-        public DbSet<ProfileCategoryItem> ProfileCategory { get; set; }
-        public DbSet<ProfileQuestionItem> ProfileQuestion { get; set; }
-        // TODO: contruct correctly with virtual connection..
-        public DbSet<TeamRoster> Roster { get; set; }
-        public DbSet<TeamRosterSeason> RosterSeason { get; set; }
-        public DbSet<Season> Season { get; set; }
-        public DbSet<Sponsor> Sponsors { get; set; }
-        public DbSet<TeamHandout> TeamHandouts { get; set; }
-        public DbSet<TeamNewsItem> TeamNews { get; set; }
-        // TODO: contruct correctly with virtual connection..
-        public DbSet<Team> Teams { get; set; }
-        public DbSet<TeamSeason> TeamsSeason { get; set; }
-        public DbSet<TeamManager> TeamSeasonManager { get; set; }
-        public DbSet<TeamsWantedClassified> TeamsWantedClassified { get; set; }
-        public DbSet<VoteResults> VoteAnswers { get; set; }
-        public DbSet<VoteOption> VoteOptions { get; set; }
-        public DbSet<VoteQuestion> VoteQuestion { get; set; }
-        public DbSet<WorkoutAnnouncement> WorkoutAnnouncement { get; set; }
-        public DbSet<WorkoutRegistrant> WorkoutRegistration { get; set; }
-        
+        public IDbSet<Account> Accounts { get; set; } // Accounts
+        public IDbSet<AccountHandout> AccountHandouts { get; set; } // AccountHandouts
+        public IDbSet<AccountSetting> AccountSettings { get; set; } // AccountSettings
+        public IDbSet<AccountType> AccountTypes { get; set; } // AccountTypes
+        public IDbSet<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome
+        public IDbSet<Affiliation> Affiliations { get; set; } // Affiliations
+        public IDbSet<AvailableField> AvailableFields { get; set; } // AvailableFields
+        public IDbSet<Batstatsum> Batstatsums { get; set; } // batstatsum
+        public IDbSet<Contact> Contacts { get; set; } // Contacts
+        public IDbSet<ContactRole> ContactRoles { get; set; } // ContactRoles
+        public IDbSet<CurrentSeason> CurrentSeasons { get; set; } // CurrentSeason
+        public IDbSet<DisplayLeagueLeader> DisplayLeagueLeaders { get; set; } // DisplayLeagueLeaders
+        public IDbSet<DivisionDef> DivisionDefs { get; set; } // DivisionDefs
+        public IDbSet<DivisionSeason> DivisionSeasons { get; set; } // DivisionSeason
+        public IDbSet<FieldContact> FieldContacts { get; set; } // FieldContacts
+        public IDbSet<Fieldstatsum> Fieldstatsums { get; set; } // fieldstatsum
+        public IDbSet<GameEjection> GameEjections { get; set; } // GameEjections
+        public IDbSet<GameRecap> GameRecaps { get; set; } // GameRecap
+        public IDbSet<Hof> Hofs { get; set; } // hof
+        public IDbSet<HofNomination> HofNominations { get; set; } // HOFNomination
+        public IDbSet<HofNominationSetup> HofNominationSetups { get; set; } // HOFNominationSetup
+        public IDbSet<League> Leagues { get; set; } // League
+        public IDbSet<LeagueEvent> LeagueEvents { get; set; } // LeagueEvents
+        public IDbSet<LeagueFaq> LeagueFaqs { get; set; } // LeagueFAQ
+        public IDbSet<LeagueNew> LeagueNews { get; set; } // LeagueNews
+        public IDbSet<LeagueSchedule> LeagueSchedules { get; set; } // LeagueSchedule
+        public IDbSet<LeagueSeason> LeagueSeasons { get; set; } // LeagueSeason
+        public IDbSet<LeagueUmpire> LeagueUmpires { get; set; } // LeagueUmpires
+        public IDbSet<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness
+        public IDbSet<MessageCategory> MessageCategories { get; set; } // MessageCategory
+        public IDbSet<MessagePost> MessagePosts { get; set; } // MessagePost
+        public IDbSet<MessageTopic> MessageTopics { get; set; } // MessageTopic
+        public IDbSet<PhotoGallery> PhotoGalleries { get; set; } // PhotoGallery
+        public IDbSet<PhotoGalleryAlbum> PhotoGalleryAlbums { get; set; } // PhotoGalleryAlbum
+        public IDbSet<Pitchstatsum> Pitchstatsums { get; set; } // pitchstatsum
+        public IDbSet<PlayerProfile> PlayerProfiles { get; set; } // PlayerProfile
+        public IDbSet<PlayerRecap> PlayerRecaps { get; set; } // PlayerRecap
+        public IDbSet<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // PlayerSeasonAffiliationDues
+        public IDbSet<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified
+        public IDbSet<PlayoffBracket> PlayoffBrackets { get; set; } // PlayoffBracket
+        public IDbSet<PlayoffGame> PlayoffGames { get; set; } // PlayoffGame
+        public IDbSet<PlayoffSeed> PlayoffSeeds { get; set; } // PlayoffSeeds
+        public IDbSet<PlayoffSetup> PlayoffSetups { get; set; } // PlayoffSetup
+        public IDbSet<ProfileCategory> ProfileCategories { get; set; } // ProfileCategory
+        public IDbSet<ProfileQuestion> ProfileQuestions { get; set; } // ProfileQuestion
+        public IDbSet<Roster> Rosters { get; set; } // Roster
+        public IDbSet<RosterSeason> RosterSeasons { get; set; } // RosterSeason
+        public IDbSet<Season> Seasons { get; set; } // Season
+        public IDbSet<Sponsor> Sponsors { get; set; } // Sponsors
+        public IDbSet<Team> Teams { get; set; } // Teams
+        public IDbSet<TeamHandout> TeamHandouts { get; set; } // TeamHandouts
+        public IDbSet<TeamNew> TeamNews { get; set; } // TeamNews
+        public IDbSet<TeamSeasonManager> TeamSeasonManagers { get; set; } // TeamSeasonManager
+        public IDbSet<TeamsSeason> TeamsSeasons { get; set; } // TeamsSeason
+        public IDbSet<TeamsWantedClassified> TeamsWantedClassifieds { get; set; } // TeamsWantedClassified
+        public IDbSet<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers
+        public IDbSet<VoteOption> VoteOptions { get; set; } // VoteOptions
+        public IDbSet<VoteQuestion> VoteQuestions { get; set; } // VoteQuestion
+        public IDbSet<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement
+        public IDbSet<WorkoutRegistration> WorkoutRegistrations { get; set; } // WorkoutRegistration
     }
 
     internal class GolfDB : DbContext

@@ -10,69 +10,56 @@ namespace ModelObjects
     /// </summary>
     public class Contact : IComparable
     {
-        public long Id { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string MiddleName { get; set; }
-        public string Phone1 { get; set; }
-        public string Phone2 { get; set; }
-        public string Phone3 { get; set; }
-        public long CreatorAccountId { get; set; }
-        public string StreetAddress { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Zip { get; set; }
-        public int FirstYear { get; set; }
-        public DateTime DateOfBirth { get; set; }
-        public bool IsFemale { get; set; }
-        public string UserId { get; set; }
-
         private static string PhotoName = "ContactPhoto.jpg";
         private static string LargePhotoName = "ContactActionPhoto.jpg";
 
+        public long Id { get; set; } // Id (Primary key)
+        public string UserId { get; set; } // UserId
+        public string LastName { get; set; } // LastName
+        public string FirstName { get; set; } // FirstName
+        public string MiddleName { get; set; } // MiddleName
+        public string Phone1 { get; set; } // Phone1
+        public string Phone2 { get; set; } // Phone2
+        public string Phone3 { get; set; } // Phone3
+        public long CreatorAccountId { get; set; } // CreatorAccountId
+        public string StreetAddress { get; set; } // StreetAddress
+        public string City { get; set; } // City
+        public string State { get; set; } // State
+        public string Zip { get; set; } // Zip
+        public int? FirstYear { get; set; } // FirstYear
+        public DateTime DateOfBirth { get; set; } // DateOfBirth
+        public bool? IsFemale { get; set; } // IsFemale
+        public string Email { get; set; } // Email
+
+        // Reverse navigation
+        public virtual ICollection<ContactRole> ContactRoles { get; set; } // ContactRoles.FK_ContactRoles_Contacts
+        public virtual ICollection<FieldContact> FieldContacts { get; set; } // FieldContacts.FK_FieldContacts_Contacts
+        public virtual ICollection<Hof> Hofs { get; set; } // hof.FK_hof_Contacts
+        public virtual ICollection<LeagueUmpire> LeagueUmpires { get; set; } // LeagueUmpires.FK_LeagueUmpires_Contacts
+        public virtual ICollection<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness.FK_MemberBusiness_Contacts
+        public virtual ICollection<MessagePost> MessagePosts { get; set; } // MessagePost.FK_MessagePost_Contacts
+        public virtual ICollection<MessageTopic> MessageTopics { get; set; } // MessageTopic.FK_MessageTopic_Contacts
+        public virtual ICollection<PlayerProfile> PlayerProfiles { get; set; } // PlayerProfile.FK_PlayerProfile_Contacts
+        public virtual ICollection<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified.FK_PlayersWantedClassified_Contacts
+        public virtual ICollection<Roster> Rosters { get; set; } // Roster.FK_Roster_Contacts
+        public virtual ICollection<TeamSeasonManager> TeamSeasonManagers { get; set; } // TeamSeasonManager.FK_TeamSeasonManager_Contacts
+        public virtual ICollection<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers.FK_VoteAnswers_Contacts
+
         public Contact()
         {
-            MessageBoardTopics = new Collection<MessageTopic>();
-        }
-
-        public Contact(long id, string email, string lastName, string firstName, string middleName,
-                    string phone1, string phone2, string phone3, long creatorAccountId, 
-                    string streetAddress, string city, string state, string zip, int fy, 
-                    DateTime dob, string userId)
-            : this()
-        {
-            Id = id;
-            Email = email;
-            FirstName = firstName;
-            LastName = lastName;
-            MiddleName = middleName;
-            Phone1 = phone1;
-            Phone2 = phone2;
-            Phone3 = phone3;
-            CreatorAccountId = creatorAccountId;
-            StreetAddress = streetAddress;
-            City = city;
-            State = state;
-            Zip = zip;
-            FirstYear = fy;
-
-            DateOfBirth = dob;
-            UserId = userId;
-        }
-
-        public string UserName
-        {
-            get { return Email; }
-        }
-
-        public string FullName
-        {
-            get
-            {
-                string fullName = LastName + ", " + FirstName + " " + MiddleName;
-                return fullName.Trim();
-            }
+            IsFemale = false;
+            ContactRoles = new List<ContactRole>();
+            FieldContacts = new List<FieldContact>();
+            Hofs = new List<Hof>();
+            LeagueUmpires = new List<LeagueUmpire>();
+            MemberBusinesses = new List<MemberBusiness>();
+            MessagePosts = new List<MessagePost>();
+            MessageTopics = new List<MessageTopic>();
+            PlayerProfiles = new List<PlayerProfile>();
+            PlayersWantedClassifieds = new List<PlayersWantedClassified>();
+            Rosters = new List<Roster>();
+            TeamSeasonManagers = new List<TeamSeasonManager>();
+            VoteAnswers = new List<VoteAnswer>();
         }
 
         static public string BuildFullName(string firstName, string middleName, string lastName)
@@ -158,10 +145,6 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
             }
         }
-
-        virtual public MemberBusiness MemberBusiness { get; set; }
-        virtual public ICollection<MessageTopic> MessageBoardTopics { get; set; }
-        virtual public ICollection<PlayerProfile> Profiles { get; set; }
 
         #region IComparable Members
 

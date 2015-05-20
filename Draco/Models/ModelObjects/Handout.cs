@@ -58,27 +58,4 @@ namespace ModelObjects
 
 	}
 
-	public class AccountHandout : Handout
-	{
-		public AccountHandout()
-		{
-		}
-
-		public AccountHandout(long id, string description, string filename, long referenceId)
-			: base(id, description, filename)
-		{
-            AccountId = referenceId;
-		}
-
-		protected override string HandoutDir
-		{
-			get
-			{
-				return Globals.UploadDirRoot + "Accounts/" + AccountId + "/Handouts/";
-			}
-		}
-
-        public long AccountId { get; set; }
-
-	}
 }

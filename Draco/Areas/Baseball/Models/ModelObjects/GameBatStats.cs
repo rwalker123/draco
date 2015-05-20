@@ -95,73 +95,39 @@ namespace ModelObjects
 	/// <summary>
 	/// Summary description for GameBatStats
 	/// </summary>
-	public class GameBatStats
+	public class Batstatsum
 	{
-		public long Id { get; set; }
-		public long PlayerId { get; set; }
-		public long GameId { get; set; }
-		public long TeamId { get; set; }
-		public int AB { get; set; }
-		public int H { get; set; }
-		public int R { get; set; }
-		public int D { get; set; }
-		public int T { get; set; }
-		public int HR { get; set; }
-		public int RBI { get; set; }
-		public int SO { get; set; }
-		public int BB { get; set; }
-		public int RE { get; set; }
-		public int HBP { get; set; }
-		public int INTR { get; set; }
-		public int SF { get; set; }
-		public int SH { get; set; }
-		public int SB { get; set; }
-		public int CS { get; set; }
-		public int LOB { get; set; }
+        public long Id { get; set; } // id (Primary key)
+        public long PlayerId { get; set; } // PlayerId
+        public long GameId { get; set; } // GameId
+        public long TeamId { get; set; } // TeamId
+        public int Ab { get; set; } // AB
+        public int H { get; set; } // H
+        public int R { get; set; } // R
+        public int C2B { get; set; } // 2B
+        public int C3B { get; set; } // 3B
+        public int Hr { get; set; } // HR
+        public int Rbi { get; set; } // RBI
+        public int So { get; set; } // SO
+        public int Bb { get; set; } // BB
+        public int Re { get; set; } // RE
+        public int Hbp { get; set; } // HBP
+        public int Intr { get; set; } // INTR
+        public int Sf { get; set; } // SF
+        public int Sh { get; set; } // SH
+        public int Sb { get; set; } // SB
+        public int Cs { get; set; } // CS
+        public int Lob { get; set; } // LOB
+        public int? Tb { get; set; } // TB
+        public int? Pa { get; set; } // PA
+        public int? ObaDenominator { get; set; } // OBADenominator
+        public int? ObaNumerator { get; set; } // OBANumerator
+        public float? Avg { get; set; } // AVG
 
-		public GameBatStats()
-		{
-		}
-
-		public GameBatStats(long statsId, long playerId, long gameId, long teamId, int ab,
-						int h, int r, int d, int t, int hr, int rbi,
-						int so, int bb, int re, int hbp, int intr,
-						int sf, int sh, int sb, int cs, int lob)
-		{
-			Id = statsId;
-			PlayerId = playerId;
-			GameId = gameId;
-			TeamId = teamId;
-			AB = ab;
-			H = h;
-			R = r;
-			D = d;
-			T = t;
-			HR = hr;
-			RBI = rbi;
-			SO = so;
-			BB = bb;
-			RE = re;
-			HBP = hbp;
-			INTR = intr;
-			SF = sf;
-			SH = sh;
-			SB = sb;
-			CS = cs;
-			LOB = lob;
-		}
-
-		public int TB
-		{
-			get;
-            set;
-        }
-
-        public double AVG
-        {
-            get;
-            set;
-        }
+        // Foreign keys
+        public virtual LeagueSchedule LeagueSchedule { get; set; } // FK_batstatsum_LeagueSchedule
+        public virtual RosterSeason RosterSeason { get; set; } // FK_batstatsum_RosterSeason
+        public virtual TeamsSeason TeamsSeason { get; set; } // FK_batstatsum_TeamsSeason
 
 		public double SLG
 		{

@@ -4,9 +4,9 @@ namespace ModelObjects
 {
     public class DisplayLeagueLeader
     {
-        public String FieldName { get; set; }
-        public long AccountId { get; set; }
-        public long TeamId { get; set; }
-        public bool IsBatLeader { get; set; }
+        public string FieldName { get; set; } // FieldName (Primary key)
+        public long AccountId { get; set; } // AccountId (Primary key)
+        public long TeamId { get; set; } // TeamId (Primary key)
+        public bool IsBatLeader { get; set; } // IsBatLeader (Primary key)
     }
 }

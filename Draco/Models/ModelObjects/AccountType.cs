@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,23 +8,20 @@ namespace ModelObjects
 	/// </summary>
 	public class AccountType
 	{
-        public long Id { get; set; }
-        public string Name { get; set; }
-        public string FilePath { get; set; }
-        public string FacebookAppId { get; set; }
-        public string FacebookSecretKey { get; set; }
-        public string TwitterAppId { get; set; }
-        public string TwitterSecret { get; set; }
+        public long Id { get; set; } // Id (Primary key)
+        public string Name { get; set; } // Name
+        public string FilePath { get; set; } // FilePath
+        public string FacebookAppId { get; set; } // FacebookAppId
+        public string FacebookSecretKey { get; set; } // FacebookSecretKey
+        public string TwitterAppId { get; set; } // TwitterAppId
+        public string TwitterSecret { get; set; } // TwitterSecret
 
-		public AccountType()
-		{
-		}
+        // Reverse navigation
+        public virtual ICollection<Account> Accounts { get; set; } // Accounts.FK_AccountTypes_Accounts
 
-		public AccountType(long id, string name, string homePageFilePath)
-		{
-			Id = id;
-			Name = name;
-            FilePath = homePageFilePath;
-		}
-	}
+        public AccountType()
+        {
+            Accounts = new List<Account>();
+        }
+    }
 }
