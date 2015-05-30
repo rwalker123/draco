@@ -117,6 +117,8 @@ namespace DataAccess
 
             db.DivisionSeasons.DeleteOnSubmit(divSeason);
 
+            db.SubmitChanges();
+
             var teamSeasons = (from ts in db.TeamsSeasons
                                where ts.DivisionSeasonId == divisionSeasonId
                                select ts);
@@ -124,6 +126,8 @@ namespace DataAccess
             {
                 teamSeason.DivisionSeasonId = 0;
             }
+
+            db.SubmitChanges();
 
             bool divisionInUse = (from ds in db.DivisionSeasons
                                   where ds.DivisionId == divisionSeasonId
