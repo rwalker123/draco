@@ -38,12 +38,11 @@ function onYouTubeIframeAPIReady() {
             'onStateChange': onPlayerStateChange
         }
     });
-
-    ytViewModel.loadVideos(ytViewModel.userId());
 }
 
 // 4. The API will call this function when the video player is ready.
 function onPlayerReady(event) {
+    ytViewModel.loadVideos(ytViewModel.userId());
 }
 
 // 5. The API calls this function when the player's state changes.
@@ -189,7 +188,7 @@ var youTubeViewModel = function (accountId, isAdmin, id, defaultVideo, autoPlay,
                 ytViewModel.videoEntries(videos);
 
                 if (!ytViewModel.isAdmin) {
-                    if (entries.length == 0) {
+                    if (videos.length == 0) {
                         $('#videos').hide();
                         return;
                     }
