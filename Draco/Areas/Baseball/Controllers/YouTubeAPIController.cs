@@ -5,10 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Web.Http;
 using Google.Apis.Services;
-using Google.Apis.Upload;
-using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
-using Google.Apis.YouTube.v3.Data;
 using System.Threading.Tasks;
 
 namespace SportsManager.Areas.Baseball.Controllers
