@@ -84,13 +84,13 @@
       <HintPath>..\packages\Google.Apis.1.9.1\lib\net40\Google.Apis.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Google.Apis.Auth, Version=1.9.0.26011, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.9.0\lib\net40\Google.Apis.Auth.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Google.Apis.Auth, Version=1.9.1.12395, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Google.Apis.Auth.1.9.1\lib\net40\Google.Apis.Auth.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.9.0.26016, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.Auth.1.9.0\lib\net40\Google.Apis.Auth.PlatformServices.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.9.1.12399, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Google.Apis.Auth.1.9.1\lib\net40\Google.Apis.Auth.PlatformServices.dll</HintPath>
     </Reference>
     <Reference Include="Google.Apis.Core, Version=1.9.1.12394, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Google.Apis.Core.1.9.1\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.Core.dll</HintPath>
@@ -195,7 +195,7 @@
     </Reference>
     <Reference Include="Microsoft.ServiceBus, Version=2.6.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\WindowsAzure.ServiceBus.2.6.6\lib\net40-full\Microsoft.ServiceBus.dll</HintPath>
+      <HintPath>..\packages\WindowsAzure.ServiceBus.2.6.7\lib\net40-full\Microsoft.ServiceBus.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
@@ -226,7 +226,7 @@
     </Reference>
     <Reference Include="StackExchange.Redis.StrongName, Version=1.0.316.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.414\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
+      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.450\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -756,6 +756,8 @@
     <Content Include="Scripts\i18n\defaults-bg_BG.min.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.min.js" />
+    <Content Include="Scripts\i18n\defaults-da_DK.js" />
+    <Content Include="Scripts\i18n\defaults-da_DK.min.js" />
     <Content Include="Scripts\i18n\defaults-de_DE.js" />
     <Content Include="Scripts\i18n\defaults-de_DE.min.js" />
     <Content Include="Scripts\i18n\defaults-en_US.js" />
@@ -764,22 +766,30 @@
     <Content Include="Scripts\i18n\defaults-es_CL.min.js" />
     <Content Include="Scripts\i18n\defaults-eu.js" />
     <Content Include="Scripts\i18n\defaults-eu.min.js" />
+    <Content Include="Scripts\i18n\defaults-fa_IR.js" />
+    <Content Include="Scripts\i18n\defaults-fa_IR.min.js" />
     <Content Include="Scripts\i18n\defaults-fr_FR.js" />
     <Content Include="Scripts\i18n\defaults-fr_FR.min.js" />
     <Content Include="Scripts\i18n\defaults-hu_HU.js" />
     <Content Include="Scripts\i18n\defaults-hu_HU.min.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.min.js" />
+    <Content Include="Scripts\i18n\defaults-ko_KR.js" />
+    <Content Include="Scripts\i18n\defaults-ko_KR.min.js" />
     <Content Include="Scripts\i18n\defaults-nl_NL.js" />
     <Content Include="Scripts\i18n\defaults-nl_NL.min.js" />
     <Content Include="Scripts\i18n\defaults-pl_PL.js" />
     <Content Include="Scripts\i18n\defaults-pl_PL.min.js" />
     <Content Include="Scripts\i18n\defaults-pt_BR.js" />
     <Content Include="Scripts\i18n\defaults-pt_BR.min.js" />
+    <Content Include="Scripts\i18n\defaults-pt_PT.js" />
+    <Content Include="Scripts\i18n\defaults-pt_PT.min.js" />
     <Content Include="Scripts\i18n\defaults-ro_RO.js" />
     <Content Include="Scripts\i18n\defaults-ro_RO.min.js" />
     <Content Include="Scripts\i18n\defaults-ru_RU.js" />
     <Content Include="Scripts\i18n\defaults-ru_RU.min.js" />
+    <Content Include="Scripts\i18n\defaults-sk_SK.js" />
+    <Content Include="Scripts\i18n\defaults-sk_SK.min.js" />
     <Content Include="Scripts\i18n\defaults-sl_SI.js" />
     <Content Include="Scripts\i18n\defaults-sl_SI.min.js" />
     <Content Include="Scripts\i18n\defaults-sv_SE.js" />
@@ -801,7 +811,6 @@
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Content\UserAddressListTemplate.xlsx" />
     <Content Include="Content\ManagerAddressListTemplate.xlsx" />
-    <Content Include="Content\bootstrap-select.css.map" />
     <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
@@ -809,6 +818,7 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Content\bootstrap-select.css.map" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
     <Content Include="Scripts\bootstrap-select.js.map" />
@@ -821,6 +831,8 @@
     <Content Include="Scripts\jsnlog.min.js" />
     <Content Include="Scripts\knockout-3.3.0.debug.js" />
     <Content Include="Scripts\knockout-3.3.0.js" />
+    <Content Include="Scripts\knockout.validation.js" />
+    <Content Include="Scripts\knockout.validation.min.js" />
     <Content Include="Scripts\leaguefaq.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.ar.min.js" />
     <Content Include="Scripts\locales\bootstrap-datepicker.az.min.js" />
@@ -1070,8 +1082,6 @@
     <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
     <Content Include="Scripts\knockout.mapping-latest.debug.js" />
     <Content Include="Scripts\knockout.mapping-latest.js" />
-    <Content Include="Scripts\knockout.validation.js" />
-    <Content Include="Scripts\knockout.validation.min.js" />
     <Content Include="Scripts\knockout.viewmodel.2.0.3.js" />
     <Content Include="Scripts\knockout.viewmodel.2.0.3.min.js" />
     <Content Include="Scripts\knockoutjs-helpers.js" />
@@ -1299,8 +1309,8 @@
     <Content Include="Views\Shared\TwitterView.cshtml" />
     <Content Include="Views\Shared\FacebookView.cshtml" />
     <Content Include="Views\Shared\HOF.cshtml" />
-    <Content Include="Scripts\knockout.validation.min.js.map" />
     <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Scripts\knockout.validation.min.js.map" />
     <None Include="Web.Azure.config">
       <DependentUpon>Web.config</DependentUpon>
       <SubType>Designer</SubType>
