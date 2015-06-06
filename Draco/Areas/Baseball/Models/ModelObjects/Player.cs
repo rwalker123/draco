@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,51 +7,29 @@ namespace ModelObjects
 	/// </summary>
 	public class Player
 	{
-		public Player()
-		{
-			DateAdded = DateTime.Now;
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public long ContactId { get; set; } // ContactId
+        public bool SubmittedDriversLicense { get; set; } // SubmittedDriversLicense
 
-		public Player(long pId, long tId, int pNo, Contact contact, bool sWaiver,
-			bool sDriversLicense, long accountId, DateTime dateAdded, string affiliationDuesPaid)
-		{
-			TeamId = tId;
-			AccountId = accountId;
-			Id = pId;
-			PlayerNumber = pNo;
+        // Reverse navigation
+        public virtual ICollection<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // Many to many mapping
+        public virtual ICollection<PlayerSeason> RosterSeasons { get; set; } // RosterSeason.FK_RosterSeason_Roster
 
-			Contact = contact;
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_Roster_Accounts
+        public virtual Contact Contact { get; set; } // FK_Roster_Contacts
+        
+        public Player()
+        {
+            PlayerSeasonAffiliationDues = new List<PlayerSeasonAffiliationDue>();
+            RosterSeasons = new List<PlayerSeason>();
+        }
 
-			SubmittedWaiver = sWaiver;
-			SubmittedDriversLicense = sDriversLicense;
-
-			DateAdded = dateAdded;
-
-			AffiliationDuesPaid = affiliationDuesPaid;
-		}
-
-		public long Id { get; set; }
-		public long TeamId { get; set; }
-		public long AccountId { get; set; }
-
-		public int PlayerNumber { get; set; }
-		public DateTime DateAdded { get; set; }
-		public string AffiliationDuesPaid { get; set; }
-
-		public bool SubmittedWaiver { get; set; }
-		public bool SubmittedDriversLicense { get; set; }
-
-		public Contact Contact { get; set; }
-        internal long ContactId { get; set; }
-
-        public int GamesPlayed { get; set; }
 		public int Age
 		{
 			get
 			{
-                if (Contact == null)
-                    return 0;
-
                 return Globals.CalculateAge(Contact.DateOfBirth);
 			}
 		}

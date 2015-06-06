@@ -1,13 +1,11 @@
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Data.Spatial;
 
 namespace ModelObjects
 {
 	/// <summary>
 	/// Summary description for Field
 	/// </summary>
-	public class AvailableField
+	public class Field
 	{
         public long Id { get; set; } // id (Primary key)
         public long AccountId { get; set; } // AccountId
@@ -24,17 +22,18 @@ namespace ModelObjects
         public string Longitude { get; set; } // Longitude
         //public DbGeography LocationGeo { get; set; }
 
-        // Reverse navigation
+        public virtual ICollection<Game> LeagueSchedules { get; set; } // LeagueSchedule.FK_LeagueSchedule_AvailableFields
         public virtual ICollection<FieldContact> FieldContacts { get; set; } // FieldContacts.FK_FieldContacts_AvailableFields
         public virtual ICollection<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement.FK_WorkoutAnnouncement_AvailableFields
 
         // Foreign keys
         public virtual Account Account { get; set; } // FK_AvailableFields_Accounts
         
-        public AvailableField()
+        public Field()
         {
             FieldContacts = new List<FieldContact>();
             WorkoutAnnouncements = new List<WorkoutAnnouncement>();
+            LeagueSchedules = new List<Game>();
             //LocationGeo = DbGeography.PointFromText("POINT(" + longitude + " " + latitude + ")", 4326);
         }
 

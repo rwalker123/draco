@@ -95,8 +95,8 @@ namespace ModelObjects
 	/// <summary>
 	/// Summary description for GameBatStats
 	/// </summary>
-	public class Batstatsum
-	{
+	public class GameBatStats
+    {
         public long Id { get; set; } // id (Primary key)
         public long PlayerId { get; set; } // PlayerId
         public long GameId { get; set; } // GameId
@@ -125,15 +125,15 @@ namespace ModelObjects
         public float? Avg { get; set; } // AVG
 
         // Foreign keys
-        public virtual LeagueSchedule LeagueSchedule { get; set; } // FK_batstatsum_LeagueSchedule
-        public virtual RosterSeason RosterSeason { get; set; } // FK_batstatsum_RosterSeason
-        public virtual TeamsSeason TeamsSeason { get; set; } // FK_batstatsum_TeamsSeason
+        public virtual Game LeagueSchedule { get; set; } // FK_batstatsum_LeagueSchedule
+        public virtual PlayerSeason RosterSeason { get; set; } // FK_batstatsum_RosterSeason
+        public virtual TeamSeason TeamsSeason { get; set; } // FK_batstatsum_TeamsSeason
 
 		public double SLG
 		{
 			get
             {
-                return AB > 0 ? (double)TB / (double)AB : 0.000;
+                return Ab > 0 ? (double)Tb / (double)Ab : 0.000;
             }
 
             set
@@ -146,7 +146,7 @@ namespace ModelObjects
 		{
 			get
             {
-                return (AB + BB + HBP) > 0 ? (double)(H + BB + HBP) / (double)(AB + BB + HBP) : 0.00;
+                return (Ab + Bb + Hbp) > 0 ? (double)(H + Bb + Hbp) / (double)(Ab + Bb + Hbp) : 0.00;
             }
 
             set
@@ -172,7 +172,7 @@ namespace ModelObjects
 		{
 			get
             {
-                return AB + BB + HBP + SH + SF + INTR;
+                return Ab + Bb + Hbp + Sh + Sf + Intr;
             }
 
             set
@@ -207,9 +207,9 @@ namespace ModelObjects
 		{
 			bool isValid = true;
 
-			if (AB < (H + SO + RE))
+			if (Ab < (H + So + Re))
 				isValid = false;
-			else if (H < (D + T + HR))
+			else if (H < (C2B + C3B + Hr))
 				isValid = false;
 
 			return isValid;

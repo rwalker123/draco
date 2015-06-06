@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -9,36 +7,18 @@ namespace ModelObjects
 	/// </summary>
     public class PhotoGalleryAlbum
     {
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Title { get; set; } // Title
+        public long ParentAlbumId { get; set; } // ParentAlbumId
+        public long TeamId { get; set; } // TeamId
+
+        // Reverse navigation
+        public virtual ICollection<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery.FK_PhotoGallery_PhotoGalleryAlbum
+
         public PhotoGalleryAlbum()
         {
-            Photos = new Collection<PhotoGalleryItem>();
+            PhotoGalleries = new List<PhotoGalleryItem>();
         }
-
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long AccountId
-        {
-            get;
-            set;
-        }
-
-        public string Title
-        {
-            get;
-            set;
-        }
-
-        public long TeamId
-        {
-            get;
-            set;
-        }
-
-        public virtual ICollection<PhotoGalleryItem> Photos { get; set; }
-        public virtual Account Account { get; set; }
     }
 }

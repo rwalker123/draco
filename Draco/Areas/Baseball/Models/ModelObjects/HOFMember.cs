@@ -1,5 +1,3 @@
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
@@ -8,58 +6,14 @@ namespace ModelObjects
 /// </summary>
 	public class HOFMember
 	{
-		public HOFMember()
-		{
-		}
-	
-		public HOFMember(long id, int yearInducted, string bio, long accountId)
-		{
-			Id = id;
-			AccountId = accountId;
-			YearInducted = yearInducted;
-		    Biography = bio;
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public int YearInducted { get; set; } // YearInducted
+        public long ContactId { get; set; } // ContactId
+        public string Bio { get; set; } // Bio
 
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long AccountId
-        {
-            get;
-            set;
-        }
-
-        public long ContactId
-        {
-            get;
-            set;
-        }
-
-		public string Name
-		{
-			get;
-            set;
-		}
-
-        public int YearInducted
-        {
-            get;
-            set;
-        }
-
-        public string Biography
-        {
-            get;
-            set;
-        }
-
-        public string PhotoURL
-        {
-            get;
-            set;
-        }
-	}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_hof_Accounts
+        public virtual Contact Contact { get; set; } // FK_hof_Contacts
+    }
 }

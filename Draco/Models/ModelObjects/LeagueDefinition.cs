@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -9,29 +7,19 @@ namespace ModelObjects
 /// </summary>
 	public class LeagueDefinition
 	{
-		public LeagueDefinition()
-		{
-            LeagueSeasons = new Collection<LeagueSeason>();
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Name { get; set; } // Name
 
-        public long Id
-        {
-            get;
-            set;
-        }
-	
-		public long AccountId
-        {
-            get;
-            set;
-        }
+        // Reverse navigation
+        public virtual ICollection<LeagueSeason> LeagueSeasons { get; set; } // LeagueSeason.FK_LeagueSeason_League
 
-		public string Name
-        {
-            get;
-            set;
-        }
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_League_Accounts
 
-        public virtual ICollection<LeagueSeason> LeagueSeasons { get; set; }
+        public LeagueDefinition()
+        {
+            LeagueSeasons = new List<LeagueSeason>();
+        }
 	}
 }

@@ -7,59 +7,18 @@ namespace ModelObjects
     /// </summary>
     public class MessagePost
     {
-        public MessagePost()
-        {
-        }
+        public long Id { get; set; } // id (Primary key)
+        public long TopicId { get; set; } // TopicId
+        public int PostOrder { get; set; } // PostOrder
+        public long ContactCreatorId { get; set; } // ContactCreatorId
+        public DateTime PostDate { get; set; } // PostDate
+        public string PostText { get; set; } // PostText
+        public DateTime EditDate { get; set; } // EditDate
+        public string PostSubject { get; set; } // PostSubject
+        public long CategoryId { get; set; } // CategoryId
 
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long TopicId
-        {
-            get;
-            set;
-        }
-
-        public int Order
-        {
-            get;
-            set;
-        }
-
-        public long CreatorContactId
-        {
-            get;
-            set;
-        }
-
-        public DateTime CreateDate
-        {
-            get;
-            set;
-        }
-
-        public string Text
-        {
-            get;
-            set;
-        }
-
-        public DateTime EditDate
-        {
-            get;
-            set;
-        }
-
-        public string Subject
-        {
-            get;
-            set;
-        }
-
-        public virtual Contact Creator { get; set; }
-        public virtual MessageTopic Topic { get; set; }
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_MessagePost_Contacts
+        public virtual MessageTopic MessageTopic { get; set; } // FK_MessagePost_MessageTopic
     }
 }

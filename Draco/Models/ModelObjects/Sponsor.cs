@@ -1,6 +1,4 @@
 using SportsManager.Models.Utils;
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
@@ -11,39 +9,21 @@ namespace ModelObjects
 	{
 		private string m_logoName = "SponsorLogo.png";
 
-		public Sponsor()
-		{
-		}
-		public Sponsor(long id, string name, string streetAddress, string cityStateZip, string description, string eMail, string phone, string fax, string webSite, long teamId, long accountId)
-		{
-			Id = id;
-			AccountId = accountId;
-			Name = name;
-			StreetAddress = streetAddress;
-			CityStateZip = cityStateZip;
-			Description = description;
-			EMail = eMail;
-			Phone = phone;
-			Fax = fax;
-			Website = webSite;
-			TeamId = teamId;
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Name { get; set; } // Name
+        public string StreetAddress { get; set; } // StreetAddress
+        public string CityStateZip { get; set; } // CityStateZip
+        public string Description { get; set; } // Description
+        public string EMail { get; set; } // EMail
+        public string Phone { get; set; } // Phone
+        public string Fax { get; set; } // Fax
+        public string WebSite { get; set; } // WebSite
+        public long TeamId { get; set; } // TeamId
 
-		public long Id { get; set; }
-		public long AccountId { get; set; }
-		public string Name { get; set; }
-		public string StreetAddress { get; set; }
-		public string CityStateZip { get; set; }
-		public string Description { get; set; }
-		public string EMail { get; set; }
-		public string Phone { get; set; }
-		public string Fax { get; set; }
-		public string Website { get; set; }
-        public long ContactId { get; set; }
-		public long TeamId { get; set; }
-
-        public String ContactName { get; set; }
-        public String ContactPhotoUrl { get; set; }
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_Sponsors_Accounts
+        public virtual Team Team { get; set; } // FK_Sponsors_Teams
 
         public string SponsorsDir
         {

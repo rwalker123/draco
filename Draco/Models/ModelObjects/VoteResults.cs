@@ -11,29 +11,8 @@ namespace ModelObjects
         {
         }
 
-		public VoteResults(long optionId, string optionText, int totalVotes)
-		{
-			OptionId = optionId;
-			TotalVotes = totalVotes;
-			OptionText = optionText;
-		}
-
-		public long OptionId
-		{
-			get;
-			set;
-		}
-
-		public int TotalVotes
-		{
-			get;
-			set;
-		}
-
-		public string OptionText
-		{
-			get;
-			set;
-		}
+		public long OptionId { get; set; }
+		public int TotalVotes { get; set; }
+		public string OptionText { get; set; }
 	}
 }

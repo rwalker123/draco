@@ -1,4 +1,3 @@
-using System;
 
 namespace ModelObjects
 {
@@ -7,34 +6,13 @@ namespace ModelObjects
 /// </summary>
 	public class DivisionSeason
 	{
-		public DivisionSeason()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long DivisionId { get; set; } // DivisionId
+        public long LeagueSeasonId { get; set; } // LeagueSeasonId
+        public int Priority { get; set; } // Priority
 
-        public long Id
-        {
-            get;
-            set;
-        }
-	
-		public long DivisionId
-		{
-            get;
-            set;
-        }
-
-        public long LeagueSeasonId
-        {
-            get;
-            set;
-        }
-
-        public int Priority
-		{
-            get;
-            set;
-        }
-
-        public virtual DivisionDefinition DivisionDefinition { get; set; }
+        // Foreign keys
+        public virtual DivisionDefinition DivisionDef { get; set; } // FK_DivisionSeason_DivisionDefs
+        public virtual LeagueSeason LeagueSeason { get; set; } // FK_DivisionSeason_LeagueSeason
     }
 }

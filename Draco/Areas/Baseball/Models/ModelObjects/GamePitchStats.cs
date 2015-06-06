@@ -97,102 +97,43 @@ namespace ModelObjects
     /// </summary>
     public class GamePitchStats
     {
-        public long Id { get; set; }
-        public long PlayerId { get; set; }
-        public long GameId { get; set; }
-        public long TeamId { get; set; }
-        public int IP { get; set; }
-        public int IP2 { get; set; }
-        public int BF { get; set; }
-        public int W { get; set; }
-        public int L { get; set; }
-        public int S { get; set; }
-        public int H { get; set; }
-        public int R { get; set; }
-        public int ER { get; set; }
-        public int D { get; set; }
-        public int T { get; set; }
-        public int HR { get; set; }
-        public int SO { get; set; }
-        public int BB { get; set; }
-        public int WP { get; set; }
-        public int HBP { get; set; }
-        public int BK { get; set; }
-        public int SC { get; set; }
+        public long Id { get; set; } // id (Primary key)
+        public long PlayerId { get; set; } // PlayerId
+        public long GameId { get; set; } // GameId
+        public long TeamId { get; set; } // TeamId
+        public int Ip { get; set; } // IP
+        public int Ip2 { get; set; } // IP2
+        public int Bf { get; set; } // BF
+        public int W { get; set; } // W
+        public int L { get; set; } // L
+        public int S { get; set; } // S
+        public int H { get; set; } // H
+        public int R { get; set; } // R
+        public int Er { get; set; } // ER
+        public int C2B { get; set; } // 2B
+        public int C3B { get; set; } // 3B
+        public int Hr { get; set; } // HR
+        public int So { get; set; } // SO
+        public int Bb { get; set; } // BB
+        public int Wp { get; set; } // WP
+        public int Hbp { get; set; } // HBP
+        public int Bk { get; set; } // BK
+        public int Sc { get; set; } // SC
+        public int? Tb { get; set; } // TB
+        public int? Ab { get; set; } // AB
+        public int? WhipNumerator { get; set; } // WHIPNumerator
+        public int? IpNumerator { get; set; } // IPNumerator
 
-        public GamePitchStats()
-        {
-        }
-
-        public GamePitchStats(long statsId, long playerId, long gameId, long teamId, int ip, int ip2, int bf,
-                              int w, int l, int s, int h, int r, int er, int d, int t, int hr,
-                              int so, int bb, int wp, int hbp, int bk, int sc)
-        {
-            Id = statsId;
-            PlayerId = playerId;
-            GameId = gameId;
-            TeamId = teamId;
-            IP = ip;
-            IP2 = ip2;
-            BF = bf;
-            W = w;
-            L = l;
-            S = s;
-            H = h;
-            R = r;
-            ER = er;
-            D = d;
-            T = t;
-            HR = hr;
-            SO = so;
-            BB = bb;
-            WP = wp;
-            HBP = hbp;
-            BK = bk;
-            SC = sc;
-        }
-
-        public int TB
-        {
-            get;
-            set;
-        }
-
-        public int AB
-        {
-            get;
-            set;
-        }
-
-        public int WHIPNumerator
-        {
-            get;
-            set;
-        }
-
-        public int IPNumerator
-        {
-            get;
-            set;
-        }
-
-        public double OBA
-        {
-            get;
-            set;
-        }
-
-        public double SLG
-        {
-            get;
-            set;
-        }
+        // Foreign keys
+        public virtual Game LeagueSchedule { get; set; } // FK_pitchstatsum_LeagueSchedule
+        public virtual PlayerSeason RosterSeason { get; set; } // FK_pitchstatsum_RosterSeason
+        public virtual TeamSeason TeamsSeason { get; set; } // FK_pitchstatsum_TeamsSeason
 
         public double IPDecimal
         {
             get
             {
-                return (double)IP + (IP2 / 3) + (IP2 % 3) / 10.0;
+                return (double)Ip + (Ip2 / 3) + (Ip2 % 3) / 10.0;
             }
 
             set
@@ -207,7 +148,7 @@ namespace ModelObjects
             {
                 if (IPDecimal > 0.0)
                 {
-                    return (double)ER * 9.0 / IPDecimal;
+                    return (double)Er * 9.0 / IPDecimal;
                 }
                 else
                 {
@@ -227,7 +168,7 @@ namespace ModelObjects
             {
                 if (IPDecimal > 0.0)
                 {
-                    return ((double)H + (double)BB) / IPDecimal;
+                    return ((double)H + (double)Bb) / IPDecimal;
                 }
                 else
                 {
@@ -247,7 +188,7 @@ namespace ModelObjects
             {
                 if (IPDecimal > 0.0)
                 {
-                    return (double)SO / IPDecimal * 9.0;
+                    return (double)So / IPDecimal * 9.0;
                 }
                 else
                 {
@@ -267,7 +208,7 @@ namespace ModelObjects
             {
                 if (IPDecimal > 0.0)
                 {
-                    return (double)BB / IPDecimal * 9.0;
+                    return (double)Bb / IPDecimal * 9.0;
                 }
                 else
                 {
@@ -303,11 +244,11 @@ namespace ModelObjects
         {
             bool isValid = true;
 
-            if (H + BB + HBP + SO > BF)
+            if (H + Bb + Hbp + So > Bf)
                 isValid = false;
-            else if (ER > R)
+            else if (Er > R)
                 isValid = false;
-            else if (H < D + T + HR)
+            else if (H < C2B + C3B + Hr)
                 isValid = false;
 
             return isValid;

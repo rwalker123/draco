@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 
 namespace ModelObjects
 {
@@ -9,55 +8,24 @@ namespace ModelObjects
     /// </summary>
     public class MessageTopic
     {
+        public long Id { get; set; } // id (Primary key)
+        public long CategoryId { get; set; } // CategoryId
+        public long ContactCreatorId { get; set; } // ContactCreatorId
+        public DateTime TopicCreateDate { get; set; } // TopicCreateDate
+        public string Topic { get; set; } // Topic
+        public bool StickyTopic { get; set; } // StickyTopic
+        public long NumberOfViews { get; set; } // NumberOfViews
+
+        // Reverse navigation
+        public virtual ICollection<MessagePost> MessagePosts { get; set; } // MessagePost.FK_MessagePost_MessageTopic
+
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_MessageTopic_Contacts
+        public virtual MessageCategory MessageCategory { get; set; } // FK_MessageTopic_MessageCategory
+
         public MessageTopic()
         {
-            Posts = new Collection<MessagePost>();
+            MessagePosts = new List<MessagePost>();
         }
-
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long CategoryId
-        {
-            get;
-            set;
-        }
-
-        public long CreatorContactId
-        {
-            get;
-            set;
-        }
-
-        public DateTime CreateDate
-        {
-            get;
-            set;
-        }
-
-        public bool StickyTopic
-        {
-            get;
-            set;
-        }
-
-        public string TopicTitle
-        {
-            get;
-            set;
-        }
-
-        public long NumberOfViews
-        {
-            get;
-            set;
-        }
-
-        // TODO: LastPost can be retrieved by sorting
-        public virtual ICollection<MessagePost> Posts { get; set; }
-        public virtual MessageCategory Category { get; set; }
     }
 }

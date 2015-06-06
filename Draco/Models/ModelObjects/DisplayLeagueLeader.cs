@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace ModelObjects
 {
     public class DisplayLeagueLeader

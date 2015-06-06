@@ -513,7 +513,7 @@ namespace DataAccess
             return false;
         }
 
-        static public Team GetBracketWinner(long playoffId, int roundNo, int gameNo)
+        static public TeamSeason GetBracketWinner(long playoffId, int roundNo, int gameNo)
         {
             Team team = null;
 

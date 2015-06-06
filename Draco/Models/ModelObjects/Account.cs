@@ -1,8 +1,6 @@
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 
 namespace ModelObjects
 {
@@ -11,7 +9,7 @@ namespace ModelObjects
 	/// </summary>
 	public class Account
 	{
-		public enum AccountType
+		public enum eAccountType
 		{
 			Baseball = 1,
 			Bowling = 2,
@@ -42,24 +40,24 @@ namespace ModelObjects
 
         // Reverse navigation
         public virtual CurrentSeason CurrentSeason { get; set; } // CurrentSeason.FK_CurrentSeason_Accounts
-        public virtual HofNominationSetup HofNominationSetup { get; set; } // HOFNominationSetup.FK_HOFNominationSetup_Accounts
+        public virtual HOFNominationSetup HofNominationSetup { get; set; } // HOFNominationSetup.FK_HOFNominationSetup_Accounts
         public virtual ICollection<AccountHandout> AccountHandouts { get; set; } // AccountHandouts.FK_AccountHandouts_Accounts
         public virtual ICollection<AccountSetting> AccountSettings { get; set; } // Many to many mapping
         public virtual ICollection<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome.FK_AccountWelcome_Accounts
-        public virtual ICollection<AvailableField> AvailableFields { get; set; } // AvailableFields.FK_AvailableFields_Accounts
-        public virtual ICollection<DivisionDef> DivisionDefs { get; set; } // DivisionDefs.FK_DivisionDefs_Accounts
-        public virtual ICollection<GolfLeagueCours> GolfLeagueCours { get; set; } // Many to many mapping
-        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Accounts
-        public virtual ICollection<Hof> Hofs { get; set; } // hof.FK_hof_Accounts
-        public virtual ICollection<HofNomination> HofNominations { get; set; } // HOFNomination.FK_HOFNomination_Accounts
-        public virtual ICollection<League> Leagues { get; set; } // League.FK_League_Accounts
-        public virtual ICollection<LeagueFaq> LeagueFaqs { get; set; } // LeagueFAQ.FK_LeagueFAQ_Accounts
-        public virtual ICollection<LeagueNew> LeagueNews { get; set; } // LeagueNews.FK_LeagueNews_Accounts
-        public virtual ICollection<LeagueUmpire> LeagueUmpires { get; set; } // LeagueUmpires.FK_LeagueUmpires_Accounts
-        public virtual ICollection<PhotoGallery> PhotoGalleries { get; set; } // PhotoGallery.FK_PhotoGallery_Accounts
+        public virtual ICollection<Field> AvailableFields { get; set; } // AvailableFields.FK_AvailableFields_Accounts
+        public virtual ICollection<DivisionDefinition> DivisionDefs { get; set; } // DivisionDefs.FK_DivisionDefs_Accounts
+        //public virtual ICollection<GolfLeagueCours> GolfLeagueCours { get; set; } // Many to many mapping
+        //public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Accounts
+        public virtual ICollection<HOFMember> Hofs { get; set; } // hof.FK_hof_Accounts
+        public virtual ICollection<HOFNomination> HofNominations { get; set; } // HOFNomination.FK_HOFNomination_Accounts
+        public virtual ICollection<LeagueDefinition> Leagues { get; set; } // League.FK_League_Accounts
+        public virtual ICollection<LeagueFAQItem> LeagueFaqs { get; set; } // LeagueFAQ.FK_LeagueFAQ_Accounts
+        public virtual ICollection<LeagueNewsItem> LeagueNews { get; set; } // LeagueNews.FK_LeagueNews_Accounts
+        public virtual ICollection<Umpire> LeagueUmpires { get; set; } // LeagueUmpires.FK_LeagueUmpires_Accounts
+        public virtual ICollection<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery.FK_PhotoGallery_Accounts
         public virtual ICollection<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified.FK_PlayersWantedClassified_Accounts
-        public virtual ICollection<ProfileCategory> ProfileCategories { get; set; } // ProfileCategory.FK_ProfileCategory_Accounts
-        public virtual ICollection<Roster> Rosters { get; set; } // Roster.FK_Roster_Accounts
+        public virtual ICollection<ProfileCategoryItem> ProfileCategories { get; set; } // ProfileCategory.FK_ProfileCategory_Accounts
+        public virtual ICollection<Player> Rosters { get; set; } // Roster.FK_Roster_Accounts
         public virtual ICollection<Season> Seasons { get; set; } // Season.FK_Season_Accounts
         public virtual ICollection<Sponsor> Sponsors { get; set; } // Sponsors.FK_Sponsors_Accounts
         public virtual ICollection<Team> Teams { get; set; } // Teams.FK_Teams_Accounts
@@ -78,18 +76,18 @@ namespace ModelObjects
             AccountHandouts = new List<AccountHandout>();
             AccountSettings = new List<AccountSetting>();
             AccountWelcomes = new List<AccountWelcome>();
-            AvailableFields = new List<AvailableField>();
-            DivisionDefs = new List<DivisionDef>();
-            Hofs = new List<Hof>();
-            HofNominations = new List<HofNomination>();
-            Leagues = new List<League>();
-            LeagueFaqs = new List<LeagueFaq>();
-            LeagueNews = new List<LeagueNew>();
-            LeagueUmpires = new List<LeagueUmpire>();
-            PhotoGalleries = new List<PhotoGallery>();
+            AvailableFields = new List<Field>();
+            DivisionDefs = new List<DivisionDefinition>();
+            Hofs = new List<HOFMember>();
+            HofNominations = new List<HOFNomination>();
+            Leagues = new List<LeagueDefinition>();
+            LeagueFaqs = new List<LeagueFAQItem>();
+            LeagueNews = new List<LeagueNewsItem>();
+            LeagueUmpires = new List<Umpire>();
+            PhotoGalleries = new List<PhotoGalleryItem>();
             PlayersWantedClassifieds = new List<PlayersWantedClassified>();
-            ProfileCategories = new List<ProfileCategory>();
-            Rosters = new List<Roster>();
+            ProfileCategories = new List<ProfileCategoryItem>();
+            Rosters = new List<Player>();
             Seasons = new List<Season>();
             Sponsors = new List<Sponsor>();
             Teams = new List<Team>();

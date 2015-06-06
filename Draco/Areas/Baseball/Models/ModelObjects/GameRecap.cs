@@ -1,4 +1,3 @@
-using System;
 
 namespace ModelObjects
 {
@@ -8,28 +7,12 @@ namespace ModelObjects
 	/// </summary>
 	public class GameRecap
 	{
-		public GameRecap()
-		{
-		}
+        public long GameId { get; set; } // GameId (Primary key)
+        public long TeamId { get; set; } // TeamId (Primary key)
+        public string Recap { get; set; } // Recap
 
-		public long GameId
-		{
-			get;
-			set;
-		}
-
-		public long TeamId
-		{
-			get;
-			set;
-		}
-
-		public string Recap
-		{
-			get;
-			set;
-		}
-
-        public virtual Game Game { get; set; }
-	}
+        // Foreign keys
+        public virtual Game LeagueSchedule { get; set; } // FK_GameRecap_LeagueSchedule
+        public virtual TeamSeason TeamsSeason { get; set; } // FK_GameRecap_TeamsSeason
+    }
 }

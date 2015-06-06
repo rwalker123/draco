@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,41 +7,20 @@ namespace ModelObjects
 /// </summary>
 	public class VoteOption
 	{
-		public VoteOption()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long QuestionId { get; set; } // QuestionId
+        public string OptionText { get; set; } // OptionText
+        public int Priority { get; set; } // Priority
 
-		public VoteOption(long id, long questionId, string optionText, int priority)
-		{
-			QuestionId = questionId;
-			Id = id;
-			OptionText = optionText;
-			Priority = priority;
-		}
+        // Reverse navigation
+        public virtual ICollection<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers.FK_VoteAnswers_VoteOptions
 
-		public long QuestionId
-		{
-			get;
-			set;
-		}
+        // Foreign keys
+        public virtual VoteQuestion VoteQuestion { get; set; } // FK_VoteOptions_VoteQuestion
 
-		public long Id
-		{
-			get;
-			set;
-		}
-
-		public string OptionText
-		{
-			get;
-			set;
-		}
-
-		public int Priority
-		{
-			get;
-			set;
-		}
-
-	}
+        public VoteOption()
+        {
+            VoteAnswers = new List<VoteAnswer>();
+        }
+    }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,69 +8,24 @@ namespace ModelObjects
 	/// </summary>
 	public class WorkoutAnnouncement
 	{
-		public WorkoutAnnouncement()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string WorkoutDesc { get; set; } // WorkoutDesc
+        public DateTime WorkoutDate { get; set; } // WorkoutDate
+        public long FieldId { get; set; } // FieldId
+        public string Comments { get; set; } // Comments
 
-		public WorkoutAnnouncement(long id, long accountId, string description,
-			DateTime workoutDate, DateTime workoutTime, long workoutLocation, 
-            string comments)
-		{
-			Id = id;
-			AccountId = accountId;
-			Description = description;
-			WorkoutDate = workoutDate;
-			WorkoutLocation = workoutLocation;
-			Comments = comments;
-		}
+        // Reverse navigation
+        public virtual ICollection<WorkoutRegistrant> WorkoutRegistrations { get; set; } // WorkoutRegistration.FK_WorkoutRegistration_WorkoutAnnouncement
 
-		public long Id
-		{
-			get;
-			set;
-		}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_WorkoutAnnouncement_Accounts
+        public virtual Field AvailableField { get; set; } // FK_WorkoutAnnouncement_AvailableFields
 
-		public long AccountId
-		{
-			get;
-			set;
-		}
-
-        public string Description
+        public WorkoutAnnouncement()
         {
-            get;
-            set;
+            WorkoutRegistrations = new List<WorkoutRegistrant>();
         }
-
-        public DateTime WorkoutDate
-        {
-            get;
-            set;
-        }
-
-        public long WorkoutLocation
-        {
-            get;
-            set;
-        }
-
-        public string Comments
-        {
-            get;
-            set;
-        }
-
-        public string FieldName
-        {
-            get;
-            set;
-        }
-
-        public int NumRegistered
-        {
-            get;
-            set;
-        }
-	}
+    }
 }
 

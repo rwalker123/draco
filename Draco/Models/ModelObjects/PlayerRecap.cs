@@ -1,22 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
+﻿
 namespace ModelObjects
 {
     public partial class PlayerRecap
     {
-        public long PlayerId { get; set; }
+        public long PlayerId { get; set; } // PlayerId (Primary key)
+        public long TeamId { get; set; } // TeamId (Primary key)
+        public long GameId { get; set; } // GameId (Primary key)
 
-        public long TeamId { get; set; }
-
-        public long GameId { get; set; }
-
-        public virtual Game LeagueSchedule { get; set; }
-
-        public virtual TeamRosterSeason RosterSeason { get; set; }
-
-        public virtual Team Team { get; set; }
+        // Foreign keys
+        public virtual Game LeagueSchedule { get; set; } // FK_PlayerRecap_LeagueSchedule
+        public virtual PlayerSeason RosterSeason { get; set; } // FK_PlayerRecap_RosterSeason
+        public virtual TeamSeason TeamsSeason { get; set; } // FK_PlayerRecap_TeamsSeason
     }
 }

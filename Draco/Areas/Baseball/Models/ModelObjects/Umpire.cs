@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,14 +7,20 @@ namespace ModelObjects
 	/// </summary>
 	public class Umpire
 	{
-		public Umpire()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public long ContactId { get; set; } // ContactId
 
-        public long Id { get; set; }
-		public long AccountId { get; set; }
-        public long ContactId { get; set; }
+        // Reverse navigation
+        public virtual ICollection<GameEjection> GameEjections { get; set; } // GameEjections.FK_GameEjections_LeagueUmpires
 
-        public virtual Contact Contact { get; set; }
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_LeagueUmpires_Accounts
+        public virtual Contact Contact { get; set; } // FK_LeagueUmpires_Contacts
+        
+        public Umpire()
+        {
+            GameEjections = new List<GameEjection>();
+        }
 	}
 }
