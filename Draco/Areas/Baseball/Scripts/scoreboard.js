@@ -82,7 +82,7 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.getTodayGames = function () {
 
         var today = moment(new Date()).format('YYYY-MM-DD');
-        var tommorow = moment(new Date()).add('days', 1).format('YYYY-MM-DD');
+        var tommorow = moment(new Date()).add(1, 'days').format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate ge datetime'" + today + "' and GameDate lt datetime'" + tommorow + "'";
@@ -117,7 +117,7 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
     self.getYesterdaysGames = function () {
 
         var today = moment(new Date()).format('YYYY-MM-DD');
-        var yesterday = moment(new Date()).add('d', -1).format('YYYY-MM-DD');
+        var yesterday = moment(new Date()).add(-1, 'd').format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate ge datetime'" + yesterday + "' and GameDate lt datetime'" + today + "'";
@@ -176,8 +176,8 @@ var ScoreboardViewModel = function (accountId, isAdmin, teamId) {
 
     self.getGameSummaries = function () {
 
-        var endDate = moment(new Date()).add('d', -1).format('YYYY-MM-DD');
-        var startDate = moment(new Date()).add('d', -8).format('YYYY-MM-DD');
+        var endDate = moment(new Date()).add(-1, 'd').format('YYYY-MM-DD');
+        var startDate = moment(new Date()).add(-8, 'd').format('YYYY-MM-DD');
 
         var url = window.config.rootUri + '/odata/ScheduleOData/?accountId=' + self.accountId;
         url += "&$filter=GameDate ge datetime'" + startDate + "' and GameDate le datetime'" + endDate + "'";

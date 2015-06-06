@@ -26,7 +26,7 @@ var NewsItemViewModel = function (data) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.Date.DisplayDate = ko.computed(function () {
-        return moment(self.Date()).format("MMM DD, YYYY");
+        return moment(new Date(self.Date())).format("MMM DD, YYYY");
     });
 
     self.Id.isLoaded = ko.observable(self.Text().length > 0);

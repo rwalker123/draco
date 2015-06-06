@@ -154,11 +154,23 @@ var LeagueViewModel = function (data, accountId) {
     }
 
     self.deleteDivision = function (divisionVM) {
+        $("#deleteDivisionModal").modal("show");
+
+        $("#confirmDeleteDivisionBtn").one("click", function () {
+            self.doDeleteDivision(divisionVM);
+        });
+    }
+
+    self.doDeleteDivision = function (divisionVM) {
         var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + divisionVM.Id();
         $.ajax({
             type: "DELETE",
             url: url,
             success: function (divisionId) {
+                $.each(divisionVM.Teams(), function (index, teamVM) {
+                    self.Id.unassignedTeams.push(teamVM.toJS());
+                });
+
                 self.Id.Divisions.remove(divisionVM);
             }
         });

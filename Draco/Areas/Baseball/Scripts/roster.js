@@ -312,11 +312,21 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.getPlayers = function (query, cb) {
 
+        var lastName = query;
+        var firstName = '';
+
+        if (query.indexOf(',') > 0)
+        {
+            var names = query.split(',');
+            lastName = names[0].trim();
+            firstName = names[1].trim();
+        }
+
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availableplayers',
             data: {
-                lastName: query,
-                firstName: '',
+                lastName: lastName,
+                firstName: firstName,
                 page: 1
             },
             success: function (data) {

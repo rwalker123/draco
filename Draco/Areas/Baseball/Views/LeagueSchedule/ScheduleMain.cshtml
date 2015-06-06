@@ -140,11 +140,11 @@
                 <div class="form-group">
                     <label for="newGameAwayTeam" class="col-md-3 control-label">Away Team:</label>
                     <div class="col-md-9" data-bind="validationOptions: { insertMessages: false }">
-                        <select id="newGameAwayTeam" data-container="body" data-bind="selectPicker: AwayTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                        <select id="newGameAwayTeam" data-bind="selectPicker: AwayTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                     </div>
                     <label for="newGameHomeTeam" class="col-md-3 control-label">Home Team:</label>
                     <div class="col-md-9">
-                        <select id="newGameHomeTeam" data-container="body" data-bind="selectPicker: HomeTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                        <select id="newGameHomeTeam" data-bind="selectPicker: HomeTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                     </div>
                 </div>
                 <div class="form-group">
@@ -154,7 +154,7 @@
                 <div class="form-group">
                     <label for="newGameType" class="col-md-3 control-label">Game Type:</label>
                     <div class="col-md-9">
-                        <select id="newGameType" data-container="body" data-bind="selectPicker: GameType">
+                        <select id="newGameType" data-bind="selectPicker: GameType">
                             <option value="0">Regular</option>
                             <option value="1">Playoff</option>
                         </select>
@@ -164,7 +164,7 @@
                 <div class="form-group">
                     <label for="newGameField" class="col-md-3 control-label">Field:</label>
                     <div class="col-md-9">
-                        <select id="newGameField" data-container="body" data-bind="selectPicker: FieldId">
+                        <select id="newGameField" data-bind="selectPicker: FieldId">
                             <option value="0">select field...</option>
                             @foreach (var f in Model.Fields)
                             {
@@ -177,7 +177,7 @@
                 <div class="form-group">
                     <label for="newGameUmpires" class="col-md-3 control-label">Umpires:</label>
                     <div class="col-md-9">
-                        <select id="newGameUmpires" data-container="body" data-bind="selectPicker: Umpires, selectPickerOptions: { optionsArray: $root.allUmpires }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select umpires..."></select>
+                       <select id="newGameUmpires" data-bind="selectPicker: Umpires, selectPickerOptions: { optionsArray: $root.allUmpires }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select umpires..."></select>
                     </div>
                 </div>
 
