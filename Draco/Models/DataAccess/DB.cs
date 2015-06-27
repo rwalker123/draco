@@ -12,6 +12,42 @@ using SportsManager.Models.DataAccess;
 
 namespace DataAccess
 {
+    public interface IUnitOfWork : IDisposable
+    {
+        DbSet<T> Set<T>() where T : class;
+        void Commit();
+    }
+
+    public class UnitOfWork : IUnitOfWork
+    {
+        readonly DB _context;
+        private bool _isDisposed;
+
+        public UnitOfWork(DB context)
+        {
+            _context = context;
+        }
+
+        public DbSet<T> Set<T>() where T : class
+        {
+            return _context.Set<T>();
+        }
+
+        public void Commit()
+        {
+            _context.SaveChanges();
+        }
+
+        public void Dispose()
+        {
+            if (_isDisposed)
+                return;
+
+            _isDisposed = true;
+            _context.Dispose();
+        }
+    }
+
     internal class DB : DbContext
     {
         public DB()
@@ -85,66 +121,66 @@ namespace DataAccess
             modelBuilder.Configurations.Add(new WorkoutRegistrationConfiguration());
         }
 
-        public IDbSet<Account> Accounts { get; set; } // Accounts
-        public IDbSet<AccountHandout> AccountHandouts { get; set; } // AccountHandouts
-        public IDbSet<AccountSetting> AccountSettings { get; set; } // AccountSettings
-        public IDbSet<AccountType> AccountTypes { get; set; } // AccountTypes
-        public IDbSet<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome
-        public IDbSet<Affiliation> Affiliations { get; set; } // Affiliations
-        public IDbSet<Field> AvailableFields { get; set; } // AvailableFields
-        public IDbSet<GameBatStats> Batstatsums { get; set; } // batstatsum
-        public IDbSet<Contact> Contacts { get; set; } // Contacts
-        public IDbSet<ContactRole> ContactRoles { get; set; } // ContactRoles
-        public IDbSet<CurrentSeason> CurrentSeasons { get; set; } // CurrentSeason
-        public IDbSet<DisplayLeagueLeader> DisplayLeagueLeaders { get; set; } // DisplayLeagueLeaders
-        public IDbSet<DivisionDefinition> DivisionDefs { get; set; } // DivisionDefs
-        public IDbSet<DivisionSeason> DivisionSeasons { get; set; } // DivisionSeason
-        public IDbSet<FieldContact> FieldContacts { get; set; } // FieldContacts
-        //public IDbSet<Fieldstatsum> Fieldstatsums { get; set; } // fieldstatsum
-        public IDbSet<GameEjection> GameEjections { get; set; } // GameEjections
-        public IDbSet<GameRecap> GameRecaps { get; set; } // GameRecap
-        public IDbSet<HOFMember> Hofs { get; set; } // hof
-        public IDbSet<HOFNomination> HofNominations { get; set; } // HOFNomination
-        public IDbSet<HOFNominationSetup> HofNominationSetups { get; set; } // HOFNominationSetup
-        public IDbSet<LeagueDefinition> Leagues { get; set; } // League
-        public IDbSet<LeagueEvent> LeagueEvents { get; set; } // LeagueEvents
-        public IDbSet<LeagueFAQItem> LeagueFaqs { get; set; } // LeagueFAQ
-        public IDbSet<LeagueNewsItem> LeagueNews { get; set; } // LeagueNews
-        public IDbSet<Game> LeagueSchedules { get; set; } // LeagueSchedule
-        public IDbSet<LeagueSeason> LeagueSeasons { get; set; } // LeagueSeason
-        public IDbSet<Umpire> LeagueUmpires { get; set; } // LeagueUmpires
-        public IDbSet<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness
-        public IDbSet<MessageCategory> MessageCategories { get; set; } // MessageCategory
-        public IDbSet<MessagePost> MessagePosts { get; set; } // MessagePost
-        public IDbSet<MessageTopic> MessageTopics { get; set; } // MessageTopic
-        public IDbSet<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery
-        public IDbSet<PhotoGalleryAlbum> PhotoGalleryAlbums { get; set; } // PhotoGalleryAlbum
-        public IDbSet<GamePitchStats> Pitchstatsums { get; set; } // pitchstatsum
-        public IDbSet<ProfileQuestionAnswer> PlayerProfiles { get; set; } // PlayerProfile
-        public IDbSet<PlayerRecap> PlayerRecaps { get; set; } // PlayerRecap
-        public IDbSet<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // PlayerSeasonAffiliationDues
-        public IDbSet<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified
-        public IDbSet<PlayoffBracket> PlayoffBrackets { get; set; } // PlayoffBracket
-        public IDbSet<PlayoffGame> PlayoffGames { get; set; } // PlayoffGame
-        public IDbSet<PlayoffSeed> PlayoffSeeds { get; set; } // PlayoffSeeds
-        public IDbSet<PlayoffSetup> PlayoffSetups { get; set; } // PlayoffSetup
-        public IDbSet<ProfileCategoryItem> ProfileCategories { get; set; } // ProfileCategory
-        public IDbSet<ProfileQuestionItem> ProfileQuestions { get; set; } // ProfileQuestion
-        public IDbSet<Player> Rosters { get; set; } // Roster
-        public IDbSet<PlayerSeason> RosterSeasons { get; set; } // RosterSeason
-        public IDbSet<Season> Seasons { get; set; } // Season
-        public IDbSet<Sponsor> Sponsors { get; set; } // Sponsors
-        public IDbSet<Team> Teams { get; set; } // Teams
-        public IDbSet<TeamHandout> TeamHandouts { get; set; } // TeamHandouts
-        public IDbSet<TeamNewsItem> TeamNews { get; set; } // TeamNews
-        public IDbSet<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager
-        public IDbSet<TeamSeason> TeamsSeasons { get; set; } // TeamsSeason
-        public IDbSet<TeamsWantedClassified> TeamsWantedClassifieds { get; set; } // TeamsWantedClassified
-        public IDbSet<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers
-        public IDbSet<VoteOption> VoteOptions { get; set; } // VoteOptions
-        public IDbSet<VoteQuestion> VoteQuestions { get; set; } // VoteQuestion
-        public IDbSet<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement
-        public IDbSet<WorkoutRegistrant> WorkoutRegistrations { get; set; } // WorkoutRegistration
+        public DbSet<Account> Accounts { get; set; } // Accounts
+        public DbSet<AccountHandout> AccountHandouts { get; set; } // AccountHandouts
+        public DbSet<AccountSetting> AccountSettings { get; set; } // AccountSettings
+        public DbSet<AccountType> AccountTypes { get; set; } // AccountTypes
+        public DbSet<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome
+        public DbSet<Affiliation> Affiliations { get; set; } // Affiliations
+        public DbSet<Field> AvailableFields { get; set; } // AvailableFields
+        public DbSet<GameBatStats> Batstatsums { get; set; } // batstatsum
+        public DbSet<Contact> Contacts { get; set; } // Contacts
+        public DbSet<ContactRole> ContactRoles { get; set; } // ContactRoles
+        public DbSet<CurrentSeason> CurrentSeasons { get; set; } // CurrentSeason
+        public DbSet<DisplayLeagueLeader> DisplayLeagueLeaders { get; set; } // DisplayLeagueLeaders
+        public DbSet<DivisionDefinition> DivisionDefs { get; set; } // DivisionDefs
+        public DbSet<DivisionSeason> DivisionSeasons { get; set; } // DivisionSeason
+        public DbSet<FieldContact> FieldContacts { get; set; } // FieldContacts
+        //public DbSet<Fieldstatsum> Fieldstatsums { get; set; } // fieldstatsum
+        public DbSet<GameEjection> GameEjections { get; set; } // GameEjections
+        public DbSet<GameRecap> GameRecaps { get; set; } // GameRecap
+        public DbSet<HOFMember> Hofs { get; set; } // hof
+        public DbSet<HOFNomination> HofNominations { get; set; } // HOFNomination
+        public DbSet<HOFNominationSetup> HofNominationSetups { get; set; } // HOFNominationSetup
+        public DbSet<LeagueDefinition> Leagues { get; set; } // League
+        public DbSet<LeagueEvent> LeagueEvents { get; set; } // LeagueEvents
+        public DbSet<LeagueFAQItem> LeagueFaqs { get; set; } // LeagueFAQ
+        public DbSet<LeagueNewsItem> LeagueNews { get; set; } // LeagueNews
+        public DbSet<Game> LeagueSchedules { get; set; } // LeagueSchedule
+        public DbSet<LeagueSeason> LeagueSeasons { get; set; } // LeagueSeason
+        public DbSet<Umpire> LeagueUmpires { get; set; } // LeagueUmpires
+        public DbSet<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness
+        public DbSet<MessageCategory> MessageCategories { get; set; } // MessageCategory
+        public DbSet<MessagePost> MessagePosts { get; set; } // MessagePost
+        public DbSet<MessageTopic> MessageTopics { get; set; } // MessageTopic
+        public DbSet<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery
+        public DbSet<PhotoGalleryAlbum> PhotoGalleryAlbums { get; set; } // PhotoGalleryAlbum
+        public DbSet<GamePitchStats> Pitchstatsums { get; set; } // pitchstatsum
+        public DbSet<ProfileQuestionAnswer> PlayerProfiles { get; set; } // PlayerProfile
+        public DbSet<PlayerRecap> PlayerRecaps { get; set; } // PlayerRecap
+        public DbSet<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // PlayerSeasonAffiliationDues
+        public DbSet<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified
+        public DbSet<PlayoffBracket> PlayoffBrackets { get; set; } // PlayoffBracket
+        public DbSet<PlayoffGame> PlayoffGames { get; set; } // PlayoffGame
+        public DbSet<PlayoffSeed> PlayoffSeeds { get; set; } // PlayoffSeeds
+        public DbSet<PlayoffSetup> PlayoffSetups { get; set; } // PlayoffSetup
+        public DbSet<ProfileCategoryItem> ProfileCategories { get; set; } // ProfileCategory
+        public DbSet<ProfileQuestionItem> ProfileQuestions { get; set; } // ProfileQuestion
+        public DbSet<Player> Rosters { get; set; } // Roster
+        public DbSet<PlayerSeason> RosterSeasons { get; set; } // RosterSeason
+        public DbSet<Season> Seasons { get; set; } // Season
+        public DbSet<Sponsor> Sponsors { get; set; } // Sponsors
+        public DbSet<Team> Teams { get; set; } // Teams
+        public DbSet<TeamHandout> TeamHandouts { get; set; } // TeamHandouts
+        public DbSet<TeamNewsItem> TeamNews { get; set; } // TeamNews
+        public DbSet<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager
+        public DbSet<TeamSeason> TeamsSeasons { get; set; } // TeamsSeason
+        public DbSet<TeamsWantedClassified> TeamsWantedClassifieds { get; set; } // TeamsWantedClassified
+        public DbSet<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers
+        public DbSet<VoteOption> VoteOptions { get; set; } // VoteOptions
+        public DbSet<VoteQuestion> VoteQuestions { get; set; } // VoteQuestion
+        public DbSet<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement
+        public DbSet<WorkoutRegistrant> WorkoutRegistrations { get; set; } // WorkoutRegistration
     }
 
     internal class GolfDB : DbContext
@@ -1555,6 +1591,7 @@ namespace DataAccess
 
             // Foreign keys
             HasRequired(a => a.Roster).WithMany(b => b.RosterSeasons).HasForeignKey(c => c.PlayerId); // FK_RosterSeason_Roster
+            HasRequired(a => a.TeamSeason).WithMany(b => b.Roster).HasForeignKey(c => c.TeamSeasonId); // FK_RosterSeason_TeamSeason
         }
     }
 
@@ -1694,6 +1731,7 @@ namespace DataAccess
             // Foreign keys
             HasRequired(a => a.LeagueSeason).WithMany(b => b.TeamsSeasons).HasForeignKey(c => c.LeagueSeasonId); // FK_TeamsSeason_LeagueSeason
             HasRequired(a => a.Team).WithMany(b => b.TeamsSeasons).HasForeignKey(c => c.TeamId); // FK_TeamsSeason_Teams
+            HasOptional(a => a.DivisionSeason).WithMany(b => b.TeamsSeasons).HasForeignKey(c => c.DivisionSeasonId); // FK_TeamsSeason_DivisionSeason
         }
     }
 

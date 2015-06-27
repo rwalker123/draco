@@ -1,5 +1,4 @@
-﻿using SportsManager;
-using SportsManager.Model;
+﻿using ModelObjects;
 using System.Linq;
 
 namespace DataAccess.Baseball

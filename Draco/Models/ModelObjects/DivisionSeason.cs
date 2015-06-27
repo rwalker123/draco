@@ -1,4 +1,5 @@
 
+using System.Collections.Generic;
 namespace ModelObjects
 {
 /// <summary>
@@ -14,5 +15,11 @@ namespace ModelObjects
         // Foreign keys
         public virtual DivisionDefinition DivisionDef { get; set; } // FK_DivisionSeason_DivisionDefs
         public virtual LeagueSeason LeagueSeason { get; set; } // FK_DivisionSeason_LeagueSeason
+        public virtual ICollection<TeamSeason> TeamsSeasons { get; set; } // FK_TeamsSeason_DivisionSeason
+
+        public DivisionSeason()
+        {
+            TeamsSeason = new List<TeamSeason>();
+        }
     }
 }

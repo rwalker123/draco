@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ModelObjects
 {
-    class PlayerSeason
+    public class PlayerSeason
     {
         public long Id { get; set; } // Id (Primary key)
         public long PlayerId { get; set; } // PlayerId
@@ -22,6 +22,7 @@ namespace ModelObjects
 
         // Foreign keys
         public virtual Player Roster { get; set; } // FK_RosterSeason_Roster
+        public virtual TeamSeason TeamSeason { get; set; } // FK_RosterSeason_TeamSeason
         
         public PlayerSeason()
         {

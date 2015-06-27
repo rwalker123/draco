@@ -2,7 +2,7 @@
 
 namespace ModelObjects
 {
-    class TeamSeason
+    public class TeamSeason
     {
         public long Id { get; set; } // id (Primary key)
         public long LeagueSeasonId { get; set; } // LeagueSeasonId
@@ -21,10 +21,12 @@ namespace ModelObjects
         public virtual ICollection<GamePitchStats> Pitchstatsums { get; set; } // pitchstatsum.FK_pitchstatsum_TeamsSeason
         public virtual ICollection<PlayerRecap> PlayerRecaps { get; set; } // Many to many mapping
         public virtual ICollection<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager.FK_TeamSeasonManager_TeamsSeason
+        public virtual ICollection<PlayerSeason> Roster { get; set; } // PlayerSeason.FK_RosterSeason_TeamSeason
 
         // Foreign keys
         public virtual LeagueSeason LeagueSeason { get; set; } // FK_TeamsSeason_LeagueSeason
         public virtual Team Team { get; set; } // FK_TeamsSeason_Teams
+        public virtual DivisionSeason DivisionSeason { get; set; } // FK_TeamsSeason_DivisionSeason
         
         public TeamSeason()
         {
@@ -38,6 +40,7 @@ namespace ModelObjects
             Pitchstatsums = new List<GamePitchStats>();
             PlayerRecaps = new List<PlayerRecap>();
             TeamSeasonManagers = new List<TeamManager>();
+            Roster = new List<PlayerSeason>();
         }
     }
 }

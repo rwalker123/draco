@@ -48,6 +48,18 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
+    <Reference Include="Autofac">
+      <HintPath>..\packages\Autofac.3.4.0\lib\net40\Autofac.dll</HintPath>
+    </Reference>
+    <Reference Include="Autofac.Integration.Mvc">
+      <HintPath>..\packages\Autofac.Mvc5.3.3.4\lib\net45\Autofac.Integration.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="AutoMapper">
+      <HintPath>..\packages\AutoMapper.3.3.1\lib\net40\AutoMapper.dll</HintPath>
+    </Reference>
+    <Reference Include="AutoMapper.Net4">
+      <HintPath>..\packages\AutoMapper.3.3.1\lib\net40\AutoMapper.Net4.dll</HintPath>
+    </Reference>
     <Reference Include="Common.Logging, Version=3.1.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Common.Logging.3.1.0\lib\net40\Common.Logging.dll</HintPath>
@@ -381,14 +393,14 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayersWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\EnterGameResults.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerClassifiedViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\UserAddressViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamScheduleViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\RosterCardViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\EnterGameResults.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerClassifiedViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamAddressViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UpcomingGamesViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamScheduleViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\RosterCardViewModel.cs" />
     <Compile Include="CleanMessageBoard.aspx.cs">
       <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -453,71 +465,25 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\Umpire.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutAnnouncement.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutRegistrant.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ManagersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\RosterViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeadersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueFieldsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueHomeViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueIndexViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueLeadersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonIndexViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueTeamsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerSearchViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ScheduleViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ScoreboardViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\SeasonStatisticsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\SettingsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\WorkoutsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\StandingsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamStatisticsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamViewModel.cs" />
-    <Compile Include="Areas\Golf\Controllers\CoursesController.cs" />
-    <Compile Include="Areas\Golf\Controllers\CourseTeeController.cs" />
-    <Compile Include="Areas\Golf\Controllers\FlightsController.cs" />
-    <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
-    <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
-    <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
-    <Compile Include="Areas\Golf\Controllers\LeagueHandicapsController.cs" />
-    <Compile Include="Areas\Golf\Controllers\PlayerController.cs" />
-    <Compile Include="Areas\Golf\Controllers\RostersController.cs" />
-    <Compile Include="Areas\Golf\Controllers\ScheduleController.cs" />
-    <Compile Include="Areas\Golf\Controllers\TeamsController.cs" />
-    <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfCourses.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\Golfer.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolferStats.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfLeagues.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfMatches.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfRosters.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfScores.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\TeeInformation.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfMatch.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfScore.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTee.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeInformation.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\CompletedMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\FlightViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfCourseViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfLeagueSetupViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfScoreViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfTeeViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueHandicapViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueHomeViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueIndexViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueMatchResultsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueScheduleViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueStandingsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\MatchResultsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerHandicapViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerHoleSkinViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerScoreViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PreviewMatchPlayerViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PreviewMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\TeamViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ManagersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\RosterViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeadersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueFieldsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueHomeViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueIndexViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueLeadersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueSeasonIndexViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueSeasonViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueTeamsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerSearchViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ScheduleViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ScoreboardViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\SeasonStatisticsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\SettingsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\StandingsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamStatisticsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamViewModel.cs" />
     <Compile Include="Controllers\AccountAPIController.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\AnnouncementAPIController.cs" />
@@ -553,7 +519,6 @@
     <Compile Include="Models\DataAccess\ContactRoles.cs" />
     <Compile Include="Models\DataAccess\Contacts.cs" />
     <Compile Include="Models\DataAccess\DB.cs" />
-    <Compile Include="Models\DataAccess\DBConnection.cs" />
     <Compile Include="Models\DataAccess\Divisions.cs" />
     <Compile Include="Models\DataAccess\LeagueEvents.cs" />
     <Compile Include="Models\DataAccess\LeagueFAQ.cs" />
@@ -639,28 +604,32 @@
     <Compile Include="Models\Utils\YearListData.cs" />
     <Compile Include="Models\ValidationAttributes.cs" />
     <Compile Include="Models\ViewEngine\MobileAwareViewEngine.cs" />
-    <Compile Include="Models\ViewModels\AccountViewModel.cs" />
-    <Compile Include="Models\ViewModels\AnnouncementsViewModel.cs" />
-    <Compile Include="Models\ViewModels\CreateSeasonViewModel.cs" />
-    <Compile Include="Models\ViewModels\HOFOfDayViewModel.cs" />
-    <Compile Include="Models\ViewModels\VideoViewModel.cs" />
-    <Compile Include="Models\ViewModels\UserPollViewModel.cs" />
-    <Compile Include="Models\ViewModels\PlayerSurveyViewModel.cs" />
-    <Compile Include="Models\ViewModels\DiscussionsViewModel.cs" />
-    <Compile Include="Models\ViewModels\DomainsViewModel.cs" />
-    <Compile Include="Models\ViewModels\EMailUsersViewModel.cs" />
-    <Compile Include="Models\ViewModels\HallOfFameViewModel.cs" />
-    <Compile Include="Models\ViewModels\LeagueCreateAccountViewModel.cs" />
-    <Compile Include="Models\ViewModels\LeagueSeasonsViewModel.cs" />
-    <Compile Include="Models\ViewModels\MemberBusinessViewModel.cs" />
-    <Compile Include="Models\ViewModels\PhotoGalleryViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\LeagueViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\TeamManagerViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\TeamViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\AccountViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\AnnouncementsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\CreateSeasonViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\DivisionViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HOFOfDayViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\VideoViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UserPollViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\PlayerSurveyViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\DiscussionsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\DomainsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\EMailUsersViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HallOfFameViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\LeagueCreateAccountViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\LeagueSeasonsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\MemberBusinessViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\PhotoGalleryViewModel.cs" />
     <Compile Include="Models\ViewModels\RolesViewModel.cs" />
-    <Compile Include="Models\ViewModels\SponsorsViewModel.cs" />
-    <Compile Include="Models\ViewModels\UserRolesViewModel.cs" />
-    <Compile Include="Models\ViewModels\UsersViewModel.cs" />
-    <Compile Include="Models\ViewModels\BirthdayViewModel.cs" />
-    <Compile Include="Models\ViewModels\HandoutsViewModel.cs" />
-    <Compile Include="Models\ViewModels\WelcomeMessageViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\SponsorsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UserRolesViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UsersViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\BirthdayViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HandoutsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\WelcomeMessageViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\ApplicationOAuthProvider.cs" />
     <Compile Include="Results\ChallengeResult.cs" />
@@ -942,63 +911,6 @@
     <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
     <Content Include="Areas\Baseball\Views\Web.config" />
     <Content Include="Areas\Baseball\Views\_ViewStart.cshtml" />
-    <Content Include="Areas\Golf\Views\Courses\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Courses\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\CourseTee\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Flights\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Flights\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Golf\GolfHome.cshtml" />
-    <Content Include="Areas\Golf\Views\Individual\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\LeagueHandicaps\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\League\CreateAccount.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Home.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Home.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\League\LeagueSetup.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\Index.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\PlayerAllScores.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\PlayerAllScores.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\RostersGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\SignPlayer.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\SubsIndex.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\CompleteSchedule.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\LeagueStandings.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\LeagueStandings.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MatchResults.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MobileRecentMatch.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\PreviewMatch.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ScheduleGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowLeagueMatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowMatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowMatchResults.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerMatchPreview.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScore.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreView.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreViewMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\CoursesDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\DayOfWeekSelector.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\EighteenNineSelector.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\IntCollectionData.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\MatchTypeDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\TeamsDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueStandings.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueStandingsMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_ShowMatches.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\ShowTeam.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\ShowTeam.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\TeamsGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Web.config" />
-    <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
@@ -1314,6 +1226,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Areas\Baseball\Models\ViewModels\API\" />
     <Folder Include="Areas\Baseball\Views\Workouts\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>
@@ -1371,6 +1284,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets'))" />
   </Target>
+  <Import Project="..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets" Condition="Exists('..\packages\AutoMapper.3.3.1\tools\AutoMapper.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

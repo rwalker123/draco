@@ -1,4 +1,5 @@
-﻿using SportsManager.Controllers.Attributes;
+﻿using DataAccess;
+using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,12 @@ namespace SportsManager.Areas.Baseball.Controllers
 {
     public class LeagueTeamsController : Controller
     {
+        private DB m_db;
+        public LeagueTeamsController(DB db)
+        {
+            m_db = db;
+        }
+
         //
         // GET: /Baseball/Teams/
 

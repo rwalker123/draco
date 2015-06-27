@@ -1,6 +1,4 @@
-﻿using SportsManager;
-using SportsManager.Model;
-using System;
+﻿using System;
 using System.Linq;
 
 /// <summary>
@@ -28,7 +26,7 @@ namespace DataAccess.SocialIntegration
             if (account != null)
             {
                 account.TwitterWidgetScript = script;
-                db.SubmitChanges();
+                db.SaveChanges();
                 return true;
             }
 
