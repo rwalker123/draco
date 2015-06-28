@@ -149,7 +149,7 @@ namespace DataAccess
             {
                 try
                 {
-                    var address = new MailAddress(reg.EMail);
+                    var address = new MailAddress(reg.EMail, reg.Name);
                     bccList.Add(address);
                 }
                 catch(Exception)

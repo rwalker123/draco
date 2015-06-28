@@ -384,7 +384,7 @@ namespace DataAccess
                 try
                 {
                     if (c.Email.Length > 0)
-                        bccList.Add(new MailAddress(c.Email));
+                        bccList.Add(new MailAddress(c.Email, c.FullNameFirst));
                 }
                 catch
                 {
