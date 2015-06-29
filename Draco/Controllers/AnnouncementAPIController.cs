@@ -1,5 +1,7 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,66 +13,45 @@ namespace SportsManager.Controllers
 {
     public class AnnouncementAPIController : ApiController
     {
+        private DB m_db;
+        public AnnouncementAPIController(DB db)
+        {
+            m_db = db;
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcements")]
         public HttpResponseMessage GetAnnouncements(long accountId)
         {
-            var allNews = DataAccess.LeagueNews.GetAllNews(accountId);
-            return ProcessNews(allNews);
+            var news = m_db.LeagueNews.Where(ln => ln.AccountId == accountId).OrderByDescending(ln => ln.Date);
+
+            var vm = Mapper.Map<IEnumerable<LeagueNewsItem>, NewsViewModel[]>(news);
+            return Request.CreateResponse<NewsViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("TeamAnnouncements")]
-        public HttpResponseMessage GetAnnouncements(long accountId, long teamSeasonId)
+        public HttpResponseMessage GetTeamAnnouncements(long accountId, long teamSeasonId)
         {
-            var allNews = DataAccess.TeamNews.GetTeamAnnouncements(teamSeasonId);
-            return ProcessNews(allNews);
-        }
+            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeason == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-        private HttpResponseMessage ProcessNews(IQueryable<LeagueNewsItem> allNews)
-        {
-            List<LeagueNewsItem> specialAnnouncments = new List<LeagueNewsItem>();
-            List<LeagueNewsItem> headlineLinks = new List<LeagueNewsItem>();
-            List<LeagueNewsItem> otherLinks = new List<LeagueNewsItem>();
-
-            int NumHeadlineLinks = 3;
-
-            foreach (var news in allNews)
-            {
-                if (news.SpecialAnnounce)
-                {
-                    specialAnnouncments.Add(news);
-                }
-                else if (headlineLinks.Count < NumHeadlineLinks)
-                {
-                    news.Text = String.Empty; // don't send back text improve performance.
-                    headlineLinks.Add(news);
-                }
-                else
-                {
-                    news.Text = String.Empty; // don't send back text improve performance.
-                    otherLinks.Add(news);
-                }
-            }
-
-            var newsResponse = new
-            {
-                SpecialNews = specialAnnouncments,
-                OtherNews = headlineLinks,
-                OlderNews = otherLinks
-            };
-
-            return Request.CreateResponse(HttpStatusCode.OK, newsResponse);
+            var news = teamSeason.Team.TeamNews.OrderByDescending(tn => tn.Date);
+            var vm = Mapper.Map<IEnumerable<TeamNewsItem>, NewsViewModel[]>(news);
+            return Request.CreateResponse<NewsViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcement")]
         public HttpResponseMessage GetAnnouncement(long accountId, long id)
         {
-            var newsItem = DataAccess.LeagueNews.GetNewsItem(id);
+
+            var newsItem = m_db.LeagueNews.Find(id);
             if (newsItem != null)
             {
-                return Request.CreateResponse<LeagueNewsItem>(HttpStatusCode.OK, newsItem);
+                var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
+                return Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -82,10 +63,11 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            var newsItem = DataAccess.TeamNews.GetTeamAnnouncement(id);
+            var newsItem = m_db.TeamNews.Find(id);
             if (newsItem != null)
             {
-                return Request.CreateResponse<LeagueNewsItem>(HttpStatusCode.OK, newsItem);
+                var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
+                return Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -96,19 +78,26 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
-        public HttpResponseMessage Announcement(long accountId, ModelObjects.LeagueNewsItem announcementData)
+        public HttpResponseMessage Announcement(long accountId, NewsViewModel announcementData)
         {
             if (ModelState.IsValid && announcementData != null)
             {
-                announcementData.Date = DateTime.Now;
+                var newsItem = new LeagueNewsItem()
+                {
+                    AccountId = accountId,
+                    Date = DateTime.Now,
+                    SpecialAnnounce = announcementData.SpecialAnnounce,
+                    Text = announcementData.Text ?? String.Empty,
+                    Title = announcementData.Title ?? "Title"
+                };
 
-                DataAccess.LeagueNews.AddNews(announcementData);
+                m_db.LeagueNews.Add(newsItem);
+                m_db.SaveChanges();
 
-                // Create a 201 response.
-                //var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
-                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
+                var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
+                var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.Created, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
             else
@@ -119,21 +108,25 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage Announcement(long accountId, long id, ModelObjects.LeagueNewsItem announcementData)
+        public HttpResponseMessage Announcement(long accountId, long id, NewsViewModel announcementData)
         {
             if (id != 0 && ModelState.IsValid && announcementData != null)
             {
-                announcementData.Date = DateTime.Now;
-
-                bool foundAnnouncement = DataAccess.LeagueNews.ModifyNews(announcementData);
-
-                if (!foundAnnouncement)
+                var newsItem = m_db.LeagueNews.Find(id);
+                if (newsItem == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
+                newsItem.Date = DateTime.Now;
+                newsItem.Text = newsItem.Text ?? String.Empty;
+                newsItem.Title = newsItem.Title ?? "Title";
+                newsItem.SpecialAnnounce = newsItem.SpecialAnnounce;
+                m_db.SaveChanges();
+
                 // Create a 200 response.
-                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.OK, announcementData);
+                var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
+                var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
             else
@@ -145,28 +138,33 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("Announcement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, ModelObjects.LeagueNewsItem announcementData)
+        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, NewsViewModel announcementData)
         {
             if (ModelState.IsValid && announcementData != null)
             {
                 announcementData.Date = DateTime.Now;
 
                 // convert teamSeasonId to teamId
-                var team = DataAccess.Teams.GetTeam(teamSeasonId);
-                if (team == null)
+                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                // need to use the teamId not team Season.
-                announcementData.AccountId = team.TeamId;
+                var newsItem = new TeamNewsItem()
+                {
+                    Date = DateTime.Now,
+                    SpecialAnnounce = announcementData.SpecialAnnounce,
+                    TeamId = teamSeason.TeamId,
+                    Text = announcementData.Text ?? String.Empty,
+                    Title = announcementData.Title ?? "Title"
+                };
 
-                if (!DataAccess.TeamNews.AddTeamAnnouncement(announcementData))
-                    return Request.CreateResponse(HttpStatusCode.BadRequest);
+                m_db.SaveChanges();
 
                 // Create a 201 response.
-                //var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
-                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.Created, announcementData);
+                var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
+                var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.Created, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
             else
@@ -178,29 +176,31 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("Announcement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id, ModelObjects.LeagueNewsItem announcementData)
+        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id, NewsViewModel announcementData)
         {
             if (id != 0 && ModelState.IsValid && announcementData != null)
             {
-                announcementData.Date = DateTime.Now;
-
                 // convert teamSeasonId to teamId
-                var team = DataAccess.Teams.GetTeam(teamSeasonId);
-                if (team == null)
+                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                // need to use the teamId not team Season.
-                announcementData.AccountId = team.TeamId;
-
-                bool foundAnnouncement = DataAccess.TeamNews.ModifyTeamAnnouncement(announcementData);
-
-                if (!foundAnnouncement)
+                var newsItem = m_db.TeamNews.Find(id);
+                if (newsItem.TeamId != teamSeason.TeamId)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                newsItem.Date = DateTime.Now;
+                newsItem.Title = announcementData.Title ?? "Title";
+                newsItem.Text = announcementData.Text ?? String.Empty;
+                newsItem.SpecialAnnounce = announcementData.SpecialAnnounce;
+
+                m_db.SaveChanges();
 
                 // Create a 200 response.
-                var response = Request.CreateResponse<ModelObjects.LeagueNewsItem>(HttpStatusCode.OK, announcementData);
+                var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
+                var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = announcementData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
             else
@@ -214,19 +214,17 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         public HttpResponseMessage Announcement(long accountid, long id)
         {
-            if (id > 0)
-            {
-                DataAccess.LeagueNews.RemoveNews(id);
+            var newsItem = m_db.LeagueNews.Find(id);
+            if (newsItem == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+            if (newsItem.AccountId != accountid)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-                return response;
-            }
+            m_db.LeagueNews.Remove(newsItem);
+            m_db.SaveChanges();
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
@@ -234,19 +232,21 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage DeleteTeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            if (id > 0)
-            {
-                DataAccess.TeamNews.RemoveTeamAnnouncement(id);
+            var newsItem = m_db.TeamNews.Find(id);
+            if (newsItem == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeasonId == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                return response;
-            }
+            if (newsItem.TeamId != teamSeason.TeamId)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            m_db.TeamNews.Remove(newsItem);
+            m_db.SaveChanges();
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
     }

@@ -393,6 +393,8 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayersWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\DivisionSetupViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\LeagueSetupViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\EnterGameResults.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerClassifiedViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
@@ -518,7 +520,7 @@
     <Compile Include="Models\DataAccess\Affiliations.cs" />
     <Compile Include="Models\DataAccess\ContactRoles.cs" />
     <Compile Include="Models\DataAccess\Contacts.cs" />
-    <Compile Include="Models\DataAccess\DB.cs" />
+    <Compile Include="Models\ModelObjects\DB.cs" />
     <Compile Include="Models\DataAccess\Divisions.cs" />
     <Compile Include="Models\DataAccess\LeagueEvents.cs" />
     <Compile Include="Models\DataAccess\LeagueFAQ.cs" />
@@ -561,7 +563,6 @@
     <Compile Include="Models\ModelObjects\DisplayLeagueLeader.cs" />
     <Compile Include="Models\ModelObjects\DivisionSeason.cs" />
     <Compile Include="Models\ModelObjects\DivisionDefinition.cs" />
-    <Compile Include="Models\ModelObjects\DivisionTeams.cs" />
     <Compile Include="Models\ModelObjects\TeamHandout.cs" />
     <Compile Include="Models\ModelObjects\HOFClass.cs" />
     <Compile Include="Models\ModelObjects\LeagueDefinition.cs" />
@@ -605,6 +606,7 @@
     <Compile Include="Models\ValidationAttributes.cs" />
     <Compile Include="Models\ViewEngine\MobileAwareViewEngine.cs" />
     <Compile Include="Models\ViewModels\API\LeagueViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\NewsViewModel.cs" />
     <Compile Include="Models\ViewModels\API\TeamManagerViewModel.cs" />
     <Compile Include="Models\ViewModels\API\TeamViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModel.cs" />
@@ -1226,7 +1228,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Areas\Baseball\Models\ViewModels\API\" />
     <Folder Include="Areas\Baseball\Views\Workouts\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>

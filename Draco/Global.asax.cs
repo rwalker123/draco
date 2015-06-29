@@ -95,6 +95,16 @@ namespace SportsManager
             Mapper.CreateMap<TeamSeason, TeamViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Team.AccountId))
                 .ForMember(vm => vm.LeagueName, opt => opt.MapFrom(model => model.LeagueSeason.League.Name));
+
+            Mapper.CreateMap<DivisionSeason, DivisionSetupViewModel>()
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.DivisionDef.AccountId))
+                .ForMember(vm => vm.DivisionDefId, opt => opt.MapFrom(model => model.DivisionId))
+                .ForMember(vm => vm.Teams, opt => opt.MapFrom(model => model.TeamsSeasons));
+
+            Mapper.CreateMap<LeagueNewsItem, NewsViewModel>();
+            Mapper.CreateMap<TeamNewsItem, NewsViewModel>()
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.TeamId));
+
         }
     }
 }

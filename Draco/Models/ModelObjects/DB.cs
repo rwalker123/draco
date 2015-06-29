@@ -1,16 +1,10 @@
-﻿using ModelObjects;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Configuration;
 using System.Data.Entity;
 using System.Data.Entity.ModelConfiguration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SportsManager.Models.DataAccess;
 
-namespace DataAccess
+namespace ModelObjects
 {
     public interface IUnitOfWork : IDisposable
     {

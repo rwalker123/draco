@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using DataAccess;
 using ModelObjects;
 using SportsManager.Models;
-using SportsManager.ViewModels;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
@@ -256,8 +254,6 @@ namespace SportsManager.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage LeagueSetup(long accountId, LeagueSetupViewModel leagueData)
         {
-            leagueData.AccountId = accountId;
-
             if (ModelState.IsValid && leagueData != null)
             {
                 var leagueDef = (from ld in m_db.Leagues
@@ -307,8 +303,6 @@ namespace SportsManager.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage UpdateLeagueSetup(long accountId, LeagueSetupViewModel leagueData)
         {
-            leagueData.AccountId = accountId;
-
             if (ModelState.IsValid && leagueData != null)
             {
                 var leagueDef = m_db.LeagueSeasons.Find(leagueData.Id);
@@ -369,21 +363,16 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("DivisionSetup")]
         public HttpResponseMessage GetDivisionSetup(long accountId, long id)
         {
-            var divisions = DataAccess.Divisions.GetDivisions(id);
+            var divisions = (from ds in m_db.DivisionSeasons
+                    join dd in m_db.DivisionDefs on ds.DivisionId equals dd.Id
+                    where ds.LeagueSeasonId == id
+                    orderby ds.Priority ascending, dd.Name ascending
+                    select ds).AsEnumerable();
+
             if (divisions != null)
             {
-                var divTeams = (from d in divisions
-                                select new ModelObjects.DivisionTeams()
-                                {
-                                    Id = d.Id,
-                                    Name = d.Name,
-                                    Priority = d.Priority,
-                                    LeagueId = d.LeagueId,
-                                    AccountId = d.AccountId,
-                                    Teams = DataAccess.Teams.GetDivisionTeams(d.Id)
-                                });
-
-                return Request.CreateResponse<IQueryable<ModelObjects.DivisionTeams>>(HttpStatusCode.OK, divTeams);
+                var vm = Mapper.Map<IEnumerable<DivisionSeason>, DivisionSetupViewModel[]>(divisions);
+                return Request.CreateResponse<IEnumerable<DivisionSetupViewModel>>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -396,37 +385,53 @@ namespace SportsManager.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DivisionSetup(long accountId, long id)
         {
-            if (DataAccess.Divisions.RemoveDivision(id))
+            var divSeason = m_db.DivisionSeasons.Find(id);
+            if (divSeason == null)
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+                
+            m_db.DivisionSeasons.Remove(divSeason);
+
+            foreach(var team in divSeason.TeamsSeasons)
+                team.DivisionSeasonId = 0;
+
+            bool divisionInUse = divSeason.DivisionDef.DivisionSeasons.Count > 1;
+            if (!divisionInUse)
             {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+                m_db.DivisionDefs.Remove(divSeason.DivisionDef);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            m_db.SaveChanges();
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("DivisionSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateDivisionSetup(long accountId, long id, DivisionViewModel division)
+        public HttpResponseMessage UpdateDivisionSetup(long accountId, long id, DivisionViewModel divisionData)
         {
-            
-
             if (ModelState.IsValid && divisionData != null)
             {
-                DataAccess.Divisions.ModifyDivision(divisionData);
+                var division = m_db.DivisionSeasons.Find(id);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                if (division != null)
                 {
-                    Content = new StringContent(divisionData.Id.ToString())
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionData.Id }));
-                return response;
+                    division.Priority = divisionData.Priority;
+                    division.DivisionDef.Name = divisionData.Name;
+                    m_db.SaveChanges();
+
+                    var response = new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(divisionData.Id.ToString())
+                    };
+                    response.Headers.Location =
+                        new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionData.Id }));
+                    return response;
+                }
+                else
+                {
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }
             }
             else
             {
@@ -437,23 +442,38 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("DivisionSetup")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage DivisionSetup(long accountId, ModelObjects.Division divisionData)
+        public HttpResponseMessage DivisionSetup(long accountId, DivisionSetupViewModel divisionData)
         {
             divisionData.AccountId = accountId;
 
             if (ModelState.IsValid && divisionData != null)
             {
-                long newDivId = DataAccess.Divisions.AddDivision(divisionData);
-                if (newDivId == 0)
+                var divisionDef = new DivisionDefinition()
+                {
+                    AccountId = divisionData.AccountId,
+                    Name = divisionData.Name
+                };
+
+                var divisionSeason = new DivisionSeason()
+                {
+                    DivisionDef = divisionDef,
+                    LeagueSeasonId = divisionData.LeagueSeasonId,
+                    Priority = divisionData.Priority
+                };
+
+                m_db.DivisionSeasons.Add(divisionSeason);
+                m_db.SaveChanges();
+
+                if (divisionSeason.Id == 0)
                     return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
                 // Create a 201 response.
                 var response = new HttpResponseMessage(HttpStatusCode.Created)
                 {
-                    Content = new StringContent(divisionData.Id.ToString())
+                    Content = new StringContent(divisionSeason.Id.ToString())
                 };
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionSeason.Id }));
                 return response;
             }
             else
@@ -465,21 +485,43 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("TeamDivision")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage TeamDivision(long accountId, long id, ModelObjects.Team teamData)
+        public HttpResponseMessage TeamDivision(long accountId, long id, TeamViewModel teamData)
         {
             teamData.AccountId = accountId;
-            teamData.LeagueId = id;
+            teamData.LeagueSeasonId = id;
 
             if (ModelState.IsValid && teamData != null)
             {
-                long newLeagueId = DataAccess.Teams.AddTeam(teamData);
-                if (newLeagueId == 0)
+                Team dbTeam = new Team()
+                {
+                    AccountId = accountId,
+                    WebAddress = String.Empty,
+                    YouTubeUserId = String.Empty,
+                    DefaultVideo = String.Empty
+                };
+
+                int nameLength = 25;
+
+                teamData.Name = teamData.Name.Trim();
+
+                TeamSeason dbTeamSeason = new TeamSeason()
+                {
+                    LeagueSeasonId = teamData.LeagueSeasonId,
+                    Team = dbTeam,
+                    DivisionSeasonId = teamData.DivisionSeasonId,
+                    Name = teamData.Name.Length <= nameLength ? teamData.Name : teamData.Name.Substring(0, nameLength)
+                };
+
+                m_db.TeamsSeasons.Add(dbTeamSeason);
+                m_db.SaveChanges();
+
+                if (dbTeamSeason.Id == 0)
                     return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
-                var team = DataAccess.Teams.GetTeam(newLeagueId);
-                var response = Request.CreateResponse<ModelObjects.Team>(HttpStatusCode.Created, team);
+                var vm = Mapper.Map<TeamSeason, TeamViewModel>(dbTeamSeason);
+                var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.Created, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = teamData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = dbTeamSeason.Id }));
                 return response;
             }
             else
@@ -491,25 +533,27 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("TeamDivision")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateTeamDivision(long accountId, long id, ModelObjects.Team teamData)
+        public HttpResponseMessage UpdateTeamDivision(long accountId, long id, TeamViewModel teamData)
         {
-            var team = DataAccess.Teams.GetTeam(teamData.Id);
-            if (team != null)
+            if (teamData != null && ModelState.IsValid)
             {
-                team.DivisionId = id;
-                if (DataAccess.Teams.ModifyTeam(team))
-                {
-                    // Create a 201 response.
-                    var response = Request.CreateResponse<ModelObjects.Team>(HttpStatusCode.OK, team);
-                    response.Headers.Location =
-                        new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
-                    return response;
-                }
+                var team = m_db.TeamsSeasons.Find(teamData.Id);
+                if (team == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                team.DivisionSeasonId = id;
+                team.Name = teamData.Name.Trim();
+                m_db.SaveChanges();
+
+                // Create a 201 response.
+                var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
+                var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
+                response.Headers.Location =
+                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
+                return response;
             }
-
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            else
+                return Request.CreateResponse(HttpStatusCode.InternalServerError);
         }
     }
 }
