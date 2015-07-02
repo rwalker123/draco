@@ -72,7 +72,7 @@ namespace SportsManager.Baseball.Controllers
             {
                 var toList = (from c in contactList
                               where !String.IsNullOrEmpty(c.Email)
-                              select new MailAddress(c.Email, c.FullNameFirst));
+                              select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
                 failedSends = Globals.MailMessage(HttpContext.Current.User.Identity.Name, toList, data);
                 SendSummaryMessage(toList.Except(failedSends), failedSends, HttpContext.Current.User.Identity.Name, data.Subject, data.Message);
             }

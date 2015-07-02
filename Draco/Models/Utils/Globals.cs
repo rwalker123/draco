@@ -9,11 +9,12 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
 using System.Net.Mime;
+using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.UI.WebControls;
 
 /// <summary>
 /// Summary description for Globals
@@ -106,63 +107,72 @@ static public class Globals
 
 	public static IEnumerable<MailAddress> MailMessage(string fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
 	{
-        Task.Factory.StartNew(() =>
+		List<MailAddress> failedSends = new List<MailAddress>();
+
+		MailAddress from = new MailAddress(fromEmail);
+
+		// Specify the message content.
+		MailMessage msg = new MailMessage();
+		msg.Subject = data.Subject;
+		msg.Body = data.Message;
+        msg.IsBodyHtml = true;
+		msg.From = from;
+
+		SmtpClient mailClient = new SmtpClient();
+
+        if (data.Attachments != null)
         {
-            MailAddress from = new MailAddress(fromEmail);
-
-            // Specify the message content.
-            MailMessage msg = new MailMessage();
-            msg.Subject = data.Subject;
-            msg.Body = data.Message;
-            msg.IsBodyHtml = true;
-            msg.From = from;
-
-            SmtpClient mailClient = new SmtpClient();
-
-            if (data.Attachments != null)
+            foreach (var attachment in data.Attachments)
             {
-                foreach (var attachment in data.Attachments)
-                {
-                    string fileName = HttpContext.Current.Server.MapPath(attachment.fileUri);
+                string fileName = HttpContext.Current.Server.MapPath(attachment.fileUri);
 
-                    // Create  the file attachment for this e-mail message.
-                    Attachment attachmentData = new Attachment(fileName, MediaTypeNames.Application.Octet);
-                    attachmentData.Name = attachment.fileName;
-                    // Add time stamp information for the file.
-                    ContentDisposition disposition = attachmentData.ContentDisposition;
-                    disposition.CreationDate = System.IO.File.GetCreationTime(fileName);
-                    disposition.ModificationDate = System.IO.File.GetLastWriteTime(fileName);
-                    disposition.ReadDate = System.IO.File.GetLastAccessTime(fileName);
-                    // Add the file attachment to this e-mail message.
-                    msg.Attachments.Add(attachmentData);
-                }
+                // Create  the file attachment for this e-mail message.
+                Attachment attachmentData = new Attachment(fileName, MediaTypeNames.Application.Octet);
+                attachmentData.Name = attachment.fileName;
+                // Add time stamp information for the file.
+                ContentDisposition disposition = attachmentData.ContentDisposition;
+                disposition.CreationDate = System.IO.File.GetCreationTime(fileName);
+                disposition.ModificationDate = System.IO.File.GetLastWriteTime(fileName);
+                disposition.ReadDate = System.IO.File.GetLastAccessTime(fileName);
+                // Add the file attachment to this e-mail message.
+                msg.Attachments.Add(attachmentData);
+            }
+        }
+
+		try
+		{
+            foreach (MailAddress ma in bccList)
+            {
+                msg.To.Add(ma);
+                mailClient.Send(msg);
+                msg.To.RemoveAt(0);
             }
 
-            try
-            {
-                foreach (MailAddress ma in bccList)
-                {
-                    msg.To.Add(ma);
-                    try
-                    {
-                        mailClient.Send(msg);
-                    }
-                    catch (Exception)
-                    {
+		}
+		catch (Exception ex)
+		{
+            Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+        }
 
-                    }
-                    msg.To.RemoveAt(0);
-                    Thread.Sleep(15000);
-                }
+		return failedSends;
+	}
 
-            }
-            catch (Exception ex)
-            {
-                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
-            }
-        });
+	public static void SetFailedSendsLabel(List<MailAddress> failedSends, Label errorLabel)
+	{
+		if (failedSends.Count > 0)
+		{
+			System.Text.StringBuilder sb = new System.Text.StringBuilder();
 
-        return new List<MailAddress>();
+			sb.Append("Failure sending your message has to " + failedSends.Count + " contacts. Delivery failed to the following Email addresses:<br/>");
+
+			foreach (MailAddress ma in failedSends)
+			{
+				sb.Append("<br/>" + ma.Address);
+			}
+
+			errorLabel.Text = sb.ToString();
+			errorLabel.Visible = true;
+		}
 	}
 
     public static void SetupAccountViewData(long accountId, ViewDataDictionary viewData)

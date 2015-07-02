@@ -246,7 +246,7 @@ namespace DataAccess
             var playersLooking = DataAccess.PlayerClassifieds.GetTeamsWanted(pw.AccountId, String.Empty);
             foreach (var playerLooking in playersLooking)
             {
-                bccList.Add(new MailAddress(playerLooking.EMail, playerLooking.Name));
+                bccList.Add(new MailAddress(playerLooking.EMail));
             }
 
             if (bccList.Any())
@@ -328,7 +328,7 @@ namespace DataAccess
             var teamsLooking = DataAccess.PlayerClassifieds.GetPlayersWanted(tw.AccountId);
             foreach (var teamLooking in teamsLooking)
             {
-                bccList.Add(new MailAddress(teamLooking.EMail, teamLooking.CreatedByName));
+                bccList.Add(new MailAddress(teamLooking.EMail));
             }
 
             if (bccList.Any())
