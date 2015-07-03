@@ -555,7 +555,7 @@
     <Compile Include="Models\ModelObjects\AccountWelcome.cs" />
     <Compile Include="Models\ModelObjects\Affiliation.cs" />
     <Compile Include="Models\ModelObjects\Contact.cs" />
-    <Compile Include="Models\ModelObjects\ContactName.cs" />
+    <Compile Include="Models\ViewModels\API\ContactNameViewModel.cs" />
     <Compile Include="Models\ModelObjects\ContactRole.cs" />
     <Compile Include="Models\ModelObjects\CurrentSeason.cs" />
     <Compile Include="Models\ModelObjects\CurrentSeasonInfo.cs" />
@@ -605,6 +605,7 @@
     <Compile Include="Models\Utils\YearListData.cs" />
     <Compile Include="Models\ValidationAttributes.cs" />
     <Compile Include="Models\ViewEngine\MobileAwareViewEngine.cs" />
+    <Compile Include="Models\ViewModels\API\ContactViewModel.cs" />
     <Compile Include="Models\ViewModels\API\LeagueViewModel.cs" />
     <Compile Include="Models\ViewModels\API\NewsViewModel.cs" />
     <Compile Include="Models\ViewModels\API\TeamManagerViewModel.cs" />

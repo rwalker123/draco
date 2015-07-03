@@ -1,17 +1,11 @@
 ﻿using Autofac;
 using Autofac.Integration.Mvc;
 using AutoMapper;
-using DataAccess;
 using Elmah;
 using ModelObjects;
 using SportsManager.Models;
-using SportsManager.ViewModels;
 using SportsManager.ViewModels.API;
-using System;
-using System.Collections.Generic;
 using System.Data.Entity;
-using System.Linq;
-using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
@@ -105,6 +99,7 @@ namespace SportsManager
             Mapper.CreateMap<TeamNewsItem, NewsViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.TeamId));
 
+            Mapper.CreateMap<Contact, ContactViewModel>();
         }
     }
 }

@@ -38,7 +38,7 @@ namespace ModelObjects
         public virtual ICollection<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness.FK_MemberBusiness_Contacts
         public virtual ICollection<MessagePost> MessagePosts { get; set; } // MessagePost.FK_MessagePost_Contacts
         public virtual ICollection<MessageTopic> MessageTopics { get; set; } // MessageTopic.FK_MessageTopic_Contacts
-        public virtual ICollection<PlayerProfile> PlayerProfiles { get; set; } // PlayerProfile.FK_PlayerProfile_Contacts
+        public virtual ICollection<ProfileQuestionAnswer> PlayerProfiles { get; set; } // PlayerProfile.FK_PlayerProfile_Contacts
         public virtual ICollection<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified.FK_PlayersWantedClassified_Contacts
         public virtual ICollection<Player> Rosters { get; set; } // Roster.FK_Roster_Contacts
         public virtual ICollection<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager.FK_TeamSeasonManager_Contacts
@@ -54,7 +54,7 @@ namespace ModelObjects
             MemberBusinesses = new List<MemberBusiness>();
             MessagePosts = new List<MessagePost>();
             MessageTopics = new List<MessageTopic>();
-            PlayerProfiles = new List<PlayerProfile>();
+            PlayerProfiles = new List<ProfileQuestionAnswer>();
             PlayersWantedClassifieds = new List<PlayersWantedClassified>();
             Rosters = new List<Player>();
             TeamSeasonManagers = new List<TeamManager>();
