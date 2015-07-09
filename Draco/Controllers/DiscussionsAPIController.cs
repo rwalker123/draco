@@ -5,21 +5,28 @@ using System.Net.Http;
 using System.Web.Http;
 using SportsManager.Models;
 using System;
+using System.Linq;
+using ModelObjects;
+using SportsManager.ViewModels.API;
 
 namespace SportsManager.Controllers
 {
     public class DiscussionsAPIController : ApiController
     {
+        private DB m_db;
+        public DiscussionsAPIController(DB db)
+        {
+            m_db = db;
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("categories")]
         public HttpResponseMessage GetCategories(long accountId)
         {
-            List<ModelObjects.MessageCategory> categories = new List<ModelObjects.MessageCategory>();
-
-            categories.AddRange(DataAccess.MessageBoard.GetCategoriesWithDetails(accountId));
+            var categories = m_db.MessageCategories.Where(mc => mc.AccountId == accountId && !mc.IsTeam).ToList();
 
             String userId = Globals.GetCurrentUserId();
-            ModelObjects.Contact contact = DataAccess.Contacts.GetContact(userId);
+            Contact contact = m_db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
 
             bool isAdmin = false;
 
@@ -38,16 +45,16 @@ namespace SportsManager.Controllers
             }
             if (contact != null || isAdmin)
             {
-                var teamCats = DataAccess.MessageBoard.GetContactTeamCategoriesWithDetails(accountId, contact);
+                var teamCats = GetContactTeamCategoriesWithDetails(accountId, contact, isAdmin);
                 if (teamCats != null)
                     categories.AddRange(teamCats);
 
-                var globalCats = DataAccess.MessageBoard.GetContactGlobalCategoriesWithDetails(accountId, contact);
+                var globalCats = GetContactGlobalCategoriesWithDetails(accountId, contact, isAdmin);
                 if (globalCats != null)
                     categories.AddRange(globalCats);
             }
 
-            return Request.CreateResponse<IEnumerable<ModelObjects.MessageCategory>>(HttpStatusCode.OK, categories);
+            return Request.CreateResponse<IEnumerable<MessageCategoryViewModel>>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -110,14 +117,14 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 topic.CategoryId = categoryId;
-                topic.CreatorContactId = 0;
+                topic.ContactCreatorId = 0;
                 var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
                 if (contact != null)
-                    topic.CreatorContactId = contact.Id;
+                    topic.ContactCreatorId = contact.Id;
 
                 if (DataAccess.MessageBoard.AddTopic(topic) > 0)
                 {
-                    topic.CreatorName = DataAccess.Contacts.GetContactName(topic.CreatorContactId);
+                    topic.Name = DataAccess.Contacts.GetContactName(topic.CreatorContactId);
                     return Request.CreateResponse<ModelObjects.MessageTopic>(HttpStatusCode.OK, topic);
                 }
             }
@@ -157,10 +164,10 @@ namespace SportsManager.Controllers
 
                 post.TopicId = topic.Id;
                 post.CategoryId = topic.CategoryId;
-                post.CreatorContactId = 0;
+                post.ContactCreatorId = 0;
                 var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
                 if (contact != null)
-                    post.CreatorContactId = contact.Id;
+                    post.ContactCreatorId = contact.Id;
 
                 if (DataAccess.MessageBoard.AddPost(post) > 0)
                     return Request.CreateResponse<ModelObjects.MessagePost>(HttpStatusCode.OK, post);
@@ -220,6 +227,116 @@ namespace SportsManager.Controllers
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
+        }
+
+        private IEnumerable<MessageCategory> GetContactTeamCategoriesWithDetails(long accountId, Contact contact, bool isAdmin)
+        {
+            IQueryable<long> teamIds;
+
+            if (isAdmin)
+            {
+                // admin can see all teams.
+                teamIds = (from cs in m_db.CurrentSeasons
+                           join ls in m_db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                           join l in m_db.Leagues on ls.LeagueId equals l.Id
+                           join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                           where cs.AccountId == accountId
+                           select ts.TeamId).Distinct();
+            }
+            else
+            {
+                // non-admin can see teams they are on Roster, a manager, or a "TeamAdmin" or "TeamPhotoAdmin"
+                teamIds = (from cs in m_db.CurrentSeasons
+                           join ls in m_db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                           join l in m_db.Leagues on ls.LeagueId equals l.Id
+                           join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                           join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                           join r in m_db.Rosters on rs.PlayerId equals r.Id
+                           where cs.AccountId == accountId && r.ContactId == contact.Id && !rs.Inactive
+                           select ts.TeamId).Union(
+                               (from cs in m_db.CurrentSeasons
+                                join ls in m_db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                                join l in m_db.Leagues on ls.LeagueId equals l.Id
+                                join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                join tsm in m_db.TeamSeasonManagers on ts.Id equals tsm.TeamSeasonId
+                                where cs.AccountId == accountId && tsm.ContactId == contact.Id
+                                select ts.TeamId)
+                               ).Union(
+                               (from cr in m_db.ContactRoles
+                                join c in m_db.Contacts on cr.ContactId equals c.Id
+                                join ur in m_db.AspNetRoles on cr.RoleId equals ur.Id
+                                where c.CreatorAccountId == accountId && cr.ContactId == contact.Id &&
+                                (ur.Name == "TeamAdmin" || ur.Name == "TeamPhotoAdmin")
+                                select cr.RoleData)
+                               ).Distinct();
+            }
+
+            List<MessageCategory> cats = new List<MessageCategory>();
+
+            if (!teamIds.Any())
+                return cats;
+
+            foreach (var teamId in teamIds)
+            {
+                MessageCategory messageCategory = (from mc in m_db.MessageCategories
+                                                   where mc.IsTeam && mc.AccountId == teamId
+                                                   select mc).SingleOrDefault();
+
+                if (messageCategory == null)
+                {
+                    messageCategory = new MessageCategory()
+                    {
+                        AccountId = teamId,
+                        CategoryOrder = 0,
+                        CategoryName = "{0} Chat",
+                        CategoryDescription = "Discussion forum available only to logged in team members",
+                        AllowAnonymousPost = false,
+                        AllowAnonymousTopic = false,
+                        IsTeam = true,
+                        IsModerated = false
+                    };
+
+                    m_db.MessageCategories.Add(messageCategory);
+                    m_db.SaveChanges();
+                }
+
+                cats.Add(messageCategory);
+
+            }
+
+            return cats;
+        }
+
+        private IQueryable<MessageCategory> GetContactGlobalCategoriesWithDetails(long accountId, Contact contact, bool isAdmin)
+        {
+            if (isAdmin || DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
+            {
+                return m_db.MessageCategories.Where(mc => mc.AccountId == 0);
+            }
+
+            return null;
+        }
+
+        private String GetTeamNameFromTeamId(long teamId)
+        {
+            var team = m_db.Teams.Find(teamId);
+            if (team == null)
+                return null;
+
+            var currentSeason = m_db.CurrentSeasons.Where(cs => cs.AccountId == team.AccountId).SingleOrDefault();
+            if (currentSeason == null)
+                return null;
+
+            var currentLeagues = m_db.LeagueSeasons.Where(ls => ls.SeasonId == currentSeason.SeasonId).Select(ls => ls.Id);
+
+            var teamSeason = m_db.TeamsSeasons.Where(ts => ts.TeamId == team.Id && currentLeagues.Contains(ts.LeagueSeasonId)).SingleOrDefault();
+            if (teamSeason == null)
+                return null;
+
+            return (from ls in m_db.LeagueSeasons
+                    join l in m_db.Leagues on ls.LeagueId equals l.Id
+                    where ls.Id == teamSeason.LeagueSeasonId
+                    select l.Name + " " + teamSeason.Name).SingleOrDefault();
         }
     }
 }

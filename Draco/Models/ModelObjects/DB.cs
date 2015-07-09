@@ -1247,6 +1247,7 @@ namespace ModelObjects
 
             // Foreign keys
             HasRequired(a => a.MessageTopic).WithMany(b => b.MessagePosts).HasForeignKey(c => c.TopicId); // FK_MessagePost_MessageTopic
+            HasRequired(a => a.MessageCategory).WithMany(b => b.MessagePosts).HasForeignKey(c => c.CategoryId); // FK_MessagePost_MessageCategory
             HasRequired(a => a.Contact).WithMany(b => b.MessagePosts).HasForeignKey(c => c.ContactCreatorId); // FK_MessagePost_Contacts
         }
     }

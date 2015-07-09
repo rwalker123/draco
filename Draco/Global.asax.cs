@@ -10,6 +10,7 @@ using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using System.Linq;
 
 namespace SportsManager
 {
@@ -100,6 +101,27 @@ namespace SportsManager
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.TeamId));
 
             Mapper.CreateMap<Contact, ContactViewModel>();
+
+            Mapper.CreateMap<MessagePost, MessagePostViewModel>()
+                .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
+                .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
+                .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.PostDate))
+                .ForMember(vm => vm.Subject, opt => opt.MapFrom(model => model.PostSubject))
+                .ForMember(vm => vm.Text, opt => opt.MapFrom(model => model.PostText));
+
+            Mapper.CreateMap<MessageCategory, MessageCategoryViewModel>()
+                .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.CategoryOrder))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.CategoryName))
+                .ForMember(vm => vm.Description, opt => opt.MapFrom(model => model.CategoryDescription))
+                .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
+                .ForMember(vm => vm.NumberOfThreads, opt => opt.MapFrom(model => model.MessageTopics.LongCount()));
+
+            Mapper.CreateMap<MessageTopic, MessageTopicViewModel>()
+                .ForMember(vm => vm.NumberOfReplies, opt => opt.MapFrom(model => model.MessagePosts.Count()))
+                .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
+                .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
+                .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.TopicCreateDate))
+                .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic));
         }
     }
 }

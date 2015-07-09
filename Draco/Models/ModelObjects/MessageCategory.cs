@@ -19,10 +19,12 @@ namespace ModelObjects
 
         // Reverse navigation
         public virtual ICollection<MessageTopic> MessageTopics { get; set; } // MessageTopic.FK_MessageTopic_MessageCategory
+        public virtual ICollection<MessagePost> MessagePosts { get; set; } // MessageTopic.FK_MessagePost_MessageCategory
 
         public MessageCategory()
         {
             MessageTopics = new List<MessageTopic>();
+            MessagePosts = new List<MessagePost>();
         }
     }
 }

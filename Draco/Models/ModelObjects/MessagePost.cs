@@ -20,5 +20,6 @@ namespace ModelObjects
         // Foreign keys
         public virtual Contact Contact { get; set; } // FK_MessagePost_Contacts
         public virtual MessageTopic MessageTopic { get; set; } // FK_MessagePost_MessageTopic
+        public virtual MessageCategory MessageCategory { get; set; }
     }
 }
