@@ -23,7 +23,13 @@
     @foreach (var league in Model.Leagues)
     {
         <div class="row">
-            <h2>@league.Name</h2>
+            <h2>@league.Name
+                @if (Model.IsAdmin)
+                {
+                    <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId?l=@league.Id' title="export address list to excel"><span class="glyphicon glyphicon-export">Rosters</span></a>
+                    <a class="btn btn-default noPrint" href='@Url.Content("~/baseball/leagueteams/exportAddressList/")@Model.AccountId?m=1&l=@league.Id' title="export managers address list to excel"><span class="glyphicon glyphicon-export">Managers</span></a>
+                }            
+            </h2>
 
             @foreach (var division in Model.Divisions(league.Id))
             {
