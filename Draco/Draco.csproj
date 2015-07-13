@@ -519,6 +519,7 @@
     <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFMemberViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\SponsorViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
     <Compile Include="Models\DataAccess\AccountHandouts.cs" />
     <Compile Include="Models\DataAccess\Accounts.cs" />

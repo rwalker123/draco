@@ -143,6 +143,10 @@ namespace SportsManager
             Mapper.CreateMap<HOFClass, HOFClassViewModel>();
 
             Mapper.CreateMap<LeagueFAQItem, FAQItemViewModel>();
+
+            Mapper.CreateMap<MemberBusiness, SponsorViewModel>()
+                .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
+                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL));
         }
     }
 }

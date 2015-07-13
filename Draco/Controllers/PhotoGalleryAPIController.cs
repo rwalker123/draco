@@ -10,7 +10,7 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class PhotoGalleryAPIController : ApiController
+    public class PhotoGalleryAPIController : DBApiController
     {
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("photos")]
