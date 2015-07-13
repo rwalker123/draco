@@ -102,6 +102,9 @@ namespace SportsManager
 
             Mapper.CreateMap<Contact, ContactViewModel>();
 
+            Mapper.CreateMap<Contact, ContactNameViewModel>()
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)));
+
             Mapper.CreateMap<MessagePost, MessagePostViewModel>()
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
@@ -122,6 +125,24 @@ namespace SportsManager
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.TopicCreateDate))
                 .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic));
+
+            Mapper.CreateMap<PhotoGalleryItem, PhotoViewModel>()
+                .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.AccountId));
+
+            Mapper.CreateMap<AccountHandout, HandoutViewModel>()
+                .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.AccountId));
+
+            Mapper.CreateMap<TeamHandout, HandoutViewModel>()
+                .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.TeamId));
+
+            Mapper.CreateMap<HOFMember, HOFMemberViewModel>()
+                .ForMember(vm => vm.Biography, opt => opt.MapFrom(model => model.Bio))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => Contact.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetLargePhotoURL(model.ContactId)));
+
+            Mapper.CreateMap<HOFClass, HOFClassViewModel>();
+
+            Mapper.CreateMap<LeagueFAQItem, FAQItemViewModel>();
         }
     }
 }

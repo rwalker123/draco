@@ -14,11 +14,11 @@ namespace ModelObjects
         public long TeamId { get; set; } // TeamId
 
         // Reverse navigation
-        public virtual ICollection<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery.FK_PhotoGallery_PhotoGalleryAlbum
+        public virtual ICollection<PhotoGalleryItem> Photos { get; set; } // PhotoGallery.FK_PhotoGallery_PhotoGalleryAlbum
 
         public PhotoGalleryAlbum()
         {
-            PhotoGalleries = new List<PhotoGalleryItem>();
+            Photos = new List<PhotoGalleryItem>();
         }
     }
 }

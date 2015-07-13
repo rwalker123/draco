@@ -411,6 +411,7 @@
       <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
     </Compile>
     <Compile Include="Controllers\BackupSiteAPIController.cs" />
+    <Compile Include="Controllers\DBApiController.cs" />
     <Compile Include="Controllers\DiscussionsAPIController.cs" />
     <Compile Include="Controllers\DiscussionsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\FieldsController.cs" />
@@ -491,7 +492,6 @@
     <Compile Include="Controllers\AnnouncementAPIController.cs" />
     <Compile Include="Controllers\ContactsAPIController.cs" />
     <Compile Include="Controllers\FileUploaderAPIController.cs" />
-    <Compile Include="Controllers\GoogleSearchController.cs" />
     <Compile Include="Controllers\HallOfFameAPIController.cs" />
     <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -514,6 +514,11 @@
     </Compile>
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\ModelObjects\AspNetRole.cs" />
+    <Compile Include="Models\ModelObjects\AspNetUser.cs" />
+    <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\HOFMemberViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
     <Compile Include="Models\DataAccess\AccountHandouts.cs" />
     <Compile Include="Models\DataAccess\Accounts.cs" />
@@ -636,6 +641,8 @@
     <Compile Include="Models\ViewModels\Controllers\BirthdayViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\HandoutsViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\WelcomeMessageViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\PhotoViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\FAQItemViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\ApplicationOAuthProvider.cs" />
     <Compile Include="Results\ChallengeResult.cs" />

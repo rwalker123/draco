@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels.API;
 using System;
@@ -12,14 +13,8 @@ using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
 {
-    public class LeaguesAPIController : ApiController
+    public class LeaguesAPIController : DBApiController
     {
-        private DB m_db;
-        public LeaguesAPIController(DB db)
-        {
-            m_db = db;
-        }
-
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Leagues")]
         public HttpResponseMessage GetLeagues(long accountId, long? id = 0)

@@ -12,12 +12,6 @@ namespace SportsManager.Areas.Baseball.Controllers
 {
     public class LeagueTeamsController : Controller
     {
-        private DB m_db;
-        public LeagueTeamsController(DB db)
-        {
-            m_db = db;
-        }
-
         //
         // GET: /Baseball/Teams/
 

@@ -1,24 +1,19 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNet.Identity;
+using ModelObjects;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using SportsManager.Models;
-using System;
-using System.Linq;
-using ModelObjects;
-using SportsManager.ViewModels.API;
 
 namespace SportsManager.Controllers
 {
-    public class DiscussionsAPIController : ApiController
+    public class DiscussionsAPIController : DBApiController
     {
-        private DB m_db;
-        public DiscussionsAPIController(DB db)
-        {
-            m_db = db;
-        }
-
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("categories")]
         public HttpResponseMessage GetCategories(long accountId)
@@ -54,20 +49,36 @@ namespace SportsManager.Controllers
                     categories.AddRange(globalCats);
             }
 
-            return Request.CreateResponse<IEnumerable<MessageCategoryViewModel>>(HttpStatusCode.OK, vm);
+            var vm = Mapper.Map<IEnumerable<MessageCategory>, MessageCategoryViewModel[]>(categories);
+            return Request.CreateResponse<MessageCategoryViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostCategories(long accountId, ModelObjects.MessageCategory cat)
+        public HttpResponseMessage PostCategories(long accountId, MessageCategoryViewModel cat)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && cat != null)
             {
                 cat.AccountId = accountId;
 
-                if (DataAccess.MessageBoard.AddCategory(cat) > 0)
-                    return Request.CreateResponse<ModelObjects.MessageCategory>(HttpStatusCode.OK, cat);
+                var dbCat = new MessageCategory()
+                {
+                    AccountId = cat.AccountId,
+                    CategoryOrder = cat.Order,
+                    CategoryName = cat.Name,
+                    CategoryDescription = cat.Description ?? String.Empty,
+                    AllowAnonymousPost = cat.AllowAnonymousPost,
+                    AllowAnonymousTopic = cat.AllowAnonymousTopic,
+                    IsModerated = cat.IsModerated,
+                    IsTeam = cat.IsTeam
+                };
+
+                m_db.MessageCategories.Add(dbCat);
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<MessageCategory, MessageCategoryViewModel>(dbCat);
+                return Request.CreateResponse<MessageCategoryViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -76,14 +87,28 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutCategories(long accountId, ModelObjects.MessageCategory cat)
+        public HttpResponseMessage PutCategories(long accountId, MessageCategoryViewModel cat)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && cat != null)
             {
                 cat.AccountId = accountId;
 
-                if (DataAccess.MessageBoard.UpdateCategory(cat))
-                    return Request.CreateResponse<ModelObjects.MessageCategory>(HttpStatusCode.OK, cat);
+                var dbCat = m_db.MessageCategories.Find(cat.Id);
+                if (dbCat == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                dbCat.CategoryOrder = cat.Order;
+                dbCat.CategoryName = cat.Name;
+                dbCat.CategoryDescription = cat.Description ?? String.Empty;
+                dbCat.AllowAnonymousPost = cat.AllowAnonymousPost;
+                dbCat.AllowAnonymousTopic = cat.AllowAnonymousTopic;
+                dbCat.IsTeam = cat.IsTeam;
+                dbCat.IsModerated = cat.IsModerated;
+
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<MessageCategory, MessageCategoryViewModel>(dbCat);
+                return Request.CreateResponse<MessageCategoryViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -94,10 +119,17 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteCategories(long accountId, long id)
         {
-            if (DataAccess.MessageBoard.RemoveCategory(id))
-                return Request.CreateResponse(HttpStatusCode.OK);
+            var cat = m_db.MessageCategories.Find(id);
+            if (cat == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            if (cat.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            m_db.MessageCategories.Remove(cat);
+            m_db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
 
@@ -105,29 +137,53 @@ namespace SportsManager.Controllers
         [ActionName("topics")]
         public HttpResponseMessage GetTopics(long accountId, long categoryId)
         {
-            var topics = DataAccess.MessageBoard.GetTopicsWithDetails(categoryId);
+            var topics = (from mt in m_db.MessageTopics
+                    where mt.CategoryId == categoryId
+                    select mt).AsEnumerable();
 
-            return Request.CreateResponse<IEnumerable<ModelObjects.MessageTopic>>(HttpStatusCode.OK, topics);
+            var vm = Mapper.Map<IEnumerable<MessageTopic>, MessageTopicViewModel[]>(topics);
+            return Request.CreateResponse<MessageTopicViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("topics")]
-        public HttpResponseMessage PostTopic(long accountId, long categoryId, ModelObjects.MessageTopic topic)
+        public HttpResponseMessage PostTopic(long accountId, long categoryId, MessageTopicViewModel topic)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && topic != null)
             {
                 topic.CategoryId = categoryId;
-                topic.ContactCreatorId = 0;
-                var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+                topic.CreatorContactId = 0;
+                var contact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
                 if (contact != null)
-                    topic.ContactCreatorId = contact.Id;
-
-                if (DataAccess.MessageBoard.AddTopic(topic) > 0)
                 {
-                    topic.Name = DataAccess.Contacts.GetContactName(topic.CreatorContactId);
-                    return Request.CreateResponse<ModelObjects.MessageTopic>(HttpStatusCode.OK, topic);
+                    topic.CreatorContactId = contact.Id;
                 }
+                else
+                {
+                    bool allowAnon = (from mc in m_db.MessageCategories
+                                      where mc.Id == topic.CategoryId
+                                      select mc.AllowAnonymousTopic).SingleOrDefault();
+                    if (!allowAnon)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+                }
+
+                var dbTopic = new MessageTopic()
+                {
+                    CategoryId = topic.CategoryId,
+                    ContactCreatorId = topic.CreatorContactId,
+                    TopicCreateDate = topic.CreateDate,
+                    Topic = topic.TopicTitle,
+                    StickyTopic = topic.StickyTopic,
+                    NumberOfViews = 0
+                };
+
+                m_db.MessageTopics.Add(dbTopic);
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<MessageTopic, MessageTopicViewModel>(dbTopic);
+                return Request.CreateResponse<MessageTopicViewModel>(HttpStatusCode.OK, vm);
             }
+
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
@@ -136,54 +192,121 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteTopic(long accountId, long id)
         {
-            if (DataAccess.MessageBoard.RemoveTopic(id))
-                return Request.CreateResponse(HttpStatusCode.OK);
+            var topic = m_db.MessageTopics.Find(id);
+            if (topic == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            if (topic.MessageCategory.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            m_db.MessageTopics.Remove(topic);
+            m_db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("messages")]
         public HttpResponseMessage GetMessages(long accountId, long topicId)
         {
-            var posts = DataAccess.MessageBoard.GetPosts(topicId);
+            var posts = (from mp in m_db.MessagePosts
+                    where mp.TopicId == topicId
+                    select mp).AsEnumerable();
 
-            return Request.CreateResponse<IEnumerable<ModelObjects.MessagePost>>(HttpStatusCode.OK, posts);
+            var vm = Mapper.Map<IEnumerable<MessagePost>, MessagePostViewModel[]>(posts);
+            return Request.CreateResponse<MessagePostViewModel[]>(HttpStatusCode.OK, vm);
         }
 
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("messages")]
-        public HttpResponseMessage PostMessage(long accountId, long topicId, ModelObjects.MessagePost post)
+        public HttpResponseMessage PostMessage(long accountId, long topicId, MessagePostViewModel post)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && post != null)
             {
-                var topic = DataAccess.MessageBoard.GetTopic(topicId);
+                var topic = m_db.MessageTopics.Find(topicId);
                 if (topic == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
+                if (topic.MessageCategory.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
                 post.TopicId = topic.Id;
                 post.CategoryId = topic.CategoryId;
-                post.ContactCreatorId = 0;
-                var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+                post.CreatorContactId = 0;
+                var contact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
                 if (contact != null)
-                    post.ContactCreatorId = contact.Id;
+                {
+                    post.CreatorContactId = contact.Id;
+                }
+                else
+                {
+                    bool allowAnon = (from mc in m_db.MessageCategories
+                                      where mc.Id == post.CategoryId
+                                      select mc.AllowAnonymousTopic).SingleOrDefault();
+                    if (!allowAnon)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+                }
 
-                if (DataAccess.MessageBoard.AddPost(post) > 0)
-                    return Request.CreateResponse<ModelObjects.MessagePost>(HttpStatusCode.OK, post);
+                var dbPost = new MessagePost()
+                {
+                    TopicId = post.TopicId,
+                    PostOrder = post.Order,
+                    ContactCreatorId = post.CreatorContactId,
+                    PostDate = post.CreateDate,
+                    PostText = post.Text ?? String.Empty,
+                    EditDate = post.EditDate,
+                    PostSubject = post.Subject,
+                    CategoryId = post.CategoryId
+                };
+
+                m_db.MessagePosts.Add(dbPost);
+
+                var vm = Mapper.Map<MessagePost, MessagePostViewModel>(dbPost);
+                return Request.CreateResponse<MessagePostViewModel>(HttpStatusCode.OK, vm);
             }
+
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("messages")]
-        public HttpResponseMessage PutMessage(long accountId, long topicId, long id, ModelObjects.MessagePost post)
+        public HttpResponseMessage PutMessage(long accountId, long topicId, MessagePostViewModel post)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && post != null)
             {
                 post.EditDate = DateTime.Now;
-                if (DataAccess.MessageBoard.ModifyPost(accountId, post))
-                    return Request.CreateResponse<ModelObjects.MessagePost>(HttpStatusCode.OK, post);
+
+                var dbPost = m_db.MessagePosts.Find(post.Id);
+                if (dbPost == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (dbPost.TopicId != topicId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                if (dbPost.MessageCategory.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                // only the admin or original author can modify the post.
+                var userId = Globals.GetCurrentUserId();
+                if (!IsAccountAdmin(accountId, userId))
+                {
+                    var contactId = m_db.Contacts.Where(u => u.UserId == userId).Select(u => u.Id).SingleOrDefault();
+                    if (dbPost.ContactCreatorId != contactId)
+                    {
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+                    }
+                }
+
+                dbPost.PostText = post.Text;
+                dbPost.EditDate = post.EditDate;
+                dbPost.PostSubject = post.Subject;
+
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<MessagePost, MessagePostViewModel>(dbPost);
+
+                return Request.CreateResponse<MessagePostViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -194,10 +317,49 @@ namespace SportsManager.Controllers
         public HttpResponseMessage DeleteMessage(long accountId, long topicId, long id)
         {
             bool topicRemoved;
-            if (DataAccess.MessageBoard.RemoveMessagePost(accountId, id, out topicRemoved))
-                return Request.CreateResponse<bool>(HttpStatusCode.OK, topicRemoved);
+            topicRemoved = false;
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var dbPost = m_db.MessagePosts.Find(id);
+            if (dbPost == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (dbPost.MessageTopic.Id != topicId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            if (dbPost.MessageCategory.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            // only the admin or original author can modify the post.
+            var userId = Globals.GetCurrentUserId();
+            if (!IsAccountAdmin(accountId, userId))
+            {
+                var contactId = m_db.Contacts.Where(u => u.UserId == userId).Select(u => u.Id).SingleOrDefault();
+                if (dbPost.ContactCreatorId != contactId)
+                {
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+                }
+            }
+
+            m_db.MessagePosts.Remove(dbPost);
+            m_db.SaveChanges();
+
+            bool anyTopics = (from mp in m_db.MessagePosts
+                              where mp.TopicId == dbPost.TopicId
+                              select mp).Any();
+            if (!anyTopics)
+            {
+                var dbTopic = (from mt in m_db.MessageTopics
+                               where mt.Id == dbPost.TopicId
+                               select mt).SingleOrDefault();
+                if (dbTopic != null)
+                {
+                    m_db.MessageTopics.Remove(dbTopic);
+                    m_db.SaveChanges();
+                    topicRemoved = true;
+                }
+            }
+
+            return Request.CreateResponse<bool>(HttpStatusCode.OK, topicRemoved);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -205,7 +367,11 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage GetExpirationDays(long accountId)
         {
-            var expirationDays = DataAccess.MessageBoard.GetExpirationDays(accountId);
+            string cleanupDays = GetAccountSetting(accountId, "MessageBoardCleanup");
+            int expirationDays = 30;
+            Int32.TryParse(cleanupDays, out expirationDays);
+            if (expirationDays <= 0)
+                expirationDays = 30;
 
             return Request.CreateResponse<int>(HttpStatusCode.OK, expirationDays);
         }
@@ -220,8 +386,7 @@ namespace SportsManager.Controllers
             {
                 if (numDays > 0)
                 {
-                    DataAccess.MessageBoard.SetExpirationDays(accountId, numDays);
-
+                    SetAccountSetting(accountId, "MessageBoardCleanup", numDays.ToString());
                     return Request.CreateResponse<int>(HttpStatusCode.OK, numDays);
                 }
             }
@@ -309,7 +474,7 @@ namespace SportsManager.Controllers
 
         private IQueryable<MessageCategory> GetContactGlobalCategoriesWithDetails(long accountId, Contact contact, bool isAdmin)
         {
-            if (isAdmin || DataAccess.Accounts.IsAccountAdmin(accountId, contact.UserId))
+            if (isAdmin || IsAccountAdmin(accountId, contact.UserId))
             {
                 return m_db.MessageCategories.Where(mc => mc.AccountId == 0);
             }
@@ -338,5 +503,6 @@ namespace SportsManager.Controllers
                     where ls.Id == teamSeason.LeagueSeasonId
                     select l.Name + " " + teamSeason.Name).SingleOrDefault();
         }
+
     }
 }

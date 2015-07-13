@@ -11,14 +11,8 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class AnnouncementAPIController : ApiController
+    public class AnnouncementAPIController : DBApiController
     {
-        private DB m_db;
-        public AnnouncementAPIController(DB db)
-        {
-            m_db = db;
-        }
-
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcements")]
         public HttpResponseMessage GetAnnouncements(long accountId)

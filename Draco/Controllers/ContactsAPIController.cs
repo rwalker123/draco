@@ -58,7 +58,7 @@ namespace SportsManager.Controllers
         }
     }
 
-    public class ContactsAPIController : ApiController
+    public class ContactsAPIController : DBApiController
     {
         private const String nameExistsError = "Name already exists.";
         private const String emailExistsError = "Email already exists.";
@@ -99,12 +99,6 @@ namespace SportsManager.Controllers
               <br />
               {0}";
 
-
-        private DB m_db;
-        public ContactsAPIController(DB db)
-        {
-            m_db = db;
-        }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("contacts")]

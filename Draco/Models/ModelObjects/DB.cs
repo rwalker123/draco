@@ -121,6 +121,8 @@ namespace ModelObjects
         public DbSet<AccountType> AccountTypes { get; set; } // AccountTypes
         public DbSet<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome
         public DbSet<Affiliation> Affiliations { get; set; } // Affiliations
+        public DbSet<AspNetRole> AspNetRoles { get; set; } // AspNetRoles
+        public DbSet<AspNetUser> AspNetUsers { get; set; } // AspNetUsers
         public DbSet<Field> AvailableFields { get; set; } // AvailableFields
         public DbSet<GameBatStats> Batstatsums { get; set; } // batstatsum
         public DbSet<Contact> Contacts { get; set; } // Contacts
@@ -302,6 +304,48 @@ namespace ModelObjects
 
             Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
             Property(x => x.Name).HasColumnName("Name").IsRequired().IsUnicode(false).HasMaxLength(75);
+        }
+    }
+
+    // AspNetRoles
+    internal class AspNetRoleConfiguration : EntityTypeConfiguration<AspNetRole>
+    {
+        public AspNetRoleConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".AspNetRoles");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasMaxLength(128).HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
+            Property(x => x.Name).HasColumnName("Name").IsRequired();
+            HasMany(t => t.AspNetUsers).WithMany(t => t.AspNetRoles).Map(m =>
+            {
+                m.ToTable("AspNetUserRoles", schema);
+                m.MapLeftKey("RoleId");
+                m.MapRightKey("UserId");
+            });
+        }
+    }
+
+    // AspNetUsers
+    internal class AspNetUserConfiguration : EntityTypeConfiguration<AspNetUser>
+    {
+        public AspNetUserConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".AspNetUsers");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasMaxLength(128).HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
+            Property(x => x.Email).HasColumnName("Email").IsOptional().HasMaxLength(256);
+            Property(x => x.EmailConfirmed).HasColumnName("EmailConfirmed").IsRequired();
+            Property(x => x.PasswordHash).HasColumnName("PasswordHash").IsOptional();
+            Property(x => x.SecurityStamp).HasColumnName("SecurityStamp").IsOptional();
+            Property(x => x.PhoneNumber).HasColumnName("PhoneNumber").IsOptional();
+            Property(x => x.PhoneNumberConfirmed).HasColumnName("PhoneNumberConfirmed").IsRequired();
+            Property(x => x.TwoFactorEnabled).HasColumnName("TwoFactorEnabled").IsRequired();
+            Property(x => x.LockoutEndDateUtc).HasColumnName("LockoutEndDateUtc").IsOptional();
+            Property(x => x.LockoutEnabled).HasColumnName("LockoutEnabled").IsRequired();
+            Property(x => x.AccessFailedCount).HasColumnName("AccessFailedCount").IsRequired();
+            Property(x => x.UserName).HasColumnName("UserName").IsOptional().HasMaxLength(256);
         }
     }
 
@@ -1290,7 +1334,7 @@ namespace ModelObjects
 
             // Foreign keys
             HasRequired(a => a.Account).WithMany(b => b.PhotoGalleries).HasForeignKey(c => c.AccountId); // FK_PhotoGallery_Accounts
-            HasRequired(a => a.PhotoGalleryAlbum).WithMany(b => b.PhotoGalleries).HasForeignKey(c => c.AlbumId); // FK_PhotoGallery_PhotoGalleryAlbum
+            HasRequired(a => a.PhotoGalleryAlbum).WithMany(b => b.Photos).HasForeignKey(c => c.AlbumId); // FK_PhotoGallery_PhotoGalleryAlbum
         }
     }
 

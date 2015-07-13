@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
 
@@ -10,7 +11,11 @@ namespace SportsManager.ViewModels.API
         public long Id { get; set; } 
         public long AccountId { get; set; } 
         public int Order { get; set; } // -> CategoryOrder
+        [Required]
+        [StringLength(50, MinimumLength=1)]
         public string Name { get; set; } // -> CategoryName
+        [Required]
+        [StringLength(50, MinimumLength = 0)]
         public string Description { get; set; }  // -> CategoryDescription
         public bool AllowAnonymousPost { get; set; } 
         public bool AllowAnonymousTopic { get; set; } 
