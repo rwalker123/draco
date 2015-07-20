@@ -514,11 +514,14 @@
     </Compile>
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
+    <Compile Include="Models\DataAccess\PhotoGallery.cs" />
     <Compile Include="Models\ModelObjects\AspNetRole.cs" />
     <Compile Include="Models\ModelObjects\AspNetUser.cs" />
     <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFMemberViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\PhotoAlbumViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileAnswersViewModel.cs" />
     <Compile Include="Models\ViewModels\API\SponsorViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
     <Compile Include="Models\DataAccess\AccountHandouts.cs" />

@@ -129,6 +129,9 @@ namespace SportsManager
             Mapper.CreateMap<PhotoGalleryItem, PhotoViewModel>()
                 .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.AccountId));
 
+            Mapper.CreateMap<PhotoGalleryAlbum, PhotoAlbumViewModel>()
+                .ForMember(vm => vm.PhotoCount, opt => opt.MapFrom(model => model.Photos.Count()));
+
             Mapper.CreateMap<AccountHandout, HandoutViewModel>()
                 .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.AccountId));
 
@@ -147,6 +150,12 @@ namespace SportsManager
             Mapper.CreateMap<MemberBusiness, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL));
+
+            Mapper.CreateMap<ProfileQuestionAnswer, ProfileAnswersViewModel>()
+                .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
+                .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
+                .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
         }
     }
 }

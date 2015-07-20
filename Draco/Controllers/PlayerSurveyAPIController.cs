@@ -1,6 +1,9 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -8,7 +11,7 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class PlayerSurveyAPIController : ApiController
+    public class PlayerSurveyAPIController : DBApiController
     {
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("activesurveys")]
@@ -22,34 +25,65 @@ namespace SportsManager.Controllers
             if (!String.IsNullOrEmpty(strPageNo))
                 int.TryParse(strPageNo, out pageNo);
 
-            var playersWithProfiles = DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId).Skip(pageNo * pageSize).Take(pageSize);
+            var currentSeasonId = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
 
-            return Request.CreateResponse<IQueryable<ModelObjects.PlayerProfile>>(HttpStatusCode.OK, playersWithProfiles);
+            var profiles = (
+                from pp in m_db.PlayerProfiles
+                join c in m_db.Contacts on pp.PlayerId equals c.Id
+                join r in m_db.Rosters on c.Id equals r.ContactId
+                join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
+                join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                where r.AccountId == accountId && ls.SeasonId == currentSeasonId
+                select c).Distinct()
+                          .OrderBy(x => x.LastName)
+                          .ThenBy(x => x.FirstName)
+                          .Skip(pageNo * pageSize)
+                          .Take(pageSize).AsEnumerable();
+
+            var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(profiles);
+            return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("randomteamsurvey")]
         public HttpResponseMessage GetRandomTeamPlayerWithSurveys(long accountId, long id)
         {
-            var playerProfile = DataAccess.ProfileAdmin.GetTeamProfileSpotlight(accountId, id);
-            if (playerProfile != null)
+            // first get a random player on the team who has answered the survey.
+            var currentSeasonId = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+
+            var qry = (from pp in m_db.PlayerProfiles
+                    join c in m_db.Contacts on pp.PlayerId equals c.Id
+                    join r in m_db.Rosters on c.Id equals r.ContactId
+                    join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                    where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
+                    ts.Id == id && !rs.Inactive
+                    select pp.PlayerId).Distinct();
+
+
+            int count = qry.Count();
+            int index = new Random().Next(count);
+
+            var playerId = qry.Skip(index).FirstOrDefault();
+            if (playerId != null)
             {
-                var playerAnswers = DataAccess.ProfileAdmin.GetPlayerQuestionAnswer(accountId, playerProfile.PlayerId);
-                int count = playerAnswers.Count();
-                int index = new Random().Next(count);
+                // next get a random answer from the player.
+                var playerAnswers = (from pc in m_db.ProfileCategories
+                                     join pq in m_db.ProfileQuestions on pc.Id equals pq.CategoryId
+                                     join pp in m_db.PlayerProfiles on pq.Id equals pp.QuestionId
+                                     where pp.PlayerId == playerId && pp.Answer != null
+                                     orderby pc.Priority, pq.QuestionNum
+                                     select pp);
+
+                count = playerAnswers.Count();
+                index = new Random().Next(count);
                 ProfileQuestionAnswer theAnswer = playerAnswers.Skip(index).FirstOrDefault();
                 if (theAnswer != null)
                 {
-                    ProfileQuestionItem theQuestion = DataAccess.ProfileAdmin.GetQuestion(theAnswer.QuestionId);
-
-                    var obj = new
-                    {
-                        PlayerProfile = playerProfile,
-                        Answer = theAnswer,
-                        Question = theQuestion
-                    };
-
-                    return Request.CreateResponse(HttpStatusCode.OK, obj);
+                    var vm = Mapper.Map<ProfileQuestionAnswer, ProfileAnswersViewModel>(theAnswer);
+                    return Request.CreateResponse<ProfileAnswersViewModel>(HttpStatusCode.OK, vm);
                 }
             }
 
@@ -78,7 +112,7 @@ namespace SportsManager.Controllers
                         Question = theQuestion
                     };
 
-                    return Request.CreateResponse(HttpStatusCode.OK, obj);
+                    return Request.CreateResponse<ProfileAnswersViewModel>(HttpStatusCode.OK, obj);
                 }
             }
 

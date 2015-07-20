@@ -118,5 +118,66 @@ namespace SportsManager.Controllers
             m_db.SaveChanges();
         }
 
+        protected bool IsPhotoAdmin(long accountId, String userId)
+        {
+            return (IsContactInRole(accountId, userId, GetAdminAccountId()) ||
+                    IsContactInRole(accountId, userId, GetAccountPhotoAdminId()));
+        }
+
+        protected bool IsContactInRole(long accountId, String aspNetUserId, String roleId)
+        {
+            var roles = GetContactRoles(accountId, aspNetUserId);
+            if (roles == null)
+                return false;
+
+            return (from r in roles
+                    where r.RoleId == roleId
+                    select r).Any();
+        }
+
+        protected IQueryable<ContactRole> GetContactRoles(long accountId, String aspNetUserId)
+        {
+            if (String.IsNullOrEmpty(aspNetUserId))
+                return null;
+
+            var contactId = (from c in m_db.Contacts
+                             where c.UserId == aspNetUserId
+                             select c.Id).SingleOrDefault();
+
+            if (contactId == 0)
+                return null;
+
+            return (from cr in m_db.ContactRoles
+                    where cr.ContactId == contactId && cr.AccountId == accountId
+                    select cr);
+        }
+
+        protected IQueryable<ContactRole> GetContactRoles(long accountId, long contactId)
+        {
+            return (from cr in m_db.ContactRoles
+                    where cr.ContactId == contactId && cr.AccountId == accountId
+                    select cr);
+        }
+
+        protected String GetAdminAccountId()
+        {
+            return (from r in m_db.AspNetRoles
+                    where r.Name == "AccountAdmin"
+                    select r.Id).Single();
+        }
+
+        protected String GetAccountPhotoAdminId()
+        {
+            return (from r in m_db.AspNetRoles
+                    where r.Name == "AccountPhotoAdmin"
+                    select r.Id).Single();
+        }
+
+        protected String GetTeamPhotoAdminId()
+        {
+            return (from r in m_db.AspNetRoles
+                    where r.Name == "TeamPhotoAdmin"
+                    select r.Id).Single();
+        }
     }
 }
