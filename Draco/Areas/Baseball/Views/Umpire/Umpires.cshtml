@@ -25,7 +25,7 @@
         <div class="form-group">
             <label for="_newUmpire" class="sr-only">Last Name</label>
             <div class="input-group">
-                <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type last name to add umpire" />
+                <input type="text" id="_newUmpire" class="form-control" style="width: 400px;" data-bind="typeahead: { datasets: { source: getPlayers, display: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type last name to add umpire" />
                 <span class="input-group-btn">
                     <button type="button" class="btn btn-primary" data-bind="enable: hasSelectedPlayer, click: addUmpire" title="add umpire"><span class="glyphicon glyphicon-plus"></span></button>
                 </span>

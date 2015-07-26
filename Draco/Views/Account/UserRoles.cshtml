@@ -35,7 +35,7 @@
                 <form class="form-inline" role="form">
                     <div class="input-group col-sm-12">
                         var searchTerm = this.term;
-                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedNewOwner, options: { highlight: true } }" />
+                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, display: 'label' }, target: selectedNewOwner, options: { highlight: true } }" />
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-success" data-bind="click: changeAccountOwner" title="change account owner"><span class="glyphicon glyphicon-ok"></span></button>
                             <button type="button" class="btn btn-danger" data-bind="click: cancelChangeAccountOwner" title="cancel change account owner"><span class="glyphicon glyphicon-remove"></span></button>

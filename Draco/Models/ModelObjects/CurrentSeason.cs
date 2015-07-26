@@ -1,7 +1,7 @@
 ﻿
 namespace ModelObjects
 {
-    class CurrentSeason
+    public class CurrentSeason
     {
         public long SeasonId { get; set; } // SeasonId
         public long AccountId { get; set; } // AccountId (Primary key)

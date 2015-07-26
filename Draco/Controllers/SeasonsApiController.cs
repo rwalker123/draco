@@ -2,6 +2,7 @@
 using ModelObjects;
 using SportsManager.Models;
 using SportsManager.ViewModels;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,44 +56,45 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage EditSeason(long accountId, long id, ModelObjects.Season seasonData)
+        public HttpResponseMessage EditSeason(long accountId, long id, SeasonViewModel seasonData)
         {
-            seasonData.AccountId = accountId;
-            seasonData.Id = id;
-
-            if (ModelState.IsValid && seasonData != null)
+            if (ModelState.IsValid)
             {
-                if (!DataAccess.Seasons.ModifySeason(seasonData))
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                var dbSeason = m_db.Seasons.Find(id);
+                if (dbSeason == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Season", accountId = accountId, id = id }));
-                return response;
+                if (dbSeason.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbSeason.Name = seasonData.Name;
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<Season, SeasonViewModel>(dbSeason);
+                return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("CurrentSeason")]
         public HttpResponseMessage CurrentSeason(long accountId)
         {
-            var currentSeason = DataAccess.Seasons.GetSeason(DataAccess.Seasons.GetCurrentSeason(accountId));
+            var cs = GetCurrentSeason(accountId);
+            if (cs == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var season = m_db.Seasons.Find(cs.SeasonId);
             var hasSeasons = DataAccess.Seasons.GetSeasons(accountId).Any();
 
-            return Request.CreateResponse<ModelObjects.CurrentSeasonInfo>(HttpStatusCode.OK,
-                new ModelObjects.CurrentSeasonInfo()
+            return Request.CreateResponse<CurrentSeasonViewModel>(HttpStatusCode.OK,
+                new CurrentSeasonViewModel()
                 {
                     AccountId = accountId,
                     HasSeasons = hasSeasons,
-                    SeasonId = currentSeason == null ? 0 : currentSeason.Id,
-                    SeasonName = currentSeason == null ? String.Empty : currentSeason.Name
+                    SeasonId = season == null ? 0 : season.Id,
+                    SeasonName = season == null ? String.Empty : season.Name
                 });
         }
 
@@ -103,34 +105,110 @@ namespace SportsManager.Controllers
         {
             DataAccess.Seasons.SetCurrentSeason(id, accountId);
 
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
+            var curSeason = (from cs in m_db.CurrentSeasons
+                             where cs.AccountId == accountId
+                             select cs).SingleOrDefault();
+            if (id == 0)
             {
-                Content = new StringContent(DataAccess.Seasons.GetCurrentSeason(accountId).ToString())
-            };
-            response.Headers.Location =
-                new Uri(Url.Link("ActionApi", new { action = "Curent", accountId = accountId, id = id }));
-            return response;
+                if (curSeason != null)
+                    m_db.CurrentSeasons.Remove(curSeason);
+            }
+            else if (curSeason == null)
+            {
+                curSeason = new CurrentSeason()
+                {
+                    AccountId = accountId,
+                    SeasonId = id
+                };
+
+                m_db.CurrentSeasons.Add(curSeason);
+            }
+            else
+            {
+                curSeason.SeasonId = id;
+            }
+
+            m_db.SaveChanges();
+
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public async Task<HttpResponseMessage> Delete(long accountId, long id)
+        public HttpResponseMessage Delete(long accountId, long id)
         {
-            bool removeSuccess = await DataAccess.Seasons.RemoveSeason(id);
-            if (removeSuccess)
-            {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
-            }
-            else
-            {
+            var season = m_db.Seasons.Find(id);
+            if (season == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (season.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            RemoveSeasonData(season);
+            m_db.Seasons.Remove(season);
+            m_db.SaveChanges();
+
+            //
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
+        }
+
+        private CurrentSeason GetCurrentSeason(long accountId)
+        {
+            return (from cs in m_db.CurrentSeasons
+                    where cs.AccountId == accountId
+                    select cs).SingleOrDefault();
+        }
+
+        private string GetCurrentSeasonName(long accountId)
+        {
+            return (from cs in m_db.CurrentSeasons
+                    join s in m_db.Seasons on cs.AccountId equals s.AccountId
+                    where cs.SeasonId == s.Id && cs.AccountId == accountId
+                    select s.Name).SingleOrDefault();
+        }
+
+        private void RemoveSeasonData(Season season)
+        {
+            RemoveLeagueSeason(season);
+
+            var currentSeason = GetCurrentSeason(season.AccountId);
+            if (currentSeason != null && currentSeason.SeasonId == season.Id)
+            {
+                currentSeason.SeasonId = 0;
+                // db changes will be saved by caller
+            }
+
+            // do some cleanup.
+            RemoveUnusedLeagues(season.AccountId);
+            RemoveUnusedDivisions(season.AccountId);
+            RemoveUnusedContacts(season.AccountId);
+        }
+
+        private void RemoveLeagueSeason(Season season)
+        {
+            foreach (var ls in season.LeagueSeasons)
+            {
+                m_db.DivisionSeasons.RemoveRange(ls.DivisionSeasons);
+
+                foreach (TeamSeason t in ls.TeamsSeasons)
+                    RemoveSeasonTeam(t);
+
+                m_db.LeagueSeasons.Remove(ls);
             }
         }
 
+        private void RemoveSeasonTeam(TeamSeason t)
+        {
+            m_db.RosterSeasons.RemoveRange(t.Roster);
+            m_db.TeamSeasonManagers.RemoveRange(t.TeamSeasonManagers);
+            m_db.GameRecaps.RemoveRange(t.GameRecaps);
 
+            var allGamesForTeam = (from ls in m_db.LeagueSchedules
+                                   where ls.HTeamId == t.Id || ls.VTeamId == t.Id
+                                   select ls);
+            m_db.LeagueSchedules.RemoveRange(allGamesForTeam);
+        }
     }
 }

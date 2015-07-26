@@ -40,8 +40,8 @@ namespace SportsManager.Controllers
                     if (!rc)
                     {
                         var roleId = (from r in m_db.AspNetRoles
-                                where r.Name == "AccountAdmin"
-                                select r.Id).Single();
+                                      where r.Name == "AccountAdmin"
+                                      select r.Id).Single();
 
                         var contactId = (from c in m_db.Contacts
                                          where c.UserId == userId
@@ -179,5 +179,53 @@ namespace SportsManager.Controllers
                     where r.Name == "TeamPhotoAdmin"
                     select r.Id).Single();
         }
+
+        protected void RemoveUnusedLeagues(long accountId)
+        {
+            // get all leagueSeasons with unique leagueId
+            var accountLeagues = (from ls in m_db.LeagueSeasons
+                                  select ls.LeagueId).Distinct();
+
+            // if no league season is using a leagueId, we can remove it.
+            var unusedLeagues = (from l in m_db.Leagues
+                                 where l.AccountId == accountId && !accountLeagues.Contains(l.Id)
+                                 select l);
+
+            m_db.Leagues.RemoveRange(unusedLeagues);
+        }
+
+        protected void RemoveUnusedContacts(long accountId)
+        {
+            // all places a contactId is used in for the account.
+            var contactInRoster = (from r in m_db.Rosters
+                                   select r.ContactId).Distinct();
+            var contactInHof = (from h in m_db.Hofs
+                                select h.ContactId).Distinct();
+            var contactInManager = (from m in m_db.TeamSeasonManagers
+                                    select m.ContactId).Distinct();
+
+            var unusedContacts = (from c in m_db.Contacts
+                                  where c.CreatorAccountId == accountId &&
+                                  !contactInRoster.Contains(c.Id) &&
+                                  !contactInHof.Contains(c.Id) &&
+                                  !contactInManager.Contains(c.Id)
+                                  select c);
+
+            m_db.Contacts.RemoveRange(unusedContacts);
+        }
+
+
+        protected void RemoveUnusedDivisions(long accountId)
+        {
+            var accountDivisions = (from ds in m_db.DivisionSeasons
+                                    select ds.DivisionId).Distinct();
+
+            var unusedDivisions = (from dd in m_db.DivisionDefs
+                                   where dd.AccountId == accountId && !accountDivisions.Contains(dd.Id)
+                                   select dd);
+
+            m_db.DivisionDefs.RemoveRange(unusedDivisions);
+        }
+
     }
 }

@@ -5,6 +5,7 @@ using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -631,7 +632,7 @@ namespace DataAccess
 
             string body = String.Format(AccountPasswordBody, accountName, currentUser, url, senderFullName);
 
-            Globals.MailMessage(fromEmail, contact.Email, subject, body);
+            Globals.MailMessage(new MailAddress(fromEmail, senderFullName), new MailAddress(contact.Email, contact.FullNameFirst), subject, body);
         }
 
         static private void NotifyUserOfNewEmail(long accountId, string oldEmail, string newEmail)
@@ -667,7 +668,7 @@ namespace DataAccess
             string accountName = DataAccess.Accounts.GetAccountName(accountId);
             string subject = String.Format(AccountModifiedSubject, accountName);
             string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail, senderFullName);
-            Globals.MailMessage(currentUser, oldEmail, subject, body);
+            Globals.MailMessage(new MailAddress(currentUser, senderFullName), new MailAddress(oldEmail), subject, body);
         }
 
         static private async Task<String> CreateAndEmailAccount(long accountId, string email)
@@ -700,7 +701,7 @@ namespace DataAccess
                     string accountName = DataAccess.Accounts.GetAccountName(accountId);
                     string subject = String.Format(AccountCreatedSubject, accountName);
                     string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password, senderFullName);
-                    Globals.MailMessage(currentUser, email, subject, body);
+                    Globals.MailMessage(new MailAddress(currentUser, senderFullName), new MailAddress(email), subject, body);
 
                     return newUser.Id;
                 }

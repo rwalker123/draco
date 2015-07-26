@@ -19,7 +19,7 @@ namespace ModelObjects
 
         public DivisionSeason()
         {
-            TeamsSeason = new List<TeamSeason>();
+            TeamsSeasons = new List<TeamSeason>();
         }
     }
 }

@@ -73,7 +73,12 @@ namespace SportsManager.Baseball.Controllers
                 var toList = (from c in contactList
                               where !String.IsNullOrEmpty(c.Email)
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
-                failedSends = Globals.MailMessage(HttpContext.Current.User.Identity.Name, toList, data);
+
+                var fromContact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+                if (fromContact == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                failedSends = Globals.MailMessage(new MailAddress(HttpContext.Current.User.Identity.Name, fromContact.FullNameFirst), toList, data);
                 SendSummaryMessage(toList.Except(failedSends), failedSends, HttpContext.Current.User.Identity.Name, data.Subject, data.Message);
             }
 
@@ -127,7 +132,7 @@ namespace SportsManager.Baseball.Controllers
             successMsg.Append("<p style='font-style: italic'>Message Sent</p>");
             successMsg.Append(message);
 
-            Globals.MailMessage(sendTo, sendTo, "Sent Message Summary: " + subject, successMsg.ToString());
+            Globals.MailMessage(new MailAddress(sendTo), new MailAddress(sendTo), "Sent Message Summary: " + subject, successMsg.ToString());
         }
 
         private IEnumerable<ModelObjects.Contact> GetSeasonContactList(long accountId)

@@ -76,17 +76,12 @@ static public class Globals
         return url;
     }
 
-	public static bool MailMessage(string fromEmail, string toEmail, string subject, string body)
+	public static bool MailMessage(MailAddress fromEmail, MailAddress toEmail, string subject, string body)
 	{
 		bool sentMsg = true;
 
-		MailAddress from = new MailAddress(fromEmail);
-
-		// Set destinations for the e-mail message.
-		MailAddress to = new MailAddress(toEmail);
-
 		// Specify the message content.
-		MailMessage msg = new MailMessage(from, to);
+		MailMessage msg = new MailMessage(fromEmail, toEmail);
 		msg.Subject = subject;
 		msg.Body = body;
         msg.IsBodyHtml = true;
@@ -105,18 +100,16 @@ static public class Globals
 		return sentMsg;
 	}
 
-	public static IEnumerable<MailAddress> MailMessage(string fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
+	public static IEnumerable<MailAddress> MailMessage(MailAddress fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
 	{
 		List<MailAddress> failedSends = new List<MailAddress>();
-
-		MailAddress from = new MailAddress(fromEmail);
 
 		// Specify the message content.
 		MailMessage msg = new MailMessage();
 		msg.Subject = data.Subject;
 		msg.Body = data.Message;
         msg.IsBodyHtml = true;
-		msg.From = from;
+		msg.From = fromEmail;
 
 		SmtpClient mailClient = new SmtpClient();
 

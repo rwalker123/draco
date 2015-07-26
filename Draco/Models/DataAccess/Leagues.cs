@@ -75,6 +75,25 @@ namespace DataAccess
                     });
         }
 
+        static public IQueryable<Team> GetLeagueTeams(long accountId, long leagueSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            return (from ls in db.LeagueSeasons
+                    join ts in db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    where ls.Id == leagueSeasonId
+                    orderby ls.League.Name, ts.Name
+                    select new Team()
+                    {
+                        Id = ts.Id,
+                        AccountId = accountId,
+                        TeamId = ts.TeamId,
+                        DivisionId = ts.DivisionSeasonId,
+                        LeagueId = ls.Id,
+                        Name = ls.League.Name + " " + ts.Name
+                    });
+        }
+       
         static public IQueryable<Team> GetLeagueTeamsFromSeason(long accountId, long? seasonId = null)
         {
             DB db = DBConnection.GetContext();

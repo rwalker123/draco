@@ -36,8 +36,11 @@ namespace SportsManager.Areas.Baseball.Controllers
         public FileStreamResult ExportAddressList(long accountId)
         {
             bool onlyManagers = !String.IsNullOrEmpty(Request.QueryString.Get("m"));
+            long leagueId = 0;
+            long.TryParse(Request.QueryString.Get("l"), out leagueId);
+
             var vm = new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId);
-            FileStream strm = vm.ExportToExcel(onlyManagers);
+            FileStream strm = vm.ExportToExcel(onlyManagers, leagueId);
             this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             fs.FileDownloadName = vm.AccountName;
