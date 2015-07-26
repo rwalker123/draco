@@ -7,3 +7,9 @@
 /Draco/obj
 /Draco/Bin
 /Draco/api
+/Draco/Uploads
+*.suo
+*.user
+Thumbs.db
+.vs
+packages
