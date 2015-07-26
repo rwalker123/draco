@@ -522,6 +522,9 @@
     <Compile Include="Models\ViewModels\API\HOFMemberViewModel.cs" />
     <Compile Include="Models\ViewModels\API\PhotoAlbumViewModel.cs" />
     <Compile Include="Models\ViewModels\API\ProfileAnswersViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileCategoryViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileQuestionViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\SeasonViewModel.cs" />
     <Compile Include="Models\ViewModels\API\SponsorViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
     <Compile Include="Models\DataAccess\AccountHandouts.cs" />

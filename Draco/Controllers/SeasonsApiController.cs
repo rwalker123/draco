@@ -1,4 +1,7 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Models;
+using SportsManager.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,16 +12,17 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class SeasonsApiController : ApiController
+    public class SeasonsApiController : DBApiController
     {
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Seasons")]
         public HttpResponseMessage GetSeasons(long accountId)
         {
-            var seasons = DataAccess.Seasons.GetSeasons(accountId);
+            var seasons = m_db.Seasons.Where(s => s.AccountId == accountId).AsEnumerable();
             if (seasons != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.Season>>(HttpStatusCode.OK, seasons);
+                var vm = Mapper.Map<IEnumerable<Season>, SeasonViewModel[]>(seasons);
+                return Request.CreateResponse<SeasonViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -29,29 +33,23 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage CreateSeason(long accountId, ModelObjects.Season seasonData)
+        public HttpResponseMessage CreateSeason(long accountId, SeasonViewModel seasonData)
         {
-            seasonData.AccountId = accountId;
-
-            if (ModelState.IsValid && seasonData != null)
+            if (ModelState.IsValid)
             {
-                long seasonId = DataAccess.Seasons.AddSeason(seasonData);
-                if (seasonId == 0)
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-
-                // Create a 201 response.
-                var response = new HttpResponseMessage(HttpStatusCode.Created)
+                var newSeason = new Season()
                 {
-                    Content = new StringContent(seasonId.ToString())
+                    AccountId = accountId,
+                    Name = seasonData.Name
                 };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Seasons", accountId = accountId, id = seasonId }));
-                return response;
+
+                m_db.Seasons.Add(newSeason);
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<Season, SeasonViewModel>(newSeason);
+                return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("PUT"), HttpPut]

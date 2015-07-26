@@ -1,7 +1,7 @@
 ﻿
 namespace ModelObjects
 {
-    class PlayerSeasonAffiliationDue
+    public class PlayerSeasonAffiliationDue
     {
         public long PlayerId { get; set; } // PlayerId (Primary key)
         public long SeasonId { get; set; } // SeasonId (Primary key)

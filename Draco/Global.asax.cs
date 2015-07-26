@@ -156,6 +156,13 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
                 .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
+
+            Mapper.CreateMap<ProfileQuestionItem, ProfileQuestionViewModel>();
+
+            Mapper.CreateMap<ProfileCategoryItem, ProfileCategoryViewModel>()
+                .ForMember(vm => vm.Questions, opt => opt.MapFrom(model => model.ProfileQuestions.OrderBy(pq => pq.QuestionNum).ThenBy(pq => pq.Question)));
+
+            Mapper.CreateMap<Season, SeasonViewModel>();
         }
     }
 }
