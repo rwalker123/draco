@@ -8,8 +8,8 @@
 /Draco/Bin
 /Draco/api
 /Draco/Uploads
-/packages
-thumbs.db
 *.suo
 *.user
+Thumbs.db
 .vs
+packages
