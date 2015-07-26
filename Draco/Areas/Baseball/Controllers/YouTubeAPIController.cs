@@ -81,7 +81,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 videos.Add(new
                 {
                     title = playlistItem.Snippet.Title,
-                    thumbnailUrl = playlistItem.Snippet.Thumbnails.Default.Url,
+                    thumbnailUrl = playlistItem.Snippet.Thumbnails.Default__.Url,
                     playerUrl = "http://www.youtube.com/embed/" + playlistItem.Snippet.ResourceId.VideoId
                 });
             }

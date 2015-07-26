@@ -20,7 +20,7 @@
                     <div class="form-group">
                         <div class="col-sm-12">
                             <div class="input-group">
-                                <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: getAvailableManagers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type manager last name" />
+                                <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: getAvailableManagers, display: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type manager last name" />
                                 <div class="input-group-btn">
                                     <button class="btn btn-primary" data-bind="click: addManager, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button>
                                 </div>

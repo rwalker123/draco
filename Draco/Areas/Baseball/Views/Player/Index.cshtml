@@ -23,7 +23,7 @@
     <div class="row" style="margin-bottom: 20px">
         <div class="col-sm-12">
             <div class="input-group">
-                <input type="text" class="form-control pull-right" placeholder="find player (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: foundPlayer, options: { highlight: true } }" />
+                <input type="text" class="form-control pull-right" placeholder="find player (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, display: 'label' }, target: foundPlayer, options: { highlight: true } }" />
                 <span class="input-group-btn">
                     <button class="btn btn-default" type="button" title="view player" data-bind="click: loadPlayer"><span class="glyphicon glyphicon-eye-open"></span></button>
                 </span>

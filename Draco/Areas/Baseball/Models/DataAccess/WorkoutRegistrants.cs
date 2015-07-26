@@ -129,9 +129,13 @@ namespace DataAccess
 
         static public String EmailRegistrants(long workoutId, String subject, String message)
         {
-            string sender = Globals.GetCurrentUserName();
+            string sender = Globals.GetCurrentUserId();
             if (String.IsNullOrEmpty(sender))
                 return String.Empty;
+
+            var currentContact = DataAccess.Contacts.GetContact(sender);
+            if (currentContact == null)
+                return "Invalid sender.";
 
             DB db = DBConnection.GetContext();
 
@@ -149,7 +153,7 @@ namespace DataAccess
             {
                 try
                 {
-                    var address = new MailAddress(reg.EMail);
+                    var address = new MailAddress(reg.EMail, reg.Name);
                     bccList.Add(address);
                 }
                 catch(Exception)
@@ -168,7 +172,7 @@ namespace DataAccess
                     Subject = subject
                 };
 
-                var failedSends = Globals.MailMessage(sender, bccList, data);
+                var failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, currentContact.FullNameFirst), bccList, data);
                 foreach(var failedSend in failedSends)
                 {
                     result.Append(failedSend.Address);

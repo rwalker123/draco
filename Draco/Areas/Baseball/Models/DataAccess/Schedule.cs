@@ -384,7 +384,7 @@ namespace DataAccess
                 try
                 {
                     if (c.Email.Length > 0)
-                        bccList.Add(new MailAddress(c.Email));
+                        bccList.Add(new MailAddress(c.Email, c.FullNameFirst));
                 }
                 catch
                 {
@@ -396,7 +396,14 @@ namespace DataAccess
                 string homeTeam = DataAccess.Teams.GetTeamName(g.HomeTeamId);
                 string awayTeam = DataAccess.Teams.GetTeamName(g.AwayTeamId);
 
-                string from = Globals.GetCurrentUserName();
+                string from = Globals.GetCurrentUserId();
+                if (String.IsNullOrEmpty(from))
+                    return 0;
+
+                var currentContact = DataAccess.Contacts.GetContact(from);
+                if (currentContact == null)
+                    return 0;
+
                 string subject = "Game Status Notification: " + awayTeam + " @ " + homeTeam + ", " + g.GameDate.ToShortDateString() + " " + g.GameDate.ToShortTimeString();
                 string message = "Your game: " + awayTeam + " @ " + homeTeam + ", " + g.GameDate.ToShortDateString() + " " + g.GameDate.ToShortTimeString() + " has been updated. The new status is: " + g.GameStatusLongText + ".";
                 if (g.GameStatus == 1)
@@ -423,7 +430,7 @@ namespace DataAccess
                      Subject = subject
                 };
 
-                IEnumerable<MailAddress> failedSends = Globals.MailMessage(from, bccList, data);
+                IEnumerable<MailAddress> failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, currentContact.FullNameFirst), bccList, data);
                 numSent = bccList.Count - failedSends.Count();
             }
 
