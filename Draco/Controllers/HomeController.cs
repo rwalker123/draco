@@ -6,12 +6,10 @@ using System.Web.Mvc;
 namespace SportsManager.Controllers
 {
     [HandleError]
-    public class HomeController : Controller
+    public class HomeController : DBController
     {
-        DB m_db;
-        HomeController(DB db)
+        HomeController(DB db) : base(db)
         {
-            m_db = db;
         }
 
         public ActionResult Index()

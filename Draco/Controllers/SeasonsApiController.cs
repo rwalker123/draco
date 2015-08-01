@@ -86,7 +86,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var season = m_db.Seasons.Find(cs.SeasonId);
-            var hasSeasons = DataAccess.Seasons.GetSeasons(accountId).Any();
+            var hasSeasons = m_db.Seasons.Where(s => s.AccountId == accountId).Any();
 
             return Request.CreateResponse<CurrentSeasonViewModel>(HttpStatusCode.OK,
                 new CurrentSeasonViewModel()
@@ -103,8 +103,6 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage EditCurrentSeason(long accountId, long id)
         {
-            DataAccess.Seasons.SetCurrentSeason(id, accountId);
-
             var curSeason = (from cs in m_db.CurrentSeasons
                              where cs.AccountId == accountId
                              select cs).SingleOrDefault();
@@ -171,44 +169,21 @@ namespace SportsManager.Controllers
 
         private void RemoveSeasonData(Season season)
         {
-            RemoveLeagueSeason(season);
+            foreach (var ls in season.LeagueSeasons)
+            {
+                RemoveLeagueSeason(ls);
+            }
 
             var currentSeason = GetCurrentSeason(season.AccountId);
             if (currentSeason != null && currentSeason.SeasonId == season.Id)
             {
                 currentSeason.SeasonId = 0;
-                // db changes will be saved by caller
             }
 
             // do some cleanup.
             RemoveUnusedLeagues(season.AccountId);
             RemoveUnusedDivisions(season.AccountId);
             RemoveUnusedContacts(season.AccountId);
-        }
-
-        private void RemoveLeagueSeason(Season season)
-        {
-            foreach (var ls in season.LeagueSeasons)
-            {
-                m_db.DivisionSeasons.RemoveRange(ls.DivisionSeasons);
-
-                foreach (TeamSeason t in ls.TeamsSeasons)
-                    RemoveSeasonTeam(t);
-
-                m_db.LeagueSeasons.Remove(ls);
-            }
-        }
-
-        private void RemoveSeasonTeam(TeamSeason t)
-        {
-            m_db.RosterSeasons.RemoveRange(t.Roster);
-            m_db.TeamSeasonManagers.RemoveRange(t.TeamSeasonManagers);
-            m_db.GameRecaps.RemoveRange(t.GameRecaps);
-
-            var allGamesForTeam = (from ls in m_db.LeagueSchedules
-                                   where ls.HTeamId == t.Id || ls.VTeamId == t.Id
-                                   select ls);
-            m_db.LeagueSchedules.RemoveRange(allGamesForTeam);
         }
     }
 }

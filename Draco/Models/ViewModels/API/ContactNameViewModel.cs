@@ -20,8 +20,12 @@ namespace SportsManager.ViewModels.API
 
     public class ContactNameRoleViewModel : ContactNameViewModel
     {
+        public long AccountId { get; set; }
+        public long ContactId { get; set; }
         public long RoleData { get; set; }
-        public string RoleDataText { get; set; }
+        // TODO: not sure how to get this with mappers
+        // maybe the client should get the info based on RoleData.
+        //public string RoleDataText { get; set; }
         public string RoleId { get; set; }
     }
 }

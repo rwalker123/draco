@@ -1,4 +1,5 @@
 ﻿using LinqToTwitter;
+using ModelObjects;
 using System;
 using System.Configuration;
 using System.Threading.Tasks;
@@ -6,8 +7,12 @@ using System.Web.Mvc;
 
 namespace SportsManager.Controllers
 {
-    public class TwitterOauthController : Controller
+    public class TwitterOauthController : DBController
     {
+        public TwitterOauthController(DB db) : base(db)
+        {
+        }
+
         //[SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<ActionResult> BeginAsync(long accountId)
         {
@@ -58,7 +63,7 @@ namespace SportsManager.Controllers
             string screenName = credentials.ScreenName;
             ulong userID = credentials.UserID;
 
-            var account = DataAccess.Accounts.GetAccount(accountId);
+            var account = m_db.Accounts.Find(accountId);
             if (account == null)
             {
                 throw new Exception("Invalid Account");
@@ -66,7 +71,10 @@ namespace SportsManager.Controllers
 
             if (screenName.Equals(account.TwitterAccountName, StringComparison.InvariantCultureIgnoreCase))
             {
-                DataAccess.SocialIntegration.Twitter.SaveCurrentAccountAuth(accountId, oauthToken, oauthTokenSecret);
+                account.TwitterOauthToken = oauthToken;
+                account.TwitterOauthSecretKey = oauthTokenSecret;
+
+                m_db.SaveChanges();
 
                 string refererUri = Request.QueryString.Get("twitterAction");
                 if (!String.IsNullOrEmpty(refererUri))
@@ -90,7 +98,7 @@ namespace SportsManager.Controllers
 
         public async Task<ActionResult> SendTweetAsync(long accountId, string tweet)
         {
-            var a = DataAccess.SocialIntegration.Twitter.GetAccountTwitterData(accountId);
+            var a = m_db.Accounts.Find(accountId);
 
             if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
             {

@@ -65,9 +65,11 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                sponsor.ContactId = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).Select(c => c.Id).SingleOrDefault();
-                if (sponsor.ContactId <= 0)
+                Contact contact = GetCurrentContact();
+                if (contact == null)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                sponsor.ContactId = contact.Id;
 
                 var dbSponsor = (from mb in m_db.MemberBusinesses
                                  where mb.ContactId == sponsor.ContactId
@@ -113,8 +115,8 @@ namespace SportsManager.Controllers
                 if (mb == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var contactId = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).Select(c => c.Id).SingleOrDefault();
-                if (mb.ContactId != contactId)
+                Contact contact = GetCurrentContact();
+                if (contact == null || mb.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 mb.Name = item.Name;
@@ -152,8 +154,8 @@ namespace SportsManager.Controllers
 
             if (!IsAccountAdmin(accountId, userId))
             {
-                var contactId = m_db.Contacts.Where(c => c.UserId == userId).Select(c => c.Id).SingleOrDefault();
-                if (dbSponsor.ContactId != contactId)
+                Contact contact = GetCurrentContact();
+                if (contact == null || dbSponsor.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }
 

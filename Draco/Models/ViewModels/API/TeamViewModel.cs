@@ -12,6 +12,7 @@ namespace SportsManager.ViewModels.API
         public long LeagueSeasonId { get; set; } 
         public long TeamId { get; set; }
         [Required]
+        [StringLength(25)]
         public string Name { get; set; } 
         public long DivisionSeasonId { get; set; }
 

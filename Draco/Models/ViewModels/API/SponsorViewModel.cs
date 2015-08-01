@@ -11,7 +11,7 @@ namespace SportsManager.ViewModels.API
         public long Id { get; set; }
         public long ContactId { get; set; }
         public long AccountId { get; set; }
-        [Required]
+        [Required, StringLength(50, MinimumLength = 1)]
         public String Name { get; set; }
         [Required]
         public String StreetAddress { get; set; }
@@ -29,5 +29,6 @@ namespace SportsManager.ViewModels.API
         public String Website { get; set; }
         public String ContactName { get; set; }
         public String ContactPhotoUrl { get; set; }
+        public long TeamId { get; set; }
     }
 }

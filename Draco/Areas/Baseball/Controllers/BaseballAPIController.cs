@@ -1,4 +1,10 @@
-﻿using System;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using SportsManager.Models.Utils;
+using SportsManager.ViewModels.API;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,39 +14,59 @@ using System.Net.Mail;
 using System.Text;
 using System.Web;
 using System.Web.Http;
-using SportsManager.Models;
-using SportsManager.Models.Utils;
 
 namespace SportsManager.Baseball.Controllers
 {
-    public class BaseballAPIController : ApiController
+    public class BaseballAPIController : DBApiController
     {
+        public BaseballAPIController(DB db) : base(db)
+        { 
+        }
+
         public HttpResponseMessage GetPlayerName(long accountId, long seasonId, long id)
         {
-            var name = DataAccess.TeamRoster.GetPlayerName(id, seasonId == 0);
-            if (name == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
+            ContactNameViewModel vm;
 
-            return Request.CreateResponse<ModelObjects.ContactName>(HttpStatusCode.OK, name);
+            if (seasonId == 0)
+            {
+                var p = (from r in m_db.Rosters
+                         where r.Id == id
+                         select r).FirstOrDefault();
+
+                if (p == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                vm = Mapper.Map<Player, ContactNameViewModel>(p);
+            }
+            else
+            {
+                var p = (from rs in m_db.RosterSeasons
+                         where rs.Id == id
+                         select rs).FirstOrDefault();
+
+                if (p == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                vm = Mapper.Map<PlayerSeason, ContactNameViewModel>(p);
+            }
+
+            return Request.CreateResponse<ContactNameViewModel>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage SearchPlayerName(long accountId, string term)
         {
-            var name = DataAccess.TeamRoster.FindPlayers(accountId, term).Take(20);
-            if (name == null)
+            var p = (from r in m_db.Rosters
+                     join c in m_db.Contacts on r.ContactId equals c.Id
+                     where r.AccountId == accountId && c.LastName.Contains(term)
+                     orderby c.LastName, c.FirstName, c.MiddleName
+                     select r).Take(20);
+
+            if (p == null)
                 throw new HttpResponseException(HttpStatusCode.NotFound);
 
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, name);
-        }
-
-        public HttpResponseMessage SearchPlayerNameExtended(long accountId, string term)
-        {
-            var name = DataAccess.TeamRoster.FindPlayers(accountId, term);
-            if (name == null)
-                throw new HttpResponseException(HttpStatusCode.NotFound);
-
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, name);
+            var vm = Mapper.Map<IEnumerable<Player>, ContactNameViewModel[]>(p);
+            return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -74,7 +100,7 @@ namespace SportsManager.Baseball.Controllers
                               where !String.IsNullOrEmpty(c.Email)
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
 
-                var fromContact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+                var fromContact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
                 if (fromContact == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -135,39 +161,53 @@ namespace SportsManager.Baseball.Controllers
             Globals.MailMessage(new MailAddress(sendTo), new MailAddress(sendTo), "Sent Message Summary: " + subject, successMsg.ToString());
         }
 
-        private IEnumerable<ModelObjects.Contact> GetSeasonContactList(long accountId)
+        private IEnumerable<Contact> GetSeasonContactList(long accountId)
         {
-            return DataAccess.TeamRoster.GetAllActiveContacts(accountId);
+            long seasonId = GetCurrentSeasonId(accountId);
+
+            // get leagues in season
+            var leagueSeasonIds = (from ls in m_db.LeagueSeasons
+                           where ls.SeasonId == seasonId
+                           select ls.Id);
+
+            return (from ls in m_db.LeagueSeasons
+                    join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in m_db.Rosters on rs.PlayerId equals r.Id
+                    join c in m_db.Contacts on r.ContactId equals c.Id
+                    orderby c.LastName, c.FirstName, c.MiddleName
+                    where !String.IsNullOrEmpty(c.Email) && leagueSeasonIds.Contains(ls.Id) && !rs.Inactive
+                    select c);
         }
 
-        private IEnumerable<ModelObjects.Contact> GetUserContactList(IEnumerable<long> contactIds)
+        private IEnumerable<Contact> GetUserContactList(IEnumerable<long> contactIds)
         {
-            return (from cId in contactIds
-                    select DataAccess.Contacts.GetContact(cId));
+            return (from c in m_db.Contacts
+                    where contactIds.Contains(c.Id)
+                    select c);
         }
 
-        private IEnumerable<ModelObjects.Contact> GetLeaguesContactList(IEnumerable<long> leagueIds)
+        private IEnumerable<Contact> GetLeaguesContactList(IEnumerable<long> leagueIds)
         {
-            List<ModelObjects.Contact> contactList = new List<ModelObjects.Contact>();
-
-            foreach (var leagueId in leagueIds)
-            {
-                contactList.AddRange(DataAccess.Leagues.GetLeagueContacts(leagueId));
-            }
-
-            return contactList;
+            return (from ls in m_db.LeagueSeasons
+                    join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in m_db.Rosters on rs.PlayerId equals r.Id
+                    join c in m_db.Contacts on r.ContactId equals c.Id
+                    orderby c.LastName, c.FirstName, c.MiddleName
+                    where (c.Email != "" && c.Email != null) && leagueIds.Contains(ls.Id) && !rs.Inactive
+                    select c);
         }
 
-        private IEnumerable<ModelObjects.Contact> GetTeamsContactList(IEnumerable<long> teamIds)
+        private IEnumerable<Contact> GetTeamsContactList(IEnumerable<long> teamIds)
         {
-            List<ModelObjects.Contact> contactList = new List<ModelObjects.Contact>();
-
-            foreach (var teamId in teamIds)
-            {
-                contactList.AddRange(DataAccess.Teams.GetTeamContacts(teamId));
-            }
-
-            return contactList;
+            return (from ts in m_db.TeamsSeasons
+                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in m_db.Rosters on rs.PlayerId equals r.Id
+                    join c in m_db.Contacts on r.ContactId equals c.Id
+                    where (c.Email != null && c.Email != "") && teamIds.Contains(ts.Id) && !rs.Inactive
+                    orderby c.LastName, c.FirstName, c.MiddleName
+                    select c);
         }
     }
 }

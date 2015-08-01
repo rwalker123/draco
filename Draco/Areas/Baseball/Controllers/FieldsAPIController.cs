@@ -1,4 +1,8 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,40 +12,54 @@ using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
 {
-    public class FieldsAPIController : ApiController
+    public class FieldsAPIController : DBApiController
     {
+        public FieldsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("fields")]
         public HttpResponseMessage GetFields(long accountId)
         {
-            var fields = DataAccess.Fields.GetFields(accountId);
+            var fields = m_db.AvailableFields.Where(f => f.AccountId == accountId).OrderBy(f => f.Name);
             if (fields != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.Field>>(HttpStatusCode.OK, fields);
+                var vm = Mapper.Map<IEnumerable<Field>, FieldViewModel[]>(fields);
+                return Request.CreateResponse<FieldViewModel[]>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("fields")]
-        public HttpResponseMessage PostField(long accountId, ModelObjects.Field f)
+        public HttpResponseMessage PostField(long accountId, FieldViewModel f)
         {
-            f.AccountId = accountId;
-
-            if (ModelState.IsValid && f != null)
+            if (ModelState.IsValid)
             {
-                var fieldId = DataAccess.Fields.AddField(f);
-                if (fieldId > 0)
+                var dbField = new Field()
                 {
-                    return Request.CreateResponse<ModelObjects.Field>(HttpStatusCode.Created, f);
-                }
-                else
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                    Name = f.Name,
+                    ShortName = f.ShortName,
+                    AccountId = f.AccountId,
+                    Address = f.Address ?? String.Empty,
+                    City = f.City ?? String.Empty,
+                    State = f.State ?? String.Empty,
+                    ZipCode = f.ZipCode ?? String.Empty,
+                    Directions = f.Directions ?? String.Empty,
+                    Comment = f.Comment ?? String.Empty,
+                    Latitude = f.Latitude ?? String.Empty,
+                    Longitude = f.Longitude ?? String.Empty,
+                    RainoutNumber = f.RainoutNumber ?? String.Empty
+                };
 
+                m_db.AvailableFields.Add(dbField);
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<Field, FieldViewModel>(dbField);
+                return Request.CreateResponse<FieldViewModel>(HttpStatusCode.Created, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -50,20 +68,33 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("fields")]
-        public HttpResponseMessage PutField(long accountId, ModelObjects.Field f)
+        public HttpResponseMessage PutField(long accountId, FieldViewModel f)
         {
-            f.AccountId = accountId;
-
-            if (ModelState.IsValid && f != null)
+            if (ModelState.IsValid)
             {
-                var success = DataAccess.Fields.ModifyField(f);
-                if (success)
-                {
-                    return Request.CreateResponse<ModelObjects.Field>(HttpStatusCode.OK, f);
-                }
-                else
+                var dbField = m_db.AvailableFields.Find(f.Id);
+                if (dbField == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
+                if (dbField.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbField.Address = f.Address ?? String.Empty;
+                dbField.City = f.City ?? String.Empty;
+                dbField.Comment = f.Comment ?? String.Empty;
+                dbField.Directions = f.Directions ?? String.Empty;
+                dbField.Latitude = f.Latitude ?? String.Empty;
+                dbField.Longitude = f.Longitude ?? String.Empty;
+                dbField.Name = f.Name;
+                dbField.RainoutNumber = f.RainoutNumber ?? String.Empty;
+                dbField.ShortName = f.ShortName;
+                dbField.State = f.State ?? String.Empty;
+                dbField.ZipCode = f.ZipCode ?? String.Empty;
+
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<Field, FieldViewModel>(dbField);
+                return Request.CreateResponse<FieldViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -78,13 +109,17 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("fields")]
         public HttpResponseMessage DeleteField(long accountId, long id)
         {
-            var success = DataAccess.Fields.RemoveField(id);
-            if (success)
-            {
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
-            else
+            var field = m_db.AvailableFields.Find(id);
+            if (field == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (field.AccountId == accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            m_db.AvailableFields.Remove(field);
+            m_db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
     }
 }

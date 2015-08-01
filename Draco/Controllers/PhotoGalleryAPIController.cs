@@ -16,6 +16,11 @@ namespace SportsManager.Controllers
 {
     public class PhotoGalleryAPIController : DBApiController
     {
+        public PhotoGalleryAPIController(DB db) : base(db)
+        {
+
+
+        }
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("photos")]
         public HttpResponseMessage Get(long accountId)
@@ -251,7 +256,7 @@ namespace SportsManager.Controllers
                                  select pga).AsEnumerable();
 
             // get team ids for current season
-             long currentSeason = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+             long currentSeason = GetCurrentSeasonId(accountId);
 
              var teamIds = (from ls in m_db.LeagueSeasons
                             join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId

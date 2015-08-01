@@ -1,6 +1,11 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -9,7 +14,7 @@ using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class RosterAPIController : ApiController
+    public class RosterAPIController : DBApiController
     {
         private int pageSize = 10;
 
@@ -19,13 +24,24 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             if (id.HasValue)
             {
-                var player = DataAccess.TeamRoster.GetPlayer(id.Value);
-                return Request.CreateResponse<ModelObjects.Player>(HttpStatusCode.OK, player);
+                var player = m_db.RosterSeasons.Find(id.Value);
+                if (player == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (player.TeamSeasonId != teamSeasonId)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (player.TeamSeason.LeagueSeason.League.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                var vm = Mapper.Map<PlayerSeason, PlayerViewModel>(player);
+                return Request.CreateResponse<PlayerViewModel>(HttpStatusCode.OK, vm);
             }
             else
             {
-                var players = DataAccess.TeamRoster.GetPlayers(teamSeasonId);
-                return Request.CreateResponse<IQueryable<ModelObjects.Player>>(HttpStatusCode.OK, players);
+                var players = m_db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId);
+                var vm = Mapper.Map<IEnumerable<PlayerSeason>, PlayerViewModel[]>(players);
+                return Request.CreateResponse<PlayerViewModel[]>(HttpStatusCode.OK, vm);
             }
         }
 
@@ -33,21 +49,34 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("availableplayers")]
         public HttpResponseMessage GetAvailablePlayers(long accountId, long teamSeasonId, string lastName, string firstName, int page)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = m_db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var players = DataAccess.TeamRoster.GetAvailablePlayers(accountId, team.LeagueId, firstName, lastName).Skip((page - 1) * pageSize).Take(pageSize);
-            var contactNames = players.Select(a => new ModelObjects.ContactName()
-            {
-                FirstName = a.FirstName,
-                LastName = a.LastName,
-                MiddleName = a.MiddleName,
-                Id = a.Id,
-                PhotoURL = a.PhotoURL
-            });
+            long affiliationId = (from a in m_db.Accounts
+                                  where a.Id == accountId
+                                  select a.AffiliationId).SingleOrDefault();
 
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, contactNames);
+            var aIds = (from a in m_db.Accounts
+                        where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
+                        select a.Id);
+
+            var cIds = (from ts in m_db.TeamsSeasons
+                        join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                        join r in m_db.Rosters on rs.PlayerId equals r.Id
+                        where ts.LeagueSeasonId == team.LeagueSeasonId && !rs.Inactive
+                        select r.ContactId);
+
+            var contacts = (from c in m_db.Contacts
+                    where aIds.Contains(c.CreatorAccountId) &&
+                    !cIds.Contains(c.Id) &&
+                    (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
+                    (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                    orderby c.LastName, c.FirstName, c.MiddleName
+                    select c).Skip((page - 1) * pageSize).Take(pageSize);
+
+            var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(contacts);
+            return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]

@@ -1,11 +1,7 @@
-﻿using DataAccess;
-using SportsManager.Controllers.Attributes;
+﻿using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers

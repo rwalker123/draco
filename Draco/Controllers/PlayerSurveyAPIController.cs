@@ -25,7 +25,7 @@ namespace SportsManager.Controllers
             if (!String.IsNullOrEmpty(strPageNo))
                 int.TryParse(strPageNo, out pageNo);
 
-            var currentSeasonId = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+            var currentSeasonId = GetCurrentSeasonId(accountId);
 
             var profiles = (
                 from pp in m_db.PlayerProfiles
@@ -50,7 +50,7 @@ namespace SportsManager.Controllers
         public HttpResponseMessage GetRandomTeamPlayerWithSurveys(long accountId, long id)
         {
             // first get a random player on the team who has answered the survey.
-            var currentSeasonId = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+            var currentSeasonId = GetCurrentSeasonId(accountId);
 
             var qry = (from pp in m_db.PlayerProfiles
                     join c in m_db.Contacts on pp.PlayerId equals c.Id
@@ -94,7 +94,7 @@ namespace SportsManager.Controllers
         [ActionName("randomsurvey")]
         public HttpResponseMessage GetRandomPlayerSurveys(long accountId)
         {
-            var currentSeasonId = m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+            var currentSeasonId = GetCurrentSeasonId(accountId);
 
             var qry = (
                 from pp in m_db.PlayerProfiles
@@ -244,10 +244,10 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 var aspNetUserId = Globals.GetCurrentUserId();
-                var currentContactId = m_db.Contacts.Where(c => c.UserId == aspNetUserId).Select(c => c.Id).SingleOrDefault();
+                Contact contact = GetCurrentContact();
 
                 var isAccountAdmin = IsAccountAdmin(accountId, aspNetUserId);
-                if (currentContactId != id && !isAccountAdmin)
+                if (contact.Id != id && !isAccountAdmin)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 var questionAnswer = (from pp in m_db.PlayerProfiles

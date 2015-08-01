@@ -42,9 +42,9 @@ namespace ModelObjects
         }
     }
 
-    internal class DB : DbContext
+    public class DB : DbContext
     {
-        public DB()
+        internal DB()
             : base(ConfigurationManager.ConnectionStrings["webDBConnection"].ConnectionString)
         {
         }

@@ -21,7 +21,7 @@ namespace SportsManager.Controllers
             var categories = m_db.MessageCategories.Where(mc => mc.AccountId == accountId && !mc.IsTeam).ToList();
 
             String userId = Globals.GetCurrentUserId();
-            Contact contact = m_db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
+            Contact contact = GetCurrentContact();
 
             bool isAdmin = false;
 
@@ -153,7 +153,7 @@ namespace SportsManager.Controllers
             {
                 topic.CategoryId = categoryId;
                 topic.CreatorContactId = 0;
-                var contact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
+                Contact contact = GetCurrentContact();
                 if (contact != null)
                 {
                     topic.CreatorContactId = contact.Id;
@@ -234,7 +234,7 @@ namespace SportsManager.Controllers
                 post.TopicId = topic.Id;
                 post.CategoryId = topic.CategoryId;
                 post.CreatorContactId = 0;
-                var contact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
+                Contact contact = GetCurrentContact();
                 if (contact != null)
                 {
                     post.CreatorContactId = contact.Id;
@@ -488,7 +488,7 @@ namespace SportsManager.Controllers
             if (team == null)
                 return null;
 
-            var currentSeason = m_db.CurrentSeasons.Where(cs => cs.AccountId == team.AccountId).SingleOrDefault();
+            var currentSeason = GetCurrentSeasonId(team.AccountId);
             if (currentSeason == null)
                 return null;
 

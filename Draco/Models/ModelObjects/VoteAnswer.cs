@@ -1,7 +1,7 @@
 ﻿
 namespace ModelObjects
 {
-    class VoteAnswer
+    public class VoteAnswer
     {
         public long Id { get; set; } // id (Primary key)
         public long QuestionId { get; set; } // QuestionId

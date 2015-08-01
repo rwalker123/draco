@@ -105,6 +105,15 @@ namespace SportsManager
             Mapper.CreateMap<Contact, ContactNameViewModel>()
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)));
 
+            Mapper.CreateMap<ContactRole, ContactNameRoleViewModel>()
+                .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
+                .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
+                .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
+                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
+                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
+                .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.ContactId)));
+
             Mapper.CreateMap<MessagePost, MessagePostViewModel>()
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
@@ -151,6 +160,10 @@ namespace SportsManager
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL));
 
+            Mapper.CreateMap<Sponsor, SponsorViewModel>()
+                .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Name))
+                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.LogoURL));
+
             Mapper.CreateMap<ProfileQuestionAnswer, ProfileAnswersViewModel>()
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
@@ -163,6 +176,67 @@ namespace SportsManager
                 .ForMember(vm => vm.Questions, opt => opt.MapFrom(model => model.ProfileQuestions.OrderBy(pq => pq.QuestionNum).ThenBy(pq => pq.Question)));
 
             Mapper.CreateMap<Season, SeasonViewModel>();
+
+            Mapper.CreateMap<VoteQuestion, VoteQuestionViewModel>();
+
+            Mapper.CreateMap<VoteOption, VoteOptionViewModel>();
+
+            Mapper.CreateMap<VoteQuestion, VoteQuestionResultsViewModel>()
+                .ForMember(vm => vm.HasVoted, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => va.Contact.UserId == Globals.GetCurrentUserId()).Any()))
+                .ForMember(vm => vm.OptionSelected, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => va.Contact.UserId == Globals.GetCurrentUserId()).Select(va => va.OptionId).SingleOrDefault()))
+                .ForMember(vm => vm.Results,
+                           opt => opt.MapFrom(model => model.VoteAnswers.GroupBy(va => new
+                           {
+                               va.OptionId,
+                               va.VoteOption.OptionText,
+                               va.VoteOption.Priority
+                           }).OrderBy(x => x.Key.Priority)
+                              .Select(va => new VoteResultsViewModel()
+                              {
+                                  OptionId = va.Key.OptionId,
+                                  OptionText = va.Key.OptionText,
+                                  TotalVotes = va.Count()
+                              })));
+
+            Mapper.CreateMap<AccountWelcome, WelcomeTextViewModel>();
+            Mapper.CreateMap<AccountWelcome, WelcomeHeaderViewModel>();
+
+            Mapper.CreateMap<Player, ContactNameViewModel>()
+                .ForMember(vm => vm.Id, opt => opt.MapFrom(model => model.ContactId))
+                .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
+                .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
+                .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.ContactId)))
+                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
+                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.DateOfBirth));
+
+            Mapper.CreateMap<PlayerSeason, ContactNameViewModel>()
+                .ForMember(vm => vm.Id, opt => opt.MapFrom(model => model.Roster.ContactId))
+                .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Roster.Contact.FirstName))
+                .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Roster.Contact.LastName))
+                .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Roster.Contact.MiddleName))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Roster.ContactId)))
+                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Roster.Contact.FirstYear))
+                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Roster.Contact.DateOfBirth));
+
+            Mapper.CreateMap<Field, FieldViewModel>();
+
+            Mapper.CreateMap<PlayersWantedClassified, PlayersWantedViewModel>()
+                .ForMember(vm => vm.EMail, opt => opt.MapFrom(model => model.Contact.Email))
+                .ForMember(vm => vm.Phone, opt => opt.MapFrom(model => model.Contact.Phone1))
+                .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => Contact.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
+
+            Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>();
+
+            Mapper.CreateMap<PlayerSeason, PlayerViewModel>()
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.AccountId))
+                .ForMember(vm => vm.TeamId, opt => opt.MapFrom(model => model.TeamSeasonId))
+                .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
+                .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid)))
+                .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact));
+
+                Mapper.AssertConfigurationIsValid();
         }
     }
 }

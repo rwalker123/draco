@@ -1,5 +1,8 @@
-﻿using SportsManager.Models;
-using System;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -7,29 +10,23 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class WelcomeAPIController : ApiController
+    public class WelcomeAPIController : DBApiController
     {
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("WelcomeText")]
         public HttpResponseMessage GetWelcomeText(long accountId, long id)
         {
-            var welcomeText = DataAccess.Accounts.GetWelcomeText(id);
+            var welcomeText = m_db.AccountWelcomes.Find(id);
             if (welcomeText != null)
             {
-                return Request.CreateResponse<String>(HttpStatusCode.OK, welcomeText.WelcomeText);
-                //// 
-                //var response = new HttpResponseMessage(HttpStatusCode.OK)
-                //{
-                //    Content = new StringContent(welcomeText.WelcomeText)
-                //};
-                //response.Headers.Location =
-                //    new Uri(Url.Link("ActionApi", new { action = "WelcomeText", id = welcomeText.Id, accountId = accountId }));
-                //return response;
+                if (welcomeText.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(welcomeText);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
 
@@ -37,22 +34,39 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage TeamGetWelcomeText(long accountId, long teamSeasonId, long id)
         {
-            return GetWelcomeText(accountId, id);
+            var welcomeText = m_db.AccountWelcomes.Find(id);
+            if (welcomeText != null)
+            {
+                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                if (teamSeason == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (welcomeText.AccountId != accountId || welcomeText.TeamId != teamSeason.TeamId)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(welcomeText);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("WelcomeTextHeaders")]
         public HttpResponseMessage GetWelcomeTextHeaders(long accountId)
         {
-            var welcomeTexts = DataAccess.Accounts.GetAccountWelcomeTextHeaders(accountId);
+            var welcomeTexts = (from aw in m_db.AccountWelcomes
+                                where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
+                                orderby aw.OrderNo
+                                select aw).AsEnumerable();
+
             if (welcomeTexts != null)
             {
-                return Request.CreateResponse<IQueryable<ModelObjects.AccountWelcome>>(HttpStatusCode.OK, welcomeTexts);
+                var vm = Mapper.Map<IEnumerable<AccountWelcome>, WelcomeHeaderViewModel[]>(welcomeTexts);
+                return Request.CreateResponse<WelcomeHeaderViewModel[]>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
 
@@ -60,57 +74,77 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeTextHeaders")]
         public HttpResponseMessage TeamGetWelcomeTextHeaders(long accountId, long teamSeasonId)
         {
-            var welcomeTexts = DataAccess.Teams.GetWelcomeTextHeaders(accountId, teamSeasonId);
+            var welcomeTexts = (from aw in m_db.AccountWelcomes
+                                where aw.AccountId == accountId && aw.TeamId == teamSeasonId
+                                orderby aw.OrderNo
+                                select aw).AsEnumerable();
+
             if (welcomeTexts != null)
             {
-                return Request.CreateResponse<IQueryable<ModelObjects.AccountWelcome>>(HttpStatusCode.OK, welcomeTexts);
+                var vm = Mapper.Map<IEnumerable<AccountWelcome>, WelcomeHeaderViewModel[]>(welcomeTexts);
+                return Request.CreateResponse<WelcomeHeaderViewModel[]>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("WelcomeText")]
-        public HttpResponseMessage TeamPostWelcomeText(long accountId, long teamSeasonId, ModelObjects.AccountWelcome welcomeData)
+        public HttpResponseMessage TeamPostWelcomeText(long accountId, long teamSeasonId, WelcomeTextViewModel welcomeData)
         {
-            return PostWelcomeText(accountId, welcomeData);
+            if (ModelState.IsValid)
+            {
+                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                if (teamSeason == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (teamSeason.Team.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                var dbData = new AccountWelcome()
+                {
+                    AccountId = accountId,
+                    Team = teamSeason.Team,
+                    CaptionMenu = welcomeData.CaptionMenu,
+                    OrderNo = welcomeData.OrderNo,
+                    WelcomeText = welcomeData.WelcomeText
+                };
+
+                m_db.AccountWelcomes.Add(dbData);
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("WelcomeText")]
-        public HttpResponseMessage PostWelcomeText(long accountId, ModelObjects.AccountWelcome welcomeData)
+        public HttpResponseMessage PostWelcomeText(long accountId, WelcomeTextViewModel welcomeData)
         {
-            if (ModelState.IsValid && welcomeData != null)
+            if (ModelState.IsValid)
             {
-                if (welcomeData.TeamId > 0)
+                var dbData = new AccountWelcome()
                 {
-                    var team = DataAccess.Teams.GetTeam(welcomeData.TeamId);
-                    if (team == null)
-                        return Request.CreateResponse(HttpStatusCode.NotFound);
+                    AccountId = accountId,
+                    TeamId = 0,
+                    CaptionMenu = welcomeData.CaptionMenu,
+                    OrderNo = welcomeData.OrderNo,
+                    WelcomeText = welcomeData.WelcomeText
+                };
 
-                    // need to use the teamId not team Season.
-                    welcomeData.TeamId = team.TeamId;
-                }
+                m_db.AccountWelcomes.Add(dbData);
+                m_db.SaveChanges();
 
-                // Convert any HTML markup in the status text.
-                DataAccess.Accounts.AddWelcomeText(welcomeData);
-                if (welcomeData.Id == 0)
-                    return Request.CreateResponse(HttpStatusCode.BadRequest);
-
-                // Create a 201 response.
-                var response = Request.CreateResponse<ModelObjects.AccountWelcome>(HttpStatusCode.Created, welcomeData);
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "WelcomeText", accountId = accountId, id = welcomeData.Id }));
-                return response;
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
@@ -118,7 +152,33 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage PutTeamWelcomeText(long accountId, long teamSeasonId, long id, ModelObjects.AccountWelcome welcomeData)
         {
-            return PutWelcomeText(accountId, id, welcomeData);
+            if (ModelState.IsValid)
+            {
+                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                if (teamSeason == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (teamSeason.Team.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                var dbData = m_db.AccountWelcomes.Find(id);
+                if (dbData == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (dbData.TeamId != teamSeason.TeamId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbData.CaptionMenu = welcomeData.CaptionMenu;
+                dbData.OrderNo = welcomeData.OrderNo;
+                dbData.WelcomeText = welcomeData.WelcomeText;
+
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
@@ -126,24 +186,26 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage PutWelcomeText(long accountId, long id, ModelObjects.AccountWelcome welcomeData)
         {
-            if (id != 0 && ModelState.IsValid && welcomeData != null)
+            if (id != 0 && ModelState.IsValid)
             {
-                // Convert any HTML markup in the status text.
-                bool foundMessage = DataAccess.Accounts.ModifyWelcomeText(welcomeData);
-
-                if (!foundMessage)
+                var dbData = m_db.AccountWelcomes.Find(id);
+                if (dbData == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                // Create a 200 response.
-                var response = Request.CreateResponse<ModelObjects.AccountWelcome>(HttpStatusCode.OK, welcomeData);
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "WelcomeText", accountId = accountId, id = welcomeData.Id }));
-                return response;
+                if (dbData.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbData.CaptionMenu = welcomeData.CaptionMenu;
+                dbData.OrderNo = welcomeData.OrderNo;
+                dbData.WelcomeText = welcomeData.WelcomeText;
+
+                m_db.SaveChanges();
+
+                var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
+                return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
@@ -151,7 +213,23 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage TeamDeleteWelcomeText(long accountId, long teamSeasonId, long id)
         {
-            return DeleteWelcomeText(accountId, id);
+            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeason == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (teamSeason.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var dbData = m_db.AccountWelcomes.Find(id);
+            if (dbData == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (dbData.TeamId != teamSeason.TeamId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            m_db.AccountWelcomes.Remove(dbData);
+            m_db.SaveChanges();
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
@@ -159,19 +237,16 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage DeleteWelcomeText(long accountId, long id)
         {
-            if (id > 0)
-            {
-                DataAccess.Accounts.RemoveWelcomeText(id);
+            var dbData = m_db.AccountWelcomes.Find(id);
+            if (dbData == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+            if (dbData.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                return response;
-            }
-
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            m_db.AccountWelcomes.Remove(dbData);
+            m_db.SaveChanges();
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
     }
 }

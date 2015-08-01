@@ -9,7 +9,8 @@ namespace SportsManager.Controllers
     public abstract class DBApiController : ApiController
     {
         protected DB m_db;
-        public DBApiController(DB db)
+
+        protected DBApiController(DB db)
         {
             m_db = db;
         }
@@ -124,6 +125,20 @@ namespace SportsManager.Controllers
                     IsContactInRole(accountId, userId, GetAccountPhotoAdminId()));
         }
 
+        protected String GetLeagueAdminId()
+        {
+            return (from r in m_db.AspNetRoles
+                    where r.Name == "LeagueAdmin"
+                    select r.Id).Single();
+        }
+
+        protected String GetTeamAdminId()
+        {
+            return (from r in m_db.AspNetRoles
+                    where r.Name == "TeamAdmin"
+                    select r.Id).Single();
+        }
+
         protected bool IsContactInRole(long accountId, String aspNetUserId, String roleId)
         {
             var roles = GetContactRoles(accountId, aspNetUserId);
@@ -214,6 +229,32 @@ namespace SportsManager.Controllers
             m_db.Contacts.RemoveRange(unusedContacts);
         }
 
+        protected long GetCurrentSeasonId(long accountId)
+        {
+            return m_db.CurrentSeasons.Where(cs => cs.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+        }
+
+        protected void RemoveLeagueSeason(LeagueSeason ls)
+        {
+            m_db.DivisionSeasons.RemoveRange(ls.DivisionSeasons);
+
+            foreach (TeamSeason t in ls.TeamsSeasons)
+                RemoveSeasonTeam(t);
+
+            m_db.LeagueSeasons.Remove(ls);
+        }
+
+        private void RemoveSeasonTeam(TeamSeason t)
+        {
+            m_db.RosterSeasons.RemoveRange(t.Roster);
+            m_db.TeamSeasonManagers.RemoveRange(t.TeamSeasonManagers);
+            m_db.GameRecaps.RemoveRange(t.GameRecaps);
+
+            var allGamesForTeam = (from ls in m_db.LeagueSchedules
+                                   where ls.HTeamId == t.Id || ls.VTeamId == t.Id
+                                   select ls);
+            m_db.LeagueSchedules.RemoveRange(allGamesForTeam);
+        }
 
         protected void RemoveUnusedDivisions(long accountId)
         {
@@ -225,6 +266,12 @@ namespace SportsManager.Controllers
                                    select dd);
 
             m_db.DivisionDefs.RemoveRange(unusedDivisions);
+        }
+
+        protected Contact GetCurrentContact()
+        {
+            String userId = Globals.GetCurrentUserId();
+            return m_db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
         }
 
     }
