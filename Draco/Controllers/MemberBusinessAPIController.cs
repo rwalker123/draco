@@ -14,20 +14,24 @@ namespace SportsManager.Controllers
 {
     public class MemberBusinessAPIController : DBApiController
     {
+        public MemberBusinessAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("memberbusinesses")]
         public HttpResponseMessage GetMemberBusiness(long accountId)
         {
-            long seasonId = (from cs in m_db.CurrentSeasons
+            long seasonId = (from cs in Db.CurrentSeasons
                              where cs.AccountId == accountId
                              select cs.SeasonId).SingleOrDefault();
 
-            var memBus = (from mb in m_db.MemberBusinesses
-                    join c in m_db.Contacts on mb.ContactId equals c.Id
-                    join r in m_db.Rosters on c.Id equals r.ContactId
-                    join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
-                    join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+            var memBus = (from mb in Db.MemberBusinesses
+                    join c in Db.Contacts on mb.ContactId equals c.Id
+                    join r in Db.Rosters on c.Id equals r.ContactId
+                    join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     where ls.SeasonId == seasonId
                     orderby mb.Name
                     select mb).AsEnumerable();
@@ -47,7 +51,7 @@ namespace SportsManager.Controllers
         [ActionName("userbusiness")]
         public HttpResponseMessage GetMemberBusiness(long accountId, long id)
         {
-            var userBusiness = m_db.MemberBusinesses.Where(mb => mb.ContactId == id).SingleOrDefault();
+            var userBusiness = Db.MemberBusinesses.Where(mb => mb.ContactId == id).SingleOrDefault();
             if (userBusiness != null)
             {
                 var vm = Mapper.Map<MemberBusiness, SponsorViewModel>(userBusiness);
@@ -65,13 +69,13 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                Contact contact = GetCurrentContact();
+                Contact contact = this.GetCurrentContact();
                 if (contact == null)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 sponsor.ContactId = contact.Id;
 
-                var dbSponsor = (from mb in m_db.MemberBusinesses
+                var dbSponsor = (from mb in Db.MemberBusinesses
                                  where mb.ContactId == sponsor.ContactId
                                  select mb).SingleOrDefault();
                 if (dbSponsor != null)
@@ -95,8 +99,8 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                m_db.MemberBusinesses.Add(dbSponsor);
-                m_db.SaveChanges();
+                Db.MemberBusinesses.Add(dbSponsor);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<MemberBusiness, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -111,11 +115,11 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var mb = m_db.MemberBusinesses.Find(id);
+                var mb = Db.MemberBusinesses.Find(id);
                 if (mb == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                Contact contact = GetCurrentContact();
+                Contact contact = this.GetCurrentContact();
                 if (contact == null || mb.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -132,7 +136,7 @@ namespace SportsManager.Controllers
                     mb.WebSite = mb.WebSite.Insert(0, "http://");
                 }
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<MemberBusiness, SponsorViewModel>(mb);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -146,21 +150,21 @@ namespace SportsManager.Controllers
         [ActionName("business")]
         public async Task<HttpResponseMessage> DeleteMemberBusiness(long accountId, long id)
         {
-            var dbSponsor = m_db.MemberBusinesses.Find(id);
+            var dbSponsor = Db.MemberBusinesses.Find(id);
             if (dbSponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             string userId = Globals.GetCurrentUserId();
 
-            if (!IsAccountAdmin(accountId, userId))
+            if (!this.IsAccountAdmin(accountId, userId))
             {
-                Contact contact = GetCurrentContact();
+                Contact contact = this.GetCurrentContact();
                 if (contact == null || dbSponsor.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            m_db.MemberBusinesses.Remove(dbSponsor);
-            m_db.SaveChanges();
+            Db.MemberBusinesses.Remove(dbSponsor);
+            Db.SaveChanges();
 
             Sponsor s = new Sponsor()
             {
@@ -176,13 +180,13 @@ namespace SportsManager.Controllers
         [ActionName("randomuserbusiness")]
         public HttpResponseMessage RandomMemberBusiness(long accountId)
         {
-            var qry = (from cs in m_db.CurrentSeasons
-                       join ls in m_db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
-                       join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                       join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
-                       join r in m_db.Rosters on rs.PlayerId equals r.Id
-                       join c in m_db.Contacts on r.ContactId equals c.Id
-                       join mbu in m_db.MemberBusinesses on c.Id equals mbu.ContactId
+            var qry = (from cs in Db.CurrentSeasons
+                       join ls in Db.LeagueSeasons on cs.SeasonId equals ls.SeasonId
+                       join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                       join rs in Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                       join r in Db.Rosters on rs.PlayerId equals r.Id
+                       join c in Db.Contacts on r.ContactId equals c.Id
+                       join mbu in Db.MemberBusinesses on c.Id equals mbu.ContactId
                        where cs.AccountId == accountId && !rs.Inactive && mbu.Id != 0 &&
                        c.CreatorAccountId == accountId
                        select mbu);

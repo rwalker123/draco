@@ -15,11 +15,16 @@ namespace SportsManager.Controllers
     {
         private int pageSize = 20;
 
+        public UserRolesAPIController(DB db) : base(db)
+        {
+
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("SearchContacts")]
         public HttpResponseMessage SearchContacts(long accountId, string lastName, string firstName, int page)
         {
-            var foundItems = (from c in m_db.Contacts
+            var foundItems = (from c in Db.Contacts
                               where c.CreatorAccountId == accountId &&
                               (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
                               (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
@@ -38,32 +43,32 @@ namespace SportsManager.Controllers
             IEnumerable<ContactRole> foundItems = null;
 
             // account admins are not bound by seasons.
-            if (roleId == GetAdminAccountId() || roleId == GetAccountPhotoAdminId())
+            if (roleId == this.GetAdminAccountId() || roleId == this.GetAccountPhotoAdminId())
             {
-                foundItems = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
+                foundItems = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId
                         select cr).AsEnumerable();
             }
-            else if (roleId == GetLeagueAdminId())
+            else if (roleId == this.GetLeagueAdminId())
             {
-                long currentSeason = GetCurrentSeasonId(accountId);
+                long currentSeason = this.GetCurrentSeasonId(accountId);
 
-                foundItems = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
-                        join ls in m_db.LeagueSeasons on cr.RoleData equals ls.Id
+                foundItems = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
+                        join ls in Db.LeagueSeasons on cr.RoleData equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         ls.Id == cr.RoleData && ls.SeasonId == currentSeason
                         select cr).AsEnumerable();
             }
-            else if (roleId == GetTeamAdminId() || roleId == GetTeamPhotoAdminId())
+            else if (roleId == this.GetTeamAdminId() || roleId == this.GetTeamPhotoAdminId())
             {
-                long currentSeason = GetCurrentSeasonId(accountId);
+                long currentSeason = this.GetCurrentSeasonId(accountId);
 
-                foundItems = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
-                        join ts in m_db.TeamsSeasons on cr.RoleData equals ts.Id
-                        join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                foundItems = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
+                        join ts in Db.TeamsSeasons on cr.RoleData equals ts.Id
+                        join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         ts.Id == cr.RoleData && ls.SeasonId == currentSeason
                         select cr).AsEnumerable();
@@ -84,7 +89,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbRole = (from cr in m_db.ContactRoles
+                var dbRole = (from cr in Db.ContactRoles
                               where cr.AccountId == accountId && cr.ContactId == roleData.ContactId &&
                               cr.RoleId == roleData.RoleId && cr.RoleData == roleData.RoleData
                               select cr).SingleOrDefault();
@@ -99,8 +104,8 @@ namespace SportsManager.Controllers
                         RoleData = roleData.RoleData
                     };
 
-                    m_db.ContactRoles.Add(dbRole);
-                    m_db.SaveChanges();
+                    Db.ContactRoles.Add(dbRole);
+                    Db.SaveChanges();
                 }
 
                 var newRole = ContactNameFromRole(accountId, dbRole.RoleId, dbRole.RoleData, dbRole.ContactId);
@@ -123,7 +128,7 @@ namespace SportsManager.Controllers
         {
             if (!String.IsNullOrEmpty(info.RoleId))
             {
-                var dbContactRole = (from cr in m_db.ContactRoles
+                var dbContactRole = (from cr in Db.ContactRoles
                                      where cr.AccountId == accountId && cr.RoleId == info.RoleId && 
                                      cr.ContactId == info.ContactId && cr.RoleData == info.RoleData
                                      select cr).SingleOrDefault();
@@ -131,8 +136,8 @@ namespace SportsManager.Controllers
                 if (dbContactRole == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                m_db.ContactRoles.Remove(dbContactRole);
-                m_db.SaveChanges();
+                Db.ContactRoles.Remove(dbContactRole);
+                Db.SaveChanges();
 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -150,34 +155,34 @@ namespace SportsManager.Controllers
             ContactRole role = null;
 
             // account admins are not bound by seasons.
-            if (roleId == GetAdminAccountId() || roleId == GetAccountPhotoAdminId())
+            if (roleId == this.GetAdminAccountId() || roleId == this.GetAccountPhotoAdminId())
             {
-                role = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
+                role = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         c.Id == contactId
                         select cr).SingleOrDefault();
             }
-            else if (roleId == GetLeagueAdminId())
+            else if (roleId == this.GetLeagueAdminId())
             {
-                long currentSeason = GetCurrentSeasonId(accountId);
+                long currentSeason = this.GetCurrentSeasonId(accountId);
 
-                role = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
-                        join ls in m_db.LeagueSeasons on cr.RoleData equals ls.Id
+                role = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
+                        join ls in Db.LeagueSeasons on cr.RoleData equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         cr.RoleData == roleData && ls.SeasonId == currentSeason &&
                         c.Id == contactId
                         select cr).SingleOrDefault();
             }
-            else if (roleId == GetTeamAdminId() || roleId == GetTeamPhotoAdminId())
+            else if (roleId == this.GetTeamAdminId() || roleId == this.GetTeamPhotoAdminId())
             {
-                long currentSeason = GetCurrentSeasonId(accountId);
+                long currentSeason = this.GetCurrentSeasonId(accountId);
 
-                role = (from cr in m_db.ContactRoles
-                        join c in m_db.Contacts on cr.ContactId equals c.Id
-                        join ts in m_db.TeamsSeasons on cr.RoleData equals ts.Id
-                        join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                role = (from cr in Db.ContactRoles
+                        join c in Db.Contacts on cr.ContactId equals c.Id
+                        join ts in Db.TeamsSeasons on cr.RoleData equals ts.Id
+                        join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         cr.RoleData == roleData && ls.SeasonId == currentSeason &&
                         c.Id == contactId

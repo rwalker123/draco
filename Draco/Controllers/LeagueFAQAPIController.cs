@@ -12,11 +12,15 @@ namespace SportsManager.Controllers
 {
     public class LeagueFAQAPIController : DBApiController
     {
+        public LeagueFAQAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("faqs")]
         public HttpResponseMessage GetFAQs(long accountId)
         {
-            var faqs = m_db.LeagueFaqs.Where(f => f.AccountId == accountId).AsEnumerable();
+            var faqs = Db.LeagueFaqs.Where(f => f.AccountId == accountId).AsEnumerable();
             
             var vm = Mapper.Map<IEnumerable<LeagueFAQItem>, FAQItemViewModel[]>(faqs); 
             return Request.CreateResponse<FAQItemViewModel[]>(HttpStatusCode.OK, vm);
@@ -36,8 +40,8 @@ namespace SportsManager.Controllers
                     Answer = faq.Answer
                 };
 
-                m_db.LeagueFaqs.Add(dbFaq);
-                m_db.SaveChanges();
+                Db.LeagueFaqs.Add(dbFaq);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
                 return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
@@ -53,7 +57,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbFaq = m_db.LeagueFaqs.Find(faq.Id);
+                var dbFaq = Db.LeagueFaqs.Find(faq.Id);
                 if (dbFaq == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -63,7 +67,7 @@ namespace SportsManager.Controllers
                 dbFaq.Answer = faq.Answer;
                 dbFaq.Question = faq.Question;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
                 return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
@@ -77,15 +81,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteFAQ(long accountId, long id)
         {
-            var faq = m_db.LeagueFaqs.Find(id);
+            var faq = Db.LeagueFaqs.Find(id);
             if (faq == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (faq.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.LeagueFaqs.Remove(faq);
-            m_db.SaveChanges();
+            Db.LeagueFaqs.Remove(faq);
+            Db.SaveChanges();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }

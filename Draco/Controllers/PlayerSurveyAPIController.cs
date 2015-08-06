@@ -13,6 +13,10 @@ namespace SportsManager.Controllers
 {
     public class PlayerSurveyAPIController : DBApiController
     {
+        public PlayerSurveyAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("activesurveys")]
         public HttpResponseMessage GetActivePlayersWithSurveys(long accountId)
@@ -25,15 +29,15 @@ namespace SportsManager.Controllers
             if (!String.IsNullOrEmpty(strPageNo))
                 int.TryParse(strPageNo, out pageNo);
 
-            var currentSeasonId = GetCurrentSeasonId(accountId);
+            var currentSeasonId = this.GetCurrentSeasonId(accountId);
 
             var profiles = (
-                from pp in m_db.PlayerProfiles
-                join c in m_db.Contacts on pp.PlayerId equals c.Id
-                join r in m_db.Rosters on c.Id equals r.ContactId
-                join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
-                join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                from pp in Db.PlayerProfiles
+                join c in Db.Contacts on pp.PlayerId equals c.Id
+                join r in Db.Rosters on c.Id equals r.ContactId
+                join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
+                join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                 where r.AccountId == accountId && ls.SeasonId == currentSeasonId
                 select c).Distinct()
                           .OrderBy(x => x.LastName)
@@ -50,14 +54,14 @@ namespace SportsManager.Controllers
         public HttpResponseMessage GetRandomTeamPlayerWithSurveys(long accountId, long id)
         {
             // first get a random player on the team who has answered the survey.
-            var currentSeasonId = GetCurrentSeasonId(accountId);
+            var currentSeasonId = this.GetCurrentSeasonId(accountId);
 
-            var qry = (from pp in m_db.PlayerProfiles
-                    join c in m_db.Contacts on pp.PlayerId equals c.Id
-                    join r in m_db.Rosters on c.Id equals r.ContactId
-                    join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
-                    join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+            var qry = (from pp in Db.PlayerProfiles
+                    join c in Db.Contacts on pp.PlayerId equals c.Id
+                    join r in Db.Rosters on c.Id equals r.ContactId
+                    join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
+                    join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                    join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
                     ts.Id == id && !rs.Inactive
                     select pp.PlayerId).Distinct();
@@ -70,9 +74,9 @@ namespace SportsManager.Controllers
             if (playerId > 0)
             {
                 // next get a random answer from the player.
-                var playerAnswers = (from pc in m_db.ProfileCategories
-                                     join pq in m_db.ProfileQuestions on pc.Id equals pq.CategoryId
-                                     join pp in m_db.PlayerProfiles on pq.Id equals pp.QuestionId
+                var playerAnswers = (from pc in Db.ProfileCategories
+                                     join pq in Db.ProfileQuestions on pc.Id equals pq.CategoryId
+                                     join pp in Db.PlayerProfiles on pq.Id equals pp.QuestionId
                                      where pp.PlayerId == playerId && pp.Answer != null
                                      orderby pc.Priority, pq.QuestionNum
                                      select pp);
@@ -94,15 +98,15 @@ namespace SportsManager.Controllers
         [ActionName("randomsurvey")]
         public HttpResponseMessage GetRandomPlayerSurveys(long accountId)
         {
-            var currentSeasonId = GetCurrentSeasonId(accountId);
+            var currentSeasonId = this.GetCurrentSeasonId(accountId);
 
             var qry = (
-                from pp in m_db.PlayerProfiles
-                join c in m_db.Contacts on pp.PlayerId equals c.Id
-                join r in m_db.Rosters on c.Id equals r.ContactId
-                join rs in m_db.RosterSeasons on r.Id equals rs.PlayerId
-                join ts in m_db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                join ls in m_db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                from pp in Db.PlayerProfiles
+                join c in Db.Contacts on pp.PlayerId equals c.Id
+                join r in Db.Rosters on c.Id equals r.ContactId
+                join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
+                join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                 where r.AccountId == accountId && ls.SeasonId == currentSeasonId
                 select pp).Distinct();
 
@@ -114,9 +118,9 @@ namespace SportsManager.Controllers
             if (playerProfile != null)
             {
                 // next get a random answer from the player.
-                var playerAnswers = (from pc in m_db.ProfileCategories
-                                     join pq in m_db.ProfileQuestions on pc.Id equals pq.CategoryId
-                                     join pp in m_db.PlayerProfiles on pq.Id equals pp.QuestionId
+                var playerAnswers = (from pc in Db.ProfileCategories
+                                     join pq in Db.ProfileQuestions on pc.Id equals pq.CategoryId
+                                     join pp in Db.PlayerProfiles on pq.Id equals pp.QuestionId
                                      where pp.PlayerId == playerProfile.PlayerId && pp.Answer != null
                                      orderby pc.Priority, pq.QuestionNum
                                      select pp);
@@ -138,9 +142,9 @@ namespace SportsManager.Controllers
         [ActionName("playeranswers")]
         public HttpResponseMessage GetPlayerAnswers(long accountId, long id)
         {
-            var playerAnswers = (from pc in m_db.ProfileCategories
-                                 join pq in m_db.ProfileQuestions on pc.Id equals pq.CategoryId
-                                 join pp in m_db.PlayerProfiles on pq.Id equals pp.QuestionId
+            var playerAnswers = (from pc in Db.ProfileCategories
+                                 join pq in Db.ProfileQuestions on pc.Id equals pq.CategoryId
+                                 join pp in Db.PlayerProfiles on pq.Id equals pp.QuestionId
                                  where pp.PlayerId == id && pp.Answer != null
                                  orderby pc.Priority, pq.QuestionNum
                                  select pp).AsEnumerable();
@@ -153,7 +157,7 @@ namespace SportsManager.Controllers
         [ActionName("questions")]
         public HttpResponseMessage GetQuestionsWithCategories(long accountId)
         {
-            var categories = (from pc in m_db.ProfileCategories
+            var categories = (from pc in Db.ProfileCategories
                               where pc.AccountId == accountId
                               orderby pc.Priority
                               select pc);
@@ -168,7 +172,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbCategory = m_db.ProfileCategories.Find(id);
+                var dbCategory = Db.ProfileCategories.Find(id);
                 if (dbCategory == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -182,8 +186,8 @@ namespace SportsManager.Controllers
                     QuestionNum = data.QuestionNum
                 };
 
-                m_db.ProfileQuestions.Add(dbQuestion);
-                m_db.SaveChanges();
+                Db.ProfileQuestions.Add(dbQuestion);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<ProfileQuestionItem, ProfileQuestionViewModel>(dbQuestion);
                 return Request.CreateResponse<ProfileQuestionViewModel>(HttpStatusCode.OK, vm);
@@ -199,7 +203,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbQuestion = m_db.ProfileQuestions.Find(id);
+                var dbQuestion = Db.ProfileQuestions.Find(id);
                 if (dbQuestion == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -209,7 +213,7 @@ namespace SportsManager.Controllers
                 dbQuestion.QuestionNum = data.QuestionNum;
                 dbQuestion.Question = data.Question;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<ProfileQuestionItem, ProfileQuestionViewModel>(dbQuestion);
                 return Request.CreateResponse<ProfileQuestionViewModel>(HttpStatusCode.OK, vm);
@@ -223,15 +227,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteQuestion(long accountId, long id)
         {
-            var dbQuestion = m_db.ProfileQuestions.Find(id);
+            var dbQuestion = Db.ProfileQuestions.Find(id);
             if (dbQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbQuestion.ProfileCategory.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.ProfileQuestions.Remove(dbQuestion);
-            m_db.SaveChanges();
+            Db.ProfileQuestions.Remove(dbQuestion);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -244,13 +248,13 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 var aspNetUserId = Globals.GetCurrentUserId();
-                Contact contact = GetCurrentContact();
+                Contact contact = this.GetCurrentContact();
 
-                var isAccountAdmin = IsAccountAdmin(accountId, aspNetUserId);
+                var isAccountAdmin = this.IsAccountAdmin(accountId, aspNetUserId);
                 if (contact.Id != id && !isAccountAdmin)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var questionAnswer = (from pp in m_db.PlayerProfiles
+                var questionAnswer = (from pp in Db.PlayerProfiles
                                       where pp.PlayerId == data.PlayerId && pp.QuestionId == data.QuestionId
                                       select pp).SingleOrDefault();
 
@@ -266,8 +270,8 @@ namespace SportsManager.Controllers
                         Answer = data.Answer
                     };
 
-                    m_db.PlayerProfiles.Add(questionAnswer);
-                    m_db.SaveChanges();
+                    Db.PlayerProfiles.Add(questionAnswer);
+                    Db.SaveChanges();
                 }
                 else
                 {
@@ -277,14 +281,14 @@ namespace SportsManager.Controllers
                     // no answer, just delete the questionAnswer.
                     if (String.IsNullOrEmpty(data.Answer))
                     {
-                        m_db.PlayerProfiles.Remove(questionAnswer);
-                        m_db.SaveChanges();
+                        Db.PlayerProfiles.Remove(questionAnswer);
+                        Db.SaveChanges();
                         return Request.CreateResponse(HttpStatusCode.NoContent);
                     }
                     else
                     {
                         questionAnswer.Answer = data.Answer;
-                        m_db.SaveChanges();
+                        Db.SaveChanges();
                     }
                 }
 
@@ -309,8 +313,8 @@ namespace SportsManager.Controllers
                     Priority = data.Priority
                 };
 
-                m_db.ProfileCategories.Add(dbCategory);
-                m_db.SaveChanges();
+                Db.ProfileCategories.Add(dbCategory);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<ProfileCategoryItem, ProfileCategoryViewModel>(dbCategory);
                 return Request.CreateResponse<ProfileCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -326,7 +330,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbCategory = m_db.ProfileCategories.Find(data.Id);
+                var dbCategory = Db.ProfileCategories.Find(data.Id);
                 if (dbCategory == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -336,7 +340,7 @@ namespace SportsManager.Controllers
                 dbCategory.CategoryName = data.CategoryName;
                 dbCategory.Priority = data.Priority;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<ProfileCategoryItem, ProfileCategoryViewModel>(dbCategory);
                 return Request.CreateResponse<ProfileCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -350,15 +354,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteCategory(long accountId, long id)
         {
-            var dbCategory = m_db.ProfileCategories.Find(id);
+            var dbCategory = Db.ProfileCategories.Find(id);
             if (dbCategory == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbCategory.AccountId == accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.ProfileCategories.Remove(dbCategory);
-            m_db.SaveChanges();
+            Db.ProfileCategories.Remove(dbCategory);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

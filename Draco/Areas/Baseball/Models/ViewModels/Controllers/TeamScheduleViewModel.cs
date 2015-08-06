@@ -1,32 +1,34 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class TeamScheduleViewModel : AccountViewModel
     {
-        public TeamScheduleViewModel(Controller c, long accountId, long teamSeasonId)
+        public TeamScheduleViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
-            Team = DataAccess.Teams.GetTeam(teamSeasonId);
+            Team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (Team != null)
             {
-                Games = DataAccess.Schedule.GetTeamSchedule(teamSeasonId);
+                Games = (from sched in c.Db.LeagueSchedules
+                         where (sched.HTeamId == teamSeasonId || sched.VTeamId == teamSeasonId)
+                         orderby sched.GameDate
+                         select sched);
             }
         }
 
-        public Team Team { get; set; }
+        public TeamSeason Team { get; set; }
         public IQueryable<Game> Games { get; set; }
 
         public string GameSummary(long gameId)
         {
-            ModelObjects.GameRecap recap = DataAccess.GameStats.GetGameRecap(gameId, Team.Id);
-
-            return (recap != null) ? recap.Recap : String.Empty;
+            return (from gr in Controller.Db.GameRecaps
+                    where gr.TeamId == Team.Id && gr.GameId == gameId
+                    select gr.Recap).SingleOrDefault();
         }
 
         public string WinLoseString(long gameWinner, int gameStatus)

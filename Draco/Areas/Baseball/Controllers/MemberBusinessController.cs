@@ -1,10 +1,16 @@
-﻿using SportsManager.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.ViewModels;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-	public class MemberBusinessController : Controller
+	public class MemberBusinessController : DBController
 	{
+        public MemberBusinessController(DB db) : base(db)
+        {
+        }
+
 		//
 		// GET: /Baseball/MemberBusiness/
 

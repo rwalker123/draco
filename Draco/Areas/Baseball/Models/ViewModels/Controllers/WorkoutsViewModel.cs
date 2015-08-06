@@ -1,26 +1,26 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System;
 using System.IO;
-using System.Web.Mvc;
 using System.Linq;
-using ModelObjects;
-using DocumentFormat.OpenXml;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class WorkoutsViewModel : AccountViewModel
     {
-        public WorkoutsViewModel(Controller c, long accountId)
+        public WorkoutsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
         }
 
-        public WorkoutsViewModel(Controller c, long accountId, long workoutId)
+        public WorkoutsViewModel(DBController c, long accountId, long workoutId)
             : base(c, accountId)
         {
-            Workout = DataAccess.Workouts.GetWorkoutAnnouncement(workoutId);
+            Workout = c.Db.WorkoutAnnouncements.Find(workoutId);
         }
 
         public WorkoutAnnouncement Workout { get; private set; }
@@ -44,10 +44,10 @@ namespace SportsManager.Baseball.ViewModels
                 SheetData sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>();
 
                 var sheet = workbookPart.Workbook.Descendants<Sheet>().ElementAt(0);
-                sheet.Name = Workout.Description;
+                sheet.Name = Workout.WorkoutDesc;
 
                 var nameCell = GetCell(worksheetPart.Worksheet, "A", 1);
-                nameCell.CellValue = new CellValue(Workout.Description);
+                nameCell.CellValue = new CellValue(Workout.WorkoutDesc);
                 nameCell.DataType = new EnumValue<CellValues>(CellValues.String);
 
                 var dateCell = GetCell(worksheetPart.Worksheet, "A", 2);
@@ -55,10 +55,10 @@ namespace SportsManager.Baseball.ViewModels
                 dateCell.DataType = new EnumValue<CellValues>(CellValues.String);
 
                 var workoutLocationCell = GetCell(worksheetPart.Worksheet, "B", 2);
-                workoutLocationCell.CellValue = new CellValue(Workout.FieldName);
+                workoutLocationCell.CellValue = new CellValue(Workout.AvailableField.Name);
                 workoutLocationCell.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                var allRegistrants = DataAccess.WorkoutRegistrants.GetWorkoutRegistrants(Workout.Id);
+                var allRegistrants = Controller.Db.WorkoutRegistrations.Where(wr => wr.WorkoutId == Workout.Id);
 
                 ExportRegistrantsToExcel(allRegistrants, sheetData);
 
@@ -84,8 +84,8 @@ namespace SportsManager.Baseball.ViewModels
                 // New Cell
                 CreateCell(row, "A" + index, registrant.Name);
                 CreateCell(row, "B" + index, registrant.Age.ToString());
-                CreateCell(row, "C" + index, registrant.WantToManage ? "yes" : "no");
-                CreateCell(row, "D" + index, registrant.Email);
+                CreateCell(row, "C" + index, registrant.IsManager ? "yes" : "no");
+                CreateCell(row, "D" + index, registrant.EMail);
                 CreateCell(row, "E" + index, PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(registrant.Phone1)));
                 CreateCell(row, "F" + index, registrant.Positions);
                 CreateCell(row, "G" + index, registrant.WhereHeard);

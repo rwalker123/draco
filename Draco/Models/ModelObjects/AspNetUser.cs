@@ -25,7 +25,7 @@ namespace ModelObjects
         //public virtual ICollection<AspNetUserClaim> AspNetUserClaims { get; set; } // AspNetUserClaims.FK_dbo.AspNetUserClaims_dbo.AspNetUsers_User_Id
         //public virtual ICollection<AspNetUserLogin> AspNetUserLogins { get; set; } // Many to many mapping
         public virtual ICollection<Contact> Contacts { get; set; } // Contacts.FK_Contacts_AspNetUsers
-        
+
         public AspNetUser()
         {
             //AspNetUserClaims = new List<AspNetUserClaim>();
@@ -33,4 +33,5 @@ namespace ModelObjects
             Contacts = new List<Contact>();
             AspNetRoles = new List<AspNetRole>();
         }
+    }
 }

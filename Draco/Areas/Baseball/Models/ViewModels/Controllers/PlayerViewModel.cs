@@ -1,9 +1,7 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -11,26 +9,26 @@ namespace SportsManager.Baseball.ViewModels
     {
         public enum IdType { ContactId, RosterSeasonId, RosterId };
 
-        public PlayerViewModel(Controller c, long accountId, long id, IdType idType)
+        public PlayerViewModel(DBController c, long accountId, long id, IdType idType)
             : base(c, accountId)
         {
             bool isIdSeasonId = false;
 
             if (idType == IdType.RosterSeasonId)
             {
-                var player = DataAccess.TeamRoster.GetPlayer(id);
+                var player = c.Db.RosterSeasons.Find(id);
                 if (player != null)
-                    Contact = player.Contact;
+                    Contact = player.Roster.Contact;
 
                 isIdSeasonId = true;
             }
             else if (idType == IdType.ContactId)
             {
-                Contact = DataAccess.Contacts.GetContact(id);
+                Contact = c.Db.Contacts.Find(id);
             }
             else if (idType == IdType.RosterId)
             {
-                var player = DataAccess.TeamRoster.GetPlayerFromId(id);
+                var player = c.Db.Rosters.Find(id);
                 if (player != null)
                 {
                     Contact = player.Contact;

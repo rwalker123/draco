@@ -1,5 +1,6 @@
-﻿using DataAccess;
-using ModelObjects;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
@@ -8,30 +9,30 @@ namespace SportsManager.ViewModels
 {
     public class HandoutsViewModel : AccountViewModel
     {
-        public HandoutsViewModel(Controller c, long accountId, long teamSeasonId)
+        public HandoutsViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             // convert from team season to team id.
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
             {
                 HasHandouts = false;
                 return;
             }
-            Handouts = DataAccess.TeamHandouts.GetTeamHandouts(team.TeamId).AsEnumerable();
+            Handouts = c.Db.TeamHandouts.Where(th => th.TeamId == team.TeamId);
             HasHandouts = Handouts.Any();
 
             // account admins and team admins.
             if (!IsAdmin)
             {
-                IsAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+                IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId);
             }
         }
 
-        public HandoutsViewModel(Controller c, long accountId)
+        public HandoutsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            Handouts = DataAccess.AccountHandouts.GetAccountHandouts(accountId).AsEnumerable();
+            Handouts = c.Db.AccountHandouts.Where(ah => ah.AccountId == accountId);
             HasHandouts = Handouts.Any();
         }
 
@@ -41,7 +42,7 @@ namespace SportsManager.ViewModels
             private set;
         }
 
-        public IEnumerable<Handout> Handouts
+        public IQueryable<Object> Handouts
         {
             get;
             private set;

@@ -1,14 +1,14 @@
-﻿using SportsManager.ViewModels;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class LeagueSeasonIndexViewModel : AccountViewModel
     {
-        public LeagueSeasonIndexViewModel(Controller c, long accountId)
+        public LeagueSeasonIndexViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            var season = DataAccess.Seasons.GetSeason(CurrentSeasonId);
+            var season = c.GetCurrentSeason(accountId);
             HasSeason = (season != null);
 
             if (HasSeason)

@@ -25,7 +25,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Home", new { accountId = aId });
             }
 
-            return View(new SportsManager.Baseball.ViewModels.LeagueIndexViewModel());
+            return View(new LeagueIndexViewModel(this));
         }
 
         [HttpPost]
@@ -37,7 +37,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
             catch
             {
-                return View(new SportsManager.Baseball.ViewModels.LeagueIndexViewModel());
+                return View(new LeagueIndexViewModel(this));
             }
         }
 
@@ -102,8 +102,8 @@ namespace SportsManager.Areas.Baseball.Controllers
                 //account.OwnerUserId = User.Identity.GetUserId();
                 account.AccountTypeId = 1; // baseball
 
-                m_db.Accounts.Add(account);
-                m_db.SaveChanges();
+                Db.Accounts.Add(account);
+                Db.SaveChanges();
 
                 ViewData["TimeZones"] = vm.TimeZones;
                 return View(vm);

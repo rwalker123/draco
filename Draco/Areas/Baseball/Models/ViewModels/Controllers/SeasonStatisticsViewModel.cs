@@ -1,20 +1,20 @@
-﻿using System.Collections.Generic;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
-using ModelObjects;
-using SportsManager.ViewModels;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class SeasonStatisticsViewModel : AccountViewModel
     {
-        public SeasonStatisticsViewModel(Controller c, long accountId, long seasonId, long leagueId, long divisionId)
+        public SeasonStatisticsViewModel(DBController c, long accountId, long seasonId, long leagueId, long divisionId)
             : base(c, accountId)
         {
             if (accountId == 0)
             {
-                League l = DataAccess.Leagues.GetLeague(leagueId);
-                accountId = l.AccountId;
+                var l = c.Db.LeagueSeasons.Find(leagueId);
+                accountId = l.League.Id;
             }
 
             SeasonId = seasonId;
@@ -25,8 +25,8 @@ namespace SportsManager.Baseball.ViewModels
 
         public IEnumerable<SelectListItem> GetSeasons()
         {
-            ICollection<Season> seasons = DataAccess.Seasons.GetSeasons(AccountId);
-            long currentSeason = DataAccess.Seasons.GetCurrentSeason(AccountId);
+            var seasons = Controller.Db.Seasons.Where(s => s.AccountId == AccountId);
+            long currentSeason = CurrentSeasonId;
 
             List<SelectListItem> seasonListItems = new List<SelectListItem>();
             seasonListItems.Add(new SelectListItem() { Text = "Current Season", Value = currentSeason.ToString(), Selected = currentSeason == SeasonId });

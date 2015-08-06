@@ -1,35 +1,34 @@
-﻿using System.Web.Mvc;
+﻿using SportsManager.Controllers;
 using System.Linq;
-using System.ComponentModel.DataAnnotations;
 
 namespace SportsManager.ViewModels
 {
     public class PhotoGalleryViewModel : AccountViewModel
     {
-        public PhotoGalleryViewModel(Controller c, long accountId, long teamSeasonId)
+        public PhotoGalleryViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             IsTeamEdit = true;
 
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return;
 
-            HasPhotos = DataAccess.PhotoGallery.GetTeamPhotos(team.TeamId).Any();
+            HasPhotos = c.Db.PhotoGalleryAlbums.Where(pga => pga.TeamId == team.Team.Id).Select(pga => pga.Photos).Any();
 
             // account admins can edit team photos, team admins, and team photo admins can as well.
             if (!IsAdmin)
             {
-                IsAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId) || DataAccess.Teams.IsTeamPhotoAdmin(accountId, teamSeasonId);
+                IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId) || c.IsTeamPhotoAdmin(accountId, teamSeasonId);
             }
         }
 
-        public PhotoGalleryViewModel(Controller c, long accountId)
+        public PhotoGalleryViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
             IsTeamEdit = false;
 
-            HasPhotos = DataAccess.PhotoGallery.GetPhotos(accountId).Any();
+            HasPhotos = c.Db.PhotoGalleries.Where(pg => pg.AccountId == accountId).Any();
         }
 
         public bool HasPhotos { get; private set; }

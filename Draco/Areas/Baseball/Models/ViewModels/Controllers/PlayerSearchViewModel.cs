@@ -1,32 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using System;
+using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class PlayerSearchViewModel
     {
-        IEnumerable<ModelObjects.ContactName> m_names;
-
-        public PlayerSearchViewModel(long accountId, string lastNameSearchTerm)
+        public PlayerSearchViewModel(DBController c, long accountId, string lastNameSearchTerm)
         {
             AccountId = accountId;
 
-            if (String.IsNullOrWhiteSpace(lastNameSearchTerm))
-                m_names = new List<ModelObjects.ContactName>();
-            else
-                m_names = DataAccess.TeamRoster.FindPlayers(accountId, lastNameSearchTerm);
+            if (!String.IsNullOrWhiteSpace(lastNameSearchTerm))
+                FoundPlayers = c.Db.Rosters.Where(r => r.AccountId == accountId && r.Contact.LastName.Contains(lastNameSearchTerm))
+                    .OrderBy(r => r.Contact.LastName).ThenBy(r => r.Contact.FirstName).ThenBy(r => r.Contact.MiddleName).Select(r => r.Contact);
         }
 
         public long AccountId { get; set; }
 
-        public IEnumerable<ModelObjects.ContactName> FoundPlayers
+        public IQueryable<Contact> FoundPlayers
         {
-            get
-            {
-                return m_names;
-            }
+            get;
+            private set;
         }
-
-        public long SeasonId { get; set; }
     }
 }

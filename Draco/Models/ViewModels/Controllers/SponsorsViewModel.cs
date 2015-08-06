@@ -1,17 +1,16 @@
-﻿using SportsManager.ViewModels;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
 
 namespace SportsManager.ViewModels
 {
     public class SponsorsViewModel : AccountViewModel
     {
-        public SponsorsViewModel(Controller c, long accountId, long teamSeasonId)
+        public SponsorsViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
-            IsAdmin = IsAdmin || DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+            IsAdmin = IsAdmin || c.IsTeamAdmin(accountId, teamSeasonId);
         }
 
-        public SponsorsViewModel(Controller c, long accountId)
+        public SponsorsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
         }

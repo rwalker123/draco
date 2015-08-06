@@ -9,6 +9,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -62,32 +63,6 @@ namespace SportsManager.Controllers
     {
         private const String nameExistsError = "Name already exists.";
         private const String emailExistsError = "Email already exists.";
-        private const String AccountCreatedSubject = "{0} Account Created";
-        private const String AccountCreatedBody =
-        @"<h4>Welcome to the {0}!</h4> 
-            <p>A new user account has been created on your behalf by <a href='mailto:{1}'>{4}</a>. You can use this account to log into the {0} website.</p>
-            <h3>Login information</h3>
-            <p>User Name: {2}</p>
-            <p>Password: {3}</p>
-            <p>After you login you can change your password by clicking your Name in the upper right corner of the web site.</p>
-            <p>If you have any questions, please reply to this email.</p>
-            Thank you,<br />
-            <br />
-            <br />
-            {0}";
-
-        private const String AccountModifiedSubject = "{0} Account Modified";
-        private const String AccountModifiedBody =
-        @"<h4>{0} Account User Name/Email Change Notice</h4>
-          <p>A new email address has been associated with your {0} account by <a href='mailto:{1}'>{3}</a>. Your new email address is: {2}.</p>
-          <p>This email address is your new <b>user name</b> when logging into the site.</p>
-          <p>If this change was made in error, please reply to this email.</p>
-          Thank you,<br />
-            <br />
-            <br />
-            {0}";
-
-
         private const String AccountPasswordSubject = "{0} Account Password Reset";
         private const String AccountPasswordBody =
             @"<h4>{0} Account Password Reset Notice</h4>
@@ -99,12 +74,15 @@ namespace SportsManager.Controllers
               <br />
               {0}";
 
+        public ContactsAPIController(DB db) : base(db)
+        {
+        }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("contacts")]
         public HttpResponseMessage GetContactDetails(long accountId, long id)
         {
-            var contact = m_db.Contacts.Find(id);
+            var contact = Db.Contacts.Find(id);
             var vm = Mapper.Map<Contact, ContactViewModel>(contact);
             return Request.CreateResponse<ContactViewModel>(HttpStatusCode.OK, vm);
         }
@@ -113,15 +91,15 @@ namespace SportsManager.Controllers
         [ActionName("DoesContactNameExist")]
         public HttpResponseMessage GetDoesContactNameExist(long accountId, long id, string firstName, string lastName, string middleName)
         {
-            long affid = (from a in m_db.Accounts
+            long affid = (from a in Db.Accounts
                           where a.Id == accountId
                           select a.AffiliationId).SingleOrDefault();
 
-            var affAccounts = (from a in m_db.Accounts
+            var affAccounts = (from a in Db.Accounts
                                where a.Id == accountId || (affid != 1 && a.AffiliationId == affid)
                                select a.Id);
 
-            var doesExist = (from c in m_db.Contacts
+            var doesExist = (from c in Db.Contacts
                              where String.Compare(firstName, c.FirstName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
                                    String.Compare(lastName, c.LastName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
                                    ((middleName == null && c.MiddleName == null) || String.Compare(middleName, c.MiddleName, StringComparison.CurrentCultureIgnoreCase) == 0) &&
@@ -169,18 +147,18 @@ namespace SportsManager.Controllers
                         IsFemale = vm.IsFemale
                     };
 
-                    m_db.Contacts.Add(contact);
-                    await m_db.SaveChangesAsync();
+                    Db.Contacts.Add(contact);
+                    await Db.SaveChangesAsync();
 
                     if (contact.Id == 0)
                         return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
                     if (!String.IsNullOrEmpty(contact.Email) && registerAccount)
                     {
-                        contact.UserId = await CreateAndEmailAccount(contact.CreatorAccountId, contact.Email);
+                        contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, contact.FullNameFirst));
                         if (!String.IsNullOrEmpty(contact.UserId))
                         {
-                            await m_db.SaveChangesAsync();
+                            await Db.SaveChangesAsync();
                         }
                     }
 
@@ -220,7 +198,7 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> ResetPassword(long accountId, long id)
         {
 
-            Contact c = m_db.Contacts.Find(id);
+            Contact c = Db.Contacts.Find(id);
             if (c != null)
             {
                 await ResetPassword(accountId, c);
@@ -237,7 +215,7 @@ namespace SportsManager.Controllers
         [ActionName("register")]
         public async Task<HttpResponseMessage> RegisterAccount(long accountId, long id)
         {
-            var contact = m_db.Contacts.Find(id);
+            var contact = Db.Contacts.Find(id);
             try
             {
                 var userId = await RegisterUser(contact);
@@ -260,121 +238,20 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid && vm != null)
             {
                 vm.CreatorAccountId = accountId;
-                var contact = m_db.Contacts.Find(vm.Id);
+                var contact = Db.Contacts.Find(vm.Id);
                 if (contact == null)
                     return new HttpResponseMessage(HttpStatusCode.NotFound);
 
                 try
                 {
-                    bool updateUserId = false;
-
                     bool registerIfNeeded = false;
                     string qsRegister = HttpContext.Current.Request["register"];
                     if (qsRegister == "1")
                         registerIfNeeded = true;
 
-                    vm.Phone1 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone1));
-                    vm.Phone2 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone2));
-                    vm.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(contact.Phone3));
+                    await this.UpdateContact(accountId, contact, vm, registerIfNeeded);
 
-                    string origEmail = contact.Email;
-                    string newEmail = vm.Email;
-
-                    if (String.Compare(newEmail, origEmail, StringComparison.InvariantCultureIgnoreCase) != 0)
-                    {
-                        ApplicationUser user = null;
-                        var userManager = Globals.GetUserManager();
-
-                        // see if user is registerd.
-                        if (!String.IsNullOrEmpty(origEmail))
-                        {
-                            user = await userManager.FindByNameAsync(origEmail);
-                        }
-
-                        // if user id does not equal contact.UserId something is wrong. The email in the Users
-                        // table is the same as this contact, but it is a different user id.
-                        if (user != null && String.Compare(user.Id, contact.UserId) != 0)
-                            throw new Exception(String.Format("Internal Error: contact id = {0}, userId = {1}, doesn't match users table user id = {2}", vm.Id, vm.UserId, user.Id));
-
-                        if (user == null)
-                        {
-                            // not registered. See if new email is specfied and we want to register.
-                            if (!String.IsNullOrEmpty(newEmail) && registerIfNeeded)
-                            {
-                                // need to create the account.
-                                vm.UserId = await CreateAndEmailAccount(accountId, newEmail);
-                                if (!String.IsNullOrEmpty(vm.UserId))
-                                    updateUserId = true;
-                            }
-                        }
-                        else
-                        {
-                            // user account exists.
-                            if (!String.IsNullOrEmpty(newEmail))
-                            {
-                                // see if new email is already registered.
-                                var newUser = await userManager.FindByNameAsync(newEmail);
-                                if (newUser != null)
-                                {
-                                    // something wrong, the email is being used. See if it is used by a contact.
-                                    Contact c = m_db.Contacts.Find(newUser.Id);
-                                    if (c != null)
-                                    {
-                                        if (String.Compare(c.Email, newEmail, StringComparison.InvariantCultureIgnoreCase) == 0)
-                                        {
-                                            throw new Exception(String.Format("{1} Email address is already registered to another contact {0}", c.Id, newEmail));
-                                        }
-                                        else
-                                        {
-                                            throw new Exception(String.Format("Internal Error: User account (id={0}) associated with email ({1}) is tied to a contact {2} but emails don't match.", newUser.Id, newEmail, c.Id));
-                                        }
-                                    }
-
-                                    throw new Exception(String.Format("Internal Error: {0} email address already registered in users table but no Contact using it.", newEmail));
-                                }
-
-                                // update the user name with new email.
-                                user.UserName = newEmail;
-                                IdentityResult idRes = userManager.Update(user);
-                                if (!idRes.Errors.Any())
-                                    NotifyUserOfNewEmail(contact.CreatorAccountId, origEmail, newEmail);
-                                else
-                                    throw new Exception(idRes.Errors.First());
-                            }
-                            else
-                            {
-                                // removed the email, remove the account.
-                                IdentityResult idRes = await userManager.DeleteAsync(user);
-                                if (!idRes.Errors.Any())
-                                {
-                                    vm.UserId = null;
-                                    updateUserId = true;
-                                }
-                                else
-                                    throw new Exception(idRes.Errors.First());
-                            }
-                        }
-                    }
-
-                    if (updateUserId)
-                        contact.UserId = vm.UserId;
-
-                    contact.LastName = vm.LastName;
-                    contact.FirstName = vm.FirstName;
-                    contact.MiddleName = vm.MiddleName;
-                    contact.Phone1 = vm.Phone1;
-                    contact.Phone2 = vm.Phone2;
-                    contact.Phone3 = vm.Phone3;
-                    contact.StreetAddress = vm.StreetAddress;
-                    contact.City = vm.City;
-                    contact.State = vm.State;
-                    contact.Zip = vm.Zip;
-                    contact.FirstYear = vm.FirstYear;
-                    contact.DateOfBirth = vm.DateOfBirth;
-                    contact.IsFemale = vm.IsFemale;
-                    contact.Email = vm.Email;
-
-                    m_db.SaveChanges();
+                    Db.SaveChanges();
 
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -420,7 +297,7 @@ namespace SportsManager.Controllers
 
                 try
                 {
-                    var contact = m_db.Contacts.Find(vm.Id);
+                    var contact = Db.Contacts.Find(vm.Id);
                     if (contact.UserId != Globals.GetCurrentUserId())
                         return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -436,7 +313,7 @@ namespace SportsManager.Controllers
                     contact.Phone2 = vm.Phone2;
                     contact.Phone3 = vm.Phone3;
 
-                    m_db.SaveChanges();
+                    Db.SaveChanges();
 
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -463,7 +340,7 @@ namespace SportsManager.Controllers
         [ActionName("contacts")]
         public async Task<HttpResponseMessage> DeleteContact(long accountId, long id)
         {
-            var contact = m_db.Contacts.Find(id);
+            var contact = Db.Contacts.Find(id);
             if (contact != null)
             {
                 if (!String.IsNullOrEmpty(contact.UserId))
@@ -477,8 +354,8 @@ namespace SportsManager.Controllers
                     }
                 }
 
-                m_db.Contacts.Remove(contact);
-                m_db.SaveChanges();
+                Db.Contacts.Remove(contact);
+                Db.SaveChanges();
 
                 await Storage.Provider.DeleteFile(contact.PhotoURL);
                 await Storage.Provider.DeleteFile(contact.LargePhotoURL);
@@ -489,7 +366,7 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
-        private static async Task<bool> ResetPassword(long accountId, ModelObjects.Contact contact)
+        private async Task<bool> ResetPassword(long accountId, ModelObjects.Contact contact)
         {
             if (!String.IsNullOrEmpty(contact.UserId))
             {
@@ -520,7 +397,7 @@ namespace SportsManager.Controllers
             return false;
         }
 
-        static private void NotifyUserPasswordReset(long accountId, ModelObjects.Contact contact, String url)
+        private void NotifyUserPasswordReset(long accountId, ModelObjects.Contact contact, String url)
         {
             String currentUser = Globals.GetCurrentUserName();
             if (String.IsNullOrEmpty(currentUser))
@@ -528,13 +405,13 @@ namespace SportsManager.Controllers
 
             string senderFullName = String.Empty;
             string accountName = String.Empty;
-            string fromEmail = String.Empty;
+            MailAddress fromEmail;
 
-            var sender = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+            var sender = this.GetCurrentContact();
             if (sender == null)
             {
-                accountName = DataAccess.Accounts.GetAccountName(accountId);
-                fromEmail = "webmaster@ezrecsports.com";
+                accountName = Db.Accounts.Find(accountId)?.Name;
+                fromEmail = new MailAddress("webmaster@ezrecsports.com");
 
                 // check to see if in AspNetUserRoles as Administrator
                 var userManager = Globals.GetUserManager();
@@ -553,103 +430,15 @@ namespace SportsManager.Controllers
             else
             {
                 senderFullName = sender.FullNameFirst;
-                accountName = DataAccess.Accounts.GetAccountName(contact.CreatorAccountId);
-                fromEmail = sender.Email;
+                accountName = Db.Accounts.Find(contact.CreatorAccountId)?.Name;
+                fromEmail = new MailAddress(sender.Email, senderFullName);
             }
 
             string subject = String.Format(AccountPasswordSubject, accountName);
 
             string body = String.Format(AccountPasswordBody, accountName, currentUser, url, senderFullName);
 
-            Globals.MailMessage(fromEmail, contact.Email, subject, body);
-        }
-
-        static private void NotifyUserOfNewEmail(long accountId, string oldEmail, string newEmail)
-        {
-            String currentUser = Globals.GetCurrentUserName();
-            if (String.IsNullOrEmpty(currentUser))
-                return;
-
-            string senderFullName = String.Empty;
-
-            var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
-            if (contact == null)
-            {
-                // check to see if in AspNetUserRoles as Administrator
-                var userManager = Globals.GetUserManager();
-                try
-                {
-                    if (userManager.IsInRole(Globals.GetCurrentUserId(), "Administrator"))
-                        senderFullName = DataAccess.Accounts.GetAccountName(accountId) + " Administrator";
-                    else
-                        return;
-                }
-                catch (Exception)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                senderFullName = contact.FullNameFirst;
-            }
-
-            string accountName = DataAccess.Accounts.GetAccountName(accountId);
-            string subject = String.Format(AccountModifiedSubject, accountName);
-            string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail, senderFullName);
-            Globals.MailMessage(currentUser, oldEmail, subject, body);
-        }
-
-
-        static private async Task<String> CreateAndEmailAccount(long accountId, string email)
-        {
-            String currentUser = Globals.GetCurrentUserName();
-            if (String.IsNullOrEmpty(currentUser))
-                return String.Empty;
-
-            string senderFullName;
-
-            var contact = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
-            if (contact == null)
-                senderFullName = currentUser;
-            else
-                senderFullName = contact.FullNameFirst;
-
-            var userManager = Globals.GetUserManager();
-
-            string password = Membership.GeneratePassword(8, 2);
-
-            // new way to create user and sign in.
-            var user = new ApplicationUser() { UserName = email };
-            var result = await userManager.CreateAsync(user, password);
-            if (result.Succeeded)
-            {
-                var newUser = await userManager.FindByNameAsync(email);
-                if (newUser != null)
-                {
-                    // notify user
-                    string accountName = DataAccess.Accounts.GetAccountName(accountId);
-                    string subject = String.Format(AccountCreatedSubject, accountName);
-                    string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password, senderFullName);
-                    Globals.MailMessage(currentUser, email, subject, body);
-
-                    return newUser.Id;
-                }
-            }
-            else
-            {
-                StringBuilder errorString = new StringBuilder();
-                // couldn't create user.
-                foreach (var error in result.Errors)
-                {
-                    errorString.Append(error);
-                    errorString.Append(Environment.NewLine);
-                }
-
-                throw new MembershipCreateUserException(errorString.ToString());
-            }
-
-            return String.Empty;
+            Globals.MailMessage(fromEmail, new MailAddress(contact.Email, Contact.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)), subject, body);
         }
 
         private async Task<String> RegisterUser(Contact contact)
@@ -671,10 +460,10 @@ namespace SportsManager.Controllers
             if (user != null)
                 throw new MembershipCreateUserException("Email already registered.");
 
-            contact.UserId = await CreateAndEmailAccount(contact.CreatorAccountId, contact.Email);
+            contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, contact.FullNameFirst));
             if (!String.IsNullOrEmpty(contact.UserId))
             {
-                m_db.SaveChanges();
+                Db.SaveChanges();
                 return contact.UserId;
             }
 

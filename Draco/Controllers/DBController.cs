@@ -3,13 +3,21 @@ using System.Web.Mvc;
 
 namespace SportsManager.Controllers
 {
-    public abstract class DBController : Controller
+    public abstract class DBController : Controller, IDb
     {
-        protected DB m_db;
+        private DB m_db;
 
         protected DBController(DB db)
         {
             m_db = db;
+        }
+
+        public DB Db
+        {
+            get
+            {
+                return m_db;
+            }
         }
     }
 }

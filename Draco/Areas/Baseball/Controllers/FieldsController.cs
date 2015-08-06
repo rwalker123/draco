@@ -1,10 +1,17 @@
-﻿using SportsManager.Baseball.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class FieldsController : Controller
+    public class FieldsController : DBController
 	{
+        public FieldsController(DB db) : base(db)
+        {
+
+        }
+
 		//
 		// GET: /Baseball/Fields/{lid}
 

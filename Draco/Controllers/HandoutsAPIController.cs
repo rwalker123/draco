@@ -13,11 +13,15 @@ namespace SportsManager.Controllers
 {
     public class HandoutsAPIController : DBApiController
     {
+        public HandoutsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("handouts")]
         public HttpResponseMessage GetHandout(long accountId)
         {
-            var handouts = m_db.AccountHandouts.Where(h => h.AccountId == accountId).OrderByDescending(h => h.Id);
+            var handouts = Db.AccountHandouts.Where(h => h.AccountId == accountId).OrderByDescending(h => h.Id);
             if (handouts != null)
             {
                 var vm = Mapper.Map <IEnumerable<AccountHandout>, HandoutViewModel[]>(handouts);
@@ -33,11 +37,11 @@ namespace SportsManager.Controllers
         [ActionName("handouts")]
         public HttpResponseMessage GetTeamHandout(long accountId, long teamSeasonId)
         {
-            var team = m_db.TeamsSeasons.Find(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var handouts = m_db.TeamHandouts.Where(h => h.TeamId == team.Team.Id).AsEnumerable();
+            var handouts = Db.TeamHandouts.Where(h => h.TeamId == team.Team.Id).AsEnumerable();
             if (handouts != null)
             {
                 var vm = Mapper.Map<IEnumerable<TeamHandout>, HandoutViewModel[]>(handouts);
@@ -56,7 +60,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbHandout = m_db.AccountHandouts.Find(id);
+                var dbHandout = Db.AccountHandouts.Find(id);
                 if (dbHandout == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -66,7 +70,7 @@ namespace SportsManager.Controllers
                 dbHandout.Description = item.Description;
                 dbHandout.FileName = item.FileName;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<AccountHandout, HandoutViewModel>(dbHandout);
                 return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
@@ -82,16 +86,16 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var team = m_db.TeamsSeasons.Find(teamSeasonId);
+                var team = Db.TeamsSeasons.Find(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var dbHandout = m_db.TeamHandouts.Find(id);
+                var dbHandout = Db.TeamHandouts.Find(id);
                 if (dbHandout == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 dbHandout.Description = item.Description;
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<TeamHandout, HandoutViewModel>(dbHandout);
                 return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
@@ -105,15 +109,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> DeleteHandout(long accountId, long id)
         {
-            var handout = await m_db.AccountHandouts.FindAsync(id);
+            var handout = await Db.AccountHandouts.FindAsync(id);
             if (handout == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (handout.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.AccountHandouts.Remove(handout);
-            await m_db.SaveChangesAsync();
+            Db.AccountHandouts.Remove(handout);
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -123,19 +127,19 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public async Task<HttpResponseMessage> DeleteHandout(long accountId, long teamSeasonId, long id)
         {
-            var team = await m_db.TeamsSeasons.FindAsync(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var handout = await m_db.TeamHandouts.FindAsync(id);
+            var handout = await Db.TeamHandouts.FindAsync(id);
             if (handout == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (handout.TeamId != team.TeamId || team.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.TeamHandouts.Remove(handout);
-            await m_db.SaveChangesAsync();
+            Db.TeamHandouts.Remove(handout);
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

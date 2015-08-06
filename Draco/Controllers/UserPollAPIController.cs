@@ -12,11 +12,16 @@ namespace SportsManager.Controllers
 {
     public class UserPollAPIController : DBApiController
     {
+        public UserPollAPIController(DB db) : base(db)
+        {
+
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("activepolls")]
         public HttpResponseMessage GetActiveUserPolls(long accountId)
         {
-            var userPolls = (from vq in m_db.VoteQuestions
+            var userPolls = (from vq in Db.VoteQuestions
                              where vq.AccountId == accountId && vq.Active
                              select vq);
 
@@ -28,7 +33,7 @@ namespace SportsManager.Controllers
         [ActionName("polls")]
         public HttpResponseMessage GetUserPolls(long accountId)
         {
-            var userPolls = (from vq in m_db.VoteQuestions
+            var userPolls = (from vq in Db.VoteQuestions
                              where vq.AccountId == accountId
                              select vq);
             var vm = Mapper.Map<IEnumerable<VoteQuestion>, VoteQuestionResultsViewModel[]>(userPolls);
@@ -39,20 +44,20 @@ namespace SportsManager.Controllers
         [ActionName("recordVote")]
         public HttpResponseMessage RecordVote(long accountId, long id, RecordVoteResultViewModel vr)
         {
-            var contact = GetCurrentContact();
+            var contact = this.GetCurrentContact();
 
             // only current signed in user can vote.
             if (contact == null || vr.ContactId != contact.Id)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var voteQuestion = m_db.VoteQuestions.Find(id);
+            var voteQuestion = Db.VoteQuestions.Find(id);
             if (voteQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (voteQuestion.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var voteOption = m_db.VoteOptions.Find(vr.OptionId);
+            var voteOption = Db.VoteOptions.Find(vr.OptionId);
             if (voteOption == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -69,14 +74,14 @@ namespace SportsManager.Controllers
                     ContactId = contact.Id
                 };
 
-                m_db.VoteAnswers.Add(dbVoteAnswer);
+                Db.VoteAnswers.Add(dbVoteAnswer);
             }
             else
             {
                 dbVoteAnswer.OptionId = vr.OptionId;
             }
 
-            m_db.SaveChanges();
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.NoContent);
         }
@@ -86,15 +91,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles="AccountAdmin")]
         public HttpResponseMessage DeletePoll(long accountId, long id)
         {
-            var dbVoteQuestion = m_db.VoteQuestions.Find(id);
+            var dbVoteQuestion = Db.VoteQuestions.Find(id);
             if (dbVoteQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbVoteQuestion.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.VoteQuestions.Remove(dbVoteQuestion);
-            m_db.SaveChanges();
+            Db.VoteQuestions.Remove(dbVoteQuestion);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -109,7 +114,7 @@ namespace SportsManager.Controllers
                 poll.AccountId = accountId;
                 poll.Id = id;
 
-                var dbQuestion = m_db.VoteQuestions.Find(id);
+                var dbQuestion = Db.VoteQuestions.Find(id);
                 if (dbQuestion == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -129,7 +134,7 @@ namespace SportsManager.Controllers
                         if (existingVoteOptions.Contains(option.Id))
                             existingVoteOptions.Remove(option.Id);
 
-                        var dbOption = m_db.VoteOptions.Find(option.Id);
+                        var dbOption = Db.VoteOptions.Find(option.Id);
                         if (dbOption == null)
                             return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -148,19 +153,19 @@ namespace SportsManager.Controllers
                             Priority = optionIndex++
                         };
 
-                        m_db.VoteOptions.Add(vo);
+                        Db.VoteOptions.Add(vo);
                     }
                 }
 
                 // delete any remaining options.
                 foreach (var oldOptionId in existingVoteOptions)
                 {
-                    var oldOption = m_db.VoteOptions.Find(oldOptionId);
+                    var oldOption = Db.VoteOptions.Find(oldOptionId);
                     if (oldOption != null)
-                        m_db.VoteOptions.Remove(oldOption);
+                        Db.VoteOptions.Remove(oldOption);
                 }
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<VoteQuestion, VoteQuestionResultsViewModel>(dbQuestion);
                 return Request.CreateResponse<VoteQuestionResultsViewModel>(HttpStatusCode.OK, vm);
@@ -183,7 +188,7 @@ namespace SportsManager.Controllers
                     Active = newPoll.Active
                 };
 
-                m_db.VoteQuestions.Add(dbVoteQuestion);
+                Db.VoteQuestions.Add(dbVoteQuestion);
 
                 // add the options
                 int optionIndex = 0;
@@ -196,10 +201,10 @@ namespace SportsManager.Controllers
                         Priority = optionIndex++
                     };
 
-                    m_db.VoteOptions.Add(vo);
+                    Db.VoteOptions.Add(vo);
                 }
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<VoteQuestion, VoteQuestionResultsViewModel>(dbVoteQuestion);
                 return Request.CreateResponse<VoteQuestionResultsViewModel>(HttpStatusCode.OK, vm);

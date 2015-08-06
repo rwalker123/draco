@@ -24,7 +24,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
 			long sId = seasonId.GetValueOrDefault(0);
             if (sId == 0)
-                sId = m_db.CurrentSeasons.Where(s => s.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
+                sId = Db.CurrentSeasons.Where(s => s.AccountId == accountId).Select(cs => cs.SeasonId).SingleOrDefault();
 
 			return View("ScheduleMain", new ScheduleViewModel(this, aId, sId));
 		}
@@ -33,15 +33,15 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("GameResultTwitter")]
         public ActionResult GameResultTwitter(long accountId, long id)
         {
-            var a = m_db.Accounts.Find(accountId);
+            var a = Db.Accounts.Find(accountId);
             if (a == null)
                 return Redirect(Request.QueryString.Get("referer"));
 
-            var g = m_db.LeagueSchedules.Find(id); 
+            var g = Db.LeagueSchedules.Find(id); 
             if (g == null)
                 return Redirect(Request.QueryString.Get("referer"));
 
-            var tweetText = GetGameResultTweetText(m_db, g);
+            var tweetText = GetGameResultTweetText(Db, g);
 
 			if (!String.IsNullOrEmpty(a.TwitterAccountName))
 			{

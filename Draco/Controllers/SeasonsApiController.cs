@@ -1,25 +1,28 @@
 ﻿using AutoMapper;
 using ModelObjects;
 using SportsManager.Models;
-using SportsManager.ViewModels;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
     public class SeasonsApiController : DBApiController
     {
+        public SeasonsApiController(DB db) : base(db)
+        {
+
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Seasons")]
         public HttpResponseMessage GetSeasons(long accountId)
         {
-            var seasons = m_db.Seasons.Where(s => s.AccountId == accountId).AsEnumerable();
+            var seasons = Db.Seasons.Where(s => s.AccountId == accountId).AsEnumerable();
             if (seasons != null)
             {
                 var vm = Mapper.Map<IEnumerable<Season>, SeasonViewModel[]>(seasons);
@@ -44,8 +47,8 @@ namespace SportsManager.Controllers
                     Name = seasonData.Name
                 };
 
-                m_db.Seasons.Add(newSeason);
-                m_db.SaveChanges();
+                Db.Seasons.Add(newSeason);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Season, SeasonViewModel>(newSeason);
                 return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
@@ -60,7 +63,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbSeason = m_db.Seasons.Find(id);
+                var dbSeason = Db.Seasons.Find(id);
                 if (dbSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -68,7 +71,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 dbSeason.Name = seasonData.Name;
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Season, SeasonViewModel>(dbSeason);
                 return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
@@ -85,8 +88,8 @@ namespace SportsManager.Controllers
             if (cs == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var season = m_db.Seasons.Find(cs.SeasonId);
-            var hasSeasons = m_db.Seasons.Where(s => s.AccountId == accountId).Any();
+            var season = Db.Seasons.Find(cs.SeasonId);
+            var hasSeasons = Db.Seasons.Where(s => s.AccountId == accountId).Any();
 
             return Request.CreateResponse<CurrentSeasonViewModel>(HttpStatusCode.OK,
                 new CurrentSeasonViewModel()
@@ -103,13 +106,13 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage EditCurrentSeason(long accountId, long id)
         {
-            var curSeason = (from cs in m_db.CurrentSeasons
+            var curSeason = (from cs in Db.CurrentSeasons
                              where cs.AccountId == accountId
                              select cs).SingleOrDefault();
             if (id == 0)
             {
                 if (curSeason != null)
-                    m_db.CurrentSeasons.Remove(curSeason);
+                    Db.CurrentSeasons.Remove(curSeason);
             }
             else if (curSeason == null)
             {
@@ -119,14 +122,14 @@ namespace SportsManager.Controllers
                     SeasonId = id
                 };
 
-                m_db.CurrentSeasons.Add(curSeason);
+                Db.CurrentSeasons.Add(curSeason);
             }
             else
             {
                 curSeason.SeasonId = id;
             }
 
-            m_db.SaveChanges();
+            Db.SaveChanges();
 
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
@@ -137,7 +140,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage Delete(long accountId, long id)
         {
-            var season = m_db.Seasons.Find(id);
+            var season = Db.Seasons.Find(id);
             if (season == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -145,8 +148,8 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             RemoveSeasonData(season);
-            m_db.Seasons.Remove(season);
-            m_db.SaveChanges();
+            Db.Seasons.Remove(season);
+            Db.SaveChanges();
 
             //
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
@@ -154,15 +157,15 @@ namespace SportsManager.Controllers
 
         private CurrentSeason GetCurrentSeason(long accountId)
         {
-            return (from cs in m_db.CurrentSeasons
+            return (from cs in Db.CurrentSeasons
                     where cs.AccountId == accountId
                     select cs).SingleOrDefault();
         }
 
         private string GetCurrentSeasonName(long accountId)
         {
-            return (from cs in m_db.CurrentSeasons
-                    join s in m_db.Seasons on cs.AccountId equals s.AccountId
+            return (from cs in Db.CurrentSeasons
+                    join s in Db.Seasons on cs.AccountId equals s.AccountId
                     where cs.SeasonId == s.Id && cs.AccountId == accountId
                     select s.Name).SingleOrDefault();
         }

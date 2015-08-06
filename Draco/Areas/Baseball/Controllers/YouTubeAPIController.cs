@@ -1,22 +1,28 @@
-﻿using System;
+﻿using Google.Apis.Services;
+using Google.Apis.YouTube.v3;
+using ModelObjects;
+using SportsManager.Controllers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Web.Http;
-using Google.Apis.Services;
-using Google.Apis.YouTube.v3;
 using System.Threading.Tasks;
+using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class YouTubeAPIController : ApiController
+    public class YouTubeAPIController : DBApiController
     {
+        public YouTubeAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Videos")]
         public async Task<HttpResponseMessage> GetVideos(long accountId)
         {
-            ModelObjects.Account a = DataAccess.Accounts.GetAccount(accountId);
+            Account a = Db.Accounts.Find(accountId);
             if (a != null)
             {
                 String youTubeId = a.YouTubeUserId;
@@ -33,10 +39,10 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("Videos")]
         public async Task<HttpResponseMessage> TeamGetVideos(long accountId, long teamSeasonId)
         {
-            ModelObjects.Team a = DataAccess.Teams.GetTeam(teamSeasonId);
+            var a = Db.TeamsSeasons.Find(teamSeasonId);
             if (a != null)
             {
-                String youTubeId = a.YouTubeUserId;
+                String youTubeId = a.Team.YouTubeUserId;
                 if (String.IsNullOrEmpty(youTubeId))
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 

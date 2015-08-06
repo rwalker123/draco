@@ -1,4 +1,5 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System;
 using System.Linq;
@@ -8,29 +9,30 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class TeamStatisticsViewModel : AccountViewModel
     {
-        public TeamStatisticsViewModel(Controller c, long accountId, long teamSeasonId)
+        public TeamStatisticsViewModel(DBController c, long accountId, long teamSeasonId)
             : this(c, accountId, teamSeasonId, 0)
         {
         }
 
-        public TeamStatisticsViewModel(Controller c, long accountId, long teamSeasonId, long seasonId)
+        public TeamStatisticsViewModel(DBController c, long accountId, long teamSeasonId, long seasonId)
             : base(c, accountId)
         {
             if (Account == null)
                 return;
 
             SeasonId = seasonId;
-            SeasonName = DataAccess.Seasons.GetSeasonName(CurrentSeasonId);
-            IsTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
-            Team = DataAccess.Teams.GetTeam(teamSeasonId);
+            SeasonName = c.GetCurrentSeason(accountId)?.Name;
+            IsTeamAdmin = c.IsTeamAdmin(accountId, teamSeasonId);
+            Team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (Team == null)
                 return;
-            CompletedGames = DataAccess.Schedule.GetTeamCompletedGames(teamSeasonId);
-            TeamStanding = DataAccess.Teams.GetTeamStanding(teamSeasonId);
+            CompletedGames = c.GetTeamCompletedGames(Team.Id);
+
+            TeamStanding = c.GetTeamStanding(teamSeasonId, CompletedGames);
         }
 
         public bool IsTeamAdmin { get; private set; }
-        public ModelObjects.Team Team { get; private set; }
+        public TeamSeason Team { get; private set; }
         public long SeasonId { get; private set; }
 
         public IQueryable<Game> CompletedGames { get; private set; }
@@ -42,6 +44,6 @@ namespace SportsManager.Baseball.ViewModels
             get { return AccountId != 0; }
         }
 
-        public TeamStanding TeamStanding { get; private set; }
+        public TeamStandingViewModel TeamStanding { get; private set; }
     }
 }

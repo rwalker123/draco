@@ -13,11 +13,15 @@ namespace SportsManager.Controllers
 {
     public class SponsorsAPIController : DBApiController
     {
+        public SponsorsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("sponsors")]
         public HttpResponseMessage GetSponsors(long accountId)
         {
-            var sponsors = (from s in m_db.Sponsors
+            var sponsors = (from s in Db.Sponsors
                             where s.AccountId == accountId && s.TeamId == 0
                             select s).AsEnumerable();
 
@@ -36,7 +40,7 @@ namespace SportsManager.Controllers
         [ActionName("teamsponsor")]
         public HttpResponseMessage GetSponsors(long accountId, long teamSeasonId)
         {
-            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -66,7 +70,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbSponsor = m_db.Sponsors.Find(id);
+                var dbSponsor = Db.Sponsors.Find(id);
                 if (dbSponsor == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -86,7 +90,7 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -121,8 +125,8 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                m_db.Sponsors.Add(dbSponsor);
-                m_db.SaveChanges();
+                Db.Sponsors.Add(dbSponsor);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -136,15 +140,15 @@ namespace SportsManager.Controllers
         [ActionName("sponsors")]
         public HttpResponseMessage DeleteSponsors(long accountId, long id)
         {
-            var sponsor = m_db.Sponsors.Find(id);
+            var sponsor = Db.Sponsors.Find(id);
             if (sponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (sponsor.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.Sponsors.Remove(sponsor);
-            m_db.SaveChanges();
+            Db.Sponsors.Remove(sponsor);
+            Db.SaveChanges();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
@@ -157,7 +161,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -168,7 +172,7 @@ namespace SportsManager.Controllers
                 if (team.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbSponsor = m_db.Sponsors.Find(id);
+                var dbSponsor = Db.Sponsors.Find(id);
                 if (dbSponsor == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -191,7 +195,7 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -207,7 +211,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid && sponsor != null)
             {
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -237,8 +241,8 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                m_db.Sponsors.Add(dbSponsor);
-                m_db.SaveChanges();
+                Db.Sponsors.Add(dbSponsor);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -252,11 +256,11 @@ namespace SportsManager.Controllers
         [ActionName("teamsponsor")]
         public HttpResponseMessage DeleteSponsors(long accountId, long teamSeasonId, long id)
         {
-            var sponsor = m_db.Sponsors.Find(id);
+            var sponsor = Db.Sponsors.Find(id);
             if (sponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -273,8 +277,8 @@ namespace SportsManager.Controllers
             if (sponsor.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.Sponsors.Remove(sponsor);
-            m_db.SaveChanges();
+            Db.Sponsors.Remove(sponsor);
+            Db.SaveChanges();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }

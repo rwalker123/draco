@@ -1,27 +1,26 @@
-﻿using ModelObjects;
-using SportsManager.ViewModels;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
+﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using DocumentFormat.OpenXml;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.ViewModels;
 using System;
 using System.IO;
+using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class TeamAddressViewModel : AccountViewModel
     {
-        public TeamAddressViewModel(Controller c, long accountId, long teamSeasonId)
+        public TeamAddressViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
-            Team = DataAccess.Teams.GetTeam(teamSeasonId);
-            Roster = DataAccess.TeamRoster.GetPlayers(teamSeasonId);
+            Team = c.Db.TeamsSeasons.Find(teamSeasonId);
+            Roster = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId);
         }
 
-        public Team Team { get; private set; }
-        public IQueryable<Player> Roster { get; private set; }
+        public TeamSeason Team { get; private set; }
+        public IQueryable<PlayerSeason> Roster { get; private set; }
 
         public FileStream ExportToExcel()
         {
@@ -49,7 +48,7 @@ namespace SportsManager.Baseball.ViewModels
                 teamNameCol.CellValue = new CellValue(Team.Name);
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                ExportRosterToExcel(Roster, sheetData);
+                ExportRosterToExcel(CurrentSeasonId, Roster, sheetData);
 
                 // save
                 worksheetPart.Worksheet.Save();
@@ -58,7 +57,7 @@ namespace SportsManager.Baseball.ViewModels
             return new FileStream(destinationFile, FileMode.Open);
         }
 
-        public static void ExportRosterToExcel(IQueryable<Player> Roster, SheetData sheetData, bool includePhone = false)
+        public static void ExportRosterToExcel(long seasonId, IQueryable<PlayerSeason> Roster, SheetData sheetData, bool includePhone = false)
         {
             // Begining Row pointer                       
             int index = 4;
@@ -71,26 +70,28 @@ namespace SportsManager.Baseball.ViewModels
                 row.RowIndex = (UInt32)index;
 
                 // New Cell
-                CreateCell(row, "A" + index, player.Contact.FullName);
-                CreateCell(row, "B" + index, player.Contact.Email);
+                CreateCell(row, "A" + index, Contact.BuildFullName(player.Roster.Contact.FirstName, player.Roster.Contact.MiddleName, player.Roster.Contact.LastName));
+                CreateCell(row, "B" + index, player.Roster.Contact.Email);
+
+                String affiliationDuesPaid = player.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == seasonId).Select(psa => psa.AffiliationDuesPaid).SingleOrDefault();
                 if (includePhone)
                 {
-                    CreateCell(row, "C" + index, player.Contact.Phone2);
-                    CreateCell(row, "D" + index, player.Contact.Phone3);
-                    CreateCell(row, "E" + index, player.Contact.Phone1);
-                    CreateCell(row, "F" + index, player.Contact.StreetAddress);
-                    CreateCell(row, "G" + index, player.Contact.City);
-                    CreateCell(row, "H" + index, player.Contact.State);
-                    CreateCell(row, "I" + index, player.Contact.Zip);
-                    CreateCell(row, "J" + index, player.AffiliationDuesPaid);
+                    CreateCell(row, "C" + index, player.Roster.Contact.Phone2);
+                    CreateCell(row, "D" + index, player.Roster.Contact.Phone3);
+                    CreateCell(row, "E" + index, player.Roster.Contact.Phone1);
+                    CreateCell(row, "F" + index, player.Roster.Contact.StreetAddress);
+                    CreateCell(row, "G" + index, player.Roster.Contact.City);
+                    CreateCell(row, "H" + index, player.Roster.Contact.State);
+                    CreateCell(row, "I" + index, player.Roster.Contact.Zip);
+                    CreateCell(row, "J" + index, affiliationDuesPaid);
                 }
                 else
                 {
-                    CreateCell(row, "C" + index, player.Contact.StreetAddress);
-                    CreateCell(row, "D" + index, player.Contact.City);
-                    CreateCell(row, "E" + index, player.Contact.State);
-                    CreateCell(row, "F" + index, player.Contact.Zip);
-                    CreateCell(row, "G" + index, player.AffiliationDuesPaid);
+                    CreateCell(row, "C" + index, player.Roster.Contact.StreetAddress);
+                    CreateCell(row, "D" + index, player.Roster.Contact.City);
+                    CreateCell(row, "E" + index, player.Roster.Contact.State);
+                    CreateCell(row, "F" + index, player.Roster.Contact.Zip);
+                    CreateCell(row, "G" + index, affiliationDuesPaid);
                 }
 
                 // Append Row to SheetData

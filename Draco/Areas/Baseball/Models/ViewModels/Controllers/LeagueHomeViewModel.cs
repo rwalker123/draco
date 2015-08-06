@@ -1,16 +1,17 @@
 ﻿using System;
 using System.Linq;
-using System.Web.Mvc;
 using SportsManager.ViewModels;
+using SportsManager.Controllers;
+using ModelObjects;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class LeagueHomeViewModel : AccountViewModel
     {
-        public LeagueHomeViewModel(Controller c, long accountId)
+        public LeagueHomeViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            SeasonName = DataAccess.Seasons.GetCurrentSeasonName(AccountId);
+            SeasonName = c.GetCurrentSeason(AccountId)?.Name;
             if (Account != null)
             {
                 FirstYear = (Account.FirstYear == 0) ? DateTime.Now.Year : Account.FirstYear;
@@ -22,40 +23,51 @@ namespace SportsManager.Baseball.ViewModels
                 }
             }
             ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
-            ShowPhotoGallery = IsAdmin || DataAccess.PhotoGallery.GetPhotos(accountId).Any();
+            ShowPhotoGallery = IsAdmin || c.Db.PhotoGalleries.Where(pg => pg.AccountId == accountId).Any();
 
-            ShowHandouts = IsAdmin || DataAccess.AccountHandouts.GetAccountHandouts(accountId).Any();
-            ShowWorkouts = IsAdmin || DataAccess.Workouts.GetActiveWorkoutAnnouncements(accountId).Any();
-            ShowSponsors = IsAdmin || DataAccess.Sponsors.GetSponsors(accountId).Any();
-            ShowFAQMessage = DataAccess.LeagueFAQ.GetFAQ(accountId).Any();
+            ShowHandouts = IsAdmin || c.Db.AccountHandouts.Where(ah => ah.AccountId == accountId).Any();
+            var now = DateTime.Now.AddDays(-1);
+
+            ShowWorkouts = IsAdmin || c.Db.WorkoutAnnouncements.Where(wa => wa.AccountId == accountId && wa.WorkoutDate >= now).Any();
+            ShowSponsors = IsAdmin || c.Db.Sponsors.Where(sp => sp.AccountId == accountId && sp.TeamId == 0).Any();
+            ShowFAQMessage = c.Db.LeagueFaqs.Where(faq => faq.AccountId == accountId).Any();
             
             var showFacebookLike = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
             ShowFacebookLike = showFacebookLike;
 
             var showPlayerSurvey = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
-            ShowPlayerInterview = showPlayerSurvey && DataAccess.ProfileAdmin.GetPlayersWithProfiles(accountId).Any();
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+
+            var hasPlayerInterview = (from pp in c.Db.PlayerProfiles
+                                      join r in c.Db.Rosters on pp.PlayerId equals r.ContactId
+                                      join rs in c.Db.RosterSeasons on r.Id equals rs.PlayerId
+                                      join ts in c.Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                                      join ls in c.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                                      where r.AccountId == accountId && ls.SeasonId == CurrentSeasonId
+                                      select pp).Distinct();
+
+            ShowPlayerInterview = showPlayerSurvey && hasPlayerInterview.Any();
 
             var showHOF = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
-            ShowHOF = showHOF && DataAccess.HOFMembers.GetMembers(accountId).Any();
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
+            ShowHOF = showHOF && c.Db.Hofs.Where(hof => hof.AccountId == accountId).Any();
 
             ShowLeagueLeaders = IsAdmin || DataAccess.GameStats.HasLeaderCategories(accountId, 0);
             ShowAnnouncements = true;
             ShowBirthdays = true;
             ShowWelcomeMessages = true;
             ShowScoreboard = true;
-            ShowUserPoll = IsAdmin || DataAccess.Votes.GetActiveVotes(accountId).Any();
+            ShowUserPoll = IsAdmin || c.Db.VoteQuestions.Where(vq => vq.AccountId == accountId && vq.Active).Any();
 
-            UserTeams = DataAccess.Teams.GetCurrentUserTeams(accountId);
+            UserTeams = c.GetCurrentUserTeams(accountId);
 
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = true;
         }
 
-        public IQueryable<ModelObjects.Team> UserTeams
+        public IQueryable<TeamSeason> UserTeams
         {
             get;
             private set;

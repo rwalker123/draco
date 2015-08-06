@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
@@ -8,6 +9,7 @@ using ModelObjects;
 using SportsManager.Models;
 using SportsManager.Providers;
 using SportsManager.Results;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,17 +23,21 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class AccountAPIController : ApiController
+    public class AccountAPIController : DBApiController
     {
         private const string LocalLoginProvider = "Local";
         private ApplicationUserManager _userManager;
+
+        public AccountAPIController(DB db) : base(db)
+        {
+        }
 
         #region Account Methods
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Accounts")]
         public HttpResponseMessage GetAccounts()
         {
-            var a = DataAccess.Accounts.GetAccounts();
+            var a = Db.Accounts;
             if (a == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -42,7 +48,7 @@ namespace SportsManager.Controllers
         [ActionName("AccountInfo")]
         public HttpResponseMessage GetAccountInfo(long accountId)
         {
-            Account a = DataAccess.Accounts.GetAccount(accountId);
+            Account a = Db.Accounts.Find(accountId);
             if (a == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -53,7 +59,13 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage TwitterId(long accountId, IdData twitterData)
         {
-            DataAccess.SocialIntegration.Twitter.SetTwitterAccountName(accountId, twitterData.Id);
+            Account a = Db.Accounts.Find(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            a.TwitterAccountName = twitterData.Id;
+
+            Db.SaveChanges();
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -66,7 +78,13 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage FacebookFanPage(long accountId, IdData facebookData)
         {
-            DataAccess.SocialIntegration.Facebook.SetFacebookFanPage(accountId, facebookData.Id);
+            Account a = Db.Accounts.Find(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            a.FacebookFanPage = facebookData.Id;
+
+            Db.SaveChanges();
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -83,7 +101,18 @@ namespace SportsManager.Controllers
             url.Uri = url.Uri.ToLower();
             if (ModelState.IsValid)
             {
-                DataAccess.Accounts.AddAccountUrl(accountId, url.Uri);
+                Account a = Db.Accounts.Find(accountId);
+                if (a == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (!String.IsNullOrWhiteSpace(a.Url))
+                    a.Url += ";";
+
+                a.Url += url;
+                a.Url = a.Url.Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
+
+                Db.SaveChanges();
+
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(url.Uri ?? String.Empty)
@@ -105,7 +134,16 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                DataAccess.Accounts.DeleteAccountUrl(accountId, url.Uri);
+                Account a = Db.Accounts.Find(accountId);
+                if (a == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (a.Url.Contains(url.Uri))
+                {
+                    a.Url = a.Url.Replace(url.Uri, String.Empty).Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
+                    Db.SaveChanges();
+                }
+
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent(url.Uri ?? String.Empty)
@@ -127,9 +165,27 @@ namespace SportsManager.Controllers
             if (userId == null || String.IsNullOrWhiteSpace(userId.Id))
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            Account a = DataAccess.Accounts.GetAccount(accountId);
-            a.OwnerContactId = Int32.Parse(userId.Id);
-            DataAccess.Accounts.ModifyAccount(a);
+            Account a = Db.Accounts.Find(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            a.OwnerId = Int32.Parse(userId.Id);
+
+            long id = (from acc in Db.Accounts
+                    where String.Compare(acc.Name, a.Name, StringComparison.CurrentCultureIgnoreCase) == 0
+                    select a.Id).SingleOrDefault();
+
+            if (id == 0)
+            {
+                if (!this.IsValidAccountName(a.Id, a.Name))
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Invalid account name");
+            }
+            else if (id != a.Id)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Account name already used.");
+            }
+
+            Db.SaveChanges();
 
             var response = new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -140,46 +196,35 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage AccountName(long accountId, Account account)
+        public HttpResponseMessage AccountName(long accountId, String accountName)
         {
-            if (account == null || String.IsNullOrWhiteSpace(account.AccountName))
+            if (String.IsNullOrWhiteSpace(accountName))
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            Account a = DataAccess.Accounts.GetAccount(accountId);
-            a.AccountName = account.AccountName;
-            a.FirstYear = account.FirstYear;
-            a.TwitterAccountName = account.TwitterAccountName;
-            bool rc = DataAccess.Accounts.ModifyAccount(a);
-            if (rc)
-            {
-                return Request.CreateResponse<Account>(HttpStatusCode.OK, account);
-            }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+            Account a = Db.Accounts.Find(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            a.Name = accountName;
+            Db.SaveChanges();
+
+            return Request.CreateResponse<String>(HttpStatusCode.OK, accountName);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage YouTubeUserId(long accountId, IdData youTubeUserId)
         {
-            var account = DataAccess.Accounts.GetAccount(accountId);
+            var account = Db.Accounts.Find(accountId);
             if (account != null)
             {
                 account.YouTubeUserId = youTubeUserId.Id;
-                if (DataAccess.Accounts.ModifyAccount(account))
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(youTubeUserId.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(youTubeUserId.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -189,22 +234,17 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage YouTubeUserId(long accountId, long teamSeasonId, IdData youTubeUserId)
         {
-            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            var account = Db.TeamsSeasons.Find(teamSeasonId);
             if (account != null)
             {
-                account.YouTubeUserId = youTubeUserId.Id;
-                if (DataAccess.Teams.ModifyYouTubeId(account))
+                var team = account.Team;
+                team.YouTubeUserId = youTubeUserId.Id;
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(youTubeUserId.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(youTubeUserId.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -214,22 +254,16 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage DefaultVideo(long accountId, IdData defaultVideo)
         {
-            var account = DataAccess.Accounts.GetAccount(accountId);
+            var account = Db.Accounts.Find(accountId);
             if (account != null)
             {
                 account.DefaultVideo = defaultVideo.Id;
-                if (DataAccess.Accounts.ModifyAccount(account))
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(defaultVideo.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(defaultVideo.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -239,22 +273,17 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage DefaultVideo(long accountId, long teamSeasonId, IdData defaultVideo)
         {
-            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            var account = Db.TeamsSeasons.Find(teamSeasonId);
             if (account != null)
             {
-                account.DefaultVideo = defaultVideo.Id;
-                if (DataAccess.Teams.ModifyDefaultVideo(account))
+                var team = account.Team;
+                team.DefaultVideo = defaultVideo.Id;
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(defaultVideo.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(defaultVideo.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -264,22 +293,16 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage AutoPlayVideo(long accountId, IdData autoPlay)
         {
-            var account = DataAccess.Accounts.GetAccount(accountId);
+            var account = Db.Accounts.Find(accountId);
             if (account != null)
             {
                 account.AutoPlayVideo = autoPlay.Id.Equals("1");
-                if (DataAccess.Accounts.ModifyAccount(account))
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(autoPlay.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(autoPlay.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -289,22 +312,17 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage AutoPlayVideo(long accountId, long teamSeasonId, IdData autoPlay)
         {
-            var account = DataAccess.Teams.GetTeam(teamSeasonId);
+            var account = Db.TeamsSeasons.Find(teamSeasonId);
             if (account != null)
             {
-                account.AutoPlayVideo = autoPlay.Id.Equals("1");
-                if (DataAccess.Teams.ModifyAutoPlayVideo(account))
+                var team = account.Team;
+                team.AutoPlayVideo = autoPlay.Id.Equals("1");
+                Db.SaveChanges();
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(autoPlay.Id ?? String.Empty)
-                    };
-                    return response;
-                }
-                else
-                {
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
-                }
+                    Content = new StringContent(autoPlay.Id ?? String.Empty)
+                };
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -314,7 +332,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage TwitterScript(long accountId)
         {
-            string script = DataAccess.SocialIntegration.Twitter.GetTwitterWidgetScript(accountId);
+            var account = Db.Accounts.Find(accountId);
+            if (account == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            string script = account.TwitterWidgetScript;
             return Request.CreateResponse<string>(HttpStatusCode.OK, script ?? String.Empty);
         }
 
@@ -322,29 +344,34 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage SaveTwitterScript(long accountId, ScriptData twitterScript)
         {
-            var account = DataAccess.Accounts.GetAccount(accountId);
-            if (account != null)
-            {
-                if (DataAccess.SocialIntegration.Twitter.SetTwitterWidgetScript(accountId, (twitterScript == null) ? String.Empty : twitterScript.Script))
-                    return Request.CreateResponse(HttpStatusCode.NoContent);
-            }
+            var account = Db.Accounts.Find(accountId);
+            if (account == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            account.TwitterWidgetScript = (twitterScript == null) ? String.Empty : twitterScript.Script;
+            Db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.NoContent);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage Settings(long accountId)
         {
-            var accountSettings = DataAccess.Accounts.GetAccountSettings(accountId);
-            return Request.CreateResponse<AccountSettings>(HttpStatusCode.OK, accountSettings);
+            var dbAccSettings = (from a in Db.AccountSettings
+                                 where a.AccountId == accountId
+                                 select a);
+
+            var vm = Mapper.Map<IEnumerable<AccountSetting>, AccountSettingViewModel[]>(dbAccSettings);
+
+            return Request.CreateResponse<AccountSettingViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
         public HttpResponseMessage Settings(long accountId, KeyValueData data)
         {
-            DataAccess.Accounts.SetAccountSetting(accountId, data.Id, data.Value);
+            this.SetAccountSetting(accountId, data.Id, data.Value);
             return Request.CreateResponse(HttpStatusCode.NoContent);
         }
         #endregion

@@ -1,19 +1,19 @@
-﻿using System;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
+using System;
 
 namespace SportsManager.ViewModels
 {
     public class UserRolesViewModel : AccountViewModel
     {
-        public UserRolesViewModel(Controller c, long accountId)
+        public UserRolesViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            AccountAdminId = DataAccess.ContactRoles.GetAdminAccountId();
-            AccountPhotoAdminId = DataAccess.ContactRoles.GetAccountPhotoAdminId();
-            LeagueAdminId = DataAccess.ContactRoles.GetLeagueAdminId();
-            TeamAdminId = DataAccess.ContactRoles.GetTeamAdminId();
-            TeamPhotoAdminId = DataAccess.ContactRoles.GetTeamPhotoAdminId();
-            IsAccountOwner = DataAccess.Accounts.IsAccountOwner(accountId);
+            AccountAdminId = c.GetAdminAccountId();
+            AccountPhotoAdminId = c.GetAccountPhotoAdminId();
+            LeagueAdminId = c.GetLeagueAdminId();
+            TeamAdminId = c.GetTeamAdminId();
+            TeamPhotoAdminId = c.GetTeamPhotoAdminId();
+            IsAccountOwner = c.IsAccountOwner(accountId);
         }
 
         public String CurrentUserId

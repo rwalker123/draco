@@ -1,35 +1,35 @@
-﻿using System.Linq;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
+using System.Linq;
 
 namespace SportsManager.ViewModels
 {
     public class DiscussionsViewModel : AccountViewModel
     {
-        public DiscussionsViewModel(Controller c, long accountId)
+        public DiscussionsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
             var displayPosterPhoto = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "MsgBoardShowPhoto"), out displayPosterPhoto);
+            bool.TryParse(c.GetAccountSetting(accountId, "MsgBoardShowPhoto"), out displayPosterPhoto);
             DisplayPosterPhoto = displayPosterPhoto;
 
             var showMemberBusiness = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
             ShowMemberBusiness = showMemberBusiness;
 
             var showPlayerClassified = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
             ShowPlayerClassified = showPlayerClassified;
 
             var showFacebookLike = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
             ShowFacebookLike = showFacebookLike;
 
             if (showPlayerClassified)
             {
                 // number of players requesting teams.
-                NumberOfPlayerRequests = DataAccess.PlayerClassifieds.GetTeamsWanted(accountId, string.Empty).Count();
+                NumberOfPlayerRequests = c.Db.TeamsWantedClassifieds.Where(twc => twc.AccountId == accountId).Count();
                 // number of teams requesting players.
-                NumberOfTeamRequests = DataAccess.PlayerClassifieds.GetPlayersWanted(accountId).Count();
+                NumberOfTeamRequests = c.Db.PlayersWantedClassifieds.Where(pwc => pwc.AccountId == accountId).Count();
             }
         }
 
@@ -37,7 +37,6 @@ namespace SportsManager.ViewModels
         public bool ShowMemberBusiness { get; private set; }
         public bool ShowPlayerClassified { get; private set; }
         public bool ShowFacebookLike { get; private set; }
-
         public int NumberOfPlayerRequests { get; private set; }
         public int NumberOfTeamRequests { get; private set; }
     }

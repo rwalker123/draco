@@ -35,6 +35,10 @@ namespace SportsManager.Controllers
             Maximum
         }
 
+        public FileUploaderAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage RemoveTempFile(long accountId, string fileUri)
@@ -57,11 +61,11 @@ namespace SportsManager.Controllers
             if (accountId == 0 || teamSeasonId == 0)
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            var team = m_db.TeamsSeasons.Find(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamAlbums = m_db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
+            var teamAlbums = Db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
             // if team album doesn't exist yet, create it.
             if (!teamAlbums.Any())
             {
@@ -73,10 +77,10 @@ namespace SportsManager.Controllers
                     TeamId = team.TeamId
                 };
 
-                m_db.PhotoGalleryAlbums.Add(newTeamAlbum);
-                m_db.SaveChanges();
+                Db.PhotoGalleryAlbums.Add(newTeamAlbum);
+                Db.SaveChanges();
 
-                teamAlbums = m_db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
+                teamAlbums = Db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
                 // this is should never happen as we just created the team album.
                 if (!teamAlbums.Any())
                     Request.CreateResponse(HttpStatusCode.NotFound);
@@ -108,8 +112,8 @@ namespace SportsManager.Controllers
 
             try
             {
-                m_db.PhotoGalleries.Add(item);
-                m_db.SaveChanges();
+                Db.PhotoGalleries.Add(item);
+                Db.SaveChanges();
 
                 HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
 
@@ -123,8 +127,8 @@ namespace SportsManager.Controllers
                 }
                 else
                 {
-                    m_db.PhotoGalleries.Remove(item);
-                    m_db.SaveChanges();
+                    Db.PhotoGalleries.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
 
@@ -162,7 +166,7 @@ namespace SportsManager.Controllers
                 AccountId = accountId
             };
 
-            var numPhotos = m_db.PhotoGalleries.Where(pg => pg.AccountId == accountId && pg.AlbumId == item.AlbumId).Count();
+            var numPhotos = Db.PhotoGalleries.Where(pg => pg.AccountId == accountId && pg.AlbumId == item.AlbumId).Count();
             if (numPhotos > Int32.Parse(ConfigurationManager.AppSettings["MaxPhotosPerAlbum"]))
             {
                 File.Delete(file.LocalFileName);
@@ -174,8 +178,8 @@ namespace SportsManager.Controllers
 
             try
             {
-                m_db.PhotoGalleries.Add(item);
-                m_db.SaveChanges();
+                Db.PhotoGalleries.Add(item);
+                Db.SaveChanges();
 
                 HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
 
@@ -189,8 +193,8 @@ namespace SportsManager.Controllers
                 }
                 else
                 {
-                    m_db.PhotoGalleries.Remove(item);
-                    m_db.SaveChanges();
+                    Db.PhotoGalleries.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
             }
@@ -234,8 +238,8 @@ namespace SportsManager.Controllers
 
             try
             {
-                m_db.AccountHandouts.Add(dbHandout);
-                m_db.SaveChanges();
+                Db.AccountHandouts.Add(dbHandout);
+                Db.SaveChanges();
 
                 var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
                 if (File.Exists(file.LocalFileName))
@@ -248,8 +252,8 @@ namespace SportsManager.Controllers
                 }
                 else
                 {
-                    m_db.AccountHandouts.Remove(item);
-                    m_db.SaveChanges();
+                    Db.AccountHandouts.Remove(item);
+                    Db.SaveChanges();
 
                     return msg;
                 }
@@ -270,7 +274,7 @@ namespace SportsManager.Controllers
             if (accountId == 0)
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
 
-            var team = m_db.TeamsSeasons.Find(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -290,8 +294,8 @@ namespace SportsManager.Controllers
 
             try
             {
-                m_db.TeamHandouts.Add(item);
-                m_db.SaveChanges();
+                Db.TeamHandouts.Add(item);
+                Db.SaveChanges();
                 var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
                 
                 if (File.Exists(file.LocalFileName))
@@ -304,8 +308,8 @@ namespace SportsManager.Controllers
                 }
                 else
                 {
-                    m_db.TeamHandouts.Remove(item);
-                    m_db.SaveChanges();
+                    Db.TeamHandouts.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
             }
@@ -332,7 +336,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> ContactPhoto(long accountId, long id)
         {
-            Contact c = m_db.Contacts.Find(id);
+            Contact c = Db.Contacts.Find(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -346,7 +350,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> ContactLargePhoto(long accountId, long id)
         {
-            ModelObjects.Contact c = m_db.Contacts.Find(id);
+            ModelObjects.Contact c = Db.Contacts.Find(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -361,7 +365,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> TeamLogo(long accountId, long id)
         {
-            TeamSeason t = m_db.TeamsSeasons.Find(id);
+            TeamSeason t = Db.TeamsSeasons.Find(id);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -375,7 +379,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> TeamPhoto(long accountId, long id)
         {
-            TeamSeason t = m_db.TeamsSeasons.Find(id);
+            TeamSeason t = Db.TeamsSeasons.Find(id);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -389,7 +393,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> AccountLargeLogo(long accountId)
         {
-            Account a = m_db.Accounts.Find(accountId);
+            Account a = Db.Accounts.Find(accountId);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
@@ -401,7 +405,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> SponsorLogo(long accountId, long id)
         {
-            Sponsor s = m_db.Sponsors.Find(id);
+            Sponsor s = Db.Sponsors.Find(id);
             if (s == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 

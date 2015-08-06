@@ -23,7 +23,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("playerswanted")]
         public HttpResponseMessage GetPlayersWanted(long accountId)
         {
-            var playersWanted = (from pw in m_db.PlayersWantedClassifieds
+            var playersWanted = (from pw in Db.PlayersWantedClassifieds
                                  where pw.AccountId == accountId
                                  orderby pw.DateCreated ascending
                                  select pw);
@@ -39,22 +39,22 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             if (ModelState.IsValid)
             {
-                var contact = GetCurrentContact();
+                var contact = this.GetCurrentContact();
                 if (contact == null)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 var dbPlayerWanted = new PlayersWantedClassified()
                 {
                     AccountId = accountId,
-                    Contact = GetCurrentContact(),
+                    Contact = contact,
                     DateCreated = DateTime.Now,
                     Description = model.Description,
                     PositionsNeeded = model.PositionsNeeded,
                     TeamEventName = model.TeamEventName
                 };
 
-                m_db.PlayersWantedClassifieds.Add(dbPlayerWanted);
-                m_db.SaveChanges();
+                Db.PlayersWantedClassifieds.Add(dbPlayerWanted);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<PlayersWantedClassified, PlayersWantedViewModel>(dbPlayerWanted);
                 return Request.CreateResponse<PlayersWantedViewModel>(HttpStatusCode.Created, vm);
@@ -72,17 +72,17 @@ namespace SportsManager.Areas.Baseball.Controllers
                 model.AccountId = accountId;
                 model.Id = id;
 
-                var dbPlayerWanted = m_db.PlayersWantedClassifieds.Find(id);
+                var dbPlayerWanted = Db.PlayersWantedClassifieds.Find(id);
                 if (dbPlayerWanted == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 if (dbPlayerWanted.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                bool isAdmin = IsAccountAdmin(accountId, Globals.GetCurrentUserId());
+                bool isAdmin = this.IsAccountAdmin(accountId, Globals.GetCurrentUserId());
                 if (!isAdmin)
                 {
-                    var contact = GetCurrentContact();
+                    var contact = this.GetCurrentContact();
                     if (contact == null || contact.Id != dbPlayerWanted.CreatedByContactId)
                         return Request.CreateResponse(HttpStatusCode.Forbidden);
                 }
@@ -91,7 +91,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 dbPlayerWanted.Description = model.Description;
                 dbPlayerWanted.PositionsNeeded = model.PositionsNeeded;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<PlayersWantedClassified, PlayersWantedViewModel>(dbPlayerWanted);
                 return Request.CreateResponse<PlayersWantedViewModel>(HttpStatusCode.OK, vm);
@@ -104,23 +104,23 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("playerswanted")]
         public HttpResponseMessage DeletePlayersWanted(long accountId, long id)
         {
-            var dbPlayerWanted = m_db.PlayersWantedClassifieds.Find(id);
+            var dbPlayerWanted = Db.PlayersWantedClassifieds.Find(id);
             if (dbPlayerWanted == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbPlayerWanted.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            bool isAdmin = IsAccountAdmin(accountId, Globals.GetCurrentUserId());
+            bool isAdmin = this.IsAccountAdmin(accountId, Globals.GetCurrentUserId());
             if (!isAdmin)
             {
-                var contact = GetCurrentContact();
+                var contact = this.GetCurrentContact();
                 if (contact == null || contact.Id != dbPlayerWanted.CreatedByContactId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            m_db.PlayersWantedClassifieds.Remove(dbPlayerWanted);
-            m_db.SaveChanges();
+            Db.PlayersWantedClassifieds.Remove(dbPlayerWanted);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -138,7 +138,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 Guid.TryParse(accessCode, out accessCodeGuid);
             }
 
-            var teamsWanted = (from tw in m_db.TeamsWantedClassifieds
+            var teamsWanted = (from tw in Db.TeamsWantedClassifieds
                                where tw.AccountId == accountId
                                orderby tw.DateCreated ascending
                                select tw);
@@ -176,8 +176,8 @@ namespace SportsManager.Areas.Baseball.Controllers
                     AccessCode = Guid.NewGuid()
                 };
 
-                m_db.TeamsWantedClassifieds.Add(tw);
-                m_db.SaveChanges();
+                Db.TeamsWantedClassifieds.Add(tw);
+                Db.SaveChanges();
 
                 // email user with access code so they can edit the entry.
                 EmailTeamRegistration(tw, refererUrl + "?c=" + tw.AccessCode);
@@ -198,7 +198,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             if (ModelState.IsValid)
             {
-                var tw = m_db.TeamsWantedClassifieds.Find(id);
+                var tw = Db.TeamsWantedClassifieds.Find(id);
                 if (tw == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -212,7 +212,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 tw.PositionsPlayed = model.PositionsPlayed;
                 tw.BirthDate = model.BirthDate;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
 
                 var vm = Mapper.Map<TeamsWantedClassified, TeamWantedViewModel>(tw);
@@ -227,7 +227,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         public HttpResponseMessage DeleteTeamsWanted(long accountId, long id)
         {
             string userId = Globals.GetCurrentUserId();
-            bool isAdmin = IsAccountAdmin(accountId, userId);
+            bool isAdmin = this.IsAccountAdmin(accountId, userId);
             var accessCode = string.Empty;
             if (!isAdmin)
             {
@@ -235,7 +235,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 accessCode = queryValues["c"];
             }
 
-            var dbObj = m_db.TeamsWantedClassifieds.Find(id);
+            var dbObj = Db.TeamsWantedClassifieds.Find(id);
             if (dbObj == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -247,8 +247,8 @@ namespace SportsManager.Areas.Baseball.Controllers
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }
 
-            m_db.TeamsWantedClassifieds.Remove(dbObj);
-            m_db.SaveChanges();
+            Db.TeamsWantedClassifieds.Remove(dbObj);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -270,8 +270,8 @@ namespace SportsManager.Areas.Baseball.Controllers
             string accountName = String.Empty;
             string fromEmail = String.Empty;
 
-            var a = m_db.Accounts.Find(tw.AccountId);
-            var sender = m_db.Contacts.Find(a.OwnerId);
+            var a = Db.Accounts.Find(tw.AccountId);
+            var sender = Db.Contacts.Find(a.OwnerId);
             if (sender == null)
                 return;
 
@@ -308,12 +308,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             string accountName = String.Empty;
             string fromEmail = String.Empty;
 
-            var sender = GetCurrentContact();
+            var sender = this.GetCurrentContact();
             if (sender == null)
                 return;
 
             senderFullName = sender.FullNameFirst;
-            accountName = m_db.Accounts.Find(tw.AccountId).Name;
+            accountName = Db.Accounts.Find(tw.AccountId).Name;
             fromEmail = sender.Email;
 
             string subject = String.Format(registerTeamSubject, accountName);
@@ -321,7 +321,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             string body = String.Format(registerTeamBody, accountName, tw.Name, Globals.CalculateAge(tw.BirthDate), tw.PositionsPlayed, tw.Experience, tw.EMail, tw.Phone, tw.Name);
 
             var bccList = new List<MailAddress>();
-            var teamsLooking = m_db.PlayersWantedClassifieds.Where(pw => pw.AccountId == tw.AccountId);
+            var teamsLooking = Db.PlayersWantedClassifieds.Where(pw => pw.AccountId == tw.AccountId);
             foreach (var teamLooking in teamsLooking)
             {
                 bccList.Add(new MailAddress(teamLooking.Contact.Email, Contact.BuildFullNameFirst(teamLooking.Contact.FirstName, teamLooking.Contact.MiddleName, teamLooking.Contact.LastName)));

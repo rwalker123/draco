@@ -1,28 +1,26 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class LeadersViewModel : AccountViewModel
     {
-        public LeadersViewModel(Controller c, long accountId, long teamSeasonId)
+        public LeadersViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             TeamSeasonId = teamSeasonId;
         }
 
-        public LeadersViewModel(Controller c, long accountId)
+        public LeadersViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            var seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
-            Leagues = DataAccess.Leagues.GetLeagues(seasonId);
+            var seasonId = c.GetCurrentSeasonId(accountId);
+            Leagues = c.Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
         }
 
         public long TeamSeasonId { get; private set; }
-        public IQueryable<League> Leagues { get; private set; }
+        public IQueryable<LeagueSeason> Leagues { get; private set; }
     }
 }

@@ -13,11 +13,15 @@ namespace SportsManager.Controllers
 {
     public class AnnouncementAPIController : DBApiController
     {
+        public AnnouncementAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcements")]
         public HttpResponseMessage GetAnnouncements(long accountId)
         {
-            var news = m_db.LeagueNews.Where(ln => ln.AccountId == accountId).OrderByDescending(ln => ln.Date);
+            var news = Db.LeagueNews.Where(ln => ln.AccountId == accountId).OrderByDescending(ln => ln.Date);
 
             var vm = Mapper.Map<IEnumerable<LeagueNewsItem>, NewsViewModel[]>(news);
             return Request.CreateResponse<NewsViewModel[]>(HttpStatusCode.OK, vm);
@@ -27,7 +31,7 @@ namespace SportsManager.Controllers
         [ActionName("TeamAnnouncements")]
         public HttpResponseMessage GetTeamAnnouncements(long accountId, long teamSeasonId)
         {
-            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -41,7 +45,7 @@ namespace SportsManager.Controllers
         public HttpResponseMessage GetAnnouncement(long accountId, long id)
         {
 
-            var newsItem = m_db.LeagueNews.Find(id);
+            var newsItem = Db.LeagueNews.Find(id);
             if (newsItem != null)
             {
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
@@ -57,7 +61,7 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            var newsItem = m_db.TeamNews.Find(id);
+            var newsItem = Db.TeamNews.Find(id);
             if (newsItem != null)
             {
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -85,8 +89,8 @@ namespace SportsManager.Controllers
                     Title = announcementData.Title ?? "Title"
                 };
 
-                m_db.LeagueNews.Add(newsItem);
-                m_db.SaveChanges();
+                Db.LeagueNews.Add(newsItem);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
                 var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.Created, vm);
@@ -106,7 +110,7 @@ namespace SportsManager.Controllers
         {
             if (id != 0 && ModelState.IsValid && announcementData != null)
             {
-                var newsItem = m_db.LeagueNews.Find(id);
+                var newsItem = Db.LeagueNews.Find(id);
                 if (newsItem == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -114,7 +118,7 @@ namespace SportsManager.Controllers
                 newsItem.Text = newsItem.Text ?? String.Empty;
                 newsItem.Title = newsItem.Title ?? "Title";
                 newsItem.SpecialAnnounce = newsItem.SpecialAnnounce;
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 // Create a 200 response.
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
@@ -139,7 +143,7 @@ namespace SportsManager.Controllers
                 announcementData.Date = DateTime.Now;
 
                 // convert teamSeasonId to teamId
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -152,7 +156,7 @@ namespace SportsManager.Controllers
                     Title = announcementData.Title ?? "Title"
                 };
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 // Create a 201 response.
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -175,11 +179,11 @@ namespace SportsManager.Controllers
             if (id != 0 && ModelState.IsValid && announcementData != null)
             {
                 // convert teamSeasonId to teamId
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var newsItem = m_db.TeamNews.Find(id);
+                var newsItem = Db.TeamNews.Find(id);
                 if (newsItem.TeamId != teamSeason.TeamId)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -188,7 +192,7 @@ namespace SportsManager.Controllers
                 newsItem.Text = announcementData.Text ?? String.Empty;
                 newsItem.SpecialAnnounce = announcementData.SpecialAnnounce;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 // Create a 200 response.
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -208,15 +212,15 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         public HttpResponseMessage Announcement(long accountid, long id)
         {
-            var newsItem = m_db.LeagueNews.Find(id);
+            var newsItem = Db.LeagueNews.Find(id);
             if (newsItem == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (newsItem.AccountId != accountid)
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            m_db.LeagueNews.Remove(newsItem);
-            m_db.SaveChanges();
+            Db.LeagueNews.Remove(newsItem);
+            Db.SaveChanges();
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -226,19 +230,19 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage DeleteTeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            var newsItem = m_db.TeamNews.Find(id);
+            var newsItem = Db.TeamNews.Find(id);
             if (newsItem == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
-            if (teamSeasonId == null)
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (newsItem.TeamId != teamSeason.TeamId)
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            m_db.TeamNews.Remove(newsItem);
-            m_db.SaveChanges();
+            Db.TeamNews.Remove(newsItem);
+            Db.SaveChanges();
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }

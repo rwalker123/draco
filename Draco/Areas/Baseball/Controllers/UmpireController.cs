@@ -1,11 +1,18 @@
-﻿using System.Web.Mvc;
+﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels;
+using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class UmpireController : Controller
+    public class UmpireController : DBController
     {
+        public UmpireController(DB db) : base(db)
+        {
+
+        }
+
         //
         // GET: /Baseball/Umpire/
 

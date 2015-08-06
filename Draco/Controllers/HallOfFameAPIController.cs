@@ -13,11 +13,16 @@ namespace SportsManager.Controllers
 {
     public class HallOfFameAPIController : DBApiController
     {
+        public HallOfFameAPIController(DB db) : base(db)
+        {
+
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("classes")]
         public HttpResponseMessage GetHOFClasses(long accountId)
         {
-            var hofClasses = (from hof in m_db.Hofs
+            var hofClasses = (from hof in Db.Hofs
                               where hof.AccountId == accountId
                               orderby hof.YearInducted descending
                               group hof by hof.YearInducted into g
@@ -43,8 +48,8 @@ namespace SportsManager.Controllers
         [ActionName("classmembers")]
         public HttpResponseMessage GetHOFClassMembers(long accountId, long id)
         {
-            var hofMembers = (from h in m_db.Hofs
-                              join c in m_db.Contacts on h.ContactId equals c.Id
+            var hofMembers = (from h in Db.Hofs
+                              join c in Db.Contacts on h.ContactId equals c.Id
                               where h.AccountId == accountId && h.YearInducted == id
                               orderby c.LastName, c.FirstName
                               select h).AsEnumerable();
@@ -69,7 +74,7 @@ namespace SportsManager.Controllers
             {
                 hofMember.AccountId = accountId;
 
-                bool isInHof = (from hof in m_db.Hofs
+                bool isInHof = (from hof in Db.Hofs
                                 where hof.AccountId == accountId &&
                                 hof.ContactId == hofMember.ContactId
                                 select hof).Any();
@@ -85,8 +90,8 @@ namespace SportsManager.Controllers
                     YearInducted = hofMember.YearInducted
                 };
 
-                m_db.Hofs.Add(dbHof);
-                m_db.SaveChanges();
+                Db.Hofs.Add(dbHof);
+                Db.SaveChanges();
 
                 if (dbHof.Id > 0)
                 {
@@ -105,7 +110,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid && hofMember != null)
             {
-                var dbHof = m_db.Hofs.Find(hofMember.Id);
+                var dbHof = Db.Hofs.Find(hofMember.Id);
                 if (dbHof == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -115,7 +120,7 @@ namespace SportsManager.Controllers
                 dbHof.Bio = hofMember.Biography;
                 dbHof.YearInducted = hofMember.YearInducted;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<HOFMember, HOFMemberViewModel>(dbHof);
                 return Request.CreateResponse<HOFMemberViewModel>(HttpStatusCode.OK, vm);
@@ -129,15 +134,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteHOFClassMember(long accountId, int id)
         {
-            var hof = m_db.Hofs.Find(id);
+            var hof = Db.Hofs.Find(id);
             if (hof == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (hof.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.Hofs.Remove(hof);
-            m_db.SaveChanges();
+            Db.Hofs.Remove(hof);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -148,19 +153,19 @@ namespace SportsManager.Controllers
         {
             int pageSize = 20;
 
-            long affiliationId = (from a in m_db.Accounts
+            long affiliationId = (from a in Db.Accounts
                                   where a.Id == accountId
                                   select a.AffiliationId).SingleOrDefault();
 
-            var aIds = (from a in m_db.Accounts
+            var aIds = (from a in Db.Accounts
                         where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
                         select a.Id);
 
-            var hofIds = (from h in m_db.Hofs
+            var hofIds = (from h in Db.Hofs
                           where h.AccountId == accountId
                           select h.ContactId);
 
-            var available = (from c in m_db.Contacts
+            var available = (from c in Db.Contacts
                              where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id) &&
                              (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
                              (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
@@ -176,7 +181,7 @@ namespace SportsManager.Controllers
         public HttpResponseMessage GetRandomHOFMember(long accountId)
         {
 
-            var hofMembers = m_db.Hofs.Where(h => h.AccountId == accountId);
+            var hofMembers = Db.Hofs.Where(h => h.AccountId == accountId);
             if (hofMembers.Any())
             {
                 int count = hofMembers.Count();

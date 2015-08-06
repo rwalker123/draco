@@ -63,7 +63,7 @@ namespace SportsManager.Controllers
             string screenName = credentials.ScreenName;
             ulong userID = credentials.UserID;
 
-            var account = m_db.Accounts.Find(accountId);
+            var account = Db.Accounts.Find(accountId);
             if (account == null)
             {
                 throw new Exception("Invalid Account");
@@ -74,7 +74,7 @@ namespace SportsManager.Controllers
                 account.TwitterOauthToken = oauthToken;
                 account.TwitterOauthSecretKey = oauthTokenSecret;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 string refererUri = Request.QueryString.Get("twitterAction");
                 if (!String.IsNullOrEmpty(refererUri))
@@ -98,7 +98,7 @@ namespace SportsManager.Controllers
 
         public async Task<ActionResult> SendTweetAsync(long accountId, string tweet)
         {
-            var a = m_db.Accounts.Find(accountId);
+            var a = Db.Accounts.Find(accountId);
 
             if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
             {

@@ -29,7 +29,7 @@ namespace SportsManager.Baseball.Controllers
 
             if (seasonId == 0)
             {
-                var p = (from r in m_db.Rosters
+                var p = (from r in Db.Rosters
                          where r.Id == id
                          select r).FirstOrDefault();
 
@@ -40,7 +40,7 @@ namespace SportsManager.Baseball.Controllers
             }
             else
             {
-                var p = (from rs in m_db.RosterSeasons
+                var p = (from rs in Db.RosterSeasons
                          where rs.Id == id
                          select rs).FirstOrDefault();
 
@@ -56,8 +56,8 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("GET"), HttpGet]
         public HttpResponseMessage SearchPlayerName(long accountId, string term)
         {
-            var p = (from r in m_db.Rosters
-                     join c in m_db.Contacts on r.ContactId equals c.Id
+            var p = (from r in Db.Rosters
+                     join c in Db.Contacts on r.ContactId equals c.Id
                      where r.AccountId == accountId && c.LastName.Contains(term)
                      orderby c.LastName, c.FirstName, c.MiddleName
                      select r).Take(20);
@@ -100,7 +100,7 @@ namespace SportsManager.Baseball.Controllers
                               where !String.IsNullOrEmpty(c.Email)
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
 
-                var fromContact = m_db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
+                var fromContact = Db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
                 if (fromContact == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -163,18 +163,18 @@ namespace SportsManager.Baseball.Controllers
 
         private IEnumerable<Contact> GetSeasonContactList(long accountId)
         {
-            long seasonId = GetCurrentSeasonId(accountId);
+            long seasonId = this.GetCurrentSeasonId(accountId);
 
             // get leagues in season
-            var leagueSeasonIds = (from ls in m_db.LeagueSeasons
+            var leagueSeasonIds = (from ls in Db.LeagueSeasons
                            where ls.SeasonId == seasonId
                            select ls.Id);
 
-            return (from ls in m_db.LeagueSeasons
-                    join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
-                    join r in m_db.Rosters on rs.PlayerId equals r.Id
-                    join c in m_db.Contacts on r.ContactId equals c.Id
+            return (from ls in Db.LeagueSeasons
+                    join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in Db.Rosters on rs.PlayerId equals r.Id
+                    join c in Db.Contacts on r.ContactId equals c.Id
                     orderby c.LastName, c.FirstName, c.MiddleName
                     where !String.IsNullOrEmpty(c.Email) && leagueSeasonIds.Contains(ls.Id) && !rs.Inactive
                     select c);
@@ -182,18 +182,18 @@ namespace SportsManager.Baseball.Controllers
 
         private IEnumerable<Contact> GetUserContactList(IEnumerable<long> contactIds)
         {
-            return (from c in m_db.Contacts
+            return (from c in Db.Contacts
                     where contactIds.Contains(c.Id)
                     select c);
         }
 
         private IEnumerable<Contact> GetLeaguesContactList(IEnumerable<long> leagueIds)
         {
-            return (from ls in m_db.LeagueSeasons
-                    join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
-                    join r in m_db.Rosters on rs.PlayerId equals r.Id
-                    join c in m_db.Contacts on r.ContactId equals c.Id
+            return (from ls in Db.LeagueSeasons
+                    join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    join rs in Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in Db.Rosters on rs.PlayerId equals r.Id
+                    join c in Db.Contacts on r.ContactId equals c.Id
                     orderby c.LastName, c.FirstName, c.MiddleName
                     where (c.Email != "" && c.Email != null) && leagueIds.Contains(ls.Id) && !rs.Inactive
                     select c);
@@ -201,10 +201,10 @@ namespace SportsManager.Baseball.Controllers
 
         private IEnumerable<Contact> GetTeamsContactList(IEnumerable<long> teamIds)
         {
-            return (from ts in m_db.TeamsSeasons
-                    join rs in m_db.RosterSeasons on ts.Id equals rs.TeamSeasonId
-                    join r in m_db.Rosters on rs.PlayerId equals r.Id
-                    join c in m_db.Contacts on r.ContactId equals c.Id
+            return (from ts in Db.TeamsSeasons
+                    join rs in Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                    join r in Db.Rosters on rs.PlayerId equals r.Id
+                    join c in Db.Contacts on r.ContactId equals c.Id
                     where (c.Email != null && c.Email != "") && teamIds.Contains(ts.Id) && !rs.Inactive
                     orderby c.LastName, c.FirstName, c.MiddleName
                     select c);

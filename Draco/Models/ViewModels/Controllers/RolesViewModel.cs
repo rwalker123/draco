@@ -1,19 +1,19 @@
 ﻿using Microsoft.AspNet.Identity;
-using System.Security.Principal;
+using SportsManager.Controllers;
 using System.Web;
 
 namespace SportsManager.ViewModels
 {
-	public class RolesViewModel
+    public class RolesViewModel
 	{
-		public RolesViewModel(long accountId, long seasonId)
+		public RolesViewModel(DBController c, long accountId, long seasonId)
 		{
 			AccountId = accountId;
 			SeasonId = seasonId;
-            AccountType = DataAccess.Accounts.GetAccountType(AccountId);
-
-			if (HttpContext.Current.User.Identity.IsAuthenticated)
-				IsAccountAdmin = DataAccess.Accounts.IsAccountAdmin(accountId, HttpContext.Current.User.Identity.GetUserId());
+            var account = c.Db.Accounts.Find(AccountId);
+            AccountType = account.AccountType;
+            if (HttpContext.Current.User.Identity.IsAuthenticated)
+				IsAccountAdmin = c.IsAccountAdmin(accountId, HttpContext.Current.User.Identity.GetUserId());
 			else
 				IsAccountAdmin = false;
 		}

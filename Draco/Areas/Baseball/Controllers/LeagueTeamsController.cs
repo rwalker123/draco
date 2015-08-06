@@ -1,4 +1,6 @@
-﻿using SportsManager.Controllers.Attributes;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using System;
 using System.IO;
@@ -6,8 +8,14 @@ using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class LeagueTeamsController : Controller
+    public class LeagueTeamsController : DBController
     {
+        public LeagueTeamsController(DB db)
+            : base(db)
+        {
+
+        }
+
         //
         // GET: /Baseball/Teams/
 

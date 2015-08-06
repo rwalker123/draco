@@ -13,7 +13,7 @@ namespace ModelObjects
         // Foreign keys
         public virtual Account Account { get; set; } // FK_AccountHandouts_Accounts
 
-        protected override string HandoutDir
+        protected string HandoutDir
         {
             get
             {

@@ -1,20 +1,20 @@
-﻿using System;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using System;
 using System.Collections.Generic;
-using System.Web.Mvc;
-using ModelObjects;
 
 namespace SportsManager.ViewModels
 {
     public class DomainsViewModel : AccountViewModel
     {
-        public DomainsViewModel(Controller c, long accountId)
+        public DomainsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            Account a = DataAccess.Accounts.GetAccount(accountId);
-            if (String.IsNullOrWhiteSpace(a.AccountURL))
+            Account a = c.Db.Accounts.Find(accountId);
+            if (String.IsNullOrWhiteSpace(a.Url))
                 AccountUrls = new List<string>();
             else
-                AccountUrls = new List<string>(a.AccountURL.Split(new char[] { ';' }));
+                AccountUrls = new List<string>(a.Url.Split(new char[] { ';' }));
         }
 
         public List<string> AccountUrls

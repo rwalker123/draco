@@ -1,5 +1,5 @@
-﻿using DataAccess.Baseball;
-using ModelObjects;
+﻿using ModelObjects;
+using SportsManager.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +12,18 @@ namespace SportsManager.Baseball.ViewModels
     /// </summary>
     public class LeagueIndexViewModel 
     {
+        DB m_db;
+
+        public LeagueIndexViewModel(DBController c)
+        {
+            m_db = c.Db;
+        }
+
         public IEnumerable<SelectListItem> GetBaseballLeagues()
         {
             List<SelectListItem> items = new List<SelectListItem>();
 
-            IQueryable<Account> baseballLeagues = BaseballLeagues.GetBaseballLeagues();
-
+            IQueryable<Account> baseballLeagues = m_db.Accounts.Where(a => a.AccountTypeId == 1);
             foreach (var l in baseballLeagues)
             {
                 if (!String.IsNullOrEmpty(l.Url))

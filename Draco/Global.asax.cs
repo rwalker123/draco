@@ -236,7 +236,35 @@ namespace SportsManager
                 .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid)))
                 .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact));
 
-                Mapper.AssertConfigurationIsValid();
+            Mapper.CreateMap<AccountSetting, AccountSettingViewModel>();
+
+            Mapper.CreateMap<Game, GameViewModel>()
+                .ForMember(vm => vm.HomeTeamId, opt => opt.MapFrom(model => model.HTeamId))
+                .ForMember(vm => vm.AwayTeamId, opt => opt.MapFrom(model => model.VTeamId))
+                .ForMember(vm => vm.HomeScore, opt => opt.MapFrom(model => model.HScore))
+                .ForMember(vm => vm.AwayScore, opt => opt.MapFrom(model => model.VScore))
+                .ForMember(vm => vm.HomeTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.HTeamId).Select(ts => ts.Name).SingleOrDefault()))
+                .ForMember(vm => vm.AwayTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.VTeamId).Select(ts => ts.Name).SingleOrDefault()))
+                .ForMember(vm => vm.FieldName, opt => opt.MapFrom(model => model.AvailableField.Name))
+                .ForMember(vm => vm.HasGameRecap, opt => opt.MapFrom(model => model.GameRecaps.Any()));
+
+            Mapper.CreateMap<WorkoutAnnouncement, WorkoutAnnouncementViewModel>()
+                .Include<WorkoutAnnouncement, WorkoutAnnouncementRegisteredViewModel>()
+                .ForMember(vm => vm.Description, opt => opt.MapFrom(model => model.WorkoutDesc))
+                .ForMember(vm => vm.WorkoutLocation, opt => opt.MapFrom(model => model.FieldId));
+
+            Mapper.CreateMap<WorkoutAnnouncement, WorkoutAnnouncementRegisteredViewModel>()
+                .ForMember(vm => vm.NumRegistered, opt => opt.MapFrom(model => model.WorkoutRegistrations.Count()))
+                .ForMember(vm => vm.FieldName, opt => opt.MapFrom(model => model.AvailableField.Name));
+
+            Mapper.CreateMap<WorkoutRegistrant, WorkoutRegistrantViewModel>()
+                .ForMember(vm => vm.Email, opt => opt.MapFrom(model => model.EMail))
+                .ForMember(vm => vm.WantToManage, opt => opt.MapFrom(model => model.IsManager));
+
+            Mapper.CreateMap<Umpire, UmpireViewModel>()
+                .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Contact));
+
+            Mapper.AssertConfigurationIsValid();
         }
     }
 }

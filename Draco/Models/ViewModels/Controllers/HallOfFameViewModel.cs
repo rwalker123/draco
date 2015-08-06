@@ -1,10 +1,10 @@
-﻿using System.Web.Mvc;
+﻿using SportsManager.Controllers;
 
 namespace SportsManager.ViewModels
 {
     public class HallOfFameViewModel : AccountViewModel
     {
-        public HallOfFameViewModel(Controller c, long accountId)
+        public HallOfFameViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
         }

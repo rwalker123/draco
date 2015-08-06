@@ -12,11 +12,15 @@ namespace SportsManager.Controllers
 {
     public class WelcomeAPIController : DBApiController
     {
+        public WelcomeAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("WelcomeText")]
         public HttpResponseMessage GetWelcomeText(long accountId, long id)
         {
-            var welcomeText = m_db.AccountWelcomes.Find(id);
+            var welcomeText = Db.AccountWelcomes.Find(id);
             if (welcomeText != null)
             {
                 if (welcomeText.AccountId != accountId)
@@ -34,10 +38,10 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage TeamGetWelcomeText(long accountId, long teamSeasonId, long id)
         {
-            var welcomeText = m_db.AccountWelcomes.Find(id);
+            var welcomeText = Db.AccountWelcomes.Find(id);
             if (welcomeText != null)
             {
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -55,7 +59,7 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeTextHeaders")]
         public HttpResponseMessage GetWelcomeTextHeaders(long accountId)
         {
-            var welcomeTexts = (from aw in m_db.AccountWelcomes
+            var welcomeTexts = (from aw in Db.AccountWelcomes
                                 where aw.AccountId == accountId && (!aw.TeamId.HasValue || aw.TeamId == 0)
                                 orderby aw.OrderNo
                                 select aw).AsEnumerable();
@@ -74,7 +78,7 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeTextHeaders")]
         public HttpResponseMessage TeamGetWelcomeTextHeaders(long accountId, long teamSeasonId)
         {
-            var welcomeTexts = (from aw in m_db.AccountWelcomes
+            var welcomeTexts = (from aw in Db.AccountWelcomes
                                 where aw.AccountId == accountId && aw.TeamId == teamSeasonId
                                 orderby aw.OrderNo
                                 select aw).AsEnumerable();
@@ -95,7 +99,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -111,8 +115,8 @@ namespace SportsManager.Controllers
                     WelcomeText = welcomeData.WelcomeText
                 };
 
-                m_db.AccountWelcomes.Add(dbData);
-                m_db.SaveChanges();
+                Db.AccountWelcomes.Add(dbData);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
                 return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
@@ -137,8 +141,8 @@ namespace SportsManager.Controllers
                     WelcomeText = welcomeData.WelcomeText
                 };
 
-                m_db.AccountWelcomes.Add(dbData);
-                m_db.SaveChanges();
+                Db.AccountWelcomes.Add(dbData);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
                 return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
@@ -154,14 +158,14 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 if (teamSeason.Team.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbData = m_db.AccountWelcomes.Find(id);
+                var dbData = Db.AccountWelcomes.Find(id);
                 if (dbData == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -172,7 +176,7 @@ namespace SportsManager.Controllers
                 dbData.OrderNo = welcomeData.OrderNo;
                 dbData.WelcomeText = welcomeData.WelcomeText;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
                 return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
@@ -188,7 +192,7 @@ namespace SportsManager.Controllers
         {
             if (id != 0 && ModelState.IsValid)
             {
-                var dbData = m_db.AccountWelcomes.Find(id);
+                var dbData = Db.AccountWelcomes.Find(id);
                 if (dbData == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -199,7 +203,7 @@ namespace SportsManager.Controllers
                 dbData.OrderNo = welcomeData.OrderNo;
                 dbData.WelcomeText = welcomeData.WelcomeText;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<AccountWelcome, WelcomeTextViewModel>(dbData);
                 return Request.CreateResponse<WelcomeTextViewModel>(HttpStatusCode.OK, vm);
@@ -213,22 +217,22 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage TeamDeleteWelcomeText(long accountId, long teamSeasonId, long id)
         {
-            var teamSeason = m_db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (teamSeason.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var dbData = m_db.AccountWelcomes.Find(id);
+            var dbData = Db.AccountWelcomes.Find(id);
             if (dbData == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbData.TeamId != teamSeason.TeamId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.AccountWelcomes.Remove(dbData);
-            m_db.SaveChanges();
+            Db.AccountWelcomes.Remove(dbData);
+            Db.SaveChanges();
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
@@ -237,15 +241,15 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeText")]
         public HttpResponseMessage DeleteWelcomeText(long accountId, long id)
         {
-            var dbData = m_db.AccountWelcomes.Find(id);
+            var dbData = Db.AccountWelcomes.Find(id);
             if (dbData == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (dbData.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.AccountWelcomes.Remove(dbData);
-            m_db.SaveChanges();
+            Db.AccountWelcomes.Remove(dbData);
+            Db.SaveChanges();
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
     }

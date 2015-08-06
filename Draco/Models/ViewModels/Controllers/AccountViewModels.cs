@@ -1,4 +1,5 @@
-﻿using SportsManager.ViewModels;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -77,7 +78,7 @@ namespace SportsManager.Models
             YearList = new List<System.Web.Mvc.SelectListItem>();
         }
 
-        public RegisterViewModel(System.Web.Mvc.Controller c, long accountId)
+        public RegisterViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
             BirthDate = DateTime.Now;
@@ -89,7 +90,7 @@ namespace SportsManager.Models
         {
             var yearList = new List<System.Web.Mvc.SelectListItem>();
 
-            ModelObjects.Account account = DataAccess.Accounts.GetAccount(accountId);
+            ModelObjects.Account account = Controller.Db.Accounts.Find(accountId);
             if (account != null)
             {
                 int currentYear = DateTime.Now.Year;

@@ -1,9 +1,14 @@
 ﻿using System.Web.Mvc;
+using ModelObjects;
 
 namespace SportsManager.Controllers
 {
-    public class DiscussionsController : Controller
+    public class DiscussionsController : DBController
     {
+        protected DiscussionsController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Baseball/Discussions/
 

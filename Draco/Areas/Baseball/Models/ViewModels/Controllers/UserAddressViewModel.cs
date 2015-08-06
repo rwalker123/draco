@@ -1,25 +1,24 @@
 ﻿using ModelObjects;
 using SportsManager.ViewModels;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic;
-using System.Web.Mvc;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml;
 using System;
 using System.IO;
+using SportsManager.Controllers;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class UserAddressViewModel : AccountViewModel
     {
-        IQueryable<SportsManager.Model.Contact> m_contacts;
+        IQueryable<Contact> m_contacts;
 
-        public UserAddressViewModel(Controller c, long accountId)
+        public UserAddressViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            m_contacts = DataAccess.Contacts.GetContacts(accountId);
+            m_contacts = c.GetContacts(accountId);
         }
 
         public FileStream ExportToExcel(String order, String filter)
@@ -136,7 +135,7 @@ namespace SportsManager.Baseball.ViewModels
             return new FileStream(destinationFile, FileMode.Open);
         }
 
-        public static void ExportUsersToExcel(IQueryable<SportsManager.Model.Contact> contacts, SheetData sheetData)
+        public static void ExportUsersToExcel(IQueryable<Contact> contacts, SheetData sheetData)
         {
             // Begining Row pointer                       
             int index = 4;

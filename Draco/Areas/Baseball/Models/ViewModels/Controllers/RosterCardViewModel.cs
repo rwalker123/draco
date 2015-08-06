@@ -1,27 +1,30 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class RosterCardViewModel : AccountViewModel
     {
-        public RosterCardViewModel(Controller c, long accountId, long teamSeasonId)
+        public RosterCardViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
-            Team = DataAccess.Teams.GetTeam(teamSeasonId);
+            Team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (Team != null)
             {
-                Players = DataAccess.TeamRoster.GetPlayers(teamSeasonId);
-                LeagueTeamName = DataAccess.Teams.GetLeagueTeamName(teamSeasonId);
+                Players = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId && !rs.Inactive);
+                LeagueTeamName = (from ts in c.Db.TeamsSeasons
+                                  join ls in c.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                                  join l in c.Db.Leagues on ls.LeagueId equals l.Id
+                                  where ts.Id == teamSeasonId
+                                  select l.Name + " " + ts.Name).SingleOrDefault();
             }
         }
 
         public String LeagueTeamName { get; set; }
-        public Team Team { get; set; }
-        public IQueryable<Player> Players { get; set; }
+        public TeamSeason Team { get; set; }
+        public IQueryable<PlayerSeason> Players { get; set; }
     }
 }

@@ -1,34 +1,31 @@
-﻿using DataAccess;
-using ModelObjects;
-using System.Collections.Generic;
+﻿using SportsManager.Controllers;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.ViewModels
 {
     public class WelcomeMessageViewModel : AccountViewModel
     {
-        public WelcomeMessageViewModel(Controller c, long accountId, long teamSeasonId)
+        public WelcomeMessageViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             // convert teamSeasonId to teamId
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return;
 
-            HasMessage = DataAccess.Teams.GetWelcomeText(accountId, team.TeamId).Any();
-            
+            HasMessage = c.Db.AccountWelcomes.Where(aw => aw.AccountId == accountId && aw.TeamId == team.TeamId).Any();
+
             // account admins and team admins.
             if (!IsAdmin)
             {
-                IsAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+                IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId);
             }            
         }
 
-        public WelcomeMessageViewModel(Controller c, long accountId)
+        public WelcomeMessageViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            HasMessage = Accounts.GetAccountWelcomeText(accountId).Any();
+            HasMessage = c.Db.AccountWelcomes.Where(aw => aw.AccountId == accountId && aw.TeamId == 0).Any();
         }
 
         public bool HasMessage

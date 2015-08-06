@@ -1,17 +1,10 @@
-﻿using DocumentFormat.OpenXml;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Spreadsheet;
-using SportsManager.Baseball.ViewModels;
-using System;
-using System.IO;
-using System.Web.Mvc;
-using System.Linq;
+﻿using SportsManager.Controllers;
 
 namespace SportsManager.ViewModels
 {
     public class UsersViewModel : AccountViewModel
     {
-        public UsersViewModel(Controller c, long accountId)
+        public UsersViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
         }

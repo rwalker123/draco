@@ -1,4 +1,5 @@
-﻿using SportsManager.ViewModels;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,26 +10,26 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class ScoreboardViewModel : AccountViewModel
     {
-        public ScoreboardViewModel(Controller c, long accountId, long teamSeasonId)
+        public ScoreboardViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
         {
             Init();
         }
 
-        public ScoreboardViewModel(Controller c, long accountId)
+        public ScoreboardViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            TeamAdmin = DataAccess.Teams.GetTeamsAsAdmin(AccountId, HttpContext.Current.User.Identity.Name);
+            TeamAdmin = c.GetTeamsAsAdmin(AccountId, HttpContext.Current.User.Identity.Name);
             Init();
         }
 
         private void Init()
         {
             var trackGamesPlayed = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(AccountId, "TrackGamesPlayed"), out trackGamesPlayed);
+            bool.TryParse(Controller.GetAccountSetting(AccountId, "TrackGamesPlayed"), out trackGamesPlayed);
             TrackGamesPlayed = trackGamesPlayed;
 
-            ShowTweetResults = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(AccountId));
+            ShowTweetResults = !String.IsNullOrEmpty(Account.TwitterAccountName);
         }
 
         /// <summary>

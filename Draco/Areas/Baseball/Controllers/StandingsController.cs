@@ -1,10 +1,16 @@
 ﻿using System.Web.Mvc;
 using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
+using ModelObjects;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class StandingsController : Controller
+    public class StandingsController : DBController
     {
+        public StandingsController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Baseball/Standings/
 

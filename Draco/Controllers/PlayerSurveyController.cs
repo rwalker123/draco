@@ -1,9 +1,15 @@
-﻿using System.Web.Mvc;
+﻿using ModelObjects;
+using System.Web.Mvc;
 
 namespace SportsManager.Controllers
 {
-    public class PlayerSurveyController : Controller
+    public class PlayerSurveyController : DBController
     {
+        public PlayerSurveyController(DB db) : base(db)
+        {
+
+        }
+
         //
         // GET: /PlayerSurvey/
 

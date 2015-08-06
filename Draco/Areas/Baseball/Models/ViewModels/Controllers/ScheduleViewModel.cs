@@ -1,33 +1,27 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Web.Mvc;
 using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class ScheduleViewModel : AccountViewModel
     {
-        public ScheduleViewModel(Controller c, long accountId, long seasonId)
+        public ScheduleViewModel(DBController c, long accountId, long seasonId)
             : base(c, accountId)
         {
             SeasonId = seasonId;
 
-            Leagues = DataAccess.Leagues.GetLeagues(seasonId);
-            Fields = DataAccess.Fields.GetFields(accountId);
-            var umpires = DataAccess.Umpires.GetUmpires(accountId);
-            Umpires = new List<Contact>();
-            foreach(var u in umpires)
-            {
-                ((List<Contact>)Umpires).Add(DataAccess.Contacts.GetContact(u.ContactId));
-            }
+            Leagues = c.Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
+            Fields = c.Db.AvailableFields.Where(f => f.AccountId == accountId);
+            var umpires = c.Db.LeagueUmpires.Where(u => u.AccountId == accountId).Select(u => u.Contact);
 
             var trackGamesPlayed = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "TrackGamesPlayed"), out trackGamesPlayed);
+            bool.TryParse(c.GetAccountSetting(accountId, "TrackGamesPlayed"), out trackGamesPlayed);
             TrackGamesPlayed = trackGamesPlayed;
 
-            EnableTweet = !String.IsNullOrEmpty(DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId));
+            EnableTweet = !String.IsNullOrEmpty(Account.TwitterAccountName);
 
             TwitterError = (String)c.Session["twitterError"];
             c.Session.Remove("twitterError");
@@ -39,20 +33,20 @@ namespace SportsManager.Baseball.ViewModels
 
         public long SeasonId { get; private set; }
 
-        public IEnumerable<Contact> Umpires
+        public IQueryable<Contact> Umpires
         {
             get;
             private set;
         }
 
 
-        public IEnumerable<Field> Fields
+        public IQueryable<Field> Fields
         {
             get;
             private set;
         }
 
-        public IEnumerable<League> Leagues
+        public IQueryable<LeagueSeason> Leagues
         {
             get;
             private set;

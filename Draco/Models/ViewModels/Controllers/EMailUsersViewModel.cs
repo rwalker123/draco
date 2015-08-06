@@ -1,15 +1,13 @@
-﻿using System;
-using System.Web;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
 
 namespace SportsManager.ViewModels
 {
     public class EMailUsersViewModel : AccountViewModel
     {
-        public EMailUsersViewModel(Controller c, long accountId)
+        public EMailUsersViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            ModelObjects.Contact currentUser = DataAccess.Contacts.GetContact(Globals.GetCurrentUserId());
+            var currentUser = c.GetCurrentContact();
             Email = currentUser.Email;
             UserName = currentUser.FirstName + " " + currentUser.LastName;
             PhotoUrl = currentUser.PhotoURL;

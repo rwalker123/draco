@@ -1,20 +1,20 @@
-﻿using SportsManager.ViewModels;
-using System.Web.Mvc;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
 
 namespace SportsManager.Baseball.ViewModels
 {
     public class ManagersViewModel : AccountViewModel
     {
-        public ManagersViewModel(Controller c, long accountId, long teamSeasonId, bool isTeamMember)
+        public ManagersViewModel(DBController c, long accountId, long teamSeasonId, bool isTeamMember)
             : base(c, accountId)
         {
             TeamSeasonId = teamSeasonId;
 
             IsTeamMember = isTeamMember;
-            IsTeamAdmin = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId);
+            IsTeamAdmin = c.IsTeamAdmin(accountId, teamSeasonId);
 
             var showLineupCard = false;
-            bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowRosterCard"), out showLineupCard);
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowRosterCard"), out showLineupCard);
             ShowLineupCard = showLineupCard;
         }
 

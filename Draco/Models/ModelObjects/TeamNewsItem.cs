@@ -2,7 +2,7 @@
 
 namespace ModelObjects
 {
-    class TeamNewsItem
+    public class TeamNewsItem
     {
         public long Id { get; set; } // Id (Primary key)
         public long TeamId { get; set; } // TeamId

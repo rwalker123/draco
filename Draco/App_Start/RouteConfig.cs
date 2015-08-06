@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Autofac;
+using ModelObjects;
+using System;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
@@ -45,8 +46,12 @@ namespace SportsManager
 
         public override RouteData GetRouteData(HttpContextBase httpContext)
         {
+            var db = DependencyResolver.Current.GetService<DB>();
+
             string url = httpContext.Request.Headers["HOST"];
-            long accountId = DataAccess.Accounts.GetAccountIdFromUrl(url);
+            long accountId = (from a in db.Accounts
+                              where a.Url.Contains(url)
+                              select a.Id).SingleOrDefault();
 
             String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(slashSep);
 
@@ -88,7 +93,11 @@ namespace SportsManager
             // Mostly works, need to handle links in ~/Controllers/.., for example, Account/Logon. With this
             // redirect, it would look for logOn in /Areas/baseball/.... How to show "shared" views when you
             // need menus and other things custom for each area.
-            ModelObjects.AccountType accountType = DataAccess.Accounts.GetAccountType(accountId);
+            var accountType = (from a in db.Accounts
+                               join at in db.AccountTypes on a.AccountTypeId equals at.Id
+                               where a.Id == accountId
+                               select at).SingleOrDefault();
+
             if (accountType.Id == 1) // baseball
             {
                 // route to the "base" url of the specific account.

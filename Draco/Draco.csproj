@@ -406,20 +406,6 @@
     <Compile Include="Areas\Baseball\Controllers\WorkoutsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\WorkoutsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\YouTubeAPIController.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\BaseballLeagues.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Fields.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\GameEjections.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\GameStats.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\HOFMembers.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\LeagueStandings.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\PlayerClassifieds.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Playoffs.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Schedule.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\TeamHandouts.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\TeamNews.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Umpires.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\WorkoutRegistrants.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Workouts.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Field.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\FieldContact.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Game.cs" />
@@ -430,9 +416,6 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameFieldStats.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GamePitchStats.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameRecap.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFMember.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNomination.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNominationSetup.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\LeagueLeaderStat.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Player.cs" />
@@ -443,7 +426,11 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffSeed.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffSetup.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\ScheduleByDayOfMonth.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\TeamStanding.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\GameViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\UmpireViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutAnnouncementViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutRegistrantViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamStandingViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Umpire.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutAnnouncement.cs" />
@@ -477,20 +464,14 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamScheduleViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamStatisticsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
-    <Compile Include="CleanMessageBoard.aspx.cs">
-      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="CleanMessageBoard.aspx.designer.cs">
-      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
-    </Compile>
     <Compile Include="Controllers\BackupSiteAPIController.cs" />
+    <Compile Include="Controllers\CleanupMessageBoardAPIController.cs" />
     <Compile Include="Controllers\DBApiController.cs" />
     <Compile Include="Controllers\DBController.cs" />
+    <Compile Include="Controllers\DBExtensions.cs" />
     <Compile Include="Controllers\DiscussionsAPIController.cs" />
     <Compile Include="Controllers\DiscussionsController.cs" />
     <Compile Include="Controllers\AccountAPIController.cs" />
@@ -502,6 +483,7 @@
     <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
+    <Compile Include="Controllers\IDb.cs" />
     <Compile Include="Controllers\LeagueFAQAPIController.cs" />
     <Compile Include="Controllers\LeagueFAQController.cs" />
     <Compile Include="Controllers\MemberBusinessAPIController.cs" />
@@ -520,9 +502,12 @@
     </Compile>
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
-    <Compile Include="Models\DataAccess\PhotoGallery.cs" />
     <Compile Include="Models\ModelObjects\AspNetRole.cs" />
     <Compile Include="Models\ModelObjects\AspNetUser.cs" />
+    <Compile Include="Models\ModelObjects\HOFMember.cs" />
+    <Compile Include="Models\ModelObjects\HOFNomination.cs" />
+    <Compile Include="Models\ModelObjects\HOFNominationSetup.cs" />
+    <Compile Include="Models\ViewModels\API\AccountSettingViewModel.cs" />
     <Compile Include="Models\ViewModels\API\ContactRoleViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />
@@ -541,31 +526,11 @@
     <Compile Include="Models\ViewModels\API\WelcomeHeaderViewModel.cs" />
     <Compile Include="Models\ViewModels\API\WelcomeTextViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
-    <Compile Include="Models\DataAccess\AccountHandouts.cs" />
-    <Compile Include="Models\DataAccess\Accounts.cs" />
-    <Compile Include="Models\DataAccess\Affiliations.cs" />
-    <Compile Include="Models\DataAccess\ContactRoles.cs" />
-    <Compile Include="Models\DataAccess\Contacts.cs" />
     <Compile Include="Models\ModelObjects\DB.cs" />
-    <Compile Include="Models\DataAccess\Divisions.cs" />
-    <Compile Include="Models\DataAccess\LeagueEvents.cs" />
-    <Compile Include="Models\DataAccess\LeagueFAQ.cs" />
-    <Compile Include="Models\DataAccess\LeagueNews.cs" />
-    <Compile Include="Models\DataAccess\Leagues.cs" />
-    <Compile Include="Models\DataAccess\MemberDirectory.cs" />
-    <Compile Include="Models\DataAccess\MessageBoard.cs" />
     <Compile Include="Models\ModelObjects\VoteAnswer.cs" />
     <Compile Include="Models\ModelObjects\TeamSeason.cs" />
     <Compile Include="Models\ModelObjects\TeamNewsItem.cs" />
     <Compile Include="Models\ModelObjects\PlayerSeasonAffiliationDue.cs" />
-    <Compile Include="Models\DataAccess\ProfileAdmin.cs" />
-    <Compile Include="Models\DataAccess\Seasons.cs" />
-    <Compile Include="Models\DataAccess\SocialIntegration\Facebook.cs" />
-    <Compile Include="Models\DataAccess\SocialIntegration\Twitter.cs" />
-    <Compile Include="Models\DataAccess\Sponsors.cs" />
-    <Compile Include="Models\DataAccess\TeamRoster.cs" />
-    <Compile Include="Models\DataAccess\Teams.cs" />
-    <Compile Include="Models\DataAccess\Votes.cs" />
     <Compile Include="Models\Filters\BasicAuthenticationAttribute.cs" />
     <Compile Include="Models\Filters\HttpAuthenticationChallengeContextExtensions.cs" />
     <Compile Include="Models\Filters\IdentityBasicAuthenticationAttribute.cs" />
@@ -684,6 +649,7 @@
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
+    <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
@@ -714,7 +680,6 @@
     <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
     <Content Include="Areas\Baseball\Views\Web.config" />
     <Content Include="Areas\Baseball\Views\_ViewStart.cshtml" />
-    <Content Include="CleanMessageBoard.aspx" />
     <Content Include="Content\bootstrap-datepicker.css" />
     <Content Include="Content\bootstrap-datepicker.min.css" />
     <Content Include="Content\bootstrap-datepicker.standalone.css" />
@@ -836,7 +801,6 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
-    <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
     <Content Include="Scripts\bootstrap-select.js.map" />

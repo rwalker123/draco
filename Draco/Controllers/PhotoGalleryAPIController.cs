@@ -34,7 +34,7 @@ namespace SportsManager.Controllers
                 int numPhotos = 10;
                 if (Int32.TryParse(numRandomPhotos, out numPhotos))
                 {
-                    var qry = (from pg in m_db.PhotoGalleries
+                    var qry = (from pg in Db.PhotoGalleries
                             where pg.AccountId == accountId
                             select pg);
 
@@ -55,11 +55,11 @@ namespace SportsManager.Controllers
                     Int32.TryParse(album, out albumId);
                 }
                 if (albumId == -1)
-                    photos = (from pg in m_db.PhotoGalleries
+                    photos = (from pg in Db.PhotoGalleries
                             where pg.AccountId == accountId
                             select pg);
                 else
-                    photos = (from pg in m_db.PhotoGalleries
+                    photos = (from pg in Db.PhotoGalleries
                               where pg.AccountId == accountId && pg.AlbumId == albumId
                               select pg);
             }
@@ -79,14 +79,14 @@ namespace SportsManager.Controllers
         [ActionName("photos")]
         public HttpResponseMessage GetTeamPhotos(long accountId, long teamSeasonId)
         {
-            var team = m_db.TeamsSeasons.Find(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (team.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var teamAlbums = (from pga in m_db.PhotoGalleryAlbums
+            var teamAlbums = (from pga in Db.PhotoGalleryAlbums
                               where pga.AccountId == accountId && pga.TeamId == team.TeamId
                               select pga);
 
@@ -97,7 +97,7 @@ namespace SportsManager.Controllers
             // should only be 1 team photo album.
             var teamAlbum = teamAlbums.First();
 
-            var photos = (from pg in m_db.PhotoGalleries
+            var photos = (from pg in Db.PhotoGalleries
                           where pg.AccountId == accountId
                           select pg).AsEnumerable();
             if (photos != null)
@@ -118,7 +118,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var photo = m_db.PhotoGalleries.Find(id);
+                var photo = Db.PhotoGalleries.Find(id);
                 if (photo == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -127,7 +127,7 @@ namespace SportsManager.Controllers
 
                 int maxPhotosPerAlbum = GetMaxPhotosPerAlbum();
 
-                var numPhotosInAlbum = (from pg in m_db.PhotoGalleries
+                var numPhotosInAlbum = (from pg in Db.PhotoGalleries
                                         where pg.AccountId == accountId && pg.AlbumId == item.AlbumId
                                         select pg).Count();
                 if (numPhotosInAlbum <= maxPhotosPerAlbum)
@@ -136,7 +136,7 @@ namespace SportsManager.Controllers
                     photo.Caption = item.Caption;
                     photo.AlbumId = item.AlbumId;
 
-                    m_db.SaveChanges();
+                    Db.SaveChanges();
 
                     var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
                     return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
@@ -157,15 +157,15 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                var team = m_db.TeamsSeasons.Find(teamSeasonId);
+                var team = Db.TeamsSeasons.Find(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var photo = m_db.PhotoGalleries.Find(id);
+                var photo = Db.PhotoGalleries.Find(id);
                 if (photo == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var teamAlbums = (from pga in m_db.PhotoGalleryAlbums
+                var teamAlbums = (from pga in Db.PhotoGalleryAlbums
                                   where pga.AccountId == accountId && pga.TeamId == team.TeamId
                                   select pga);
 
@@ -180,7 +180,7 @@ namespace SportsManager.Controllers
 
                 int maxPhotosPerAlbum = GetMaxPhotosPerAlbum();
 
-                var numPhotosInAlbum = (from pg in m_db.PhotoGalleries
+                var numPhotosInAlbum = (from pg in Db.PhotoGalleries
                                         where pg.AccountId == accountId && pg.AlbumId == item.AlbumId
                                         select pg).Count();
                 if (numPhotosInAlbum <= maxPhotosPerAlbum)
@@ -189,7 +189,7 @@ namespace SportsManager.Controllers
                     photo.Caption = item.Caption;
                     photo.AlbumId = item.AlbumId;
 
-                    m_db.SaveChanges();
+                    Db.SaveChanges();
 
                     var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
                     return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
@@ -208,15 +208,15 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> DeletePhoto(long accountId, long id)
         {
-            var photo = m_db.PhotoGalleries.Find(id);
+            var photo = Db.PhotoGalleries.Find(id);
             if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (photo.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.PhotoGalleries.Remove(photo);
-            m_db.SaveChanges();
+            Db.PhotoGalleries.Remove(photo);
+            Db.SaveChanges();
 
             await Storage.Provider.DeleteDirectory(photo.PhotoURL);
             return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
@@ -227,19 +227,19 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> DeleteTeamPhoto(long accountId, long teamSeasonId, long id)
         {
-            var team = m_db.TeamsSeasons.Find(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var photo = m_db.PhotoGalleries.Find(id);
+            var photo = Db.PhotoGalleries.Find(id);
             if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (photo.AccountId != team.TeamId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.PhotoGalleries.Remove(photo);
-            m_db.SaveChanges();
+            Db.PhotoGalleries.Remove(photo);
+            Db.SaveChanges();
 
             await Storage.Provider.DeleteDirectory(photo.PhotoURL);
             return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
@@ -249,22 +249,22 @@ namespace SportsManager.Controllers
         [ActionName("albums")]
         public HttpResponseMessage GetPhotoAlbums(long accountId)
         {
-            var accountAlbums = (from pga in m_db.PhotoGalleryAlbums
+            var accountAlbums = (from pga in Db.PhotoGalleryAlbums
                                  where pga.AccountId == accountId
                                  & pga.TeamId == 0
                                  orderby pga.Title
                                  select pga).AsEnumerable();
 
             // get team ids for current season
-             long currentSeason = GetCurrentSeasonId(accountId);
+             long currentSeason = this.GetCurrentSeasonId(accountId);
 
-             var teamIds = (from ls in m_db.LeagueSeasons
-                            join ts in m_db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+             var teamIds = (from ls in Db.LeagueSeasons
+                            join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
                             where ls.SeasonId == currentSeason
                             select ts.TeamId);
 
             // get teams with photos
-            var teamAlbums = (from pga in m_db.PhotoGalleryAlbums
+            var teamAlbums = (from pga in Db.PhotoGalleryAlbums
                               where pga.AccountId == accountId
                               & teamIds.Contains(pga.TeamId)
                               select pga).OrderBy(i => i.Title);
@@ -285,24 +285,24 @@ namespace SportsManager.Controllers
         public HttpResponseMessage EditableAlbums(long accountId)
         {
             var userId = Globals.GetCurrentUserId();
-            bool isSitePhotoAdmin = IsAccountAdmin(accountId, userId) || IsPhotoAdmin(accountId, userId);
+            bool isSitePhotoAdmin = this.IsAccountAdmin(accountId, userId) || this.IsPhotoAdmin(accountId, userId);
             if (isSitePhotoAdmin)
             {
                 return GetPhotoAlbums(accountId);
             }
             else
             {
-                var roles = GetContactRoles(accountId, userId);
+                var roles = this.GetContactRoles(accountId, userId);
                 if (roles != null)
                 {
-                    String roleId = GetTeamPhotoAdminId();
+                    String roleId = this.GetTeamPhotoAdminId();
 
                     // find all the teams the user is a photo admin
                     var teamPhotoAdminIds = (from r in roles
                                              where r.RoleId == roleId
                                              select r.RoleData);
 
-                    var albums = (from pga in m_db.PhotoGalleryAlbums
+                    var albums = (from pga in Db.PhotoGalleryAlbums
                                     where pga.AccountId == accountId && teamPhotoAdminIds.Contains(pga.TeamId)
                                     select pga).AsEnumerable();
 
@@ -319,7 +319,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeletePhotoAlbum(long accountId, long id)
         {
-            var pa = m_db.PhotoGalleryAlbums.Find(id);
+            var pa = Db.PhotoGalleryAlbums.Find(id);
             if (pa == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -330,8 +330,8 @@ namespace SportsManager.Controllers
             foreach (var photo in photosInGallery)
                 photo.AlbumId = 0;
 
-            m_db.PhotoGalleryAlbums.Remove(pa);
-            m_db.SaveChanges();
+            Db.PhotoGalleryAlbums.Remove(pa);
+            Db.SaveChanges();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
@@ -346,7 +346,7 @@ namespace SportsManager.Controllers
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Must specify Photo Album name.");
             }
 
-            var numAccountAlbums = (from pga in m_db.PhotoGalleryAlbums
+            var numAccountAlbums = (from pga in Db.PhotoGalleryAlbums
                                     where pga.AccountId == accountId && pga.TeamId == 0
                                     select pga).Count();
 
@@ -362,8 +362,8 @@ namespace SportsManager.Controllers
                     ParentAlbumId = 0
                 };
 
-                m_db.PhotoGalleryAlbums.Add(dbAlbum);
-                m_db.SaveChanges();
+                Db.PhotoGalleryAlbums.Add(dbAlbum);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<PhotoGalleryAlbum, PhotoAlbumViewModel>(dbAlbum);
                 return Request.CreateResponse<PhotoAlbumViewModel>(HttpStatusCode.Created, vm);

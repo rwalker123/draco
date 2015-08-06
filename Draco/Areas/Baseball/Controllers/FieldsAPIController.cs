@@ -22,7 +22,7 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("fields")]
         public HttpResponseMessage GetFields(long accountId)
         {
-            var fields = m_db.AvailableFields.Where(f => f.AccountId == accountId).OrderBy(f => f.Name);
+            var fields = Db.AvailableFields.Where(f => f.AccountId == accountId).OrderBy(f => f.Name);
             if (fields != null)
             {
                 var vm = Mapper.Map<IEnumerable<Field>, FieldViewModel[]>(fields);
@@ -55,8 +55,8 @@ namespace SportsManager.Baseball.Controllers
                     RainoutNumber = f.RainoutNumber ?? String.Empty
                 };
 
-                m_db.AvailableFields.Add(dbField);
-                m_db.SaveChanges();
+                Db.AvailableFields.Add(dbField);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Field, FieldViewModel>(dbField);
                 return Request.CreateResponse<FieldViewModel>(HttpStatusCode.Created, vm);
@@ -72,7 +72,7 @@ namespace SportsManager.Baseball.Controllers
         {
             if (ModelState.IsValid)
             {
-                var dbField = m_db.AvailableFields.Find(f.Id);
+                var dbField = Db.AvailableFields.Find(f.Id);
                 if (dbField == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -91,7 +91,7 @@ namespace SportsManager.Baseball.Controllers
                 dbField.State = f.State ?? String.Empty;
                 dbField.ZipCode = f.ZipCode ?? String.Empty;
 
-                m_db.SaveChanges();
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<Field, FieldViewModel>(dbField);
                 return Request.CreateResponse<FieldViewModel>(HttpStatusCode.OK, vm);
@@ -109,15 +109,15 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("fields")]
         public HttpResponseMessage DeleteField(long accountId, long id)
         {
-            var field = m_db.AvailableFields.Find(id);
+            var field = Db.AvailableFields.Find(id);
             if (field == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (field.AccountId == accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            m_db.AvailableFields.Remove(field);
-            m_db.SaveChanges();
+            Db.AvailableFields.Remove(field);
+            Db.SaveChanges();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

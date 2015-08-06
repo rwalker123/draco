@@ -1,10 +1,16 @@
-﻿using SportsManager.Baseball.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class PlayerController : Controller
+    public class PlayerController : DBController
     {
+        public PlayerController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("contact")]
         public ActionResult GetFromContact(long accountId, long id)

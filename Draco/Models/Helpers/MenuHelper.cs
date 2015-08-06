@@ -72,6 +72,7 @@ namespace SportsManager.Models.Helpers
 
         public static IEnumerable<MenuItem> GetAccountTypeMenu(long accountType, long accountId)
         {
+            var db = DependencyResolver.Current.GetService<DB>();
             if (accountType == (long)Account.AccountType.Baseball)
             {
                 string teamsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
@@ -101,7 +102,7 @@ namespace SportsManager.Models.Helpers
                 var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
 
                 var showPlayerClassified = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
+                bool.TryParse(db.GetAccountSetting(accountId, "ShowPlayerClassified"), out showPlayerClassified);
                 if (showPlayerClassified)
                 {
                     string playerclassifiedurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,

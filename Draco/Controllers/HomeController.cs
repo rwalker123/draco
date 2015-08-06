@@ -34,11 +34,11 @@ namespace SportsManager.Controllers
         [ChildActionOnly]
         public ActionResult AdminLinks(long accountId)
         {
-            long seasonId = (from cs in m_db.CurrentSeasons
+            long seasonId = (from cs in Db.CurrentSeasons
                              where cs.AccountId == accountId
                              select cs.SeasonId).SingleOrDefault();
 
-            return PartialView(new RolesViewModel(accountId, seasonId));
+            return PartialView(new RolesViewModel(this, accountId, seasonId));
         }
     }
 }

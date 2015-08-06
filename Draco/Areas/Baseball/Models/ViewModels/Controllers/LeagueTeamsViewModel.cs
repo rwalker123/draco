@@ -1,7 +1,9 @@
-﻿using DocumentFormat.OpenXml;
+﻿using AutoMapper;
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using SportsManager.ViewModels.API;
 using System;
@@ -14,27 +16,37 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class LeagueTeamsViewModel : AccountViewModel
     {
-        public LeagueTeamsViewModel(Controller c, long accountId)
+        public LeagueTeamsViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
         }
 
-        public IEnumerable<LeagueViewModel> Leagues
+        public IQueryable<LeagueSeason> Leagues
         {
             get
             {
-                return DataAccess.Leagues.GetLeagues(DataAccess.Seasons.GetCurrentSeason(AccountId));
+                var seasonId = Controller.GetCurrentSeasonId(AccountId);
+                return (from ls in Controller.Db.LeagueSeasons
+                        where ls.SeasonId == seasonId
+                        select ls);
             }
         }
 
-        public IQueryable<DivisionViewModel> Divisions(long leagueId)
+        public IQueryable<DivisionSeason> Divisions(long leagueId)
         {
-            return DataAccess.Divisions.GetDivisions(leagueId);
+            return (from ds in Controller.Db.DivisionSeasons
+                    join dd in Controller.Db.DivisionDefs on ds.DivisionId equals dd.Id
+                    where ds.LeagueSeasonId == leagueId
+                    orderby ds.Priority ascending, dd.Name ascending
+                    select ds);
         }
 
-        public IQueryable<TeamViewModel> GetDivisionTeams(long divisionId)
+        public IQueryable<TeamSeason> GetDivisionTeams(long divisionId)
         {
-            return DataAccess.Teams.GetDivisionTeams(divisionId);
+            return (from t in Controller.Db.TeamsSeasons
+                    where t.DivisionSeasonId == divisionId
+                    orderby t.Name ascending
+                    select t);
         }
 
         public FileStream ExportToExcel(bool onlyManagers)
@@ -77,7 +89,15 @@ namespace SportsManager.Baseball.ViewModels
 
                     var leagueTeamManagers = new List<ModelObjects.TeamManager>();
 
-                    var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(AccountId);
+                    //var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(AccountId);
+                    long currentSeason = Controller.GetCurrentSeasonId(AccountId);
+
+                    var leagueTeams = (from ls in Controller.Db.LeagueSeasons
+                                       join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                       where ls.SeasonId == currentSeason
+                                       orderby ls.League.Name, ts.Name
+                                       select ls);
+
                     foreach (var lt in leagueTeams)
                     {
                         var tms = DataAccess.Teams.GetTeamManagersAsPlayer(lt.Id).ToList();

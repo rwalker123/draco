@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNet.Identity;
+using SportsManager.Controllers;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Web;
@@ -15,27 +16,27 @@ namespace SportsManager.ViewModels
 
         }
 
-        public AccountViewModel(Controller c, long accountId)
+        public AccountViewModel(DBController c, long accountId)
         {
             AccountId = accountId;
             Controller = c;
-            ContactId = DataAccess.Contacts.GetContactId(Globals.GetCurrentUserId());
-            m_account = DataAccess.Accounts.GetAccount(accountId);
+            ContactId = c.GetCurrentContact().Id;
+            m_account = c.Db.Accounts.Find(accountId);
             if (m_account == null)
                 return;
 
-            AccountName = m_account.AccountName;
+            AccountName = m_account.Name;
 
             FirstYear = m_account.FirstYear;
 
             if (m_account.HasLargeLogo)
                 AccountLogoUrl = m_account.LargeLogoURL;
             
-            CurrentSeasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
-            IsAdmin = DataAccess.Accounts.IsAccountAdmin(AccountId, HttpContext.Current.User.Identity.GetUserId());
+            CurrentSeasonId = c.GetCurrentSeasonId(accountId);
+            IsAdmin = c.IsAccountAdmin(AccountId, HttpContext.Current.User.Identity.GetUserId());
             c.ViewData["IsAdmin"] = IsAdmin;
 
-            Globals.SetupAccountViewData(accountId, AccountName, AccountLogoUrl, m_account.AccountTypeId, m_account.AccountURL, c.ViewData);
+            Globals.SetupAccountViewData(accountId, AccountName, AccountLogoUrl, m_account.AccountTypeId, m_account.Url, c.ViewData);
         }
 
         [ScaffoldColumn(false)]
@@ -48,7 +49,7 @@ namespace SportsManager.ViewModels
         }
 
         [ScaffoldColumn(false)]
-        public Controller Controller
+        public DBController Controller
         {
             get;
             private set;

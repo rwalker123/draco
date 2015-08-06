@@ -1,6 +1,6 @@
-﻿using SportsManager.ViewModels;
+﻿using SportsManager.Controllers;
+using SportsManager.ViewModels;
 using System.Configuration;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -8,7 +8,7 @@ namespace SportsManager.Baseball.ViewModels
     {
         public enum IdType { ContactId, RosterSeasonId, RosterId };
 
-        public PlayerClassifiedViewModel(Controller c, long accountId)
+        public PlayerClassifiedViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
             var configDaysToKeep = ConfigurationManager.AppSettings["DaysToKeepPlayerClassified"];

@@ -1,10 +1,10 @@
-﻿using System.Web.Mvc;
+﻿using SportsManager.Controllers;
 
 namespace SportsManager.ViewModels
 {
     public class UserPollViewModel : AccountViewModel
     {
-        public UserPollViewModel(Controller c, long accountId)
+        public UserPollViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
             CanVote = this.ContactId > 0;
