@@ -14,16 +14,5 @@ namespace ModelObjects
         // Foreign keys
         public virtual PlayoffSetup PlayoffSetup { get; set; } // FK_PlayoffSeeds_PlayoffSetup
 
-        public string TeamName
-        {
-            get
-            {
-                return DataAccess.Teams.GetTeamName(TeamId);
-            }
-            set
-            {
-            }
-        }
-
 	}
 }

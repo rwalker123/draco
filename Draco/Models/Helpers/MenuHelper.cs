@@ -1,4 +1,5 @@
 ﻿using ModelObjects;
+using SportsManager.Controllers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -9,6 +10,15 @@ namespace SportsManager.Models.Helpers
 {
     public static class MenuHelper
     {
+        public enum eAccountType
+        {
+            Baseball = 1,
+            Bowling = 2,
+            Golf = 3,
+            FitnessClub = 4,
+            GolfIndividual = 5
+        }
+
         public class MenuItem
         {
             private List<MenuItem> m_subMenuItems = new List<MenuItem>();
@@ -29,14 +39,27 @@ namespace SportsManager.Models.Helpers
                 m_subMenuItems.Add(subMenu);
             }
 
-            public IEnumerable<MenuItem> SubMenuItems 
-            { 
-                get { return m_subMenuItems; } 
+            public IEnumerable<MenuItem> SubMenuItems
+            {
+                get { return m_subMenuItems; }
             }
 
             public string Url { get; set; }
             public string Title { get; set; }
             public string Description { get; set; }
+        }
+
+        private class dbHelper : Controllers.IDb
+        {
+            public dbHelper()
+            {
+                Db = DependencyResolver.Current.GetService<DB>();
+            }
+
+            public DB Db
+            {
+                get; private set;
+            }
         }
 
         /// <summary>
@@ -47,7 +70,7 @@ namespace SportsManager.Models.Helpers
         /// <returns></returns>
         public static IEnumerable<MenuItem> GetAccountHomeTypeMenu(long accountType, long accountId)
         {
-            if (accountType == (long)Account.AccountType.Baseball)
+            if (accountType == (long)eAccountType.Baseball)
             {
                 string homeurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                 new RouteValueDictionary(new { area = "baseball", controller = "League", action = "Home", accountId = accountId })).VirtualPath;
@@ -72,8 +95,9 @@ namespace SportsManager.Models.Helpers
 
         public static IEnumerable<MenuItem> GetAccountTypeMenu(long accountType, long accountId)
         {
-            var db = DependencyResolver.Current.GetService<DB>();
-            if (accountType == (long)Account.AccountType.Baseball)
+            var db = new dbHelper();
+
+            if (accountType == (long)eAccountType.Baseball)
             {
                 string teamsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "LeagueTeams", action = "Index", accountId = accountId })).VirtualPath;
@@ -112,7 +136,7 @@ namespace SportsManager.Models.Helpers
                 }
 
                 var showPlayerSurvey = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+                bool.TryParse(db.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
                 if (showPlayerSurvey)
                 {
                     string playersurveyurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
@@ -122,7 +146,7 @@ namespace SportsManager.Models.Helpers
                 }
 
                 var showMemberBusiness = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
+                bool.TryParse(db.GetAccountSetting(accountId, "ShowBusinessDirectory"), out showMemberBusiness);
                 if (showMemberBusiness)
                 {
                     string memberbusinessurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
@@ -145,13 +169,13 @@ namespace SportsManager.Models.Helpers
 
 
                 var showHOF = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
+                bool.TryParse(db.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
                 if (showHOF)
                 {
                     leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
                 }
 
-                if (DataAccess.LeagueFAQ.GetFAQ(accountId).Any())
+                if (db.Db.LeagueFaqs.Where(lf => lf.AccountId == accountId).Any())
                 {
                     leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(faqurl, "League FAQ", "FAQ Page"));
                 }
@@ -166,18 +190,18 @@ namespace SportsManager.Models.Helpers
 	            };
 
             }
-            else if (accountType == (long)Account.AccountType.Golf)
+            else if (accountType == (long)eAccountType.Golf)
             {
                 string homeurl = RouteTable.Routes.GetVirtualPath(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "golf", controller = "League", action = "Home", accountId = accountId })).VirtualPath;
 
-                return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
+                return new List<MenuHelper.MenuItem>()
 	            {
-		            new SportsManager.Models.Helpers.MenuHelper.MenuItem(homeurl, "Home", "Home Page"),
+		            new MenuHelper.MenuItem(homeurl, "Home", "Home Page"),
 	            };
             }
 
-            return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>();
+            return new List<MenuHelper.MenuItem>();
         }
     }
 }

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SportsManager.ViewModels.API
 {
-    public class ContactViewModel
+    public class ContactViewModel : IComparable
     {
         public long Id { get; set; } // Id (Primary key)
         public string UserId { get; set; } // UserId
@@ -29,5 +29,82 @@ namespace SportsManager.ViewModels.API
         public DateTime DateOfBirth { get; set; } // DateOfBirth
         public bool IsFemale { get; set; } // IsFemale
         public string Email { get; set; } // Email
+
+        static public string BuildFullName(string firstName, string middleName, string lastName)
+        {
+            string fullName = lastName + ", " + firstName + " " + middleName;
+            return fullName.Trim();
+        }
+
+        static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
+        {
+            System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
+
+            if (!String.IsNullOrWhiteSpace(middleName))
+                fullName.Append(middleName + " ");
+
+            fullName.Append(lastName);
+
+            return fullName.ToString();
+        }
+
+        public string FullNameFirst
+        {
+            get
+            {
+                return ContactViewModel.BuildFullNameFirst(FirstName, MiddleName, LastName);
+            }
+        }
+
+        public string SinglePhone
+        {
+            get
+            {
+                if (!String.IsNullOrEmpty(Phone1))
+                    return Phone1;
+
+                if (!String.IsNullOrEmpty(Phone2))
+                    return Phone2;
+
+                return Phone3 ?? String.Empty;
+            }
+        }
+
+        public string CityState
+        {
+            get
+            {
+                if (String.IsNullOrWhiteSpace(City))
+                    return State;
+
+                if (String.IsNullOrWhiteSpace(State))
+                    return City;
+
+                return City + ", " + State;
+            }
+        }
+
+        #region IComparable Members
+
+        public int CompareTo(object obj)
+        {
+            var p = obj as ContactViewModel;
+            if (p == null)
+                return 0;
+
+            int rc = String.Compare(LastName, p.LastName, true);
+            if (rc == 0)
+            {
+                rc = String.Compare(FirstName, p.FirstName, true);
+
+                if (rc == 0)
+                    rc = String.Compare(MiddleName, p.MiddleName, true);
+            }
+
+            return rc;
+        }
+
+        #endregion
+
     }
 }

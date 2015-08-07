@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using ModelObjects;
+using SportsManager.ViewModels.API;
+using SportsManager.Utils;
+using System.Web.Mvc;
+using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -12,7 +16,7 @@ namespace SportsManager.Baseball.ViewModels
         private int m_minIPPerSeason = 20;
 
         private List<LeaderLine> m_leaderLines = new List<LeaderLine>();
-        private List<LeagueLeaderStat> m_leaders;
+        private List<LeagueLeaderStatViewModel> m_leaders;
 
         public class LeaderLine
         {
@@ -26,11 +30,15 @@ namespace SportsManager.Baseball.ViewModels
             public String PhotoURL;
         }
 
+        private DB m_db;
+
         public LeagueLeadersViewModel(long accountId, long leagueId, long divisionId, string category, bool isBatStats, bool allTimeLeaders, bool calculateMin,
             string fieldFormat = "#.000",
             string tieImage = "tie1.gif",
             string cssHeaderStyle = "statHeader1")
         {
+            m_db = DependencyResolver.Current.GetService<DB>();
+
             AccountId = accountId;
             LeagueId = leagueId;
             DivisionId = divisionId;
@@ -45,13 +53,21 @@ namespace SportsManager.Baseball.ViewModels
             if (LeagueId != 0)
             {
                 if (IsBatStats)
-                    m_leaders = DataAccess.GameStats.GetBatLeagueLeaders(LeagueId, DivisionId, Category, 5, Min, IsAllTimeLeaders);
+                {
+                    var statsHelper = new BatStatsHelper(m_db);
+                    m_leaders = statsHelper.GetBatLeagueLeaders(LeagueId, DivisionId, Category, 5, Min, IsAllTimeLeaders);
+                }
                 else
-                    m_leaders = DataAccess.GameStats.GetPitchLeagueLeaders(LeagueId, DivisionId, Category, 5, Min, IsAllTimeLeaders);
+                {
+                    var statsHelper = new PitchStatsHelper(m_db);
+                    m_leaders = statsHelper.GetPitchLeagueLeaders(LeagueId, DivisionId, Category, 5, Min, IsAllTimeLeaders);
+                }
 
-                Title = DataAccess.Leagues.GetLeagueName(LeagueId) + " " + Category + " Leaders";
+                var leagueName = m_db.LeagueSeasons.Find(LeagueId)?.League.Name;
 
-                ProcessLeaders(m_leaders);
+                Title = leagueName + " " + Category + " Leaders";
+
+                ProcessLeaders();
             }
             else
             {
@@ -71,7 +87,7 @@ namespace SportsManager.Baseball.ViewModels
         public string TieImage { get; private set; }
         public string StatCssHeaderStyle { get; private set; }
 
-        public ICollection<LeagueLeaderStat> Leaders { get { return m_leaders; } }
+        public ICollection<LeagueLeaderStatViewModel> Leaders { get { return m_leaders; } }
         public ICollection<LeaderLine> LeaderLines { get { return m_leaderLines; } }
 
         public int Min
@@ -82,23 +98,25 @@ namespace SportsManager.Baseball.ViewModels
                 {
                     if (IsAllTimeLeaders)
                     {
+                        int numSeasons = m_db.Seasons.Where(s => s.AccountId == AccountId).Count();
+
                         if (IsBatStats)
                         {
-                            int numSeasons = DataAccess.Seasons.GetSeasons(AccountId).Count;
                             int minAB = numSeasons * m_minABPerSeason;
                             return (minAB > m_allTimeMinAB) ? m_allTimeMinAB : minAB;
                         }
                         else
                         {
-                            int numSeasons = DataAccess.Seasons.GetSeasons(AccountId).Count;
                             int minIP = numSeasons * m_minIPPerSeason;
                             return (minIP > m_allTimeMinIP) ? m_allTimeMinIP : minIP;
                         }
                     }
+
+                    var minCalculator = new MinCalculator(m_db);
                     if (IsBatStats)
-                        return DataAccess.GameStats.CalculateMinAB(LeagueId);
+                        return minCalculator.CalculateMinAB(LeagueId);
                     else
-                        return DataAccess.GameStats.CalculateMinIP(LeagueId);
+                        return minCalculator.CalculateMinIP(LeagueId);
                 }
                 else
                 {
@@ -107,11 +125,11 @@ namespace SportsManager.Baseball.ViewModels
             }
         }
 
-        private void ProcessLeaders(List<LeagueLeaderStat> leaders)
+        private void ProcessLeaders()
         {
             bool firstTime = true;
 
-            foreach (LeagueLeaderStat lls in m_leaders)
+            foreach (var lls in m_leaders)
             {
                 if (firstTime)
                 {
@@ -122,7 +140,7 @@ namespace SportsManager.Baseball.ViewModels
 
                 LeaderLine ll = new LeaderLine();
 
-                ModelObjects.Player leaderPlayer = null;
+                Player leaderPlayer = null;
                 bool isTie = false;
 
                 if (lls.FieldName == "TIE")
@@ -132,17 +150,23 @@ namespace SportsManager.Baseball.ViewModels
                 }
                 else
                 {
+                    var teamName = String.Empty;
+
                     if (IsAllTimeLeaders)
-                        leaderPlayer = DataAccess.TeamRoster.GetPlayerFromId(lls.PlayerId);
+                        leaderPlayer = m_db.Rosters.Find(lls.PlayerId);
                     else
-                        leaderPlayer = DataAccess.TeamRoster.GetPlayer(lls.PlayerId);
+                    {
+                        var rosterSeasonPlayer = m_db.RosterSeasons.Find(lls.PlayerId);
+                        leaderPlayer = rosterSeasonPlayer?.Roster;
+                        teamName = rosterSeasonPlayer?.TeamSeason.Name;
+                    }
 
                     if (leaderPlayer != null)
                     {
                         ll.PlayerId = leaderPlayer.Id;
                         ll.LastName = leaderPlayer.Contact.LastName;
                         ll.FirstName = leaderPlayer.Contact.FirstName;
-                        ll.Team = DataAccess.Teams.GetTeamName(leaderPlayer.TeamId);
+                        ll.Team = teamName;
                         ll.PhotoURL = leaderPlayer.Contact.PhotoURL;
                     }
                 }

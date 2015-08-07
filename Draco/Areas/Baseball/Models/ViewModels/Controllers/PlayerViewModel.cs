@@ -1,6 +1,8 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
+using SportsManager.Utils;
 using SportsManager.ViewModels;
+using SportsManager.ViewModels.API;
 using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
@@ -35,18 +37,20 @@ namespace SportsManager.Baseball.ViewModels
                     id = Contact.Id;
                 }
             }
-            BatStats = DataAccess.GameStats.GetBatPlayerCareer(id, isIdSeasonId);
-            BatStatsTotals = DataAccess.GameStats.GetBatPlayerCareerTotal(id, isIdSeasonId);
+            var batStatsHelper = new BatStatsHelper(c.Db);
+            BatStats = batStatsHelper.GetBatPlayerCareer(id, isIdSeasonId);
+            BatStatsTotals = batStatsHelper.GetBatPlayerCareerTotal(id, isIdSeasonId);
 
-            PitchStats = DataAccess.GameStats.GetPitchPlayerCareer(id, isIdSeasonId);
-            PitchStatsTotals = DataAccess.GameStats.GetPitchPlayerCareerTotal(id, isIdSeasonId);
+            var pitchStatsHelper = new PitchStatsHelper(c.Db);
+            PitchStats = pitchStatsHelper.GetPitchPlayerCareer(id, isIdSeasonId);
+            PitchStatsTotals = pitchStatsHelper.GetPitchPlayerCareerTotal(id, isIdSeasonId);
         }
 
-        public IQueryable<GameCareerBatStats> BatStats { get; private set; }
-        public GameCareerBatStats BatStatsTotals { get; private set; }
+        public IQueryable<CareerBatStatsViewModel> BatStats { get; private set; }
+        public CareerBatStatsViewModel BatStatsTotals { get; private set; }
 
-        public IQueryable<GameCareerPitchStats> PitchStats { get; private set; }
-        public GameCareerPitchStats PitchStatsTotals { get; private set; }
+        public IQueryable<CareerPitchStatsViewModel> PitchStats { get; private set; }
+        public CareerPitchStatsViewModel PitchStatsTotals { get; private set; }
 
         public Contact Contact { get; set; }
 

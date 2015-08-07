@@ -4,7 +4,9 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.ViewModels;
+using SportsManager.ViewModels.API;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -57,42 +59,62 @@ namespace SportsManager.Baseball.ViewModels
             return new FileStream(destinationFile, FileMode.Open);
         }
 
-        public static void ExportRosterToExcel(long seasonId, IQueryable<PlayerSeason> Roster, SheetData sheetData, bool includePhone = false)
+        public static void ExportRosterToExcel(long seasonId, IQueryable<PlayerSeason> roster, SheetData sheetData)
         {
             // Begining Row pointer                       
             int index = 4;
 
             // For each item in the database, add a Row to SheetData.
-            foreach (var player in Roster)
+            foreach (var player in roster)
             {
                 // New Row
                 Row row = new Row();
                 row.RowIndex = (UInt32)index;
 
                 // New Cell
-                CreateCell(row, "A" + index, Contact.BuildFullName(player.Roster.Contact.FirstName, player.Roster.Contact.MiddleName, player.Roster.Contact.LastName));
+                CreateCell(row, "A" + index, ContactViewModel.BuildFullName(player.Roster.Contact.FirstName, player.Roster.Contact.MiddleName, player.Roster.Contact.LastName));
                 CreateCell(row, "B" + index, player.Roster.Contact.Email);
 
                 String affiliationDuesPaid = player.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == seasonId).Select(psa => psa.AffiliationDuesPaid).SingleOrDefault();
-                if (includePhone)
-                {
-                    CreateCell(row, "C" + index, player.Roster.Contact.Phone2);
-                    CreateCell(row, "D" + index, player.Roster.Contact.Phone3);
-                    CreateCell(row, "E" + index, player.Roster.Contact.Phone1);
-                    CreateCell(row, "F" + index, player.Roster.Contact.StreetAddress);
-                    CreateCell(row, "G" + index, player.Roster.Contact.City);
-                    CreateCell(row, "H" + index, player.Roster.Contact.State);
-                    CreateCell(row, "I" + index, player.Roster.Contact.Zip);
-                    CreateCell(row, "J" + index, affiliationDuesPaid);
-                }
-                else
-                {
-                    CreateCell(row, "C" + index, player.Roster.Contact.StreetAddress);
-                    CreateCell(row, "D" + index, player.Roster.Contact.City);
-                    CreateCell(row, "E" + index, player.Roster.Contact.State);
-                    CreateCell(row, "F" + index, player.Roster.Contact.Zip);
-                    CreateCell(row, "G" + index, affiliationDuesPaid);
-                }
+                CreateCell(row, "C" + index, player.Roster.Contact.StreetAddress);
+                CreateCell(row, "D" + index, player.Roster.Contact.City);
+                CreateCell(row, "E" + index, player.Roster.Contact.State);
+                CreateCell(row, "F" + index, player.Roster.Contact.Zip);
+                CreateCell(row, "G" + index, affiliationDuesPaid);
+
+                // Append Row to SheetData
+                sheetData.AppendChild(row);
+
+                // increase row pointer
+                index++;
+
+            }
+        }
+
+        public static void ExportManagersToExcel(long seasonId, IEnumerable<TeamManager> mgrs, SheetData sheetData)
+        {
+            // Begining Row pointer                       
+            int index = 4;
+
+            // For each item in the database, add a Row to SheetData.
+            foreach (var mgr in mgrs)
+            {
+                // New Row
+                Row row = new Row();
+                row.RowIndex = (UInt32)index;
+
+                // New Cell
+                CreateCell(row, "A" + index, ContactViewModel.BuildFullName(mgr.Contact.FirstName, mgr.Contact.MiddleName, mgr.Contact.LastName));
+                CreateCell(row, "B" + index, mgr.Contact.Email);
+
+                CreateCell(row, "C" + index, mgr.Contact.Phone2);
+                CreateCell(row, "D" + index, mgr.Contact.Phone3);
+                CreateCell(row, "E" + index, mgr.Contact.Phone1);
+                CreateCell(row, "F" + index, mgr.Contact.StreetAddress);
+                CreateCell(row, "G" + index, mgr.Contact.City);
+                CreateCell(row, "H" + index, mgr.Contact.State);
+                CreateCell(row, "I" + index, mgr.Contact.Zip);
+                CreateCell(row, "J" + index, "");
 
                 // Append Row to SheetData
                 sheetData.AppendChild(row);

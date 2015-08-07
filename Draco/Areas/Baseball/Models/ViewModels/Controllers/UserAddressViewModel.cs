@@ -8,6 +8,7 @@ using DocumentFormat.OpenXml;
 using System;
 using System.IO;
 using SportsManager.Controllers;
+using SportsManager.ViewModels.API;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -148,7 +149,7 @@ namespace SportsManager.Baseball.ViewModels
                 row.RowIndex = (UInt32)index;
 
                 // New Cell
-                CreateCell(row, "A" + index, Contact.BuildFullName(contact.FirstName, contact.MiddleName, contact.LastName));
+                CreateCell(row, "A" + index, ContactViewModel.BuildFullName(contact.FirstName, contact.MiddleName, contact.LastName));
                 CreateCell(row, "B" + index, contact.Email);
                 CreateCell(row, "C" + index, contact.StreetAddress);
                 CreateCell(row, "D" + index, contact.City);

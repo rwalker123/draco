@@ -275,7 +275,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (sender == null)
                 return;
 
-            senderFullName = sender.FullNameFirst;
+            senderFullName = ContactViewModel.BuildFullNameFirst(sender.FirstName, sender.MiddleName, sender.LastName);
             accountName = a.Name;
             fromEmail = sender.Email;
 
@@ -312,7 +312,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (sender == null)
                 return;
 
-            senderFullName = sender.FullNameFirst;
+            senderFullName = ContactViewModel.BuildFullNameFirst(sender.FirstName, sender.MiddleName, sender.LastName);
             accountName = Db.Accounts.Find(tw.AccountId).Name;
             fromEmail = sender.Email;
 
@@ -324,7 +324,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             var teamsLooking = Db.PlayersWantedClassifieds.Where(pw => pw.AccountId == tw.AccountId);
             foreach (var teamLooking in teamsLooking)
             {
-                bccList.Add(new MailAddress(teamLooking.Contact.Email, Contact.BuildFullNameFirst(teamLooking.Contact.FirstName, teamLooking.Contact.MiddleName, teamLooking.Contact.LastName)));
+                bccList.Add(new MailAddress(teamLooking.Contact.Email, ContactViewModel.BuildFullNameFirst(teamLooking.Contact.FirstName, teamLooking.Contact.MiddleName, teamLooking.Contact.LastName)));
             }
 
             if (bccList.Any())

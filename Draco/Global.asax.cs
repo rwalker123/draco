@@ -149,7 +149,7 @@ namespace SportsManager
 
             Mapper.CreateMap<HOFMember, HOFMemberViewModel>()
                 .ForMember(vm => vm.Biography, opt => opt.MapFrom(model => model.Bio))
-                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => Contact.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetLargePhotoURL(model.ContactId)));
 
             Mapper.CreateMap<HOFClass, HOFClassViewModel>();
@@ -224,7 +224,7 @@ namespace SportsManager
             Mapper.CreateMap<PlayersWantedClassified, PlayersWantedViewModel>()
                 .ForMember(vm => vm.EMail, opt => opt.MapFrom(model => model.Contact.Email))
                 .ForMember(vm => vm.Phone, opt => opt.MapFrom(model => model.Contact.Phone1))
-                .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => Contact.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
                 .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
 
             Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>();
@@ -263,6 +263,51 @@ namespace SportsManager
 
             Mapper.CreateMap<Umpire, UmpireViewModel>()
                 .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Contact));
+
+            Mapper.CreateMap<GameBatStats, BatStatsViewModel>()
+                .ForMember(vm => vm.AB, opt => opt.MapFrom(model => model.Ab))
+                .ForMember(vm => vm.D, opt => opt.MapFrom(model => model.C2B))
+                .ForMember(vm => vm.T, opt => opt.MapFrom(model => model.C3B))
+                .ForMember(vm => vm.HR, opt => opt.MapFrom(model => model.Hr))
+                .ForMember(vm => vm.RBI, opt => opt.MapFrom(model => model.Rbi))
+                .ForMember(vm => vm.SO, opt => opt.MapFrom(model => model.So))
+                .ForMember(vm => vm.BB, opt => opt.MapFrom(model => model.Bb))
+                .ForMember(vm => vm.RE, opt => opt.MapFrom(model => model.Re))
+                .ForMember(vm => vm.HBP, opt => opt.MapFrom(model => model.Hbp))
+                .ForMember(vm => vm.INTR, opt => opt.MapFrom(model => model.Intr))
+                .ForMember(vm => vm.SF, opt => opt.MapFrom(model => model.Sf))
+                .ForMember(vm => vm.SH, opt => opt.MapFrom(model => model.Sh))
+                .ForMember(vm => vm.SB, opt => opt.MapFrom(model => model.Sb))
+                .ForMember(vm => vm.CS, opt => opt.MapFrom(model => model.Cs))
+                .ForMember(vm => vm.LOB, opt => opt.MapFrom(model => model.Lob))
+                .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
+                .ForMember(vm => vm.PA, opt => opt.MapFrom(model => model.Pa))
+                .ForMember(vm => vm.AVG, opt => opt.MapFrom(model => model.Avg))
+                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.RosterSeason.Roster.Contact.FirstName, model.RosterSeason.Roster.Contact.MiddleName, model.RosterSeason.Roster.Contact.LastName)));
+
+            Mapper.CreateMap<GamePitchStats, PitchStatsViewModel>()
+                .ForMember(vm => vm.IP, opt => opt.MapFrom(model => model.Ip))
+                .ForMember(vm => vm.IP2, opt => opt.MapFrom(model => model.Ip2))
+                .ForMember(vm => vm.BF, opt => opt.MapFrom(model => model.Bf))
+                .ForMember(vm => vm.ER, opt => opt.MapFrom(model => model.Er))
+                .ForMember(vm => vm.D, opt => opt.MapFrom(model => model.C2B))
+                .ForMember(vm => vm.T, opt => opt.MapFrom(model => model.C3B))
+                .ForMember(vm => vm.HR, opt => opt.MapFrom(model => model.Hr))
+                .ForMember(vm => vm.SO, opt => opt.MapFrom(model => model.So))
+                .ForMember(vm => vm.BB, opt => opt.MapFrom(model => model.Bb))
+                .ForMember(vm => vm.WP, opt => opt.MapFrom(model => model.Wp))
+                .ForMember(vm => vm.HBP, opt => opt.MapFrom(model => model.Hbp))
+                .ForMember(vm => vm.BK, opt => opt.MapFrom(model => model.Bk))
+                .ForMember(vm => vm.SC, opt => opt.MapFrom(model => model.Sc))
+                .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
+                .ForMember(vm => vm.AB, opt => opt.MapFrom(model => model.Ab))
+                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.RosterSeason.Roster.Contact.FirstName, model.RosterSeason.Roster.Contact.MiddleName, model.RosterSeason.Roster.Contact.LastName)));
+
+            Mapper.CreateMap<GameRecap, GameRecapViewModel>();
+
+            Mapper.CreateMap<PlayoffBracket, PlayoffBracketViewModel>();
+            Mapper.CreateMap<PlayoffGame, PlayoffGameViewModel>();
+            Mapper.CreateMap<PlayoffSeed, PlayoffSeedViewModel>();
 
             Mapper.AssertConfigurationIsValid();
         }

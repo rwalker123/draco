@@ -36,7 +36,7 @@ namespace SportsManager.ViewModels
             IsAdmin = c.IsAccountAdmin(AccountId, HttpContext.Current.User.Identity.GetUserId());
             c.ViewData["IsAdmin"] = IsAdmin;
 
-            Globals.SetupAccountViewData(accountId, AccountName, AccountLogoUrl, m_account.AccountTypeId, m_account.Url, c.ViewData);
+            Globals.SetupAccountViewData(m_account, c.ViewData);
         }
 
         [ScaffoldColumn(false)]

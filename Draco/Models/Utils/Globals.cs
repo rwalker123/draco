@@ -1,5 +1,6 @@
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
+using ModelObjects;
 using SportsManager;
 using SportsManager.Models;
 using SportsManager.Models.Utils;
@@ -9,7 +10,6 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
 using System.Net.Mime;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
@@ -170,33 +170,33 @@ static public class Globals
 
     public static void SetupAccountViewData(long accountId, ViewDataDictionary viewData)
     {
-        var account = DataAccess.Accounts.GetAccount(accountId);
-        string accountName = account.AccountName;
+        var db = DependencyResolver.Current.GetService<DB>();
+
+        var account = db.Accounts.Find(accountId);
+        if (account == null)
+            return;
+
+        string accountName = account.Name;
         string accountLogoUrl = account.LargeLogoURL;
 
-        SetupAccountViewData(accountId, accountName, accountLogoUrl, account.AccountTypeId, account.AccountURL, viewData);
+        SetupAccountViewData(account, viewData);
     }
 
-    public static void SetupAccountViewData(long accountId, string accountName, string accountLogoUrl, long accountType, string accountUrl, ViewDataDictionary viewData)
+    public static void SetupAccountViewData(Account account, ViewDataDictionary viewData)
     {
-        viewData["AccountLogoUrl"] = accountLogoUrl;
-        viewData["AccountName"] = accountName;
-        viewData["AccountId"] = accountId;
-        var accountUrls = accountUrl.Split(new char[] { ';' });
+        viewData["AccountLogoUrl"] = account.LargeLogoURL;
+        viewData["AccountName"] = account.Name;
+        viewData["AccountId"] = account.Id;
+        var accountUrls = account.Url.Split(new char[] { ';' });
         viewData["AccountUrl"] = accountUrls.Length > 0 ? accountUrls[0] : String.Empty;
 
-        string twitterAccountName = DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId);
+        string twitterAccountName = account.TwitterAccountName;
         if (!String.IsNullOrEmpty(twitterAccountName))
             viewData["TwitterAccountName"] = twitterAccountName;
 
-        string facebookFanPage = DataAccess.SocialIntegration.Facebook.FacebookFanPage(accountId);
+        string facebookFanPage = account.FacebookFanPage;
         if (!String.IsNullOrEmpty(facebookFanPage))
             viewData["FacebookFanPage"] = facebookFanPage;
-
-        string facebookApiKey = DataAccess.SocialIntegration.Facebook.GetApiKey((int)accountType);
-        if (!String.IsNullOrEmpty(facebookApiKey))
-            viewData["FacebookApiKey"] = facebookApiKey;
-
     }
 
     public static String GetCurrentUserId()

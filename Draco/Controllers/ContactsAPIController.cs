@@ -155,7 +155,7 @@ namespace SportsManager.Controllers
 
                     if (!String.IsNullOrEmpty(contact.Email) && registerAccount)
                     {
-                        contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, contact.FullNameFirst));
+                        contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)));
                         if (!String.IsNullOrEmpty(contact.UserId))
                         {
                             await Db.SaveChangesAsync();
@@ -429,7 +429,7 @@ namespace SportsManager.Controllers
             }
             else
             {
-                senderFullName = sender.FullNameFirst;
+                senderFullName = ContactViewModel.BuildFullNameFirst(sender.FirstName, sender.MiddleName, sender.LastName);
                 accountName = Db.Accounts.Find(contact.CreatorAccountId)?.Name;
                 fromEmail = new MailAddress(sender.Email, senderFullName);
             }
@@ -438,7 +438,7 @@ namespace SportsManager.Controllers
 
             string body = String.Format(AccountPasswordBody, accountName, currentUser, url, senderFullName);
 
-            Globals.MailMessage(fromEmail, new MailAddress(contact.Email, Contact.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)), subject, body);
+            Globals.MailMessage(fromEmail, new MailAddress(contact.Email, ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)), subject, body);
         }
 
         private async Task<String> RegisterUser(Contact contact)
@@ -460,7 +460,7 @@ namespace SportsManager.Controllers
             if (user != null)
                 throw new MembershipCreateUserException("Email already registered.");
 
-            contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, contact.FullNameFirst));
+            contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)));
             if (!String.IsNullOrEmpty(contact.UserId))
             {
                 Db.SaveChanges();

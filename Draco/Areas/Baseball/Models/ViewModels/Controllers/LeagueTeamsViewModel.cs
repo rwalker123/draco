@@ -82,37 +82,48 @@ namespace SportsManager.Baseball.ViewModels
 
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                IEnumerable<Player> allPlayers;
+                long seasonId = Controller.GetCurrentSeasonId(AccountId);
+
                 if (onlyManagers)
                 {
-                    List<Player> allManagers = new List<Player>();
-
-                    var leagueTeamManagers = new List<ModelObjects.TeamManager>();
-
-                    //var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(AccountId);
-                    long currentSeason = Controller.GetCurrentSeasonId(AccountId);
+                    var allManagers = new List<TeamManager>();
 
                     var leagueTeams = (from ls in Controller.Db.LeagueSeasons
                                        join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                                       where ls.SeasonId == currentSeason
+                                       where ls.SeasonId == seasonId
                                        orderby ls.League.Name, ts.Name
                                        select ls);
 
                     foreach (var lt in leagueTeams)
                     {
-                        var tms = DataAccess.Teams.GetTeamManagersAsPlayer(lt.Id).ToList();
-                        tms.ForEach(tm => tm.AffiliationDuesPaid = lt.Name);
+                        var tms = (from tsm in Controller.Db.TeamSeasonManagers
+                                   join ts in Controller.Db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
+                                   join t in Controller.Db.Teams on ts.TeamId equals t.Id
+                                   join c in Controller.Db.Contacts on tsm.ContactId equals c.Id
+                                   where tsm.TeamSeasonId == lt.Id
+                                   select tsm);
+
+                        //tms.ForEach(tm => tm.AffiliationDuesPaid = lt.Name);
                         allManagers.AddRange(tms);
                     }
 
-                    allPlayers = allManagers;
+                    allManagers = allManagers.OrderBy(x => x.Contact.LastName).ThenBy(x => x.Contact.FirstName).ThenBy(x => x.Contact.MiddleName).ToList();
+                    TeamAddressViewModel.ExportManagersToExcel(seasonId, allManagers, sheetData);
                 }
                 else
-                    allPlayers = DataAccess.TeamRoster.GetAllActivePlayers(AccountId).AsEnumerable();
+                {
 
-                allPlayers = allPlayers.OrderBy(x => x.Contact.FullName);
+                    var allPlayers = (from ls in Controller.Db.LeagueSeasons
+                            join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                            join rs in Controller.Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                            join r in Controller.Db.Rosters on rs.PlayerId equals r.Id
+                            where ls.SeasonId == seasonId && !rs.Inactive
+                            select rs).GroupBy(x => x.Roster.ContactId).Select(y => y.First());
 
-                TeamAddressViewModel.ExportRosterToExcel(allPlayers.AsQueryable(), sheetData, onlyManagers);
+                    allPlayers = allPlayers.OrderBy(x => x.Roster.Contact.LastName).ThenBy(x => x.Roster.Contact.FirstName).ThenBy(x => x.Roster.Contact.MiddleName);
+                    TeamAddressViewModel.ExportRosterToExcel(seasonId, allPlayers, sheetData);
+                }
+
 
                 // save
                 worksheetPart.Worksheet.Save();

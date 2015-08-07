@@ -18,7 +18,8 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("Twitter")]
         public ActionResult PostToTwitter(long accountId, long id)
         {
-            string tweetText = WorkoutsAPIController.GetWorkoutTweetText(id);
+            var workoutAnnouncement = Db.WorkoutAnnouncements.Find(id);
+            string tweetText = WorkoutsAPIController.GetWorkoutTweetText(workoutAnnouncement);
             if (String.IsNullOrEmpty(tweetText))
                 return Redirect(Request.QueryString.Get("referer"));
 

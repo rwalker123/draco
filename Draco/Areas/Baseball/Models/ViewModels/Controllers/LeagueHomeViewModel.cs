@@ -1,8 +1,8 @@
-﻿using System;
-using System.Linq;
-using SportsManager.ViewModels;
+﻿using ModelObjects;
 using SportsManager.Controllers;
-using ModelObjects;
+using SportsManager.ViewModels;
+using System;
+using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -53,7 +53,8 @@ namespace SportsManager.Baseball.ViewModels
             bool.TryParse(c.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
             ShowHOF = showHOF && c.Db.Hofs.Where(hof => hof.AccountId == accountId).Any();
 
-            ShowLeagueLeaders = IsAdmin || DataAccess.GameStats.HasLeaderCategories(accountId, 0);
+            var hasLeaderCats = c.Db.DisplayLeagueLeaders.Where(ll => ll.AccountId == accountId && ll.TeamId == 0).Any();
+            ShowLeagueLeaders = IsAdmin || hasLeaderCats;
             ShowAnnouncements = true;
             ShowBirthdays = true;
             ShowWelcomeMessages = true;

@@ -469,7 +469,7 @@ namespace SportsManager.Baseball.Controllers
                     Subject = subject
                 };
 
-                var failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, currentContact.FullNameFirst), bccList, data);
+                var failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, ContactViewModel.BuildFullNameFirst(currentContact.FirstName, currentContact.MiddleName, currentContact.LastName)), bccList, data);
                 foreach (var failedSend in failedSends)
                 {
                     result.Append(failedSend.Address);

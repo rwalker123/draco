@@ -1,17 +1,20 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using SportsManager.Models;
+using SportsManager.Utils;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
-using System.Web.Http.OData;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class StatisticsAPIController : ApiController
+    public class StatisticsAPIController : DBApiController
     {
         private const int m_allTimeMinAB = 150;
         private const int m_minABPerSeason = 30;
@@ -20,6 +23,10 @@ namespace SportsManager.Areas.Baseball.Controllers
         private const int m_numLeaders = 5;
 
         private const int m_defaultPageSize = 30;
+
+        public StatisticsAPIController(DB db) : base(db)
+        {
+        }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("batleaders")]
@@ -43,7 +50,10 @@ namespace SportsManager.Areas.Baseball.Controllers
                 if (allTimeLeaders)
                     minAB = m_allTimeMinAB;
                 else
-                    minAB = DataAccess.GameStats.CalculateMinAB(leagueSeasonId);
+                {
+                    var minCalculator = new MinCalculator(Db);
+                    minAB = minCalculator.CalculateMinAB(leagueSeasonId);
+                }
             }
 
             int numLeaders = m_numLeaders;
@@ -63,8 +73,9 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "AVG";
-            var leaders = DataAccess.GameStats.GetBatLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minAB, allTimeLeaders);
-            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+            var statsHelper = new BatStatsHelper(Db);
+            var leaders = statsHelper.GetBatLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minAB, allTimeLeaders);
+            return Request.CreateResponse<IEnumerable<LeagueLeaderStatViewModel>>(HttpStatusCode.OK, leaders);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -104,21 +115,22 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             pageNo--;
 
-            IQueryable<ModelObjects.GameBatStats> stats;
+            IQueryable<BatStatsViewModel> stats;
+            var statsHelper = new BatStatsHelper(Db);
             if (divisionId == 0)
-                stats = DataAccess.GameStats.GetBatLeaguePlayerTotals(id, sortField, sortOrder, allTime).Skip(pageSize * pageNo).Take(pageSize);
+                stats = statsHelper.GetBatLeaguePlayerTotals(id, sortField, sortOrder, allTime).Skip(pageSize * pageNo).Take(pageSize);
             else
-                stats = DataAccess.GameStats.GetBatLeaguePlayerTotals(id, divisionId, sortField, sortOrder).Skip(pageSize * pageNo).Take(pageSize);
+                stats = statsHelper.GetBatLeaguePlayerTotals(id, divisionId, sortField, sortOrder).Skip(pageSize * pageNo).Take(pageSize);
 
 
-            return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, stats);
+            return Request.CreateResponse<IEnumerable<BatStatsViewModel>>(HttpStatusCode.OK, stats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("batcategories")]
         public HttpResponseMessage GetBatAvailableCategories(long accountId)
         {
-            var leaderCats = DataAccess.GameStats.AvailableBatCategories();
+            var leaderCats = BatStatsHelper.AvailableBatCategories();
             return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
@@ -126,7 +138,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("pitchcategories")]
         public HttpResponseMessage GetPitchAvailableCategories(long accountId)
         {
-            var leaderCats = DataAccess.GameStats.AvailablePitchCategories();
+            var leaderCats = PitchStatsHelper.AvailablePitchCategories();
             return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
@@ -141,11 +153,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [SportsManagerAuthorize(Roles="AccountAdmin")]
         public HttpResponseMessage PostBatSelectedCategories(long accountId, LeaderCategories categories)
         {
-            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, true, categories == null ? null : categories.cats);
-            if (success)
-                return Request.CreateResponse(HttpStatusCode.OK);
-            else
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return AddLeaderCategories(accountId, 0, true, categories == null ? null : categories.cats);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -153,18 +161,14 @@ namespace SportsManager.Areas.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage PostPitchSelectedCategories(long accountId, LeaderCategories categories)
         {
-            var success = DataAccess.GameStats.AddLeaderCategories(accountId, 0, false, categories == null ? null : categories.cats);
-            if (success)
-                return Request.CreateResponse(HttpStatusCode.OK);
-            else
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return AddLeaderCategories(accountId, 0, false, categories == null ? null : categories.cats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("batselectedcategories")]
         public HttpResponseMessage GetBatSelectedCategories(long accountId)
         {
-            var leaderCats = DataAccess.GameStats.GetLeaderCategories(accountId, 0, true);
+            var leaderCats = GetLeaderCategories(accountId, 0, true);
             return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
@@ -172,7 +176,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("pitchselectedcategories")]
         public HttpResponseMessage GetPitchSelectedCategories(long accountId)
         {
-            var leaderCats = DataAccess.GameStats.GetLeaderCategories(accountId, 0, false);
+            var leaderCats = GetLeaderCategories(accountId, 0, false);
             return Request.CreateResponse<IEnumerable<LeaderCategory>>(HttpStatusCode.OK, leaderCats);
         }
 
@@ -198,7 +202,10 @@ namespace SportsManager.Areas.Baseball.Controllers
                 if (allTimeLeaders)
                     minIP = m_allTimeMinIP;
                 else
-                    minIP = DataAccess.GameStats.CalculateMinIP(leagueSeasonId);
+                {
+                    var minCalculator = new MinCalculator(Db);
+                    minIP = minCalculator.CalculateMinIP(leagueSeasonId);
+                }
             }
 
             int numLeaders = m_numLeaders;
@@ -218,8 +225,10 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "ERA";
-            var leaders = DataAccess.GameStats.GetPitchLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minIP, allTimeLeaders);
-            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+
+            var statsHelper = new PitchStatsHelper(Db);
+            var leaders = statsHelper.GetPitchLeagueLeaders(leagueSeasonId, divisionId, statCategory, numLeaders, minIP, allTimeLeaders);
+            return Request.CreateResponse<IEnumerable<LeagueLeaderStatViewModel>>(HttpStatusCode.OK, leaders);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -233,7 +242,8 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             if (!String.IsNullOrEmpty(strMinAB))
             {
-                minAB = DataAccess.GameStats.CalculateTeamMinAB(teamSeasonId);
+                var minCalculator = new MinCalculator(Db);
+                minAB = minCalculator.CalculateTeamMinAB(teamSeasonId);
             }
 
             int numLeaders = m_numLeaders;
@@ -245,8 +255,9 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "AVG";
-            var leaders = DataAccess.GameStats.GetBatTeamLeaders(teamSeasonId, statCategory, numLeaders, minAB);
-            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+            var statsHelper = new BatStatsHelper(Db);
+            var leaders = statsHelper.GetBatTeamLeaders(teamSeasonId, statCategory, numLeaders, minAB);
+            return Request.CreateResponse<IEnumerable<LeagueLeaderStatViewModel>>(HttpStatusCode.OK, leaders);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -260,7 +271,8 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             if (!String.IsNullOrEmpty(strMinIP))
             {
-                minIP = DataAccess.GameStats.CalculateTeamMinIP(teamSeasonId);
+                var minCalculator = new MinCalculator(Db);
+                minIP = minCalculator.CalculateTeamMinIP(teamSeasonId);
             }
 
             int numLeaders = m_numLeaders;
@@ -272,8 +284,9 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             String statCategory = queryValues["category"] ?? "ERA";
-            var leaders = DataAccess.GameStats.GetPitchTeamLeaders(teamSeasonId, statCategory, numLeaders, minIP);
-            return Request.CreateResponse<List<ModelObjects.LeagueLeaderStat>>(HttpStatusCode.OK, leaders);
+            var statsHelper = new PitchStatsHelper(Db);
+            var leaders = statsHelper.GetPitchTeamLeaders(teamSeasonId, statCategory, numLeaders, minIP);
+            return Request.CreateResponse<IEnumerable<LeagueLeaderStatViewModel>>(HttpStatusCode.OK, leaders);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -313,32 +326,35 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             pageNo--;
 
-            IQueryable<ModelObjects.GamePitchStats> stats;
+            IQueryable<PitchStatsViewModel> stats;
 
+            var statsHelper = new PitchStatsHelper(Db);
             if (divisionId == 0)
-                stats = DataAccess.GameStats.GetPitchLeaguePlayerTotals(id, sortField, sortOrder, allTime).Skip(pageSize * pageNo).Take(pageSize);
+                stats = statsHelper.GetPitchLeaguePlayerTotals(id, sortField, sortOrder, allTime).Skip(pageSize * pageNo).Take(pageSize);
             else
-                stats = DataAccess.GameStats.GetPitchLeaguePlayerTotals(id, divisionId, sortField, sortOrder).Skip(pageSize * pageNo).Take(pageSize);
+                stats = statsHelper.GetPitchLeaguePlayerTotals(id, divisionId, sortField, sortOrder).Skip(pageSize * pageNo).Take(pageSize);
 
-            return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, stats);
+            return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, stats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("historicalleagues")]
         public HttpResponseMessage GetHistoricalLeagues(long accountId)
         {
-            var leagues = DataAccess.Leagues.GetLeaguesFromSeason(accountId, true);
-            return Request.CreateResponse<IQueryable<ModelObjects.League>>(HttpStatusCode.OK, leagues);
+            var leagues = Db.Leagues.Where(l => l.AccountId == accountId);
+
+            var vm = Mapper.Map<IEnumerable<LeagueDefinition>, LeagueViewModel[]>(leagues);
+            return Request.CreateResponse<LeagueViewModel[]>(HttpStatusCode.OK, vm);
         }
 
-        class TeamStandingGamesBack : TeamStanding
+        class TeamStandingGamesBack : TeamStandingViewModel
         {
             public TeamStandingGamesBack()
             {
 
             }
 
-            public TeamStandingGamesBack(TeamStanding copyFrom)
+            public TeamStandingGamesBack(TeamStandingViewModel copyFrom)
                 : base(copyFrom)
             {
                 
@@ -362,7 +378,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("historicalstandings")]
         public HttpResponseMessage GetHistoricalStandings(long accountId, long id)
         {
-            BuildStandingsHelper standingsHelper = new BuildStandingsHelper();
+            BuildStandingsHelper standingsHelper = new BuildStandingsHelper(Db);
 
             var standings = new List<LeagueStanding>();
 
@@ -371,7 +387,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 var ls = new LeagueStanding()
                     {
-                        Name = league.Name,
+                        Name = league.League.Name,
                         Divisions = new List<DivisionStanding>()
                     };
 
@@ -381,7 +397,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 {
                     var d = new DivisionStanding()
                     {
-                        Name = division.Name,
+                        Name = division.DivisionDef.Name,
                         Standings = new List<TeamStandingGamesBack>()
                     };
 
@@ -402,5 +418,59 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             return Request.CreateResponse<IEnumerable<LeagueStanding>>(HttpStatusCode.OK, standings);
         }
+
+        private HttpResponseMessage AddLeaderCategories(long accountId, long teamId, bool isBatLeader, IEnumerable<LeaderCategory> cat)
+        {
+            // remove old ones first.
+            var remove = (from ll in Db.DisplayLeagueLeaders
+                          where ll.AccountId == accountId && ll.TeamId == teamId && ll.IsBatLeader == isBatLeader
+                          select ll);
+            Db.DisplayLeagueLeaders.RemoveRange(remove);
+
+            if (cat != null)
+                foreach (var lc in cat)
+                {
+                    Db.DisplayLeagueLeaders.Add(new DisplayLeagueLeader()
+                    {
+                        FieldName = lc.Name,
+                        AccountId = accountId,
+                        TeamId = teamId,
+                        IsBatLeader = isBatLeader
+                    });
+                }
+
+            Db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
+        }
+        private IQueryable<LeaderCategory> GetLeaderCategories(long accountId, long teamId, bool isBatLeader)
+        {
+            return (from ll in Db.DisplayLeagueLeaders
+                    where ll.AccountId == accountId && ll.TeamId == teamId && ll.IsBatLeader == isBatLeader
+                    select GetLeaderCategoryFromName(ll.FieldName, isBatLeader));
+        }
+
+        private LeaderCategory GetLeaderCategoryFromName(string name, bool isBatLeader)
+        {
+            if (isBatLeader)
+            {
+                foreach (var lc in BatStatsHelper.AvailableBatCategories())
+                {
+                    if (lc.Name == name)
+                        return lc;
+                }
+            }
+            else
+            {
+                foreach (var lc in PitchStatsHelper.AvailablePitchCategories())
+                {
+                    if (lc.Name == name)
+                        return lc;
+                }
+            }
+
+            return null;
+        }
+
     }
 }
