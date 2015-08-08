@@ -8,7 +8,7 @@ namespace SportsManager.Controllers
     [HandleError]
     public class HomeController : DBController
     {
-        HomeController(DB db) : base(db)
+        public HomeController(DB db) : base(db)
         {
         }
 

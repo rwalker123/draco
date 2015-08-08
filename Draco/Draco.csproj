@@ -432,12 +432,11 @@
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffSetup.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\ScheduleByDayOfMonth.cs" />
     <Compile Include="Areas\Baseball\Models\Utils\MinCalculator.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayerViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\StatsHelper.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\GameViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\PitchStatsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayoffBracketViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayoffGameViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayoffSeedViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\UmpireViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutAnnouncementViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutRegistrantViewModel.cs" />
@@ -450,7 +449,6 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\API\FieldViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\LeagueSetupViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayersWantedViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayerViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\TeamWantedViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\EnterGameResults.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeadersViewModel.cs" />

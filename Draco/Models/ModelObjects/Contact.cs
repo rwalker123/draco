@@ -30,6 +30,9 @@ namespace ModelObjects
         public bool? IsFemale { get; set; } // IsFemale
         public string Email { get; set; } // Email
 
+        // Foriegn Keys
+        public virtual AspNetUser AspNetUser { get; set; } // FK_Contacts_AspNetUser
+
         // Reverse navigation
         public virtual ICollection<ContactRole> ContactRoles { get; set; } // ContactRoles.FK_ContactRoles_Contacts
         public virtual ICollection<FieldContact> FieldContacts { get; set; } // FieldContacts.FK_FieldContacts_Contacts

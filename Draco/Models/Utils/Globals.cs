@@ -50,17 +50,6 @@ static public class Globals
         }
 	}
 
-	static public string UploadDir
-	{
-		get
-		{
-			// Don't use this anymore! Don't have "DataAccess.Accounts.GetCurrentAccount()" anymore, the accountId
-            // is passed in the URL. There is no session data. Use UploadDirRoot and add the account id yourself.
-			throw new NotImplementedException();
-			//return ConfigurationManager.AppSettings["UploadDir"] + DataAccess.Accounts.GetCurrentAccount() + "/"; 
-		}
-	}
-
 	static public string LogFile
 	{
 		get { return ConfigurationManager.AppSettings["LogFile"]; }

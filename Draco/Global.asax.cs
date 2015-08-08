@@ -78,10 +78,15 @@ namespace SportsManager
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.DivisionDef.AccountId))
                 .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.DivisionDef.Name));
 
-            Mapper.CreateMap<LeagueSeason, LeagueViewModel>();
+            Mapper.CreateMap<LeagueSeason, LeagueViewModel>()
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.League.Name))
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.League.AccountId));
+
             Mapper.CreateMap<LeagueDefinition, LeagueViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.AccountId))
-                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.Name));
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.Name))
+                .ForMember(vm => vm.LeagueId, opt => opt.MapFrom(model => model.Id))
+                .ForMember(vm => vm.SeasonId, opt => opt.Ignore());
 
             Mapper.CreateMap<TeamManager, TeamManagerViewModel>()
                 .ForMember(vm => vm.TeamName, opt => opt.MapFrom(model => model.TeamsSeason.Name))
@@ -94,7 +99,8 @@ namespace SportsManager
             Mapper.CreateMap<DivisionSeason, DivisionSetupViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.DivisionDef.AccountId))
                 .ForMember(vm => vm.DivisionDefId, opt => opt.MapFrom(model => model.DivisionId))
-                .ForMember(vm => vm.Teams, opt => opt.MapFrom(model => model.TeamsSeasons));
+                .ForMember(vm => vm.Teams, opt => opt.MapFrom(model => model.TeamsSeasons))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.DivisionDef.Name));
 
             Mapper.CreateMap<LeagueNewsItem, NewsViewModel>();
             Mapper.CreateMap<TeamNewsItem, NewsViewModel>()
@@ -103,7 +109,8 @@ namespace SportsManager
             Mapper.CreateMap<Contact, ContactViewModel>();
 
             Mapper.CreateMap<Contact, ContactNameViewModel>()
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)));
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)))
+                .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.DateOfBirth));
 
             Mapper.CreateMap<ContactRole, ContactNameRoleViewModel>()
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
@@ -119,7 +126,8 @@ namespace SportsManager
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.PostDate))
                 .ForMember(vm => vm.Subject, opt => opt.MapFrom(model => model.PostSubject))
-                .ForMember(vm => vm.Text, opt => opt.MapFrom(model => model.PostText));
+                .ForMember(vm => vm.Text, opt => opt.MapFrom(model => model.PostText))
+                .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));
 
             Mapper.CreateMap<MessageCategory, MessageCategoryViewModel>()
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.CategoryOrder))
@@ -133,7 +141,8 @@ namespace SportsManager
                 .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.TopicCreateDate))
-                .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic));
+                .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic))
+                .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));
 
             Mapper.CreateMap<PhotoGalleryItem, PhotoViewModel>()
                 .ForMember(vm => vm.ReferenceId, opt => opt.MapFrom(model => model.AccountId));
@@ -158,11 +167,14 @@ namespace SportsManager
 
             Mapper.CreateMap<MemberBusiness, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
-                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL));
+                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
+                .ForMember(vm => vm.AccountId, opt => opt.Ignore())
+                .ForMember(vm => vm.TeamId, opt => opt.Ignore());
 
             Mapper.CreateMap<Sponsor, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Name))
-                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.LogoURL));
+                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.LogoURL))
+                .ForMember(vm => vm.ContactId, opt => opt.Ignore());
 
             Mapper.CreateMap<ProfileQuestionAnswer, ProfileAnswersViewModel>()
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
@@ -177,7 +189,8 @@ namespace SportsManager
 
             Mapper.CreateMap<Season, SeasonViewModel>();
 
-            Mapper.CreateMap<VoteQuestion, VoteQuestionViewModel>();
+            Mapper.CreateMap<VoteQuestion, VoteQuestionViewModel>()
+                .ForMember(vm => vm.Options, opt => opt.MapFrom(model => model.VoteOptions));
 
             Mapper.CreateMap<VoteOption, VoteOptionViewModel>();
 
@@ -208,7 +221,8 @@ namespace SportsManager
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.ContactId)))
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
-                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.DateOfBirth));
+                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
+                .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth));
 
             Mapper.CreateMap<PlayerSeason, ContactNameViewModel>()
                 .ForMember(vm => vm.Id, opt => opt.MapFrom(model => model.Roster.ContactId))
@@ -217,7 +231,8 @@ namespace SportsManager
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Roster.Contact.MiddleName))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Roster.ContactId)))
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Roster.Contact.FirstYear))
-                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Roster.Contact.DateOfBirth));
+                .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Roster.Contact.Zip))
+                .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Roster.Contact.DateOfBirth));
 
             Mapper.CreateMap<Field, FieldViewModel>();
 
@@ -227,14 +242,16 @@ namespace SportsManager
                 .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
                 .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
 
-            Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>();
+            Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>()
+                .ForMember(vm => vm.CanEdit, opt => opt.Ignore());
 
             Mapper.CreateMap<PlayerSeason, PlayerViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.AccountId))
                 .ForMember(vm => vm.TeamId, opt => opt.MapFrom(model => model.TeamSeasonId))
                 .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
                 .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid)))
-                .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact));
+                .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact))
+                .ForMember(vm => vm.GamesPlayed, opt => opt.MapFrom(model => model.PlayerRecaps.Count));
 
             Mapper.CreateMap<AccountSetting, AccountSettingViewModel>();
 
@@ -246,7 +263,9 @@ namespace SportsManager
                 .ForMember(vm => vm.HomeTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.HTeamId).Select(ts => ts.Name).SingleOrDefault()))
                 .ForMember(vm => vm.AwayTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.VTeamId).Select(ts => ts.Name).SingleOrDefault()))
                 .ForMember(vm => vm.FieldName, opt => opt.MapFrom(model => model.AvailableField.Name))
-                .ForMember(vm => vm.HasGameRecap, opt => opt.MapFrom(model => model.GameRecaps.Any()));
+                .ForMember(vm => vm.HasGameRecap, opt => opt.MapFrom(model => model.GameRecaps.Any()))
+                .ForMember(vm => vm.HomePlayersPresent, opt => opt.MapFrom(model => model.PlayerRecaps.Where(pr => pr.TeamId == model.HTeamId).Select(pr => pr.PlayerId)))
+                .ForMember(vm => vm.AwayPlayersPresent, opt => opt.MapFrom(model => model.PlayerRecaps.Where(pr => pr.TeamId == model.VTeamId).Select(pr => pr.PlayerId)));
 
             Mapper.CreateMap<WorkoutAnnouncement, WorkoutAnnouncementViewModel>()
                 .Include<WorkoutAnnouncement, WorkoutAnnouncementRegisteredViewModel>()
@@ -305,9 +324,9 @@ namespace SportsManager
 
             Mapper.CreateMap<GameRecap, GameRecapViewModel>();
 
-            Mapper.CreateMap<PlayoffBracket, PlayoffBracketViewModel>();
-            Mapper.CreateMap<PlayoffGame, PlayoffGameViewModel>();
-            Mapper.CreateMap<PlayoffSeed, PlayoffSeedViewModel>();
+            //Mapper.CreateMap<PlayoffBracket, PlayoffBracketViewModel>();
+            //Mapper.CreateMap<PlayoffGame, PlayoffGameViewModel>();
+            //Mapper.CreateMap<PlayoffSeed, PlayoffSeedViewModel>();
 
             Mapper.AssertConfigurationIsValid();
         }

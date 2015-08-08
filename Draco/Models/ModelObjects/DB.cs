@@ -44,7 +44,7 @@ namespace ModelObjects
 
     public class DB : DbContext
     {
-        internal DB()
+        public DB()
             : base(ConfigurationManager.ConnectionStrings["webDBConnection"].ConnectionString)
         {
         }
@@ -444,7 +444,7 @@ namespace ModelObjects
             Property(x => x.Email).HasColumnName("Email").IsOptional().IsUnicode(false).HasMaxLength(50);
 
             // Foreign keys
-            //HasOptional(a => a.AspNetUser).WithMany(b => b.Contacts).HasForeignKey(c => c.UserId); // FK_Contacts_AspNetUsers
+            HasOptional(a => a.AspNetUser).WithMany(b => b.Contacts).HasForeignKey(c => c.UserId); // FK_Contacts_AspNetUsers
         }
     }
 
@@ -1765,7 +1765,7 @@ namespace ModelObjects
             Property(x => x.LeagueSeasonId).HasColumnName("LeagueSeasonId").IsRequired();
             Property(x => x.TeamId).HasColumnName("TeamId").IsRequired();
             Property(x => x.Name).HasColumnName("Name").IsRequired().IsUnicode(false).HasMaxLength(25);
-            Property(x => x.DivisionSeasonId).HasColumnName("DivisionSeasonId").IsRequired();
+            Property(x => x.DivisionSeasonId).HasColumnName("DivisionSeasonId").IsOptional();
 
             // Foreign keys
             HasRequired(a => a.LeagueSeason).WithMany(b => b.TeamsSeasons).HasForeignKey(c => c.LeagueSeasonId); // FK_TeamsSeason_LeagueSeason

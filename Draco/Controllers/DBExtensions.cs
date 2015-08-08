@@ -294,6 +294,27 @@ namespace SportsManager.Controllers
             return db.Db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
         }
 
+        static public String GetFirstNameFromUserName(this IDb db, string userName)
+        {
+            string userId = Globals.GetCurrentUserId();
+
+            String firstName = (from c in db.Db.Contacts
+                                where c.UserId == userId
+                                select c.FirstName).SingleOrDefault();
+            if (String.IsNullOrEmpty(firstName))
+                return userName;
+
+            return firstName;
+        }
+
+        static public long GetAccountTypeFromAccountId(this IDb db, long accountId)
+        {
+            return (from a in db.Db.Accounts
+                    where a.Id == accountId
+                    select a.AccountTypeId).SingleOrDefault();
+        }
+
+
         public static IQueryable<TeamSeason> GetCurrentUserTeams(this IDb db, long accountId)
         {
             var contact = db.GetCurrentContact();

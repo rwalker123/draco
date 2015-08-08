@@ -1,8 +1,15 @@
-﻿@model long
+﻿@using SportsManager.Controllers
+@model long
 
 @{
+    long accountType = 0;
+
     // load sitemap for accountType
-	long accountType = DataAccess.Accounts.GetAccountTypeFromAccountId(Model);
+    var c = ViewContext.Controller as DBController;
+    if (c != null)
+    {
+        accountType = c.GetAccountTypeFromAccountId(Model);
+    }
     IEnumerable<SportsManager.Models.Helpers.MenuHelper.MenuItem> menuNodes = SportsManager.Models.Helpers.MenuHelper.GetAccountHomeTypeMenu(accountType, Model);
 }
 

@@ -15,7 +15,7 @@ namespace SportsManager.ViewModels.API
         public String TopicTitle { get; set; }
         public bool StickyTopic { get; set; }
         public int NumberOfViews { get; set; }
-        public MessageTopicViewModel LastPost { get; set; }
+        public MessagePostViewModel LastPost { get; set; }
         public int NumberOfReplies  { get; set; }
     }
 }

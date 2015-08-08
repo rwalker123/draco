@@ -78,7 +78,7 @@ namespace SportsManager
 
             ODataModelBuilder modelBuilder = new ODataConventionModelBuilder();
             modelBuilder.EntitySet<ContactNameViewModel>("ContactsOData");
-            modelBuilder.EntitySet<Game>("ScheduleOData");
+            modelBuilder.EntitySet<GameViewModel>("ScheduleOData");
 
             Microsoft.Data.Edm.IEdmModel model = modelBuilder.GetEdmModel();
             config.Routes.MapODataServiceRoute("ODataRoute", "odata", model);

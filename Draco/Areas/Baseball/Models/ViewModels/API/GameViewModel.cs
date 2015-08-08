@@ -20,9 +20,9 @@ namespace SportsManager.ViewModels.API
         public long Umpire3 { get; set; }
         public long Umpire4 { get; set; } 
         public int GameType { get; set; }
-        public String HomeTeamName { get; set; } //= DataAccess.Teams.GetTeamName(g.HomeTeamId);
-        public String AwayTeamName { get; set; } //= DataAccess.Teams.GetTeamName(g.AwayTeamId);
-        public String FieldName { get; set; } //= DataAccess.Fields.GetFieldName(g.FieldId);
+        public String HomeTeamName { get; set; }
+        public String AwayTeamName { get; set; }
+        public String FieldName { get; set; }
         public IEnumerable<long> HomePlayersPresent { get; set; }
         public IEnumerable<long> AwayPlayersPresent { get; set; }
         public bool HasGameRecap { get; set; }

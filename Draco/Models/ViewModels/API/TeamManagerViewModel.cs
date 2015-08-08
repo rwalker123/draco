@@ -13,6 +13,6 @@ namespace SportsManager.ViewModels.API
 
         public String TeamName { get; set; }
         public String LeagueName { get; set; }
-        public String ContactName { get; set; }
+        public ContactViewModel Contact { get; set; }
     }
 }
