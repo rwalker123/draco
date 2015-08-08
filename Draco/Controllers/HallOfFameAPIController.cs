@@ -29,8 +29,7 @@ namespace SportsManager.Controllers
                               select new HOFClass()
                               {
                                   Year = g.Key,
-                                  MemberCount = g.Count(),
-                                  Members = null
+                                  MemberCount = g.Count()
                               }).AsEnumerable();
 
             if (hofClasses != null)
@@ -181,7 +180,7 @@ namespace SportsManager.Controllers
         public HttpResponseMessage GetRandomHOFMember(long accountId)
         {
 
-            var hofMembers = Db.Hofs.Where(h => h.AccountId == accountId);
+            var hofMembers = Db.Hofs.Where(h => h.AccountId == accountId).OrderBy(h => h.Id);
             if (hofMembers.Any())
             {
                 int count = hofMembers.Count();

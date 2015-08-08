@@ -94,5 +94,23 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
             }
         }
+
+        public string FullName
+        {
+            get
+            {
+                return Globals.BuildFullName(FirstName, MiddleName, LastName);
+            }
+        }
+
+        public string FullNameFirst
+        {
+            get
+            {
+                return Globals.BuildFullNameFirst(FirstName, MiddleName, LastName);
+            }
+        }
+
+
     }
 }

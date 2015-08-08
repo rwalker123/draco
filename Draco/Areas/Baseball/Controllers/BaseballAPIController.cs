@@ -104,7 +104,7 @@ namespace SportsManager.Baseball.Controllers
                 if (fromContact == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                failedSends = Globals.MailMessage(new MailAddress(HttpContext.Current.User.Identity.Name, ContactViewModel.BuildFullNameFirst(fromContact.FirstName, fromContact.MiddleName, fromContact.LastName)), toList, data);
+                failedSends = Globals.MailMessage(new MailAddress(HttpContext.Current.User.Identity.Name, fromContact.FullNameFirst), toList, data);
                 SendSummaryMessage(toList.Except(failedSends), failedSends, HttpContext.Current.User.Identity.Name, data.Subject, data.Message);
             }
 

@@ -17,5 +17,10 @@ namespace SportsManager.Baseball.ViewModels
 
         public TeamSeason Team { get; private set; }
         public IQueryable<Game> Games { get; private set; }
+
+        public string FieldName(Game g)
+        {
+            return g.AvailableField?.Name;
+        }
     }
 }

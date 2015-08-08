@@ -1,6 +1,4 @@
-﻿using Autofac;
-using Autofac.Integration.Mvc;
-using AutoMapper;
+﻿using AutoMapper;
 using Elmah;
 using ModelObjects;
 using SportsManager.Models;
@@ -52,26 +50,13 @@ namespace SportsManager
         protected void Application_Start()
         {
             AreaRegistration.RegisterAllAreas();
-            GlobalConfiguration.Configure(WebApiConfig.Register);
+            //GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             Database.SetInitializer<ApplicationDbContext>(new MyDbInitializer());
 
             GlobalFilters.Filters.Add(new ElmahHandlerAttribute());
-
-            // AutoFac IOC
-            var builder = new ContainerBuilder();
-
-            // Register your MVC controllers.
-            builder.RegisterControllers(typeof(MvcApplication).Assembly);
-
-            builder.RegisterType<DB>()
-                   .AsSelf()
-                   .InstancePerRequest();
-
-            var container = builder.Build();
-            DependencyResolver.SetResolver(new AutofacDependencyResolver(container));
 
             // autoMapper - map models to view models
             Mapper.CreateMap<DivisionSeason, DivisionViewModel>()
@@ -158,7 +143,7 @@ namespace SportsManager
 
             Mapper.CreateMap<HOFMember, HOFMemberViewModel>()
                 .ForMember(vm => vm.Biography, opt => opt.MapFrom(model => model.Bio))
-                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.Contact.FullName))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetLargePhotoURL(model.ContactId)));
 
             Mapper.CreateMap<HOFClass, HOFClassViewModel>();
@@ -239,7 +224,7 @@ namespace SportsManager
             Mapper.CreateMap<PlayersWantedClassified, PlayersWantedViewModel>()
                 .ForMember(vm => vm.EMail, opt => opt.MapFrom(model => model.Contact.Email))
                 .ForMember(vm => vm.Phone, opt => opt.MapFrom(model => model.Contact.Phone1))
-                .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.Contact.FirstName, model.Contact.MiddleName, model.Contact.LastName)))
+                .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => model.Contact.FullName))
                 .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
 
             Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>()
@@ -302,7 +287,7 @@ namespace SportsManager
                 .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
                 .ForMember(vm => vm.PA, opt => opt.MapFrom(model => model.Pa))
                 .ForMember(vm => vm.AVG, opt => opt.MapFrom(model => model.Avg))
-                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.RosterSeason.Roster.Contact.FirstName, model.RosterSeason.Roster.Contact.MiddleName, model.RosterSeason.Roster.Contact.LastName)));
+                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => model.RosterSeason.Roster.Contact.FullName));
 
             Mapper.CreateMap<GamePitchStats, PitchStatsViewModel>()
                 .ForMember(vm => vm.IP, opt => opt.MapFrom(model => model.Ip))
@@ -320,7 +305,7 @@ namespace SportsManager
                 .ForMember(vm => vm.SC, opt => opt.MapFrom(model => model.Sc))
                 .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
                 .ForMember(vm => vm.AB, opt => opt.MapFrom(model => model.Ab))
-                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => ContactViewModel.BuildFullName(model.RosterSeason.Roster.Contact.FirstName, model.RosterSeason.Roster.Contact.MiddleName, model.RosterSeason.Roster.Contact.LastName)));
+                .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => model.RosterSeason.Roster.Contact.FullName));
 
             Mapper.CreateMap<GameRecap, GameRecapViewModel>();
 

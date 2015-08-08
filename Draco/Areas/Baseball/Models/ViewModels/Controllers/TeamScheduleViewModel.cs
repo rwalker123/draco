@@ -94,5 +94,9 @@ namespace SportsManager.Baseball.ViewModels
             return score;
         }
 
+        public string FieldName(Game g)
+        {
+            return g.AvailableField?.Name;
+        }
     }
 }

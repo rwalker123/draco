@@ -84,11 +84,6 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
-
-            set
-            {
-
-            }
 		}
 
 		public string GameStatusLongText
@@ -113,10 +108,6 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
-            set
-            {
-
-            }
         }
 
 		public long GameWinner
@@ -137,10 +128,6 @@ namespace ModelObjects
 
 				return ret;
 			}
-            set
-            {
-
-            }
         }
 
 		public bool IsGameComplete
@@ -148,10 +135,6 @@ namespace ModelObjects
             get
             {
                 return (GameStatus == 1 || GameStatus == 4);
-            }
-            set
-            {
-
             }
         }
 	}

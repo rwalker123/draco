@@ -5,7 +5,7 @@ namespace SportsManager.Controllers
 {
     public class HallOfFameController : DBController
     {
-        protected HallOfFameController(DB db) : base(db)
+        public HallOfFameController(DB db) : base(db)
         {
         }
 

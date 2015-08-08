@@ -16,7 +16,7 @@
 
 <div class="noPrint jumbotron">
     
-    <h1><img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-right:20px" />@Model.Team.Name Schedule</h1>
+    <h1><img onerror="this.style.display = 'none';" src="@Model.Team.Team.TeamLogoURL" class="img-rounded" style="margin-right:20px" />@Model.Team.Name Schedule</h1>
 
     <a href='@Url.Content("~/")baseball/team/index/@Model.AccountId/@Model.Team.Id' class="btn btn-info noPrint"><small>team home page</small></a>
     <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
@@ -49,18 +49,18 @@
                         @if (g.FieldId > 0)
                         { 
                         <a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = @Model.AccountId, id = g.FieldId }, null)'>
-                            @g.FieldName
+                            @Model.FieldName(g)
                         </a>
                         }
                     </td>
                     <td>
-                        <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HomeTeamId == Model.Team.Id ? g.AwayTeamId : g.HomeTeamId }, null)'>
-                            @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
+                        <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HTeamId == Model.Team.Id ? g.VTeamId : g.HTeamId }, null)'>
+                            @(g.HTeamId == Model.Team.Id ? Model.TeamName(g.VTeamId) : "at " + Model.TeamName(g.HTeamId))
                         </a>
                     </td>
                     <td>@Model.WinLoseString(g.GameWinner, g.GameStatus)</td>
-                    <td>@Model.Score1(g.GameWinner, g.HomeScore, g.AwayScore)</td>
-                    <td>@Model.Score2(g.GameWinner, g.HomeScore, g.AwayScore)</td>
+                    <td>@Model.Score1(g.GameWinner, g.HScore, g.VScore)</td>
+                    <td>@Model.Score2(g.GameWinner, g.HScore, g.VScore)</td>
                 </tr>
                 <tr style="display: none" id="recap_@g.Id">
                     <td colspan="8">

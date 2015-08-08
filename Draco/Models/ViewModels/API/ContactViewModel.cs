@@ -30,29 +30,19 @@ namespace SportsManager.ViewModels.API
         public bool IsFemale { get; set; } // IsFemale
         public string Email { get; set; } // Email
 
-        static public string BuildFullName(string firstName, string middleName, string lastName)
+        public string FullName
         {
-            string fullName = lastName + ", " + firstName + " " + middleName;
-            return fullName.Trim();
-        }
-
-        static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
-        {
-            System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
-
-            if (!String.IsNullOrWhiteSpace(middleName))
-                fullName.Append(middleName + " ");
-
-            fullName.Append(lastName);
-
-            return fullName.ToString();
+            get
+            {
+                return Globals.BuildFullName(FirstName, MiddleName, LastName);
+            }
         }
 
         public string FullNameFirst
         {
             get
             {
-                return ContactViewModel.BuildFullNameFirst(FirstName, MiddleName, LastName);
+                return Globals.BuildFullNameFirst(FirstName, MiddleName, LastName);
             }
         }
 

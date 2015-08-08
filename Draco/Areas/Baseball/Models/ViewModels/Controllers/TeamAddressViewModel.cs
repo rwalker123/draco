@@ -72,7 +72,7 @@ namespace SportsManager.Baseball.ViewModels
                 row.RowIndex = (UInt32)index;
 
                 // New Cell
-                CreateCell(row, "A" + index, ContactViewModel.BuildFullName(player.Roster.Contact.FirstName, player.Roster.Contact.MiddleName, player.Roster.Contact.LastName));
+                CreateCell(row, "A" + index, player.Roster.Contact.FullName);
                 CreateCell(row, "B" + index, player.Roster.Contact.Email);
 
                 String affiliationDuesPaid = player.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == seasonId).Select(psa => psa.AffiliationDuesPaid).SingleOrDefault();
@@ -104,7 +104,7 @@ namespace SportsManager.Baseball.ViewModels
                 row.RowIndex = (UInt32)index;
 
                 // New Cell
-                CreateCell(row, "A" + index, ContactViewModel.BuildFullName(mgr.Contact.FirstName, mgr.Contact.MiddleName, mgr.Contact.LastName));
+                CreateCell(row, "A" + index, mgr.Contact.FullName);
                 CreateCell(row, "B" + index, mgr.Contact.Email);
 
                 CreateCell(row, "C" + index, mgr.Contact.Phone2);

@@ -413,7 +413,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 try
                 {
                     if (c.Email.Length > 0)
-                        bccList.Add(new MailAddress(c.Email, ContactViewModel.BuildFullNameFirst(c.FirstName, c.MiddleName, c.LastName)));
+                        bccList.Add(new MailAddress(c.Email, c.FullNameFirst));
                 }
                 catch
                 {
@@ -455,7 +455,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                     Subject = subject
                 };
 
-                IEnumerable<MailAddress> failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, ContactViewModel.BuildFullNameFirst(currentContact.FirstName, currentContact.MiddleName, currentContact.LastName)), bccList, data);
+                IEnumerable<MailAddress> failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, currentContact.FullNameFirst), bccList, data);
                 numSent = bccList.Count - failedSends.Count();
             }
 

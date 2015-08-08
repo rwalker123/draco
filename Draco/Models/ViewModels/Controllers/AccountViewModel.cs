@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNet.Identity;
 using SportsManager.Controllers;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web;
 using System.Web.Mvc;
@@ -37,6 +38,18 @@ namespace SportsManager.ViewModels
             c.ViewData["IsAdmin"] = IsAdmin;
 
             Globals.SetupAccountViewData(m_account, c.ViewData);
+        }
+
+        private Dictionary<long, string> m_teamIdToName = new Dictionary<long, string>();
+
+        public string TeamName(long teamId)
+        {
+            string teamName;
+            if (m_teamIdToName.TryGetValue(teamId, out teamName))
+                return teamName;
+
+            m_teamIdToName[teamId] = Controller.Db.TeamsSeasons.Find(teamId)?.Name;
+            return m_teamIdToName[teamId];
         }
 
         [ScaffoldColumn(false)]

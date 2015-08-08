@@ -15,7 +15,7 @@
 
     <div data-bind="visible: viewMode()">
         <h1>
-            <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" />
+            <img onerror="this.style.display = 'none';" src="@Model.Team.Team.TeamLogoURL" class="img-rounded" />
             @if (Model.IsAdmin)
             {
                 <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">

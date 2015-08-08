@@ -572,7 +572,7 @@ namespace SportsManager.Controllers
                     if (!String.IsNullOrEmpty(newEmail) && registerIfNeeded)
                     {
                         // need to create the account.
-                        vm.UserId = await db.CreateAndEmailAccount(accountId, new MailAddress(newEmail, ContactViewModel.BuildFullName(vm.FirstName, vm.MiddleName, vm.LastName)));
+                        vm.UserId = await db.CreateAndEmailAccount(accountId, new MailAddress(newEmail, vm.FullName));
                         if (!String.IsNullOrEmpty(vm.UserId))
                             updateUserId = true;
                     }
@@ -607,7 +607,7 @@ namespace SportsManager.Controllers
                         user.UserName = newEmail;
                         IdentityResult idRes = userManager.Update(user);
                         if (!idRes.Errors.Any())
-                            db.NotifyUserOfNewEmail(contact.CreatorAccountId, new MailAddress(origEmail, ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName)), newEmail);
+                            db.NotifyUserOfNewEmail(contact.CreatorAccountId, new MailAddress(origEmail, contact.FullNameFirst), newEmail);
                         else
                             throw new Exception(idRes.Errors.First());
                     }
@@ -671,7 +671,7 @@ namespace SportsManager.Controllers
             if (contact == null)
                 senderFullName = currentUser;
             else
-                senderFullName = ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName);
+                senderFullName = contact.FullNameFirst;
 
             var userManager = Globals.GetUserManager();
 
@@ -750,7 +750,7 @@ namespace SportsManager.Controllers
             }
             else
             {
-                senderFullName = ContactViewModel.BuildFullNameFirst(contact.FirstName, contact.MiddleName, contact.LastName);
+                senderFullName = contact.FullNameFirst;
             }
 
             string subject = String.Format(AccountModifiedSubject, accountName);

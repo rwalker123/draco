@@ -113,7 +113,7 @@ namespace SportsManager.Controllers
             int count = qry.Count();
             int index = new Random().Next(count);
 
-            var playerProfile = qry.Skip(index).FirstOrDefault();
+            var playerProfile = qry.OrderBy(p => p.Id).Skip(index).FirstOrDefault();
 
             if (playerProfile != null)
             {

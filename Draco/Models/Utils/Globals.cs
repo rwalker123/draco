@@ -190,7 +190,7 @@ static public class Globals
 
     public static String GetCurrentUserId()
     {
-        return System.Web.HttpContext.Current.User.Identity.GetUserId();
+        return HttpContext.Current.User?.Identity.GetUserId();
     }
 
     public static String GetCurrentUserName()
@@ -219,6 +219,24 @@ static public class Globals
 
         return years;
     }
+    static public string BuildFullName(string firstName, string middleName, string lastName)
+    {
+        string fullName = lastName + ", " + firstName + " " + middleName;
+        return fullName.Trim();
+    }
+
+    static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
+    {
+        System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
+
+        if (!String.IsNullOrWhiteSpace(middleName))
+            fullName.Append(middleName + " ");
+
+        fullName.Append(lastName);
+
+        return fullName.ToString();
+    }
+
 }
 
 public class EmailUserValidator : IIdentityValidator<ApplicationUser>
