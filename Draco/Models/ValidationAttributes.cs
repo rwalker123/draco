@@ -18,7 +18,6 @@ namespace SportsManager.Models
 	{
         public SportsManagerAuthorizeAttribute()
         {
-            Db = DependencyResolver.Current.GetService<DB>();
         }
 
         public DB Db
@@ -28,10 +27,12 @@ namespace SportsManager.Models
 
         public override void OnAuthorization(System.Web.Http.Controllers.HttpActionContext actionContext)
         {
-			bool isAuthorized = false;
+            Db = DependencyResolver.Current.GetService<DB>();
 
-            IPrincipal user = HttpContext.Current.User;
-            bool isAuthenticated = user.Identity.IsAuthenticated;
+            bool isAuthorized = false;
+
+            IPrincipal user = actionContext.RequestContext.Principal; // HttpContext.Current.User;
+            bool isAuthenticated = (user?.Identity.IsAuthenticated).GetValueOrDefault();
 
 			// ROLES:
 			// AccountAdmin

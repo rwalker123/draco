@@ -165,7 +165,8 @@ namespace SportsManager
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
-                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)))
+                .ForMember(vm => vm.Question, opt => opt.MapFrom(model => model.ProfileQuestion.Question));
 
             Mapper.CreateMap<ProfileQuestionItem, ProfileQuestionViewModel>();
 
@@ -175,13 +176,14 @@ namespace SportsManager
             Mapper.CreateMap<Season, SeasonViewModel>();
 
             Mapper.CreateMap<VoteQuestion, VoteQuestionViewModel>()
-                .ForMember(vm => vm.Options, opt => opt.MapFrom(model => model.VoteOptions));
+                .ForMember(vm => vm.Options, opt => opt.MapFrom(model => model.VoteOptions.OrderBy(x => x.Priority)));
 
             Mapper.CreateMap<VoteOption, VoteOptionViewModel>();
 
             Mapper.CreateMap<VoteQuestion, VoteQuestionResultsViewModel>()
-                .ForMember(vm => vm.HasVoted, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => va.Contact.UserId == Globals.GetCurrentUserId()).Any()))
-                .ForMember(vm => vm.OptionSelected, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => va.Contact.UserId == Globals.GetCurrentUserId()).Select(va => va.OptionId).SingleOrDefault()))
+                .ForMember(vm => vm.HasVoted, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => Globals.GetCurrentUserId() != null && va.Contact.UserId == Globals.GetCurrentUserId()).Any()))
+                .ForMember(vm => vm.OptionSelected, opt => opt.MapFrom(model => model.VoteAnswers.Where(va => Globals.GetCurrentUserId() != null && va.Contact.UserId == Globals.GetCurrentUserId()).Select(va => va.OptionId).SingleOrDefault()))
+                .ForMember(vm => vm.Options, opt => opt.MapFrom(model => model.VoteOptions.OrderBy(x => x.Priority)))
                 .ForMember(vm => vm.Results,
                            opt => opt.MapFrom(model => model.VoteAnswers.GroupBy(va => new
                            {
@@ -192,7 +194,6 @@ namespace SportsManager
                               .Select(va => new VoteResultsViewModel()
                               {
                                   OptionId = va.Key.OptionId,
-                                  OptionText = va.Key.OptionText,
                                   TotalVotes = va.Count()
                               })));
 

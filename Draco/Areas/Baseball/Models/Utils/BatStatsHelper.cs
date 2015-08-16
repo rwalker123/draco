@@ -99,7 +99,7 @@ namespace SportsManager.Utils
             bool abCheck = NeedABCheck(fieldName);
 
             String queryString = GetBatLeagueLeadersQueryString(leagueId, divisionId, fieldName, allTimeLeaders);
-            
+
             var result = m_db.Database.SqlQuery<LeaderStatRecord>(queryString, new object[] { }).AsQueryable();
             return ProcessLeaders(result, fieldName, allTimeLeaders, limitRecords, abCheck, minAB);
         }

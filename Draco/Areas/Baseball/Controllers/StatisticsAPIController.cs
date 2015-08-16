@@ -443,11 +443,19 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
-        private IQueryable<LeaderCategory> GetLeaderCategories(long accountId, long teamId, bool isBatLeader)
+
+
+        private IEnumerable<LeaderCategory> GetLeaderCategories(long accountId, long teamId, bool isBatLeader)
         {
-            return (from ll in Db.DisplayLeagueLeaders
+            var leaderCats = (from ll in Db.DisplayLeagueLeaders
                     where ll.AccountId == accountId && ll.TeamId == teamId && ll.IsBatLeader == isBatLeader
-                    select GetLeaderCategoryFromName(ll.FieldName, isBatLeader));
+                    select ll);
+
+            List<LeaderCategory> l = new List<LeaderCategory>();
+            foreach (var ll in leaderCats)
+                l.Add(GetLeaderCategoryFromName(ll.FieldName, isBatLeader));
+
+            return l;
         }
 
         private LeaderCategory GetLeaderCategoryFromName(string name, bool isBatLeader)

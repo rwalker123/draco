@@ -14,6 +14,7 @@ namespace SportsManager.ViewModels.API
         [StringLength(255, MinimumLength = 1)]
         public string Question { get; set; }
         public bool Active { get; set; }
+        [Required]
         public IEnumerable<VoteOptionViewModel> Options { get; set; }
 
     }

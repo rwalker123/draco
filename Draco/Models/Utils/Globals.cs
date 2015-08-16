@@ -195,7 +195,7 @@ static public class Globals
 
     public static String GetCurrentUserName()
     {
-        return System.Web.HttpContext.Current.User.Identity.GetUserName();
+        return System.Web.HttpContext.Current.User?.Identity.GetUserName();
     }
 
     public static ApplicationUserManager GetUserManager()

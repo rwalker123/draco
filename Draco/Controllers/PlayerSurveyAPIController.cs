@@ -70,7 +70,7 @@ namespace SportsManager.Controllers
             int count = qry.Count();
             int index = new Random().Next(count);
 
-            var playerId = qry.Skip(index).FirstOrDefault();
+            var playerId = qry.OrderBy(x => x).Skip(index).FirstOrDefault();
             if (playerId > 0)
             {
                 // next get a random answer from the player.

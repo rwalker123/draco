@@ -7,23 +7,30 @@ using System.Linq;
 
 namespace SportsManager.Utils
 {
+    public class LeaderStatRecord
+    {
+        public LeaderStatRecord()
+        {
+            PlayerId = 0;
+            TeamId = 0;
+            FieldTotal = Decimal.MinValue;
+            CheckField = Decimal.MinValue;
+        }
+        public long PlayerId { get; set; }
+        public long TeamId { get; set; }
+        public Decimal? FieldTotal { get; set; }
+        public Decimal? CheckField { get; set; }
+    };
+
     public abstract class StatsHelper
     {
-        protected class LeaderStatRecord
-        {
-            public long PlayerId = 0;
-            public long TeamId = 0;
-            public Decimal? FieldTotal = Decimal.MinValue;
-            public Decimal? CheckField = Decimal.MinValue;
-        };
-
         protected DB m_db;
         public StatsHelper(DB db)
         {
             m_db = db;
         }
 
-        protected List<LeagueLeaderStatViewModel> ProcessLeaders(IEnumerable<LeaderStatRecord> batStats, string fieldName, bool allTimeLeaders, int limitRecords, bool checkMin, int minVal)
+        protected List<LeagueLeaderStatViewModel> ProcessLeaders(IQueryable<LeaderStatRecord> batStats, string fieldName, bool allTimeLeaders, int limitRecords, bool checkMin, int minVal)
         {
             var stats = new List<LeagueLeaderStatViewModel>();
 
@@ -32,31 +39,30 @@ namespace SportsManager.Utils
 
             int numRecords = 0;
 
-            foreach (var batStat in batStats)
+            var newbs = batStats.Where(bs => bs.FieldTotal.HasValue && (!checkMin || (checkMin && ((int)bs.CheckField) >= minVal)));
+
+            foreach (var batStat in newbs)
             {
-                if (batStat.FieldTotal.HasValue && (!checkMin || (checkMin && ((int)batStat.CheckField) >= minVal)))
+                double totalValue = (double)batStat.FieldTotal;
+                LeagueLeaderStatViewModel stat = new LeagueLeaderStatViewModel(fieldName, batStat.PlayerId, allTimeLeaders ? 0 : batStat.TeamId, totalValue);
+                if (leaderList.ContainsKey(totalValue))
                 {
-                    double totalValue = (double)batStat.FieldTotal;
-                    LeagueLeaderStatViewModel stat = new LeagueLeaderStatViewModel(fieldName, batStat.PlayerId, allTimeLeaders ? 0 : batStat.TeamId, totalValue);
-                    if (leaderList.ContainsKey(totalValue))
-                    {
-                        leaderList[totalValue].Add(stat);
-                    }
-                    else
-                    {
-                        // if we need to add a new record, it means we are done with potential ties.
-                        if (numRecords >= limitRecords)
-                            break;
-
-                        leaderKeys.Add(totalValue);
-
-                        var leaderStats = new List<LeagueLeaderStatViewModel>();
-                        leaderStats.Add(stat);
-                        leaderList[totalValue] = leaderStats;
-                    }
-
-                    numRecords++;
+                    leaderList[totalValue].Add(stat);
                 }
+                else
+                {
+                    // if we need to add a new record, it means we are done with potential ties.
+                    if (numRecords >= limitRecords)
+                        break;
+
+                    leaderKeys.Add(totalValue);
+
+                    var leaderStats = new List<LeagueLeaderStatViewModel>();
+                    leaderStats.Add(stat);
+                    leaderList[totalValue] = leaderStats;
+                }
+
+                ++numRecords;
             }
 
             foreach (double leaderKey in leaderKeys)
@@ -101,15 +107,11 @@ namespace SportsManager.Utils
                     Contact c;
                     if (allTimeLeaders)
                     {
-                         c = (from r in m_db.Rosters
-                                           where r.Id == stat.PlayerId
-                                           select r.Contact).FirstOrDefault();
+                        c = m_db.Rosters.Find(stat.PlayerId)?.Contact;
                     }
                     else
                     {
-                        c = (from rs in m_db.RosterSeasons
-                                           where rs.Id == stat.PlayerId
-                                           select rs.Roster.Contact).FirstOrDefault();
+                        c = m_db.RosterSeasons.Find(stat.PlayerId)?.Roster.Contact;
                     }
 
                     stat.PlayerName = Mapper.Map<Contact, ContactNameViewModel>(c);

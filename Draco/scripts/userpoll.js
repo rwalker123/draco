@@ -42,6 +42,33 @@ var PollViewModel = function (data, accountId, contactId) {
     self.accountId = accountId;
     self.contactId = contactId;
 
+	self.transformDataToResults = function(poll) {
+		if (!poll || !poll.Options)
+			return poll;
+
+		$.each(poll.Options, function(index, option) {
+			var result = ko.utils.arrayFirst(poll.Results, function (result) {
+				return result.OptionId == option.Id;
+			});
+
+			// need to add options that have no votes to results.
+			if (result) {
+				result.OptionText = option.OptionText;
+			} else {
+				result = {}
+				result.OptionId = option.Id;
+				result.OptionText = option.OptionText;
+				result.TotalVotes = 0;
+
+				poll.Results.splice(index, 0, result);
+			}
+		});
+
+		return poll;
+	}
+    
+	data = self.transformDataToResults(data);
+
     self.totalVotes = ko.observable(0);
 
     // mappings to handle special cases in parsing the object.
@@ -196,14 +223,32 @@ var PollViewModel = function (data, accountId, contactId) {
     }
 
     self.update = function (data) {
+		data = self.transformDataToResults(data);
+
         self.totalVotes(0);
         ko.mapping.fromJS(data, self);
     }
 
-    self.toJS = function () {
+	self.toJS = function () {
         var js = ko.mapping.toJS(self);
         return js;
     }
+
+	self.toOptionsJS = function () {
+		var js = ko.mapping.toJS(self);
+
+		if(js.hasOwnProperty("Results")){
+            js.Options = js.Results;
+            delete js.Results;
+        }
+
+        $.each(js.Options, function (index, option) {
+			option.Id = option.OptionId;
+			delete option.OptionId;	
+		});
+
+		return js;
+	}
 }
 
 
@@ -249,7 +294,7 @@ var UserPollViewModel = function (accountId, isAdmin, contactId) {
     }
 
     self.updatePoll = function (userPoll) {
-        var data = userPoll.toJS();
+        var data = userPoll.toOptionsJS();
         if (!data.OptionSelected)
             data.OptionSelected = 0;
 
@@ -266,7 +311,16 @@ var UserPollViewModel = function (accountId, isAdmin, contactId) {
                     poll.update(pollData);
 
                 self.cancelEdit();
-            }
+            },
+            error: function (a, b, c) {
+                if (a.responseJSON && a.responseJSON.ModelState) {
+                    var ms = a.responseJSON.ModelState;
+                    for (var prop in ms) {
+                        if (ms.hasOwnProperty(prop))
+                            alert(ms[prop]);
+                    }
+                }
+			}
         });
     }
 
@@ -325,12 +379,14 @@ var UserPollViewModel = function (accountId, isAdmin, contactId) {
         else
             url = window.config.rootUri + '/api/UserPollAPI/' + self.accountId + '/activepolls';
 
-    $.ajax({
+        self.userPolls(null);
+
+        $.ajax({
             type: "GET",
             url: url,
             success: function (polls) {
                 var pollsMap = $.map(polls, function (poll) {
-                    return new PollViewModel(poll, self.accountId, self.contactId);
+					return new PollViewModel(poll, self.accountId, self.contactId);
                 });
 
                 self.userPolls(pollsMap);

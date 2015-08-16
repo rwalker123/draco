@@ -15,7 +15,7 @@ namespace SportsManager.Baseball.ViewModels
 
             Leagues = c.Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
             Fields = c.Db.AvailableFields.Where(f => f.AccountId == accountId);
-            var umpires = c.Db.LeagueUmpires.Where(u => u.AccountId == accountId).Select(u => u.Contact);
+            Umpires = c.Db.LeagueUmpires.Where(u => u.AccountId == accountId).Select(u => u.Contact);
 
             var trackGamesPlayed = false;
             bool.TryParse(c.GetAccountSetting(accountId, "TrackGamesPlayed"), out trackGamesPlayed);

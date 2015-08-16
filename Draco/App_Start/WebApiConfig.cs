@@ -1,5 +1,6 @@
 ﻿using BasicAuthentication.Filters;
 using ModelObjects;
+using SportsManager.Models.Filters;
 using SportsManager.ViewModels.API;
 using System.Linq;
 using System.Web.Http;
@@ -14,7 +15,8 @@ namespace SportsManager
         {
             // Web API configuration and services
             config.Filters.Add(new IdentityBasicAuthenticationAttribute());
-            
+            config.Filters.Add(new ModelStateValidationAttribute());
+
             // Web API configuration and services
             // Configure Web API to use only bearer token authentication.
             //config.SuppressDefaultHostAuthentication();

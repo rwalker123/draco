@@ -4,6 +4,7 @@ using Autofac.Integration.WebApi;
 using Microsoft.Owin;
 using ModelObjects;
 using Owin;
+using System;
 using System.Reflection;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -21,31 +22,34 @@ namespace SportsManager
 
             var config = new HttpConfiguration(); // if using OWIN, don't use this: GlobalConfiguration.Configuration;
 
+            var config2 = GlobalConfiguration.Configuration;
+
             WebApiConfig.Register(config);
 
             // Register your MVC controllers.
-            builder.RegisterControllers(Assembly.GetExecutingAssembly()); 
-            builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
+            builder.RegisterControllers(Assembly.GetExecutingAssembly());
 
+            builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
+            builder.Register(ctx => ctx.Resolve<ILifetimeScope>().BeginLifetimeScope() as IServiceProvider).As<IServiceProvider>();
 
             builder.RegisterType<DB>()
                    .AsSelf()
                    .InstancePerRequest();
 
-            //builder.RegisterFilterProvider();
-            //builder.RegisterWebApiFilterProvider(config);
+            builder.RegisterFilterProvider();
+            builder.RegisterWebApiFilterProvider(config);
 
             var container = builder.Build();
 
             config.DependencyResolver = new AutofacWebApiDependencyResolver(container);
-
             DependencyResolver.SetResolver(new AutofacDependencyResolver(container));
-            app.UseAutofacMiddleware(container);
-            app.UseAutofacMvc();
-            app.UseAutofacWebApi(config);
-            app.UseWebApi(config);
 
             ConfigureAuth(app);
+
+            app.UseAutofacMiddleware(container);
+            app.UseAutofacWebApi(config);
+            app.UseWebApi(config);
+            app.UseAutofacMvc();
         }
     }
 }

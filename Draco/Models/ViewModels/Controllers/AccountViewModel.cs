@@ -21,7 +21,7 @@ namespace SportsManager.ViewModels
         {
             AccountId = accountId;
             Controller = c;
-            ContactId = c.GetCurrentContact().Id;
+            ContactId = (c.GetCurrentContact()?.Id).GetValueOrDefault();
             m_account = c.Db.Accounts.Find(accountId);
             if (m_account == null)
                 return;

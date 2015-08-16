@@ -75,9 +75,9 @@
     }
     <div class="row noPrint">
         <select data-bind="selectPicker: selectedLeague" data-container="body" id="leagueSelect">
-            @foreach (ModelObjects.League l in Model.Leagues)
+            @foreach (var l in Model.Leagues)
             {
-                <option value="@l.Id">@l.Name</option>
+                <option value="@l.Id">@l.League.Name</option>
             }
             <option value="0">All Leagues</option>
         </select>

@@ -7,6 +7,7 @@ namespace SportsManager.ViewModels.API
         public long Id { get; set; }
         public long PlayerId { get; set; }
         public long QuestionId { get; set; }
+        public string Question { get; set; }
         public String Answer { get; set; }
         public String LastName { get; set; }
         public String FirstName { get; set; }

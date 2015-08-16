@@ -19,7 +19,7 @@ namespace SportsManager.ViewModels.API
         public long Umpire2 { get; set; }
         public long Umpire3 { get; set; }
         public long Umpire4 { get; set; } 
-        public int GameType { get; set; }
+        public long GameType { get; set; }
         public String HomeTeamName { get; set; }
         public String AwayTeamName { get; set; }
         public String FieldName { get; set; }

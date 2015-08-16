@@ -5,7 +5,7 @@ namespace SportsManager.Controllers
 {
     public class DiscussionsController : DBController
     {
-        protected DiscussionsController(DB db) : base(db)
+        public DiscussionsController(DB db) : base(db)
         {
         }
 

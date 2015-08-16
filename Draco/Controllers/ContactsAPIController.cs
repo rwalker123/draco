@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager.Models;
@@ -44,18 +45,7 @@ namespace SportsManager.Controllers
 
             return (from c in m_db.Contacts
                     where affiliationAccounts.Contains(c.CreatorAccountId)
-                    select new ContactNameViewModel()
-                    {
-                        Id = c.Id,
-                        FirstName = c.FirstName,
-                        MiddleName = c.MiddleName,
-                        LastName = c.LastName,
-                        PhotoURL = Contact.GetPhotoURL(c.Id),
-                        FirstYear = c.FirstYear.GetValueOrDefault(),
-                        Zip = c.Zip,
-                        BirthDate = c.DateOfBirth
-                    });
-
+                    select c).Project<Contact>().To<ContactNameViewModel>();
         }
     }
 

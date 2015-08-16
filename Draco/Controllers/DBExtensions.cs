@@ -291,6 +291,9 @@ namespace SportsManager.Controllers
         public static Contact GetCurrentContact(this IDb db)
         {
             String userId = Globals.GetCurrentUserId();
+            if (userId == null)
+                return null;
+
             return db.Db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
         }
 

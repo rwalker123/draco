@@ -60,9 +60,12 @@ var PlayerSurveyViewModel = function (accountId, teamSeasonId) {
             type: "GET",
             url: url,
             success: function (playerSurvey) {
-                self.playerSurvey(new SpotlightPlayerViewModel(playerSurvey.PlayerProfile, self.accountId));
-                self.question(playerSurvey.Question.Question);
-                self.answer(playerSurvey.Answer.Answer);
+                self.playerSurvey(new SpotlightPlayerViewModel(playerSurvey, self.accountId));
+                self.question(playerSurvey.Question);
+                self.answer(playerSurvey.Answer);
+                self.isLoading(false);
+            },
+            error: function () {
                 self.isLoading(false);
             }
         });

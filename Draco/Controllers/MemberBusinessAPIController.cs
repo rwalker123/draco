@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ModelObjects;
 using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
@@ -22,11 +23,9 @@ namespace SportsManager.Controllers
         [ActionName("memberbusinesses")]
         public HttpResponseMessage GetMemberBusiness(long accountId)
         {
-            long seasonId = (from cs in Db.CurrentSeasons
-                             where cs.AccountId == accountId
-                             select cs.SeasonId).SingleOrDefault();
+            long seasonId = this.GetCurrentSeasonId(accountId);
 
-            var memBus = (from mb in Db.MemberBusinesses
+            var vm = (from mb in Db.MemberBusinesses
                     join c in Db.Contacts on mb.ContactId equals c.Id
                     join r in Db.Rosters on c.Id equals r.ContactId
                     join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
@@ -34,17 +33,9 @@ namespace SportsManager.Controllers
                     join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                     where ls.SeasonId == seasonId
                     orderby mb.Name
-                    select mb).AsEnumerable();
+                    select mb).Distinct().Project<MemberBusiness>().To<SponsorViewModel>();
 
-            if (memBus != null)
-            {
-                var vm = Mapper.Map<IEnumerable<MemberBusiness>, SponsorViewModel[]>(memBus);
-                return Request.CreateResponse<SponsorViewModel[]>(HttpStatusCode.OK, vm);
-            }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+            return Request.CreateResponse<IEnumerable<SponsorViewModel>>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -194,7 +185,7 @@ namespace SportsManager.Controllers
             int count = qry.Count();
             int index = new Random().Next(count);
 
-            var mb = qry.Skip(index).FirstOrDefault();
+            var mb = qry.OrderBy(mbu => mbu.Id).Skip(index).FirstOrDefault();
 
             if (mb != null)
             {

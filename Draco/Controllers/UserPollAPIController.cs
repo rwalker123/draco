@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using ModelObjects;
 using SportsManager.Models;
 using SportsManager.ViewModels.API;
@@ -21,23 +22,18 @@ namespace SportsManager.Controllers
         [ActionName("activepolls")]
         public HttpResponseMessage GetActiveUserPolls(long accountId)
         {
-            var userPolls = (from vq in Db.VoteQuestions
-                             where vq.AccountId == accountId && vq.Active
-                             select vq);
-
-            var vm = Mapper.Map<IEnumerable<VoteQuestion>, VoteQuestionResultsViewModel[]>(userPolls);
-            return Request.CreateResponse<VoteQuestionResultsViewModel[]>(HttpStatusCode.OK, vm);
+            var questions = Db.VoteQuestions.Where(vq => vq.AccountId == accountId && vq.Active);
+            var vm = Mapper.Map<IEnumerable<VoteQuestion>, IEnumerable<VoteQuestionResultsViewModel>>(questions);
+            return Request.CreateResponse<IEnumerable<VoteQuestionResultsViewModel>>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("polls")]
         public HttpResponseMessage GetUserPolls(long accountId)
         {
-            var userPolls = (from vq in Db.VoteQuestions
-                             where vq.AccountId == accountId
-                             select vq);
-            var vm = Mapper.Map<IEnumerable<VoteQuestion>, VoteQuestionResultsViewModel[]>(userPolls);
-            return Request.CreateResponse<VoteQuestionResultsViewModel[]>(HttpStatusCode.OK, vm);
+            var questions = Db.VoteQuestions.Where(vq => vq.AccountId == accountId);
+            var vm = Mapper.Map<IEnumerable<VoteQuestion>, IEnumerable<VoteQuestionResultsViewModel>>(questions);
+            return Request.CreateResponse<IEnumerable<VoteQuestionResultsViewModel>>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
@@ -167,6 +163,8 @@ namespace SportsManager.Controllers
 
                 Db.SaveChanges();
 
+                // requery to get any order changes.
+                dbQuestion = Db.VoteQuestions.Find(id);
                 var vm = Mapper.Map<VoteQuestion, VoteQuestionResultsViewModel>(dbQuestion);
                 return Request.CreateResponse<VoteQuestionResultsViewModel>(HttpStatusCode.OK, vm);
             }
