@@ -23,8 +23,8 @@ namespace SportsManager.Controllers
         {
             var news = Db.LeagueNews.Where(ln => ln.AccountId == accountId).OrderByDescending(ln => ln.Date);
 
-            var vm = Mapper.Map<IEnumerable<LeagueNewsItem>, NewsViewModel[]>(news);
-            return Request.CreateResponse<NewsViewModel[]>(HttpStatusCode.OK, vm);
+            var vm = Mapper.Map<IEnumerable<LeagueNewsItem>, IEnumerable<NewsViewModel>>(news);
+            return ProcessNews(vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -36,25 +36,58 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var news = teamSeason.Team.TeamNews.OrderByDescending(tn => tn.Date);
-            var vm = Mapper.Map<IEnumerable<TeamNewsItem>, NewsViewModel[]>(news);
-            return Request.CreateResponse<NewsViewModel[]>(HttpStatusCode.OK, vm);
+            var vm = Mapper.Map<IEnumerable<TeamNewsItem>, IEnumerable<NewsViewModel>>(news);
+            return ProcessNews(vm);
+        }
+
+        private HttpResponseMessage ProcessNews(IEnumerable<NewsViewModel> allNews)
+        {
+            var specialAnnouncments = new List<NewsViewModel>();
+            var headlineLinks = new List<NewsViewModel>();
+            var otherLinks = new List<NewsViewModel>();
+
+            int NumHeadlineLinks = 3;
+
+            foreach (var news in allNews)
+            {
+                if (news.SpecialAnnounce)
+                {
+                    specialAnnouncments.Add(news);
+                }
+                else if (headlineLinks.Count < NumHeadlineLinks)
+                {
+                    news.Text = String.Empty; // don't send back text improve performance.
+                    headlineLinks.Add(news);
+                }
+                else
+                {
+                    news.Text = String.Empty; // don't send back text improve performance.
+                    otherLinks.Add(news);
+                }
+            }
+
+            var newsResponse = new
+            {
+                SpecialNews = specialAnnouncments,
+                OtherNews = headlineLinks,
+                OlderNews = otherLinks
+            };
+
+            return Request.CreateResponse(HttpStatusCode.OK, newsResponse);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcement")]
         public HttpResponseMessage GetAnnouncement(long accountId, long id)
         {
-
             var newsItem = Db.LeagueNews.Find(id);
             if (newsItem != null)
             {
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
                 return Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -67,10 +100,8 @@ namespace SportsManager.Controllers
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
                 return Request.CreateResponse<NewsViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
 
@@ -78,7 +109,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         public HttpResponseMessage Announcement(long accountId, NewsViewModel announcementData)
         {
-            if (ModelState.IsValid && announcementData != null)
+            if (ModelState.IsValid)
             {
                 var newsItem = new LeagueNewsItem()
                 {
@@ -98,26 +129,24 @@ namespace SportsManager.Controllers
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage Announcement(long accountId, long id, NewsViewModel announcementData)
         {
-            if (id != 0 && ModelState.IsValid && announcementData != null)
+            if (ModelState.IsValid)
             {
                 var newsItem = Db.LeagueNews.Find(id);
                 if (newsItem == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 newsItem.Date = DateTime.Now;
-                newsItem.Text = newsItem.Text ?? String.Empty;
-                newsItem.Title = newsItem.Title ?? "Title";
-                newsItem.SpecialAnnounce = newsItem.SpecialAnnounce;
+                newsItem.Text = announcementData.Text ?? String.Empty;
+                newsItem.Title = announcementData.Title ?? "Title";
+                newsItem.SpecialAnnounce = announcementData.SpecialAnnounce;
                 Db.SaveChanges();
 
                 // Create a 200 response.
@@ -127,10 +156,8 @@ namespace SportsManager.Controllers
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
@@ -138,7 +165,7 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, NewsViewModel announcementData)
         {
-            if (ModelState.IsValid && announcementData != null)
+            if (ModelState.IsValid)
             {
                 announcementData.Date = DateTime.Now;
 
@@ -165,10 +192,8 @@ namespace SportsManager.Controllers
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
@@ -176,7 +201,7 @@ namespace SportsManager.Controllers
         [ActionName("Announcement")]
         public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id, NewsViewModel announcementData)
         {
-            if (id != 0 && ModelState.IsValid && announcementData != null)
+            if (ModelState.IsValid)
             {
                 // convert teamSeasonId to teamId
                 var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
@@ -201,10 +226,8 @@ namespace SportsManager.Controllers
                     new Uri(Url.Link("ActionApi", new { action = "Announcement", accountId = accountId, id = newsItem.Id }));
                 return response;
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
 

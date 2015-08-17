@@ -14,5 +14,7 @@ namespace SportsManager.ViewModels.API
         public String Caption { get; set; }
         public long AlbumId { get; set; }
         public long ReferenceId { get; set; }
+        public string PhotoURL { get; set; }
+        public string PhotoThumbURL { get; set; }
     }
 }
