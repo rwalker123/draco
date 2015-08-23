@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class TeamAddressViewModel : AccountViewModel
+    public class TeamAddressViewModel : SportsManager.ViewModels.AccountViewModel
     {
         public TeamAddressViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)
@@ -114,7 +114,7 @@ namespace SportsManager.Baseball.ViewModels
                 CreateCell(row, "G" + index, mgr.Contact.City);
                 CreateCell(row, "H" + index, mgr.Contact.State);
                 CreateCell(row, "I" + index, mgr.Contact.Zip);
-                CreateCell(row, "J" + index, "");
+                CreateCell(row, "J" + index, mgr.TeamsSeason.LeagueSeason.League.Name + " " + mgr.TeamsSeason.Name);
 
                 // Append Row to SheetData
                 sheetData.AppendChild(row);

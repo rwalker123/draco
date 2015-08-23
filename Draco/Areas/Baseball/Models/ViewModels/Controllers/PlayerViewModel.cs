@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class PlayerViewModel : AccountViewModel
+    public class PlayerViewModel : SportsManager.ViewModels.AccountViewModel
     {
         public enum IdType { ContactId, RosterSeasonId, RosterId };
 

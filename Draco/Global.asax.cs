@@ -2,9 +2,9 @@
 using Elmah;
 using ModelObjects;
 using SportsManager.Models;
+using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
 using System.Data.Entity;
-using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
@@ -91,7 +91,8 @@ namespace SportsManager
             Mapper.CreateMap<TeamNewsItem, NewsViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.TeamId));
 
-            Mapper.CreateMap<Contact, ContactViewModel>();
+            Mapper.CreateMap<Contact, ContactViewModel>()
+                .ForMember(vm => vm.Age, opt => opt.MapFrom(model => model.DateOfBirth.Age()));
 
             Mapper.CreateMap<Contact, ContactNameViewModel>()
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)))
@@ -235,7 +236,7 @@ namespace SportsManager
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.AccountId))
                 .ForMember(vm => vm.TeamId, opt => opt.MapFrom(model => model.TeamSeasonId))
                 .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
-                .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid)))
+                .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid).FirstOrDefault()))
                 .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact))
                 .ForMember(vm => vm.GamesPlayed, opt => opt.MapFrom(model => model.PlayerRecaps.Count));
 

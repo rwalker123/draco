@@ -1,16 +1,13 @@
-﻿using AutoMapper;
-using DocumentFormat.OpenXml;
+﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.ViewModels;
-using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Web.Mvc;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -49,7 +46,7 @@ namespace SportsManager.Baseball.ViewModels
                     select t);
         }
 
-        public FileStream ExportToExcel(bool onlyManagers)
+        public FileStream ExportToExcel(long leagueSeasonId, bool onlyManagers)
         {
             Guid guid = Guid.NewGuid();
             var destinationFile = Controller.Server.MapPath("~/Uploads/Temp/" + guid.ToString() + ".xlsx");
@@ -86,39 +83,24 @@ namespace SportsManager.Baseball.ViewModels
 
                 if (onlyManagers)
                 {
-                    var allManagers = new List<TeamManager>();
-
-                    var leagueTeams = (from ls in Controller.Db.LeagueSeasons
-                                       join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                                       where ls.SeasonId == seasonId
+                    var leagueTeams = (from ts in Controller.Db.TeamsSeasons
+                                       join ls in Controller.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                                       where ls.SeasonId == seasonId && (leagueSeasonId == 0 || ls.Id == leagueSeasonId)
                                        orderby ls.League.Name, ts.Name
-                                       select ls);
+                                       select ts.Id);
 
-                    foreach (var lt in leagueTeams)
-                    {
-                        var tms = (from tsm in Controller.Db.TeamSeasonManagers
-                                   join ts in Controller.Db.TeamsSeasons on tsm.TeamSeasonId equals ts.Id
-                                   join t in Controller.Db.Teams on ts.TeamId equals t.Id
-                                   join c in Controller.Db.Contacts on tsm.ContactId equals c.Id
-                                   where tsm.TeamSeasonId == lt.Id
-                                   select tsm);
-
-                        //tms.ForEach(tm => tm.AffiliationDuesPaid = lt.Name);
-                        allManagers.AddRange(tms);
-                    }
-
-                    allManagers = allManagers.OrderBy(x => x.Contact.LastName).ThenBy(x => x.Contact.FirstName).ThenBy(x => x.Contact.MiddleName).ToList();
+                    var allManagers = Controller.Db.TeamSeasonManagers.Where(tsm => leagueTeams.Contains(tsm.TeamSeasonId)).OrderBy(x => x.Contact.LastName).ThenBy(x => x.Contact.FirstName).ThenBy(x => x.Contact.MiddleName);
                     TeamAddressViewModel.ExportManagersToExcel(seasonId, allManagers, sheetData);
                 }
                 else
                 {
 
                     var allPlayers = (from ls in Controller.Db.LeagueSeasons
-                            join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
-                            join rs in Controller.Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
-                            join r in Controller.Db.Rosters on rs.PlayerId equals r.Id
-                            where ls.SeasonId == seasonId && !rs.Inactive
-                            select rs).GroupBy(x => x.Roster.ContactId).Select(y => y.First());
+                                      join ts in Controller.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                      join rs in Controller.Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
+                                      join r in Controller.Db.Rosters on rs.PlayerId equals r.Id
+                                      where ls.SeasonId == seasonId && !rs.Inactive && (leagueSeasonId == 0 || ls.Id == leagueSeasonId)
+                                      select rs).GroupBy(x => x.Roster.ContactId).Select(y => y.FirstOrDefault());
 
                     allPlayers = allPlayers.OrderBy(x => x.Roster.Contact.LastName).ThenBy(x => x.Roster.Contact.FirstName).ThenBy(x => x.Roster.Contact.MiddleName);
                     TeamAddressViewModel.ExportRosterToExcel(seasonId, allPlayers, sheetData);

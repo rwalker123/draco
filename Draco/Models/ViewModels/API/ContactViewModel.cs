@@ -29,6 +29,9 @@ namespace SportsManager.ViewModels.API
         public DateTime DateOfBirth { get; set; } // DateOfBirth
         public bool IsFemale { get; set; } // IsFemale
         public string Email { get; set; } // Email
+        public string PhotoURL { get; set; }
+        public string LargePhotoURL { get; set; }
+        public int Age { get; set; }
 
         public string FullName
         {

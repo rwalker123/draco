@@ -183,6 +183,7 @@ namespace SportsManager.Controllers
                     Title = announcementData.Title ?? "Title"
                 };
 
+                Db.TeamNews.Add(newsItem);
                 Db.SaveChanges();
 
                 // Create a 201 response.

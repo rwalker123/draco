@@ -196,19 +196,21 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage AccountName(long accountId, String accountName)
+        public HttpResponseMessage AccountName(long accountId, AccountViewModel accountData)
         {
-            if (String.IsNullOrWhiteSpace(accountName))
+            if (String.IsNullOrWhiteSpace(accountData.AccountName))
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Account a = Db.Accounts.Find(accountId);
             if (a == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            a.Name = accountName;
+            a.Name = accountData.AccountName;
+            a.FirstYear = accountData.FirstYear;
+            a.TwitterAccountName = accountData.TwitterAccountName;
             Db.SaveChanges();
 
-            return Request.CreateResponse<String>(HttpStatusCode.OK, accountName);
+            return Request.CreateResponse<AccountViewModel>(HttpStatusCode.OK, accountData);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

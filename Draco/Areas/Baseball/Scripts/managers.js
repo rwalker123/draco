@@ -30,7 +30,7 @@ var ManagerViewModel = function (accountId, data) {
     self.viewMode = ko.observable(true);
 
     self.name = ko.computed(function () {
-        return self.FirstName() + " " + self.LastName();
+        return self.Contact.FullNameFirst();
     });
 
     self.fileUploaderUrl = ko.computed(function () {

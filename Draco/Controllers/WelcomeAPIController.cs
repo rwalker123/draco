@@ -78,10 +78,14 @@ namespace SportsManager.Controllers
         [ActionName("WelcomeTextHeaders")]
         public HttpResponseMessage TeamGetWelcomeTextHeaders(long accountId, long teamSeasonId)
         {
-            var welcomeTexts = (from aw in Db.AccountWelcomes
-                                where aw.AccountId == accountId && aw.TeamId == teamSeasonId
-                                orderby aw.OrderNo
-                                select aw).AsEnumerable();
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeason == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (teamSeason.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var welcomeTexts = teamSeason.Team.AccountWelcomes.OrderBy(aw => aw.OrderNo);
 
             if (welcomeTexts != null)
             {

@@ -12,7 +12,7 @@ using SportsManager.ViewModels.API;
 
 namespace SportsManager.Baseball.ViewModels
 {
-    public class UserAddressViewModel : AccountViewModel
+    public class UserAddressViewModel : SportsManager.ViewModels.AccountViewModel
     {
         IQueryable<Contact> m_contacts;
 

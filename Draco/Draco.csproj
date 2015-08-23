@@ -532,7 +532,9 @@
     <Compile Include="Models\ModelObjects\HOFMember.cs" />
     <Compile Include="Models\ModelObjects\HOFNomination.cs" />
     <Compile Include="Models\ModelObjects\HOFNominationSetup.cs" />
+    <Compile Include="Models\Utils\DateTimeExtensions.cs" />
     <Compile Include="Models\ViewModels\API\AccountSettingViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\AccountViewModel.cs" />
     <Compile Include="Models\ViewModels\API\ContactRoleViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />

@@ -79,15 +79,15 @@ namespace SportsManager.Controllers
         [ActionName("photos")]
         public HttpResponseMessage GetTeamPhotos(long accountId, long teamSeasonId)
         {
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
-            if (team == null)
+            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (team.Team.AccountId != accountId)
+            if (teamSeason.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             var teamAlbums = (from pga in Db.PhotoGalleryAlbums
-                              where pga.AccountId == accountId && pga.TeamId == team.TeamId
+                              where pga.AccountId == accountId && pga.TeamId == teamSeason.Team.Id
                               select pga);
 
             // should always be an album.
@@ -95,11 +95,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             // should only be 1 team photo album.
-            var teamAlbum = teamAlbums.First();
-
-            var photos = (from pg in Db.PhotoGalleries
-                          where pg.AccountId == accountId
-                          select pg).AsEnumerable();
+            var photos = teamAlbums.First().Photos;
             if (photos != null)
             {
                 var vm = Mapper.Map<IEnumerable<PhotoGalleryItem>, PhotoViewModel[]>(photos);
@@ -235,7 +231,7 @@ namespace SportsManager.Controllers
             if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (photo.AccountId != team.TeamId)
+            if (photo.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.PhotoGalleries.Remove(photo);

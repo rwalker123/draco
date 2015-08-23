@@ -151,25 +151,31 @@ namespace SportsManager.Areas.Baseball.Controllers
 
                 List<PlayerRecap> playersPresent = new List<PlayerRecap>();
 
-                foreach (var playerId in game.HomePlayersPresent)
+                if (game.HomePlayersPresent != null)
                 {
-                    playersPresent.Add(new PlayerRecap()
+                    foreach (var playerId in game.HomePlayersPresent)
                     {
-                        GameId = game.Id,
-                        PlayerId = playerId,
-                        TeamId = game.HomeTeamId,
-                    });
+                        playersPresent.Add(new PlayerRecap()
+                        {
+                            GameId = game.Id,
+                            PlayerId = playerId,
+                            TeamId = game.HomeTeamId,
+                        });
+                    }
                 }
 
-                foreach (var playerId in game.AwayPlayersPresent)
+                if (game.AwayPlayersPresent != null)
                 {
-                    playersPresent.Add(new PlayerRecap()
+                    foreach (var playerId in game.AwayPlayersPresent)
                     {
-                        GameId = game.Id,
-                        PlayerId = playerId,
-                        TeamId = game.AwayTeamId,
+                        playersPresent.Add(new PlayerRecap()
+                        {
+                            GameId = game.Id,
+                            PlayerId = playerId,
+                            TeamId = game.AwayTeamId,
 
-                    });
+                        });
+                    }
                 }
 
                 Db.PlayerRecaps.AddRange(playersPresent);
