@@ -14,6 +14,7 @@ namespace SportsManager.ViewModels.API
         public int HomeScore { get; set; } //HScore = g.HomeScore,
         public int AwayScore { get; set; } //VScore = g.AwayScore,
         public long LeagueId { get; set; } 
+        public string LeagueName { get; set; }
         public int GameStatus { get; set; }
         public long Umpire1 { get; set; }
         public long Umpire2 { get; set; }

@@ -221,7 +221,7 @@ namespace SportsManager.Controllers
 
             String fileName = file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' });
 
-            AccountHandout item = new AccountHandout()
+            AccountHandout dbHandout = new AccountHandout()
             {
                 Id = 0,
                 Description = formData["Description"],
@@ -229,30 +229,23 @@ namespace SportsManager.Controllers
                 AccountId = accountId
             };
 
-            var dbHandout = new AccountHandout()
-            {
-                AccountId = item.AccountId,
-                Description = item.Description,
-                FileName = item.FileName
-            };
-
             try
             {
                 Db.AccountHandouts.Add(dbHandout);
                 Db.SaveChanges();
 
-                var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
+                var msg = await ProcessUploadRequest(file, accountId, dbHandout.HandoutURL);
                 if (File.Exists(file.LocalFileName))
                     File.Delete(file.LocalFileName);
 
                 if (msg.IsSuccessStatusCode)
                 {
-                    var vm = Mapper.Map<AccountHandout, HandoutViewModel>(item);
+                    var vm = Mapper.Map<AccountHandout, HandoutViewModel>(dbHandout);
                     return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
                 }
                 else
                 {
-                    Db.AccountHandouts.Remove(item);
+                    Db.AccountHandouts.Remove(dbHandout);
                     Db.SaveChanges();
 
                     return msg;

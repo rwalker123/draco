@@ -12,5 +12,6 @@ namespace SportsManager.ViewModels.API
         public short OrderNo { get; set; }
         public string CaptionMenu { get; set; }
         public long? TeamId { get; set; }
+        public String WelcomeText { get { return String.Empty; } }
     }
 }

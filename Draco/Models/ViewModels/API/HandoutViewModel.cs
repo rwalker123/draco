@@ -14,5 +14,6 @@ namespace SportsManager.ViewModels.API
         [StringLength(255, MinimumLength=1)]
         public string FileName { get; set; }
         public long ReferenceId { get; set; }
+        public string HandoutURL { get; set; }
     }
 }

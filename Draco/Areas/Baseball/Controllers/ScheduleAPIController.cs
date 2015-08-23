@@ -47,7 +47,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                     VTeamId = g.AwayTeamId,
                     HScore = g.HomeScore,
                     VScore = g.AwayScore,
-                    LeagueId = g.LeagueId,
+                    LeagueId = leagueSeasonId,
                     GameStatus = g.GameStatus,
                     Umpire1 = g.Umpire1,
                     Umpire2 = g.Umpire2,

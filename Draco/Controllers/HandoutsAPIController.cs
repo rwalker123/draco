@@ -119,7 +119,9 @@ namespace SportsManager.Controllers
             Db.AccountHandouts.Remove(handout);
             await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.OK);
+            await SportsManager.Models.Utils.Storage.Provider.DeleteDirectory(handout.HandoutURL);
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -141,7 +143,9 @@ namespace SportsManager.Controllers
             Db.TeamHandouts.Remove(handout);
             await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.OK);
+            await SportsManager.Models.Utils.Storage.Provider.DeleteDirectory(handout.HandoutURL);
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
     }
 }

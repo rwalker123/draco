@@ -249,6 +249,7 @@ namespace SportsManager
                 .ForMember(vm => vm.HomeTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.HTeamId).Select(ts => ts.Name).SingleOrDefault()))
                 .ForMember(vm => vm.AwayTeamName, opt => opt.MapFrom(model => model.LeagueSeason.TeamsSeasons.Where(ts => ts.Id == model.VTeamId).Select(ts => ts.Name).SingleOrDefault()))
                 .ForMember(vm => vm.FieldName, opt => opt.MapFrom(model => model.AvailableField.Name))
+                .ForMember(vm => vm.LeagueName, opt => opt.MapFrom(model => model.LeagueSeason.League.Name))
                 .ForMember(vm => vm.HasGameRecap, opt => opt.MapFrom(model => model.GameRecaps.Any()))
                 .ForMember(vm => vm.HomePlayersPresent, opt => opt.MapFrom(model => model.PlayerRecaps.Where(pr => pr.TeamId == model.HTeamId).Select(pr => pr.PlayerId)))
                 .ForMember(vm => vm.AwayPlayersPresent, opt => opt.MapFrom(model => model.PlayerRecaps.Where(pr => pr.TeamId == model.VTeamId).Select(pr => pr.PlayerId)));

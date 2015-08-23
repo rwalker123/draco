@@ -53,7 +53,7 @@ var WelcomeClass = function (accountId, isAdmin, teamId) {
         Id: 0,
         AccountId: self.accountId,
         TeamId: self.teamId ? self.teamId : 0,
-        CaptionText: '',
+        CaptionMenu: '',
         OrderNo: 0,
         WelcomeText: ''
     }
@@ -180,7 +180,7 @@ var WelcomeClass = function (accountId, isAdmin, teamId) {
             type: 'GET',
             url: url,
             success: function (theText) {
-                vm.WelcomeText(theText);
+                vm.WelcomeText(theText.WelcomeText);
                 vm.Id.isLoaded(true);
             }
         });

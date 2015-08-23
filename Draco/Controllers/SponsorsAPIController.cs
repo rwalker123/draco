@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using ModelObjects;
 using SportsManager.Models;
+using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -138,7 +140,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("sponsors")]
-        public HttpResponseMessage DeleteSponsors(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteSponsors(long accountId, long id)
         {
             var sponsor = Db.Sponsors.Find(id);
             if (sponsor == null)
@@ -149,6 +151,11 @@ namespace SportsManager.Controllers
 
             Db.Sponsors.Remove(sponsor);
             Db.SaveChanges();
+
+            if (sponsor.LogoURL != null)
+            {
+                await Storage.Provider.DeleteDirectory(sponsor.SponsorsDir);
+            }
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
