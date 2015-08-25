@@ -42,7 +42,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
             else
             {
-                var players = Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId);
+                var players = Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId).OrderBy(rs => rs.Roster.Contact.LastName).ThenBy(rs => rs.Roster.Contact.FirstName).ThenBy(rs => rs.Roster.Contact.MiddleName);
                 var vm = Mapper.Map<IEnumerable<PlayerSeason>, PlayerViewModel[]>(players);
                 return Request.CreateResponse<PlayerViewModel[]>(HttpStatusCode.OK, vm);
             }
