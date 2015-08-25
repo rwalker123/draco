@@ -9,7 +9,7 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class BuildStandingsHelper
     {
-        private bool m_firstDivisionTeam;
+        private long m_prevDivision;
         private int m_divisionWins;
         private int m_divisionLosses;
 
@@ -31,7 +31,7 @@ namespace SportsManager.Baseball.ViewModels
         {
             GamesBack = 0.0;
 
-            m_firstDivisionTeam = true;
+            m_prevDivision = 0;
             m_divisionWins = 0;
             m_divisionLosses = 0;
 
@@ -40,7 +40,7 @@ namespace SportsManager.Baseball.ViewModels
 
         public IQueryable<DivisionSeason> GetDivisions(long leagueId)
         {
-            m_firstDivisionTeam = true;
+            m_prevDivision = 0;
 
             m_divisionStandings.Clear();
 
@@ -69,13 +69,13 @@ namespace SportsManager.Baseball.ViewModels
 
         public void ProcessTeamStanding(TeamStandingViewModel t)
         {
-            if (m_firstDivisionTeam)
+            if (m_prevDivision != t.DivisionId)
             {
                 GamesBack = 0.0;
 
                 m_divisionWins = t.Wins;
                 m_divisionLosses = t.Losses;
-                m_firstDivisionTeam = false;
+                m_prevDivision = t.DivisionId;
             }
             else
             {
