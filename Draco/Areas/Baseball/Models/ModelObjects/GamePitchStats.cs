@@ -204,6 +204,7 @@ namespace ModelObjects
             }
         }
 
+        // for display, not used in calculating ERA
         public double IPDecimal
         {
             get
@@ -217,13 +218,20 @@ namespace ModelObjects
             }
         }
 
+        private double IPCalc
+        {
+            get
+            {
+                return (double)IP + (IP2 / 3) + (IP2 % 3) / 3.0;
+            }
+        }
         public double ERA
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)ER * 9.0 / IPDecimal;
+                    return (double)ER * 9.0 / IPCalc;
                 }
                 else
                 {
@@ -241,9 +249,9 @@ namespace ModelObjects
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return ((double)H + (double)BB) / IPDecimal;
+                    return ((double)H + (double)BB) / IPCalc;
                 }
                 else
                 {
@@ -261,9 +269,9 @@ namespace ModelObjects
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)SO / IPDecimal * 9.0;
+                    return (double)SO / IPCalc * 9.0;
                 }
                 else
                 {
@@ -281,9 +289,9 @@ namespace ModelObjects
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)BB / IPDecimal * 9.0;
+                    return (double)BB / IPCalc * 9.0;
                 }
                 else
                 {
