@@ -309,6 +309,11 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             string sortField = queryValues["sortField"] ?? "ERA";
             string sortOrder = queryValues["sortOrder"] ?? "ascending";
+            if (sortOrder == "ascending")
+                sortOrder = "asc";
+            else
+                sortOrder = "desc";
+
             string qvDivisionId = queryValues["divisionId"] ?? "0";
             long divisionId = 0;
             if (qvDivisionId != null)

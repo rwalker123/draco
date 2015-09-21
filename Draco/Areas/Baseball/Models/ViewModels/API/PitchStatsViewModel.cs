@@ -114,8 +114,20 @@ namespace SportsManager.ViewModels.API
         public int HBP { get; set; } // HBP
         public int BK { get; set; } // BK
         public int SC { get; set; } // SC
-        public int TB { get; set; } // TB
-        public int AB { get; set; } // AB
+        public int TB
+        {
+            get
+            {
+                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
+            }
+        } // TB
+        public int AB
+        {
+            get
+            {
+                return BF - BB - HBP - SC;
+            }
+        } 
 
         public double IPDecimal
         {
@@ -125,13 +137,21 @@ namespace SportsManager.ViewModels.API
             }
         }
 
+        public double IPCalc
+        {
+            get
+            {
+                return (double)IP + (IP2 / 3) + (IP2 % 3) / 3.0;
+            }
+        }
+
         public double ERA
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)ER * 9.0 / IPDecimal;
+                    return (double)ER * 9.0 / IPCalc;
                 }
                 else
                 {
@@ -144,9 +164,9 @@ namespace SportsManager.ViewModels.API
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return ((double)H + (double)BB) / IPDecimal;
+                    return ((double)H + (double)BB) / IPCalc;
                 }
                 else
                 {
@@ -159,9 +179,9 @@ namespace SportsManager.ViewModels.API
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)SO / IPDecimal * 9.0;
+                    return (double)SO / IPCalc * 9.0;
                 }
                 else
                 {
@@ -174,9 +194,39 @@ namespace SportsManager.ViewModels.API
         {
             get
             {
-                if (IPDecimal > 0.0)
+                if (IPCalc > 0.0)
                 {
-                    return (double)BB / IPDecimal * 9.0;
+                    return (double)BB / IPCalc * 9.0;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+        }
+
+        public double SLG
+        {
+            get
+            {
+                if (AB > 0)
+                {
+                    return (double)TB / (double)AB;
+                }
+                else
+                {
+                    return 0.0;
+                }
+            }
+        }
+
+        public double OBA
+        {
+            get
+            {
+                if (AB > 0)
+                {
+                    return (double)H / (double)AB;
                 }
                 else
                 {

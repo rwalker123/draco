@@ -114,41 +114,26 @@ namespace SportsManager.Utils
                                 join leagueSeason in m_db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
                                 where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
                                 group bss by rs.PlayerId into g
-                                let ab = g.Sum(b => b.Ab)
-                                let h = g.Sum(b => b.H)
-                                let bb = g.Sum(b => b.Bb)
-                                let hbp = g.Sum(b => b.Hbp)
-                                let d = g.Sum(b => b.C2B)
-                                let t = g.Sum(b => b.C3B)
-                                let hr = g.Sum(b => b.Hr)
-                                let sh = g.Sum(b => b.Sh)
-                                let sf = g.Sum(b => b.Sf)
-                                let intr = g.Sum(b => b.Intr)
-                                let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
                                 select new CareerBatStatsViewModel
                                 {
                                     PlayerId = g.Key,
-                                    AB = ab,
-                                    H = h,
+                                    AB = g.Sum(b => b.Ab),
+                                    H = g.Sum(b => b.H),
                                     R = g.Sum(b => b.R),
-                                    D = d,
-                                    T = t,
-                                    HR = hr,
+                                    D = g.Sum(b => b.C2B),
+                                    T = g.Sum(b => b.C3B),
+                                    HR = g.Sum(b => b.Hr),
                                     RBI = g.Sum(b => b.Rbi),
                                     SO = g.Sum(b => b.So),
-                                    BB = bb,
+                                    BB = g.Sum(b => b.Bb),
                                     RE = g.Sum(b => b.Re),
-                                    HBP = hbp,
-                                    INTR = intr,
-                                    SF = sf,
-                                    SH = sh,
+                                    HBP = g.Sum(b => b.Hbp),
+                                    INTR = g.Sum(b => b.Intr),
+                                    SF = g.Sum(b => b.Sf),
+                                    SH = g.Sum(b => b.Sh),
                                     SB = g.Sum(b => b.Sb),
                                     CS = g.Sum(b => b.Cs),
                                     LOB = g.Sum(b => b.Lob),
-                                    AVG = ab > 0 ? (double)h / (double)ab : 0.000,
-                                    PA = ab + bb + hbp + sh + sf + intr,
-                                    TB = tb
-                                    //PlayerName = ContactViewModel.BuildFullName(m_db.Rosters.Find(g.Key)?.Contact)
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 //totalRecords = batstats.Count();
@@ -161,40 +146,26 @@ namespace SportsManager.Utils
                                 join ls in m_db.LeagueSchedules on bss.GameId equals ls.Id
                                 where ls.GameStatus == 1 && ls.LeagueId == leagueId
                                 group bss by bss.PlayerId into g
-                                let ab = g.Sum(b => b.Ab)
-                                let h = g.Sum(b => b.H)
-                                let bb = g.Sum(b => b.Bb)
-                                let hbp = g.Sum(b => b.Hbp)
-                                let d = g.Sum(b => b.C2B)
-                                let t = g.Sum(b => b.C3B)
-                                let hr = g.Sum(b => b.Hr)
-                                let sh = g.Sum(b => b.Sh)
-                                let sf = g.Sum(b => b.Sf)
-                                let intr = g.Sum(b => b.Intr)
-                                let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
                                 select new BatStatsViewModel
                                 {
                                     PlayerId = g.Key,
-                                    AB = ab,
-                                    H = h,
+                                    AB = g.Sum(b => b.Ab),
+                                    H = g.Sum(b => b.H),
                                     R = g.Sum(b => b.R),
-                                    D = d,
-                                    T = t,
-                                    HR = hr,
+                                    D = g.Sum(b => b.C2B),
+                                    T = g.Sum(b => b.C3B),
+                                    HR = g.Sum(b => b.Hr),
                                     RBI = g.Sum(b => b.Rbi),
                                     SO = g.Sum(b => b.So),
-                                    BB = bb,
+                                    BB = g.Sum(b => b.Bb),
                                     RE = g.Sum(b => b.Re),
-                                    HBP = hbp,
-                                    INTR = intr,
-                                    SF = sf,
-                                    SH = sh,
+                                    HBP = g.Sum(b => b.Hbp),
+                                    INTR = g.Sum(b => b.Intr),
+                                    SF = g.Sum(b => b.Sf),
+                                    SH = g.Sum(b => b.Sh),
                                     SB = g.Sum(b => b.Sb),
                                     CS = g.Sum(b => b.Cs),
                                     LOB = g.Sum(b => b.Lob),
-                                    AVG = ab > 0 ? (double)h / (double)ab : 0.000,
-                                    PA = ab + bb + hbp + sh + sf + intr,
-                                    TB = tb
                                 }).OrderBy(sortField + " " + sortOrder);
 
                 //totalRecords = batstats.Count();
@@ -210,40 +181,26 @@ namespace SportsManager.Utils
                     join ts in m_db.TeamsSeasons on bss.TeamId equals ts.Id
                     where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
                     group bss by bss.PlayerId into g
-                    let ab = g.Sum(b => b.Ab)
-                    let h = g.Sum(b => b.H)
-                    let bb = g.Sum(b => b.Bb)
-                    let hbp = g.Sum(b => b.Hbp)
-                    let d = g.Sum(b => b.C2B)
-                    let t = g.Sum(b => b.C3B)
-                    let hr = g.Sum(b => b.Hr)
-                    let sh = g.Sum(b => b.Sh)
-                    let sf = g.Sum(b => b.Sf)
-                    let intr = g.Sum(b => b.Intr)
-                    let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
                     select new BatStatsViewModel
                     {
                         PlayerId = g.Key,
-                        AB = ab,
-                        H = h,
+                        AB = g.Sum(b => b.Ab),
+                        H = g.Sum(b => b.H),
                         R = g.Sum(b => b.R),
-                        D = d,
-                        T = t,
-                        HR = hr,
+                        D = g.Sum(b => b.C2B),
+                        T = g.Sum(b => b.C3B),
+                        HR = g.Sum(b => b.Hr),
                         RBI = g.Sum(b => b.Rbi),
                         SO = g.Sum(b => b.So),
-                        BB = bb,
+                        BB = g.Sum(b => b.Bb),
                         RE = g.Sum(b => b.Re),
-                        HBP = hbp,
-                        INTR = intr,
-                        SF = sf,
-                        SH = sh,
+                        HBP = g.Sum(b => b.Hbp),
+                        INTR = g.Sum(b => b.Intr),
+                        SF = g.Sum(b => b.Sf),
+                        SH = g.Sum(b => b.Sh),
                         SB = g.Sum(b => b.Sb),
                         CS = g.Sum(b => b.Cs),
                         LOB = g.Sum(b => b.Lob),
-                        AVG = ab > 0 ? (double)h / (double)ab : 0.000,
-                        PA = ab + bb + hbp + sh + sf + intr,
-                        TB = tb
                     }).OrderBy(sortField + " " + sortOrder);
         }
 
@@ -422,41 +379,27 @@ namespace SportsManager.Utils
                         join ts in m_db.TeamsSeasons on bss.TeamId equals ts.Id
                         where ts.TeamId == teamId
                         group bss by rs.PlayerId into g
-                        let ab = g.Sum(b => b.Ab)
-                        let h = g.Sum(b => b.H)
-                        let bb = g.Sum(b => b.Bb)
-                        let hbp = g.Sum(b => b.Hbp)
-                        let d = g.Sum(b => b.C2B)
-                        let t = g.Sum(b => b.C3B)
-                        let hr = g.Sum(b => b.Hr)
-                        let sh = g.Sum(b => b.Sh)
-                        let sf = g.Sum(b => b.Sf)
-                        let intr = g.Sum(b => b.Intr)
-                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
                         select new CareerBatStatsViewModel
                         {
                             PlayerId = g.Key,
                             TeamId = teamId,
-                            AB = ab,
-                            H = h,
+                            AB = g.Sum(b => b.Ab),
+                            H = g.Sum(b => b.H),
                             R = g.Sum(b => b.R),
-                            D = d,
-                            T = t,
-                            HR = hr,
+                            D = g.Sum(b => b.C2B),
+                            T = g.Sum(b => b.C3B),
+                            HR = g.Sum(b => b.Hr),
                             RBI = g.Sum(b => b.Rbi),
                             SO = g.Sum(b => b.So),
-                            BB = bb,
+                            BB = g.Sum(b => b.Bb),
                             RE = g.Sum(b => b.Re),
-                            HBP = hbp,
-                            INTR = intr,
-                            SF = sf,
-                            SH = sh,
+                            HBP = g.Sum(b => b.Hbp),
+                            INTR = g.Sum(b => b.Intr),
+                            SF = g.Sum(b => b.Sf),
+                            SH = g.Sum(b => b.Sh),
                             SB = g.Sum(b => b.Sb),
                             CS = g.Sum(b => b.Cs),
                             LOB = g.Sum(b => b.Lob),
-                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
-                            PA = ab + bb + hbp + sh + sf + intr,
-                            TB = tb
                         }).OrderBy(sortField + " " + sortOrder);
             }
             else
@@ -464,41 +407,27 @@ namespace SportsManager.Utils
                 return (from bss in m_db.Batstatsums
                         where bss.TeamId == teamId
                         group bss by bss.PlayerId into g
-                        let ab = g.Sum(b => b.Ab)
-                        let h = g.Sum(b => b.H)
-                        let bb = g.Sum(b => b.Bb)
-                        let hbp = g.Sum(b => b.Hbp)
-                        let d = g.Sum(b => b.C2B)
-                        let t = g.Sum(b => b.C3B)
-                        let hr = g.Sum(b => b.Hr)
-                        let sh = g.Sum(b => b.Sh)
-                        let sf = g.Sum(b => b.Sf)
-                        let intr = g.Sum(b => b.Intr)
-                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
                         select new BatStatsViewModel
                         {
                             PlayerId = g.Key,
                             TeamId = teamId,
-                            AB = ab,
-                            H = h,
+                            AB = g.Sum(b => b.Ab),
+                            H = g.Sum(b => b.H),
                             R = g.Sum(b => b.R),
-                            D = d,
-                            T = t,
-                            HR = hr,
+                            D = g.Sum(b => b.C2B),
+                            T = g.Sum(b => b.C3B),
+                            HR = g.Sum(b => b.Hr),
                             RBI = g.Sum(b => b.Rbi),
                             SO = g.Sum(b => b.So),
-                            BB = bb,
+                            BB = g.Sum(b => b.Bb),
                             RE = g.Sum(b => b.Re),
-                            HBP = hbp,
-                            INTR = intr,
-                            SF = sf,
-                            SH = sh,
+                            HBP = g.Sum(b => b.Hbp),
+                            INTR = g.Sum(b => b.Intr),
+                            SF = g.Sum(b => b.Sf),
+                            SH = g.Sum(b => b.Sh),
                             SB = g.Sum(b => b.Sb),
                             CS = g.Sum(b => b.Cs),
                             LOB = g.Sum(b => b.Lob),
-                            AVG = ab > 0 ? (double)h / (double)ab : 0.000,
-                            PA = ab + bb + hbp + sh + sf + intr,
-                            TB = tb
                         }).OrderBy(sortField + " " + sortOrder);
 
             }

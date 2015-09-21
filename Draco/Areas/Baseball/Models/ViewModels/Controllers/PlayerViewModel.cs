@@ -1,7 +1,6 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.Utils;
-using SportsManager.ViewModels;
 using SportsManager.ViewModels.API;
 using System.Linq;
 

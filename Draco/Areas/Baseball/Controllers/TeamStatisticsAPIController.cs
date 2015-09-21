@@ -207,7 +207,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
             else
             {
-                var gameStats = statsHelper.GetPitchTeamPlayerTotals(teamSeasonId, "ERA", "ascending", false);
+                var gameStats = statsHelper.GetPitchTeamPlayerTotals(teamSeasonId, "ERA", "asc", false);
                 return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, gameStats);
             }
         }

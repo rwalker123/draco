@@ -115,9 +115,27 @@ namespace SportsManager.ViewModels.API
         public int SB { get; set; } // SB
         public int CS { get; set; } // CS
         public int LOB { get; set; } // LOB
-        public int TB { get; set; } // TB
-        public int PA { get; set; } // PA
-        public double AVG { get; set; } // AVG
+        public int TB
+        {
+            get
+            {
+                return (D * 2) + (T * 3) + (HR * 4) + (H - D - T - HR);
+            }
+        }
+        public int PA
+        {
+            get
+            {
+                return AB + BB + HBP + SH + SF + INTR;
+            }
+        } // PA
+        public double AVG
+        {
+            get
+            {
+                return AB > 0 ? (double)H / (double)AB : 0.00;
+            }
+        } // AVG
 
         public double SLG
         {

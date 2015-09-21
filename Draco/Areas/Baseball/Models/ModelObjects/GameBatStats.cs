@@ -26,11 +26,6 @@ namespace ModelObjects
         public int Sb { get; set; } // SB
         public int Cs { get; set; } // CS
         public int Lob { get; set; } // LOB
-        public int? Tb { get; set; } // TB
-        public int? Pa { get; set; } // PA
-        public int? ObaDenominator { get; set; } // OBADenominator
-        public int? ObaNumerator { get; set; } // OBANumerator
-        public float? Avg { get; set; } // AVG
 
         // Foreign keys
         public virtual Game LeagueSchedule { get; set; } // FK_batstatsum_LeagueSchedule

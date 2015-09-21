@@ -287,9 +287,6 @@ namespace SportsManager
                 .ForMember(vm => vm.SB, opt => opt.MapFrom(model => model.Sb))
                 .ForMember(vm => vm.CS, opt => opt.MapFrom(model => model.Cs))
                 .ForMember(vm => vm.LOB, opt => opt.MapFrom(model => model.Lob))
-                .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
-                .ForMember(vm => vm.PA, opt => opt.MapFrom(model => model.Pa))
-                .ForMember(vm => vm.AVG, opt => opt.MapFrom(model => model.Avg))
                 .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => model.RosterSeason.Roster.Contact.FullName));
 
             Mapper.CreateMap<GamePitchStats, PitchStatsViewModel>()
@@ -306,8 +303,6 @@ namespace SportsManager
                 .ForMember(vm => vm.HBP, opt => opt.MapFrom(model => model.Hbp))
                 .ForMember(vm => vm.BK, opt => opt.MapFrom(model => model.Bk))
                 .ForMember(vm => vm.SC, opt => opt.MapFrom(model => model.Sc))
-                .ForMember(vm => vm.TB, opt => opt.MapFrom(model => model.Tb))
-                .ForMember(vm => vm.AB, opt => opt.MapFrom(model => model.Ab))
                 .ForMember(vm => vm.PlayerName, opt => opt.MapFrom(model => model.RosterSeason.Roster.Contact.FullName));
 
             Mapper.CreateMap<GameRecap, GameRecapViewModel>();

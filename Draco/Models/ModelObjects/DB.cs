@@ -405,10 +405,6 @@ namespace ModelObjects
             Property(x => x.Sb).HasColumnName("SB").IsRequired();
             Property(x => x.Cs).HasColumnName("CS").IsRequired();
             Property(x => x.Lob).HasColumnName("LOB").IsRequired();
-            Property(x => x.Tb).HasColumnName("TB").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.Pa).HasColumnName("PA").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.ObaDenominator).HasColumnName("OBADenominator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.ObaNumerator).HasColumnName("OBANumerator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
 
             // Foreign keys
             HasRequired(a => a.RosterSeason).WithMany(b => b.Batstatsums).HasForeignKey(c => c.PlayerId); // FK_batstatsum_RosterSeason
@@ -1384,10 +1380,10 @@ namespace ModelObjects
             Property(x => x.Hbp).HasColumnName("HBP").IsRequired();
             Property(x => x.Bk).HasColumnName("BK").IsRequired();
             Property(x => x.Sc).HasColumnName("SC").IsRequired();
-            Property(x => x.Tb).HasColumnName("TB").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.Ab).HasColumnName("AB").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.WhipNumerator).HasColumnName("WHIPNumerator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
-            Property(x => x.IpNumerator).HasColumnName("IPNumerator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+            //Property(x => x.Tb).HasColumnName("TB").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+            //Property(x => x.Ab).HasColumnName("AB").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+            //Property(x => x.WhipNumerator).HasColumnName("WHIPNumerator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
+            //Property(x => x.IpNumerator).HasColumnName("IPNumerator").IsOptional().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Computed);
 
             // Foreign keys
             HasRequired(a => a.RosterSeason).WithMany(b => b.Pitchstatsums).HasForeignKey(c => c.PlayerId); // FK_pitchstatsum_RosterSeason

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic;
+using System.Text;
 
 namespace SportsManager.Utils
 {
@@ -100,165 +101,17 @@ namespace SportsManager.Utils
 
         public IQueryable<PitchStatsViewModel> GetPitchLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats)
         {
+            var queryString = GetPitchOrderedStats(leagueId, sortField, sortOrder, historicalStats);
             if (historicalStats)
-            {
-                var pitchstats = (from pss in m_db.Pitchstatsums
-                                  join rs in m_db.RosterSeasons on pss.PlayerId equals rs.Id
-                                  join leagueSchedule in m_db.LeagueSchedules on pss.GameId equals leagueSchedule.Id
-                                  join leagueSeason in m_db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
-                                  where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
-                                  group pss by rs.PlayerId into g
-                                  let h = g.Sum(b => b.H)
-                                  let bb = g.Sum(b => b.Bb)
-                                  let hbp = g.Sum(b => b.Hbp)
-                                  let d = g.Sum(b => b.C2B)
-                                  let t = g.Sum(b => b.C3B)
-                                  let hr = g.Sum(b => b.Hr)
-                                  let sc = g.Sum(b => b.Sc)
-                                  let bf = g.Sum(b => b.Bf)
-                                  let ip = g.Sum(b => b.Ip)
-                                  let ip2 = g.Sum(b => b.Ip2)
-                                  let er = g.Sum(b => b.Er)
-                                  let so = g.Sum(b => b.So)
-                                  let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
-                                  let ab = bf - bb - hbp - sc
-                                  let oba = ab > 0 ? (double)h / (double)ab : 0.00
-                                  let slg = ab > 0 ? (double)tb / (double)ab : 0.000
-                                  let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
-                                  let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
-                                  select new CareerPitchStatsViewModel
-                                  {
-                                      PlayerId = g.Key,
-                                      IP = ip,
-                                      IP2 = ip2,
-                                      BF = bf,
-                                      W = g.Sum(b => b.W),
-                                      L = g.Sum(b => b.L),
-                                      S = g.Sum(b => b.S),
-                                      H = h,
-                                      R = g.Sum(b => b.R),
-                                      ER = er,
-                                      D = d,
-                                      T = t,
-                                      HR = hr,
-                                      SO = so,
-                                      BB = bb,
-                                      WP = g.Sum(b => b.Wp),
-                                      HBP = hbp,
-                                      BK = g.Sum(b => b.Bk),
-                                      SC = sc,
-                                      AB = ab,
-                                      TB = tb
-                                  }).OrderBy(sortField + " " + sortOrder);
-
-                //totalRecords = pitchstats.Count();
-
-                return pitchstats;
-            }
+                return m_db.Database.SqlQuery<CareerPitchStatsViewModel>(queryString, new object[] { }).AsQueryable();
             else
-            {
-                var pitchstats = (from pss in m_db.Pitchstatsums
-                                  join ls in m_db.LeagueSchedules on pss.GameId equals ls.Id
-                                  where ls.GameStatus == 1 && ls.LeagueId == leagueId
-                                  group pss by pss.PlayerId into g
-                                  let h = g.Sum(b => b.H)
-                                  let bb = g.Sum(b => b.Bb)
-                                  let hbp = g.Sum(b => b.Hbp)
-                                  let d = g.Sum(b => b.C2B)
-                                  let t = g.Sum(b => b.C3B)
-                                  let hr = g.Sum(b => b.Hr)
-                                  let sc = g.Sum(b => b.Sc)
-                                  let bf = g.Sum(b => b.Bf)
-                                  let ip = g.Sum(b => b.Ip)
-                                  let ip2 = g.Sum(b => b.Ip2)
-                                  let er = g.Sum(b => b.Er)
-                                  let so = g.Sum(b => b.So)
-                                  let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
-                                  let ab = bf - bb - hbp - sc
-                                  let oba = ab > 0 ? (double)h / (double)ab : 0.00
-                                  let slg = ab > 0 ? (double)tb / (double)ab : 0.000
-                                  let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
-                                  let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
-                                  select new PitchStatsViewModel
-                                  {
-                                      PlayerId = g.Key,
-                                      IP = ip,
-                                      IP2 = ip2,
-                                      BF = bf,
-                                      W = g.Sum(b => b.W),
-                                      L = g.Sum(b => b.L),
-                                      S = g.Sum(b => b.S),
-                                      H = h,
-                                      R = g.Sum(b => b.R),
-                                      ER = er,
-                                      D = d,
-                                      T = t,
-                                      HR = hr,
-                                      SO = so,
-                                      BB = bb,
-                                      WP = g.Sum(b => b.Wp),
-                                      HBP = hbp,
-                                      BK = g.Sum(b => b.Bb),
-                                      SC = sc,
-                                      AB = ab,
-                                      TB = tb
-                                  }).OrderBy(sortField + " " + sortOrder);
-
-                //totalRecords = pitchstats.Count();
-
-                return pitchstats;
-            }
+                return m_db.Database.SqlQuery<PitchStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public IQueryable<PitchStatsViewModel> GetPitchLeaguePlayerTotals(long leagueId, long divisionId, string sortField, string sortOrder)
         {
-            return (from pss in m_db.Pitchstatsums
-                    join ls in m_db.LeagueSchedules on pss.GameId equals ls.Id
-                    join ts in m_db.TeamsSeasons on pss.TeamId equals ts.Id
-                    where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
-                    group pss by pss.PlayerId into g
-                    let h = g.Sum(b => b.H)
-                    let bb = g.Sum(b => b.Bb)
-                    let hbp = g.Sum(b => b.Hbp)
-                    let d = g.Sum(b => b.C2B)
-                    let t = g.Sum(b => b.C3B)
-                    let hr = g.Sum(b => b.Hr)
-                    let sc = g.Sum(b => b.Sc)
-                    let bf = g.Sum(b => b.Bf)
-                    let ip = g.Sum(b => b.Ip)
-                    let ip2 = g.Sum(b => b.Ip2)
-                    let er = g.Sum(b => b.Er)
-                    let so = g.Sum(b => b.So)
-                    let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
-                    let ab = bf - bb - hbp - sc
-                    let oba = ab > 0 ? (double)h / (double)ab : 0.00
-                    let slg = ab > 0 ? (double)tb / (double)ab : 0.000
-                    let ipdecimal = (double)ip + (ip2 / 3) + (ip2 % 3) / 10.0
-                    let era = (ipdecimal > 0.0) ? (double)er * 9.0 / ipdecimal : 0.0
-                    select new PitchStatsViewModel
-                    {
-                        PlayerId = g.Key,
-                        IP = ip,
-                        IP2 = ip2,
-                        BF = bf,
-                        W = g.Sum(b => b.W),
-                        L = g.Sum(b => b.L),
-                        S = g.Sum(b => b.S),
-                        H = h,
-                        R = g.Sum(b => b.R),
-                        ER = er,
-                        D = d,
-                        T = t,
-                        HR = hr,
-                        SO = so,
-                        BB = bb,
-                        WP = g.Sum(b => b.Wp),
-                        HBP = hbp,
-                        BK = g.Sum(b => b.Bk),
-                        SC = sc,
-                        AB = ab,
-                        TB = tb
-                    }).OrderBy(sortField + " " + sortOrder);
+            var queryString = GetPitchOrderedStats(leagueId, divisionId, sortField, sortOrder);
+            return m_db.Database.SqlQuery<PitchStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public IQueryable<GamePitchStats> GetPitchGameStats(long gameId, long teamId)
@@ -394,7 +247,7 @@ namespace SportsManager.Utils
                         WP = g.Sum(b => b.bss.Wp),
                         HBP = g.Sum(b => b.bss.Hbp),
                         BK = g.Sum(b => b.bss.Bk),
-                        SC = g.Sum(b => b.bss.Sc)
+                        SC = g.Sum(b => b.bss.Sc),
                     }).SingleOrDefault();
         }
 
@@ -431,99 +284,11 @@ namespace SportsManager.Utils
             //    FROM pitchstatsum 
             //    WHERE TeamId = @teamId GROUP BY PlayerId
             //GO
+            var queryString = GetTeamPitchOrderedStats(teamId, sortField, sortOrder, historicalStats);
             if (historicalStats)
-            {
-                return (from bss in m_db.Pitchstatsums
-                        join rs in m_db.RosterSeasons on bss.PlayerId equals rs.Id
-                        join ts in m_db.TeamsSeasons on bss.TeamId equals ts.Id
-                        where ts.TeamId == teamId
-                        group bss by rs.PlayerId into g
-                        let h = g.Sum(b => b.H)
-                        let bb = g.Sum(b => b.Bb)
-                        let hbp = g.Sum(b => b.Hbp)
-                        let d = g.Sum(b => b.C2B)
-                        let t = g.Sum(b => b.C3B)
-                        let hr = g.Sum(b => b.Hr)
-                        let sc = g.Sum(b => b.Sc)
-                        let bf = g.Sum(b => b.Bf)
-                        let ip = g.Sum(b => b.Ip)
-                        let ip2 = g.Sum(b => b.Ip2)
-                        let er = g.Sum(b => b.Er)
-                        let so = g.Sum(b => b.So)
-                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
-                        let ab = bf - bb - hbp - sc
-                        select new CareerPitchStatsViewModel
-                        {
-                            PlayerId = g.Key,
-                            TeamId = teamId,
-                            IP = ip,
-                            IP2 = ip2,
-                            BF = bf,
-                            W = g.Sum(b => b.W),
-                            L = g.Sum(b => b.L),
-                            S = g.Sum(b => b.S),
-                            H = h,
-                            R = g.Sum(b => b.R),
-                            ER = er,
-                            D = d,
-                            T = t,
-                            HR = hr,
-                            SO = so,
-                            BB = bb,
-                            WP = g.Sum(b => b.Wp),
-                            HBP = hbp,
-                            BK = g.Sum(b => b.Bk),
-                            SC = sc,
-                            AB = ab,
-                            TB = tb
-                        }).OrderBy(sortField + " " + sortOrder);
-            }
+                return m_db.Database.SqlQuery<CareerPitchStatsViewModel>(queryString, new object[] { }).AsQueryable();
             else
-            {
-                return (from bss in m_db.Pitchstatsums
-                        where bss.TeamId == teamId
-                        group bss by bss.PlayerId into g
-                        let h = g.Sum(b => b.H)
-                        let bb = g.Sum(b => b.Bb)
-                        let hbp = g.Sum(b => b.Hbp)
-                        let d = g.Sum(b => b.C2B)
-                        let t = g.Sum(b => b.C3B)
-                        let hr = g.Sum(b => b.Hr)
-                        let sc = g.Sum(b => b.Sc)
-                        let bf = g.Sum(b => b.Bf)
-                        let ip = g.Sum(b => b.Ip)
-                        let ip2 = g.Sum(b => b.Ip2)
-                        let er = g.Sum(b => b.Er)
-                        let so = g.Sum(b => b.So)
-                        let tb = (d * 2) + (t * 3) + (hr * 4) + (h - d - t - hr)
-                        let ab = bf - bb - hbp - sc
-                        select new PitchStatsViewModel
-                        {
-                            PlayerId = g.Key,
-                            TeamId = teamId,
-                            IP = ip,
-                            IP2 = ip2,
-                            BF = bf,
-                            W = g.Sum(b => b.W),
-                            L = g.Sum(b => b.L),
-                            S = g.Sum(b => b.S),
-                            H = h,
-                            R = g.Sum(b => b.R),
-                            ER = er,
-                            D = d,
-                            T = t,
-                            HR = hr,
-                            SO = so,
-                            BB = bb,
-                            WP = g.Sum(b => b.Wp),
-                            HBP = hbp,
-                            BK = g.Sum(b => b.Bk),
-                            SC = sc,
-                            AB = ab,
-                            TB = tb
-                        }).OrderBy(sortField + " " + sortOrder);
-            }
-
+                return m_db.Database.SqlQuery<PitchStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public PitchStatsViewModel GetPitchGameTotals(long gameId, long teamId)
@@ -698,6 +463,89 @@ namespace SportsManager.Utils
             return (fieldName == "ERA" || fieldName == "WHIP" || fieldName == "K9" || fieldName == "BB9"
                             || fieldName == "SLG" || fieldName == "OBA" || fieldName == "TB"
                             || fieldName == "R" || fieldName == "ER");
+        }
+
+        private const String pitchStatsBaseSelect = "SELECT PlayerId as PlayerId, SUM(IP) as IP, SUM(IP2) as IP2, SUM(BF) as BF, SUM(W) as W, SUM(L) as L, SUM(S) as S, SUM(H) as H, SUM(R) as R, SUM(ER) as ER, SUM([2B]) as D, SUM([3B]) as T, SUM(HR) as HR, SUM(SO) as SO, SUM(BB) as BB, SUM(WP) as WP, SUM(HBP) as HBP, SUM(BK) as BK, SUM(SC) as SC, ";
+        private const String pitchStatsStandardSelect = pitchStatsBaseSelect + " {0} ";
+        private const String pitchStatsTeamStandardSelect = pitchStatsBaseSelect + " TeamId, {0}, Contact.FirstName, Contact.MiddleName, Contact.LastName";
+
+        private String GetTeamPitchOrderedStats(long teamId, string fieldName, string orderBy, bool isHistorical)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(pitchStatsTeamStandardSelect);
+
+            if (isHistorical)
+            {
+                query.Append(@"FROM pitchstatsum 
+                                LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id
+                                LEFT JOIN Contact on Roster.ContactId = Contact.Id
+                                LEFT JOIN TeamSeason on pitchstatsum.TeamId = TeamSeason.Id");
+                query.Append("WHERE TeamSeason.TeamId = {1} ");
+            }
+            else
+            {
+                query.Append("FROM pitchstatsum ");
+                query.Append("WHERE TeamId = {1} ");
+            }
+
+            query.Append("GROUP BY TeamId, PlayerId ORDER BY FieldTotal {2} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForPitchLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, teamId, orderBy);
+
+        }
+
+
+        private String GetPitchOrderedStats(long leagueId, string fieldName, string orderBy, bool isHistorical)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(pitchStatsStandardSelect);
+
+            if (isHistorical)
+            {
+                query.Append(@"FROM pitchstatsum LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
+                               LEFT JOIN LeagueSchedule on pitchstatsum.GameId = LeagueSchedule.Id
+                               LEFT JOIN LeagueSeason on LeagueSchedule.LeagueId = LeagueSeason.Id ");
+            }
+            else
+            {
+                query.Append("FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id ");
+            }
+
+            query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {1} ");
+            query.Append("GROUP BY PlayerId ORDER BY FieldTotal {2} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForPitchLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, leagueId, orderBy);
+
+        }
+
+        private String GetPitchOrderedStats(long leagueId, long divisionId, string fieldName, string orderBy)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(pitchStatsStandardSelect);
+
+            query.Append(@"FROM pitchstatsum 
+                                LEFT JOIN LeagueSchedule on pitchstatsum.GameId = LeagueSchedule.Id
+                                LEFT JOIN TeamSeason on pitchstatsum.TeamId = TeamSeason.Id
+                           ");
+
+            query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {1} && TeamSeason.DivisionSeasonId = {2}");
+            query.Append("GROUP BY RosterSeason.PlayerId ORDER BY FieldTotal {3} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForPitchLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, leagueId, divisionId, orderBy);
+
         }
 
         private String GetPitchLeagueLeadersQueryString(long leagueId, long divisionId, string fieldName, bool allTimeLeaders)

@@ -31,10 +31,6 @@ namespace ModelObjects
         public int Hbp { get; set; } // HBP
         public int Bk { get; set; } // BK
         public int Sc { get; set; } // SC
-        public int? Tb { get; set; } // TB
-        public int? Ab { get; set; } // AB
-        public int? WhipNumerator { get; set; } // WHIPNumerator
-        public int? IpNumerator { get; set; } // IPNumerator
 
         // Foreign keys
         public virtual Game LeagueSchedule { get; set; } // FK_pitchstatsum_LeagueSchedule
