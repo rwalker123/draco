@@ -79,8 +79,17 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
 
+            long affiliationId = (from a in db.Accounts
+                                  where a.Id == accountId
+                                  select a.AffiliationId).SingleOrDefault();
+
+            var creatorAccounts = (from a in db.Accounts
+                                   where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
+                                   select a.Id);
+
+
             return (from c in db.Contacts
-                    where c.CreatorAccountId == accountId && 
+                    where creatorAccounts.Contains(c.CreatorAccountId) && 
                     (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
                     (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
                     orderby c.LastName, c.FirstName, c.MiddleName
