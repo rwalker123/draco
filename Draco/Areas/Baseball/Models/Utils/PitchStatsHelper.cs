@@ -465,9 +465,9 @@ namespace SportsManager.Utils
                             || fieldName == "R" || fieldName == "ER");
         }
 
-        private const String pitchStatsBaseSelect = "SELECT PlayerId as PlayerId, SUM(IP) as IP, SUM(IP2) as IP2, SUM(BF) as BF, SUM(W) as W, SUM(L) as L, SUM(S) as S, SUM(H) as H, SUM(R) as R, SUM(ER) as ER, SUM([2B]) as D, SUM([3B]) as T, SUM(HR) as HR, SUM(SO) as SO, SUM(BB) as BB, SUM(WP) as WP, SUM(HBP) as HBP, SUM(BK) as BK, SUM(SC) as SC, ";
+        private const String pitchStatsBaseSelect = "SELECT {1} as PlayerId, SUM(IP) as IP, SUM(IP2) as IP2, SUM(BF) as BF, SUM(W) as W, SUM(L) as L, SUM(S) as S, SUM(H) as H, SUM(R) as R, SUM(ER) as ER, SUM([2B]) as D, SUM([3B]) as T, SUM(HR) as HR, SUM(SO) as SO, SUM(BB) as BB, SUM(WP) as WP, SUM(HBP) as HBP, SUM(BK) as BK, SUM(SC) as SC, RTRIM(CONCAT(Contacts.LastName, ', ', Contacts.FirstName, Contacts.MiddleName)) As PlayerName, ";
         private const String pitchStatsStandardSelect = pitchStatsBaseSelect + " {0} ";
-        private const String pitchStatsTeamStandardSelect = pitchStatsBaseSelect + " TeamId, {0}, Contact.FirstName, Contact.MiddleName, Contact.LastName";
+        private const String pitchStatsTeamStandardSelect = pitchStatsBaseSelect + " {0} ";
 
         private String GetTeamPitchOrderedStats(long teamId, string fieldName, string orderBy, bool isHistorical)
         {
@@ -475,27 +475,38 @@ namespace SportsManager.Utils
 
             query.Append(pitchStatsTeamStandardSelect);
 
+            String playerIdField = String.Empty;
             if (isHistorical)
             {
+                playerIdField = "RosterSeason.PlayerId";
+
                 query.Append(@"FROM pitchstatsum 
                                 LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
                                 LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id
-                                LEFT JOIN Contact on Roster.ContactId = Contact.Id
-                                LEFT JOIN TeamSeason on pitchstatsum.TeamId = TeamSeason.Id");
-                query.Append("WHERE TeamSeason.TeamId = {1} ");
+                                LEFT JOIN Contacts on Roster.ContactId = Contacts.Id
+                                LEFT JOIN TeamsSeason on pitchstatsum.TeamId = TeamsSeason.Id ");
+                query.Append("WHERE TeamsSeason.TeamId = {2} ");
+                query.Append("GROUP BY {1}, Contacts.FirstName, Contacts.LastName, Contacts.MiddleName ");
             }
             else
             {
-                query.Append("FROM pitchstatsum ");
-                query.Append("WHERE TeamId = {1} ");
+                playerIdField = "pitchstatsum.PlayerId";
+
+                query.Append(", pitchstatsum.TeamId ");
+                query.Append(@"FROM pitchstatsum 
+                                LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id
+                                LEFT JOIN Contacts on Roster.ContactId = Contacts.Id ");
+                query.Append("WHERE pitchstatsum.TeamId = {2}  ");
+                query.Append("GROUP BY pitchstatsum.TeamId, {1}, Contacts.FirstName, Contacts.LastName, Contacts.MiddleName ");
             }
 
-            query.Append("GROUP BY TeamId, PlayerId ORDER BY FieldTotal {2} ");
+            query.Append("ORDER BY FieldTotal {3} ");
 
             var defaultOrderBy = "DESC"; // not used.
             var selectStmt = BuildSelectForPitchLeaders(fieldName, out defaultOrderBy);
 
-            return String.Format(query.ToString(), selectStmt, teamId, orderBy);
+            return String.Format(query.ToString(), selectStmt, playerIdField, teamId, orderBy);
 
         }
 
@@ -506,24 +517,37 @@ namespace SportsManager.Utils
 
             query.Append(pitchStatsStandardSelect);
 
+            String playerIdField = String.Empty;
             if (isHistorical)
             {
-                query.Append(@"FROM pitchstatsum LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
-                               LEFT JOIN LeagueSchedule on pitchstatsum.GameId = LeagueSchedule.Id
-                               LEFT JOIN LeagueSeason on LeagueSchedule.LeagueId = LeagueSeason.Id ");
+                playerIdField = "RosterSeason.PlayerId";
+
+                query.Append(@"FROM pitchstatsum 
+                                LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on Roster.Id = RosterSeason.PlayerId
+                                LEFT JOIN Contacts on Contacts.Id = Roster.ContactId
+                                LEFT JOIN LeagueSchedule on pitchstatsum.GameId = LeagueSchedule.Id
+                                LEFT JOIN LeagueSeason on LeagueSchedule.LeagueId = LeagueSeason.Id ");
+                query.Append("WHERE GameStatus = 1 AND LeagueSeason.LeagueId = {2} ");
             }
             else
             {
-                query.Append("FROM pitchstatsum LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id ");
+                playerIdField = "pitchstatsum.PlayerId";
+
+                query.Append(@"FROM pitchstatsum 
+                                LEFT JOIN RosterSeason on pitchstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on Roster.Id = RosterSeason.PlayerId
+                                LEFT JOIN Contacts on Contacts.Id = Roster.ContactId
+                                LEFT JOIN LeagueSchedule ON pitchstatsum.GameId = LeagueSchedule.Id ");
+                query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {2} ");
             }
 
-            query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {1} ");
-            query.Append("GROUP BY PlayerId ORDER BY FieldTotal {2} ");
+            query.Append("GROUP BY {1}, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName ORDER BY FieldTotal {3} ");
 
             var defaultOrderBy = "DESC"; // not used.
             var selectStmt = BuildSelectForPitchLeaders(fieldName, out defaultOrderBy);
 
-            return String.Format(query.ToString(), selectStmt, leagueId, orderBy);
+            return String.Format(query.ToString(), selectStmt, playerIdField, leagueId, orderBy);
 
         }
 

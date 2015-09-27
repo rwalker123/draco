@@ -33,7 +33,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
             else
             {
-                var gameStats = statsHelper.GetBatTeamPlayerTotals(teamSeasonId, "AVG", "descending", false);
+                var gameStats = statsHelper.GetBatTeamPlayerTotals(teamSeasonId, "AVG", "DESC", false);
                 return Request.CreateResponse<IEnumerable<BatStatsViewModel>>(HttpStatusCode.OK, gameStats);
             }
         }
@@ -47,7 +47,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var statsHelper = new BatStatsHelper(Db);
-            var gameStats = statsHelper.GetBatTeamPlayerTotals(t.TeamId, "AVG", "descending", true);
+            var gameStats = statsHelper.GetBatTeamPlayerTotals(t.TeamId, "AVG", "DESC", true);
             return Request.CreateResponse<IEnumerable<BatStatsViewModel>>(HttpStatusCode.OK, gameStats);
         }
 
@@ -60,7 +60,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var statsHelper = new PitchStatsHelper(Db);
-            var gameStats = statsHelper.GetPitchTeamPlayerTotals(t.TeamId, "ERA", "ascending", true);
+            var gameStats = statsHelper.GetPitchTeamPlayerTotals(t.TeamId, "ERA", "ASC", true);
             return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, gameStats);
         }
 

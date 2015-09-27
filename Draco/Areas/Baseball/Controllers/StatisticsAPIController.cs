@@ -97,7 +97,12 @@ namespace SportsManager.Areas.Baseball.Controllers
             var queryValues = Request.RequestUri.ParseQueryString();
 
             string sortField = queryValues["sortField"] ?? "AVG";
-            string sortOrder = queryValues["sortOrder"] ?? "descending";
+            string sortOrder = queryValues["sortOrder"] ?? "DESC";
+            if (sortOrder == "ascending")
+                sortOrder = "ASC";
+            else
+                sortOrder = "DESC";
+
             string qvDivisionId = queryValues["divisionId"] ?? "0";
             long divisionId = 0;
             if (qvDivisionId != null)
@@ -308,11 +313,11 @@ namespace SportsManager.Areas.Baseball.Controllers
             var queryValues = Request.RequestUri.ParseQueryString();
 
             string sortField = queryValues["sortField"] ?? "ERA";
-            string sortOrder = queryValues["sortOrder"] ?? "ascending";
+            string sortOrder = queryValues["sortOrder"] ?? "ASC";
             if (sortOrder == "ascending")
-                sortOrder = "asc";
+                sortOrder = "ASC";
             else
-                sortOrder = "desc";
+                sortOrder = "DESC";
 
             string qvDivisionId = queryValues["divisionId"] ?? "0";
             long divisionId = 0;

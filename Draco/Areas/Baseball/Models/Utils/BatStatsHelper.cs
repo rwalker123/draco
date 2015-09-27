@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Linq.Dynamic;
+using System.Text;
 
 namespace SportsManager.Utils
 {
@@ -106,102 +107,17 @@ namespace SportsManager.Utils
 
         public IQueryable<BatStatsViewModel> GetBatLeaguePlayerTotals(long leagueId, string sortField, string sortOrder, bool historicalStats) //, out int totalRecords)
         {
+            var queryString = GetBatOrderedStats(leagueId, sortField, sortOrder, historicalStats);
             if (historicalStats)
-            {
-                var batstats = (from bss in m_db.Batstatsums
-                                join rs in m_db.RosterSeasons on bss.PlayerId equals rs.Id
-                                join leagueSchedule in m_db.LeagueSchedules on bss.GameId equals leagueSchedule.Id
-                                join leagueSeason in m_db.LeagueSeasons on leagueSchedule.LeagueId equals leagueSeason.Id
-                                where leagueSchedule.GameStatus == 1 && leagueSeason.LeagueId == leagueId
-                                group bss by rs.PlayerId into g
-                                select new CareerBatStatsViewModel
-                                {
-                                    PlayerId = g.Key,
-                                    AB = g.Sum(b => b.Ab),
-                                    H = g.Sum(b => b.H),
-                                    R = g.Sum(b => b.R),
-                                    D = g.Sum(b => b.C2B),
-                                    T = g.Sum(b => b.C3B),
-                                    HR = g.Sum(b => b.Hr),
-                                    RBI = g.Sum(b => b.Rbi),
-                                    SO = g.Sum(b => b.So),
-                                    BB = g.Sum(b => b.Bb),
-                                    RE = g.Sum(b => b.Re),
-                                    HBP = g.Sum(b => b.Hbp),
-                                    INTR = g.Sum(b => b.Intr),
-                                    SF = g.Sum(b => b.Sf),
-                                    SH = g.Sum(b => b.Sh),
-                                    SB = g.Sum(b => b.Sb),
-                                    CS = g.Sum(b => b.Cs),
-                                    LOB = g.Sum(b => b.Lob),
-                                }).OrderBy(sortField + " " + sortOrder);
-
-                //totalRecords = batstats.Count();
-
-                return batstats;
-            }
+                return m_db.Database.SqlQuery<CareerBatStatsViewModel>(queryString, new object[] { }).AsQueryable();
             else
-            {
-                var batstats = (from bss in m_db.Batstatsums
-                                join ls in m_db.LeagueSchedules on bss.GameId equals ls.Id
-                                where ls.GameStatus == 1 && ls.LeagueId == leagueId
-                                group bss by bss.PlayerId into g
-                                select new BatStatsViewModel
-                                {
-                                    PlayerId = g.Key,
-                                    AB = g.Sum(b => b.Ab),
-                                    H = g.Sum(b => b.H),
-                                    R = g.Sum(b => b.R),
-                                    D = g.Sum(b => b.C2B),
-                                    T = g.Sum(b => b.C3B),
-                                    HR = g.Sum(b => b.Hr),
-                                    RBI = g.Sum(b => b.Rbi),
-                                    SO = g.Sum(b => b.So),
-                                    BB = g.Sum(b => b.Bb),
-                                    RE = g.Sum(b => b.Re),
-                                    HBP = g.Sum(b => b.Hbp),
-                                    INTR = g.Sum(b => b.Intr),
-                                    SF = g.Sum(b => b.Sf),
-                                    SH = g.Sum(b => b.Sh),
-                                    SB = g.Sum(b => b.Sb),
-                                    CS = g.Sum(b => b.Cs),
-                                    LOB = g.Sum(b => b.Lob),
-                                }).OrderBy(sortField + " " + sortOrder);
-
-                //totalRecords = batstats.Count();
-
-                return batstats;
-            }
+                return m_db.Database.SqlQuery<BatStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public IQueryable<BatStatsViewModel> GetBatLeaguePlayerTotals(long leagueId, long divisionId, string sortField, string sortOrder)
         {
-            return (from bss in m_db.Batstatsums
-                    join ls in m_db.LeagueSchedules on bss.GameId equals ls.Id
-                    join ts in m_db.TeamsSeasons on bss.TeamId equals ts.Id
-                    where ls.GameStatus == 1 && ls.LeagueId == leagueId && ts.DivisionSeasonId == divisionId
-                    group bss by bss.PlayerId into g
-                    select new BatStatsViewModel
-                    {
-                        PlayerId = g.Key,
-                        AB = g.Sum(b => b.Ab),
-                        H = g.Sum(b => b.H),
-                        R = g.Sum(b => b.R),
-                        D = g.Sum(b => b.C2B),
-                        T = g.Sum(b => b.C3B),
-                        HR = g.Sum(b => b.Hr),
-                        RBI = g.Sum(b => b.Rbi),
-                        SO = g.Sum(b => b.So),
-                        BB = g.Sum(b => b.Bb),
-                        RE = g.Sum(b => b.Re),
-                        HBP = g.Sum(b => b.Hbp),
-                        INTR = g.Sum(b => b.Intr),
-                        SF = g.Sum(b => b.Sf),
-                        SH = g.Sum(b => b.Sh),
-                        SB = g.Sum(b => b.Sb),
-                        CS = g.Sum(b => b.Cs),
-                        LOB = g.Sum(b => b.Lob),
-                    }).OrderBy(sortField + " " + sortOrder);
+            var queryString = GetBatOrderedStats(leagueId, divisionId, sortField, sortOrder);
+            return m_db.Database.SqlQuery<BatStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public IQueryable<GameBatStats> GetBatGameStats(long gameId, long teamId)
@@ -372,65 +288,11 @@ namespace SportsManager.Utils
             //    myCommand.Parameters.Add("@gameId", SqlDbType.BigInt).Value = filterData;
             //    break;
 
+            var queryString = GetTeamBatOrderedStats(teamId, sortField, sortOrder, historicalStats);
             if (historicalStats)
-            {
-                return (from bss in m_db.Batstatsums
-                        join rs in m_db.RosterSeasons on bss.PlayerId equals rs.Id
-                        join ts in m_db.TeamsSeasons on bss.TeamId equals ts.Id
-                        where ts.TeamId == teamId
-                        group bss by rs.PlayerId into g
-                        select new CareerBatStatsViewModel
-                        {
-                            PlayerId = g.Key,
-                            TeamId = teamId,
-                            AB = g.Sum(b => b.Ab),
-                            H = g.Sum(b => b.H),
-                            R = g.Sum(b => b.R),
-                            D = g.Sum(b => b.C2B),
-                            T = g.Sum(b => b.C3B),
-                            HR = g.Sum(b => b.Hr),
-                            RBI = g.Sum(b => b.Rbi),
-                            SO = g.Sum(b => b.So),
-                            BB = g.Sum(b => b.Bb),
-                            RE = g.Sum(b => b.Re),
-                            HBP = g.Sum(b => b.Hbp),
-                            INTR = g.Sum(b => b.Intr),
-                            SF = g.Sum(b => b.Sf),
-                            SH = g.Sum(b => b.Sh),
-                            SB = g.Sum(b => b.Sb),
-                            CS = g.Sum(b => b.Cs),
-                            LOB = g.Sum(b => b.Lob),
-                        }).OrderBy(sortField + " " + sortOrder);
-            }
+                return m_db.Database.SqlQuery<CareerBatStatsViewModel>(queryString, new object[] { }).AsQueryable();
             else
-            {
-                return (from bss in m_db.Batstatsums
-                        where bss.TeamId == teamId
-                        group bss by bss.PlayerId into g
-                        select new BatStatsViewModel
-                        {
-                            PlayerId = g.Key,
-                            TeamId = teamId,
-                            AB = g.Sum(b => b.Ab),
-                            H = g.Sum(b => b.H),
-                            R = g.Sum(b => b.R),
-                            D = g.Sum(b => b.C2B),
-                            T = g.Sum(b => b.C3B),
-                            HR = g.Sum(b => b.Hr),
-                            RBI = g.Sum(b => b.Rbi),
-                            SO = g.Sum(b => b.So),
-                            BB = g.Sum(b => b.Bb),
-                            RE = g.Sum(b => b.Re),
-                            HBP = g.Sum(b => b.Hbp),
-                            INTR = g.Sum(b => b.Intr),
-                            SF = g.Sum(b => b.Sf),
-                            SH = g.Sum(b => b.Sh),
-                            SB = g.Sum(b => b.Sb),
-                            CS = g.Sum(b => b.Cs),
-                            LOB = g.Sum(b => b.Lob),
-                        }).OrderBy(sortField + " " + sortOrder);
-
-            }
+                return m_db.Database.SqlQuery<BatStatsViewModel>(queryString, new object[] { }).AsQueryable();
         }
 
         public BatStatsViewModel GetBatGameTotals(long gameId, long teamId)
@@ -585,6 +447,114 @@ namespace SportsManager.Utils
             return (fieldName == "AVG" || fieldName == "SLG" || fieldName == "OBP" || fieldName == "OPS");
         }
 
+        private const String batStatsBaseSelect = "SELECT {1} as PlayerId, SUM(AB) as AB, SUM(H) as H, SUM(R) as R, SUM([2B]) as D, SUM([3B]) as T, SUM(HR) as HR, SUM(RBI) as RBI, SUM(SO) as SO, SUM(BB) as BB, SUM(RE) as RE, SUM(HBP) as HBP, SUM(INTR) as INTR, SUM(SF) as SF, SUM(SH) as SH, SUM(SB) as SB, SUM(CS) as CS, SUM(LOB) as LOB, RTRIM(CONCAT(Contacts.LastName, ', ', Contacts.FirstName, Contacts.MiddleName)) As PlayerName, ";
+        private const String batStatsStandardSelect = batStatsBaseSelect + " {0} ";
+        private const String batStatsTeamStandardSelect = batStatsBaseSelect + " {0} ";
+
+        private String GetTeamBatOrderedStats(long teamId, string fieldName, string orderBy, bool isHistorical)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(batStatsTeamStandardSelect);
+
+            String playerIdField = String.Empty;
+            if (isHistorical)
+            {
+                playerIdField = "RosterSeason.PlayerId";
+
+                query.Append(@"FROM batstatsum 
+                                LEFT JOIN RosterSeason on batstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id
+                                LEFT JOIN Contacts on Roster.ContactId = Contacts.Id
+                                LEFT JOIN TeamsSeason on batstatsum.TeamId = TeamsSeason.Id ");
+                query.Append("WHERE TeamsSeason.TeamId = {2} ");
+                query.Append("GROUP BY {1}, Contacts.FirstName, Contacts.LastName, Contacts.MiddleName ");
+            }
+            else
+            {
+                playerIdField = "batstatsum.PlayerId";
+
+                query.Append(", batstatsum.TeamId ");
+                query.Append(@"FROM batstatsum 
+                                LEFT JOIN RosterSeason on batstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on RosterSeason.PlayerId = Roster.Id
+                                LEFT JOIN Contacts on Roster.ContactId = Contacts.Id ");
+                query.Append("WHERE batstatsum.TeamId = {2}  ");
+                query.Append("GROUP BY batstatsum.TeamId, {1}, Contacts.FirstName, Contacts.LastName, Contacts.MiddleName ");
+            }
+
+            query.Append("ORDER BY FieldTotal {3} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForBatLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, playerIdField, teamId, orderBy);
+
+        }
+
+
+        private String GetBatOrderedStats(long leagueId, string fieldName, string orderBy, bool isHistorical)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(batStatsStandardSelect);
+
+            String playerIdField = String.Empty;
+            if (isHistorical)
+            {
+                playerIdField = "RosterSeason.PlayerId";
+
+                query.Append(@"FROM batstatsum 
+                                LEFT JOIN RosterSeason on batstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on Roster.Id = RosterSeason.PlayerId
+                                LEFT JOIN Contacts on Contacts.Id = Roster.ContactId
+                                LEFT JOIN LeagueSchedule on batstatsum.GameId = LeagueSchedule.Id
+                                LEFT JOIN LeagueSeason on LeagueSchedule.LeagueId = LeagueSeason.Id ");
+                query.Append("WHERE GameStatus = 1 AND LeagueSeason.LeagueId = {2} ");
+            }
+            else
+            {
+                playerIdField = "batstatsum.PlayerId";
+
+                query.Append(@"FROM batstatsum 
+                                LEFT JOIN RosterSeason on batstatsum.PlayerId = RosterSeason.Id
+                                LEFT JOIN Roster on Roster.Id = RosterSeason.PlayerId
+                                LEFT JOIN Contacts on Contacts.Id = Roster.ContactId
+                                LEFT JOIN LeagueSchedule ON batstatsum.GameId = LeagueSchedule.Id ");
+                query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {2} ");
+            }
+
+            query.Append("GROUP BY {1}, Contacts.LastName, Contacts.FirstName, Contacts.MiddleName ORDER BY FieldTotal {3} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForBatLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, playerIdField, leagueId, orderBy);
+
+        }
+
+        private String GetBatOrderedStats(long leagueId, long divisionId, string fieldName, string orderBy)
+        {
+            StringBuilder query = new StringBuilder();
+
+            query.Append(batStatsStandardSelect);
+
+            query.Append(@"FROM batstatsum 
+                                LEFT JOIN LeagueSchedule on batstatsum.GameId = LeagueSchedule.Id
+                                LEFT JOIN TeamSeason on batstatsum.TeamId = TeamSeason.Id
+                           ");
+
+            query.Append("WHERE GameStatus = 1 AND LeagueSchedule.LeagueId = {1} && TeamSeason.DivisionSeasonId = {2}");
+            query.Append("GROUP BY RosterSeason.PlayerId ORDER BY FieldTotal {3} ");
+
+            var defaultOrderBy = "DESC"; // not used.
+            var selectStmt = BuildSelectForBatLeaders(fieldName, out defaultOrderBy);
+
+            return String.Format(query.ToString(), selectStmt, leagueId, divisionId, orderBy);
+
+        }
+
+
         private String GetBatTeamLeadersQueryString(long teamSeasonId, String fieldName)
         {
             String query = String.Empty;
@@ -594,8 +564,8 @@ namespace SportsManager.Utils
                         WHERE GameStatus = 1 AND (HTeamId = {0} OR VTeamId = {0}) AND TeamId = {0}
                         GROUP BY batstatsum.PlayerId ORDER BY [FieldTotal] {2}";
 
-            String selectStmt = BuildSelectForBatLeaders(fieldName);
             String orderBy = "DESC";
+            String selectStmt = BuildSelectForBatLeaders(fieldName, out orderBy);
 
             return String.Format(query, teamSeasonId, selectStmt, orderBy);
         }
@@ -649,8 +619,8 @@ namespace SportsManager.Utils
                 }
             }
 
-            String selectStmt = BuildSelectForBatLeaders(fieldName);
             String orderBy = "DESC";
+            String selectStmt = BuildSelectForBatLeaders(fieldName, out orderBy);
 
             if (divisionId != 0)
                 return String.Format(query, leagueId, divisionId, selectStmt, orderBy);
@@ -658,8 +628,10 @@ namespace SportsManager.Utils
                 return String.Format(query, leagueId, selectStmt, orderBy);
         }
 
-        private String BuildSelectForBatLeaders(String fieldName)
+        private String BuildSelectForBatLeaders(String fieldName, out String orderBy)
         {
+            orderBy = "DESC";
+
             String selectStmt = String.Empty;
             if (fieldName == "AVG")
             {

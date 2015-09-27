@@ -378,7 +378,7 @@ namespace SportsManager.Baseball.Controllers
         public HttpResponseMessage GetDivisions(long accountId, long id)
         {
             var divisions = (from d in Db.DivisionSeasons
-                             where d.Id == id
+                             where d.LeagueSeasonId == id
                              select d).OrderBy(d => d.Priority).ThenBy(d => d.DivisionDef.Name).AsEnumerable();
                              
             var dvm = Mapper.Map<IEnumerable<DivisionSeason>, DivisionViewModel[]>(divisions);
