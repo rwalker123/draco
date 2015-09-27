@@ -10,6 +10,7 @@ namespace SportsManager.ViewModels.API
         public int Order { get; set; }
         public long CreatorContactId { get; set; }
         public String CreatorName { get; set; }
+        public String PhotoUrl { get; set; }
         public DateTime CreateDate { get; set; }
         public DateTime EditDate { get; set; }
         [Required]

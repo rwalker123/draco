@@ -111,6 +111,7 @@ namespace SportsManager
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.PostDate))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
                 .ForMember(vm => vm.Subject, opt => opt.MapFrom(model => model.PostSubject))
                 .ForMember(vm => vm.Text, opt => opt.MapFrom(model => model.PostText))
                 .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));
@@ -126,6 +127,7 @@ namespace SportsManager
                 .ForMember(vm => vm.NumberOfReplies, opt => opt.MapFrom(model => model.MessagePosts.Count()))
                 .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.TopicCreateDate))
                 .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic))
                 .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));

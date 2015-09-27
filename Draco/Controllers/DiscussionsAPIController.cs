@@ -265,6 +265,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.MessagePosts.Add(dbPost);
+                Db.SaveChanges();
 
                 var vm = Mapper.Map<MessagePost, MessagePostViewModel>(dbPost);
                 return Request.CreateResponse<MessagePostViewModel>(HttpStatusCode.OK, vm);

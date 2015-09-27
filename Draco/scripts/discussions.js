@@ -406,6 +406,8 @@ var DiscussionsViewModel = function(accountId, isAdmin, userId) {
         var newData = self.currentCategory().editTopic().toJS();
         newData.CreateDate = moment(new Date()).format("MM DD, YYYY h:mm a");
 
+        delete newData.LastPost;
+
         $.ajax({
             type: (newData.Id <= 0) ? "POST" : "PUT",
             url: window.config.rootUri + '/api/DiscussionsAPI/' + self.accountId + '/categories/' + self.currentCategory().Id() + '/topics',
