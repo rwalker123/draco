@@ -105,6 +105,8 @@
     <script type="text/javascript">
         var editAccountNameViewModel = function (accountId) {
             var self = this;
+            self.settingsInitialized = false;
+
             self.accountId = accountId;
 
             self.myInformation = ko.observable();
@@ -169,6 +171,9 @@
             });
 
             self.settingChanged = function (settingKey, value) {
+                if (!self.settingsInitialized)
+                    return;
+
                 $.ajax({
                     type: "POST",
                     url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/Settings',
@@ -234,9 +239,11 @@
                 url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/Settings',
                 dataType: "json",
                 success: function (data) {
-                    $.each(data.KeyValues, function (index, value) {
-                        self.setSetting(index, value == 'true');
+                    $.each(data, function (index, value) {
+                        self.setSetting(value.SettingKey, value.SettingValue == 'true');
                     });
+
+                    self.settingsInitialized = true;
                 }
             });
         }

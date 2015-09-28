@@ -158,7 +158,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("WelcomeText")]
-        public HttpResponseMessage PutTeamWelcomeText(long accountId, long teamSeasonId, long id, ModelObjects.AccountWelcome welcomeData)
+        public HttpResponseMessage PutTeamWelcomeText(long accountId, long teamSeasonId, long id, WelcomeTextViewModel welcomeData)
         {
             if (ModelState.IsValid)
             {
@@ -192,7 +192,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("WelcomeText")]
-        public HttpResponseMessage PutWelcomeText(long accountId, long id, ModelObjects.AccountWelcome welcomeData)
+        public HttpResponseMessage PutWelcomeText(long accountId, long id, WelcomeTextViewModel welcomeData)
         {
             if (id != 0 && ModelState.IsValid)
             {

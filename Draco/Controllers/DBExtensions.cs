@@ -54,7 +54,7 @@ namespace SportsManager.Controllers
                         var roles = (from cr in db.Db.ContactRoles
                                      where cr.ContactId == contactId && cr.AccountId == accountId
                                      select cr);
-                        if (roles != null)
+                        if (roles.Any())
                             rc = (from r in roles
                                   where r.RoleId == roleId && r.AccountId == accountId
                                   select r).Any();

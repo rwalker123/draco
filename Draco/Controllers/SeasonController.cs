@@ -6,7 +6,7 @@ namespace SportsManager.Controllers
 {
     public class SeasonController : DBController
     {
-        protected SeasonController(DB db) : base(db)
+        public SeasonController(DB db) : base(db)
         {
         }
 
