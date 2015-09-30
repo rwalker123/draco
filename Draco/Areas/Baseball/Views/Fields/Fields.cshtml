@@ -147,7 +147,7 @@
                     }
 
                     <div data-bind="visible: viewMode">
-                        <select data-container="body" data-bind="selectPicker: selectedFieldId, selectPickerOptions: { optionsArray: fields }, optionsText: 'Name', optionsValue: 'Id'"></select>
+                        <select data-bind="selectPicker: selectedFieldId, selectPickerOptions: { optionsArray: fields }, optionsText: 'Name', optionsValue: 'Id'"></select>
                         <button type="button" class="btn btn-default" style="margin-top:-10px" data-bind="click: viewAllFields" title="fit all fields on map"><span class="fa fa-compass"></span></button>
                         <div data-bind="if: selectedFieldId() !== undefined">
                             <div data-bind="with: selectedField">

@@ -554,34 +554,29 @@ namespace SportsManager.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage UpdateTeamDivision(long accountId, long id, TeamViewModel teamData)
         {
-            if (teamData != null)
-            {
-                var div = Db.DivisionSeasons.Find(id);
-                if (div == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+            var div = Db.DivisionSeasons.Find(id);
+            if (div == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                if (div.DivisionDef.AccountId != accountId)
-                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+            if (div.DivisionDef.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var team = Db.TeamsSeasons.Find(teamData.Id);
-                if (team == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+            var team = Db.TeamsSeasons.Find(teamData.Id);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                if (team.Team.AccountId != accountId)
-                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+            if (team.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                team.DivisionSeasonId = id;
-                Db.SaveChanges();
+            team.DivisionSeasonId = id;
+            Db.SaveChanges();
 
-                // Create a 201 response.
-                var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
-                var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
-                return response;
-            }
-            else
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+            // Create a 201 response.
+            var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
+            var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
+            response.Headers.Location =
+                new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
+            return response;
         }
     }
 }

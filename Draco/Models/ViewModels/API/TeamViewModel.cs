@@ -18,5 +18,6 @@ namespace SportsManager.ViewModels.API
 
         public long AccountId { get; set; }
         public String LeagueName { get; set; }
+        public String TeamLogoURL { get; set; }
     }
 }

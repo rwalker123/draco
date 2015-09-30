@@ -22,14 +22,14 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("SearchContacts")]
-        public HttpResponseMessage SearchContacts(long accountId, string lastName, string firstName, int page)
+        public HttpResponseMessage SearchContacts(long accountId, [FromUri]NameSearchViewModel nsvm)
         {
             var foundItems = (from c in Db.Contacts
                               where c.CreatorAccountId == accountId &&
-                              (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
-                              (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                              (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
+                              (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
                               orderby c.LastName, c.FirstName, c.MiddleName
-                              select c).Skip((page - 1) * pageSize).Take(pageSize);
+                              select c).Skip((nsvm.Page - 1) * pageSize).Take(pageSize);
 
             var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(foundItems);
             return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);

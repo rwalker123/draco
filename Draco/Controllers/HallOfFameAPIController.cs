@@ -148,7 +148,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("availableinductees")]
-        public HttpResponseMessage GetAvailablePlayers(long accountId, string lastName, string firstName, int page)
+        public HttpResponseMessage GetAvailablePlayers(long accountId, [FromUri]NameSearchViewModel nsvm)
         {
             int pageSize = 20;
 
@@ -166,10 +166,10 @@ namespace SportsManager.Controllers
 
             var available = (from c in Db.Contacts
                              where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id) &&
-                             (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
-                             (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                              (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
+                              (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
                              orderby c.LastName, c.FirstName, c.MiddleName
-                             select c).Skip((page - 1) * pageSize).Take(pageSize).AsEnumerable();
+                             select c).Skip((nsvm.Page - 1) * pageSize).Take(pageSize).AsEnumerable();
 
             var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(available);
             return Request.CreateResponse<IEnumerable<ContactNameViewModel>>(HttpStatusCode.OK, vm);

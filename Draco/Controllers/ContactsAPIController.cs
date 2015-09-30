@@ -79,7 +79,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("DoesContactNameExist")]
-        public HttpResponseMessage GetDoesContactNameExist(long accountId, long id, string firstName, string lastName, string middleName)
+        public HttpResponseMessage GetDoesContactNameExist(long accountId, long id, [FromUri]NameViewModel nvm)
         {
             long affid = (from a in Db.Accounts
                           where a.Id == accountId
@@ -90,9 +90,9 @@ namespace SportsManager.Controllers
                                select a.Id);
 
             var doesExist = (from c in Db.Contacts
-                             where String.Compare(firstName, c.FirstName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
-                                   String.Compare(lastName, c.LastName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
-                                   ((middleName == null && c.MiddleName == null) || String.Compare(middleName, c.MiddleName, StringComparison.CurrentCultureIgnoreCase) == 0) &&
+                             where String.Compare(nvm.FirstName, c.FirstName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
+                                   String.Compare(nvm.LastName, c.LastName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
+                                   ((nvm.MiddleName == null && c.MiddleName == null) || String.Compare(nvm.MiddleName, c.MiddleName, StringComparison.CurrentCultureIgnoreCase) == 0) &&
                                    affAccounts.Contains(c.CreatorAccountId)
                              select c).Any();
 

@@ -50,7 +50,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("availableplayers")]
-        public HttpResponseMessage GetAvailablePlayers(long accountId, long teamSeasonId, string lastName, string firstName, int page)
+        public HttpResponseMessage GetAvailablePlayers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
         {
             var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
@@ -71,12 +71,12 @@ namespace SportsManager.Areas.Baseball.Controllers
                         select r.ContactId);
 
             var contacts = (from c in Db.Contacts
-                    where aIds.Contains(c.CreatorAccountId) &&
-                    !cIds.Contains(c.Id) &&
-                    (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
-                    (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
-                    orderby c.LastName, c.FirstName, c.MiddleName
-                    select c).Skip((page - 1) * pageSize).Take(pageSize);
+                            where aIds.Contains(c.CreatorAccountId) &&
+                            !cIds.Contains(c.Id) &&
+                            (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
+                            (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
+                            orderby c.LastName, c.FirstName, c.MiddleName
+                            select c).Skip((nsvm.Page - 1) * pageSize).Take(pageSize);
 
             var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(contacts);
             return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
@@ -337,7 +337,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("availablemanagers")]
-        public HttpResponseMessage AvailableManagers(long accountId, long teamSeasonId, string lastName, string firstName, int page)
+        public HttpResponseMessage AvailableManagers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
         {
             var ts = Db.TeamsSeasons.Find(teamSeasonId);
             if (ts == null)
@@ -346,7 +346,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (ts.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var availManagers = GetAvailableManagers(accountId, ts, firstName, lastName).Skip((page - 1) * pageSize).Take(pageSize);
+            var availManagers = GetAvailableManagers(accountId, ts, nsvm.FirstName, nsvm.LastName).Skip((nsvm.Page - 1) * pageSize).Take(pageSize);
             var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(availManagers);
             return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
         }
@@ -395,8 +395,8 @@ namespace SportsManager.Areas.Baseball.Controllers
                     join c in Db.Contacts on r.ContactId equals c.Id
                     where rs.TeamSeasonId == ts.Id && !rs.Inactive &&
                     !cIds.Contains(c.Id) &&
-                    (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
-                    (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                    (firstName == null || lastName == "" || c.FirstName.Contains(firstName)) &&
+                    (lastName == null || lastName == "" || c.LastName.Contains(lastName))
                     orderby c.LastName, c.FirstName, c.MiddleName
                     select c);
         }

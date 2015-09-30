@@ -79,12 +79,13 @@ namespace SportsManager
 
             Mapper.CreateMap<TeamSeason, TeamViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Team.AccountId))
+                .ForMember(vm => vm.TeamLogoURL, opt => opt.MapFrom(model => model.Team.TeamLogoURL))
                 .ForMember(vm => vm.LeagueName, opt => opt.MapFrom(model => model.LeagueSeason.League.Name));
 
             Mapper.CreateMap<DivisionSeason, DivisionSetupViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.DivisionDef.AccountId))
                 .ForMember(vm => vm.DivisionDefId, opt => opt.MapFrom(model => model.DivisionId))
-                .ForMember(vm => vm.Teams, opt => opt.MapFrom(model => model.TeamsSeasons))
+                .ForMember(vm => vm.Teams, opt => opt.MapFrom(model => model.TeamsSeasons.OrderBy(ts => ts.Name)))
                 .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.DivisionDef.Name));
 
             Mapper.CreateMap<LeagueNewsItem, NewsViewModel>();

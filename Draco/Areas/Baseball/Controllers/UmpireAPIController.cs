@@ -5,6 +5,7 @@ using SportsManager.Models;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -21,6 +22,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("umpires")]
         public HttpResponseMessage GetUmpires(long accountId)
         {
             var umps = Db.LeagueUmpires.Where(u => u.AccountId == accountId).OrderBy(u => u.Contact.LastName).ThenBy(u => u.Contact.FirstName).ThenBy(u => u.Contact.MiddleName);
@@ -29,7 +31,8 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
-        public HttpResponseMessage AvailableUmpires(long accountId, string lastName, string firstName, int page)
+        [ActionName("AvailableUmpires")]
+        public HttpResponseMessage AvailableUmpires(long accountId, [FromUri]NameSearchViewModel nsvm)
         {
             long affiliationId = (from a in Db.Accounts
                                   where a.Id == accountId
@@ -45,17 +48,17 @@ namespace SportsManager.Areas.Baseball.Controllers
             var cs = (from c in Db.Contacts
                       where aIds.Contains(c.CreatorAccountId) &&
                       !cIds.Contains(c.Id) &&
-                      (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
-                      (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
+                      (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
+                      (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
                       orderby c.LastName, c.FirstName, c.MiddleName
-                      select c).Skip((page - 1) * pageSize).Take(pageSize);
+                      select c).Skip((nsvm.Page - 1) * pageSize).Take(pageSize);
 
             var vm = Mapper.Map<IEnumerable<Contact>, ContactNameViewModel[]>(cs);
             return Request.CreateResponse<ContactNameViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [ActionName("umpire")]
+        [ActionName("umpires")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage AddUmpire(long accountId, long id)
         {
@@ -77,7 +80,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
-        [ActionName("umpire")]
+        [ActionName("umpires")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteUmpire(long accountId, long id)
         {

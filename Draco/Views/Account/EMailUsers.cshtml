@@ -320,7 +320,7 @@ else
                     $.each(teams, function () {
                         self.availableToData.push({
                             id: this.Id,
-                            text: this.Name,
+                            text: this.LeagueName + ' ' + this.Name,
                             logo: this.TeamLogoURL,
                             hasLogo: !!this.TeamLogoURL,
                             selected: ko.observable(false)
@@ -340,9 +340,9 @@ else
                     }
 
                     $.each(managers, function () {
-                        var fullName = this.LastName + ", " + this.FirstName;
+                        var fullName = this.Contact.LastName + ", " + this.Contact.FirstName;
                         if (this.MiddleName)
-                            fullName += " " + this.MiddleName;
+                            fullName += " " + this.Contact.MiddleName;
 
                         self.availableToData.push({
                             id: this.Id,

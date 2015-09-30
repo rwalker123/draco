@@ -125,7 +125,7 @@ var LeagueViewModel = function (data, accountId) {
             type: "POST",
             url: url,
             data: {
-                LeagueId: leagueVM.Id(),
+                LeagueSeasonId: leagueVM.Id(),
                 Name: self.Id.newDivisionName(),
                 Priority: sortOrder
             },
@@ -133,7 +133,7 @@ var LeagueViewModel = function (data, accountId) {
 
                 var data = {
                     Id: divisionId,
-                    LeagueId: leagueVM.Id(),
+                    LeagueSeasonId: leagueVM.Id(),
                     Name: self.Id.newDivisionName(),
                     Priority: sortOrder,
                     Teams: []
@@ -209,14 +209,14 @@ var LeagueViewModel = function (data, accountId) {
             url: url,
             success: function (divisionId) {
                 var divisionVM = ko.utils.arrayFirst(self.Id.Divisions(), function(div) {
-                    return (div.Id() == teamVM.DivisionId());
+                    return (div.Id() == teamVM.DivisionSeasonId());
                 });
 
                 if (divisionVM) {
                     divisionVM.Teams.remove(teamVM);
                 }
 
-                teamVM.DivisionId(0);
+                teamVM.DivisionSeasonId(0);
                 self.Id.unassignedTeams.push(teamVM.toJS());
             }
         });
@@ -231,7 +231,8 @@ var LeagueViewModel = function (data, accountId) {
             type: "PUT",
             url: url,
             data: {
-                Id: divisionVM.Id.selectedNewTeam()
+                Id: divisionVM.Id.selectedNewTeam(),
+                Name: "Not Used"
             },
             success: function (newTeam) {
 
@@ -259,8 +260,8 @@ var LeagueViewModel = function (data, accountId) {
             url: url,
             data: {
                 AccountId: this.accountId,
-                LeagueId: self.Id(),
-                DivisionId: divisionVM.Id(),
+                LeagueSeasonId: self.Id(),
+                DivisionSeasonId: divisionVM.Id(),
                 Name: divisionVM.Id.newTeamName()
             },
             success: function (team) {
@@ -371,7 +372,7 @@ var TeamViewModel = function (data, accountId) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.teamLogoUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.TeamId();
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.Id();
     });
 
     self.update = function (data) {

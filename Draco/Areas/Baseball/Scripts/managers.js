@@ -67,7 +67,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     })
 
     self.removeManager = function (manager) {
-        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.MgrSeasonId();
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.Id();
 
         $.ajax({
             type: "DELETE",

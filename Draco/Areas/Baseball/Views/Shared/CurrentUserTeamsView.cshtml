@@ -1,4 +1,4 @@
-﻿@model IQueryable<ModelObjects.Team>
+﻿@model IQueryable<ModelObjects.TeamSeason>
 
 
 <div class="panel panel-success">
@@ -11,7 +11,7 @@
         <div class="list-group">
             @foreach(var team in Model)
             {
-                <a href='@Url.Content("~/baseball/team/index/")@team.AccountId/@team.Id' class="list-group-item"><img onerror="this.style.display = 'none';" src="@team.TeamLogoURL" /> @team.Name</a>
+                <a href='@Url.Content("~/baseball/team/index/")@team.Team.AccountId/@team.Id' class="list-group-item"><img onerror="this.style.display = 'none';" src="@team.Team.TeamLogoURL" /> @team.Name</a>
             }
         </div>
     </div>
