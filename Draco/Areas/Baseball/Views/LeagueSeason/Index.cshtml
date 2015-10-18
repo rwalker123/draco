@@ -125,7 +125,7 @@
                     <form class="form-inline" role="form">
                         <div class="input-group">
                             <label for="seasonList" class="sr-only">Season</label>
-                            <select data-container="body" data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
+                            <select data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-default" data-bind="click: copySeason" title="import selected season into current season">Import</button>
                             </div>
@@ -206,7 +206,7 @@
                             <small>division teams</small><br />
 
                             <div class="input-group">
-                                <select data-container="body" data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                                <select data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                                 <div class="input-group-btn">
                                     <button type="button" class="btn btn-success" data-bind="click: league.addTeamToDivision" title="add selected team to division"><span class="glyphicon glyphicon-ok"></span></button>
                                 </div>

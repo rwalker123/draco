@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ModelObjects;
 using SportsManager.Models;
+using SportsManager.Models.Helpers;
 using SportsManager.ViewModels.API;
 using System;
 using System.Configuration;
@@ -336,7 +337,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, PhotoURLHelper.GetPhotoURL(c.Id), ImageFormat.Png, smallImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -350,7 +351,7 @@ namespace SportsManager.Controllers
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, c.LargePhotoURL, ImageFormat.Png, mediumPhotoImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, PhotoURLHelper.GetLargePhotoURL(c.Id), ImageFormat.Png, mediumPhotoImageSize, eSizeType.Maximum);
         }
 
 

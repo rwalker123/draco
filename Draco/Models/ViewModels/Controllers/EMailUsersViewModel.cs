@@ -1,4 +1,5 @@
 ﻿using SportsManager.Controllers;
+using SportsManager.Models.Helpers;
 
 namespace SportsManager.ViewModels
 {
@@ -10,7 +11,7 @@ namespace SportsManager.ViewModels
             var currentUser = c.GetCurrentContact();
             Email = currentUser.Email;
             UserName = currentUser.FirstName + " " + currentUser.LastName;
-            PhotoUrl = currentUser.PhotoURL;
+            PhotoUrl = PhotoURLHelper.GetPhotoURL(currentUser.Id);
         }
 
         public string Email { get; private set; }

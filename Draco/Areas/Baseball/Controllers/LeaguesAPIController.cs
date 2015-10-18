@@ -165,9 +165,9 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("CopyLeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage CopyLeagueSetup(long accountId, long id, long fromSeasonId)
+        public HttpResponseMessage CopyLeagueSetup(long accountId, long id, CopySeasonViewModel fromSeason)
         {
-            var season = Db.Seasons.Find(fromSeasonId);
+            var season = Db.Seasons.Find(fromSeason.Id);
             if (season == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -182,7 +182,7 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             var leagues = (from ls in Db.LeagueSeasons
-                           where ls.SeasonId == fromSeasonId
+                           where ls.SeasonId == fromSeason.Id
                            select ls).ToList();
             leagues.ForEach(ls =>
             {
@@ -205,9 +205,7 @@ namespace SportsManager.Baseball.Controllers
 
                     Db.DivisionSeasons.Add(newDiv);
 
-                    var teams = (from ts in Db.TeamsSeasons
-                                 where ts.LeagueSeasonId == ls.Id
-                                 select ts).ToList();
+                    var teams = ds.TeamsSeasons.ToList(); 
 
                     teams.ForEach(ts =>
                     {
@@ -420,15 +418,18 @@ namespace SportsManager.Baseball.Controllers
             if (divSeason.DivisionDef.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            Db.DivisionSeasons.Remove(divSeason);
+            bool divisionInUse = divSeason.DivisionDef.DivisionSeasons?.Count > 1;
 
             foreach(var team in divSeason.TeamsSeasons)
                 team.DivisionSeasonId = 0;
 
-            bool divisionInUse = divSeason.DivisionDef.DivisionSeasons.Count > 1;
             if (!divisionInUse)
             {
                 Db.DivisionDefs.Remove(divSeason.DivisionDef);
+            }
+            else
+            {
+                Db.DivisionSeasons.Remove(divSeason);
             }
 
             Db.SaveChanges();

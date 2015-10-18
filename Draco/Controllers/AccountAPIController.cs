@@ -108,7 +108,7 @@ namespace SportsManager.Controllers
                 if (!String.IsNullOrWhiteSpace(a.Url))
                     a.Url += ";";
 
-                a.Url += url;
+                a.Url += url.Uri;
                 a.Url = a.Url.Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
 
                 Db.SaveChanges();
@@ -207,6 +207,11 @@ namespace SportsManager.Controllers
 
             a.Name = accountData.AccountName;
             a.FirstYear = accountData.FirstYear;
+            if (!a.TwitterAccountName.Equals(accountData.TwitterAccountName))
+            {
+                a.TwitterOauthSecretKey = String.Empty;
+                a.TwitterOauthToken = String.Empty;
+            }
             a.TwitterAccountName = accountData.TwitterAccountName;
             Db.SaveChanges();
 

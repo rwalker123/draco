@@ -45,14 +45,16 @@ namespace SportsManager.Controllers
                                 select h.ContactId).Distinct();
             var contactInManager = (from m in m_db.TeamSeasonManagers
                                     select m.ContactId).Distinct();
-
+            var contactInMemberBusiness = (from mb in m_db.MemberBusinesses
+                                           select mb.ContactId).Distinct();
             var unusedContacts = (from c in m_db.Contacts
                                   where c.CreatorAccountId == accountId &&
                                   !contactInRoster.Contains(c.Id) &&
                                   !contactInHof.Contains(c.Id) &&
-                                  !contactInManager.Contains(c.Id)
+                                  !contactInManager.Contains(c.Id) &&
+                                  !contactInMemberBusiness.Contains(c.Id)
                                   select c);
-
+            // member business blocking
             m_db.Contacts.RemoveRange(unusedContacts);
         }
 
@@ -60,8 +62,13 @@ namespace SportsManager.Controllers
         {
             m_db.DivisionSeasons.RemoveRange(ls.DivisionSeasons);
 
-            foreach (TeamSeason t in ls.TeamsSeasons)
+            var teamList = ls.TeamsSeasons.ToList();
+            while (teamList.Any())
+            {
+                var t = teamList.First();
                 RemoveSeasonTeam(t);
+                teamList.Remove(t);
+            }
 
             m_db.LeagueSeasons.Remove(ls);
         }

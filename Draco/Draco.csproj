@@ -436,6 +436,7 @@
     <Compile Include="Areas\Baseball\Models\Utils\BatStatsHelper.cs" />
     <Compile Include="Areas\Baseball\Models\Utils\PitchStatsHelper.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\BatStatsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\CopySeasonViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\GameRecapViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\API\LeagueLeaderStatViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Player.cs" />
@@ -527,6 +528,7 @@
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\Filters\ModelStateValidationAttribute.cs" />
+    <Compile Include="Models\Helpers\PhotoURLHelper.cs" />
     <Compile Include="Models\ModelObjects\AspNetRole.cs" />
     <Compile Include="Models\ModelObjects\AspNetUser.cs" />
     <Compile Include="Models\ModelObjects\HOFMember.cs" />

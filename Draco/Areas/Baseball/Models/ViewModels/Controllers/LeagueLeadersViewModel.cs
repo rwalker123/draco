@@ -5,6 +5,7 @@ using SportsManager.ViewModels.API;
 using SportsManager.Utils;
 using System.Web.Mvc;
 using System.Linq;
+using SportsManager.Models.Helpers;
 
 namespace SportsManager.Baseball.ViewModels
 {
@@ -167,7 +168,7 @@ namespace SportsManager.Baseball.ViewModels
                         ll.LastName = leaderPlayer.Contact.LastName;
                         ll.FirstName = leaderPlayer.Contact.FirstName;
                         ll.Team = teamName;
-                        ll.PhotoURL = leaderPlayer.Contact.PhotoURL;
+                        ll.PhotoURL = PhotoURLHelper.GetPhotoURL(leaderPlayer.Contact.Id);
                     }
                 }
 

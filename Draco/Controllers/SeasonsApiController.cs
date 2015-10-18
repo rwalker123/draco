@@ -172,9 +172,12 @@ namespace SportsManager.Controllers
 
         private void RemoveSeasonData(Season season)
         {
-            foreach (var ls in season.LeagueSeasons)
+            var leagueList = season.LeagueSeasons.ToList();
+            while (leagueList.Any())
             {
-                RemoveLeagueSeason(ls);
+                var l = leagueList.First();
+                RemoveLeagueSeason(l);
+                leagueList.Remove(l);
             }
 
             var currentSeason = GetCurrentSeason(season.AccountId);

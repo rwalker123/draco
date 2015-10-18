@@ -641,7 +641,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                 url += '&$orderby=LastName ' + self.filterSort() + ', FirstName ' + self.filterSort();
                 if (self.filterOp() == 'startswith' ||
                     self.filterOp() == 'endswith') {
-                    if (!isNumberField && !isDateField) // only strings for this type.
+                    if (!isNumberField && !isDateField && self.filterValue() != "") // only strings for this type.
                         url += '&$filter=' + self.filterOp() + '(' + self.filterField() + ", '" + self.filterValue() + "')";
                 }
                 else {

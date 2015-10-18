@@ -46,10 +46,10 @@
 
     <small>filter user list</small><br />
     <form class="form-inline" role="form">
-        <select data-container="body" data-bind="selectPicker: filterField, selectPickerOptions: {optionsArray: availableFilters}, optionsText: 'name', optionsValue: 'id'"></select>
-        <select data-container="body" data-bind="selectPicker: filterOp, selectPickerOptions: {optionsArray: availableOperations}, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-bind="selectPicker: filterField, selectPickerOptions: {optionsArray: availableFilters}, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-bind="selectPicker: filterOp, selectPickerOptions: {optionsArray: availableOperations}, optionsText: 'name', optionsValue: 'id'"></select>
         <input type="text" class="form-control" style="width:200px" data-bind="value: filterValue" placeholder="filter text" />
-        <select data-container="body" data-bind="selectPicker: filterSort, selectPickerOptions: {optionsArray: availableSort}, optionsText: 'name', optionsValue: 'id'"></select>
+        <select data-bind="selectPicker: filterSort, selectPickerOptions: {optionsArray: availableSort}, optionsText: 'name', optionsValue: 'id'"></select>
         <button type="button" class="btn btn-default" data-bind="click: applyFilter"><span class="glyphicon glyphicon-ok"></span></button>
         <button type="button" class="btn btn-default" data-bind="click: exportToExcel" title="export user list to excel"><span class="glyphicon glyphicon-export"></span></button>
     </form>

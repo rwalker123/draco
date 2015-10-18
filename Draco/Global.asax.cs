@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
 using System.Linq;
+using SportsManager.Models.Helpers;
 
 namespace SportsManager
 {
@@ -93,10 +94,12 @@ namespace SportsManager
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.TeamId));
 
             Mapper.CreateMap<Contact, ContactViewModel>()
-                .ForMember(vm => vm.Age, opt => opt.MapFrom(model => model.DateOfBirth.Age()));
+                .ForMember(vm => vm.Age, opt => opt.MapFrom(model => model.DateOfBirth.Age()))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Id)))
+                .ForMember(vm => vm.LargePhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetLargePhotoURL(model.Id)));
 
             Mapper.CreateMap<Contact, ContactNameViewModel>()
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Id)))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Id)))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.DateOfBirth));
 
             Mapper.CreateMap<ContactRole, ContactNameRoleViewModel>()
@@ -106,13 +109,13 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth))
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.ContactId)));
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.ContactId)));
 
             Mapper.CreateMap<MessagePost, MessagePostViewModel>()
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.PostOrder))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.PostDate))
-                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)))
                 .ForMember(vm => vm.Subject, opt => opt.MapFrom(model => model.PostSubject))
                 .ForMember(vm => vm.Text, opt => opt.MapFrom(model => model.PostText))
                 .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));
@@ -128,7 +131,7 @@ namespace SportsManager
                 .ForMember(vm => vm.NumberOfReplies, opt => opt.MapFrom(model => model.MessagePosts.Count()))
                 .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
                 .ForMember(vm => vm.CreatorName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
-                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)))
                 .ForMember(vm => vm.CreateDate, opt => opt.MapFrom(model => model.TopicCreateDate))
                 .ForMember(vm => vm.TopicTitle, opt => opt.MapFrom(model => model.Topic))
                 .ForMember(vm => vm.CreatorContactId, opt => opt.MapFrom(model => model.ContactCreatorId));
@@ -148,7 +151,7 @@ namespace SportsManager
             Mapper.CreateMap<HOFMember, HOFMemberViewModel>()
                 .ForMember(vm => vm.Biography, opt => opt.MapFrom(model => model.Bio))
                 .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.Contact.FullName))
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetLargePhotoURL(model.ContactId)));
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetLargePhotoURL(model.ContactId)));
 
             Mapper.CreateMap<HOFClass, HOFClassViewModel>();
 
@@ -156,7 +159,7 @@ namespace SportsManager
 
             Mapper.CreateMap<MemberBusiness, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
-                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.Contact.PhotoURL))
+                .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)))
                 .ForMember(vm => vm.AccountId, opt => opt.Ignore())
                 .ForMember(vm => vm.TeamId, opt => opt.Ignore());
 
@@ -169,7 +172,7 @@ namespace SportsManager
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
-                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)))
+                .ForMember(vm => vm.PhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)))
                 .ForMember(vm => vm.Question, opt => opt.MapFrom(model => model.ProfileQuestion.Question));
 
             Mapper.CreateMap<ProfileQuestionItem, ProfileQuestionViewModel>();
@@ -209,7 +212,7 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.ContactId)))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.ContactId)))
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth));
@@ -219,7 +222,7 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Roster.Contact.FirstName))
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Roster.Contact.LastName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Roster.Contact.MiddleName))
-                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Roster.ContactId)))
+                .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Roster.ContactId)))
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Roster.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Roster.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Roster.Contact.DateOfBirth));
@@ -230,7 +233,7 @@ namespace SportsManager
                 .ForMember(vm => vm.EMail, opt => opt.MapFrom(model => model.Contact.Email))
                 .ForMember(vm => vm.Phone, opt => opt.MapFrom(model => model.Contact.Phone1))
                 .ForMember(vm => vm.CreatedByName, opt => opt.MapFrom(model => model.Contact.FullName))
-                .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => Contact.GetPhotoURL(model.Contact.Id)));
+                .ForMember(vm => vm.CreatedByPhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)));
 
             Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>()
                 .ForMember(vm => vm.CanEdit, opt => opt.Ignore());

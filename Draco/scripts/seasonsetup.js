@@ -95,11 +95,11 @@ var SeasonSetupViewModel = function (accountId) {
                 AccountId: self.accountId,
                 Name: self.newSeasonName()
             },
-            success: function (seasonId) {
+            success: function (seasonData) {
 
                 var seasonvm = new SeasonViewModel({
-                    Id: seasonId,
-                    Name: self.newSeasonName()
+                    Id: seasonData.Id,
+                    Name: seasonData.Name
                 }, self.accountId);
 
                 self.seasons.push(seasonvm);

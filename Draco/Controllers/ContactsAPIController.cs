@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager.Models;
+using SportsManager.Models.Helpers;
 using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
 using System;
@@ -40,12 +41,21 @@ namespace SportsManager.Controllers
                           select a.AffiliationId).SingleOrDefault();
 
             var affiliationAccounts = (from a in m_db.Accounts
-                                       where a.Id == accountId || (affId != 1 && a.AffiliationId == affId)
+                                       where a.Id == accountId || a.AffiliationId == affId
                                        select a.Id);
 
-            return (from c in m_db.Contacts
-                    where affiliationAccounts.Contains(c.CreatorAccountId)
-                    select c).Project<Contact>().To<ContactNameViewModel>();
+            return m_db.Contacts
+                    .Where(c => affiliationAccounts.Contains(c.CreatorAccountId))
+                    .Select(c => new ContactNameViewModel()
+                    {
+                        Id = c.Id,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName,
+                        LastName = c.LastName,
+                        BirthDate = c.DateOfBirth,
+                        FirstYear = c.FirstYear ?? 0,
+                        Zip = c.Zip
+                    }).AsQueryable();
         }
     }
 
@@ -347,8 +357,8 @@ namespace SportsManager.Controllers
                 Db.Contacts.Remove(contact);
                 Db.SaveChanges();
 
-                await Storage.Provider.DeleteFile(contact.PhotoURL);
-                await Storage.Provider.DeleteFile(contact.LargePhotoURL);
+                await Storage.Provider.DeleteFile(PhotoURLHelper.GetPhotoURL(contact.Id));
+                await Storage.Provider.DeleteFile(PhotoURLHelper.GetLargePhotoURL(contact.Id));
 
                 return Request.CreateResponse(HttpStatusCode.OK);
             }

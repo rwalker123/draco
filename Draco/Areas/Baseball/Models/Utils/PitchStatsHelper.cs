@@ -405,7 +405,6 @@ namespace SportsManager.Utils
                         FirstName = r.Contact.FirstName,
                         LastName = r.Contact.LastName,
                         MiddleName = r.Contact.MiddleName,
-                        PhotoURL = Contact.GetPhotoURL(r.Contact.Id),
                         BirthDate = r.Contact.DateOfBirth
                     });
         }

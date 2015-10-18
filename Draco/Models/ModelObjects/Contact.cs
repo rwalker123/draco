@@ -1,3 +1,4 @@
+using SportsManager.Models.Helpers;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
@@ -9,9 +10,6 @@ namespace ModelObjects
     /// </summary>
     public class Contact
     {
-        private static string PhotoName = "ContactPhoto.jpg";
-        private static string LargePhotoName = "ContactActionPhoto.jpg";
-
         public long Id { get; set; } // Id (Primary key)
         public string UserId { get; set; } // UserId
         public string LastName { get; set; } // LastName
@@ -62,37 +60,6 @@ namespace ModelObjects
             Rosters = new List<Player>();
             TeamSeasonManagers = new List<TeamManager>();
             VoteAnswers = new List<VoteAnswer>();
-        }
-
-
-        static public string GetPhotoURL(long id)
-        {
-            Contact c = new Contact();
-            c.Id = id;
-            return c.PhotoURL;
-        }
-
-        static public string GetLargePhotoURL(long id)
-        {
-            Contact c = new Contact();
-            c.Id = id;
-            return c.LargePhotoURL;
-        }
-
-        public string PhotoURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + PhotoName);
-            }
-        }
-
-        public string LargePhotoURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
-            }
         }
 
         public string FullName

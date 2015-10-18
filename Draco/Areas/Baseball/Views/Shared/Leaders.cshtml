@@ -19,7 +19,7 @@
             <form class="form" role="form" data-bind="visible: editMode">
                 <div class="form-group">
                     <label for="_leadersBatCats" class="control-label">Select Bat Categories: </label>
-                    <select id="_leadersBatCats" data-container="body" data-bind="selectPicker: selectedBatCategories, selectPickerOptions: { optionsArray: availableBatCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
+                    <select id="_leadersBatCats" data-bind="selectPicker: selectedBatCategories, selectPickerOptions: { optionsArray: availableBatCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
                     </select>
                     <div data-bind="if: selectedBatCategories().length > 3">
                         <div class="alert alert-danger">Only 3 categories allowed.</div>
@@ -27,7 +27,7 @@
                 </div>
                 <div class="form-group">
                     <label for="_leadersPitchCats" class="control-label">Select Pitch Categories: </label>
-                    <select id="_leadersPitchCats" data-container="body" data-bind="selectPicker: selectedPitchCategories, selectPickerOptions: { optionsArray: availablePitchCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
+                    <select id="_leadersPitchCats" data-bind="selectPicker: selectedPitchCategories, selectPickerOptions: { optionsArray: availablePitchCategories }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select categories..." >
                     </select>
                     <div data-bind="if: selectedPitchCategories().length > 3">
                         <div class="alert alert-danger">Only 3 categories allowed.</div>
@@ -43,7 +43,7 @@
         <div data-bind="visible: !editMode()">
             @if (Model.TeamSeasonId == 0)
             {
-                <select data-container="body" data-bind="selectPicker: selectedLeagueId">
+                <select data-bind="selectPicker: selectedLeagueId">
                     @if (!Model.Leagues.Any())
                     {
                         <option value="0">No Leagues Found</option>
