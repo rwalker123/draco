@@ -211,7 +211,7 @@ namespace SportsManager.Baseball.Controllers
                     {
                         var newTeam = new TeamSeason()
                         {
-                            LeagueSeasonId = ls.Id,
+                            LeagueSeason = newls,
                             TeamId = ts.TeamId,
                             Name = ts.Name,
                             DivisionSeason = newDiv
