@@ -28,7 +28,7 @@
     <div style="margin-top: 10px" class="row">
         <div class="col-lg-12 col-md-12 col-sm-12 text-center">
             <label class="control-label">Season:</label>
-            <select data-container="body" data-bind="selectPicker: selectedSeasonId">
+            <select data-bind="selectPicker: selectedSeasonId">
                 @foreach (var season in Model.GetSeasons())
                 {
                     <option value="@season.Value">@season.Text</option>
@@ -50,11 +50,11 @@
                         <div class="form-group">
                             <label class="col-lg-1 col-sm-2 control-label">League: </label>
                             <div class="col-lg-4 col-sm-4">
-                                <select data-container="body" data-bind="selectPicker: selectedLeagueId, selectPickerOptions: { optionsArray: leagues }, optionsText: 'Name', optionsValue: 'Id'"></select>
+                                <select data-bind="selectPicker: selectedLeagueId, selectPickerOptions: { optionsArray: leagues }, optionsText: 'Name', optionsValue: 'Id'"></select>
                             </div>
                             <label class="col-lg-1 col-sm-2 control-label">Division:</label>
                             <div class="col-lg-4 col-sm-4">
-                                <select data-container="body" data-bind="selectPicker: selectedDivisionId, selectPickerOptions: { optionsArray: divisions }, optionsText: 'Name', optionsValue: 'Id'"></select>
+                                <select data-bind="selectPicker: selectedDivisionId, selectPickerOptions: { optionsArray: divisions }, optionsText: 'Name', optionsValue: 'Id'"></select>
                             </div>
                         </div>
                     </form>
@@ -278,7 +278,7 @@
                         <div class="form-group">
                             <label class="col-lg-1 col-sm-2 control-label">Team: </label>
                             <div class="col-lg-4 col-sm-4">
-                                <select data-container="body" data-bind="selectPicker: selectedTeamId, selectPickerOptions: { optionsArray: teamsList }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                                <select data-bind="selectPicker: selectedTeamId, selectPickerOptions: { optionsArray: teamsList }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                             </div>
                         </div>
                     </form>

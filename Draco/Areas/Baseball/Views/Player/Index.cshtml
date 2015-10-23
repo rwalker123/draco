@@ -1,5 +1,6 @@
 ﻿@using System.Web.Optimization
-@using SportsManager.Baseball.ViewModels;
+@using SportsManager.Baseball.ViewModels
+@using SportsManager.Models.Helpers;
 @model PlayerViewModel
 
 @if (@Model.Contact == null)
@@ -16,7 +17,7 @@
 }
 
 <div class="jumbotron">
-    <h1><img onerror="this.style.display = 'none';" class="img-rounded" src="@Model.Contact.PhotoURL" />@ViewBag.Title.</h1>
+    <h1><img onerror="this.style.display = 'none';" class="img-rounded" src="@PhotoURLHelper.GetPhotoURL(Model.Contact.Id)" />@ViewBag.Title.</h1>
 </div>
 
 <div class="container" id="playerView">
