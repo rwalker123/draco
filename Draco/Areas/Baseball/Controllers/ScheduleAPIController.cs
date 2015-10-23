@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using LinqToTwitter;
-using Microsoft.ServiceBus.Notifications;
+using Microsoft.Azure.NotificationHubs;
 using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.Models;
