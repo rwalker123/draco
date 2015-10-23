@@ -823,10 +823,6 @@
     <Content Include="Scripts\i18n\defaults-zh_TW.min.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\halloffame.js" />
-    <Content Include="fonts\fontawesome-webfont.woff" />
-    <Content Include="fonts\fontawesome-webfont.ttf" />
-    <Content Include="fonts\fontawesome-webfont.eot" />
-    <Content Include="fonts\FontAwesome.otf" />
     <Content Include="Content\UserAddressListTemplate.xlsx" />
     <Content Include="Content\ManagerAddressListTemplate.xlsx" />
     <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
@@ -837,6 +833,11 @@
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
     <Content Include="Content\bootstrap.css.map" />
     <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="fonts\FontAwesome.otf" />
+    <Content Include="fonts\fontawesome-webfont.woff2" />
+    <Content Include="fonts\fontawesome-webfont.woff" />
+    <Content Include="fonts\fontawesome-webfont.ttf" />
+    <Content Include="fonts\fontawesome-webfont.eot" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
     <Content Include="Scripts\bootstrap-select.js.map" />
