@@ -161,12 +161,14 @@ namespace SportsManager
             Mapper.CreateMap<MemberBusiness, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Contact.FirstName + " " + model.Contact.LastName))
                 .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Contact.Id)))
+                .ForMember(vm => vm.Website, opt => opt.MapFrom(model => model.WebSite))
                 .ForMember(vm => vm.AccountId, opt => opt.Ignore())
                 .ForMember(vm => vm.TeamId, opt => opt.Ignore());
 
             Mapper.CreateMap<Sponsor, SponsorViewModel>()
                 .ForMember(vm => vm.ContactName, opt => opt.MapFrom(model => model.Name))
                 .ForMember(vm => vm.ContactPhotoUrl, opt => opt.MapFrom(model => model.LogoURL))
+                .ForMember(vm => vm.Website, opt => opt.MapFrom(model => model.WebSite))
                 .ForMember(vm => vm.ContactId, opt => opt.Ignore());
 
             Mapper.CreateMap<ProfileQuestionAnswer, ProfileAnswersViewModel>()
