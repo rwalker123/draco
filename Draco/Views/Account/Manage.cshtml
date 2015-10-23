@@ -98,8 +98,8 @@
                     <div class="form-group">
                         <label class="control-label col-sm-2">state</label>
                         <div class="col-sm-10">
-                            @*<select data-container="body" data-bind="selectPicker: State, selectPickerOptions: { optionsArray: $root.availableStates }, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>*@
-                            <select data-container="body" class="selectpicker" data-bind="uniqueId: $parent.Id, value: State, options: $root.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+                            @*<select data-bind="selectPicker: State, selectPickerOptions: { optionsArray: $root.availableStates }, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>*@
+                            <select class="selectpicker" data-bind="uniqueId: $parent.Id, value: State, options: $root.availableStates, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
                         </div>
                     </div>
                     <div class="form-group">
@@ -121,11 +121,11 @@
             <div class="tab-pane fade @if (!ViewBag.ShowUserInfo) { <text>in active</text> }" id="password">
                 @if (ViewBag.HasLocalPassword)
                 {
-                    @Html.Partial("_ChangePasswordPartial", new ManageUserViewModel())
+                    @Html.Partial("_ChangePasswordPartial", new ManageUserViewModel(Model.AccountId))
                 }
                 else
                 {
-                    @Html.Partial("_SetPasswordPartial", new ManageUserViewModel())
+                    @Html.Partial("_SetPasswordPartial", new ManageUserViewModel(Model.AccountId))
                 }
             </div>
         </div>

@@ -30,6 +30,17 @@ namespace SportsManager.Models
         [Display(Name = "Confirm new password")]
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
+
+        public long AccountId { get;  }
+
+        public ManageUserViewModel()
+        {
+        }
+
+        public ManageUserViewModel(long accountId)
+        {
+            AccountId = accountId;
+        }
     }
 
     public class LoginViewModel

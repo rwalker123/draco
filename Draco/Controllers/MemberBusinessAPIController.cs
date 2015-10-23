@@ -25,17 +25,19 @@ namespace SportsManager.Controllers
         {
             long seasonId = this.GetCurrentSeasonId(accountId);
 
-            var vm = (from mb in Db.MemberBusinesses
-                    join c in Db.Contacts on mb.ContactId equals c.Id
-                    join r in Db.Rosters on c.Id equals r.ContactId
-                    join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
-                    join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
-                    join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                    where ls.SeasonId == seasonId
-                    orderby mb.Name
-                    select mb).Distinct().Project<MemberBusiness>().To<SponsorViewModel>();
+            var m = (from mb in Db.MemberBusinesses
+                      join c in Db.Contacts on mb.ContactId equals c.Id
+                      join r in Db.Rosters on c.Id equals r.ContactId
+                      join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
+                      join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                      join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                      where ls.SeasonId == seasonId
+                      orderby mb.Name
+                      select mb).Distinct();
+            
+            var vm = Mapper.Map<IQueryable<MemberBusiness>, SponsorViewModel[]>(m);
 
-            return Request.CreateResponse<IEnumerable<SponsorViewModel>>(HttpStatusCode.OK, vm);
+            return Request.CreateResponse<SponsorViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -56,6 +58,7 @@ namespace SportsManager.Controllers
 
 
         [AcceptVerbs("POST"), HttpPost]
+        [ActionName("userbusiness")]
         public HttpResponseMessage PostMemberBusiness(long accountId, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid)
@@ -76,13 +79,13 @@ namespace SportsManager.Controllers
                 {
                     ContactId = sponsor.ContactId,
                     Name = sponsor.Name,
-                    CityStateZip = sponsor.CityStateZip,
-                    Description = sponsor.Description,
-                    EMail = sponsor.EMail,
-                    Fax = sponsor.Fax,
-                    Phone = sponsor.Phone,
-                    StreetAddress = sponsor.StreetAddress,
-                    WebSite = sponsor.Website
+                    CityStateZip = sponsor.CityStateZip ?? String.Empty,
+                    Description = sponsor.Description ?? String.Empty,
+                    EMail = sponsor.EMail ?? String.Empty,
+                    Fax = sponsor.Fax ?? String.Empty,
+                    Phone = sponsor.Phone ?? String.Empty,
+                    StreetAddress = sponsor.StreetAddress ?? String.Empty,
+                    WebSite = sponsor.Website ?? String.Empty
                 };
 
                 if (!String.IsNullOrEmpty(dbSponsor.WebSite) && !dbSponsor.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
@@ -101,7 +104,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("PUT"), HttpPut]
-        [ActionName("business")]
+        [ActionName("userbusiness")]
         public HttpResponseMessage PutMemberBusiness(long accountId, long id, SponsorViewModel item)
         {
             if (ModelState.IsValid)
@@ -115,13 +118,13 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 mb.Name = item.Name;
-                mb.CityStateZip = item.CityStateZip;
-                mb.Description = item.Description;
-                mb.EMail = item.EMail;
-                mb.Fax = item.Fax;
-                mb.Phone = item.Phone;
-                mb.StreetAddress = item.StreetAddress;
-                mb.WebSite = item.Website;
+                mb.CityStateZip = item.CityStateZip ?? String.Empty;
+                mb.Description = item.Description ?? String.Empty;
+                mb.EMail = item.EMail ?? String.Empty;
+                mb.Fax = item.Fax ?? String.Empty;
+                mb.Phone = item.Phone ?? String.Empty;
+                mb.StreetAddress = item.StreetAddress ?? String.Empty;
+                mb.WebSite = item.Website ?? String.Empty;
                 if (!String.IsNullOrEmpty(mb.WebSite) && !mb.WebSite.StartsWith("http", StringComparison.InvariantCultureIgnoreCase))
                 {
                     mb.WebSite = mb.WebSite.Insert(0, "http://");
@@ -138,7 +141,7 @@ namespace SportsManager.Controllers
 
 
         [AcceptVerbs("DELETE"), HttpDelete]
-        [ActionName("business")]
+        [ActionName("userbusiness")]
         public async Task<HttpResponseMessage> DeleteMemberBusiness(long accountId, long id)
         {
             var dbSponsor = Db.MemberBusinesses.Find(id);
