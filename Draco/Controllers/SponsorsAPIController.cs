@@ -278,9 +278,6 @@ namespace SportsManager.Controllers
             if (team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            if (sponsor.TeamId != team.Id)
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-
             if (sponsor.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
