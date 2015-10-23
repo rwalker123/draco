@@ -43,7 +43,7 @@ namespace SportsManager.Baseball.Controllers
                 {
                     Name = f.Name,
                     ShortName = f.ShortName,
-                    AccountId = f.AccountId,
+                    AccountId = accountId,
                     Address = f.Address ?? String.Empty,
                     City = f.City ?? String.Empty,
                     State = f.State ?? String.Empty,
@@ -113,7 +113,7 @@ namespace SportsManager.Baseball.Controllers
             if (field == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (field.AccountId == accountId)
+            if (field.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.AvailableFields.Remove(field);

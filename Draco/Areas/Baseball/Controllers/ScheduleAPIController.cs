@@ -307,12 +307,15 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("Week")]
         public HttpResponseMessage GetWeekGames(long accountId, long leagueSeasonId)
         {
-            var ls = Db.LeagueSeasons.Find(leagueSeasonId);
-            if (ls == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+            if (leagueSeasonId != 0)
+            {
+                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                if (ls == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            if (ls.League.AccountId != accountId)
-                return Request.CreateResponse(HttpStatusCode.Forbidden);
+                if (ls.League.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+            }
 
             var queryValues = Request.RequestUri.ParseQueryString();
             String strStartDate = queryValues["startDay"];

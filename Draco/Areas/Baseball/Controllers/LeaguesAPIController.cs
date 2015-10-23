@@ -87,7 +87,7 @@ namespace SportsManager.Baseball.Controllers
         public HttpResponseMessage GetLeagueTeams(long accountId, long id)
         {
             var teams = (from ts in Db.TeamsSeasons
-                         where ts.LeagueSeasonId == id
+                         where ts.LeagueSeasonId == id && ts.DivisionSeasonId != 0
                          orderby ts.DivisionSeasonId
                          select ts);
 

@@ -16,31 +16,22 @@ namespace SportsManager.ViewModels.API
         [Required]
         [StringLength(5)]
         public string ShortName { get; set; }
-        [Required]
         [StringLength(255)]
         public string Comment { get; set; }
-        [Required]
         [StringLength(255)]
         public string Address { get; set; }
-        [Required]
         [StringLength(25)]
         public string City { get; set; }
-        [Required]
         [StringLength(25)]
         public string State { get; set; }
-        [Required]
         [StringLength(10)]
         public string ZipCode { get; set; }
-        [Required]
         [StringLength(255)]
         public string Directions { get; set; }
-        [Required]
         [StringLength(15)]
         public string RainoutNumber { get; set; }
-        [Required]
         [StringLength(25)]
         public string Latitude { get; set; }
-        [Required]
         [StringLength(25)]
         public string Longitude { get; set; }
         //public DbGeography LocationGeo { get; set; }
