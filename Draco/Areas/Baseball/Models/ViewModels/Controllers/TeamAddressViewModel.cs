@@ -18,11 +18,11 @@ namespace SportsManager.Baseball.ViewModels
             : base(c, accountId)
         {
             Team = c.Db.TeamsSeasons.Find(teamSeasonId);
-            Roster = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId);
+            SeasonPlayers = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId);
         }
 
         public TeamSeason Team { get; private set; }
-        public IQueryable<PlayerSeason> Roster { get; private set; }
+        public IQueryable<PlayerSeason> SeasonPlayers { get; private set; }
 
         public FileStream ExportToExcel()
         {
@@ -50,7 +50,7 @@ namespace SportsManager.Baseball.ViewModels
                 teamNameCol.CellValue = new CellValue(Team.Name);
                 teamNameCol.DataType = new EnumValue<CellValues>(CellValues.String);
 
-                ExportRosterToExcel(CurrentSeasonId, Roster, sheetData);
+                ExportRosterToExcel(CurrentSeasonId, SeasonPlayers, sheetData);
 
                 // save
                 worksheetPart.Worksheet.Save();
