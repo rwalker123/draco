@@ -299,7 +299,7 @@
                     }
                 </div>
 
-            <div id="gamesummary" class="tab-pane fade" data-bind="if: selectedGame() > 0">
+            <div id="gamesummary" class="tab-pane fade" data-bind="visible: selectedGame() > 0">
 
                 @if (Model.IsAdmin || Model.IsTeamAdmin)
                 {
