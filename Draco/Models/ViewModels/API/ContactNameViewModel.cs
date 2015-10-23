@@ -5,6 +5,8 @@ namespace SportsManager.ViewModels.API
 {
     public class ContactNameViewModel
     {
+        string photoUrl = String.Empty;
+
         public ContactNameViewModel()
         {
         }
@@ -18,9 +20,14 @@ namespace SportsManager.ViewModels.API
         {
             get
             {
-                return PhotoURLHelper.GetPhotoURL(Id);
+                if (photoUrl == "")
+                    photoUrl = PhotoURLHelper.GetPhotoURL(Id);
+                return photoUrl;
             }
-            set { } 
+            set
+            {
+                photoUrl = value;
+            }
         }
         public int FirstYear { get; set; }
         public string Zip { get; set; }
@@ -32,9 +39,7 @@ namespace SportsManager.ViewModels.API
         public long AccountId { get; set; }
         public long ContactId { get; set; }
         public long RoleData { get; set; }
-        // TODO: not sure how to get this with mappers
-        // maybe the client should get the info based on RoleData.
-        //public string RoleDataText { get; set; }
+        public string RoleDataText { get; set; }
         public string RoleId { get; set; }
     }
 }

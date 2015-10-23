@@ -529,6 +529,7 @@
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\Filters\ModelStateValidationAttribute.cs" />
     <Compile Include="Models\Helpers\PhotoURLHelper.cs" />
+    <Compile Include="Models\Helpers\RoleDataHelper.cs" />
     <Compile Include="Models\ModelObjects\AspNetRole.cs" />
     <Compile Include="Models\ModelObjects\AspNetUser.cs" />
     <Compile Include="Models\ModelObjects\HOFMember.cs" />

@@ -657,6 +657,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url: url,
             success: function (gameSummary) {
                 self.gameSummary(gameSummary);
+                tinymce.get('gameSummaryText').setContent(self.gameSummary());
             }
         });
     }

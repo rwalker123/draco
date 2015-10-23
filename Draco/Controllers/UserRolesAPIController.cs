@@ -36,6 +36,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("UserRoles")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage AdminsForRole(long accountId, string id)
         {
@@ -83,7 +84,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [ActionName("AddToRole")]
+        [ActionName("UserRoles")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage AddToRole(long accountId, ContactRoleViewModel roleData)
         {
@@ -99,7 +100,7 @@ namespace SportsManager.Controllers
                     dbRole = new ContactRole()
                     {
                         AccountId = accountId,
-                        ContactId = roleData.ContactId,
+                        Contact = Db.Contacts.Find(roleData.ContactId),
                         RoleId = roleData.RoleId,
                         RoleData = roleData.RoleData
                     };
@@ -122,8 +123,9 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
+        [ActionName("UserRoles")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public HttpResponseMessage DeleteFromRole(long accountId, ContactRoleViewModel info)
         {
             if (!String.IsNullOrEmpty(info.RoleId))
@@ -158,9 +160,7 @@ namespace SportsManager.Controllers
             if (roleId == this.GetAdminAccountId() || roleId == this.GetAccountPhotoAdminId())
             {
                 role = (from cr in Db.ContactRoles
-                        join c in Db.Contacts on cr.ContactId equals c.Id
-                        where cr.AccountId == accountId && cr.RoleId == roleId &&
-                        c.Id == contactId
+                        where cr.ContactId == contactId && cr.AccountId == accountId && cr.RoleId == roleId
                         select cr).SingleOrDefault();
             }
             else if (roleId == this.GetLeagueAdminId())
@@ -168,11 +168,10 @@ namespace SportsManager.Controllers
                 long currentSeason = this.GetCurrentSeasonId(accountId);
 
                 role = (from cr in Db.ContactRoles
-                        join c in Db.Contacts on cr.ContactId equals c.Id
                         join ls in Db.LeagueSeasons on cr.RoleData equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         cr.RoleData == roleData && ls.SeasonId == currentSeason &&
-                        c.Id == contactId
+                        cr.ContactId == contactId
                         select cr).SingleOrDefault();
             }
             else if (roleId == this.GetTeamAdminId() || roleId == this.GetTeamPhotoAdminId())
@@ -180,12 +179,11 @@ namespace SportsManager.Controllers
                 long currentSeason = this.GetCurrentSeasonId(accountId);
 
                 role = (from cr in Db.ContactRoles
-                        join c in Db.Contacts on cr.ContactId equals c.Id
                         join ts in Db.TeamsSeasons on cr.RoleData equals ts.Id
                         join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                         where cr.AccountId == accountId && cr.RoleId == roleId &&
                         cr.RoleData == roleData && ls.SeasonId == currentSeason &&
-                        c.Id == contactId
+                        cr.ContactId == contactId
                         select cr).SingleOrDefault();
 
             }

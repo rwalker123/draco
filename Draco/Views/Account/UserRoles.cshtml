@@ -82,13 +82,13 @@
                             <!-- ko if: ShowLeagues -->
                             <div class="form-group col-sm-12">
                                 <label data-bind="uniqueFor: Id" class="control-label">select league</label>
-                                <select data-bind="uniqueId: Id, selectPicker: selectedLeague, selectPickerOptions: { optionsArray: $parent.availableLeagues }, optionsText: 'Name', optionsValue: 'Id'" data-container="body" title="Choose a league..."></select>
+                                <select data-bind="uniqueId: Id, selectPicker: selectedLeague, selectPickerOptions: { optionsArray: $parent.availableLeagues }, optionsText: 'Name', optionsValue: 'Id'" title="Choose a league..."></select>
                             </div>
                             <!-- /ko -->
                             <!-- ko if: ShowTeams -->
                             <div class="form-group col-sm-12">
                                 <label data-bind="uniqueFor: Id" class="control-label">select team</label>
-                                <select data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: $parent.availableTeams }, optionsText: 'Name', optionsValue: 'Id'" data-container="body" title="Choose a team..."></select>
+                                <select data-bind="selectPicker: selectedTeam, selectPickerOptions: { optionsArray: $parent.availableTeams }, optionsText: 'LeagueTeamName', optionsValue: 'Id'" title="Choose a team..."></select>
                             </div>
                             <!-- /ko -->
                             <div class="form-group col-sm-12">

@@ -109,6 +109,7 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth))
+                .ForMember(vm => vm.RoleDataText, opt => opt.MapFrom(model => RoleDataHelper.GetRoleDataText(model)))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.ContactId)));
 
             Mapper.CreateMap<MessagePost, MessagePostViewModel>()

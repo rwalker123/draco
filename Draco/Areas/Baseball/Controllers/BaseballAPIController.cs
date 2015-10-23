@@ -100,7 +100,8 @@ namespace SportsManager.Baseball.Controllers
                               where !String.IsNullOrEmpty(c.Email)
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
 
-                var fromContact = Db.Contacts.Where(c => c.UserId == Globals.GetCurrentUserId()).SingleOrDefault();
+                var currentUserId = Globals.GetCurrentUserId();
+                var fromContact = Db.Contacts.Where(c => c.UserId == currentUserId).SingleOrDefault();
                 if (fromContact == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 

@@ -117,9 +117,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             var batStats = new GameBatStats()
             {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
+                LeagueSchedule = Db.LeagueSchedules.Find(gameId),
+                RosterSeason = Db.RosterSeasons.Find(playerId),
+                TeamsSeason = Db.TeamsSeasons.Find(teamSeasonId)
             };
 
             Db.Batstatsums.Add(batStats);
@@ -280,9 +280,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             var pitchStats = new GamePitchStats()
             {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
+                LeagueSchedule = Db.LeagueSchedules.Find(gameId),
+                RosterSeason = Db.RosterSeasons.Find(playerId),
+                TeamsSeason = Db.TeamsSeasons.Find(teamSeasonId)
             };
 
             Db.Pitchstatsums.Add(pitchStats);
