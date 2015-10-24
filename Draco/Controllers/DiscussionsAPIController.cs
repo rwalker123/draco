@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -60,7 +61,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostCategories(long accountId, MessageCategoryViewModel cat)
+        public async Task<HttpResponseMessage> PostCategories(long accountId, MessageCategoryViewModel cat)
         {
             if (ModelState.IsValid && cat != null)
             {
@@ -79,7 +80,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.MessageCategories.Add(dbCat);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MessageCategory, MessageCategoryViewModel>(dbCat);
                 return Request.CreateResponse<MessageCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -91,13 +92,13 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutCategories(long accountId, MessageCategoryViewModel cat)
+        public async Task<HttpResponseMessage> PutCategories(long accountId, MessageCategoryViewModel cat)
         {
             if (ModelState.IsValid && cat != null)
             {
                 cat.AccountId = accountId;
 
-                var dbCat = Db.MessageCategories.Find(cat.Id);
+                var dbCat = await Db.MessageCategories.FindAsync(cat.Id);
                 if (dbCat == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -109,7 +110,7 @@ namespace SportsManager.Controllers
                 dbCat.IsTeam = cat.IsTeam;
                 dbCat.IsModerated = cat.IsModerated;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MessageCategory, MessageCategoryViewModel>(dbCat);
                 return Request.CreateResponse<MessageCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -121,9 +122,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteCategories(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteCategories(long accountId, long id)
         {
-            var cat = Db.MessageCategories.Find(id);
+            var cat = await Db.MessageCategories.FindAsync(id);
             if (cat == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -131,7 +132,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.MessageCategories.Remove(cat);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -151,7 +152,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("topics")]
-        public HttpResponseMessage PostTopic(long accountId, long categoryId, MessageTopicViewModel topic)
+        public async Task<HttpResponseMessage> PostTopic(long accountId, long categoryId, MessageTopicViewModel topic)
         {
             if (ModelState.IsValid && topic != null)
             {
@@ -182,7 +183,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.MessageTopics.Add(dbTopic);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MessageTopic, MessageTopicViewModel>(dbTopic);
                 return Request.CreateResponse<MessageTopicViewModel>(HttpStatusCode.OK, vm);
@@ -194,9 +195,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("topics")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteTopic(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteTopic(long accountId, long id)
         {
-            var topic = Db.MessageTopics.Find(id);
+            var topic = await Db.MessageTopics.FindAsync(id);
             if (topic == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -204,7 +205,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.MessageTopics.Remove(topic);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -224,11 +225,11 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("messages")]
-        public HttpResponseMessage PostMessage(long accountId, long topicId, MessagePostViewModel post)
+        public async Task<HttpResponseMessage> PostMessage(long accountId, long topicId, MessagePostViewModel post)
         {
             if (ModelState.IsValid && post != null)
             {
-                var topic = Db.MessageTopics.Find(topicId);
+                var topic = await Db.MessageTopics.FindAsync(topicId);
                 if (topic == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -265,7 +266,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.MessagePosts.Add(dbPost);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MessagePost, MessagePostViewModel>(dbPost);
                 return Request.CreateResponse<MessagePostViewModel>(HttpStatusCode.OK, vm);
@@ -276,13 +277,13 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("messages")]
-        public HttpResponseMessage PutMessage(long accountId, long topicId, MessagePostViewModel post)
+        public async Task<HttpResponseMessage> PutMessage(long accountId, long topicId, MessagePostViewModel post)
         {
             if (ModelState.IsValid && post != null)
             {
                 post.EditDate = DateTime.Now;
 
-                var dbPost = Db.MessagePosts.Find(post.Id);
+                var dbPost = await Db.MessagePosts.FindAsync(post.Id);
                 if (dbPost == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -307,7 +308,7 @@ namespace SportsManager.Controllers
                 dbPost.EditDate = post.EditDate;
                 dbPost.PostSubject = post.Subject;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MessagePost, MessagePostViewModel>(dbPost);
 
@@ -319,9 +320,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("messages")]
-        public HttpResponseMessage DeleteMessage(long accountId, long topicId, long id)
+        public async Task<HttpResponseMessage> DeleteMessage(long accountId, long topicId, long id)
         {
-            var dbPost = Db.MessagePosts.Find(id);
+            var dbPost = await Db.MessagePosts.FindAsync(id);
             if (dbPost == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -343,7 +344,7 @@ namespace SportsManager.Controllers
             }
 
             Db.MessagePosts.Remove(dbPost);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             bool topicRemoved = this.CleanupEmptyMessageTopics(dbPost.TopicId);
             return Request.CreateResponse<bool>(HttpStatusCode.OK, topicRemoved);
