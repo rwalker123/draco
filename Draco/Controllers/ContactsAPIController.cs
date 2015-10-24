@@ -80,9 +80,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("contacts")]
-        public HttpResponseMessage GetContactDetails(long accountId, long id)
+        public async Task<HttpResponseMessage> GetContactDetails(long accountId, long id)
         {
-            var contact = Db.Contacts.Find(id);
+            var contact = await Db.Contacts.FindAsync(id);
             var vm = Mapper.Map<Contact, ContactViewModel>(contact);
             return Request.CreateResponse<ContactViewModel>(HttpStatusCode.OK, vm);
         }
@@ -198,7 +198,7 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> ResetPassword(long accountId, long id)
         {
 
-            Contact c = Db.Contacts.Find(id);
+            Contact c = await Db.Contacts.FindAsync(id);
             if (c != null)
             {
                 await ResetPassword(accountId, c);
@@ -215,7 +215,7 @@ namespace SportsManager.Controllers
         [ActionName("register")]
         public async Task<HttpResponseMessage> RegisterAccount(long accountId, long id)
         {
-            var contact = Db.Contacts.Find(id);
+            var contact = await Db.Contacts.FindAsync(id);
             try
             {
                 var userId = await RegisterUser(contact);
@@ -238,7 +238,7 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid && vm != null)
             {
                 vm.CreatorAccountId = accountId;
-                var contact = Db.Contacts.Find(vm.Id);
+                var contact = await Db.Contacts.FindAsync(vm.Id);
                 if (contact == null)
                     return new HttpResponseMessage(HttpStatusCode.NotFound);
 
@@ -251,7 +251,7 @@ namespace SportsManager.Controllers
 
                     await this.UpdateContact(accountId, contact, vm, registerIfNeeded);
 
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
 
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -289,7 +289,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("contactinfo")]
-        public HttpResponseMessage PutContactInfo(long accountId, ContactViewModel vm)
+        public async Task<HttpResponseMessage> PutContactInfo(long accountId, ContactViewModel vm)
         {
             if (ModelState.IsValid && vm != null)
             {
@@ -297,7 +297,7 @@ namespace SportsManager.Controllers
 
                 try
                 {
-                    var contact = Db.Contacts.Find(vm.Id);
+                    var contact = await Db.Contacts.FindAsync(vm.Id);
                     if (contact.UserId != Globals.GetCurrentUserId())
                         return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -313,7 +313,7 @@ namespace SportsManager.Controllers
                     contact.Phone2 = vm.Phone2;
                     contact.Phone3 = vm.Phone3;
 
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
 
                     // Create a 200 response.
                     var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -340,7 +340,7 @@ namespace SportsManager.Controllers
         [ActionName("contacts")]
         public async Task<HttpResponseMessage> DeleteContact(long accountId, long id)
         {
-            var contact = Db.Contacts.Find(id);
+            var contact = await Db.Contacts.FindAsync(id);
             if (contact != null)
             {
                 if (!String.IsNullOrEmpty(contact.UserId))
@@ -355,7 +355,7 @@ namespace SportsManager.Controllers
                 }
 
                 Db.Contacts.Remove(contact);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 await Storage.Provider.DeleteFile(PhotoURLHelper.GetPhotoURL(contact.Id));
                 await Storage.Provider.DeleteFile(PhotoURLHelper.GetLargePhotoURL(contact.Id));
@@ -463,7 +463,7 @@ namespace SportsManager.Controllers
             contact.UserId = await this.CreateAndEmailAccount(contact.CreatorAccountId, new MailAddress(contact.Email, contact.FullNameFirst));
             if (!String.IsNullOrEmpty(contact.UserId))
             {
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
                 return contact.UserId;
             }
 
