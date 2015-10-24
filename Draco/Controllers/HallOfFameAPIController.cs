@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -67,7 +68,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("classmembers")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage PostHOFClassMembers(long accountId, HOFMemberViewModel hofMember)
+        public async Task<HttpResponseMessage> PostHOFClassMembers(long accountId, HOFMemberViewModel hofMember)
         {
             if (ModelState.IsValid && hofMember != null)
             {
@@ -90,7 +91,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.Hofs.Add(dbHof);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 if (dbHof.Id > 0)
                 {
@@ -105,11 +106,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("Put"), HttpPut]
         [ActionName("classmembers")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutHOFClassMembers(long accountId, HOFMemberViewModel hofMember)
+        public async Task<HttpResponseMessage> PutHOFClassMembers(long accountId, HOFMemberViewModel hofMember)
         {
             if (ModelState.IsValid && hofMember != null)
             {
-                var dbHof = Db.Hofs.Find(hofMember.Id);
+                var dbHof = await Db.Hofs.FindAsync(hofMember.Id);
                 if (dbHof == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -119,7 +120,7 @@ namespace SportsManager.Controllers
                 dbHof.Bio = hofMember.Biography;
                 dbHof.YearInducted = hofMember.YearInducted;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<HOFMember, HOFMemberViewModel>(dbHof);
                 return Request.CreateResponse<HOFMemberViewModel>(HttpStatusCode.OK, vm);
@@ -131,9 +132,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("classmembers")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteHOFClassMember(long accountId, int id)
+        public async Task<HttpResponseMessage> DeleteHOFClassMember(long accountId, int id)
         {
-            var hof = Db.Hofs.Find(id);
+            var hof = await Db.Hofs.FindAsync(id);
             if (hof == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -141,7 +142,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.Hofs.Remove(hof);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
