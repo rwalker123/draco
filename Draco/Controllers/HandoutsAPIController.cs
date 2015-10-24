@@ -35,9 +35,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("handouts")]
-        public HttpResponseMessage GetTeamHandout(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamHandout(long accountId, long teamSeasonId)
         {
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -56,11 +56,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("handouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateHandout(long accountId, int id, HandoutViewModel item)
+        public async Task<HttpResponseMessage> UpdateHandout(long accountId, int id, HandoutViewModel item)
         {
             if (ModelState.IsValid)
             {
-                var dbHandout = Db.AccountHandouts.Find(id);
+                var dbHandout = await Db.AccountHandouts.FindAsync(id);
                 if (dbHandout == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -70,7 +70,7 @@ namespace SportsManager.Controllers
                 dbHandout.Description = item.Description;
                 dbHandout.FileName = item.FileName;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<AccountHandout, HandoutViewModel>(dbHandout);
                 return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
@@ -82,20 +82,20 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("handouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage UpdateHandout(long accountId, long teamSeasonId, int id, TeamHandout item)
+        public async Task<HttpResponseMessage> UpdateHandout(long accountId, long teamSeasonId, int id, TeamHandout item)
         {
             if (ModelState.IsValid)
             {
-                var team = Db.TeamsSeasons.Find(teamSeasonId);
+                var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var dbHandout = Db.TeamHandouts.Find(id);
+                var dbHandout = await Db.TeamHandouts.FindAsync(id);
                 if (dbHandout == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 dbHandout.Description = item.Description;
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<TeamHandout, HandoutViewModel>(dbHandout);
                 return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
