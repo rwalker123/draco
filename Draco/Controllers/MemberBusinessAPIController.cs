@@ -59,7 +59,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("userbusiness")]
-        public HttpResponseMessage PostMemberBusiness(long accountId, SponsorViewModel sponsor)
+        public async Task<HttpResponseMessage> PostMemberBusiness(long accountId, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid)
             {
@@ -94,7 +94,7 @@ namespace SportsManager.Controllers
                 }
 
                 Db.MemberBusinesses.Add(dbSponsor);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MemberBusiness, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -105,11 +105,11 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("userbusiness")]
-        public HttpResponseMessage PutMemberBusiness(long accountId, long id, SponsorViewModel item)
+        public async Task<HttpResponseMessage> PutMemberBusiness(long accountId, long id, SponsorViewModel item)
         {
             if (ModelState.IsValid)
             {
-                var mb = Db.MemberBusinesses.Find(id);
+                var mb = await Db.MemberBusinesses.FindAsync(id);
                 if (mb == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -130,7 +130,7 @@ namespace SportsManager.Controllers
                     mb.WebSite = mb.WebSite.Insert(0, "http://");
                 }
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<MemberBusiness, SponsorViewModel>(mb);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -144,7 +144,7 @@ namespace SportsManager.Controllers
         [ActionName("userbusiness")]
         public async Task<HttpResponseMessage> DeleteMemberBusiness(long accountId, long id)
         {
-            var dbSponsor = Db.MemberBusinesses.Find(id);
+            var dbSponsor = await Db.MemberBusinesses.FindAsync(id);
             if (dbSponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -158,7 +158,7 @@ namespace SportsManager.Controllers
             }
 
             Db.MemberBusinesses.Remove(dbSponsor);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             Sponsor s = new Sponsor()
             {

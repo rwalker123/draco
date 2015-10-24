@@ -77,9 +77,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("photos")]
-        public HttpResponseMessage GetTeamPhotos(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamPhotos(long accountId, long teamSeasonId)
         {
-            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -110,11 +110,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdatePhoto(long accountId, int id, PhotoViewModel item)
+        public async Task<HttpResponseMessage> UpdatePhoto(long accountId, int id, PhotoViewModel item)
         {
             if (ModelState.IsValid)
             {
-                var photo = Db.PhotoGalleries.Find(id);
+                var photo = await Db.PhotoGalleries.FindAsync(id);
                 if (photo == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -132,7 +132,7 @@ namespace SportsManager.Controllers
                     photo.Caption = item.Caption;
                     photo.AlbumId = item.AlbumId;
 
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
 
                     var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
                     return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
@@ -149,15 +149,15 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
-        public HttpResponseMessage UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoViewModel item)
+        public async Task<HttpResponseMessage> UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoViewModel item)
         {
             if (ModelState.IsValid)
             {
-                var team = Db.TeamsSeasons.Find(teamSeasonId);
+                var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (team == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var photo = Db.PhotoGalleries.Find(id);
+                var photo = await Db.PhotoGalleries.FindAsync(id);
                 if (photo == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -185,7 +185,7 @@ namespace SportsManager.Controllers
                     photo.Caption = item.Caption;
                     photo.AlbumId = item.AlbumId;
 
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
 
                     var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
                     return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
@@ -204,7 +204,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> DeletePhoto(long accountId, long id)
         {
-            var photo = Db.PhotoGalleries.Find(id);
+            var photo = await Db.PhotoGalleries.FindAsync(id);
             if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -212,7 +212,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.PhotoGalleries.Remove(photo);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             await Storage.Provider.DeleteDirectory(photo.PhotoURL);
             return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
@@ -223,11 +223,11 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> DeleteTeamPhoto(long accountId, long teamSeasonId, long id)
         {
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var photo = Db.PhotoGalleries.Find(id);
+            var photo = await Db.PhotoGalleries.FindAsync(id);
             if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -235,7 +235,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.PhotoGalleries.Remove(photo);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             await Storage.Provider.DeleteDirectory(photo.PhotoURL);
             return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
@@ -313,9 +313,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("albums")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeletePhotoAlbum(long accountId, long id)
+        public async Task<HttpResponseMessage> DeletePhotoAlbum(long accountId, long id)
         {
-            var pa = Db.PhotoGalleryAlbums.Find(id);
+            var pa = await Db.PhotoGalleryAlbums.FindAsync(id);
             if (pa == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -327,7 +327,7 @@ namespace SportsManager.Controllers
                 photo.AlbumId = 0;
 
             Db.PhotoGalleryAlbums.Remove(pa);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
@@ -335,7 +335,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("albums")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostPhotoAlbum(long accountId, IdData name)
+        public async Task<HttpResponseMessage> PostPhotoAlbum(long accountId, IdData name)
         {
             if (name == null)
             {
@@ -359,7 +359,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.PhotoGalleryAlbums.Add(dbAlbum);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<PhotoGalleryAlbum, PhotoAlbumViewModel>(dbAlbum);
                 return Request.CreateResponse<PhotoAlbumViewModel>(HttpStatusCode.Created, vm);
