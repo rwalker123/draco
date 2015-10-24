@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -29,9 +30,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("TeamAnnouncements")]
-        public HttpResponseMessage GetTeamAnnouncements(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamAnnouncements(long accountId, long teamSeasonId)
         {
-            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -78,9 +79,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcement")]
-        public HttpResponseMessage GetAnnouncement(long accountId, long id)
+        public async Task<HttpResponseMessage> GetAnnouncement(long accountId, long id)
         {
-            var newsItem = Db.LeagueNews.Find(id);
+            var newsItem = await Db.LeagueNews.FindAsync(id);
             if (newsItem != null)
             {
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
@@ -92,9 +93,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Announcement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> TeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            var newsItem = Db.TeamNews.Find(id);
+            var newsItem = await Db.TeamNews.FindAsync(id);
             if (newsItem != null)
             {
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -107,7 +108,7 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
-        public HttpResponseMessage Announcement(long accountId, NewsViewModel announcementData)
+        public async Task<HttpResponseMessage> Announcement(long accountId, NewsViewModel announcementData)
         {
             if (ModelState.IsValid)
             {
@@ -121,7 +122,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.LeagueNews.Add(newsItem);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
                 var response = Request.CreateResponse<NewsViewModel>(HttpStatusCode.Created, vm);
@@ -135,11 +136,11 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage Announcement(long accountId, long id, NewsViewModel announcementData)
+        public async Task<HttpResponseMessage> Announcement(long accountId, long id, NewsViewModel announcementData)
         {
             if (ModelState.IsValid)
             {
-                var newsItem = Db.LeagueNews.Find(id);
+                var newsItem = await Db.LeagueNews.FindAsync(id);
                 if (newsItem == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -147,7 +148,7 @@ namespace SportsManager.Controllers
                 newsItem.Text = announcementData.Text ?? String.Empty;
                 newsItem.Title = announcementData.Title ?? "Title";
                 newsItem.SpecialAnnounce = announcementData.SpecialAnnounce;
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // Create a 200 response.
                 var vm = Mapper.Map<LeagueNewsItem, NewsViewModel>(newsItem);
@@ -163,14 +164,14 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("Announcement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, NewsViewModel announcementData)
+        public async Task<HttpResponseMessage> TeamAnnouncement(long accountId, long teamSeasonId, NewsViewModel announcementData)
         {
             if (ModelState.IsValid)
             {
                 announcementData.Date = DateTime.Now;
 
                 // convert teamSeasonId to teamId
-                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -184,7 +185,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.TeamNews.Add(newsItem);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // Create a 201 response.
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -200,16 +201,16 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("Announcement")]
-        public HttpResponseMessage TeamAnnouncement(long accountId, long teamSeasonId, long id, NewsViewModel announcementData)
+        public async Task<HttpResponseMessage> TeamAnnouncement(long accountId, long teamSeasonId, long id, NewsViewModel announcementData)
         {
             if (ModelState.IsValid)
             {
                 // convert teamSeasonId to teamId
-                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var newsItem = Db.TeamNews.Find(id);
+                var newsItem = await Db.TeamNews.FindAsync(id);
                 if (newsItem.TeamId != teamSeason.TeamId)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -218,7 +219,7 @@ namespace SportsManager.Controllers
                 newsItem.Text = announcementData.Text ?? String.Empty;
                 newsItem.SpecialAnnounce = announcementData.SpecialAnnounce;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // Create a 200 response.
                 var vm = Mapper.Map<TeamNewsItem, NewsViewModel>(newsItem);
@@ -234,9 +235,9 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
-        public HttpResponseMessage Announcement(long accountid, long id)
+        public async Task<HttpResponseMessage> Announcement(long accountid, long id)
         {
-            var newsItem = Db.LeagueNews.Find(id);
+            var newsItem = await Db.LeagueNews.FindAsync(id);
             if (newsItem == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -244,7 +245,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Db.LeagueNews.Remove(newsItem);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
@@ -252,13 +253,13 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, LeagueAdmin, TeamAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Announcement")]
-        public HttpResponseMessage DeleteTeamAnnouncement(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> DeleteTeamAnnouncement(long accountId, long teamSeasonId, long id)
         {
-            var newsItem = Db.TeamNews.Find(id);
+            var newsItem = await Db.TeamNews.FindAsync(id);
             if (newsItem == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -266,7 +267,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             Db.TeamNews.Remove(newsItem);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         }
