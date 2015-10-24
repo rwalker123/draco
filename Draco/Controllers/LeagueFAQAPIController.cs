@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -29,7 +30,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostFAQ(long accountId, FAQItemViewModel faq)
+        public async Task<HttpResponseMessage> PostFAQ(long accountId, FAQItemViewModel faq)
         {
             if (ModelState.IsValid)
             {
@@ -41,7 +42,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.LeagueFaqs.Add(dbFaq);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
                 return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
@@ -53,11 +54,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutFAQ(long accountId, FAQItemViewModel faq)
+        public async Task<HttpResponseMessage> PutFAQ(long accountId, FAQItemViewModel faq)
         {
             if (ModelState.IsValid)
             {
-                var dbFaq = Db.LeagueFaqs.Find(faq.Id);
+                var dbFaq = await Db.LeagueFaqs.FindAsync(faq.Id);
                 if (dbFaq == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -67,7 +68,7 @@ namespace SportsManager.Controllers
                 dbFaq.Answer = faq.Answer;
                 dbFaq.Question = faq.Question;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
                 return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
@@ -79,9 +80,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteFAQ(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteFAQ(long accountId, long id)
         {
-            var faq = Db.LeagueFaqs.Find(id);
+            var faq = await Db.LeagueFaqs.FindAsync(id);
             if (faq == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -89,7 +90,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.LeagueFaqs.Remove(faq);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
