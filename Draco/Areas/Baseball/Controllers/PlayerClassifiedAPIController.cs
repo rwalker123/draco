@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Mail;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
@@ -35,7 +36,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("playerswanted")]
-        public HttpResponseMessage PostPlayersWanted(long accountId, PlayersWantedViewModel model)
+        public async Task<HttpResponseMessage> PostPlayersWanted(long accountId, PlayersWantedViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -54,7 +55,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 };
 
                 Db.PlayersWantedClassifieds.Add(dbPlayerWanted);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<PlayersWantedClassified, PlayersWantedViewModel>(dbPlayerWanted);
                 return Request.CreateResponse<PlayersWantedViewModel>(HttpStatusCode.Created, vm);
@@ -65,14 +66,14 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("playerswanted")]
-        public HttpResponseMessage PutPlayersWanted(long accountId, long id, PlayersWantedViewModel model)
+        public async Task<HttpResponseMessage> PutPlayersWanted(long accountId, long id, PlayersWantedViewModel model)
         {
             if (ModelState.IsValid)
             {
                 model.AccountId = accountId;
                 model.Id = id;
 
-                var dbPlayerWanted = Db.PlayersWantedClassifieds.Find(id);
+                var dbPlayerWanted = await Db.PlayersWantedClassifieds.FindAsync(id);
                 if (dbPlayerWanted == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -91,7 +92,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 dbPlayerWanted.Description = model.Description;
                 dbPlayerWanted.PositionsNeeded = model.PositionsNeeded;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<PlayersWantedClassified, PlayersWantedViewModel>(dbPlayerWanted);
                 return Request.CreateResponse<PlayersWantedViewModel>(HttpStatusCode.OK, vm);
@@ -102,9 +103,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("playerswanted")]
-        public HttpResponseMessage DeletePlayersWanted(long accountId, long id)
+        public async Task<HttpResponseMessage> DeletePlayersWanted(long accountId, long id)
         {
-            var dbPlayerWanted = Db.PlayersWantedClassifieds.Find(id);
+            var dbPlayerWanted = await Db.PlayersWantedClassifieds.FindAsync(id);
             if (dbPlayerWanted == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -120,7 +121,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             Db.PlayersWantedClassifieds.Remove(dbPlayerWanted);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -156,7 +157,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("teamswanted")]
-        public HttpResponseMessage PostTeamsWanted(long accountId, TeamWantedViewModel model)
+        public async Task<HttpResponseMessage> PostTeamsWanted(long accountId, TeamWantedViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -177,7 +178,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 };
 
                 Db.TeamsWantedClassifieds.Add(tw);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // email user with access code so they can edit the entry.
                 EmailTeamRegistration(tw, refererUrl + "?c=" + tw.AccessCode);
@@ -194,11 +195,11 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("teamswanted")]
-        public HttpResponseMessage PutTeamsWanted(long accountId, long id, TeamWantedViewModel model)
+        public async Task<HttpResponseMessage> PutTeamsWanted(long accountId, long id, TeamWantedViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var tw = Db.TeamsWantedClassifieds.Find(id);
+                var tw = await Db.TeamsWantedClassifieds.FindAsync(id);
                 if (tw == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -212,7 +213,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 tw.PositionsPlayed = model.PositionsPlayed;
                 tw.BirthDate = model.BirthDate;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
 
                 var vm = Mapper.Map<TeamsWantedClassified, TeamWantedViewModel>(tw);
@@ -224,7 +225,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("teamswanted")]
-        public HttpResponseMessage DeleteTeamsWanted(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteTeamsWanted(long accountId, long id)
         {
             string userId = Globals.GetCurrentUserId();
             bool isAdmin = this.IsAccountAdmin(accountId, userId);
@@ -235,7 +236,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 accessCode = queryValues["c"];
             }
 
-            var dbObj = Db.TeamsWantedClassifieds.Find(id);
+            var dbObj = await Db.TeamsWantedClassifieds.FindAsync(id);
             if (dbObj == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -248,7 +249,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
 
             Db.TeamsWantedClassifieds.Remove(dbObj);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

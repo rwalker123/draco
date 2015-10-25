@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
@@ -35,7 +36,7 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("fields")]
-        public HttpResponseMessage PostField(long accountId, FieldViewModel f)
+        public async Task<HttpResponseMessage> PostField(long accountId, FieldViewModel f)
         {
             if (ModelState.IsValid)
             {
@@ -56,7 +57,7 @@ namespace SportsManager.Baseball.Controllers
                 };
 
                 Db.AvailableFields.Add(dbField);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Field, FieldViewModel>(dbField);
                 return Request.CreateResponse<FieldViewModel>(HttpStatusCode.Created, vm);
@@ -68,11 +69,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("fields")]
-        public HttpResponseMessage PutField(long accountId, FieldViewModel f)
+        public async Task<HttpResponseMessage> PutField(long accountId, FieldViewModel f)
         {
             if (ModelState.IsValid)
             {
-                var dbField = Db.AvailableFields.Find(f.Id);
+                var dbField = await Db.AvailableFields.FindAsync(f.Id);
                 if (dbField == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -91,7 +92,7 @@ namespace SportsManager.Baseball.Controllers
                 dbField.State = f.State ?? String.Empty;
                 dbField.ZipCode = f.ZipCode ?? String.Empty;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Field, FieldViewModel>(dbField);
                 return Request.CreateResponse<FieldViewModel>(HttpStatusCode.OK, vm);
@@ -107,9 +108,9 @@ namespace SportsManager.Baseball.Controllers
         // has a route for it. I think because of "default" id
         // it was matching the action route.
         [ActionName("fields")]
-        public HttpResponseMessage DeleteField(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteField(long accountId, long id)
         {
-            var field = Db.AvailableFields.Find(id);
+            var field = await Db.AvailableFields.FindAsync(id);
             if (field == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -117,7 +118,7 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.AvailableFields.Remove(field);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

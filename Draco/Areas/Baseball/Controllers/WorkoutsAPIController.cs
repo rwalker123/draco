@@ -86,7 +86,7 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("workouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddWorkout(long accountId, WorkoutAnnouncementViewModel w)
+        public async Task<HttpResponseMessage> AddWorkout(long accountId, WorkoutAnnouncementViewModel w)
         {
             if (ModelState.IsValid)
             {
@@ -100,7 +100,7 @@ namespace SportsManager.Baseball.Controllers
                 };
 
                 Db.WorkoutAnnouncements.Add(dbWorkout);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<WorkoutAnnouncement, WorkoutAnnouncementViewModel>(dbWorkout);
 
@@ -117,9 +117,9 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpPost]
         [ActionName("registrants")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteWorkoutRegistrant(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteWorkoutRegistrant(long accountId, long id)
         {
-            var wr = Db.WorkoutRegistrations.Find(id);
+            var wr = await Db.WorkoutRegistrations.FindAsync(id);
             if (wr == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -127,7 +127,7 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.WorkoutRegistrations.Remove(wr);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -136,11 +136,11 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("register")]
-        public HttpResponseMessage RegisterWorkout(long accountId, long id, WorkoutRegistrantViewModel wr)
+        public async Task<HttpResponseMessage> RegisterWorkout(long accountId, long id, WorkoutRegistrantViewModel wr)
         {
             if (ModelState.IsValid)
             {
-                var wa = Db.WorkoutAnnouncements.Find(id);
+                var wa = await Db.WorkoutAnnouncements.FindAsync(id);
                 if (wa == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -169,7 +169,7 @@ namespace SportsManager.Baseball.Controllers
                 };
 
                 Db.WorkoutRegistrations.Add(dbRegister);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<WorkoutRegistrant, WorkoutRegistrantViewModel>(dbRegister);
 
@@ -188,11 +188,11 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("register")]
-        public HttpResponseMessage UpdateWorkoutReg(long accountId, long id, WorkoutRegistrantViewModel wr)
+        public async Task<HttpResponseMessage> UpdateWorkoutReg(long accountId, long id, WorkoutRegistrantViewModel wr)
         {
             if (ModelState.IsValid)
             {
-                var wa = Db.WorkoutAnnouncements.Find(id);
+                var wa = await Db.WorkoutAnnouncements.FindAsync(id);
                 if (wa == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -218,7 +218,7 @@ namespace SportsManager.Baseball.Controllers
                 dbRegistrant.IsManager = wr.WantToManage;
                 dbRegistrant.WhereHeard = wr.WhereHeard ?? String.Empty;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // Create a 201 response.
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
@@ -243,9 +243,9 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("registrants")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage GetRegistrantsForWorkout(long accountId, long id)
+        public async Task<HttpResponseMessage> GetRegistrantsForWorkout(long accountId, long id)
         {
-            var wa = Db.WorkoutAnnouncements.Find(id);
+            var wa = await Db.WorkoutAnnouncements.FindAsync(id);
             if (wa == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -261,11 +261,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("email")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage EmailRegistrants(long accountId, long id, EmailData emailData)
+        public async Task<HttpResponseMessage> EmailRegistrants(long accountId, long id, EmailData emailData)
         {
             if (ModelState.IsValid)
             {
-                var wa = Db.WorkoutAnnouncements.Find(id);
+                var wa = await Db.WorkoutAnnouncements.FindAsync(id);
                 if (wa == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -289,11 +289,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("workouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage ModifyWorkout(long accountId, WorkoutAnnouncementViewModel wa)
+        public async Task<HttpResponseMessage> ModifyWorkout(long accountId, WorkoutAnnouncementViewModel wa)
         {
             if (ModelState.IsValid)
             {
-                var dbWorkout = Db.WorkoutAnnouncements.Find(wa.Id);
+                var dbWorkout = await Db.WorkoutAnnouncements.FindAsync(wa.Id);
                 if (dbWorkout == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -305,7 +305,7 @@ namespace SportsManager.Baseball.Controllers
                 dbWorkout.Comments = wa.Comments;
                 dbWorkout.FieldId = wa.WorkoutLocation;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<WorkoutAnnouncement, WorkoutAnnouncementViewModel>(dbWorkout);
                 // Create a 201 response.
@@ -322,14 +322,14 @@ namespace SportsManager.Baseball.Controllers
         {
             // if twitter keys then use them, if not return "Unauthorized" so that 
             // signin can begin and refresh page, etc.
-            var a = Db.Accounts.Find(accountId);
+            var a = await Db.Accounts.FindAsync(accountId);
             if (a == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (String.IsNullOrEmpty(a.TwitterOauthSecretKey) || String.IsNullOrEmpty(a.TwitterOauthToken))
                 return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
 
-            var wa = Db.WorkoutAnnouncements.Find(id);
+            var wa = await Db.WorkoutAnnouncements.FindAsync(id);
             if (wa == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -386,9 +386,9 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpPost]
         [ActionName("workouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteWorkout(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteWorkout(long accountId, long id)
         {
-            var dbWorkout = Db.WorkoutAnnouncements.Find(id);
+            var dbWorkout = await Db.WorkoutAnnouncements.FindAsync(id);
             if (dbWorkout == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -396,7 +396,7 @@ namespace SportsManager.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.WorkoutAnnouncements.Remove(dbWorkout);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -404,11 +404,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("whereheard")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostWhereHeard(long accountId, WorkoutWhereHeard whereHeardData)
+        public async Task<HttpResponseMessage> PostWhereHeard(long accountId, WorkoutWhereHeard whereHeardData)
         {
             if (ModelState.IsValid)
             {
-                var a = Db.Accounts.Find(accountId);
+                var a = await Db.Accounts.FindAsync(accountId);
                 if (a == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -422,7 +422,7 @@ namespace SportsManager.Baseball.Controllers
                     var ms = new MemoryStream();
                     serializer.Serialize(ms, wwh);
                     ms.Position = 0;
-                    Storage.Provider.Save(ms, WorkoutWhereHeard.FileUri(accountId));
+                    await Storage.Provider.Save(ms, WorkoutWhereHeard.FileUri(accountId));
                 }
 
                 // Create a 201 response.

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
@@ -40,9 +41,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("historicalbatstats")]
-        public HttpResponseMessage GetHistoricalGameBatStats(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetHistoricalGameBatStats(long accountId, long teamSeasonId)
         {
-            var t = Db.TeamsSeasons.Find(teamSeasonId);
+            var t = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -53,9 +54,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("historicalpitchstats")]
-        public HttpResponseMessage GetHistoricalGamePitchStats(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetHistoricalGamePitchStats(long accountId, long teamSeasonId)
         {
-            var t = Db.TeamsSeasons.Find(teamSeasonId);
+            var t = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -109,7 +110,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var existing = Db.Batstatsums.Where(bs => bs.PlayerId == playerId && bs.GameId == gameId && bs.TeamId == teamSeasonId).Any();
             if (existing)
@@ -117,13 +118,13 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             var batStats = new GameBatStats()
             {
-                LeagueSchedule = Db.LeagueSchedules.Find(gameId),
-                RosterSeason = Db.RosterSeasons.Find(playerId),
-                TeamsSeason = Db.TeamsSeasons.Find(teamSeasonId)
+                LeagueSchedule = await Db.LeagueSchedules.FindAsync(gameId),
+                RosterSeason = await Db.RosterSeasons.FindAsync(playerId),
+                TeamsSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId)
             };
 
             Db.Batstatsums.Add(batStats);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<GameBatStats, BatStatsViewModel>(batStats);
             return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.Created, vm);
@@ -132,14 +133,14 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage DeletePlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> DeletePlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var stat = Db.Batstatsums.Where(bs => bs.GameId == gameId && bs.TeamId == teamSeasonId && bs.PlayerId == playerId).SingleOrDefault();
             if (stat == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             Db.Batstatsums.Remove(stat);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -147,24 +148,24 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId, BatStatsViewModel batStats)
+        public async Task<HttpResponseMessage> PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId, BatStatsViewModel batStats)
         {
             if (!batStats.IsValid())
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            var player = Db.RosterSeasons.Find(playerId);
+            var player = await Db.RosterSeasons.FindAsync(playerId);
             if (player == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var game = Db.LeagueSchedules.Find(gameId);
+            var game = await Db.LeagueSchedules.FindAsync(gameId);
             if (game == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var dbStats = Db.Batstatsums.Find(batStats.Id);
+            var dbStats = await Db.Batstatsums.FindAsync(batStats.Id);
             if (dbStats == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -189,7 +190,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             dbStats.Sh = batStats.SH;
             dbStats.Lob = batStats.LOB;
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
             var vm = Mapper.Map<GameBatStats, BatStatsViewModel>(dbStats);
             return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.OK, vm);
         }
@@ -256,14 +257,14 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage DeletePlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> DeletePlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var stat = Db.Pitchstatsums.Where(bs => bs.GameId == gameId && bs.TeamId == teamSeasonId && bs.PlayerId == playerId).SingleOrDefault();
             if (stat == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             Db.Pitchstatsums.Remove(stat);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -272,7 +273,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
             var existing = Db.Pitchstatsums.Where(bs => bs.PlayerId == playerId && bs.GameId == gameId && bs.TeamId == teamSeasonId).Any();
             if (existing)
@@ -280,13 +281,13 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             var pitchStats = new GamePitchStats()
             {
-                LeagueSchedule = Db.LeagueSchedules.Find(gameId),
-                RosterSeason = Db.RosterSeasons.Find(playerId),
-                TeamsSeason = Db.TeamsSeasons.Find(teamSeasonId)
+                LeagueSchedule = await Db.LeagueSchedules.FindAsync(gameId),
+                RosterSeason = await Db.RosterSeasons.FindAsync(playerId),
+                TeamsSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId)
             };
 
             Db.Pitchstatsums.Add(pitchStats);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<GamePitchStats, PitchStatsViewModel>(pitchStats);
             return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.Created, vm);
@@ -295,24 +296,24 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PutPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId, PitchStatsViewModel pitchStats)
+        public async Task<HttpResponseMessage> PutPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId, PitchStatsViewModel pitchStats)
         {
             if (!pitchStats.IsValid())
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            var player = Db.RosterSeasons.Find(playerId);
+            var player = await Db.RosterSeasons.FindAsync(playerId);
             if (player == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var game = Db.LeagueSchedules.Find(gameId);
+            var game = await Db.LeagueSchedules.FindAsync(gameId);
             if (game == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var dbStats = Db.Pitchstatsums.Find(pitchStats.Id);
+            var dbStats = await Db.Pitchstatsums.FindAsync(pitchStats.Id);
             if (dbStats == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -338,7 +339,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             dbStats.Bk = pitchStats.BK;
             dbStats.Sc = pitchStats.SC;
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<GamePitchStats, PitchStatsViewModel>(dbStats);
             return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.OK, vm);
@@ -362,7 +363,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gamesummary")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostGameSummary(long accountId, long teamSeasonId, long id, GameRecapViewModel recap)
+        public async Task<HttpResponseMessage> PostGameSummary(long accountId, long teamSeasonId, long id, GameRecapViewModel recap)
         {
             var dbRecap = Db.GameRecaps.Where(gr => gr.GameId == id && gr.TeamId == teamSeasonId).SingleOrDefault();
             if (dbRecap == null)
@@ -374,7 +375,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             dbRecap.GameId = id;
             dbRecap.TeamId = teamSeasonId;
             dbRecap.Recap = recap.Recap ?? String.Empty;
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<GameRecap, GameRecapViewModel>(dbRecap);
             return Request.CreateResponse<GameRecapViewModel>(HttpStatusCode.Created, vm);

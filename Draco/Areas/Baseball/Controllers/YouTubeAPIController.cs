@@ -22,7 +22,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("Videos")]
         public async Task<HttpResponseMessage> GetVideos(long accountId)
         {
-            Account a = Db.Accounts.Find(accountId);
+            Account a = await Db.Accounts.FindAsync(accountId);
             if (a != null)
             {
                 String youTubeId = a.YouTubeUserId;
@@ -39,7 +39,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("Videos")]
         public async Task<HttpResponseMessage> TeamGetVideos(long accountId, long teamSeasonId)
         {
-            var a = Db.TeamsSeasons.Find(teamSeasonId);
+            var a = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (a != null)
             {
                 String youTubeId = a.Team.YouTubeUserId;

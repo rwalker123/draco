@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
@@ -156,17 +157,17 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("setbatcategories")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage PostBatSelectedCategories(long accountId, LeaderCategories categories)
+        public async Task<HttpResponseMessage> PostBatSelectedCategories(long accountId, LeaderCategories categories)
         {
-            return AddLeaderCategories(accountId, 0, true, categories == null ? null : categories.cats);
+            return await AddLeaderCategories(accountId, 0, true, categories == null ? null : categories.cats);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("setpitchcategories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostPitchSelectedCategories(long accountId, LeaderCategories categories)
+        public async Task<HttpResponseMessage> PostPitchSelectedCategories(long accountId, LeaderCategories categories)
         {
-            return AddLeaderCategories(accountId, 0, false, categories == null ? null : categories.cats);
+            return await AddLeaderCategories(accountId, 0, false, categories == null ? null : categories.cats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -429,7 +430,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse<IEnumerable<LeagueStanding>>(HttpStatusCode.OK, standings);
         }
 
-        private HttpResponseMessage AddLeaderCategories(long accountId, long teamId, bool isBatLeader, IEnumerable<LeaderCategory> cat)
+        private async Task<HttpResponseMessage> AddLeaderCategories(long accountId, long teamId, bool isBatLeader, IEnumerable<LeaderCategory> cat)
         {
             // remove old ones first.
             var remove = (from ll in Db.DisplayLeagueLeaders
@@ -449,7 +450,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                     });
                 }
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

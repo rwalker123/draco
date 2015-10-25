@@ -9,6 +9,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
@@ -60,9 +61,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("umpires")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddUmpire(long accountId, long id)
+        public async Task<HttpResponseMessage> AddUmpire(long accountId, long id)
         {
-            var c = Db.Contacts.Find(id);
+            var c = await Db.Contacts.FindAsync(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -73,7 +74,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             };
 
             Db.LeagueUmpires.Add(dbUmp);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<Umpire, UmpireViewModel>(dbUmp);
             return Request.CreateResponse<UmpireViewModel>(HttpStatusCode.Created, vm);
@@ -82,9 +83,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("umpires")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteUmpire(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteUmpire(long accountId, long id)
         {
-            var u = Db.LeagueUmpires.Find(id);
+            var u = await Db.LeagueUmpires.FindAsync(id);
             if (u == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -92,7 +93,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.LeagueUmpires.Remove(u);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

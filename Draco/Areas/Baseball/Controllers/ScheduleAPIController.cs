@@ -27,11 +27,11 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("Game")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddGame(long accountId, long leagueSeasonId, GameViewModel g)
+        public async Task<HttpResponseMessage> AddGame(long accountId, long leagueSeasonId, GameViewModel g)
         {
             if (ModelState.IsValid)
             {
-                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
                 if (ls == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -57,7 +57,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 };
 
                 Db.LeagueSchedules.Add(dbGame);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Game, GameViewModel>(dbGame);
                 return Request.CreateResponse<GameViewModel>(HttpStatusCode.Created, vm);
@@ -69,18 +69,18 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("Game")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateGame(long accountId, long leagueSeasonId, GameViewModel g)
+        public async Task<HttpResponseMessage> UpdateGame(long accountId, long leagueSeasonId, GameViewModel g)
         {
             if (ModelState.IsValid)
             {
-                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
                 if (ls == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 if (ls.League.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbGame = Db.LeagueSchedules.Find(g.Id);
+                var dbGame = await Db.LeagueSchedules.FindAsync(g.Id);
                 if (dbGame == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -97,7 +97,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 dbGame.Umpire3 = g.Umpire3;
                 dbGame.Umpire4 = g.Umpire4;
                 dbGame.GameType = g.GameType;
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Game, GameViewModel>(dbGame);
                 return Request.CreateResponse<GameViewModel>(HttpStatusCode.Created, vm);
@@ -109,7 +109,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("GameResult")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateGameResults(long accountId, long leagueSeasonId, GameViewModel game)
+        public async Task<HttpResponseMessage> UpdateGameResults(long accountId, long leagueSeasonId, GameViewModel game)
         {
             game.LeagueId = leagueSeasonId;
             if (ModelState.IsValid)
@@ -122,14 +122,14 @@ namespace SportsManager.Areas.Baseball.Controllers
                     bool.TryParse(strEmailResult, out emailResult);
                 }
 
-                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
                 if (ls == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 if (ls.League.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbGame = Db.LeagueSchedules.Find(game.Id);
+                var dbGame = await Db.LeagueSchedules.FindAsync(game.Id);
                 if (dbGame == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -144,7 +144,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 dbGame.HScore = game.HomeScore;
                 dbGame.VScore = game.AwayScore;
                 dbGame.Comment = game.Comment ?? String.Empty;
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var playerRecapGame = Db.PlayerRecaps.Where(pr => pr.GameId == game.Id);
                 Db.PlayerRecaps.RemoveRange(playerRecapGame);
@@ -179,7 +179,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 }
 
                 Db.PlayerRecaps.AddRange(playersPresent);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 if (emailResult)
                     SendGameResultEmail(dbGame);
@@ -222,18 +222,18 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 // if twitter keys then use them, if not return "Unauthorized" so that 
                 // signin can begin and refresh page, etc.
-                var a = Db.Accounts.Find(accountId);
+                var a = await Db.Accounts.FindAsync(accountId);
                 if (a == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
                 if (ls == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 if (ls.League.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbGame = Db.LeagueSchedules.Find(game.Id);
+                var dbGame = await Db.LeagueSchedules.FindAsync(game.Id);
                 if (dbGame == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -284,32 +284,32 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Game")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteGame(long accountId, long leagueSeasonId, long id)
+        public async Task<HttpResponseMessage> DeleteGame(long accountId, long leagueSeasonId, long id)
         {
-            var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+            var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
             if (ls == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (ls.League.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var dbGame = Db.LeagueSchedules.Find(id);
+            var dbGame = await Db.LeagueSchedules.FindAsync(id);
             if (dbGame == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             Db.LeagueSchedules.Remove(dbGame);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Week")]
-        public HttpResponseMessage GetWeekGames(long accountId, long leagueSeasonId)
+        public async Task<HttpResponseMessage> GetWeekGames(long accountId, long leagueSeasonId)
         {
             if (leagueSeasonId != 0)
             {
-                var ls = Db.LeagueSeasons.Find(leagueSeasonId);
+                var ls = await Db.LeagueSeasons.FindAsync(leagueSeasonId);
                 if (ls == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -357,9 +357,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Week")]
-        public HttpResponseMessage GetTeamWeekGames(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamWeekGames(long accountId, long teamSeasonId)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 

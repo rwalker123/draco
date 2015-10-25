@@ -23,11 +23,11 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("players")]
-        public HttpResponseMessage GetPlayers(long accountId, long teamSeasonId, long? id = null)
+        public async Task<HttpResponseMessage> GetPlayers(long accountId, long teamSeasonId, long? id = null)
         {
             if (id.HasValue)
             {
-                var player = Db.RosterSeasons.Find(id.Value);
+                var player = await Db.RosterSeasons.FindAsync(id.Value);
                 if (player == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -50,9 +50,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("availableplayers")]
-        public HttpResponseMessage GetAvailablePlayers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
+        public async Task<HttpResponseMessage> GetAvailablePlayers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
         {
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -85,13 +85,13 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("roster")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage SignPlayer(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> SignPlayer(long accountId, long teamSeasonId, long id)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var c = Db.Contacts.Find(id);
+            var c = await Db.Contacts.FindAsync(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -129,7 +129,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 rosterSeason.DateAdded = DateTime.Now;
             }
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<PlayerSeason, PlayerViewModel>(rosterSeason);
             return Request.CreateResponse<PlayerViewModel>(HttpStatusCode.OK, vm);
@@ -140,14 +140,14 @@ namespace SportsManager.Areas.Baseball.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> ModifyPlayer(long accountId, long teamSeasonId, long id, PlayerViewModel p)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (ts.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var rs = Db.RosterSeasons.Find(id);
+            var rs = await Db.RosterSeasons.FindAsync(id);
             if (rs == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -185,7 +185,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             Contact c = rs.Roster.Contact;
             await this.UpdateContact(accountId, c, p.Contact, true);
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.NoContent);
         }
@@ -193,9 +193,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("playernumber")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage ModifyPlayer(long accountId, long teamSeasonId, long id, PlayerNumberData playerNumber)
+        public async Task<HttpResponseMessage> ModifyPlayer(long accountId, long teamSeasonId, long id, PlayerNumberData playerNumber)
         {
-            var p = Db.RosterSeasons.Find(id);
+            var p = await Db.RosterSeasons.FindAsync(id);
             if (p == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -213,16 +213,16 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             p.PlayerNumber = playerNum;
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
             return Request.CreateResponse(HttpStatusCode.NoContent);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("roster")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage ReleasePlayer(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> ReleasePlayer(long accountId, long teamSeasonId, long id)
         {
-            var p = Db.RosterSeasons.Find(id);
+            var p = await Db.RosterSeasons.FindAsync(id);
             if (p == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -234,7 +234,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             p.Inactive = true;
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -242,9 +242,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("players")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeletePlayer(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> DeletePlayer(long accountId, long teamSeasonId, long id)
         {
-            var p = Db.RosterSeasons.Find(id);
+            var p = await Db.RosterSeasons.FindAsync(id);
             if (p == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -260,9 +260,9 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("managers")]
-        public HttpResponseMessage TeamManagers(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> TeamManagers(long accountId, long teamSeasonId)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -279,13 +279,13 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("managers")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddTeamManager(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> AddTeamManager(long accountId, long teamSeasonId, long id)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var c = Db.Contacts.Find(id);
+            var c = await Db.Contacts.FindAsync(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -304,7 +304,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             Db.TeamSeasonManagers.Add(dbManager);
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<TeamManager, TeamManagerViewModel>(dbManager);
             return Request.CreateResponse<TeamManagerViewModel>(HttpStatusCode.OK, vm);
@@ -313,16 +313,16 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("managers")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteTeamManager(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> DeleteTeamManager(long accountId, long teamSeasonId, long id)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (ts.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var manager = Db.TeamSeasonManagers.Find(id);
+            var manager = await Db.TeamSeasonManagers.FindAsync(id);
             if (manager == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -330,16 +330,16 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.TeamSeasonManagers.Remove(manager);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("availablemanagers")]
-        public HttpResponseMessage AvailableManagers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
+        public async Task<HttpResponseMessage> AvailableManagers(long accountId, long teamSeasonId, [FromUri]NameSearchViewModel nsvm)
         {
-            var ts = Db.TeamsSeasons.Find(teamSeasonId);
+            var ts = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (ts == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 

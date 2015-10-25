@@ -676,6 +676,10 @@ namespace SportsManager.Utils
             {
                 selectStmt = "SUM(IP)+(SUM(IP2)/3)+((SUM(IP2)%3)/10.0) + 0.0 AS FieldTotal";
             }
+            else if (fieldName == "ER" || fieldName == "R")
+            {
+                selectStmt = String.Format("SUM(IP)+(SUM(IP2)/3.0) + 0.0 AS CheckField, SUM([{0}]) + 0.0 AS FieldTotal", fieldName);
+            }
             else
             {
                 selectStmt = String.Format("SUM([{0}]) + 0.0 AS FieldTotal", fieldName);

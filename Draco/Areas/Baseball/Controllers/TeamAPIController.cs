@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Web.Http;
 using ModelObjects;
 using SportsManager.ViewModels.API;
+using System.Threading.Tasks;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
@@ -19,9 +20,9 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("teamname")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage Put(long accountId, long teamSeasonId, TeamViewModel t)
+        public async Task<HttpResponseMessage> Put(long accountId, long teamSeasonId, TeamViewModel t)
         {
-            var team = Db.TeamsSeasons.Find(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -32,7 +33,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
             team.Name = t.Name;
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
             return Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
