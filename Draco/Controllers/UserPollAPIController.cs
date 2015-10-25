@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -38,7 +39,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("recordVote")]
-        public HttpResponseMessage RecordVote(long accountId, long id, RecordVoteResultViewModel vr)
+        public async Task<HttpResponseMessage> RecordVote(long accountId, long id, RecordVoteResultViewModel vr)
         {
             var contact = this.GetCurrentContact();
 
@@ -46,14 +47,14 @@ namespace SportsManager.Controllers
             if (contact == null || vr.ContactId != contact.Id)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var voteQuestion = Db.VoteQuestions.Find(id);
+            var voteQuestion = await Db.VoteQuestions.FindAsync(id);
             if (voteQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             if (voteQuestion.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var voteOption = Db.VoteOptions.Find(vr.OptionId);
+            var voteOption = await Db.VoteOptions.FindAsync(vr.OptionId);
             if (voteOption == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -77,7 +78,7 @@ namespace SportsManager.Controllers
                 dbVoteAnswer.OptionId = vr.OptionId;
             }
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.NoContent);
         }
@@ -85,9 +86,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("polls")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage DeletePoll(long accountId, long id)
+        public async Task<HttpResponseMessage> DeletePoll(long accountId, long id)
         {
-            var dbVoteQuestion = Db.VoteQuestions.Find(id);
+            var dbVoteQuestion = await Db.VoteQuestions.FindAsync(id);
             if (dbVoteQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -95,7 +96,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.VoteQuestions.Remove(dbVoteQuestion);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -103,14 +104,14 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("polls")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdatePoll(long accountId, long id, VoteQuestionViewModel poll)
+        public async Task<HttpResponseMessage> UpdatePoll(long accountId, long id, VoteQuestionViewModel poll)
         {
             if (ModelState.IsValid)
             {
                 poll.AccountId = accountId;
                 poll.Id = id;
 
-                var dbQuestion = Db.VoteQuestions.Find(id);
+                var dbQuestion = await Db.VoteQuestions.FindAsync(id);
                 if (dbQuestion == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -130,7 +131,7 @@ namespace SportsManager.Controllers
                         if (existingVoteOptions.Contains(option.Id))
                             existingVoteOptions.Remove(option.Id);
 
-                        var dbOption = Db.VoteOptions.Find(option.Id);
+                        var dbOption = await Db.VoteOptions.FindAsync(option.Id);
                         if (dbOption == null)
                             return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -156,15 +157,15 @@ namespace SportsManager.Controllers
                 // delete any remaining options.
                 foreach (var oldOptionId in existingVoteOptions)
                 {
-                    var oldOption = Db.VoteOptions.Find(oldOptionId);
+                    var oldOption = await Db.VoteOptions.FindAsync(oldOptionId);
                     if (oldOption != null)
                         Db.VoteOptions.Remove(oldOption);
                 }
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 // requery to get any order changes.
-                dbQuestion = Db.VoteQuestions.Find(id);
+                dbQuestion = await Db.VoteQuestions.FindAsync(id);
                 var vm = Mapper.Map<VoteQuestion, VoteQuestionResultsViewModel>(dbQuestion);
                 return Request.CreateResponse<VoteQuestionResultsViewModel>(HttpStatusCode.OK, vm);
             }
@@ -175,7 +176,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("polls")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage CreatePoll(long accountId, VoteQuestionViewModel newPoll)
+        public async Task<HttpResponseMessage> CreatePoll(long accountId, VoteQuestionViewModel newPoll)
         {
             if (ModelState.IsValid)
             {
@@ -202,7 +203,7 @@ namespace SportsManager.Controllers
                     Db.VoteOptions.Add(vo);
                 }
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<VoteQuestion, VoteQuestionResultsViewModel>(dbVoteQuestion);
                 return Request.CreateResponse<VoteQuestionResultsViewModel>(HttpStatusCode.OK, vm);

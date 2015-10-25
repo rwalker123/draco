@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -168,11 +169,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("questions")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddQuestion(long accountId, long id, ProfileQuestionViewModel data)
+        public async Task<HttpResponseMessage> AddQuestion(long accountId, long id, ProfileQuestionViewModel data)
         {
             if (ModelState.IsValid)
             {
-                var dbCategory = Db.ProfileCategories.Find(id);
+                var dbCategory = await Db.ProfileCategories.FindAsync(id);
                 if (dbCategory == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -187,7 +188,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.ProfileQuestions.Add(dbQuestion);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<ProfileQuestionItem, ProfileQuestionViewModel>(dbQuestion);
                 return Request.CreateResponse<ProfileQuestionViewModel>(HttpStatusCode.OK, vm);
@@ -199,11 +200,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("questions")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateQuestion(long accountId, long id, ProfileQuestionViewModel data)
+        public async Task<HttpResponseMessage> UpdateQuestion(long accountId, long id, ProfileQuestionViewModel data)
         {
             if (ModelState.IsValid)
             {
-                var dbQuestion = Db.ProfileQuestions.Find(id);
+                var dbQuestion = await Db.ProfileQuestions.FindAsync(id);
                 if (dbQuestion == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -213,7 +214,7 @@ namespace SportsManager.Controllers
                 dbQuestion.QuestionNum = data.QuestionNum;
                 dbQuestion.Question = data.Question;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<ProfileQuestionItem, ProfileQuestionViewModel>(dbQuestion);
                 return Request.CreateResponse<ProfileQuestionViewModel>(HttpStatusCode.OK, vm);
@@ -225,9 +226,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("questions")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteQuestion(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteQuestion(long accountId, long id)
         {
-            var dbQuestion = Db.ProfileQuestions.Find(id);
+            var dbQuestion = await Db.ProfileQuestions.FindAsync(id);
             if (dbQuestion == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -235,7 +236,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.ProfileQuestions.Remove(dbQuestion);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }
@@ -243,7 +244,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("questionAnswer")]
-        public HttpResponseMessage UpdatePlayerQuestionAnswer(long accountId, long id, ProfileAnswersViewModel data)
+        public async Task<HttpResponseMessage> UpdatePlayerQuestionAnswer(long accountId, long id, ProfileAnswersViewModel data)
         {
             if (ModelState.IsValid)
             {
@@ -271,7 +272,7 @@ namespace SportsManager.Controllers
                     };
 
                     Db.PlayerProfiles.Add(questionAnswer);
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
                 }
                 else
                 {
@@ -282,13 +283,13 @@ namespace SportsManager.Controllers
                     if (String.IsNullOrEmpty(data.Answer))
                     {
                         Db.PlayerProfiles.Remove(questionAnswer);
-                        Db.SaveChanges();
+                        await Db.SaveChangesAsync();
                         return Request.CreateResponse(HttpStatusCode.NoContent);
                     }
                     else
                     {
                         questionAnswer.Answer = data.Answer;
-                        Db.SaveChanges();
+                        await Db.SaveChangesAsync();
                     }
                 }
 
@@ -302,7 +303,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage AddCategory(long accountId, ProfileCategoryViewModel data)
+        public async Task<HttpResponseMessage> AddCategory(long accountId, ProfileCategoryViewModel data)
         {
             if (ModelState.IsValid)
             {
@@ -314,7 +315,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.ProfileCategories.Add(dbCategory);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<ProfileCategoryItem, ProfileCategoryViewModel>(dbCategory);
                 return Request.CreateResponse<ProfileCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -326,11 +327,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateCategory(long accountId, ProfileCategoryViewModel data)
+        public async Task<HttpResponseMessage> UpdateCategory(long accountId, ProfileCategoryViewModel data)
         {
             if (ModelState.IsValid)
             {
-                var dbCategory = Db.ProfileCategories.Find(data.Id);
+                var dbCategory = await Db.ProfileCategories.FindAsync(data.Id);
                 if (dbCategory == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -340,7 +341,7 @@ namespace SportsManager.Controllers
                 dbCategory.CategoryName = data.CategoryName;
                 dbCategory.Priority = data.Priority;
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<ProfileCategoryItem, ProfileCategoryViewModel>(dbCategory);
                 return Request.CreateResponse<ProfileCategoryViewModel>(HttpStatusCode.OK, vm);
@@ -352,9 +353,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("categories")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteCategory(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteCategory(long accountId, long id)
         {
-            var dbCategory = Db.ProfileCategories.Find(id);
+            var dbCategory = await Db.ProfileCategories.FindAsync(id);
             if (dbCategory == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -362,7 +363,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.ProfileCategories.Remove(dbCategory);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse(HttpStatusCode.OK);
         }

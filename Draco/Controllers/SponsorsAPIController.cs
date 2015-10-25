@@ -40,9 +40,9 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("teamsponsor")]
-        public HttpResponseMessage GetSponsors(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetSponsors(long accountId, long teamSeasonId)
         {
-            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -68,11 +68,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
         [ActionName("sponsors")]
-        public HttpResponseMessage PutSponsors(long accountId, long id, SponsorViewModel sponsor)
+        public async Task<HttpResponseMessage> PutSponsors(long accountId, long id, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid)
             {
-                var dbSponsor = Db.Sponsors.Find(id);
+                var dbSponsor = await Db.Sponsors.FindAsync(id);
                 if (dbSponsor == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -92,7 +92,7 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -104,7 +104,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [ActionName("sponsors")]
-        public HttpResponseMessage PostSponsors(long accountId, SponsorViewModel sponsor)
+        public async Task<HttpResponseMessage> PostSponsors(long accountId, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid)
             {
@@ -128,7 +128,7 @@ namespace SportsManager.Controllers
                 }
 
                 Db.Sponsors.Add(dbSponsor);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -142,7 +142,7 @@ namespace SportsManager.Controllers
         [ActionName("sponsors")]
         public async Task<HttpResponseMessage> DeleteSponsors(long accountId, long id)
         {
-            var sponsor = Db.Sponsors.Find(id);
+            var sponsor = await Db.Sponsors.FindAsync(id);
             if (sponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -150,7 +150,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.Sponsors.Remove(sponsor);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             if (sponsor.LogoURL != null)
             {
@@ -164,11 +164,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         [ActionName("teamsponsor")]
-        public HttpResponseMessage PutSponsors(long accountId, long teamSeasonId, long id, SponsorViewModel sponsor)
+        public async Task<HttpResponseMessage> PutSponsors(long accountId, long teamSeasonId, long id, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid)
             {
-                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -179,7 +179,7 @@ namespace SportsManager.Controllers
                 if (team.AccountId != accountId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var dbSponsor = Db.Sponsors.Find(id);
+                var dbSponsor = await Db.Sponsors.FindAsync(id);
                 if (dbSponsor == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -202,7 +202,7 @@ namespace SportsManager.Controllers
                     dbSponsor.WebSite = dbSponsor.WebSite.Insert(0, "http://");
                 }
 
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -214,11 +214,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         [ActionName("teamsponsor")]
-        public HttpResponseMessage PostSponsors(long accountId, long teamSeasonId, SponsorViewModel sponsor)
+        public async Task<HttpResponseMessage> PostSponsors(long accountId, long teamSeasonId, SponsorViewModel sponsor)
         {
             if (ModelState.IsValid && sponsor != null)
             {
-                var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+                var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
                 if (teamSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -249,7 +249,7 @@ namespace SportsManager.Controllers
                 }
 
                 Db.Sponsors.Add(dbSponsor);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Sponsor, SponsorViewModel>(dbSponsor);
                 return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
@@ -261,13 +261,13 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         [ActionName("teamsponsor")]
-        public HttpResponseMessage DeleteSponsors(long accountId, long teamSeasonId, long id)
+        public async Task<HttpResponseMessage> DeleteSponsors(long accountId, long teamSeasonId, long id)
         {
-            var sponsor = Db.Sponsors.Find(id);
+            var sponsor = await Db.Sponsors.FindAsync(id);
             if (sponsor == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamSeason = Db.TeamsSeasons.Find(teamSeasonId);
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -282,7 +282,7 @@ namespace SportsManager.Controllers
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             Db.Sponsors.Remove(sponsor);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }

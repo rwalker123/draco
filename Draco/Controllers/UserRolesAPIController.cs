@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -86,7 +87,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("UserRoles")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage AddToRole(long accountId, ContactRoleViewModel roleData)
+        public async Task<HttpResponseMessage> AddToRole(long accountId, ContactRoleViewModel roleData)
         {
             if (ModelState.IsValid)
             {
@@ -100,13 +101,13 @@ namespace SportsManager.Controllers
                     dbRole = new ContactRole()
                     {
                         AccountId = accountId,
-                        Contact = Db.Contacts.Find(roleData.ContactId),
+                        Contact = await Db.Contacts.FindAsync(roleData.ContactId),
                         RoleId = roleData.RoleId,
                         RoleData = roleData.RoleData
                     };
 
                     Db.ContactRoles.Add(dbRole);
-                    Db.SaveChanges();
+                    await Db.SaveChangesAsync();
                 }
 
                 var newRole = ContactNameFromRole(accountId, dbRole.RoleId, dbRole.RoleData, dbRole.ContactId);
@@ -126,7 +127,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("UserRoles")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteFromRole(long accountId, ContactRoleViewModel info)
+        public async Task<HttpResponseMessage> DeleteFromRole(long accountId, ContactRoleViewModel info)
         {
             if (!String.IsNullOrEmpty(info.RoleId))
             {
@@ -139,7 +140,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
                 Db.ContactRoles.Remove(dbContactRole);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {

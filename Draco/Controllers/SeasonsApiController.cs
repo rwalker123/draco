@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
@@ -37,7 +38,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage CreateSeason(long accountId, SeasonViewModel seasonData)
+        public async Task<HttpResponseMessage> CreateSeason(long accountId, SeasonViewModel seasonData)
         {
             if (ModelState.IsValid)
             {
@@ -48,7 +49,7 @@ namespace SportsManager.Controllers
                 };
 
                 Db.Seasons.Add(newSeason);
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Season, SeasonViewModel>(newSeason);
                 return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
@@ -59,11 +60,11 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage EditSeason(long accountId, long id, SeasonViewModel seasonData)
+        public async Task<HttpResponseMessage> EditSeason(long accountId, long id, SeasonViewModel seasonData)
         {
             if (ModelState.IsValid)
             {
-                var dbSeason = Db.Seasons.Find(id);
+                var dbSeason = await Db.Seasons.FindAsync(id);
                 if (dbSeason == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -71,7 +72,7 @@ namespace SportsManager.Controllers
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 dbSeason.Name = seasonData.Name;
-                Db.SaveChanges();
+                await Db.SaveChangesAsync();
 
                 var vm = Mapper.Map<Season, SeasonViewModel>(dbSeason);
                 return Request.CreateResponse<SeasonViewModel>(HttpStatusCode.OK, vm);
@@ -82,13 +83,13 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("CurrentSeason")]
-        public HttpResponseMessage CurrentSeason(long accountId)
+        public async Task<HttpResponseMessage> CurrentSeason(long accountId)
         {
             var cs = GetCurrentSeason(accountId);
             if (cs == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var season = Db.Seasons.Find(cs.SeasonId);
+            var season = await Db.Seasons.FindAsync(cs.SeasonId);
             var hasSeasons = Db.Seasons.Where(s => s.AccountId == accountId).Any();
 
             return Request.CreateResponse<CurrentSeasonViewModel>(HttpStatusCode.OK,
@@ -104,7 +105,7 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("CurrentSeason")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage EditCurrentSeason(long accountId, long id)
+        public async Task<HttpResponseMessage> EditCurrentSeason(long accountId, long id)
         {
             var curSeason = (from cs in Db.CurrentSeasons
                              where cs.AccountId == accountId
@@ -129,7 +130,7 @@ namespace SportsManager.Controllers
                 curSeason.SeasonId = id;
             }
 
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
 
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
@@ -138,9 +139,9 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("Season")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage Delete(long accountId, long id)
+        public async Task<HttpResponseMessage> Delete(long accountId, long id)
         {
-            var season = Db.Seasons.Find(id);
+            var season = await Db.Seasons.FindAsync(id);
             if (season == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -149,7 +150,7 @@ namespace SportsManager.Controllers
 
             RemoveSeasonData(season);
             Db.Seasons.Remove(season);
-            Db.SaveChanges();
+            await Db.SaveChangesAsync();
 
             //
             return Request.CreateResponse<long>(HttpStatusCode.OK, id);
