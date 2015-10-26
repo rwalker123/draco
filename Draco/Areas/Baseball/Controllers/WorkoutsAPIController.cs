@@ -102,10 +102,10 @@ namespace SportsManager.Baseball.Controllers
                 Db.WorkoutAnnouncements.Add(dbWorkout);
                 await Db.SaveChangesAsync();
 
-                var vm = Mapper.Map<WorkoutAnnouncement, WorkoutAnnouncementViewModel>(dbWorkout);
+                var vm = Mapper.Map<WorkoutAnnouncement, WorkoutAnnouncementRegisteredViewModel>(dbWorkout);
 
                 // Create a 201 response.
-                var response = Request.CreateResponse<WorkoutAnnouncementViewModel>(HttpStatusCode.Created, vm);
+                var response = Request.CreateResponse<WorkoutAnnouncementRegisteredViewModel>(HttpStatusCode.Created, vm);
                 response.Headers.Location =
                     new Uri(Url.Link("ActionApi", new { action = "Workouts", accountId = accountId, id = vm.Id }));
                 return response;

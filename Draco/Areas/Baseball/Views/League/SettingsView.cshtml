@@ -39,6 +39,7 @@
                 </div>
                 <div class="panel-body">
                     <div><label><input type="checkbox" data-bind="checked: showMemberBusiness" />Show Member Business Directory</label></div>
+                    <div><label><input type="checkbox" data-bind="checked: showSponsorSpotlight" />Show Sponsor Spotlight</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerClassified" />Show Player Classified (team needs player/player needs team)</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showPlayerSurvey" />Show Player Survey</label></div>
                     <div><label><input type="checkbox" data-bind="checked: showFacebookLike" />Show Facebook Like</label></div>
@@ -125,6 +126,10 @@
             self.showMemberBusiness.subscribe(function (newValue) {
                 self.settingChanged('ShowBusinessDirectory', newValue);
             });
+            self.showSponsorSpotlight= ko.observable();
+            self.showSponsorSpotlight.subscribe(function (newValue) {
+                self.settingChanged('ShowSponsorSpotlight', newValue);
+            });
             self.showPlayerSurvey = ko.observable();
             self.showPlayerSurvey.subscribe(function (newValue) {
                 self.settingChanged('ShowPlayerSurvey', newValue);
@@ -196,6 +201,9 @@
                 }
                 else if (settingKey == "ShowBusinessDirectory") {
                     self.showMemberBusiness(value);
+                }
+                else if (settingKey == "ShowSponsorSpotlight") {
+                    self.showSponsorSpotlight(value);
                 }
                 else if (settingKey == "ShowPlayerClassified") {
                     self.showPlayerClassified(value);

@@ -81,7 +81,7 @@
         },
         {
             displayKey: 'label',
-            source: function (query, cb) {
+            source: function (query, syncResults, asyncResults) {
 
                 $.ajax({
                     url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
@@ -106,7 +106,7 @@
                                 LastName: item.LastName
                             }
                         });
-                        cb(results);
+                        asyncResults(results);
                     },
                 });
             }

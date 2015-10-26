@@ -25,6 +25,13 @@ namespace SportsManager.Controllers
         [ActionName("SearchContacts")]
         public HttpResponseMessage SearchContacts(long accountId, [FromUri]NameSearchViewModel nsvm)
         {
+            if (nsvm.LastName.Contains(','))
+            {
+                var s = nsvm.LastName.Split(new char[] { ',' });
+                nsvm.LastName = s[0].Trim();
+                nsvm.FirstName = s[1].Trim();
+            }
+
             var foundItems = (from c in Db.Contacts
                               where c.CreatorAccountId == accountId &&
                               (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&

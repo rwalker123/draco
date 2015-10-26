@@ -39,6 +39,46 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("randomsponsor")]
+        public HttpResponseMessage GetRandomSponsor(long accountId)
+        {
+            var sponsors = Db.Sponsors.Where(s => s.AccountId == accountId && s.TeamId == 0).OrderBy(s => s.Id);
+            if (sponsors.Any())
+            {
+                int count = sponsors.Count();
+                int index = new Random().Next(count);
+                var sponsor = sponsors.Skip(index).FirstOrDefault();
+                if (sponsor != null)
+                {
+                    var vm = Mapper.Map<Sponsor, SponsorViewModel>(sponsor);
+                    return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("randomteamsponsor")]
+        public HttpResponseMessage GetRandomTeamSponsor(long accountId, long teamSeasonId)
+        {
+            var sponsors = Db.Sponsors.Where(s => s.AccountId == accountId && s.TeamId == teamSeasonId).OrderBy(s => s.Id);
+            if (sponsors.Any())
+            {
+                int count = sponsors.Count();
+                int index = new Random().Next(count);
+                var sponsor = sponsors.Skip(index).FirstOrDefault();
+                if (sponsor != null)
+                {
+                    var vm = Mapper.Map<Sponsor, SponsorViewModel>(sponsor);
+                    return Request.CreateResponse<SponsorViewModel>(HttpStatusCode.OK, vm);
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
+        }
+
+        [AcceptVerbs("GET"), HttpGet]
         [ActionName("teamsponsor")]
         public async Task<HttpResponseMessage> GetSponsors(long accountId, long teamSeasonId)
         {

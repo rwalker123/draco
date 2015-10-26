@@ -63,9 +63,19 @@ namespace SportsManager.Baseball.ViewModels
 
             UserTeams = c.GetCurrentUserTeams(accountId);
 
+            var showSponsorSpotlight = false;
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowSponsorSpotlight"), out showSponsorSpotlight);
+            ShowSponsorSpotlight = showSponsorSpotlight && Account.Sponsors.Any();
+
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = true;
+        }
+
+        public Sponsor SponsorSpotlight
+        {
+            get;
+            private set;
         }
 
         public IQueryable<TeamSeason> UserTeams
@@ -142,6 +152,12 @@ namespace SportsManager.Baseball.ViewModels
         }
 
         public bool ShowSponsors
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowSponsorSpotlight
         {
             get;
             private set;
