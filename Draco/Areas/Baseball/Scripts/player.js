@@ -27,7 +27,7 @@ var PlayerViewModel = function (accountId) {
         window.location = window.config.rootUri + '/baseball/player/contact/' + self.accountId + '/' + self.foundPlayer().Id;
     }
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
@@ -52,7 +52,7 @@ var PlayerViewModel = function (accountId) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             },
         });
     }

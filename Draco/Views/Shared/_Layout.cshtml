@@ -116,49 +116,52 @@
 
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/typeahead")
+    @Scripts.Render("~/bundles/typeahead-jquery")
 
-    <script>
+    < script >
         function reportAjaxError(url, xhr, ajaxOptions, thrownError) {
-            JL().fatal({
-                url: url,
+        JL().fatal({
+            url: url,
                 msg: "AJAX error response",
                 errorThrown: thrownError,
                 jqXHR: xhr,
-                textStatus: ajaxOptions
-            });
-            //alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
-        }
+                textStatus:
+            ajaxOptions
+                });
+        //alert("Caught error: Status: " + xhr.status + ". Error: " + thrownError);
+    }
 
-        $(document).ready(function () {
-            window.onerror = function (errorMsg, url, lineNumber, column, errorObj) {
+        $(document).ready(function() {
+        window.onerror = function(errorMsg, url, lineNumber, column, errorObj) {
 
-                JL().fatalException({
-                    "msg": "Exception!",
+            JL().fatalException({
+                "msg": "Exception!",
                     "errorMsg": errorMsg, "url": url,
                     "line number": lineNumber, "column": column
-                }, errorObj);
+                    }, errorObj);
 
-                //alert("Caught window.onerror: url: " + url);
+            //alert("Caught window.onerror: url: " + url);
 
-                // Tell browser to run its own error handler as well   
-                return false;
-            }
+            // Tell browser to run its own error handler as well
+            return false;
+        }
 
 
             $.ajaxSetup({
-                // put your favorite error function here: 
-                error: function (jqXHR, ajaxOptions, thrownError) {
-                    reportAjaxError(jqXHR.url, jqXHR, ajaxOptions, thrownError);
-                },
-                beforeSend: function (jqXHR, settings) {
-                    jqXHR.url = settings.url;
-                },
-                cache: false
+            // put your favorite error function here:
+            error: function(jqXHR, ajaxOptions, thrownError) {
+                reportAjaxError(jqXHR.url, jqXHR, ajaxOptions, thrownError);
+            },
+                beforeSend: function(jqXHR, settings) {
+                jqXHR.url = settings.url;
+            },
+                cache:
+            false
             });
 
-        });
+    });
 
-    </script>
+    </ script >
     @*JQuery must be included before boostrap*@
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)

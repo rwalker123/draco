@@ -111,7 +111,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     }
 
-    self.getAvailableManagers = function (query, cb) {
+    self.getAvailableManagers = function (query, syncCallback, asyncCallback) {
 
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availablemanagers',
@@ -135,7 +135,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncCallback(results);
             }
         });
     }

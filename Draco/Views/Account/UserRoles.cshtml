@@ -35,7 +35,7 @@
                 <form class="form-inline" role="form">
                     <div class="input-group col-sm-12">
                         var searchTerm = this.term;
-                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, display: 'label' }, target: selectedNewOwner, options: { highlight: true } }" />
+                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectedNewOwner, options: { highlight: true } }" />
                         <div class="input-group-btn">
                             <button type="button" class="btn btn-success" data-bind="click: changeAccountOwner" title="change account owner"><span class="glyphicon glyphicon-ok"></span></button>
                             <button type="button" class="btn btn-danger" data-bind="click: cancelChangeAccountOwner" title="cancel change account owner"><span class="glyphicon glyphicon-remove"></span></button>
@@ -94,7 +94,7 @@
                             <div class="form-group col-sm-12">
                                 <label data-bind="uniqueFor: Id" class="sr-only">Last Name</label>
                                 <div class="input-group ">
-                                    <input type="text" class="form-control" placeholder="find player (type last name)" data-bind="uniqueId: Id, typeahead: { datasets: { source: $root.getPlayers, displayKey: 'label' }, target: selectedUser, options: { highlight: true } }" />
+                                    <input type="text" class="form-control" placeholder="find player (type last name)" data-bind="uniqueId: Id, typeahead: { datasets: { source: $root.getPlayers, async: true, displayKey: 'label' }, target: selectedUser, options: { highlight: true } }" />
                                     <div class="input-group-btn">
                                         <button type="button" class="btn btn-primary" data-bind="click: addSelectedUserToRole" title="add user to role"><span class="glyphicon glyphicon-plus"></span></button>
                                     </div>

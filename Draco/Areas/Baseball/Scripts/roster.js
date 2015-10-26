@@ -311,7 +311,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     }
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         var lastName = query;
         var firstName = '';
@@ -345,7 +345,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             }
         });
     }

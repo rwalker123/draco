@@ -88,7 +88,7 @@ var UmpiresClass = function (accountId) {
         return self.selectedPlayer() != null;
     }, self);
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AvailableUmpires',
@@ -113,7 +113,7 @@ var UmpiresClass = function (accountId) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             }
         });
     }

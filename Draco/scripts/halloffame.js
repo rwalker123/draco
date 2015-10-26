@@ -147,7 +147,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
 
     self.selectedPlayer = ko.observable();
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/HallOfFameAPI/' + self.accountId + '/availableinductees',
@@ -171,7 +171,7 @@ var HallOfFameViewModel = function (accountId, isAdmin) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             }
         });
     }

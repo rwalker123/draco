@@ -56,7 +56,7 @@
                     </div>
                     <div data-bind="fadeVisible: toOptionsAvailable" class="form-group">
                         <div data-bind="visible: toField() == 5" class="col-sm-12">
-                            <input type="text" id="toOptionsInput" class="form-control" data-bind="typeahead: { datasets: { source: getPlayers, display: 'label' }, target: selectPlayer, options: { highlight: true } }" placeholder="type last name to begin search" />
+                            <input type="text" id="toOptionsInput" class="form-control" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectPlayer, options: { highlight: true } }" placeholder="type last name to begin search" />
                         </div>
                     </div>
                    <div class="form-group">
@@ -247,7 +247,7 @@ else
 
         }
 
-        self.getPlayers = function (query, cb) {
+        self.getPlayers = function (query, syncResults, asyncResults) {
 
             $.ajax({
                 url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
@@ -273,7 +273,7 @@ else
                             selected: ko.observable()
                         }
                     });
-                    cb(results);
+                    asyncResults(results);
                 },
             });
         }

@@ -272,7 +272,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
         });
     }
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
@@ -297,7 +297,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             },
         });
     }
