@@ -1,0 +1,44 @@
+﻿@model SportsManager.ViewModels.SponsorSpotlightViewModel
+
+<div class="panel panel-default" id="sponsorSpotlightView">
+
+    <div class="panel-heading">
+        <!-- ko if: sponsor -->
+        <span class="h3" data-bind="html: 'League Sponsor: ' + sponsor().Name()"></span>
+        <!-- /ko -->
+        <!-- ko ifnot: sponsor -->
+        <h3 class="panel-title">League Sponsor: ...</h3>
+        <!-- /ko -->
+    </div>
+
+    <div class="panel-body">
+        <div data-bind="if: isLoading">
+            <img src="/Images/busy.gif" />Loading...
+        </div>
+        <div data-bind="ifnot: isLoading">
+            <div class="row">
+                <div class="col-md-3">
+                    <img class="img-rounded" style="display:inline-block;" onerror="this.style.display = 'none';" data-bind="attr: { src: sponsor().LogoURL }" />
+                </div>
+                <div class="col-md-3">
+                    <address>
+                        <div data-bind="if: sponsor().EMail"><a data-bind="attr: { href: 'mailto:' + sponsor().EMail }">EMail</a></div>
+                        <div data-bind="if: sponsor().Website"><a target="_blank" data-bind="attr: { href: sponsor().Website }">Website</a></div>
+                        <div data-bind="if: sponsor().Phone"><abbr title="Phone">P:</abbr> <span data-bind="html: sponsor().Phone"></span></div>
+                    </address>
+
+                    <address>
+                        <div data-bind="if: sponsor().StreetAddress"><span data-bind="html: sponsor().StreetAddress"></span></div>
+                        <div data-bind="if: sponsor().CityStateZip"><span data-bind="html: sponsor().CityStateZip"></span></div>
+                    </address>
+
+                </div>
+                <div class="col-md-4">
+                    <div data-bind="if: sponsor().Description">
+                        <p class="well descriptionField" data-bind="html: sponsor().Description"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

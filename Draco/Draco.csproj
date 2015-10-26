@@ -648,6 +648,7 @@
     <Compile Include="Models\ViewModels\Controllers\AnnouncementsViewModel.cs" />
     <Compile Include="Models\ViewModels\API\DivisionViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\HOFOfDayViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\SponsorSpotlightViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\VideoViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\UserPollViewModel.cs" />
     <Compile Include="Models\ViewModels\Controllers\PlayerSurveyViewModel.cs" />
@@ -938,6 +939,7 @@
     <Content Include="Scripts\hofspotlight.js" />
     <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
+    <Content Include="Scripts\sponsorspotlight.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
     <Content Include="Scripts\tinymce\license.txt" />
     <Content Include="Scripts\tinymce\plugins\advlist\plugin.js" />
@@ -1260,6 +1262,7 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.eot" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
+    <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
     <None Include="Web.Azure.config">
       <DependentUpon>Web.config</DependentUpon>
       <SubType>Designer</SubType>
