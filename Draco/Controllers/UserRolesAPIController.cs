@@ -34,7 +34,7 @@ namespace SportsManager.Controllers
 
             var foundItems = (from c in Db.Contacts
                               where c.CreatorAccountId == accountId &&
-                              (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
+                              (nsvm.FirstName == null || nsvm.FirstName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
                               (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
                               orderby c.LastName, c.FirstName, c.MiddleName
                               select c).Skip((nsvm.Page - 1) * pageSize).Take(pageSize);
