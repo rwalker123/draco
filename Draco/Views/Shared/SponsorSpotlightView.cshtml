@@ -4,10 +4,10 @@
 
     <div class="panel-heading">
         <!-- ko if: sponsor -->
-        <span class="h3" data-bind="html: 'League Sponsor: ' + sponsor().Name()"></span>
+        <span class="panel-title" data-bind="html: 'League Sponsor: ' + sponsor().Name()"></span>
         <!-- /ko -->
         <!-- ko ifnot: sponsor -->
-        <h3 class="panel-title">League Sponsor: ...</h3>
+        <div class="panel-title">League Sponsor: ...</div>
         <!-- /ko -->
     </div>
 
