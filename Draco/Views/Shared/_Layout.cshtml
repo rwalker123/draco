@@ -118,7 +118,7 @@
     @Scripts.Render("~/bundles/typeahead")
     @Scripts.Render("~/bundles/typeahead-jquery")
 
-    < script >
+    <script type="text/javascript">
         function reportAjaxError(url, xhr, ajaxOptions, thrownError) {
         JL().fatal({
             url: url,
@@ -161,7 +161,7 @@
 
     });
 
-    </ script >
+    </script>
     @*JQuery must be included before boostrap*@
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
