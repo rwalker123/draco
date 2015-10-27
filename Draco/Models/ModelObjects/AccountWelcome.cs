@@ -1,50 +1,17 @@
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
     public class AccountWelcome
     {
-        public AccountWelcome()
-        {
-        }
+        public long Id { get; set; } // Id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public short OrderNo { get; set; } // OrderNo
+        public string CaptionMenu { get; set; } // CaptionMenu
+        public string WelcomeText { get; set; } // WelcomeText
+        public long? TeamId { get; set; } // TeamId
 
-        public AccountWelcome(long id, long accountId, short orderNo, string captionText, string accountText)
-        {
-            Id = id;
-            AccountId = accountId;
-            OrderNo = orderNo;
-            CaptionText = captionText;
-            WelcomeText = accountText;
-        }
-
-        public void CopyTo(SportsManager.Model.AccountWelcome dbAw)
-        {
-            dbAw.Id = Id;
-            dbAw.AccountId = AccountId;
-            dbAw.OrderNo = OrderNo;
-            dbAw.CaptionMenu = CaptionText;
-            if (TeamId == 0)
-                dbAw.TeamId = null;
-            else
-                dbAw.TeamId = TeamId;
-            dbAw.WelcomeText = String.IsNullOrEmpty(WelcomeText) ? String.Empty : WelcomeText;
-        }
-
-        public SportsManager.Model.AccountWelcome ToDBType()
-        {
-            SportsManager.Model.AccountWelcome dbAw = new SportsManager.Model.AccountWelcome();
-            CopyTo(dbAw);
-
-            return dbAw;
-
-        }
-
-        public long Id { get; set; }
-        public long AccountId { get; set; }
-        public short OrderNo { get; set; }
-        public string CaptionText { get; set; }
-        public string WelcomeText { get; set; }
-        public long TeamId { get; set; }
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_AccountWelcome_Accounts
+        public virtual Team Team { get; set; } // FK_AccountWelcome_Teams
     }
 }

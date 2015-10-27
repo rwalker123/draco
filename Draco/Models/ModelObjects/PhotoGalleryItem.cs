@@ -1,6 +1,4 @@
 using SportsManager.Models.Utils;
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
@@ -13,50 +11,17 @@ namespace ModelObjects
 		private const string m_thumbPhotoName = "PhotoGalleryThumb.jpg";
         private static string m_SubmittedPhotoDir = Globals.UploadDirRoot + "SubmittedPhotos/";
 
-		public PhotoGalleryItem()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Title { get; set; } // Title
+        public string Caption { get; set; } // Caption
+        public long AlbumId { get; set; } // AlbumId
 
-		public PhotoGalleryItem(long id, string title, string caption, long accountId, long albumId)
-		{
-			Id = id;
-			AccountId = accountId;
-			Title = title;
-		    Caption = caption;
-			AlbumId = albumId;
-		}
-
-		public long Id
-		{
-            get; 
-            set;
-		}
-
-		public long AlbumId
-		{
-            get;
-            set;
-        }
-
-		public long AccountId
-		{
-            get;
-            set;
-        }
-
-		public string Title
-		{
-            get;
-            set;
-        }
-
-		public string Caption
-		{
-            get;
-            set;
-        }
-
-		public string PhotoURL
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_PhotoGallery_Accounts
+        public virtual PhotoGalleryAlbum PhotoGalleryAlbum { get; set; } // FK_PhotoGallery_PhotoGalleryAlbum
+        
+        public string PhotoURL
 		{
 			get 
 			{
@@ -71,57 +36,6 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + AccountId + "/PhotoGallery/" + Id + "/" + m_thumbPhotoName);
 			}
 		}
-
-        static public string SubmittedPhotoDirURL
-        {
-            get
-            {
-                return m_SubmittedPhotoDir;
-            }
-        }
-
-        public Guid SubmittedPhotoKey
-        {
-            get; set;
-        }
-
-        public string SubmittedBy
-        {
-            get; set;
-        }
-
-        public string SubmittedThumbPhotoName
-        {
-            get; set;
-        }
-
-        public string SubmittedPhotoThumbURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(m_SubmittedPhotoDir + SubmittedThumbPhotoName);
-            }
-        }
-
-        public string SubmittedPhotoName
-        {
-            get;
-            set;
-        }
-
-        public string SubmittedPhotoURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(m_SubmittedPhotoDir + SubmittedPhotoName);
-            }
-        }
-
-        public long SubmittedForTeamId
-        {
-            get;
-            set;
-        }
     }
 }
 	

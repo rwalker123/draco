@@ -1,200 +1,83 @@
+using SportsManager.Models.Helpers;
 using SportsManager.Models.Utils;
 using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
     /// <summary>
     /// Summary description for Contact
     /// </summary>
-    public class Contact : IComparable
+    public class Contact
     {
-        public long Id { get; set; }
-        public string Email { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string MiddleName { get; set; }
-        public string Phone1 { get; set; }
-        public string Phone2 { get; set; }
-        public string Phone3 { get; set; }
-        public long CreatorAccountId { get; set; }
-        public string StreetAddress { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string Zip { get; set; }
-        public int FirstYear { get; set; }
-        public DateTime DateOfBirth { get; set; }
-        public bool IsFemale { get; set; }
-        public string UserId { get; set; }
+        public long Id { get; set; } // Id (Primary key)
+        public string UserId { get; set; } // UserId
+        public string LastName { get; set; } // LastName
+        public string FirstName { get; set; } // FirstName
+        public string MiddleName { get; set; } // MiddleName
+        public string Phone1 { get; set; } // Phone1
+        public string Phone2 { get; set; } // Phone2
+        public string Phone3 { get; set; } // Phone3
+        public long CreatorAccountId { get; set; } // CreatorAccountId
+        public string StreetAddress { get; set; } // StreetAddress
+        public string City { get; set; } // City
+        public string State { get; set; } // State
+        public string Zip { get; set; } // Zip
+        public int? FirstYear { get; set; } // FirstYear
+        public DateTime DateOfBirth { get; set; } // DateOfBirth
+        public bool? IsFemale { get; set; } // IsFemale
+        public string Email { get; set; } // Email
 
-        private static string PhotoName = "ContactPhoto.jpg";
-        private static string LargePhotoName = "ContactActionPhoto.jpg";
+        // Foriegn Keys
+        public virtual AspNetUser AspNetUser { get; set; } // FK_Contacts_AspNetUser
+
+        // Reverse navigation
+        public virtual ICollection<ContactRole> ContactRoles { get; set; } // ContactRoles.FK_ContactRoles_Contacts
+        public virtual ICollection<FieldContact> FieldContacts { get; set; } // FieldContacts.FK_FieldContacts_Contacts
+        public virtual ICollection<HOFMember> Hofs { get; set; } // hof.FK_hof_Contacts
+        public virtual ICollection<Umpire> LeagueUmpires { get; set; } // LeagueUmpires.FK_LeagueUmpires_Contacts
+        public virtual ICollection<MemberBusiness> MemberBusinesses { get; set; } // MemberBusiness.FK_MemberBusiness_Contacts
+        public virtual ICollection<MessagePost> MessagePosts { get; set; } // MessagePost.FK_MessagePost_Contacts
+        public virtual ICollection<MessageTopic> MessageTopics { get; set; } // MessageTopic.FK_MessageTopic_Contacts
+        public virtual ICollection<ProfileQuestionAnswer> PlayerProfiles { get; set; } // PlayerProfile.FK_PlayerProfile_Contacts
+        public virtual ICollection<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified.FK_PlayersWantedClassified_Contacts
+        public virtual ICollection<Player> Rosters { get; set; } // Roster.FK_Roster_Contacts
+        public virtual ICollection<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager.FK_TeamSeasonManager_Contacts
+        public virtual ICollection<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers.FK_VoteAnswers_Contacts
 
         public Contact()
         {
-        }
-
-        public void Copy(SportsManager.Model.Contact copyTo, bool updateUserId = false)
-        {
-            copyTo.Email = Email;
-            copyTo.FirstName = FirstName;
-            copyTo.LastName = LastName;
-            copyTo.MiddleName = MiddleName;
-            copyTo.Phone1 = Phone1;
-            copyTo.Phone2 = Phone2;
-            copyTo.Phone3 = Phone3;
-            copyTo.CreatorAccountId = CreatorAccountId;
-            copyTo.StreetAddress = StreetAddress;
-            copyTo.City = City;
-            copyTo.State = State;
-            copyTo.Zip = Zip;
-            copyTo.FirstYear = FirstYear;
-            copyTo.DateOfBirth = DateOfBirth;
-            if (updateUserId)
-                copyTo.UserId = UserId;
-        }
-        
-        public Contact(long id, string email, string lastName, string firstName, string middleName,
-                    string phone1, string phone2, string phone3, long creatorAccountId, 
-                    string streetAddress, string city, string state, string zip, int fy, 
-                    DateTime dob, string userId)
-        {
-            Id = id;
-            Email = email;
-            FirstName = firstName;
-            LastName = lastName;
-            MiddleName = middleName;
-            Phone1 = phone1;
-            Phone2 = phone2;
-            Phone3 = phone3;
-            CreatorAccountId = creatorAccountId;
-            StreetAddress = streetAddress;
-            City = city;
-            State = state;
-            Zip = zip;
-            FirstYear = fy;
-
-            DateOfBirth = dob;
-            UserId = userId;
-        }
-
-        public string UserName
-        {
-            get { return Email; }
+            IsFemale = false;
+            ContactRoles = new List<ContactRole>();
+            FieldContacts = new List<FieldContact>();
+            Hofs = new List<HOFMember>();
+            LeagueUmpires = new List<Umpire>();
+            MemberBusinesses = new List<MemberBusiness>();
+            MessagePosts = new List<MessagePost>();
+            MessageTopics = new List<MessageTopic>();
+            PlayerProfiles = new List<ProfileQuestionAnswer>();
+            PlayersWantedClassifieds = new List<PlayersWantedClassified>();
+            Rosters = new List<Player>();
+            TeamSeasonManagers = new List<TeamManager>();
+            VoteAnswers = new List<VoteAnswer>();
         }
 
         public string FullName
         {
             get
             {
-                string fullName = LastName + ", " + FirstName + " " + MiddleName;
-                return fullName.Trim();
+                return Globals.BuildFullName(FirstName, MiddleName, LastName);
             }
-        }
-
-        static public string BuildFullName(string firstName, string middleName, string lastName)
-        {
-            string fullName = lastName + ", " + firstName + " " + middleName;
-            return fullName.Trim();
-        }
-
-        static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
-        {
-            System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
-
-            if (!String.IsNullOrWhiteSpace(middleName))
-                fullName.Append(middleName + " ");
-
-            fullName.Append(lastName);
-
-            return fullName.ToString();
         }
 
         public string FullNameFirst
         {
             get
             {
-                return Contact.BuildFullNameFirst(FirstName, MiddleName, LastName);
+                return Globals.BuildFullNameFirst(FirstName, MiddleName, LastName);
             }
         }
 
-        public string SinglePhone
-        {
-            get
-            {
-                if (!String.IsNullOrEmpty(Phone1))
-                    return Phone1;
 
-                if (!String.IsNullOrEmpty(Phone2))
-                    return Phone2;
-
-                return Phone3 ?? String.Empty;
-            }
-        }
-
-        public string CityState
-        {
-            get
-            {
-                if (String.IsNullOrWhiteSpace(City))
-                    return State;
-
-                if (String.IsNullOrWhiteSpace(State))
-                    return City;
-
-                return City + ", " + State;
-            }
-        }
-
-        static public string GetPhotoURL(long id)
-        {
-            Contact c = new Contact();
-            c.Id = id;
-            return c.PhotoURL;
-        }
-
-        static public string GetLargePhotoURL(long id)
-        {
-            Contact c = new Contact();
-            c.Id = id;
-            return c.LargePhotoURL;
-        }
-
-        public string PhotoURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + PhotoName);
-            }
-        }
-
-        public string LargePhotoURL
-        {
-            get
-            {
-                return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Contacts/" + Id + "/" + LargePhotoName);
-            }
-        }
-
-        #region IComparable Members
-
-        public int CompareTo(object obj)
-        {
-            Contact p = obj as Contact;
-            if (p == null)
-                return 0;
-
-            int rc = String.Compare(LastName, p.LastName, true);
-            if (rc == 0)
-            {
-                rc = String.Compare(FirstName, p.FirstName, true);
-
-                if (rc == 0)
-                    rc = String.Compare(MiddleName, p.MiddleName, true);
-            }
-
-            return rc;
-        }
-
-        #endregion
     }
 }

@@ -1,16 +1,21 @@
-﻿using SportsManager.Controllers.Attributes;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Web;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class LeagueTeamsController : Controller
+    public class LeagueTeamsController : DBController
     {
+        public LeagueTeamsController(DB db)
+            : base(db)
+        {
+
+        }
+
         //
         // GET: /Baseball/Teams/
 
@@ -34,11 +39,18 @@ namespace SportsManager.Areas.Baseball.Controllers
         [DeleteTempFile]
         public FileStreamResult ExportAddressList(long accountId)
         {
+            bool onlyManagers = !String.IsNullOrEmpty(Request.QueryString.Get("m"));
+            long leagueId = 0;
+            long.TryParse(Request.QueryString.Get("l"), out leagueId);
+
             var vm = new SportsManager.Baseball.ViewModels.LeagueTeamsViewModel(this, accountId);
-            FileStream strm = vm.ExportToExcel();
+            FileStream strm = vm.ExportToExcel(leagueId, onlyManagers);
             this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-            fs.FileDownloadName = vm.AccountLogoUrl + "AddressList.xlsx";
+            fs.FileDownloadName = vm.AccountName;
+            if (onlyManagers)
+                fs.FileDownloadName += "Managers";
+            fs.FileDownloadName += "AddressList.xlsx";
             return fs;
         }
     }

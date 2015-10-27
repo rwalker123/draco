@@ -44,7 +44,7 @@
                         <h3 class="control-label col-sm-12">sign a player</h3>
                         <div class="col-sm-12">
                             <div class="input-group">
-                                <input type="text" class="form-control pull-left" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="enter player name" />
+                                <input type="text" class="form-control pull-left" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectedPlayer, options: { highlight: true } }" placeholder="enter player name" />
 
                                 <span class="input-group-btn">
                                     <button class="btn btn-primary pull-left" data-bind="click: signPlayer, enable: isPlayerSelected" title="sign player"><span class="glyphicon glyphicon-ok"></span></button>
@@ -164,7 +164,7 @@
 
                         @if (Model.IsAdmin || Model.IsTeamAdmin)
                         {
-                            <td class="col-sm-1" data-bind="html: Age"></td>
+                            <td class="col-sm-1" data-bind="html: Contact.Age"></td>
 
                             <td class="col-sm-2">
                                 <span data-bind="html: DateAdded.Formatted"></span>
@@ -244,7 +244,7 @@
                                 }
                         </td>
 
-                            <td class="col-sm-1" data-bind="html: Age"></td>
+                            <td class="col-sm-1" data-bind="html: Contact.Age"></td>
                             <td class="col-sm-2">
                                 <span data-bind="html: DateAdded.Formatted"></span>
                             </td>
@@ -307,7 +307,7 @@
                             <td colspan="2">
                                     <input class="form-control" type="text" data-bind='value: StreetAddress' placeholder="address" />
                                     <input class="form-control" type="text" data-bind='value: City' placeholder="city"/>
-                                    <select data-container="body" data-size="7" data-bind="selectPicker: State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+                                    <select id="StatePicker" data-bind="selectPicker: State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
                                     <input class="form-control" type="text" data-bind='value: Zip' placeholder="zip code"/>
                             </td>
                             <td colspan="2">
@@ -317,10 +317,10 @@
                                 <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone1" placeholder="home phone" />
                             </td>
                             <td colspan="2">
-                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth"/>
-                                <select data-container="body" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" />
+                                <select id="FirstYearSelect" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
 
-                                <select data-container="body" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+                                <select id="GenderSelect" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
 
                             </td>
                         </tr>

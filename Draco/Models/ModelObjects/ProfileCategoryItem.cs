@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ModelObjects
 {
@@ -9,51 +7,20 @@ namespace ModelObjects
 /// </summary>
 	public class ProfileCategoryItem
 	{
-		private long m_id;
-		private long m_accountId;
-		private string m_category = String.Empty;
-		private int m_priority = 0;
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string CategoryName { get; set; } // CategoryName
+        public int Priority { get; set; } // Priority
 
-		public ProfileCategoryItem()
-		{
-		}
+        // Reverse navigation
+        public virtual ICollection<ProfileQuestionItem> ProfileQuestions { get; set; } // ProfileQuestion.FK_ProfileQuestion_ProfileCategory
 
-		public ProfileCategoryItem(long id, string category, int priority, long accountId)
-		{
-			m_id = id;
-			m_accountId = accountId;
-			m_category = category;
-			m_priority = priority;
-		}
-
-		public long Id
-		{
-			get { return m_id; }
-			set { m_id = value; }
-		}
-
-		public long AccountId
-		{
-			get { return m_accountId; }
-			set { m_accountId = value; }
-		}
-
-		public string CategoryName
-		{
-			get { return m_category; }
-			set { m_category = value; }
-		}
-
-		public int Priority
-		{
-			get { return m_priority; }
-			set { m_priority = value; }
-		}
-
-        public IEnumerable<ProfileQuestionItem> Questions
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_ProfileCategory_Accounts
+        
+        public ProfileCategoryItem()
         {
-            get;
-            set;
+            ProfileQuestions = new List<ProfileQuestionItem>();
         }
 	}
 }

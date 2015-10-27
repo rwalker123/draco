@@ -1,31 +1,26 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
 	/// <summary>
 	/// Summary description for TeamManager
 	/// </summary>
-	public class Umpire : ContactName
+	public class Umpire
 	{
-		public Umpire()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public long ContactId { get; set; } // ContactId
 
-		public Umpire(long id, long accountId)
-		{
-            Id = id;
-            AccountId = accountId;
-		}
+        // Reverse navigation
+        public virtual ICollection<GameEjection> GameEjections { get; set; } // GameEjections.FK_GameEjections_LeagueUmpires
 
-		public long AccountId { get; set; }
-        public long ContactId { get; set; }
-        public String FullName
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_LeagueUmpires_Accounts
+        public virtual Contact Contact { get; set; } // FK_LeagueUmpires_Contacts
+        
+        public Umpire()
         {
-            get
-            {
-                string fullName = LastName + ", " + FirstName + " " + MiddleName;
-                return fullName.Trim();
-            }
+            GameEjections = new List<GameEjection>();
         }
 	}
 }

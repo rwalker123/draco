@@ -160,7 +160,7 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
 
         $.ajax({
             type: (self.addMode()) ? "POST" : "PUT",
-            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/fields',
             data: newData,
             success: function (field) {
                 if (self.addMode()) {
@@ -197,7 +197,7 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
     self.doDeleteField = function (field) {
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/field/' + field.Id(),
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/fields/' + field.Id(),
             success: function () {
                 self.removeFieldPin(field);
                 self.fields.remove(field);
@@ -240,7 +240,7 @@ var FieldsViewModel = function (accountId, isAdmin, selectedField) {
 
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/fields',
             success: function (fields) {
                 var fieldsVM = $.map(fields, function (field) {
                     var fieldVM = new FieldViewModel(field);

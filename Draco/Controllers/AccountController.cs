@@ -1,8 +1,12 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
+using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using SportsManager.ViewModels;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
@@ -11,14 +15,16 @@ using System.Web.Mvc;
 namespace SportsManager.Controllers
 {
     [Authorize]
-    public class AccountController : Controller
+    public class AccountController : DBController
     {
-        public AccountController()
-            : this(Globals.GetUserManager())
+        public AccountController(DB db)
+            : base(db)
         {
+            UserManager = Globals.GetUserManager();
         }
 
-        public AccountController(ApplicationUserManager userManager)
+    public AccountController(DB db, ApplicationUserManager userManager)
+            : base(db)
         {
             UserManager = userManager;
         }
@@ -41,6 +47,29 @@ namespace SportsManager.Controllers
             return View(new UsersViewModel(this, accountId));
         }
 
+        //
+        // GET: /Baseball/Team/
+        // accountId = accountId or teamId
+        [AcceptVerbs("GET"), HttpGet]
+        [ActionName("exportaddresslist")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [DeleteTempFile]
+        public FileStreamResult ExportAddressList(long accountId)
+        {
+            var vm = new UserAddressViewModel(this, accountId);
+            // order
+            // filter
+            string order = Request.QueryString.Get("order");
+            string filter = Request.QueryString.Get("filter");
+
+            FileStream strm = vm.ExportToExcel(order, filter);
+
+            this.TempData["tempFileName"] = strm.Name;
+            var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fs.FileDownloadName = vm.AccountName + "AddressList.xlsx";
+            return fs;
+        }
+
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult EMail(long accountId)
         {
@@ -58,7 +87,7 @@ namespace SportsManager.Controllers
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
-                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+                ViewData["AccountName"] = Db.Accounts.Find(accountId.Value)?.Name;
             }
 
             ViewBag.ReturnUrl = returnUrl != null ? returnUrl : Request.UrlReferrer != null ? Request.UrlReferrer.ToString() : "";
@@ -75,7 +104,7 @@ namespace SportsManager.Controllers
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
-                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+                ViewData["AccountName"] = Db.Accounts.Find(accountId.Value)?.Name;
             }
 
             if (ModelState.IsValid)
@@ -122,7 +151,7 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 // find the contact and compare values.
-                var contact = DataAccess.Contacts.GetContact(model.PlayerId);
+                var contact = Db.Contacts.Find(model.PlayerId);
                 if (contact == null)
                 {
                     ModelState.AddModelError("PlayerName", "Could not find player. Please try another name or contact your league administrator.");
@@ -152,7 +181,7 @@ namespace SportsManager.Controllers
                             {
                                 contact.UserId = user.Id;
                                 contact.Email = model.Email;
-                                DataAccess.Contacts.UpdateUserId(contact);
+                                Db.SaveChanges();
                                 await SignInAsync(user, isPersistent: false);
                                 return RedirectToAction("Index", "Home");
                             }
@@ -167,7 +196,7 @@ namespace SportsManager.Controllers
 
             model.AccountId = model.RegisterAccountId;
             ViewData["AccountId"] = model.AccountId;
-            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(model.AccountId);
+            ViewData["AccountName"] = model.AccountName;
 
 
             // If we got this far, something failed, redisplay form
@@ -205,14 +234,14 @@ namespace SportsManager.Controllers
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
-                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+                ViewData["AccountName"] = Db.Accounts.Find(accountId.Value)?.Name;
 
                 bool showUserInfo = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId.Value, "ShowContactInfo"), out showUserInfo);
+                bool.TryParse(this.GetAccountSetting(accountId.Value, "ShowContactInfo"), out showUserInfo);
                 ViewBag.ShowUserInfo = showUserInfo;
 
                 bool editUserInfo = false;
-                bool.TryParse(DataAccess.Accounts.GetAccountSetting(accountId.Value, "EditContactInfo"), out editUserInfo);
+                bool.TryParse(this.GetAccountSetting(accountId.Value, "EditContactInfo"), out editUserInfo);
                 ViewBag.EditUserInfo = editUserInfo; 
             }
 
@@ -276,7 +305,7 @@ namespace SportsManager.Controllers
             }
 
             // If we got this far, something failed, redisplay form
-            return View(model);
+            return View(new ViewModels.AccountViewModel(this, model.AccountId));
         }
 
         [AllowAnonymous]
@@ -286,7 +315,7 @@ namespace SportsManager.Controllers
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
-                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+                ViewData["AccountName"] = Db.Accounts.Find(accountId.Value)?.Name;
             }
             else if (Request.UrlReferrer != null)
                 return Redirect(Request.UrlReferrer.ToString());
@@ -301,7 +330,8 @@ namespace SportsManager.Controllers
         public async Task<ActionResult> ResetPassword(long accountId, ResetPasswordViewModel vm)
         {
             ViewData["AccountId"] = accountId;
-            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+            String accountName = Db.Accounts.Find(accountId)?.Name;
+            ViewData["AccountName"] = accountName;
 
             if (ModelState.IsValid)
             {
@@ -315,7 +345,7 @@ namespace SportsManager.Controllers
                         string confirmationToken = await userManager.GeneratePasswordResetTokenAsync(user.Id);
                         var url = Url.Action("ResetPassword", "Account", new { token = confirmationToken }, Request.Url.Scheme);
 
-                        String passwordResetMessage = String.Format("<p>A request has been made to reset your password at {1}.</p><p>If you made this request, <a href='{0}'>click here</a> to reset your password.</p><p>If you did not make this request, please ignore this message.</p>", url, DataAccess.Accounts.GetAccountName(accountId));
+                        String passwordResetMessage = String.Format("<p>A request has been made to reset your password at {1}.</p><p>If you made this request, <a href='{0}'>click here</a> to reset your password.</p><p>If you did not make this request, please ignore this message.</p>", url, accountName);
 
                         IdentityMessage im = new IdentityMessage()
                         {
@@ -351,7 +381,7 @@ namespace SportsManager.Controllers
         public ActionResult ResetPwStepTwo(long accountId)
         {
             ViewData["AccountId"] = accountId;
-            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+            ViewData["AccountName"] = Db.Accounts.Find(accountId)?.Name;
 
             return View();
         }
@@ -360,7 +390,7 @@ namespace SportsManager.Controllers
         public ActionResult PasswordReset(long accountId)
         {
             ViewData["AccountId"] = accountId;
-            ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId);
+            ViewData["AccountName"] = Db.Accounts.Find(accountId)?.Name;
 
             return View();
         }
@@ -477,7 +507,7 @@ namespace SportsManager.Controllers
             if (accountId.HasValue)
             {
                 ViewData["AccountId"] = accountId.Value;
-                ViewData["AccountName"] = DataAccess.Accounts.GetAccountName(accountId.Value);
+                ViewData["AccountName"] = Db.Accounts.Find(accountId.Value)?.Name;
             }
 
             AuthenticationManager.SignOut();

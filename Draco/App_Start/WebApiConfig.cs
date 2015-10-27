@@ -1,5 +1,7 @@
 ﻿using BasicAuthentication.Filters;
-using Microsoft.Owin.Security.OAuth;
+using ModelObjects;
+using SportsManager.Models.Filters;
+using SportsManager.ViewModels.API;
 using System.Linq;
 using System.Web.Http;
 using System.Web.Http.OData.Builder;
@@ -13,7 +15,8 @@ namespace SportsManager
         {
             // Web API configuration and services
             config.Filters.Add(new IdentityBasicAuthenticationAttribute());
-            
+            config.Filters.Add(new ModelStateValidationAttribute());
+
             // Web API configuration and services
             // Configure Web API to use only bearer token authentication.
             //config.SuppressDefaultHostAuthentication();
@@ -21,6 +24,12 @@ namespace SportsManager
 
             // Web API routes
             config.MapHttpAttributeRoutes();
+
+            config.Routes.MapHttpRoute(
+                name: "NoAccountIdAPI",
+                routeTemplate: "api/{controller}/{action}"
+            );
+
 
             config.Routes.MapHttpRoute(
                 name: "TeamGameApi",
@@ -68,9 +77,10 @@ namespace SportsManager
                 defaults: new { id = RouteParameter.Optional }
             );
 
+
             ODataModelBuilder modelBuilder = new ODataConventionModelBuilder();
-            modelBuilder.EntitySet<ModelObjects.ContactName>("ContactsOData");
-            modelBuilder.EntitySet<ModelObjects.Game>("ScheduleOData");
+            modelBuilder.EntitySet<ContactNameViewModel>("ContactsOData");
+            modelBuilder.EntitySet<GameViewModel>("ScheduleOData");
 
             Microsoft.Data.Edm.IEdmModel model = modelBuilder.GetEdmModel();
             config.Routes.MapODataServiceRoute("ODataRoute", "odata", model);

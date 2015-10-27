@@ -1,25 +1,31 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Models;
-using System;
+using SportsManager.ViewModels.API;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class HandoutsAPIController : ApiController
+    public class HandoutsAPIController : DBApiController
     {
+        public HandoutsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("handouts")]
         public HttpResponseMessage GetHandout(long accountId)
         {
-            var handouts = DataAccess.AccountHandouts.GetAccountHandouts(accountId);
+            var handouts = Db.AccountHandouts.Where(h => h.AccountId == accountId).OrderByDescending(h => h.Id);
             if (handouts != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.AccountHandout>>(HttpStatusCode.OK, handouts);
+                var vm = Mapper.Map <IEnumerable<AccountHandout>, HandoutViewModel[]>(handouts);
+                return Request.CreateResponse<HandoutViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -29,16 +35,17 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("handouts")]
-        public HttpResponseMessage GetTeamHandout(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamHandout(long accountId, long teamSeasonId)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var handouts = DataAccess.TeamHandouts.GetTeamHandouts(team.TeamId);
+            var handouts = Db.TeamHandouts.Where(h => h.TeamId == team.Team.Id).AsEnumerable();
             if (handouts != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.TeamHandout>>(HttpStatusCode.OK, handouts);
+                var vm = Mapper.Map<IEnumerable<TeamHandout>, HandoutViewModel[]>(handouts);
+                return Request.CreateResponse<HandoutViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -49,57 +56,52 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("handouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateHandout(long accountId, int id, AccountHandout item)
+        public async Task<HttpResponseMessage> UpdateHandout(long accountId, int id, HandoutViewModel item)
         {
-            if (String.IsNullOrEmpty(item.FileName))
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "FileName cannot be empty.");
-
-            item.Id = id;
-            item.ReferenceId = accountId;
-            AccountHandout foundItem = DataAccess.AccountHandouts.GetHandout(item.Id);
-            if (foundItem == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-
-            bool rc = DataAccess.AccountHandouts.ModifyAccountHandout(item);
-
-            if (rc)
+            if (ModelState.IsValid)
             {
-                return Request.CreateResponse<AccountHandout>(HttpStatusCode.OK, item);
+                var dbHandout = await Db.AccountHandouts.FindAsync(id);
+                if (dbHandout == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (dbHandout.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbHandout.Description = item.Description;
+                dbHandout.FileName = item.FileName;
+
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<AccountHandout, HandoutViewModel>(dbHandout);
+                return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum photos in albums reached.");
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("handouts")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage UpdateHandout(long accountId, long teamSeasonId, int id, TeamHandout item)
+        public async Task<HttpResponseMessage> UpdateHandout(long accountId, long teamSeasonId, int id, TeamHandout item)
         {
-            if (String.IsNullOrEmpty(item.FileName))
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "FileName cannot be empty.");
-
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
-            if (team == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-
-            item.Id = id;
-            item.ReferenceId = teamSeasonId;
-            var foundItem = DataAccess.TeamHandouts.GetHandout(item.Id);
-            if (foundItem == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-
-            bool rc = DataAccess.TeamHandouts.ModifyTeamHandout(item);
-
-            if (rc)
+            if (ModelState.IsValid)
             {
-                return Request.CreateResponse<TeamHandout>(HttpStatusCode.OK, item);
+                var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
+                if (team == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                var dbHandout = await Db.TeamHandouts.FindAsync(id);
+                if (dbHandout == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                dbHandout.Description = item.Description;
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<TeamHandout, HandoutViewModel>(dbHandout);
+                return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum photos in albums reached.");
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -107,23 +109,19 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> DeleteHandout(long accountId, long id)
         {
-            var handout = new AccountHandout()
-            {
-                ReferenceId = accountId,
-                Id = id
-            };
-
-            if (await DataAccess.AccountHandouts.RemoveAccountHandout(handout))
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(handout.Id.ToString())
-                };
-
-                return response;
-            }
-            else
+            var handout = await Db.AccountHandouts.FindAsync(id);
+            if (handout == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (handout.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.AccountHandouts.Remove(handout);
+            await Db.SaveChangesAsync();
+
+            await SportsManager.Models.Utils.Storage.Provider.DeleteDirectory(handout.HandoutURL);
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -131,27 +129,23 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
         public async Task<HttpResponseMessage> DeleteHandout(long accountId, long teamSeasonId, long id)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var handout = new TeamHandout()
-            {
-                ReferenceId = teamSeasonId,
-                Id = id
-            };
-
-            if (await DataAccess.TeamHandouts.RemoveTeamHandout(handout))
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(handout.Id.ToString())
-                };
-
-                return response;
-            }
-            else
+            var handout = await Db.TeamHandouts.FindAsync(id);
+            if (handout == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (handout.TeamId != team.TeamId || team.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.TeamHandouts.Remove(handout);
+            await Db.SaveChangesAsync();
+
+            await SportsManager.Models.Utils.Storage.Provider.DeleteDirectory(handout.HandoutURL);
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
     }
 }

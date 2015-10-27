@@ -1,28 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using AutoMapper;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using ModelObjects;
+using SportsManager.ViewModels.API;
+using System.Threading.Tasks;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class TeamAPIController : ApiController
+    public class TeamAPIController : DBApiController
     {
+        public TeamAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("teamname")]
-        public HttpResponseMessage Put(long accountId, long teamSeasonId, ModelObjects.Team t)
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        public async Task<HttpResponseMessage> Put(long accountId, long teamSeasonId, TeamViewModel t)
         {
-            var team = DataAccess.Teams.GetTeam(t.Id);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            team.Name = t.Name ?? String.Empty;
-            if (DataAccess.Teams.ModifyTeam(team))
-                return Request.CreateResponse<ModelObjects.Team>(HttpStatusCode.OK, team);
-            else
+            if (team.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            if (String.IsNullOrEmpty(t.Name))
                 return Request.CreateResponse(HttpStatusCode.BadRequest);
 
+            team.Name = t.Name;
+            await Db.SaveChangesAsync();
+
+            var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
+            return Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
         }
 
     }

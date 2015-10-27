@@ -1,80 +1,51 @@
 using SportsManager.Models.Utils;
-using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
 	/// <summary>
 	/// Summary description for Team
 	/// </summary>
-	public class Team : IComparable<Team>
+	public class Team 
 	{
 		private readonly string m_teamPhotoName = "TeamPhoto.jpg";
 		private readonly string m_submittedPhotoName = "SubmittedTeamPhoto.jpg";
 		private readonly string m_teamLogoName = "TeamLogo.png";
 		private readonly string m_submittedLogoName = "SubmittedTeamLogo.png";
 
-		public Team()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string WebAddress { get; set; } // WebAddress
+        public string YouTubeUserId { get; set; } // YouTubeUserId
+        public string DefaultVideo { get; set; } // DefaultVideo
+        public bool AutoPlayVideo { get; set; } // AutoPlayVideo
 
-		public Team(long teamSeasonId, long leagueId, string teamName, long divisionId, long teamId, long accountId)
-		{
-			LeagueId = leagueId;
-			AccountId = accountId;
-			Id = teamSeasonId;
-			DivisionId = divisionId;
-			Name = teamName;
-			TeamId = teamId;
-		}
+        // Reverse navigation
+        public virtual ICollection<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome.FK_AccountWelcome_Teams
+        public virtual ICollection<Sponsor> Sponsors { get; set; } // Sponsors.FK_Sponsors_Teams
+        public virtual ICollection<TeamHandout> TeamHandouts { get; set; } // TeamHandouts.FK_TeamHandouts_Teams
+        public virtual ICollection<TeamNewsItem> TeamNews { get; set; } // TeamNews.FK_TeamNews_Teams
+        public virtual ICollection<TeamSeason> TeamsSeasons { get; set; } // TeamsSeason.FK_TeamsSeason_Teams
 
-		public long Id
-		{
-			get;
-			set;
-		}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_Teams_Accounts
 
-		public long TeamId
-		{
-			get;
-			set;
-		}
-
-		public long AccountId
-		{
-			get;
-			set;
-		}
-
-		public string Name
-		{
-			get;
-			set;
-		}
-
-		public long LeagueId
-		{
-			get;
-			set;
-		}
-
-		public long DivisionId
-		{
-			get;
-			set;
-		}
-
-        public string YouTubeUserId
+        public Team()
         {
-            get;
-            set;
+            DefaultVideo = "";
+            AutoPlayVideo = false;
+            AccountWelcomes = new List<AccountWelcome>();
+            Sponsors = new List<Sponsor>();
+            TeamHandouts = new List<TeamHandout>();
+            TeamNews = new List<TeamNewsItem>();
+            TeamsSeasons = new List<TeamSeason>();
         }
 
 		private string TeamDir
 		{
 			get
 			{
-				return (Globals.UploadDirRoot + "Teams/" + TeamId + "/");
+				return (Globals.UploadDirRoot + "Teams/" + Id + "/");
 			}
 		}
 
@@ -109,15 +80,5 @@ namespace ModelObjects
 				return Storage.Provider.GetUrl(TeamDir + m_submittedLogoName);
 			}
 		}
-
-
-		#region IComparable<Team> Members
-
-		public int CompareTo(Team other)
-		{
-			return String.Compare(this.Name, other.Name);
-		}
-
-		#endregion
 	}
 }

@@ -1,4 +1,8 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,18 +13,25 @@ using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
 {
-    public class LeaguesAPIController : ApiController
+    public class LeaguesAPIController : DBApiController
     {
+        public LeaguesAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Leagues")]
         public HttpResponseMessage GetLeagues(long accountId, long? id = 0)
         {
-            long seasonId = (id.HasValue && id.GetValueOrDefault() != 0) ? id.Value : DataAccess.Seasons.GetCurrentSeason(accountId);
+            long seasonId = (id.HasValue && id.GetValueOrDefault() != 0) ? id.Value : Db.CurrentSeasons.Find(accountId).SeasonId;
 
-            var leagues = DataAccess.Leagues.GetLeagues(seasonId);
+            var leagues = (from ls in Db.LeagueSeasons
+                           where ls.SeasonId == seasonId
+                           select ls);
             if (leagues != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.League>>(HttpStatusCode.OK, leagues);
+                var vm = Mapper.Map<IEnumerable<LeagueSeason>, LeagueViewModel[]>(leagues);
+                return Request.CreateResponse<LeagueViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -32,20 +43,26 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("LeagueManagers")]
         public HttpResponseMessage GetLeagueManagers(long accountId)
         {
-            var leagueTeamManagers = new List<ModelObjects.TeamManager>();
+            var leagueTeamManagers = new List<TeamManagerViewModel>();
 
-            var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId);
-            foreach(var lt in leagueTeams)
+            long currentSeason = Db.CurrentSeasons.Find(accountId).SeasonId;
+
+            var leagueTeams = (from ls in Db.LeagueSeasons
+                               join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                               where ls.SeasonId == currentSeason
+                               orderby ls.League.Name, ts.Name
+                               select ts);
+            if (leagueTeams != null)
             {
-                var teamMgrs = DataAccess.Teams.GetTeamManagers(lt.Id);
-                foreach(var m in teamMgrs)
+                foreach (var lt in leagueTeams)
                 {
-                    m.MiddleName += " (" + lt.Name + ")";
-                    leagueTeamManagers.Add(m);
+                    var vms = Mapper.Map<IEnumerable<TeamManager>, List<TeamManagerViewModel>>(lt.TeamSeasonManagers);
+                    if (vms != null && vms.Any())
+                        leagueTeamManagers.AddRange(vms);
                 }
             }
 
-            return Request.CreateResponse<IEnumerable<ModelObjects.TeamManager>>(HttpStatusCode.OK, leagueTeamManagers);
+            return Request.CreateResponse<IEnumerable<TeamManagerViewModel>>(HttpStatusCode.OK, leagueTeamManagers);
         }
 
 
@@ -53,17 +70,29 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("LeagueTeams")]
         public HttpResponseMessage GetLeagueTeams(long accountId, long? id = null)
         {
-            var leagueTeams = DataAccess.Leagues.GetLeagueTeamsFromSeason(accountId, id);
-            return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, leagueTeams);
+            long seasonId = (id.HasValue && id.GetValueOrDefault() != 0) ? id.Value : Db.CurrentSeasons.Find(accountId).SeasonId;
+
+            var teams = (from ls in Db.LeagueSeasons
+                    join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                    where ls.SeasonId == seasonId
+                    orderby ls.League.Name, ts.Name
+                    select ts);     
+       
+            var leagueTeams = Mapper.Map<IEnumerable<TeamSeason>, TeamViewModel[]>(teams);
+            return Request.CreateResponse<TeamViewModel[]>(HttpStatusCode.OK, leagueTeams);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Teams")]
         public HttpResponseMessage GetLeagueTeams(long accountId, long id)
         {
+            var teams = (from ts in Db.TeamsSeasons
+                         where ts.LeagueSeasonId == id && ts.DivisionSeasonId != 0
+                         orderby ts.DivisionSeasonId
+                         select ts);
 
-            var leagueTeams = DataAccess.Teams.GetTeams(id);
-            return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, leagueTeams);
+            var leagueTeams = Mapper.Map<IEnumerable<TeamSeason>, TeamViewModel[]>(teams);
+            return Request.CreateResponse<TeamViewModel[]>(HttpStatusCode.OK, leagueTeams);
         }
 
 
@@ -71,10 +100,16 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("UnassignedTeams")]
         public HttpResponseMessage UnassignedTeams(long accountId, long id)
         {
-            var unassignedTeams = DataAccess.Teams.GetUnassignedTeams(id);
-            if (unassignedTeams != null)
+
+            var teams = (from ts in Db.TeamsSeasons
+                         where ts.LeagueSeasonId == id && ts.DivisionSeasonId == 0
+                         orderby ts.Name
+                         select ts);
+
+            if (teams != null)
             {
-                return Request.CreateResponse<IQueryable<ModelObjects.Team>>(HttpStatusCode.OK, unassignedTeams);
+                var unassignedTeams = Mapper.Map<IEnumerable<TeamSeason>, TeamViewModel[]>(teams);
+                return Request.CreateResponse<TeamViewModel[]>(HttpStatusCode.OK, unassignedTeams);
             }
             else
             {
@@ -85,24 +120,43 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("DivisionTeams")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage RemoveDivisionTeams(long accountId, long id)
+        public async Task<HttpResponseMessage> RemoveDivisionTeams(long accountId, long id)
         {
-            var team = DataAccess.Teams.GetTeam(id);
+            var queryValues = Request.RequestUri.ParseQueryString();
+            String strReleasePlayers = queryValues["r"] ?? "f";
+
+            bool releasePlayers = strReleasePlayers.Equals("t");
+
+            var team = await Db.TeamsSeasons.FindAsync(id);  
             if (team != null)
             {
-                var prevDivisionId = team.DivisionId;
-                team.DivisionId = 0;
-                if (DataAccess.Teams.ModifyTeam(team))
-                {
-                    var response = new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(prevDivisionId.ToString())
-                    };
+                if (team.Team.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                    return response;
+                var prevDivisionId = team.DivisionSeasonId;
+                team.DivisionSeasonId = 0;
+
+                if (releasePlayers)
+                {
+                    var dbPlayers = (from rs in Db.RosterSeasons
+                                     where rs.TeamSeasonId == team.Id
+                                     select rs);
+
+                    foreach (var p in dbPlayers)
+                        p.Inactive = true;
+
+
+                    Db.TeamSeasonManagers.RemoveRange(team.TeamSeasonManagers);
                 }
 
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                await Db.SaveChangesAsync();
+
+                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(prevDivisionId.ToString())
+                };
+
+                return response;
             }
 
             return Request.CreateResponse(HttpStatusCode.NotFound);
@@ -111,10 +165,93 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("CopyLeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage CopyLeagueSetup(long accountId, long id, ModelObjects.Season fromSeason)
+        public async Task<HttpResponseMessage> CopyLeagueSetup(long accountId, long id, CopySeasonViewModel fromSeason)
         {
-            if (!DataAccess.Leagues.CopySeasonLeague(id, fromSeason.Id))
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
+            var season = await Db.Seasons.FindAsync(fromSeason.Id);
+            if (season == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (season.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var toSeason = await Db.Seasons.FindAsync(id);
+            if (toSeason == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (toSeason.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var leagues = (from ls in Db.LeagueSeasons
+                           where ls.SeasonId == fromSeason.Id
+                           select ls).ToList();
+            leagues.ForEach(ls =>
+            {
+                var newls = new LeagueSeason()
+                {
+                    LeagueId = ls.LeagueId,
+                    SeasonId = id
+                };
+
+                Db.LeagueSeasons.Add(newls);
+
+                ls.DivisionSeasons.ToList().ForEach(ds =>
+                {
+                    var newDiv = new DivisionSeason()
+                    {
+                        DivisionId = ds.DivisionId,
+                        LeagueSeason = newls,
+                        Priority = ds.Priority
+                    };
+
+                    Db.DivisionSeasons.Add(newDiv);
+
+                    var teams = ds.TeamsSeasons.ToList(); 
+
+                    teams.ForEach(ts =>
+                    {
+                        var newTeam = new TeamSeason()
+                        {
+                            LeagueSeason = newls,
+                            TeamId = ts.TeamId,
+                            Name = ts.Name,
+                            DivisionSeason = newDiv
+                        };
+
+                        Db.TeamsSeasons.Add(newTeam);
+
+                        ts.Roster.ToList().ForEach(r =>
+                        {
+                            if (!r.Inactive)
+                            {
+                                var newPlayer = new PlayerSeason()
+                                {
+                                    PlayerId = r.PlayerId,
+                                    TeamSeason = newTeam,
+                                    PlayerNumber = r.PlayerNumber,
+                                    DateAdded = r.DateAdded,
+                                    Inactive = false,
+                                    SubmittedWaiver = false
+                                };
+
+                                Db.RosterSeasons.Add(newPlayer);
+                            }
+                        });
+
+                        ts.TeamSeasonManagers.ToList().ForEach(m =>
+                            {
+                                var newManager = new TeamManager()
+                                {
+                                    TeamsSeason = newTeam,
+                                    ContactId = m.ContactId
+                                };
+
+                                Db.TeamSeasonManagers.Add(newManager);
+                            });
+                    });
+                });
+            });
+
+            await Db.SaveChangesAsync();
 
             // Create a 201 response.
             var response = new HttpResponseMessage(HttpStatusCode.Created)
@@ -129,23 +266,51 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage LeagueSetup(long accountId, long id, ModelObjects.League leagueData)
+        public async Task<HttpResponseMessage> LeagueSetup(long accountId, LeagueSetupViewModel leagueData)
         {
-            leagueData.AccountId = accountId;
-
-            if (ModelState.IsValid && leagueData != null)
+            if (ModelState.IsValid)
             {
-                long newLeagueId = DataAccess.Leagues.AddLeague(leagueData, seasonId: id);
-                if (newLeagueId == 0)
+                var season = await Db.Seasons.FindAsync(leagueData.SeasonId);
+                if (season == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (season.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                var leagueDef = (from ld in Db.Leagues
+                                 where ld.AccountId == accountId && ld.Name == leagueData.Name
+                                 select ld).SingleOrDefault();
+                if (leagueDef == null)
+                {
+                    leagueDef = new LeagueDefinition()
+                    {
+                        AccountId = accountId,
+                        Name = leagueData.Name
+                    };
+
+                    Db.Leagues.Add(leagueDef);
+                }
+
+                LeagueSeason leagueSeason = new LeagueSeason()
+                {
+                    League = leagueDef,
+                    SeasonId = leagueData.SeasonId
+                };
+
+                Db.LeagueSeasons.Add(leagueSeason);
+
+                await Db.SaveChangesAsync();
+
+                if (leagueSeason.Id == 0)
                     return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
                 // Create a 201 response.
                 var response = new HttpResponseMessage(HttpStatusCode.Created)
                 {
-                    Content = new StringContent(leagueData.Id.ToString())
+                    Content = new StringContent(leagueSeason.Id.ToString())
                 };
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "LeagueSetup", accountId = accountId, id = leagueData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "LeagueSetup", accountId = accountId, id = leagueSeason.Id }));
                 return response;
             }
             else
@@ -157,15 +322,19 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateLeagueSetup(long accountId, long id, ModelObjects.League leagueData)
+        public async Task<HttpResponseMessage> UpdateLeagueSetup(long accountId, LeagueSetupViewModel leagueData)
         {
-            leagueData.AccountId = accountId;
-            leagueData.Id = id;
-
-            if (ModelState.IsValid && leagueData != null)
+            if (ModelState.IsValid)
             {
-                if (!DataAccess.Leagues.ModifyLeague(leagueData))
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                var leagueDef = await Db.LeagueSeasons.FindAsync(leagueData.Id);
+                if (leagueDef == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (leagueDef.League.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                leagueDef.League.Name = leagueData.Name;
+                await Db.SaveChangesAsync();
 
                 var response = new HttpResponseMessage(HttpStatusCode.OK)
                 {
@@ -184,28 +353,35 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public async Task<HttpResponseMessage> LeagueSetup(long accountId, long id)
+        public HttpResponseMessage LeagueSetup(long accountId, long id)
         {
-            bool removeSuccess = await DataAccess.Leagues.RemoveLeague(id);
-            if (removeSuccess)
-            {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
-            }
-            else
-            {
+            var league = Db.LeagueSeasons.Find(id);
+            if (league == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            if (league.League.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            RemoveLeagueSeason(league);
+
+            RemoveUnusedLeagues(accountId);
+            RemoveUnusedDivisions(accountId);
+            RemoveUnusedContacts(accountId);
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("Divisions")]
         public HttpResponseMessage GetDivisions(long accountId, long id)
         {
-            var divisions = DataAccess.Divisions.GetDivisions(id);
-            return Request.CreateResponse<IQueryable<ModelObjects.Division>>(HttpStatusCode.OK, divisions);
+            var divisions = (from d in Db.DivisionSeasons
+                             where d.LeagueSeasonId == id
+                             select d).OrderBy(d => d.Priority).ThenBy(d => d.DivisionDef.Name).AsEnumerable();
+                             
+            var dvm = Mapper.Map<IEnumerable<DivisionSeason>, DivisionViewModel[]>(divisions);
+
+            return Request.CreateResponse<DivisionViewModel[]>(HttpStatusCode.OK, dvm);
         }
         
 
@@ -213,21 +389,16 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("DivisionSetup")]
         public HttpResponseMessage GetDivisionSetup(long accountId, long id)
         {
-            var divisions = DataAccess.Divisions.GetDivisions(id);
+            var divisions = (from ds in Db.DivisionSeasons
+                    join dd in Db.DivisionDefs on ds.DivisionId equals dd.Id
+                    where ds.LeagueSeasonId == id
+                    orderby ds.Priority ascending, dd.Name ascending
+                    select ds).AsEnumerable();
+
             if (divisions != null)
             {
-                var divTeams = (from d in divisions
-                                select new ModelObjects.DivisionTeams()
-                                {
-                                    Id = d.Id,
-                                    Name = d.Name,
-                                    Priority = d.Priority,
-                                    LeagueId = d.LeagueId,
-                                    AccountId = d.AccountId,
-                                    Teams = DataAccess.Teams.GetDivisionTeams(d.Id)
-                                });
-
-                return Request.CreateResponse<IQueryable<ModelObjects.DivisionTeams>>(HttpStatusCode.OK, divTeams);
+                var vm = Mapper.Map<IEnumerable<DivisionSeason>, DivisionSetupViewModel[]>(divisions);
+                return Request.CreateResponse<IEnumerable<DivisionSetupViewModel>>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -238,66 +409,97 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("DivisionSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DivisionSetup(long accountId, long id)
+        public async Task<HttpResponseMessage> DivisionSetup(long accountId, long id)
         {
-            if (DataAccess.Divisions.RemoveDivision(id))
+            var divSeason = await Db.DivisionSeasons.FindAsync(id);
+            if (divSeason == null)
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+            if (divSeason.DivisionDef.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            bool divisionInUse = divSeason.DivisionDef.DivisionSeasons?.Count > 1;
+
+            foreach(var team in divSeason.TeamsSeasons)
+                team.DivisionSeasonId = 0;
+
+            if (!divisionInUse)
             {
-                return new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(id.ToString())
-                };
+                Db.DivisionDefs.Remove(divSeason.DivisionDef);
             }
             else
             {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                Db.DivisionSeasons.Remove(divSeason);
             }
+
+            await Db.SaveChangesAsync();
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("DivisionSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateDivisionSetup(long accountId, long id, ModelObjects.Division divisionData)
+        public async Task<HttpResponseMessage> UpdateDivisionSetup(long accountId, long id, DivisionViewModel divisionData)
         {
-            divisionData.AccountId = accountId;
-
-            if (ModelState.IsValid && divisionData != null)
+            if (ModelState.IsValid)
             {
-                DataAccess.Divisions.ModifyDivision(divisionData);
+                var division = await Db.DivisionSeasons.FindAsync(id);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
+                if (division != null)
                 {
-                    Content = new StringContent(divisionData.Id.ToString())
-                };
-                response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionData.Id }));
-                return response;
+                    if (division.DivisionDef.AccountId != accountId)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                    division.Priority = divisionData.Priority;
+                    division.DivisionDef.Name = divisionData.Name;
+                    await Db.SaveChangesAsync();
+
+                    var vm = Mapper.Map<DivisionSeason, DivisionSetupViewModel>(division);
+                    return Request.CreateResponse<DivisionSetupViewModel>(HttpStatusCode.OK, vm);
+                }
+                else
+                {
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("DivisionSetup")]
         [SportsManagerAuthorize(Roles="AccountAdmin")]
-        public HttpResponseMessage DivisionSetup(long accountId, ModelObjects.Division divisionData)
+        public async Task<HttpResponseMessage> DivisionSetup(long accountId, DivisionSetupViewModel divisionData)
         {
-            divisionData.AccountId = accountId;
-
-            if (ModelState.IsValid && divisionData != null)
+            if (ModelState.IsValid)
             {
-                long newDivId = DataAccess.Divisions.AddDivision(divisionData);
-                if (newDivId == 0)
+                var divisionDef = new DivisionDefinition()
+                {
+                    AccountId = accountId,
+                    Name = divisionData.Name
+                };
+
+                var divisionSeason = new DivisionSeason()
+                {
+                    DivisionDef = divisionDef,
+                    LeagueSeasonId = divisionData.LeagueSeasonId,
+                    Priority = divisionData.Priority
+                };
+
+                Db.DivisionSeasons.Add(divisionSeason);
+                await Db.SaveChangesAsync();
+
+                if (divisionSeason.Id == 0)
                     return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
                 // Create a 201 response.
                 var response = new HttpResponseMessage(HttpStatusCode.Created)
                 {
-                    Content = new StringContent(divisionData.Id.ToString())
+                    Content = new StringContent(divisionSeason.Id.ToString())
                 };
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "DivisionSetup", accountId = accountId, id = divisionSeason.Id }));
                 return response;
             }
             else
@@ -309,51 +511,73 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("TeamDivision")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage TeamDivision(long accountId, long id, ModelObjects.Team teamData)
+        public async Task<HttpResponseMessage> TeamDivision(long accountId, long id, TeamViewModel teamData)
         {
             teamData.AccountId = accountId;
-            teamData.LeagueId = id;
+            teamData.LeagueSeasonId = id;
 
-            if (ModelState.IsValid && teamData != null)
+            if (ModelState.IsValid)
             {
-                long newLeagueId = DataAccess.Teams.AddTeam(teamData);
-                if (newLeagueId == 0)
+                Team dbTeam = new Team()
+                {
+                    AccountId = accountId,
+                    WebAddress = String.Empty,
+                    YouTubeUserId = String.Empty,
+                    DefaultVideo = String.Empty
+                };
+
+                TeamSeason dbTeamSeason = new TeamSeason()
+                {
+                    LeagueSeasonId = id,
+                    Team = dbTeam,
+                    DivisionSeasonId = teamData.DivisionSeasonId,
+                    Name = teamData.Name
+                };
+
+                Db.TeamsSeasons.Add(dbTeamSeason);
+                await Db.SaveChangesAsync();
+
+                if (dbTeamSeason.Id == 0)
                     return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
-                var team = DataAccess.Teams.GetTeam(newLeagueId);
-                var response = Request.CreateResponse<ModelObjects.Team>(HttpStatusCode.Created, team);
+                var vm = Mapper.Map<TeamSeason, TeamViewModel>(dbTeamSeason);
+                var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.Created, vm);
                 response.Headers.Location =
-                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = teamData.Id }));
+                    new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = dbTeamSeason.Id }));
                 return response;
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("TeamDivision")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdateTeamDivision(long accountId, long id, ModelObjects.Team teamData)
+        public async Task<HttpResponseMessage> UpdateTeamDivision(long accountId, long id, TeamViewModel teamData)
         {
-            var team = DataAccess.Teams.GetTeam(teamData.Id);
-            if (team != null)
-            {
-                team.DivisionId = id;
-                if (DataAccess.Teams.ModifyTeam(team))
-                {
-                    // Create a 201 response.
-                    var response = Request.CreateResponse<ModelObjects.Team>(HttpStatusCode.OK, team);
-                    response.Headers.Location =
-                        new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
-                    return response;
-                }
+            var div = await Db.DivisionSeasons.FindAsync(id);
+            if (div == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                return Request.CreateResponse(HttpStatusCode.InternalServerError);
-            }
+            if (div.DivisionDef.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            var team = await Db.TeamsSeasons.FindAsync(teamData.Id);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (team.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            team.DivisionSeasonId = id;
+            await Db.SaveChangesAsync();
+
+            // Create a 201 response.
+            var vm = Mapper.Map<TeamSeason, TeamViewModel>(team);
+            var response = Request.CreateResponse<TeamViewModel>(HttpStatusCode.OK, vm);
+            response.Headers.Location =
+                new Uri(Url.Link("ActionApi", new { action = "Teams", accountId = accountId, id = team.Id }));
+            return response;
         }
     }
 }

@@ -81,6 +81,7 @@ var JL;
     JL.maxMessages;
     JL.defaultAjaxUrl;
     JL.clientIP;
+    JL.defaultBeforeSend;
 
     // Initialise requestId to empty string. If you don't do this and the user
     // does not set it via setOptions, then the JSNLog-RequestId header will
@@ -243,7 +244,7 @@ var JL;
                 finalString = actualLogObject.toString();
                 return new StringifiedLogObject(finalString, null, finalString);
             case "undefined":
-                return new StringifiedLogObject("undefined");
+                return new StringifiedLogObject("undefined", null, "undefined");
             case "object":
                 if ((actualLogObject instanceof RegExp) || (actualLogObject instanceof String) || (actualLogObject instanceof Number) || (actualLogObject instanceof Boolean)) {
                     finalString = actualLogObject.toString();
@@ -262,6 +263,7 @@ var JL;
         copyProperty("defaultAjaxUrl", options, this);
         copyProperty("clientIP", options, this);
         copyProperty("requestId", options, this);
+        copyProperty("defaultBeforeSend", options, this);
         return this;
     }
     JL.setOptions = setOptions;
@@ -504,6 +506,7 @@ var JL;
         }
         AjaxAppender.prototype.setOptions = function (options) {
             copyProperty("url", options, this);
+            copyProperty("beforeSend", options, this);
             _super.prototype.setOptions.call(this, options);
             return this;
         };
@@ -535,14 +538,54 @@ var JL;
                 // Send the json to the server.
                 // Note that there is no event handling here. If the send is not
                 // successful, nothing can be done about it.
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', ajaxUrl);
+                var xhr = this.getXhr(ajaxUrl);
 
-                xhr.setRequestHeader('Content-Type', 'application/json');
-                xhr.setRequestHeader('JSNLog-RequestId', JL.requestId);
+                // call beforeSend callback
+                // first try the callback on the appender
+                // then the global defaultBeforeSend callback
+                if (typeof this.beforeSend === 'function') {
+                    this.beforeSend(xhr);
+                } else if (typeof JL.defaultBeforeSend === 'function') {
+                    JL.defaultBeforeSend(xhr);
+                }
+
                 xhr.send(json);
             } catch (e) {
             }
+        };
+
+        // Creates the Xhr object to use to send the log request.
+        // Sets out to create an Xhr object that can be used for CORS.
+        // However, if there seems to be no CORS support on the browser,
+        // returns a non-CORS capable Xhr.
+        AjaxAppender.prototype.getXhr = function (ajaxUrl) {
+            var xhr = new XMLHttpRequest();
+
+            // Check whether this xhr is CORS capable by checking whether it has
+            // withCredentials.
+            // "withCredentials" only exists on XMLHTTPRequest2 objects.
+            if (!("withCredentials" in xhr)) {
+                // Just found that no XMLHttpRequest2 available.
+                // Check if XDomainRequest is available.
+                // This only exists in IE, and is IE's way of making CORS requests.
+                if (typeof XDomainRequest != "undefined") {
+                    // Note that here we're not setting request headers on the XDomainRequest
+                    // object. This is because this object doesn't let you do that:
+                    // http://blogs.msdn.com/b/ieinternals/archive/2010/05/13/xdomainrequest-restrictions-limitations-and-workarounds.aspx
+                    // This means that for IE8 and IE9, CORS logging requests do not carry request ids.
+                    var xdr = new XDomainRequest();
+                    xdr.open('POST', ajaxUrl);
+                    return xdr;
+                }
+            }
+
+            // At this point, we're going with XMLHttpRequest, whether it is CORS capable or not.
+            // If it is not CORS capable, at least will handle the non-CORS requests.
+            xhr.open('POST', ajaxUrl);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('JSNLog-RequestId', JL.requestId);
+
+            return xhr;
         };
         return AjaxAppender;
     })(Appender);
@@ -828,6 +871,6 @@ if (typeof define == 'function' && define.amd) {
 // setting logger options etc. inline in the page before jsnlog.js
 // has been loaded.
 if (typeof __jsnlog_configure == 'function') {
-    __jsnlog_configure();
+    __jsnlog_configure(JL);
 }
 //# sourceMappingURL=jsnlog.js.map

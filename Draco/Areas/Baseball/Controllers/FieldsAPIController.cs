@@ -1,45 +1,66 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Baseball.Controllers
 {
-    public class FieldsAPIController : ApiController
+    public class FieldsAPIController : DBApiController
     {
+        public FieldsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
+        [ActionName("fields")]
         public HttpResponseMessage GetFields(long accountId)
         {
-            var fields = DataAccess.Fields.GetFields(accountId);
+            var fields = Db.AvailableFields.Where(f => f.AccountId == accountId).OrderBy(f => f.Name);
             if (fields != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.Field>>(HttpStatusCode.OK, fields);
+                var vm = Mapper.Map<IEnumerable<Field>, FieldViewModel[]>(fields);
+                return Request.CreateResponse<FieldViewModel[]>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostField(long accountId, ModelObjects.Field f)
+        [ActionName("fields")]
+        public async Task<HttpResponseMessage> PostField(long accountId, FieldViewModel f)
         {
-            f.AccountId = accountId;
-
-            if (ModelState.IsValid && f != null)
+            if (ModelState.IsValid)
             {
-                var fieldId = DataAccess.Fields.AddField(f);
-                if (fieldId > 0)
+                var dbField = new Field()
                 {
-                    return Request.CreateResponse<ModelObjects.Field>(HttpStatusCode.Created, f);
-                }
-                else
-                    return Request.CreateResponse(HttpStatusCode.InternalServerError);
+                    Name = f.Name,
+                    ShortName = f.ShortName,
+                    AccountId = accountId,
+                    Address = f.Address ?? String.Empty,
+                    City = f.City ?? String.Empty,
+                    State = f.State ?? String.Empty,
+                    ZipCode = f.ZipCode ?? String.Empty,
+                    Directions = f.Directions ?? String.Empty,
+                    Comment = f.Comment ?? String.Empty,
+                    Latitude = f.Latitude ?? String.Empty,
+                    Longitude = f.Longitude ?? String.Empty,
+                    RainoutNumber = f.RainoutNumber ?? String.Empty
+                };
 
+                Db.AvailableFields.Add(dbField);
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<Field, FieldViewModel>(dbField);
+                return Request.CreateResponse<FieldViewModel>(HttpStatusCode.Created, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -47,20 +68,34 @@ namespace SportsManager.Baseball.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutField(long accountId, ModelObjects.Field f)
+        [ActionName("fields")]
+        public async Task<HttpResponseMessage> PutField(long accountId, FieldViewModel f)
         {
-            f.AccountId = accountId;
-
-            if (ModelState.IsValid && f != null)
+            if (ModelState.IsValid)
             {
-                var success = DataAccess.Fields.ModifyField(f);
-                if (success)
-                {
-                    return Request.CreateResponse<ModelObjects.Field>(HttpStatusCode.OK, f);
-                }
-                else
+                var dbField = await Db.AvailableFields.FindAsync(f.Id);
+                if (dbField == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
+                if (dbField.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbField.Address = f.Address ?? String.Empty;
+                dbField.City = f.City ?? String.Empty;
+                dbField.Comment = f.Comment ?? String.Empty;
+                dbField.Directions = f.Directions ?? String.Empty;
+                dbField.Latitude = f.Latitude ?? String.Empty;
+                dbField.Longitude = f.Longitude ?? String.Empty;
+                dbField.Name = f.Name;
+                dbField.RainoutNumber = f.RainoutNumber ?? String.Empty;
+                dbField.ShortName = f.ShortName;
+                dbField.State = f.State ?? String.Empty;
+                dbField.ZipCode = f.ZipCode ?? String.Empty;
+
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<Field, FieldViewModel>(dbField);
+                return Request.CreateResponse<FieldViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -72,16 +107,20 @@ namespace SportsManager.Baseball.Controllers
         // with FieldsAPI/accountId/Id even though WebApiConfig
         // has a route for it. I think because of "default" id
         // it was matching the action route.
-        [ActionName("field")]
-        public HttpResponseMessage DeleteField(long accountId, long id)
+        [ActionName("fields")]
+        public async Task<HttpResponseMessage> DeleteField(long accountId, long id)
         {
-            var success = DataAccess.Fields.RemoveField(id);
-            if (success)
-            {
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
-            else
+            var field = await Db.AvailableFields.FindAsync(id);
+            if (field == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (field.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.AvailableFields.Remove(field);
+            await Db.SaveChangesAsync();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
     }
 }

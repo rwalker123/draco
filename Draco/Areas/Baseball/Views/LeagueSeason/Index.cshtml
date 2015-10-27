@@ -49,6 +49,45 @@
         </div>
     </div>
 
+    <div class="modal fade" id="releasePlayersModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Release Players</h4>
+                </div>
+                <div class="modal-body" id="deleteModalBody">
+                    <p>Would you like to release all players from the team?</p>
+                    <p>Releasing all the players will make them available to sign to other teams. Release the players if the team is not part of the season.</p>
+                    <p>Don't release the players if you later plan to add this team back into the league.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmReleaseBtn">Release</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="confirmKeepBtn">Don't Release</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteDivisionModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="deleteModalLabel">Confirm Delete Division</h4>
+                </div>
+                <div class="modal-body" id="deleteModalBody">
+                    <p>Are you sure you want to delete the division? The teams in the division will NOT be deleted. They will become
+                    available to assign to other divisions.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmDeleteDivisionBtn">Delete</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal" id="confirmKeepBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="modal fade" id="copySeasonModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -86,7 +125,7 @@
                     <form class="form-inline" role="form">
                         <div class="input-group">
                             <label for="seasonList" class="sr-only">Season</label>
-                            <select data-container="body" data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
+                            <select data-bind="selectPicker: selectedSeasonId, selectPickerOptions: { optionsArray: seasons }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'Select a season to copy' " id="seasonList"></select>
                             <div class="input-group-btn">
                                 <button type="button" class="btn btn-default" data-bind="click: copySeason" title="import selected season into current season">Import</button>
                             </div>
@@ -167,7 +206,7 @@
                             <small>division teams</small><br />
 
                             <div class="input-group">
-                                <select data-container="body" data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                                <select data-bind="selectPicker: Id.selectedNewTeam, selectPickerOptions: { optionsArray: league.Id.unassignedTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                                 <div class="input-group-btn">
                                     <button type="button" class="btn btn-success" data-bind="click: league.addTeamToDivision" title="add selected team to division"><span class="glyphicon glyphicon-ok"></span></button>
                                 </div>

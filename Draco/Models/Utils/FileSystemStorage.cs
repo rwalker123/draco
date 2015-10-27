@@ -55,6 +55,32 @@ namespace SportsManager.Models.Utils
             return String.Empty;
         }
 
+        public async System.Threading.Tasks.Task<String> Save(MemoryStream ms, string storageUri)
+        {
+            String localPath = GetLocalPath(storageUri);
+            await Task.Run(() =>
+            {
+                FileInfo fi = new FileInfo(localPath);
+                String dir = fi.DirectoryName;
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                using (FileStream fs = new FileStream(fi.FullName, FileMode.Create))
+                {
+                    try
+                    {
+                        ms.WriteTo(fs);
+                        ms.Close();
+                    }
+                    catch(Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+            });
+            return HttpContext.Current.Server.MapUrl(localPath);
+        }
+
         public async System.Threading.Tasks.Task<bool> DeleteDirectory(string storageUri)
         {
             String localPath = GetLocalPath(storageUri);

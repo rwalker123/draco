@@ -131,6 +131,9 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
         if (self.teamId) {
             url += '/Team/' + self.teamId + "/teamsponsor";
         }
+        else {
+            url += '/sponsors';
+        }
 
         $.ajax({
             type: "POST",
@@ -147,7 +150,7 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
     self.promptDeleteSponsor = function (sponsor) {
         $("#deleteSponsorModal").modal("show");
 
-        $("#confirmDeleteBtn").one("click", function () {
+        $("#confirmDeleteSponsorBtn").one("click", function () {
             self.deleteSponsor(sponsor);
         });
     }
@@ -159,7 +162,7 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
             url += '/Team/' + self.teamId + "/teamsponsor/";
         }
         else {
-            url += '/sponsor/';
+            url += '/sponsors/';
         }
 
         url += sponsor.Id();
@@ -180,7 +183,7 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
             url += '/Team/' + self.teamId + "/teamsponsor/";
         }
         else {
-            url += '/sponsor/';
+            url += '/sponsors/';
         }
 
         url += data.Id;
@@ -210,6 +213,9 @@ var SponsorsViewModel = function (accountId, isAdmin, teamId) {
 
         if (self.teamId) {
             url += '/Team/' + self.teamId + "/teamsponsor";
+        }
+        else {
+            url += '/sponsors'
         }
 
         $.ajax({

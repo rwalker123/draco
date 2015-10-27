@@ -125,7 +125,7 @@ var LeagueViewModel = function (data, accountId) {
             type: "POST",
             url: url,
             data: {
-                LeagueId: leagueVM.Id(),
+                LeagueSeasonId: leagueVM.Id(),
                 Name: self.Id.newDivisionName(),
                 Priority: sortOrder
             },
@@ -133,7 +133,7 @@ var LeagueViewModel = function (data, accountId) {
 
                 var data = {
                     Id: divisionId,
-                    LeagueId: leagueVM.Id(),
+                    LeagueSeasonId: leagueVM.Id(),
                     Name: self.Id.newDivisionName(),
                     Priority: sortOrder,
                     Teams: []
@@ -154,11 +154,23 @@ var LeagueViewModel = function (data, accountId) {
     }
 
     self.deleteDivision = function (divisionVM) {
+        $("#deleteDivisionModal").modal("show");
+
+        $("#confirmDeleteDivisionBtn").one("click", function () {
+            self.doDeleteDivision(divisionVM);
+        });
+    }
+
+    self.doDeleteDivision = function (divisionVM) {
         var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionSetup/' + divisionVM.Id();
         $.ajax({
             type: "DELETE",
             url: url,
             success: function (divisionId) {
+                $.each(divisionVM.Teams(), function (index, teamVM) {
+                    self.Id.unassignedTeams.push(teamVM.toJS());
+                });
+
                 self.Id.Divisions.remove(divisionVM);
             }
         });
@@ -175,20 +187,36 @@ var LeagueViewModel = function (data, accountId) {
     }
 
     self.removeTeamFromDivision = function (teamVM) {
+
+        $("#releasePlayersModal").modal("show");
+
+        $("#confirmReleaseBtn").one("click", function () {
+            self.doRemoveTeamFromDivision(teamVM, true);
+        });
+        $("#confirmKeepBtn").one("click", function () {
+            self.doRemoveTeamFromDivision(teamVM, false);
+        });
+    }
+
+    self.doRemoveTeamFromDivision = function(teamVM, releasePlayers) {
         var url = window.config.rootUri + '/api/LeaguesAPI/' + self.accountId + '/DivisionTeams/' + teamVM.Id();
+
+        if (releasePlayers)
+            url = url + "?r=t";
+
         $.ajax({
             type: "DELETE",
             url: url,
             success: function (divisionId) {
                 var divisionVM = ko.utils.arrayFirst(self.Id.Divisions(), function(div) {
-                    return (div.Id() == teamVM.DivisionId());
+                    return (div.Id() == teamVM.DivisionSeasonId());
                 });
 
                 if (divisionVM) {
                     divisionVM.Teams.remove(teamVM);
                 }
 
-                teamVM.DivisionId(0);
+                teamVM.DivisionSeasonId(0);
                 self.Id.unassignedTeams.push(teamVM.toJS());
             }
         });
@@ -203,7 +231,8 @@ var LeagueViewModel = function (data, accountId) {
             type: "PUT",
             url: url,
             data: {
-                Id: divisionVM.Id.selectedNewTeam()
+                Id: divisionVM.Id.selectedNewTeam(),
+                Name: "Not Used"
             },
             success: function (newTeam) {
 
@@ -231,8 +260,8 @@ var LeagueViewModel = function (data, accountId) {
             url: url,
             data: {
                 AccountId: this.accountId,
-                LeagueId: self.Id(),
-                DivisionId: divisionVM.Id(),
+                LeagueSeasonId: self.Id(),
+                DivisionSeasonId: divisionVM.Id(),
                 Name: divisionVM.Id.newTeamName()
             },
             success: function (team) {
@@ -343,7 +372,7 @@ var TeamViewModel = function (data, accountId) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.teamLogoUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.TeamId();
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.Id();
     });
 
     self.update = function (data) {

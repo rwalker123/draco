@@ -1,53 +1,68 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Models;
+using SportsManager.Utils;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class TeamStatisticsAPIController : ApiController
+    public class TeamStatisticsAPIController : DBApiController
     {
+        public TeamStatisticsAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gamebatstats")]
         public HttpResponseMessage GetGameBatStats(long accountId, long teamSeasonId, long? id = null)
         {
+            var statsHelper = new BatStatsHelper(Db);
+
             if (id.HasValue)
             {
-                var gameStats = DataAccess.GameStats.GetBatGameStats(id.Value, teamSeasonId);
-                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetBatGameStats(id.Value, teamSeasonId);
+                var vm = Mapper.Map<IEnumerable<GameBatStats>, BatStatsViewModel[]>(gameStats);
+                return Request.CreateResponse<BatStatsViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
-                var gameStats = DataAccess.GameStats.GetBatTeamPlayerTotals(teamSeasonId, "AVG", "descending", false);
-                return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetBatTeamPlayerTotals(teamSeasonId, "AVG", "DESC", false);
+                return Request.CreateResponse<IEnumerable<BatStatsViewModel>>(HttpStatusCode.OK, gameStats);
             }
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("historicalbatstats")]
-        public HttpResponseMessage GetHistoricalGameBatStats(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetHistoricalGameBatStats(long accountId, long teamSeasonId)
         {
-            var t = DataAccess.Teams.GetTeam(teamSeasonId);
+            var t = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var gameStats = DataAccess.GameStats.GetBatTeamPlayerTotals(t.TeamId, "AVG", "descending", true);
-            return Request.CreateResponse<IQueryable<ModelObjects.GameBatStats>>(HttpStatusCode.OK, gameStats);
+            var statsHelper = new BatStatsHelper(Db);
+            var gameStats = statsHelper.GetBatTeamPlayerTotals(t.TeamId, "AVG", "DESC", true);
+            return Request.CreateResponse<IEnumerable<BatStatsViewModel>>(HttpStatusCode.OK, gameStats);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("historicalpitchstats")]
-        public HttpResponseMessage GetHistoricalGamePitchStats(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetHistoricalGamePitchStats(long accountId, long teamSeasonId)
         {
-            var t = DataAccess.Teams.GetTeam(teamSeasonId);
+            var t = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var gameStats = DataAccess.GameStats.GetPitchTeamPlayerTotals(t.TeamId, "ERA", "ascending", true);
-            return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
+            var statsHelper = new PitchStatsHelper(Db);
+            var gameStats = statsHelper.GetPitchTeamPlayerTotals(t.TeamId, "ERA", "ASC", true);
+            return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, gameStats);
         }
 
 
@@ -55,15 +70,17 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("gamebatstatstotals")]
         public HttpResponseMessage GetGameBatStatsTotals(long accountId, long teamSeasonId, long? id = null)
         {
+            var statsHelper = new BatStatsHelper(Db);
+
             if (id.HasValue)
             {
-                var gameStats = DataAccess.GameStats.GetBatGameTotals(id.Value, teamSeasonId);
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetBatGameTotals(id.Value, teamSeasonId);
+                return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.OK, gameStats);
             }
             else
             {
-                var gameStats = DataAccess.GameStats.GetBatTeamSeasonTotals(teamSeasonId, DataAccess.Seasons.GetCurrentSeason(accountId));
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetBatTeamSeasonTotals(teamSeasonId, this.GetCurrentSeasonId(accountId));
+                return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -71,93 +88,128 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("nobatstats")]
         public HttpResponseMessage GetPlayersWithNoGameBatStats(long accountId, long teamSeasonId, long id)
         {
-            var players = DataAccess.GameStats.GetPlayersWithNoGameBatStats(id, teamSeasonId);
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, players);
+            var statsHelper = new BatStatsHelper(Db);
+            var players = statsHelper.GetPlayersWithNoGameBatStats(id, teamSeasonId);
+            return Request.CreateResponse<IEnumerable<ContactNameViewModel>>(HttpStatusCode.OK, players);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gameplayerbatstats")]
         public HttpResponseMessage GetPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var gameStats = DataAccess.GameStats.GetPlayerGameBatStats(gameId, playerId);
+            var statsHelper = new BatStatsHelper(Db);
+            var gameStats = statsHelper.GetPlayerGameBatStats(gameId, playerId);
             if (gameStats == null)
             {
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
 
-            return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, gameStats);
+            return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.OK, gameStats);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var batStats = new ModelObjects.GameBatStats()
+            var existing = Db.Batstatsums.Where(bs => bs.PlayerId == playerId && bs.GameId == gameId && bs.TeamId == teamSeasonId).Any();
+            if (existing)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            var batStats = new GameBatStats()
             {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
+                LeagueSchedule = await Db.LeagueSchedules.FindAsync(gameId),
+                RosterSeason = await Db.RosterSeasons.FindAsync(playerId),
+                TeamsSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId)
             };
 
-            var gameStatId = DataAccess.GameStats.AddBattingGameStats(batStats);
-            if (gameStatId > 0)
-            {
-                batStats.Id = gameStatId;
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.Created, batStats);
-            }
+            Db.Batstatsums.Add(batStats);
+            await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var vm = Mapper.Map<GameBatStats, BatStatsViewModel>(batStats);
+            return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.Created, vm);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage DeletePlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> DeletePlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var batStats = new ModelObjects.GameBatStats()
-            {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
-            };
+            var stat = Db.Batstatsums.Where(bs => bs.GameId == gameId && bs.TeamId == teamSeasonId && bs.PlayerId == playerId).SingleOrDefault();
+            if (stat == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var gameStatId = DataAccess.GameStats.RemoveGameBatStats(batStats);
-            if (gameStatId)
-            {
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
+            Db.Batstatsums.Remove(stat);
+            await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerbatstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId, ModelObjects.GameBatStats batStats)
+        public async Task<HttpResponseMessage> PostPlayerGameBatStats(long accountId, long teamSeasonId, long gameId, long playerId, BatStatsViewModel batStats)
         {
-            var updated = DataAccess.GameStats.UpdateBattingGameStats(batStats);
-            if (updated)
-            {
-                return Request.CreateResponse<ModelObjects.GameBatStats>(HttpStatusCode.OK, batStats);
-            }
+            if (!batStats.IsValid())
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var player = await Db.RosterSeasons.FindAsync(playerId);
+            if (player == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var game = await Db.LeagueSchedules.FindAsync(gameId);
+            if (game == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var dbStats = await Db.Batstatsums.FindAsync(batStats.Id);
+            if (dbStats == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (dbStats.GameId != gameId || dbStats.PlayerId != playerId || dbStats.TeamId != teamSeasonId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            dbStats.Ab = batStats.AB;
+            dbStats.H = batStats.H;
+            dbStats.R = batStats.R;
+            dbStats.C2B = batStats.D;
+            dbStats.C3B = batStats.T;
+            dbStats.Hr = batStats.HR;
+            dbStats.Rbi = batStats.RBI;
+            dbStats.So = batStats.SO;
+            dbStats.Bb = batStats.BB;
+            dbStats.Sb = batStats.SB;
+            dbStats.Cs = batStats.CS;
+            dbStats.Re = batStats.RE;
+            dbStats.Hbp = batStats.HBP;
+            dbStats.Intr = batStats.INTR;
+            dbStats.Sf = batStats.SF;
+            dbStats.Sh = batStats.SH;
+            dbStats.Lob = batStats.LOB;
+
+            await Db.SaveChangesAsync();
+            var vm = Mapper.Map<GameBatStats, BatStatsViewModel>(dbStats);
+            return Request.CreateResponse<BatStatsViewModel>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gamepitchstats")]
         public HttpResponseMessage GetGamePitchStats(long accountId, long teamSeasonId, long? id = null)
         {
+            var statsHelper = new PitchStatsHelper(Db);
             if (id.HasValue)
             {
-                var gameStats = DataAccess.GameStats.GetPitchGameStats(id.Value, teamSeasonId);
-                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetPitchGameStats(id.Value, teamSeasonId);
+                var vm = Mapper.Map<IEnumerable<GamePitchStats>, PitchStatsViewModel[]>(gameStats);
+                return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, vm);
             }
             else
             {
-                var gameStats = DataAccess.GameStats.GetPitchTeamPlayerTotals(teamSeasonId, "ERA", "ascending", false);
-                return Request.CreateResponse<IQueryable<ModelObjects.GamePitchStats>>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetPitchTeamPlayerTotals(teamSeasonId, "ERA", "asc", false);
+                return Request.CreateResponse<IEnumerable<PitchStatsViewModel>>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -165,15 +217,16 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("gamepitchstatstotals")]
         public HttpResponseMessage GetGamePitchStatsTotals(long accountId, long teamSeasonId, long? id = null)
         {
+            var statsHelper = new PitchStatsHelper(Db);
             if (id.HasValue)
             {
-                var gameStats = DataAccess.GameStats.GetPitchGameTotals(id.Value, teamSeasonId);
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetPitchGameTotals(id.Value, teamSeasonId);
+                return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.OK, gameStats);
             }
             else
             {
-                var gameStats = DataAccess.GameStats.GetPitchTeamSeasonTotals(teamSeasonId, DataAccess.Seasons.GetCurrentSeason(accountId));
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
+                var gameStats = statsHelper.GetPitchTeamSeasonTotals(teamSeasonId, this.GetCurrentSeasonId(accountId));
+                return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.OK, gameStats);
             }
         }
 
@@ -182,89 +235,127 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("nopitchstats")]
         public HttpResponseMessage GetPlayersWithNoGamePitchStats(long accountId, long teamSeasonId, long id)
         {
-            var players = DataAccess.GameStats.GetPlayersWithNoGamePitchStats(id, teamSeasonId);
-            return Request.CreateResponse<IQueryable<ModelObjects.ContactName>>(HttpStatusCode.OK, players);
+            var statsHelper = new PitchStatsHelper(Db);
+            var players = statsHelper.GetPlayersWithNoGamePitchStats(id, teamSeasonId);
+            return Request.CreateResponse<IEnumerable<ContactNameViewModel>>(HttpStatusCode.OK, players);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gameplayerpitchstats")]
         public HttpResponseMessage GetPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var gameStats = DataAccess.GameStats.GetPlayerGamePitchStats(gameId, playerId);
+            var statsHelper = new PitchStatsHelper(Db);
+            var gameStats = statsHelper.GetPlayerGamePitchStats(gameId, playerId);
             if (gameStats == null)
             {
                 return Request.CreateResponse(HttpStatusCode.NotFound);
             }
 
-            return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, gameStats);
+            return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.OK, gameStats);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage DeletePlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> DeletePlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var pitchStats = new ModelObjects.GamePitchStats()
-            {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
-            };
+            var stat = Db.Pitchstatsums.Where(bs => bs.GameId == gameId && bs.TeamId == teamSeasonId && bs.PlayerId == playerId).SingleOrDefault();
+            if (stat == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var gameStatId = DataAccess.GameStats.RemoveGamePitchStats(pitchStats);
-            if (gameStatId)
-            {
-                return Request.CreateResponse(HttpStatusCode.OK);
-            }
+            Db.Pitchstatsums.Remove(stat);
+            await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
+        public async Task<HttpResponseMessage> PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId)
         {
-            var batStats = new ModelObjects.GamePitchStats()
+            var existing = Db.Pitchstatsums.Where(bs => bs.PlayerId == playerId && bs.GameId == gameId && bs.TeamId == teamSeasonId).Any();
+            if (existing)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            var pitchStats = new GamePitchStats()
             {
-                GameId = gameId,
-                PlayerId = playerId,
-                TeamId = teamSeasonId
+                LeagueSchedule = await Db.LeagueSchedules.FindAsync(gameId),
+                RosterSeason = await Db.RosterSeasons.FindAsync(playerId),
+                TeamsSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId)
             };
 
-            var gameStatId = DataAccess.GameStats.AddPitchingGameStats(batStats);
-            if (gameStatId > 0)
-            {
-                batStats.Id = gameStatId;
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.Created, batStats);
-            }
+            Db.Pitchstatsums.Add(pitchStats);
+            await Db.SaveChangesAsync();
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var vm = Mapper.Map<GamePitchStats, PitchStatsViewModel>(pitchStats);
+            return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.Created, vm);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("gameplayerpitchstats")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId, ModelObjects.GamePitchStats pitchStats)
+        public async Task<HttpResponseMessage> PutPlayerGamePitchStats(long accountId, long teamSeasonId, long gameId, long playerId, PitchStatsViewModel pitchStats)
         {
-            var updated = DataAccess.GameStats.UpdatePitchingGameStats(pitchStats);
-            if (updated)
-            {
-                return Request.CreateResponse<ModelObjects.GamePitchStats>(HttpStatusCode.OK, pitchStats);
-            }
+            if (!pitchStats.IsValid())
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var player = await Db.RosterSeasons.FindAsync(playerId);
+            if (player == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
+            if (team == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var game = await Db.LeagueSchedules.FindAsync(gameId);
+            if (game == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            var dbStats = await Db.Pitchstatsums.FindAsync(pitchStats.Id);
+            if (dbStats == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (dbStats.GameId != gameId || dbStats.PlayerId != playerId || dbStats.TeamId != teamSeasonId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            dbStats.Ip = pitchStats.IP;
+            dbStats.Ip2 = pitchStats.IP2;
+            dbStats.Bf = pitchStats.BF;
+            dbStats.W = pitchStats.W;
+            dbStats.L = pitchStats.L;
+            dbStats.S = pitchStats.S;
+            dbStats.H = pitchStats.H;
+            dbStats.R = pitchStats.R;
+            dbStats.Er = pitchStats.ER;
+            dbStats.C2B = pitchStats.D;
+            dbStats.C3B = pitchStats.T;
+            dbStats.Hr = pitchStats.HR;
+            dbStats.So = pitchStats.SO;
+            dbStats.Bb = pitchStats.BB;
+            dbStats.Wp = pitchStats.WP;
+            dbStats.Hbp = pitchStats.HBP;
+            dbStats.Bk = pitchStats.BK;
+            dbStats.Sc = pitchStats.SC;
+
+            await Db.SaveChangesAsync();
+
+            var vm = Mapper.Map<GamePitchStats, PitchStatsViewModel>(dbStats);
+            return Request.CreateResponse<PitchStatsViewModel>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("gamesummary")]
         public HttpResponseMessage GetGameSummary(long accountId, long teamSeasonId, long id)
         {
-            var gameStats = DataAccess.GameStats.GetGameRecap(id, teamSeasonId);
+            var recap = (from gr in Db.GameRecaps
+                         where gr.TeamId == teamSeasonId && gr.GameId == id
+                         select gr).SingleOrDefault();
+
             string gameSummary = String.Empty;
-            if (gameStats != null)
-                gameSummary = gameStats.Recap;
+            if (recap != null)
+                gameSummary = recap.Recap;
 
             return Request.CreateResponse<String>(HttpStatusCode.OK, gameSummary);
         }
@@ -272,14 +363,22 @@ namespace SportsManager.Areas.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("gamesummary")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
-        public HttpResponseMessage PostGameSummary(long accountId, long teamSeasonId, long id, ModelObjects.GameRecap recap)
+        public async Task<HttpResponseMessage> PostGameSummary(long accountId, long teamSeasonId, long id, GameRecapViewModel recap)
         {
-            var gameStats = DataAccess.GameStats.UpdateGameRecap(recap);
-            string gameSummary = String.Empty;
-            if (gameStats)
-                gameSummary = recap.Recap;
+            var dbRecap = Db.GameRecaps.Where(gr => gr.GameId == id && gr.TeamId == teamSeasonId).SingleOrDefault();
+            if (dbRecap == null)
+            {
+                dbRecap = new GameRecap();
+                Db.GameRecaps.Add(dbRecap);
+            }
 
-            return Request.CreateResponse<String>(HttpStatusCode.Created, gameSummary);
+            dbRecap.GameId = id;
+            dbRecap.TeamId = teamSeasonId;
+            dbRecap.Recap = recap.Recap ?? String.Empty;
+            await Db.SaveChangesAsync();
+
+            var vm = Mapper.Map<GameRecap, GameRecapViewModel>(dbRecap);
+            return Request.CreateResponse<GameRecapViewModel>(HttpStatusCode.Created, vm);
         }
     }
 }

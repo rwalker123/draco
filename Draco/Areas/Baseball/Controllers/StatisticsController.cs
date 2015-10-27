@@ -1,15 +1,17 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using System.Linq;
 using System.Web.Mvc;
-using ModelObjects;
-using SportsManager.Baseball.ViewModels;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class StatisticsController : Controller
+    public class StatisticsController : DBController
     {
+        public StatisticsController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Baseball/Statistics/
 
@@ -22,12 +24,12 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             long sId = seasonId.GetValueOrDefault(0);
             if (sId == 0)
-                sId = DataAccess.Seasons.GetCurrentSeason(aId);
+                sId = Db.CurrentSeasons.Where(cs => cs.AccountId == aId).Select(cs => cs.SeasonId).SingleOrDefault();
 
             long lId = id.GetValueOrDefault(0);
             if (lId == 0)
             {
-                League l = DataAccess.Leagues.GetLeagues(sId).FirstOrDefault();
+                var l = Db.LeagueSeasons.Where(ls => ls.SeasonId == sId).FirstOrDefault();
                 if (l != null)
                     lId = l.Id;
             }
@@ -49,7 +51,7 @@ namespace SportsManager.Areas.Baseball.Controllers
 
         public ActionResult PlayerSearch(long accountId, string searchTerm)
         {
-            return View(new PlayerSearchViewModel(accountId, searchTerm));
+            return View(new PlayerSearchViewModel(this, accountId, searchTerm));
         }
 
         [HttpPost]

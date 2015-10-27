@@ -5,6 +5,7 @@ using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -78,8 +79,17 @@ namespace DataAccess
         {
             DB db = DBConnection.GetContext();
 
+            long affiliationId = (from a in db.Accounts
+                                  where a.Id == accountId
+                                  select a.AffiliationId).SingleOrDefault();
+
+            var creatorAccounts = (from a in db.Accounts
+                                   where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
+                                   select a.Id);
+
+
             return (from c in db.Contacts
-                    where c.CreatorAccountId == accountId && 
+                    where creatorAccounts.Contains(c.CreatorAccountId) && 
                     (String.IsNullOrWhiteSpace(firstName) || c.FirstName.Contains(firstName)) &&
                     (String.IsNullOrWhiteSpace(lastName) || c.LastName.Contains(lastName))
                     orderby c.LastName, c.FirstName, c.MiddleName
@@ -89,7 +99,8 @@ namespace DataAccess
                         FirstName = c.FirstName,
                         LastName = c.LastName,
                         MiddleName = c.MiddleName,
-                        PhotoURL = Contact.GetPhotoURL(c.Id)
+                        PhotoURL = Contact.GetPhotoURL(c.Id),
+                        BirthDate = c.DateOfBirth
                     });
         }
 
@@ -192,7 +203,7 @@ namespace DataAccess
                             IsFemale = c.IsFemale.GetValueOrDefault()
                         }).SingleOrDefault();
         }
-       
+
         static public IQueryable<ModelObjects.ContactName> GetContactNames(long accountId)
         {
             DB db = DBConnection.GetContext();
@@ -207,16 +218,17 @@ namespace DataAccess
 
             return (from c in db.Contacts
                     where affiliationAccounts.Contains(c.CreatorAccountId)
-                    select new ModelObjects.ContactName()
-                                                     {
-                                                         Id = c.Id,
-                                                         FirstName = c.FirstName,
-                                                         MiddleName = c.MiddleName,
-                                                         LastName = c.LastName,
-                                                         PhotoURL = Contact.GetPhotoURL(c.Id),
-                                                         FirstYear = c.FirstYear.GetValueOrDefault(),
-                                                         Zip = c.Zip
-                                                     });
+                    select new ContactName()
+                    {
+                        Id = c.Id,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName,
+                        LastName = c.LastName,
+                        PhotoURL = Contact.GetPhotoURL(c.Id),
+                        FirstYear = c.FirstYear.GetValueOrDefault(),
+                        Zip = c.Zip,
+                        BirthDate = c.DateOfBirth
+                    });
         }
 
 
@@ -629,7 +641,7 @@ namespace DataAccess
 
             string body = String.Format(AccountPasswordBody, accountName, currentUser, url, senderFullName);
 
-            Globals.MailMessage(fromEmail, contact.Email, subject, body);
+            Globals.MailMessage(new MailAddress(fromEmail, senderFullName), new MailAddress(contact.Email, contact.FullNameFirst), subject, body);
         }
 
         static private void NotifyUserOfNewEmail(long accountId, string oldEmail, string newEmail)
@@ -665,7 +677,7 @@ namespace DataAccess
             string accountName = DataAccess.Accounts.GetAccountName(accountId);
             string subject = String.Format(AccountModifiedSubject, accountName);
             string body = String.Format(AccountModifiedBody, accountName, currentUser, newEmail, senderFullName);
-            Globals.MailMessage(currentUser, oldEmail, subject, body);
+            Globals.MailMessage(new MailAddress(currentUser, senderFullName), new MailAddress(oldEmail), subject, body);
         }
 
         static private async Task<String> CreateAndEmailAccount(long accountId, string email)
@@ -698,7 +710,7 @@ namespace DataAccess
                     string accountName = DataAccess.Accounts.GetAccountName(accountId);
                     string subject = String.Format(AccountCreatedSubject, accountName);
                     string body = String.Format(AccountCreatedBody, accountName, currentUser, email, password, senderFullName);
-                    Globals.MailMessage(currentUser, email, subject, body);
+                    Globals.MailMessage(new MailAddress(currentUser, senderFullName), new MailAddress(email), subject, body);
 
                     return newUser.Id;
                 }

@@ -6,7 +6,7 @@
         int i = 0;
         bool newRow = false;
         
-        <h2>@league.Name</h2>
+        <h2>@league.League.Name</h2>
 
         foreach (var d in Model.GetDivisions(league.Id))
         {
@@ -21,7 +21,7 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                             <tr>
-                                <th>@d.Name</th>
+                                <th>@d.DivisionDef.Name</th>
                                 <th>&nbsp;W&nbsp;</th>
                                 <th>&nbsp;L&nbsp;</th>
                                 <th>&nbsp;T&nbsp;</th>

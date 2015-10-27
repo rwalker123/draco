@@ -124,6 +124,9 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.editPlayer = function (player) {        
         self.currentEditPlayer().update(player.toJS());
+        $("#FirstYearSelect").selectpicker("refresh");
+        $("#GenderSelect").selectpicker("refresh");
+        $("#StatePicker").selectpicker("refresh");
     }
 
     self.cancelEditPlayer = function (player) {
@@ -210,7 +213,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     self.savePlayer = function (player) {
 
-        if (!self.currentEditPlayer().isValid())
+        if (!self.currentEditPlayer() && !self.currentEditPlayer().isValid())
             return;
 
         var data = self.currentEditPlayer().toJS();
@@ -308,13 +311,23 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
 
     }
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
+
+        var lastName = query;
+        var firstName = '';
+
+        if (query.indexOf(',') > 0)
+        {
+            var names = query.split(',');
+            lastName = names[0].trim();
+            firstName = names[1].trim();
+        }
 
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availableplayers',
             data: {
-                lastName: query,
-                firstName: '',
+                lastName: lastName,
+                firstName: firstName,
                 page: 1
             },
             success: function (data) {
@@ -332,7 +345,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             }
         });
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,26 +8,22 @@ namespace ModelObjects
 	/// </summary>
 	public class Season : IComparable
 	{
-		public Season()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Name { get; set; } // Name
 
-		public Season(Season t)
-		{
-			Id = t.Id;
-			Name = t.Name;
-		}
+        // Reverse navigation
+        public virtual ICollection<LeagueSeason> LeagueSeasons { get; set; } // LeagueSeason.FK_LeagueSeason_Season
+        public virtual ICollection<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // Many to many mapping
 
-		public Season(long seasonId, string seasonName, long accountId)
-		{
-			AccountId = accountId;
-			Id = seasonId;
-			Name = seasonName;
-		}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_Season_Accounts
 
-		public long Id { get; set; }
-		public long AccountId { get; set; }
-		public string Name { get; set; }
+        public Season()
+        {
+            LeagueSeasons = new List<LeagueSeason>();
+            PlayerSeasonAffiliationDues = new List<PlayerSeasonAffiliationDue>();
+        }
 
 		public int CompareTo(Object o)
 		{

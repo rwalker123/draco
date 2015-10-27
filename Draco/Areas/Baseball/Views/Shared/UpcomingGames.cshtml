@@ -23,14 +23,14 @@
                                 @if (g.FieldId > 0)
                                 {
                                     <a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = @Model.AccountId, id = g.FieldId }, null)'>
-                                        @g.FieldName
+                                        @Model.FieldName(g)
                                     </a>
                                 }
                             </td>
                             <td>
                                
-                                <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HomeTeamId == Model.Team.Id ? g.AwayTeamId : g.HomeTeamId }, null)'>
-                                    @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
+                                <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HTeamId == Model.Team.Id ? g.VTeamId : g.HTeamId }, null)'>
+                                    @(g.HTeamId == Model.Team.Id ? Model.TeamName(g.VTeamId) : "at " + Model.TeamName(g.HTeamId))
                                 </a>
                             </td>
                         </tr>

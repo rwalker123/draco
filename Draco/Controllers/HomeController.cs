@@ -1,11 +1,17 @@
-﻿using SportsManager.ViewModels;
+﻿using ModelObjects;
+using SportsManager.ViewModels;
+using System.Linq;
 using System.Web.Mvc;
 
 namespace SportsManager.Controllers
 {
     [HandleError]
-    public class HomeController : Controller
+    public class HomeController : DBController
     {
+        public HomeController(DB db) : base(db)
+        {
+        }
+
         public ActionResult Index()
         {
             return View();
@@ -28,8 +34,11 @@ namespace SportsManager.Controllers
         [ChildActionOnly]
         public ActionResult AdminLinks(long accountId)
         {
-            long seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
-            return PartialView(new RolesViewModel(accountId, seasonId));
+            long seasonId = (from cs in Db.CurrentSeasons
+                             where cs.AccountId == accountId
+                             select cs.SeasonId).SingleOrDefault();
+
+            return PartialView(new RolesViewModel(this, accountId, seasonId));
         }
     }
 }

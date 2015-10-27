@@ -250,7 +250,7 @@ namespace DataAccess
             }
 
             if (bccList.Any())
-                Globals.MailMessage(fromEmail, bccList, new SportsManager.Models.Utils.EmailUsersData()
+                Globals.MailMessage(new MailAddress(fromEmail, senderFullName), bccList, new SportsManager.Models.Utils.EmailUsersData()
                     {
                         Subject = subject,
                         Message = body
@@ -287,7 +287,7 @@ namespace DataAccess
 
             string body = String.Format(registerTeamBody, tw.Name, accountName, refererUrl, ConfigurationManager.AppSettings["DaysToKeepPlayerClassified"]);
 
-            Globals.MailMessage(fromEmail, tw.EMail, subject, body);
+            Globals.MailMessage(new MailAddress(fromEmail, senderFullName), new MailAddress(tw.EMail, tw.Name), subject, body);
         }
 
         private static void EmailTeamsLookingForPlayers(SportsManager.Model.TeamsWantedClassified tw)
@@ -328,11 +328,11 @@ namespace DataAccess
             var teamsLooking = DataAccess.PlayerClassifieds.GetPlayersWanted(tw.AccountId);
             foreach (var teamLooking in teamsLooking)
             {
-                bccList.Add(new MailAddress(teamLooking.EMail));
+                bccList.Add(new MailAddress(teamLooking.EMail, teamLooking.CreatedByName));
             }
 
             if (bccList.Any())
-                Globals.MailMessage(fromEmail, bccList, new SportsManager.Models.Utils.EmailUsersData()
+                Globals.MailMessage(new MailAddress(fromEmail, senderFullName), bccList, new SportsManager.Models.Utils.EmailUsersData()
                     {
                         Subject = subject,
                         Message = body

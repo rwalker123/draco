@@ -63,9 +63,6 @@ var GameResultsViewModel = function (accountId, data) {
 
     self.updateGameResult = function (callback) {
 
-        if (!self.isValid())
-            return;
-
         var data = self.toJS();
 
         var url = window.config.rootUri + '/api/ScheduleAPI/' + self.accountId + '/league/' + self.LeagueId() + '/gameresult';

@@ -18,14 +18,6 @@
 
     ko.mapping.fromJS(data, self.mapping, self);
 
-    self.removeRegistrant = function () {
-        alert('not implemented');
-    }
-
-    self.editRegistrant = function () {
-        alert('not implemented');
-    }
-
     self.update = function (data) {
         ko.mapping.fromJS(data, self);
     }
@@ -113,6 +105,10 @@ var WorkoutViewModel = function (data, parent) {
         self.viewMode(true);
     }
 
+    self.exportRegistrants = function (workout) {
+        window.location.href = window.config.rootUri + '/baseball/workouts/ExportRegistrants/' + self.accountId + '/' + workout.Id();
+    }
+
     self.editRegistrants = function () {
         if (self.editRegistrantsMode())
             return;
@@ -138,6 +134,35 @@ var WorkoutViewModel = function (data, parent) {
         });
 
     }
+
+    self.removeRegistrant = function (workoutReg) {
+
+        $("#deleteWorkoutRegModal").modal("show");
+
+        $("#confirmWorkoutRegDeleteBtn").one("click", function () {
+            self.makeWorkoutRegistrantDeleteCall(workoutReg)
+        });
+    }
+
+    self.editRegistrant = function (workoutReg) {
+
+        var data = workoutReg.toJS();
+        self.registerData.update(data);
+        self.registerForWorkout(true);
+    }
+
+    self.makeWorkoutRegistrantDeleteCall = function (workoutReg) {
+        $.ajax({
+            type: "DELETE",
+            url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/registrants/' + workoutReg.Id(),
+            success: function () {
+                self.workoutRegistrants.remove(workoutReg);
+                self.NumRegistered(self.NumRegistered() - 1);
+            }
+        });
+
+    }
+
 
     self.cancelSendEmail = function () {
         self.sendEmail(false);
@@ -193,20 +218,32 @@ var WorkoutViewModel = function (data, parent) {
 
         var data = w.toJS();
 
+        var type = (w.Id() > 0) ? "PUT" : "POST";
+
         $.ajax({
-            type: "POST",
+            type: type,
             url: window.config.rootUri + '/api/WorkoutsAPI/' + self.accountId + '/register/' + w.WorkoutId(),
             data: data,
             success: function (workoutId) {
                 self.registerForWorkout(false);
-                alert('You are now registered for the workout.');
+                if (w.Id() == 0)
+                    alert('You are now registered for the workout.');
+                else {
+                    var theWorkoutReg = ko.utils.arrayFirst(self.workoutRegistrants(), function (workout) {
+                        return (workout.Id() == w.Id())
+                    });
+
+                    if (theWorkoutReg) {
+                        theWorkoutReg.update(w.toJS());
+                    }
+                }
             }
         });
 
     }
 
     self.endRegisterForWorkout = function () {
-        this.registerForWorkout(false);
+        self.registerForWorkout(false);
     }
 
     self.update = function (data) {
@@ -302,7 +339,7 @@ var WorkoutsViewModel = function (accountId, isAdmin) {
     self.getAvailableFields = function () {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/FieldsAPI/' + self.accountId + '/fields',
             success: function (fields) {
                 var mappedFields = $.map(fields, function (field) {
                     return {

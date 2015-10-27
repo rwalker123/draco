@@ -77,7 +77,7 @@ var PlayerBatStatsVM = function (data, parent, accountId) {
         if (+self.AB() <= 0)
             return ".000";
 
-        return (+self.TB() / +self.AB()).toFixed(3);
+        return (+self.TB.dynamicVal() / +self.AB()).toFixed(3);
     });
 
     self.OPS.dynamicVal = ko.computed(function () {
@@ -657,6 +657,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
             url: url,
             success: function (gameSummary) {
                 self.gameSummary(gameSummary);
+                tinymce.get('gameSummaryText').setContent(self.gameSummary());
             }
         });
     }

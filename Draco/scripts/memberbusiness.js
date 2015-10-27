@@ -90,13 +90,13 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
     self.userBusiness = ko.validatedObservable(new MemberBusinessViewModel(emptyBusiness, self.accountId));
 
     self.saveEditBusiness = function (data) {
-        if (!data.isValid())
+        if (!self.userBusiness.isValid())
             return;
         
-        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId;
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + '/userbusiness';
 
         if (data.Id() > 0)
-            url = url + "/business/" + data.Id();
+            url = url + "/" + data.Id();
 
         $.ajax({
             type: data.Id() > 0 ? "PUT" : "POST",
@@ -117,7 +117,7 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
 
     self.deleteBusiness = function (data) {
 
-        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/business/" + data.Id();
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/userbusiness/" + data.Id();
 
         $.ajax({
             type: "DELETE",
@@ -131,7 +131,7 @@ var MemberBusinessesViewModel = function (accountId, isAdmin, contactId) {
 
     self.adminDeleteBusiness = function (data) {
 
-        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/business/" + data.Id();
+        var url = window.config.rootUri + '/api/MemberBusinessAPI/' + self.accountId + "/userbusiness/" + data.Id();
 
         $.ajax({
             type: "DELETE",

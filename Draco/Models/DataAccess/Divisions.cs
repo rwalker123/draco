@@ -1,5 +1,4 @@
 using ModelObjects;
-using SportsManager;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,74 +9,87 @@ namespace DataAccess
 	/// </summary>
 	static public class Divisions
 	{
-        static public IQueryable<Division> GetDivisions(long leagueId)
+        static public IQueryable<DivisionSeason> GetDivisions(long leagueId)
         {
-            DB db = DBConnection.GetContext();
-            return (from ds in db.DivisionSeasons
-                    join dd in db.DivisionDefs on ds.DivisionId equals dd.Id
-                    where ds.LeagueSeasonId == leagueId
-                    orderby ds.Priority ascending, dd.Name ascending
-                    select new Division(ds.Id, leagueId, dd.Name, ds.Priority, dd.AccountId));
+            using (var db = DBConnection.GetContext())
+            {
+                return (from ds in db.DivisionSeasons
+                        join dd in db.DivisionDefs on ds.DivisionId equals dd.Id
+                        where ds.LeagueSeasonId == leagueId
+                        orderby ds.Priority ascending, dd.Name ascending
+                        select ds);
+            }
         }
 
-		static public bool ModifyDivision(Division division)
+        static public bool ModifyDivision(DivisionDefinition division)
+        {
+            // TODO: dependency injection for DB
+            // How to attach if not attached
+            // Should DataAccess "Save" changes or caller.
+        }
+
+		static public bool ModifyDivision(DivisionSeason division)
 		{
             //DECLARE @divisionId bigint
             //SET @divisionId = (SELECT DivisionID From DivisionSeason WHERE DivisionSeason.ID = @divisionSeasonId)
 
             //Update DivisionSeason SET Priority = @priority WHERE ID = @divisionSeasonId
             //Update DivisionDefs SET Name = @divisionName WHERE ID = @divisionId
-            DB db = DBConnection.GetContext();
-
-            var divisionId = (from ds in db.DivisionSeasons
-                              where ds.Id == division.Id
-                              select ds.DivisionId).SingleOrDefault();
-
-            var dbDivSeason = (from ds in db.DivisionSeasons
-                               where ds.Id == division.Id
-                               select ds).SingleOrDefault();
-            if (dbDivSeason != null)
+            using (DB db = DBConnection.GetContext())
             {
-                dbDivSeason.Priority = division.Priority;
-            }
+                db.DivisionSeasons.Attach(division);
+                db.Entry(division).State = System.Data.Entity.EntityState.Modified;
 
-            var dbDivDef = (from dd in db.DivisionDefs
-                            where dd.Id == division.Id
-                            select dd).SingleOrDefault();
-            if (dbDivDef != null)
-            {
-                dbDivDef.Name = division.Name;
-            }
+                var divisionId = (from ds in db.DivisionSeasons
+                                  where ds.Id == division.Id
+                                  select ds.DivisionId).SingleOrDefault();
 
-            db.SubmitChanges();
-            return true;
+                var dbDivSeason = (from ds in db.DivisionSeasons
+                                   where ds.Id == division.Id
+                                   select ds).SingleOrDefault();
+                if (dbDivSeason != null)
+                {
+                    dbDivSeason.Priority = division.Priority;
+                }
+
+                var dbDivDef = (from dd in db.DivisionDefs
+                                where dd.Id == division.Id
+                                select dd).SingleOrDefault();
+                if (dbDivDef != null)
+                {
+                    dbDivDef.Name = division.Name;
+                }
+
+                db.SaveChanges();
+                return true;
+            }
 		}
 
-		static public long AddDivision(Division d)
+		static public long AddDivision(DivisionSeason d)
 		{
-            if (d.AccountId <= 0 || d.LeagueId <= 0)
+            if (d.DivisionDef == null || d.DivisionDef.AccountId <= 0 || d.LeagueSeasonId <= 0)
                 return 0;
 
             DB db = DBConnection.GetContext();
 
-            var divisionDef = new SportsManager.Model.DivisionDef()
+            var divisionDef = new DivisionDefinition()
             {
-                AccountId = d.AccountId,
-                Name = d.Name
+                AccountId = d.DivisionDef.AccountId,
+                Name = d.DivisionDef.Name
             };
 
-            db.DivisionDefs.InsertOnSubmit(divisionDef);
-            db.SubmitChanges();
+            db.DivisionDefs.Add(divisionDef);
+            db.SaveChanges();
 
-            var divisionSeason = new SportsManager.Model.DivisionSeason()
+            var divisionSeason = new DivisionSeason()
             {
                 DivisionId = divisionDef.Id,
-                LeagueSeasonId = d.LeagueId,
+                LeagueSeasonId = d.LeagueSeasonId,
                 Priority = d.Priority
             };
 
             db.DivisionSeasons.InsertOnSubmit(divisionSeason);
-            db.SubmitChanges();
+            db.SaveChanges();
 
             d.Id = divisionSeason.Id;
 
@@ -87,7 +99,7 @@ namespace DataAccess
 		static public void RemoveLeagueDivisions(long leagueId)
 		{
 			var divisions = Divisions.GetDivisions(leagueId);
-			foreach (Division d in divisions)
+			foreach (DivisionSeason d in divisions)
 			{
 				Divisions.RemoveDivision(d.Id);
 			}
@@ -117,6 +129,8 @@ namespace DataAccess
 
             db.DivisionSeasons.DeleteOnSubmit(divSeason);
 
+            db.SaveChanges();
+
             var teamSeasons = (from ts in db.TeamsSeasons
                                where ts.DivisionSeasonId == divisionSeasonId
                                select ts);
@@ -124,6 +138,8 @@ namespace DataAccess
             {
                 teamSeason.DivisionSeasonId = 0;
             }
+
+            db.SaveChanges();
 
             bool divisionInUse = (from ds in db.DivisionSeasons
                                   where ds.DivisionId == divisionSeasonId
@@ -133,7 +149,7 @@ namespace DataAccess
                 db.DivisionDefs.DeleteOnSubmit(db.DivisionDefs.Where(dd => dd.Id == divSeason.DivisionId).SingleOrDefault());
             }
 
-            db.SubmitChanges();
+            db.SaveChanges();
             return true;
 		}
 
@@ -160,10 +176,10 @@ namespace DataAccess
             var divisions = (from ds in db.DivisionSeasons
                              where ds.LeagueSeasonId == copyLeagueSeasonId
                              select ds);
-            List<SportsManager.Model.DivisionSeason> newDivSeasons = new List<SportsManager.Model.DivisionSeason>();
+            List<DivisionSeason> newDivSeasons = new List<DivisionSeason>();
             foreach (var div in divisions)
             {
-                newDivSeasons.Add(new SportsManager.Model.DivisionSeason()
+                newDivSeasons.Add(new DivisionSeason()
                     {
                         DivisionId = div.DivisionId,
                         LeagueSeasonId = leagueSeasonId,
@@ -172,7 +188,7 @@ namespace DataAccess
             }
 
             db.DivisionSeasons.InsertAllOnSubmit(newDivSeasons);
-            db.SubmitChanges();
+            db.SaveChanges();
 
 			return true;
 		}

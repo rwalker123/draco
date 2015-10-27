@@ -5,11 +5,16 @@ using SportsManager.Baseball.ViewModels;
 using System.IO;
 using SportsManager.Models;
 using SportsManager.Controllers.Attributes;
+using SportsManager.Controllers;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class TeamController : Controller
+    public class TeamController : DBController
     {
+        public TeamController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Baseball/Team/
         // accountId = accountId or teamId

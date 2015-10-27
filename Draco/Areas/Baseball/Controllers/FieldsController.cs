@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using System.Web.Mvc;
-using ModelObjects;
+﻿using ModelObjects;
 using SportsManager.Baseball.ViewModels;
-using SportsManager.Models;
+using SportsManager.Controllers;
+using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-	public class FieldsController : Controller
+    public class FieldsController : DBController
 	{
+        public FieldsController(DB db) : base(db)
+        {
+
+        }
+
 		//
 		// GET: /Baseball/Fields/{lid}
 
-		// disable cache so that ajax call can be made.
-		[OutputCache(Duration = 0, VaryByParam = "None")]
 		public ActionResult Index(long? accountId, long? id = null)
 		{
 			if (accountId.GetValueOrDefault(0) == 0)

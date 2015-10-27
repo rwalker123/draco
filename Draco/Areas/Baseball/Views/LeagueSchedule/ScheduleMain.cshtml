@@ -74,14 +74,14 @@
     </div>
     }
     <div class="row noPrint">
-        <select data-bind="selectPicker: selectedLeague" data-container="body" id="leagueSelect">
-            @foreach (ModelObjects.League l in Model.Leagues)
+        <select data-bind="selectPicker: selectedLeague" id="leagueSelect">
+            @foreach (var l in Model.Leagues)
             {
-                <option value="@l.Id">@l.Name</option>
+                <option value="@l.Id">@l.League.Name</option>
             }
             <option value="0">All Leagues</option>
         </select>
-        <select data-container="body" data-bind="selectPicker: selectedTeam, attr: {'disabled': leagueTeamSelectDisabled }, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
+        <select data-bind="selectPicker: selectedTeam, attr: {'disabled': leagueTeamSelectDisabled }, selectPickerOptions: { optionsArray: leagueTeams, disabledCondition: loadingSchedule() || !viewMode() }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'All teams'"></select>
 
     </div>
 
@@ -132,7 +132,7 @@
                     <label for="newGameTime" class="col-md-3 control-label">Game Time:</label>
                     <div class="col-md-9">
                         <div class="bootstrap-timepicker">
-                            <input id="newGameTime" class="form-control add-on" type="text" data-bind="timepicker: GameDate.TimeText, timepickerOptions: { minuteStep: 5, showInputs: false, disableFocus: false }" />
+                            <input id="newGameTime" class="form-control add-on" type="text" data-bind="timepicker: GameDate.TimeText, timepickerOptions: { template: false, minuteStep: 5, showInputs: false }" />
                         </div>
                     </div>
                 </div>
@@ -140,11 +140,11 @@
                 <div class="form-group">
                     <label for="newGameAwayTeam" class="col-md-3 control-label">Away Team:</label>
                     <div class="col-md-9" data-bind="validationOptions: { insertMessages: false }">
-                        <select id="newGameAwayTeam" data-container="body" data-bind="selectPicker: AwayTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                        <select id="newGameAwayTeam" data-bind="selectPicker: AwayTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                     </div>
                     <label for="newGameHomeTeam" class="col-md-3 control-label">Home Team:</label>
                     <div class="col-md-9">
-                        <select id="newGameHomeTeam" data-container="body" data-bind="selectPicker: HomeTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
+                        <select id="newGameHomeTeam" data-bind="selectPicker: HomeTeamId, selectPickerOptions: { optionsArray: $root.leagueTeams }, optionsText: 'Name', optionsValue: 'Id', optionsCaption: 'select team...'"></select>
                     </div>
                 </div>
                 <div class="form-group">
@@ -154,7 +154,7 @@
                 <div class="form-group">
                     <label for="newGameType" class="col-md-3 control-label">Game Type:</label>
                     <div class="col-md-9">
-                        <select id="newGameType" data-container="body" data-bind="selectPicker: GameType">
+                        <select id="newGameType" data-bind="selectPicker: GameType">
                             <option value="0">Regular</option>
                             <option value="1">Playoff</option>
                         </select>
@@ -164,7 +164,7 @@
                 <div class="form-group">
                     <label for="newGameField" class="col-md-3 control-label">Field:</label>
                     <div class="col-md-9">
-                        <select id="newGameField" data-container="body" data-bind="selectPicker: FieldId">
+                        <select id="newGameField" data-bind="selectPicker: FieldId">
                             <option value="0">select field...</option>
                             @foreach (var f in Model.Fields)
                             {
@@ -177,7 +177,7 @@
                 <div class="form-group">
                     <label for="newGameUmpires" class="col-md-3 control-label">Umpires:</label>
                     <div class="col-md-9">
-                        <select id="newGameUmpires" data-container="body" data-bind="selectPicker: Umpires, selectPickerOptions: { optionsArray: $root.allUmpires }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select umpires..."></select>
+                       <select id="newGameUmpires" data-bind="selectPicker: Umpires, selectPickerOptions: { optionsArray: $root.allUmpires }, optionsText: 'Name', optionsValue: 'Id'" multiple title="select umpires..."></select>
                     </div>
                 </div>
 
@@ -224,7 +224,7 @@
                                             <button type="button" class="btn btn-default dropdown-toggle btn-xs" data-toggle="dropdown">
                                                 <span class="glyphicon glyphicon-edit"></span> <span class="caret"></span>
                                             </button>
-                                            <ul data-container="body" class="dropdown-menu" role="menu">
+                                            <ul class="dropdown-menu" role="menu">
                                                 <li><a data-bind="visible: $root.selectedLeague() > 0, click: $root.editGame"><span class="glyphicon glyphicon-edit"></span> edit</a></li>
                                                 <li><a data-bind="click: $root.deleteGame"><span class="glyphicon glyphicon-remove"></span> delete</a></li>
                                                 <li class="divider"></li>

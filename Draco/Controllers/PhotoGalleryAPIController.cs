@@ -1,7 +1,11 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Models;
+using SportsManager.Models.Utils;
+using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -10,8 +14,13 @@ using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class PhotoGalleryAPIController : ApiController
+    public class PhotoGalleryAPIController : DBApiController
     {
+        public PhotoGalleryAPIController(DB db) : base(db)
+        {
+
+
+        }
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("photos")]
         public HttpResponseMessage Get(long accountId)
@@ -25,7 +34,16 @@ namespace SportsManager.Controllers
                 int numPhotos = 10;
                 if (Int32.TryParse(numRandomPhotos, out numPhotos))
                 {
-                    photos = DataAccess.PhotoGallery.GetRandomPhotos(accountId, numPhotos);
+                    var qry = (from pg in Db.PhotoGalleries
+                            where pg.AccountId == accountId
+                            select pg);
+
+                    int count = qry.Count() - numPhotos;
+                    if (count < 0)
+                        count = 0;
+                    int index = new Random().Next(count);
+
+                    photos = qry.Skip(index).Take(numPhotos);
                 }
             }
             else
@@ -36,12 +54,20 @@ namespace SportsManager.Controllers
                 {
                     Int32.TryParse(album, out albumId);
                 }
-                photos = DataAccess.PhotoGallery.GetPhotos(accountId, albumId);
+                if (albumId == -1)
+                    photos = (from pg in Db.PhotoGalleries
+                            where pg.AccountId == accountId
+                            select pg);
+                else
+                    photos = (from pg in Db.PhotoGalleries
+                              where pg.AccountId == accountId && pg.AlbumId == albumId
+                              select pg);
             }
 
             if (photos != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos);
+                var vm = Mapper.Map<IEnumerable<PhotoGalleryItem>, PhotoViewModel[]>(photos);
+                return Request.CreateResponse<PhotoViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -51,24 +77,29 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("photos")]
-        public HttpResponseMessage GetTeamPhotos(long accountId, long teamSeasonId)
+        public async Task<HttpResponseMessage> GetTeamPhotos(long accountId, long teamSeasonId)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
-            if (team == null)
+            var teamSeason = await Db.TeamsSeasons.FindAsync(teamSeasonId);
+            if (teamSeason == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
+            if (teamSeason.Team.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var teamAlbums = (from pga in Db.PhotoGalleryAlbums
+                              where pga.AccountId == accountId && pga.TeamId == teamSeason.Team.Id
+                              select pga);
+
             // should always be an album.
             if (!teamAlbums.Any())
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             // should only be 1 team photo album.
-            var teamAlbum = teamAlbums.First();
-
-            var photos = DataAccess.PhotoGallery.GetPhotos(accountId, teamAlbum.Id);
+            var photos = teamAlbums.First().Photos;
             if (photos != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryItem>>(HttpStatusCode.OK, photos);
+                var vm = Mapper.Map<IEnumerable<PhotoGalleryItem>, PhotoViewModel[]>(photos);
+                return Request.CreateResponse<PhotoViewModel[]>(HttpStatusCode.OK, vm);
             }
             else
             {
@@ -79,49 +110,93 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage UpdatePhoto(long accountId, int id, PhotoGalleryItem item)
+        public async Task<HttpResponseMessage> UpdatePhoto(long accountId, int id, PhotoViewModel item)
         {
-            if (String.IsNullOrEmpty(item.Title))
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Title cannot be empty.");
-
-            item.Id = id;
-            item.AccountId = accountId;
-            PhotoGalleryItem foundItem = DataAccess.PhotoGallery.GetPhoto(item.Id);
-            if (foundItem == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-
-            bool rc = DataAccess.PhotoGallery.ModifyPhoto(item);
-
-            if (rc)
+            if (ModelState.IsValid)
             {
-                return Request.CreateResponse<PhotoGalleryItem>(HttpStatusCode.OK, item);
+                var photo = await Db.PhotoGalleries.FindAsync(id);
+                if (photo == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (photo.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                int maxPhotosPerAlbum = GetMaxPhotosPerAlbum();
+
+                var numPhotosInAlbum = (from pg in Db.PhotoGalleries
+                                        where pg.AccountId == accountId && pg.AlbumId == item.AlbumId
+                                        select pg).Count();
+                if (numPhotosInAlbum <= maxPhotosPerAlbum)
+                {
+                    photo.Title = item.Title;
+                    photo.Caption = item.Caption;
+                    photo.AlbumId = item.AlbumId;
+
+                    await Db.SaveChangesAsync();
+
+                    var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
+                    return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photo Albums Reached.");
+                }
             }
-            else
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum photos in albums reached.");
-            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
-        public HttpResponseMessage UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoGalleryItem item)
+        public async Task<HttpResponseMessage> UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoViewModel item)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
-            if (team == null)
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+            if (ModelState.IsValid)
+            {
+                var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
+                if (team == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
-            // should always be an album.
-            if (!teamAlbums.Any())
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                var photo = await Db.PhotoGalleries.FindAsync(id);
+                if (photo == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            // should only be 1 team photo album.
-            var teamAlbum = teamAlbums.First();
+                var teamAlbums = (from pga in Db.PhotoGalleryAlbums
+                                  where pga.AccountId == accountId && pga.TeamId == team.TeamId
+                                  select pga);
 
-            item.AlbumId = teamAlbum.Id;
+                // should always be an album.
+                if (!teamAlbums.Any())
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            return UpdatePhoto(accountId, id, item);
+                // should only be 1 team photo album.
+                var teamAlbum = teamAlbums.First();
+
+                item.AlbumId = teamAlbum.Id;
+
+                int maxPhotosPerAlbum = GetMaxPhotosPerAlbum();
+
+                var numPhotosInAlbum = (from pg in Db.PhotoGalleries
+                                        where pg.AccountId == accountId && pg.AlbumId == item.AlbumId
+                                        select pg).Count();
+                if (numPhotosInAlbum <= maxPhotosPerAlbum)
+                {
+                    photo.Title = item.Title;
+                    photo.Caption = item.Caption;
+                    photo.AlbumId = item.AlbumId;
+
+                    await Db.SaveChangesAsync();
+
+                    var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(photo);
+                    return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photo Albums Reached.");
+                }
+            }
+
+            return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -129,23 +204,18 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> DeletePhoto(long accountId, long id)
         {
-            var photo = new PhotoGalleryItem()
-            {
-                AccountId = accountId,
-                Id = id
-            };
-
-            if (await DataAccess.PhotoGallery.RemovePhoto(photo))
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(photo.Id.ToString())
-                };
-
-                return response;
-            }
-            else
+            var photo = await Db.PhotoGalleries.FindAsync(id);
+            if (photo == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (photo.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.PhotoGalleries.Remove(photo);
+            await Db.SaveChangesAsync();
+
+            await Storage.Provider.DeleteDirectory(photo.PhotoURL);
+            return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -153,89 +223,146 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> DeleteTeamPhoto(long accountId, long teamSeasonId, long id)
         {
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            return await DeletePhoto(accountId, id);
+            var photo = await Db.PhotoGalleries.FindAsync(id);
+            if (photo == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (photo.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.PhotoGalleries.Remove(photo);
+            await Db.SaveChangesAsync();
+
+            await Storage.Provider.DeleteDirectory(photo.PhotoURL);
+            return Request.CreateResponse<long>(HttpStatusCode.OK, photo.Id);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("albums")]
         public HttpResponseMessage GetPhotoAlbums(long accountId)
         {
-            var photos = DataAccess.PhotoGallery.GetPhotoAlbums(accountId);
+            var accountAlbums = (from pga in Db.PhotoGalleryAlbums
+                                 where pga.AccountId == accountId
+                                 & pga.TeamId == 0
+                                 orderby pga.Title
+                                 select pga).AsEnumerable();
+
+            // get team ids for current season
+             long currentSeason = this.GetCurrentSeasonId(accountId);
+
+             var teamIds = (from ls in Db.LeagueSeasons
+                            join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                            where ls.SeasonId == currentSeason
+                            select ts.TeamId);
+
+            // get teams with photos
+            var teamAlbums = (from pga in Db.PhotoGalleryAlbums
+                              where pga.AccountId == accountId
+                              & teamIds.Contains(pga.TeamId)
+                              select pga).OrderBy(i => i.Title);
+
+
+            var photos = accountAlbums.Concat(teamAlbums).AsEnumerable();
             if (photos != null)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryAlbum>>(HttpStatusCode.OK, photos);
+                var vm = Mapper.Map <IEnumerable<PhotoGalleryAlbum>, PhotoAlbumViewModel[]>(photos);
+                return Request.CreateResponse<PhotoAlbumViewModel[]>(HttpStatusCode.OK, vm);
             }
-            else
-            {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
-            }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("editablealbums")]
         public HttpResponseMessage EditableAlbums(long accountId)
         {
-            var photos = DataAccess.PhotoGallery.GetEditablePhotoAlbums(accountId);
-            if (photos != null)
+            var userId = Globals.GetCurrentUserId();
+            bool isSitePhotoAdmin = this.IsAccountAdmin(accountId, userId) || this.IsPhotoAdmin(accountId, userId);
+            if (isSitePhotoAdmin)
             {
-                return Request.CreateResponse<IEnumerable<ModelObjects.PhotoGalleryAlbum>>(HttpStatusCode.OK, photos);
+                return GetPhotoAlbums(accountId);
             }
             else
             {
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+                var roles = this.GetContactRoles(accountId, userId);
+                if (roles != null)
+                {
+                    String roleId = this.GetTeamPhotoAdminId();
+
+                    // find all the teams the user is a photo admin
+                    var teamPhotoAdminIds = (from r in roles
+                                             where r.RoleId == roleId
+                                             select r.RoleData);
+
+                    var albums = (from pga in Db.PhotoGalleryAlbums
+                                    where pga.AccountId == accountId && teamPhotoAdminIds.Contains(pga.TeamId)
+                                    select pga).AsEnumerable();
+
+                    var vm = Mapper.Map<IEnumerable<PhotoGalleryAlbum>, PhotoAlbumViewModel[]>(albums);
+                    return Request.CreateResponse<PhotoAlbumViewModel[]>(HttpStatusCode.OK, vm);
+                }
             }
+
+            return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("albums")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeletePhotoAlbum(long accountId, long id)
+        public async Task<HttpResponseMessage> DeletePhotoAlbum(long accountId, long id)
         {
-            PhotoGalleryAlbum album = new PhotoGalleryAlbum()
-            {
-                AccountId = accountId,
-                Id = id
-            };
-
-            if (DataAccess.PhotoGallery.RemovePhotoAlbum(album))
-            {
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(album.Id.ToString())
-                };
-
-                return response;
-            }
-            else
+            var pa = await Db.PhotoGalleryAlbums.FindAsync(id);
+            if (pa == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (pa.AccountId != accountId || pa.TeamId != 0)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            var photosInGallery = pa.Photos;
+            foreach (var photo in photosInGallery)
+                photo.AlbumId = 0;
+
+            Db.PhotoGalleryAlbums.Remove(pa);
+            await Db.SaveChangesAsync();
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("albums")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostPhotoAlbum(long accountId, IdData name)
+        public async Task<HttpResponseMessage> PostPhotoAlbum(long accountId, IdData name)
         {
             if (name == null)
             {
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Must specify Photo Album name.");
             }
 
-            PhotoGalleryAlbum album = new PhotoGalleryAlbum()
-            {
-                Title = name.Id,
-                ParentAlbumId = 0,
-                AccountId = accountId,
-                TeamId = 0
-            };
+            var numAccountAlbums = (from pga in Db.PhotoGalleryAlbums
+                                    where pga.AccountId == accountId && pga.TeamId == 0
+                                    select pga).Count();
 
-            bool rc = DataAccess.PhotoGallery.AddPhotoAlbum(album);
-            if (rc)
+			int maxAlbums = GetMaxAlbums();
+
+            if (numAccountAlbums < maxAlbums)
             {
-                return Request.CreateResponse<PhotoGalleryAlbum>(HttpStatusCode.Created, album);
+                PhotoGalleryAlbum dbAlbum = new PhotoGalleryAlbum()
+                {
+                    Title = name.Id,
+                    AccountId = accountId,
+                    TeamId = 0,
+                    ParentAlbumId = 0
+                };
+
+                Db.PhotoGalleryAlbums.Add(dbAlbum);
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<PhotoGalleryAlbum, PhotoAlbumViewModel>(dbAlbum);
+                return Request.CreateResponse<PhotoAlbumViewModel>(HttpStatusCode.Created, vm);
             }
             else
             {
@@ -243,5 +370,30 @@ namespace SportsManager.Controllers
             }
         }
 
+        private int GetMaxPhotosPerAlbum()
+        {
+            int numPhotosPerAlbum = 20;
+
+            string configValue = ConfigurationManager.AppSettings["MaxPhotosPerAlbum"];
+            if (!String.IsNullOrEmpty(configValue))
+            {
+                Int32.TryParse(configValue, out numPhotosPerAlbum);
+            }
+
+            return numPhotosPerAlbum;
+        }
+
+        private int GetMaxAlbums()
+        {
+            int numAlbums = 5;
+
+            string configValue = ConfigurationManager.AppSettings["MaxAccountPhotoAlbums"];
+            if (!String.IsNullOrEmpty(configValue))
+            {
+                Int32.TryParse(configValue, out numAlbums);
+            }
+
+            return numAlbums;
+        }
     }
 }

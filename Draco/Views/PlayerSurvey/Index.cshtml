@@ -147,21 +147,21 @@
     </div>
     }
     
-    <!-- ko if: !currentPlayerSurvey().PlayerId() -->
+    <!-- ko if: !currentPlayerSurvey().Id() -->
     <div class="alert alert-info">
         Login to take or edit your own survey!
     </div>
     <!-- /ko -->
-    <!-- ko if: currentPlayerSurvey().PlayerId() -->
+    <!-- ko if: currentPlayerSurvey().Id() -->
     <div class="panel-group" data-bind="with: currentPlayerSurvey" id="accordion1">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
-                <a data-toggle="collapse" data-parent="#accordion1" data-bind="attr: { href: '#' + PlayerId()}">
+                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" />
+                <a data-toggle="collapse" data-parent="#accordion1" data-bind="attr: { href: '#' + Id()}">
                     <span class="h3">Your Survey</span>
                 </a>
             </div>
-            <div data-bind="attr: { id: PlayerId }" class="panel-collapse collapse">
+            <div data-bind="attr: { id: Id }" class="panel-collapse collapse">
                 <div class="panel-body">
                     <div data-bind="if: isLoading">
                         <img src="/Images/busy.gif" />Loading...
@@ -194,12 +194,12 @@
     <div class="panel-group" data-bind="foreach: surveys" id="accordion">
         <div class="panel panel-default">
             <div class="panel-heading">
-                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoUrl }" />
-                <a data-toggle="collapse" data-parent="#accordion" data-bind="attr: { href: '#' + PlayerId()}">
-                    <span class="h3" data-bind="html: LastName() + ', ' + FirstName() + ' ' + MiddleName()"></span>
+                <img class="img-rounded" style="display:inline-block" onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" />
+                <a data-toggle="collapse" data-parent="#accordion" data-bind="attr: { href: '#' + Id()}">
+                    <span class="h3" data-bind="html: LastName() + ', ' + FirstName() + ' ' + (MiddleName() || '')"></span>
                 </a>
             </div>
-            <div data-bind="attr: { id: PlayerId }" class="panel-collapse collapse">
+            <div data-bind="attr: { id: Id }" class="panel-collapse collapse">
                 <div class="panel-body">
                     <div data-bind="if: isLoading">
                         <img src="/Images/busy.gif" />Loading...

@@ -14,8 +14,9 @@
 </style>
 }
 
-<div class="jumbotron">
-    <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name Schedule</h1><br />
+<div class="noPrint jumbotron">
+    
+    <h1><img onerror="this.style.display = 'none';" src="@Model.Team.Team.TeamLogoURL" class="img-rounded" style="margin-right:20px" />@Model.Team.Name Schedule</h1>
 
     <a href='@Url.Content("~/")baseball/team/index/@Model.AccountId/@Model.Team.Id' class="btn btn-info noPrint"><small>team home page</small></a>
     <a class="btn btn-info noPrint" href="javascript:window.print();"><span class="glyphicon glyphicon-print"></span></a>
@@ -48,30 +49,25 @@
                         @if (g.FieldId > 0)
                         { 
                         <a href='@Url.Action("Index", "Fields", new { area = "baseball", accountId = @Model.AccountId, id = g.FieldId }, null)'>
-                            @g.FieldName
+                            @Model.FieldName(g)
                         </a>
                         }
                     </td>
                     <td>
-                        <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HomeTeamId == Model.Team.Id ? g.AwayTeamId : g.HomeTeamId }, null)'>
-                            @(g.HomeTeamId == Model.Team.Id ? g.AwayTeamName : "at " + g.HomeTeamName)
+                        <a href='@Url.Action("Index", "Team", new { area = "baseball", accountId = @Model.AccountId, id = g.HTeamId == Model.Team.Id ? g.VTeamId : g.HTeamId }, null)'>
+                            @(g.HTeamId == Model.Team.Id ? Model.TeamName(g.VTeamId) : "at " + Model.TeamName(g.HTeamId))
                         </a>
                     </td>
                     <td>@Model.WinLoseString(g.GameWinner, g.GameStatus)</td>
-                    <td>@Model.Score1(g.GameWinner, g.HomeScore, g.AwayScore)</td>
-                    <td>@Model.Score2(g.GameWinner, g.HomeScore, g.AwayScore)</td>
+                    <td>@Model.Score1(g.GameWinner, g.HScore, g.VScore)</td>
+                    <td>@Model.Score2(g.GameWinner, g.HScore, g.VScore)</td>
                 </tr>
-                <tr>
+                <tr style="display: none" id="recap_@g.Id">
                     <td colspan="8">
-                        @if (!String.IsNullOrEmpty(recap))
-                        {
-                            <div style="display: none" id="recap_@g.Id">
-                                @Html.Raw(recap)
-                            </div>
-                        }
+                        @Html.Raw(recap)
                     </td>
                 </tr>
-                
+
                 gameNo++;
             }
         </tbody>
@@ -81,12 +77,12 @@
 @section Scripts {
     <script type="text/javascript">
         function toggleGameSummary(id) {
-            var elem = document.getElementById(id);
+            var elem = $("#" + id);
             if (elem) {
-                if (elem.style.display == 'block')
-                    elem.style.display = 'none';
+                if (elem.is(':visible'))
+                    $(elem).hide();
                 else
-                    elem.style.display = 'block';
+                    $(elem).show();
             }
 
             return false;

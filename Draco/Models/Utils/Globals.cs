@@ -1,5 +1,6 @@
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
+using ModelObjects;
 using SportsManager;
 using SportsManager.Models;
 using SportsManager.Models.Utils;
@@ -9,7 +10,6 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
 using System.Net.Mime;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
@@ -50,17 +50,6 @@ static public class Globals
         }
 	}
 
-	static public string UploadDir
-	{
-		get
-		{
-			// Don't use this anymore! Don't have "DataAccess.Accounts.GetCurrentAccount()" anymore, the accountId
-            // is passed in the URL. There is no session data. Use UploadDirRoot and add the account id yourself.
-			throw new NotImplementedException();
-			//return ConfigurationManager.AppSettings["UploadDir"] + DataAccess.Accounts.GetCurrentAccount() + "/"; 
-		}
-	}
-
 	static public string LogFile
 	{
 		get { return ConfigurationManager.AppSettings["LogFile"]; }
@@ -76,17 +65,12 @@ static public class Globals
         return url;
     }
 
-	public static bool MailMessage(string fromEmail, string toEmail, string subject, string body)
+	public static bool MailMessage(MailAddress fromEmail, MailAddress toEmail, string subject, string body)
 	{
 		bool sentMsg = true;
 
-		MailAddress from = new MailAddress(fromEmail);
-
-		// Set destinations for the e-mail message.
-		MailAddress to = new MailAddress(toEmail);
-
 		// Specify the message content.
-		MailMessage msg = new MailMessage(from, to);
+		MailMessage msg = new MailMessage(fromEmail, toEmail);
 		msg.Subject = subject;
 		msg.Body = body;
         msg.IsBodyHtml = true;
@@ -99,24 +83,22 @@ static public class Globals
 		catch (Exception ex)
 		{
 			sentMsg = false;
-			LogException(ex);
-		}
+            Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+        }
 
 		return sentMsg;
 	}
 
-	public static IEnumerable<MailAddress> MailMessage(string fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
+	public static IEnumerable<MailAddress> MailMessage(MailAddress fromEmail, IEnumerable<MailAddress> bccList, EmailUsersData data)
 	{
 		List<MailAddress> failedSends = new List<MailAddress>();
-
-		MailAddress from = new MailAddress(fromEmail);
 
 		// Specify the message content.
 		MailMessage msg = new MailMessage();
 		msg.Subject = data.Subject;
 		msg.Body = data.Message;
         msg.IsBodyHtml = true;
-		msg.From = from;
+		msg.From = fromEmail;
 
 		SmtpClient mailClient = new SmtpClient();
 
@@ -151,8 +133,8 @@ static public class Globals
 		}
 		catch (Exception ex)
 		{
-			LogException(ex);
-		}
+            Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
+        }
 
 		return failedSends;
 	}
@@ -175,72 +157,45 @@ static public class Globals
 		}
 	}
 
-	public static void LogException(Exception ex)
-	{
-		System.Web.HttpContext context = System.Web.HttpContext.Current;
-		if (context == null)
-			return;
-
-		String logPath = context.Server.MapPath(Globals.LogFile);
-		string logDir = System.IO.Path.GetDirectoryName(logPath);
-		if (!System.IO.Directory.Exists(logDir))
-			System.IO.Directory.CreateDirectory(logDir);
-
-		// prepend date to log file            
-		string logFile = logDir + "\\" + DateTime.Today.ToString("MM-dd-yy.") + System.IO.Path.GetFileName(logPath);
-		using (System.IO.TextWriter tw = System.IO.File.AppendText(logFile))
-		{
-			StringBuilder sb = new StringBuilder();
-
-            String userName = System.Web.HttpContext.Current.User != null ? Globals.GetCurrentUserName() : "";
-
-            sb.AppendLine(String.Format("{0} User: {1}", DateTime.Now, userName));
-			sb.AppendLine(ex.ToString());
-
-			Globals.LastException = sb.ToString();
-			tw.WriteLine(Globals.LastException);
-		}
-	}
-
     public static void SetupAccountViewData(long accountId, ViewDataDictionary viewData)
     {
-        var account = DataAccess.Accounts.GetAccount(accountId);
-        string accountName = account.AccountName;
+        var db = DependencyResolver.Current.GetService<DB>();
+
+        var account = db.Accounts.Find(accountId);
+        if (account == null)
+            return;
+
+        string accountName = account.Name;
         string accountLogoUrl = account.LargeLogoURL;
 
-        SetupAccountViewData(accountId, accountName, accountLogoUrl, account.AccountTypeId, account.AccountURL, viewData);
+        SetupAccountViewData(account, viewData);
     }
 
-    public static void SetupAccountViewData(long accountId, string accountName, string accountLogoUrl, long accountType, string accountUrl, ViewDataDictionary viewData)
+    public static void SetupAccountViewData(Account account, ViewDataDictionary viewData)
     {
-        viewData["AccountLogoUrl"] = accountLogoUrl;
-        viewData["AccountName"] = accountName;
-        viewData["AccountId"] = accountId;
-        var accountUrls = accountUrl.Split(new char[] { ';' });
+        viewData["AccountLogoUrl"] = account.LargeLogoURL;
+        viewData["AccountName"] = account.Name;
+        viewData["AccountId"] = account.Id;
+        var accountUrls = account.Url.Split(new char[] { ';' });
         viewData["AccountUrl"] = accountUrls.Length > 0 ? accountUrls[0] : String.Empty;
 
-        string twitterAccountName = DataAccess.SocialIntegration.Twitter.TwitterAccountName(accountId);
+        string twitterAccountName = account.TwitterAccountName;
         if (!String.IsNullOrEmpty(twitterAccountName))
             viewData["TwitterAccountName"] = twitterAccountName;
 
-        string facebookFanPage = DataAccess.SocialIntegration.Facebook.FacebookFanPage(accountId);
+        string facebookFanPage = account.FacebookFanPage;
         if (!String.IsNullOrEmpty(facebookFanPage))
             viewData["FacebookFanPage"] = facebookFanPage;
-
-        string facebookApiKey = DataAccess.SocialIntegration.Facebook.GetApiKey((int)accountType);
-        if (!String.IsNullOrEmpty(facebookApiKey))
-            viewData["FacebookApiKey"] = facebookApiKey;
-
     }
 
     public static String GetCurrentUserId()
     {
-        return System.Web.HttpContext.Current.User.Identity.GetUserId();
+        return HttpContext.Current.User?.Identity.GetUserId();
     }
 
     public static String GetCurrentUserName()
     {
-        return System.Web.HttpContext.Current.User.Identity.GetUserName();
+        return System.Web.HttpContext.Current.User?.Identity.GetUserName();
     }
 
     public static ApplicationUserManager GetUserManager()
@@ -264,6 +219,24 @@ static public class Globals
 
         return years;
     }
+    static public string BuildFullName(string firstName, string middleName, string lastName)
+    {
+        string fullName = lastName + ", " + firstName + " " + middleName;
+        return fullName.Trim();
+    }
+
+    static public string BuildFullNameFirst(string firstName, string middleName, string lastName)
+    {
+        System.Text.StringBuilder fullName = new System.Text.StringBuilder(firstName + " ");
+
+        if (!String.IsNullOrWhiteSpace(middleName))
+            fullName.Append(middleName + " ");
+
+        fullName.Append(lastName);
+
+        return fullName.ToString();
+    }
+
 }
 
 public class EmailUserValidator : IIdentityValidator<ApplicationUser>

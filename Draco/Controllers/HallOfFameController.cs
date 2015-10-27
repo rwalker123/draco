@@ -1,9 +1,14 @@
 ﻿using System.Web.Mvc;
+using ModelObjects;
 
 namespace SportsManager.Controllers
 {
-    public class HallOfFameController : Controller
+    public class HallOfFameController : DBController
     {
+        public HallOfFameController(DB db) : base(db)
+        {
+        }
+
         // GET: HallOfFame
         public ActionResult Index(long? accountId)
         {

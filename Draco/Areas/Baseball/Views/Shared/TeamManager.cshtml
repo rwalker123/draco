@@ -20,7 +20,7 @@
                     <div class="form-group">
                         <div class="col-sm-12">
                             <div class="input-group">
-                                <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: getAvailableManagers, displayKey: 'label' }, target: selectedPlayer, options: { highlight: true } }" placeholder="type manager last name" />
+                                <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: getAvailableManagers, async: true, display: 'label', limit: 10 }, target: selectedPlayer, options: { highlight: true } }" placeholder="type manager last name" />
                                 <div class="input-group-btn">
                                     <button class="btn btn-primary" data-bind="click: addManager, enable: isPlayerSelected"><span class="glyphicon glyphicon-ok"></span></button>
                                 </div>
@@ -30,12 +30,8 @@
                 </form>
             </div>
             <div class="row" style="display:none" data-bind="visible: !viewMode()">
-                <div class="help-block">
-                    If you don't find the manager in your search:
-                    <ol>
-                        <li>Ensure the manager is not already on another team in the league.</li>
-                        <li>Ensure the manager exists as a user, you can add new <a class="btn btn-success" href="@Url.Action("Users", "Account", new { area = "", accountId = Model.AccountId }, null)">Users &raquo;</a>.</li>
-                    </ol>
+                <div class="col-sm-12 help-block">
+                    Manager must be on the teams roster to be added.
                 </div>
             </div>
         }
@@ -43,7 +39,7 @@
         <div data-bind="foreach: managers">
             <div class="row" style="margin-bottom: 10px">
                 <div class="col-sm-4">
-                    <img onerror="this.style.display = 'none';" data-bind="attr: { src: PhotoURL }" class="img-rounded" />
+                    <img onerror="this.style.display = 'none';" data-bind="attr: { src: Contact.PhotoURL }" class="img-rounded" />
                     @if (Model.IsAdmin)
                     {
                         <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
@@ -61,17 +57,17 @@
                         <strong><span data-bind="html: name"></span></strong><br />
                         @if (Model.IsAdmin || Model.IsTeamAdmin || Model.IsTeamMember)
                         { 
-                            <!--ko if: Email -->
-                            <a data-bind="attr: { href: 'mailto:' + Email()}">EMail</a><br />
+                            <!--ko if: Contact.Email -->
+                            <a data-bind="attr: { href: 'mailto:' + Contact.Email()}">EMail</a><br />
                             <!--/ko-->
-                            <!--ko if: Phone1 -->
-                            <abbr title="Cell Phone">C:</abbr> <span data-bind="html: Phone1"></span><br />
+                            <!--ko if: Contact.Phone1 -->
+                            <abbr title="Cell Phone">C:</abbr> <span data-bind="html: Contact.Phone1"></span><br />
                             <!--/ko-->
-                            <!--ko if: Phone2 -->
-                            <abbr title="Home Phone">H:</abbr> <span data-bind="html: Phone2"></span><br />
+                            <!--ko if: Contact.Phone2 -->
+                            <abbr title="Home Phone">H:</abbr> <span data-bind="html: Contact.Phone2"></span><br />
                             <!--/ko-->
-                            <!--ko if: Phone3 -->
-                            <abbr title="Work Phone">W:</abbr> <span data-bind="html: Phone3"></span><br />
+                            <!--ko if: Contact.Phone3 -->
+                            <abbr title="Work Phone">W:</abbr> <span data-bind="html: Contact.Phone3"></span><br />
                             <!--/ko-->
                         }
                     </address>

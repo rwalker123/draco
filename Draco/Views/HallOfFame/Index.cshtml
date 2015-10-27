@@ -48,7 +48,7 @@
                 </div>
                 <div data-bind="ifnot: Id">
                     <div class="col-sm-8">
-                        <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: $root.getPlayers, displayKey: 'label' }, target: $root.selectedPlayer, options: { highlight: true } }" placeholder="type last name to search for player" />
+                        <input type="text" class="form-control" data-bind="typeahead: { datasets: { source: $root.getPlayers, async: true, display: 'label', limit: 10 }, target: $root.selectedPlayer, options: { highlight: true } }" placeholder="type last name to search for player" />
                     </div>
                 </div>
             </div>

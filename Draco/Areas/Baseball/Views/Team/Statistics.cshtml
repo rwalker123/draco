@@ -19,7 +19,7 @@
 }
 
 <div class="jumbotron">
-    <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name Statistics</h1><br />
+    <img onerror="this.style.display = 'none';" src="@Model.Team.Team.TeamLogoURL" class="img-rounded" style="margin-top:-35px;margin-right:20px" /><h1 style="display: inline-block;">@Model.Team.Name Statistics</h1><br />
     @Model.TeamStanding.Wins - @Model.TeamStanding.Losses - @Model.TeamStanding.Ties <br />
     @if (Model.FromLeagueAccount)
     {
@@ -35,17 +35,17 @@
         <form class="form-horizontal">
             <label class="col-sm-2 control-label">Games:</label>
             <div class="col-sm-10">
-                <select id="selectGame" data-container="body" data-bind="selectPicker: selectedGame">
+                <select id="selectGame" data-bind="selectPicker: selectedGame">
                     <option value="0">All games</option>
                     @foreach (var game in Model.CompletedGames)
                     {
-                        if (game.HomeTeamId != Model.Team.Id)
+                        if (game.HTeamId != Model.Team.Id)
                         {
-                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @@ @game.HomeTeamName</option>
+                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @@ @Model.TeamName(game.HTeamId)</option>
                         }
                         else
                         {
-                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @game.AwayTeamName</option>
+                            <option value="@game.Id">@game.GameDate.ToString("MMM d, h:mm tt") @Model.TeamName(game.VTeamId)</option>
                         }
                     }
 
@@ -299,7 +299,7 @@
                     }
                 </div>
 
-            <div id="gamesummary" class="tab-pane fade" data-bind="if: selectedGame() > 0">
+            <div id="gamesummary" class="tab-pane fade" data-bind="visible: selectedGame() > 0">
 
                 @if (Model.IsAdmin || Model.IsTeamAdmin)
                 {
@@ -307,7 +307,7 @@
                         <button class="btn btn-success" data-bind="click: enterEditGameSummary">Edit Summary</button>
                     </div>
                     <div data-bind="visible: editGameSummaryMode" style="margin: 10px">
-                        <textarea data-bind="wysiwyg: gameSummary, wysiwygConfig: { height: 300, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
+                        <textarea id="gameSummaryText" data-bind="wysiwyg: gameSummary, wysiwygConfig: { height: 300, toolbar1: 'undo redo | cut copy paste | styleselect |  bullist numlist | outdent indent  | table | link', toolbar2: 'fontselect | fontsizeselect | forecolor backcolor | spellchecker | print', menu : {}, plugins : [ 'paste', 'spellchecker', 'table', 'textcolor', 'advlist', 'autolink', 'link', 'lists', 'print' ], tools: 'inserttable', content_css: '@Url.Content("~/Content/tinymce.css")' }"></textarea>
                         <button class="btn btn-success" data-bind="click: $root.saveGameSummary"><span class="glyphicon glyphicon-ok"></span></button>
                         <button class="btn btn-danger" data-bind="click: $root.cancelEditGameSummary"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>

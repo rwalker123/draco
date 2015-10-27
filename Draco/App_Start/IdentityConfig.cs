@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -146,7 +147,7 @@ namespace SportsManager
     {
         public Task SendAsync(IdentityMessage message)
         {
-            Globals.MailMessage("admin@ezrecsports.com", message.Destination, message.Subject, message.Body);
+            Globals.MailMessage(new MailAddress("admin@ezrecsports.com"), new MailAddress(message.Destination), message.Subject, message.Body);
             return Task.FromResult(0);
         }
     }

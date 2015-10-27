@@ -203,7 +203,8 @@
 
                 if ($.type(widget.date) === 'string') {
                 //if (_.isString(widget.date)) {
-                    widget.date = new Date(widget.date);
+                    //widget.date = new Date(widget.date);
+                    widget.date = moment(widget.date).toDate();
                 }
 
                 widget.setDate(widget.date); //.value

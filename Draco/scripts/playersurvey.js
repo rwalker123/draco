@@ -286,11 +286,11 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
     }
 
     self.currentPlayerSurvey = ko.observable(new PlayerSurveyViewModel({
-        PlayerId: self.contactId,
+        Id: self.contactId,
         LastName: '',
         FirstName: '',
         MiddleName: '',
-        PhotoUrl: window.config.rootUri + '/uploads/contacts/' + self.contactId + '/ContactPhoto.jpg',
+        PhotoURL: window.config.rootUri + '/uploads/contacts/' + self.contactId + '/ContactPhoto.jpg',
         Categories: []
     }, self.accountId));
 
@@ -318,7 +318,7 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
                 }
                                         
                 var mappedSurveys = $.map(playerSurveys, function (survey) {
-                    if (survey.PlayerId == self.contactId) {
+                    if (survey.Id == self.contactId) {
                         self.currentPlayerSurvey().update(survey);
                         return null;
                     }
@@ -387,7 +387,7 @@ var PlayerSurveysViewModel = function (accountId, isAdmin, contactId) {
                 }
                 else {
                     survey = ko.utils.arrayFirst(self.surveys(), function (item) {
-                        return (item.PlayerId() == contactId);
+                        return (item.Id() == contactId);
                     });
                 }
 

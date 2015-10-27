@@ -30,7 +30,7 @@ var ManagerViewModel = function (accountId, data) {
     self.viewMode = ko.observable(true);
 
     self.name = ko.computed(function () {
-        return self.FirstName() + " " + self.LastName();
+        return self.Contact.FullNameFirst();
     });
 
     self.fileUploaderUrl = ko.computed(function () {
@@ -67,7 +67,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
     })
 
     self.removeManager = function (manager) {
-        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.MgrSeasonId();
+        var url = window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/managers/' + manager.Id();
 
         $.ajax({
             type: "DELETE",
@@ -111,7 +111,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
 
     }
 
-    self.getAvailableManagers = function (query, cb) {
+    self.getAvailableManagers = function (query, syncCallback, asyncCallback) {
 
         $.ajax({
             url: window.config.rootUri + '/api/RosterAPI/' + self.accountId + '/team/' + self.teamId + '/availablemanagers',
@@ -135,7 +135,7 @@ var ManagersViewModel = function (accountId, isAdmin, isTeamAdmin, teamId) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncCallback(results);
             }
         });
     }

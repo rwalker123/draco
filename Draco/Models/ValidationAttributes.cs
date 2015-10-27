@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNet.Identity;
+using ModelObjects;
+using SportsManager.Controllers;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -6,20 +8,31 @@ using System.Globalization;
 using System.Net.Http;
 using System.Security.Principal;
 using System.Web;
-using System.Web.Http;
+using System.Web.Mvc;
 using System.Web.Security;
 
 namespace SportsManager.Models
 {
 
-	public sealed class SportsManagerAuthorizeAttribute : AuthorizeAttribute
+	public sealed class SportsManagerAuthorizeAttribute : System.Web.Http.AuthorizeAttribute, IDb
 	{
+        public SportsManagerAuthorizeAttribute()
+        {
+        }
+
+        public DB Db
+        {
+            get; private set;
+        }
+
         public override void OnAuthorization(System.Web.Http.Controllers.HttpActionContext actionContext)
         {
-			bool isAuthorized = false;
+            Db = DependencyResolver.Current.GetService<DB>();
 
-            IPrincipal user = HttpContext.Current.User;
-            bool isAuthenticated = user.Identity.IsAuthenticated;
+            bool isAuthorized = false;
+
+            IPrincipal user = actionContext.RequestContext.Principal; // HttpContext.Current.User;
+            bool isAuthenticated = (user?.Identity.IsAuthenticated).GetValueOrDefault();
 
 			// ROLES:
 			// AccountAdmin
@@ -44,7 +57,7 @@ namespace SportsManager.Models
                         // support multiple roles, the user can be authorized in any of the roles (i.e. multiple roles are an "or" match)
                         if (this.Roles.Contains("AccountAdmin"))
                         {
-                            isAuthorized = DataAccess.Accounts.IsAccountAdmin(accountId, user.Identity.GetUserId());
+                            isAuthorized = this.IsAccountAdmin(accountId, user.Identity.GetUserId());
                         }
 
                         if (!isAuthorized)
@@ -68,10 +81,10 @@ namespace SportsManager.Models
                                 if (sId != null && long.TryParse(sId.ToString(), out teamSeasonId))
                                 {
                                     if (this.Roles.Contains("TeamAdmin"))
-                                        isAuthorized = DataAccess.Teams.IsTeamAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                        isAuthorized = this.IsTeamAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
                                     
                                     if (!isAuthorized && this.Roles.Contains("TeamPhotoAdmin"))
-                                        isAuthorized = DataAccess.Teams.IsTeamPhotoAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                        isAuthorized = this.IsTeamPhotoAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
                                 }
                             }
                         }

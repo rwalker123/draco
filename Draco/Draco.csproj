@@ -23,6 +23,7 @@
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
     <NuGetPackageImportStamp>e2635a2d</NuGetPackageImportStamp>
+    <UseGlobalApplicationHostFile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -47,12 +48,48 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="Common.Logging, Version=2.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Common.Logging.2.3.1\lib\net40\Common.Logging.dll</HintPath>
+    <Reference Include="Autofac, Version=3.5.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.3.5.2\lib\net40\Autofac.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Common.Logging.Elmah.v2">
-      <HintPath>..\packages\Common.Logging.Elmah.v2.1.0.0\lib\net45\Common.Logging.Elmah.v2.dll</HintPath>
+    <Reference Include="Autofac.Integration.Mvc">
+      <HintPath>..\packages\Autofac.Mvc5.3.3.4\lib\net45\Autofac.Integration.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="Autofac.Integration.Mvc.Owin, Version=3.1.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.Mvc5.Owin.3.1.0\lib\net45\Autofac.Integration.Mvc.Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Autofac.Integration.Owin, Version=3.1.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.Owin.3.1.0\lib\net45\Autofac.Integration.Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Autofac.Integration.WebApi, Version=3.4.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.WebApi2.3.4.0\lib\net45\Autofac.Integration.WebApi.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Autofac.Integration.WebApi.Owin, Version=3.3.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.WebApi2.Owin.3.3.0\lib\net45\Autofac.Integration.WebApi.Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="AutoMapper, Version=4.1.1.0, Culture=neutral, PublicKeyToken=be96cd2c38ef1005, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoMapper.4.1.1\lib\net45\AutoMapper.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.7.4137.9688, Culture=neutral, PublicKeyToken=a4292a325f69b123, processorArchitecture=MSIL">
+      <HintPath>..\packages\BouncyCastle.1.7.0\lib\Net40-Client\BouncyCastle.Crypto.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging, Version=3.3.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Common.Logging.3.3.0\lib\net40\Common.Logging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Common.Logging.Core.3.3.0\lib\net40\Common.Logging.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging.Elmah.v2, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Common.Logging.Elmah.v2.1.0.1\lib\net45\Common.Logging.Elmah.v2.dll</HintPath>
     </Reference>
     <Reference Include="DocumentFormat.OpenXml, Version=2.5.5631.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <Private>True</Private>
@@ -62,112 +99,195 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\elmah.corelibrary.1.2.2\lib\Elmah.dll</HintPath>
     </Reference>
-    <Reference Include="Elmah.Mvc">
-      <HintPath>..\packages\Elmah.MVC.2.1.1\lib\net40\Elmah.Mvc.dll</HintPath>
+    <Reference Include="Elmah.Mvc, Version=2.1.2.1389, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Elmah.MVC.2.1.2\lib\net40\Elmah.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\EntityFramework.6.1.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Apis, Version=1.9.3.19379, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.9.3\lib\net40\Google.Apis.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.Apis.Auth, Version=1.9.3.19379, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.9.3\lib\net40\Google.Apis.Auth.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.Apis.Auth.PlatformServices, Version=1.9.3.19383, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Auth.1.9.3\lib\net40\Google.Apis.Auth.PlatformServices.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.Apis.Core, Version=1.9.3.19379, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.Core.1.9.3\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.Apis.PlatformServices, Version=1.9.3.19381, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.1.9.3\lib\net40\Google.Apis.PlatformServices.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.9.2.150, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.9.2.1500\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.YouTube.v3.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.GData.Client, Version=2.2.0.0, Culture=neutral, PublicKeyToken=04a59ca9b0273830, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.GData.Client.2.2.0.0\lib\Google.GData.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.GData.Extensions, Version=2.2.0.0, Culture=neutral, PublicKeyToken=0b4c5df2ebf20876, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.GData.Extensions.2.2.0.0\lib\Google.GData.Extensions.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>Bin\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
-    <Reference Include="JSNLog, Version=2.7.6.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\JSNLog.2.7.6.0\lib\net40\JSNLog.dll</HintPath>
+    <Reference Include="JSNLog, Version=2.10.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\JSNLog.2.10.1.0\lib\net40\JSNLog.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="LinqToTwitter.AspNet, Version=3.1.1.15391, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="LinqToTwitter.AspNet, Version=3.1.2.18330, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\linqtotwitter.3.1.1\lib\net45\LinqToTwitter.AspNet.dll</HintPath>
+      <HintPath>..\packages\linqtotwitter.3.1.2\lib\net45\LinqToTwitter.AspNet.dll</HintPath>
     </Reference>
-    <Reference Include="LinqToTwitterPcl, Version=3.1.1.15391, Culture=neutral, PublicKeyToken=957107be965c25d9, processorArchitecture=MSIL">
+    <Reference Include="LinqToTwitterPcl, Version=3.1.2.18329, Culture=neutral, PublicKeyToken=957107be965c25d9, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\linqtotwitter.3.1.1\lib\net45\LinqToTwitterPcl.dll</HintPath>
+      <HintPath>..\packages\linqtotwitter.3.1.2\lib\net45\LinqToTwitterPcl.dll</HintPath>
+    </Reference>
+    <Reference Include="log4net, Version=1.2.13.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.1.0\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.2.1\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.EntityFramework, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.Identity.EntityFramework.2.1.0\lib\net45\Microsoft.AspNet.Identity.EntityFramework.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.Identity.EntityFramework.2.2.1\lib\net45\Microsoft.AspNet.Identity.EntityFramework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.Identity.Owin, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.Identity.Owin.2.1.0\lib\net45\Microsoft.AspNet.Identity.Owin.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.Identity.Owin.2.2.1\lib\net45\Microsoft.AspNet.Identity.Owin.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Azure.KeyVault.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.KeyVault.Core.1.0.0\lib\net40\Microsoft.Azure.KeyVault.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Azure.NotificationHubs, Version=2.16.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Azure.NotificationHubs.1.0.3\lib\net45-full\Microsoft.Azure.NotificationHubs.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.Data.Edm, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Data.Edm, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Data.Edm.5.6.3\lib\net40\Microsoft.Data.Edm.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Data.Edm.5.6.4\lib\net40\Microsoft.Data.Edm.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Data.OData, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Data.OData, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Data.OData.5.6.3\lib\net40\Microsoft.Data.OData.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Data.OData.5.6.4\lib\net40\Microsoft.Data.OData.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.3.0.0\lib\net45\Microsoft.Owin.dll</HintPath>
+    <Reference Include="Microsoft.Data.Services.Client, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Data.Services.Client.5.6.4\lib\net40\Microsoft.Data.Services.Client.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Host.SystemWeb.3.0.0\lib\net45\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.3.0.1\lib\net45\Microsoft.Owin.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Host.SystemWeb, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.3.0.0\lib\net45\Microsoft.Owin.Security.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Host.SystemWeb.3.0.1\lib\net45\Microsoft.Owin.Host.SystemWeb.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.Cookies, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.Cookies.3.0.0\lib\net45\Microsoft.Owin.Security.Cookies.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.3.0.1\lib\net45\Microsoft.Owin.Security.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.Facebook, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.Cookies, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.Facebook.3.0.0\lib\net45\Microsoft.Owin.Security.Facebook.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.Cookies.3.0.1\lib\net45\Microsoft.Owin.Security.Cookies.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.Google, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.Facebook, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.Google.3.0.0\lib\net45\Microsoft.Owin.Security.Google.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.Facebook.3.0.1\lib\net45\Microsoft.Owin.Security.Facebook.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.MicrosoftAccount, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.Google, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.MicrosoftAccount.3.0.0\lib\net45\Microsoft.Owin.Security.MicrosoftAccount.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.Google.3.0.1\lib\net45\Microsoft.Owin.Security.Google.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.OAuth, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.MicrosoftAccount, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.OAuth.3.0.0\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.MicrosoftAccount.3.0.1\lib\net45\Microsoft.Owin.Security.MicrosoftAccount.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Owin.Security.Twitter, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.OAuth, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Owin.Security.Twitter.3.0.0\lib\net45\Microsoft.Owin.Security.Twitter.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.OAuth.3.0.1\lib\net45\Microsoft.Owin.Security.OAuth.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.Owin.Security.Twitter, Version=3.0.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.6\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Owin.Security.Twitter.3.0.1\lib\net45\Microsoft.Owin.Security.Twitter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.ServiceBus, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.ServiceBus.3.0.7\lib\net45-full\Microsoft.ServiceBus.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.Extensions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Threading.Tasks.Extensions.Desktop, Version=1.0.168.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.Extensions.Desktop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.RedisSessionStateProvider, Version=1.6.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.RedisSessionStateProvider.1.6.5\lib\net40\Microsoft.Web.RedisSessionStateProvider.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.1.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.Storage.6.0.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="StackExchange.Redis.StrongName, Version=1.0.316.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
+      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.481\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity" />
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Data.Services.Client" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
-    <Reference Include="System.Net.Http.Extensions, Version=2.2.28.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Extensions.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Extensions.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net.Http.Formatting, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.2\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
     </Reference>
-    <Reference Include="System.Net.Http.Primitives, Version=4.2.28.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+    <Reference Include="System.Net.Http.Primitives, Version=4.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\net45\System.Net.Http.Primitives.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Net.Http.2.2.29\lib\net45\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive.Core">
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -181,9 +301,12 @@
     <Reference Include="System.Reactive.PlatformServices">
       <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
     </Reference>
-    <Reference Include="System.Spatial, Version=5.6.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Spatial, Version=5.6.4.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\System.Spatial.5.6.3\lib\net40\System.Spatial.dll</HintPath>
+      <HintPath>..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
     <Reference Include="System.Web.DynamicData" />
@@ -194,27 +317,27 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.2\lib\net45\System.Web.Helpers.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Http, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.2\lib\net45\System.Web.Http.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.3\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http.OData, Version=5.3.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.3.1\lib\net45\System.Web.Http.OData.dll</HintPath>
+    <Reference Include="System.Web.Http.OData, Version=5.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.OData.5.7.0\lib\net45\System.Web.Http.OData.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="System.Web.Http.Owin, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Http.Owin, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Owin.5.2.2\lib\net45\System.Web.Http.Owin.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Owin.5.2.3\lib\net45\System.Web.Http.Owin.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Http.WebHost, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Http.WebHost, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.2\lib\net45\System.Web.Http.WebHost.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.WebHost.5.2.3\lib\net45\System.Web.Http.WebHost.dll</HintPath>
     </Reference>
-    <Reference Include="System.Web.Mvc, Version=5.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+    <Reference Include="System.Web.Mvc, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.2\lib\net45\System.Web.Mvc.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.3\lib\net45\System.Web.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.Optimization, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -222,19 +345,19 @@
     </Reference>
     <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.2\lib\net45\System.Web.Razor.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.3\lib\net45\System.Web.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.2\lib\net45\System.Web.WebPages.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.2\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
     </Reference>
     <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.2\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Web" />
@@ -262,6 +385,10 @@
       <HintPath>..\packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
+    <Reference Include="Zlib.Portable, Version=1.11.0.0, Culture=neutral, PublicKeyToken=431cba815f6a8b5b, processorArchitecture=MSIL">
+      <HintPath>..\packages\Zlib.Portable.Signed.1.11.0\lib\portable-net4+sl5+wp8+win8+wpa81+MonoTouch+MonoAndroid\Zlib.Portable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Owin">
@@ -283,35 +410,7 @@
     <Compile Include="Areas\Baseball\Controllers\AffiliationsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\BaseballController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\PlayerClassifiedAPIController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\PlayerClassifiedController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\PlayerController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\WorkoutsController.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\PlayerClassifieds.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\PlayersWantedClassified.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\AffiliationHomeViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\EnterGameResults.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerClassifiedViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamAddressViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\UpcomingGamesViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamScheduleViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\RosterCardViewModel.cs" />
-    <Compile Include="CleanMessageBoard.aspx.cs">
-      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="CleanMessageBoard.aspx.designer.cs">
-      <DependentUpon>CleanMessageBoard.aspx</DependentUpon>
-    </Compile>
-    <Compile Include="Controllers\BackupSiteAPIController.cs" />
-    <Compile Include="Controllers\DiscussionsAPIController.cs" />
-    <Compile Include="Controllers\DiscussionsController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\FieldsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\FieldsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\LeagueController.cs" />
     <Compile Include="Areas\Baseball\Controllers\LeaguesAPIController.cs" />
@@ -319,128 +418,111 @@
     <Compile Include="Areas\Baseball\Controllers\LeagueSeasonController.cs" />
     <Compile Include="Areas\Baseball\Controllers\LeagueTeamsController.cs" />
     <Compile Include="Areas\Baseball\Controllers\MemberBusinessController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\PlayerClassifiedAPIController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\PlayerClassifiedController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\PlayerController.cs" />
     <Compile Include="Areas\Baseball\Controllers\RosterAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\ScheduleAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\ScheduleODataController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StandingsController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\StatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\StatisticsController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\TeamAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\TeamController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\TeamStatisticsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\UmpireAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\UmpireController.cs" />
-    <Compile Include="Areas\Baseball\Controllers\FieldsAPIController.cs" />
     <Compile Include="Areas\Baseball\Controllers\WorkoutsAPIController.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\BaseballLeagues.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Fields.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\GameEjections.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\GameStats.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\HOFMembers.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\LeagueStandings.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Playoffs.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Schedule.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\TeamHandouts.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\TeamNews.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Umpires.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\WorkoutRegistrants.cs" />
-    <Compile Include="Areas\Baseball\Models\DataAccess\Workouts.cs" />
+    <Compile Include="Areas\Baseball\Controllers\WorkoutsController.cs" />
+    <Compile Include="Areas\Baseball\Controllers\YouTubeAPIController.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Field.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\FieldContact.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Game.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameBatStats.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\GameCareerBatStats.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\GameCareerPitchStats.cs" />
+    <Compile Include="Areas\Baseball\Models\Utils\PlayoffHelper.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\CareerBatStatsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\CareerPitchStatsViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameEjection.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameFieldStats.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GamePitchStats.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\GameRecap.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFMember.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNomination.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\HOFNominationSetup.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\LeagueLeaderStat.cs" />
+    <Compile Include="Areas\Baseball\Models\ModelObjects\LeaderCategory.cs" />
+    <Compile Include="Areas\Baseball\Models\Utils\BatStatsHelper.cs" />
+    <Compile Include="Areas\Baseball\Models\Utils\PitchStatsHelper.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\BatStatsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\CopySeasonViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\GameRecapViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\LeagueLeaderStatViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Player.cs" />
+    <Compile Include="Areas\Baseball\Models\ModelObjects\PlayerSeason.cs" />
+    <Compile Include="Areas\Baseball\Models\ModelObjects\PlayersWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffBracket.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffGame.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffSeed.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\PlayoffSetup.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\ScheduleByDayOfMonth.cs" />
-    <Compile Include="Areas\Baseball\Models\ModelObjects\TeamStanding.cs" />
+    <Compile Include="Areas\Baseball\Models\Utils\MinCalculator.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayerViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\StatsHelper.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\GameViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\PitchStatsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\UmpireViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutAnnouncementViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\WorkoutRegistrantViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamStandingViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ModelObjects\TeamsWantedClassified.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\Umpire.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutAnnouncement.cs" />
     <Compile Include="Areas\Baseball\Models\ModelObjects\WorkoutRegistrant.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ManagersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\RosterViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeadersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueFieldsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueHomeViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueIndexViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueLeadersViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonIndexViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueSeasonViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\LeagueTeamsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\PlayerSearchViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ScheduleViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\ScoreboardViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\SeasonStatisticsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\SettingsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\WorkoutsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\StandingsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamStatisticsViewModel.cs" />
-    <Compile Include="Areas\Baseball\Models\ViewModels\TeamViewModel.cs" />
-    <Compile Include="Areas\Golf\Controllers\CoursesController.cs" />
-    <Compile Include="Areas\Golf\Controllers\CourseTeeController.cs" />
-    <Compile Include="Areas\Golf\Controllers\FlightsController.cs" />
-    <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
-    <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
-    <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
-    <Compile Include="Areas\Golf\Controllers\LeagueHandicapsController.cs" />
-    <Compile Include="Areas\Golf\Controllers\PlayerController.cs" />
-    <Compile Include="Areas\Golf\Controllers\RostersController.cs" />
-    <Compile Include="Areas\Golf\Controllers\ScheduleController.cs" />
-    <Compile Include="Areas\Golf\Controllers\TeamsController.cs" />
-    <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfCourses.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\Golfer.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolferStats.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfLeagues.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfMatches.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfRosters.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\GolfScores.cs" />
-    <Compile Include="Areas\Golf\Models\DataAccess\TeeInformation.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfMatch.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfScore.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTee.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeInformation.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\CompletedMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\FlightViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfCourseViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfLeagueSetupViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfScoreViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\GolfTeeViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueHandicapViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueHomeViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueIndexViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueMatchResultsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueScheduleViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\LeagueStandingsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\MatchResultsViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerHandicapViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerHoleSkinViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerScoreViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PlayerViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PreviewMatchPlayerViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\PreviewMatchViewModel.cs" />
-    <Compile Include="Areas\Golf\Models\ViewModels\TeamViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\DivisionSetupViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\FieldViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\LeagueSetupViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\PlayersWantedViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\API\TeamWantedViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\EnterGameResults.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeadersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueFieldsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueHomeViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueIndexViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueLeadersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueSeasonIndexViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueSeasonViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\LeagueTeamsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ManagersViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerClassifiedViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerSearchViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\PlayerViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\RosterCardViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\RosterViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ScheduleViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\ScoreboardViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\SeasonStatisticsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\SettingsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\StandingsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamAddressViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamScheduleViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\TeamStatisticsViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UpcomingGamesViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
+    <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
+    <Compile Include="Controllers\BackupSiteAPIController.cs" />
+    <Compile Include="Controllers\CleanupMessageBoardAPIController.cs" />
+    <Compile Include="Controllers\DBApiController.cs" />
+    <Compile Include="Controllers\DBController.cs" />
+    <Compile Include="Controllers\DBExtensions.cs" />
+    <Compile Include="Controllers\DiscussionsAPIController.cs" />
+    <Compile Include="Controllers\DiscussionsController.cs" />
     <Compile Include="Controllers\AccountAPIController.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\AnnouncementAPIController.cs" />
     <Compile Include="Controllers\ContactsAPIController.cs" />
     <Compile Include="Controllers\FileUploaderAPIController.cs" />
-    <Compile Include="Controllers\GoogleSearchController.cs" />
     <Compile Include="Controllers\HallOfFameAPIController.cs" />
     <Compile Include="Controllers\HallOfFameController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HandoutsAPIController.cs" />
+    <Compile Include="Controllers\IDb.cs" />
     <Compile Include="Controllers\LeagueFAQAPIController.cs" />
     <Compile Include="Controllers\LeagueFAQController.cs" />
     <Compile Include="Controllers\MemberBusinessAPIController.cs" />
@@ -459,37 +541,41 @@
     </Compile>
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
-    <Compile Include="Models\AccountViewModels.cs" />
-    <Compile Include="Models\DataAccess\AccountHandouts.cs" />
-    <Compile Include="Models\DataAccess\Accounts.cs" />
-    <Compile Include="Models\DataAccess\Affiliations.cs" />
-    <Compile Include="Models\DataAccess\ContactRoles.cs" />
-    <Compile Include="Models\DataAccess\Contacts.cs" />
-    <Compile Include="Models\DataAccess\DBConnection.cs" />
-    <Compile Include="Models\DataAccess\Divisions.cs" />
-    <Compile Include="Models\DataAccess\LeagueEvents.cs" />
-    <Compile Include="Models\DataAccess\LeagueFAQ.cs" />
-    <Compile Include="Models\DataAccess\LeagueNews.cs" />
-    <Compile Include="Models\DataAccess\Leagues.cs" />
-    <Compile Include="Models\DataAccess\MemberDirectory.cs" />
-    <Compile Include="Models\DataAccess\MessageBoard.cs" />
-    <Compile Include="Models\DataAccess\PhotoGallery.cs" />
-    <Compile Include="Models\DataAccess\ProfileAdmin.cs" />
-    <Compile Include="Models\DataAccess\Seasons.cs" />
-    <Compile Include="Models\DataAccess\SocialIntegration\Facebook.cs" />
-    <Compile Include="Models\DataAccess\SocialIntegration\Twitter.cs" />
-    <Compile Include="Models\DataAccess\Sponsors.cs" />
-    <Compile Include="Models\DataAccess\TeamRoster.cs" />
-    <Compile Include="Models\DataAccess\Teams.cs" />
-    <Compile Include="Models\DataAccess\Votes.cs" />
-    <Compile Include="Models\DataClasses.cs">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-    </Compile>
-    <Compile Include="Models\DataClasses.designer.cs">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-    </Compile>
+    <Compile Include="Models\Filters\ModelStateValidationAttribute.cs" />
+    <Compile Include="Models\Helpers\PhotoURLHelper.cs" />
+    <Compile Include="Models\Helpers\RoleDataHelper.cs" />
+    <Compile Include="Models\ModelObjects\AspNetRole.cs" />
+    <Compile Include="Models\ModelObjects\AspNetUser.cs" />
+    <Compile Include="Models\ModelObjects\HOFMember.cs" />
+    <Compile Include="Models\ModelObjects\HOFNomination.cs" />
+    <Compile Include="Models\ModelObjects\HOFNominationSetup.cs" />
+    <Compile Include="Models\Utils\DateTimeExtensions.cs" />
+    <Compile Include="Models\ViewModels\API\AccountSettingViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\AccountViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ContactRoleViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\HOFClassViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\HOFMemberViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\NameViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\PhotoAlbumViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileAnswersViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileCategoryViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ProfileQuestionViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\RecordVoteResultsViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\SeasonViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\SponsorViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\VoteOptionViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\VoteQuestionResultsViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\VoteQuestionViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\VoteResultsViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\WelcomeHeaderViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\WelcomeTextViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\AccountViewModels.cs" />
+    <Compile Include="Models\ModelObjects\DB.cs" />
+    <Compile Include="Models\ModelObjects\VoteAnswer.cs" />
+    <Compile Include="Models\ModelObjects\TeamSeason.cs" />
+    <Compile Include="Models\ModelObjects\TeamNewsItem.cs" />
+    <Compile Include="Models\ModelObjects\PlayerSeasonAffiliationDue.cs" />
     <Compile Include="Models\Filters\BasicAuthenticationAttribute.cs" />
     <Compile Include="Models\Filters\HttpAuthenticationChallengeContextExtensions.cs" />
     <Compile Include="Models\Filters\IdentityBasicAuthenticationAttribute.cs" />
@@ -498,49 +584,49 @@
     <Compile Include="Models\Helpers\MenuHelper.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ModelObjects\Account.cs" />
-    <Compile Include="Models\ModelObjects\AccountSettings.cs" />
+    <Compile Include="Models\ModelObjects\AccountHandout.cs" />
+    <Compile Include="Models\ModelObjects\AccountSetting.cs" />
     <Compile Include="Models\ModelObjects\AccountType.cs" />
     <Compile Include="Models\ModelObjects\AccountWelcome.cs" />
     <Compile Include="Models\ModelObjects\Affiliation.cs" />
     <Compile Include="Models\ModelObjects\Contact.cs" />
-    <Compile Include="Models\ModelObjects\ContactName.cs" />
+    <Compile Include="Models\ViewModels\API\ContactNameViewModel.cs" />
     <Compile Include="Models\ModelObjects\ContactRole.cs" />
-    <Compile Include="Models\ModelObjects\CurrentSeasonInfo.cs" />
+    <Compile Include="Models\ModelObjects\CurrentSeason.cs" />
+    <Compile Include="Models\ViewModels\API\CurrentSeasonViewModel.cs" />
     <Compile Include="Models\ModelObjects\DeleteTempFileAttribute.cs" />
-    <Compile Include="Models\ModelObjects\Division.cs" />
-    <Compile Include="Models\ModelObjects\DivisionTeams.cs" />
-    <Compile Include="Models\ModelObjects\Handout.cs" />
+    <Compile Include="Models\ModelObjects\DisplayLeagueLeader.cs" />
+    <Compile Include="Models\ModelObjects\DivisionSeason.cs" />
+    <Compile Include="Models\ModelObjects\DivisionDefinition.cs" />
+    <Compile Include="Models\ModelObjects\TeamHandout.cs" />
     <Compile Include="Models\ModelObjects\HOFClass.cs" />
-    <Compile Include="Models\ModelObjects\League.cs" />
+    <Compile Include="Models\ModelObjects\LeagueDefinition.cs" />
     <Compile Include="Models\ModelObjects\LeagueEvent.cs" />
     <Compile Include="Models\ModelObjects\LeagueFAQItem.cs" />
     <Compile Include="Models\ModelObjects\LeagueNewsItem.cs" />
-    <Compile Include="Models\ModelObjects\LeagueNewsItemExtensions.cs" />
+    <Compile Include="Models\ModelObjects\LeagueSeason.cs" />
+    <Compile Include="Models\ModelObjects\MemberBusiness.cs" />
     <Compile Include="Models\ModelObjects\MessageCategory.cs" />
     <Compile Include="Models\ModelObjects\MessagePost.cs" />
     <Compile Include="Models\ModelObjects\MessageTopic.cs" />
     <Compile Include="Models\ModelObjects\PhotoGalleryAlbum.cs" />
     <Compile Include="Models\ModelObjects\PhotoGalleryItem.cs" />
-    <Compile Include="Models\ModelObjects\PlayerProfile.cs" />
+    <Compile Include="Models\ModelObjects\PlayerRecap.cs" />
     <Compile Include="Models\ModelObjects\ProfileCategoryItem.cs" />
     <Compile Include="Models\ModelObjects\ProfileQuestionAnswer.cs" />
     <Compile Include="Models\ModelObjects\ProfileQuestionItem.cs" />
-    <Compile Include="Models\ModelObjects\RoleData.cs" />
-    <Compile Include="Models\ModelObjects\RoleDefinition.cs" />
-    <Compile Include="Models\ModelObjects\RoleInfo.cs" />
     <Compile Include="Models\ModelObjects\Season.cs" />
     <Compile Include="Models\ModelObjects\Sponsor.cs" />
     <Compile Include="Models\ModelObjects\Team.cs" />
     <Compile Include="Models\ModelObjects\TeamManager.cs" />
-    <Compile Include="Models\ModelObjects\User.cs" />
-    <Compile Include="Models\ModelObjects\VideoAccount.cs" />
     <Compile Include="Models\ModelObjects\VoteOption.cs" />
     <Compile Include="Models\ModelObjects\VoteQuestion.cs" />
-    <Compile Include="Models\ModelObjects\VoteResults.cs" />
+    <Compile Include="Models\PushNotifications.cs" />
     <Compile Include="Models\RandomPassword.cs" />
     <Compile Include="Models\Results\AddChallengeOnUnauthorizedResult.cs" />
     <Compile Include="Models\Results\AuthenticationFailureResult.cs" />
     <Compile Include="Models\Utils\ControllerParameterData.cs" />
+    <Compile Include="Models\Utils\AzureBlobStorage.cs" />
     <Compile Include="Models\Utils\FileSystemStorage.cs" />
     <Compile Include="Models\Utils\Globals.cs" />
     <Compile Include="Models\Utils\IStorage.cs" />
@@ -551,35 +637,46 @@
     <Compile Include="Models\Utils\YearListData.cs" />
     <Compile Include="Models\ValidationAttributes.cs" />
     <Compile Include="Models\ViewEngine\MobileAwareViewEngine.cs" />
-    <Compile Include="Models\ViewModels\AccountViewModel.cs" />
-    <Compile Include="Models\ViewModels\AnnouncementsViewModel.cs" />
-    <Compile Include="Models\ViewModels\CreateSeasonViewModel.cs" />
-    <Compile Include="Models\ViewModels\HOFOfDayViewModel.cs" />
-    <Compile Include="Models\ViewModels\VideoViewModel.cs" />
-    <Compile Include="Models\ViewModels\UserPollViewModel.cs" />
-    <Compile Include="Models\ViewModels\PlayerSurveyViewModel.cs" />
-    <Compile Include="Models\ViewModels\DiscussionsViewModel.cs" />
-    <Compile Include="Models\ViewModels\DomainsViewModel.cs" />
-    <Compile Include="Models\ViewModels\EMailUsersViewModel.cs" />
-    <Compile Include="Models\ViewModels\HallOfFameViewModel.cs" />
-    <Compile Include="Models\ViewModels\LeagueCreateAccountViewModel.cs" />
-    <Compile Include="Models\ViewModels\LeagueSeasonsViewModel.cs" />
-    <Compile Include="Models\ViewModels\MemberBusinessViewModel.cs" />
-    <Compile Include="Models\ViewModels\PhotoGalleryViewModel.cs" />
-    <Compile Include="Models\ViewModels\RolesViewModel.cs" />
-    <Compile Include="Models\ViewModels\SponsorsViewModel.cs" />
-    <Compile Include="Models\ViewModels\UserRolesViewModel.cs" />
-    <Compile Include="Models\ViewModels\UsersViewModel.cs" />
-    <Compile Include="Models\ViewModels\BirthdayViewModel.cs" />
-    <Compile Include="Models\ViewModels\HandoutsViewModel.cs" />
-    <Compile Include="Models\ViewModels\WelcomeMessageViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\ContactViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\LeagueViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\MessageCategoryViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\MessagePostViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\MessageTopicViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\NewsViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\TeamManagerViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\TeamViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\AccountViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\AnnouncementsViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\DivisionViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HOFOfDayViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\SponsorSpotlightViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\VideoViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UserPollViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\PlayerSurveyViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\DiscussionsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\DomainsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\EMailUsersViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HallOfFameViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\LeagueCreateAccountViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\LeagueSeasonsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\MemberBusinessViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\PhotoGalleryViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\RolesViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\SponsorsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UserRolesViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\UsersViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\BirthdayViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\HandoutsViewModel.cs" />
+    <Compile Include="Models\ViewModels\Controllers\WelcomeMessageViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\PhotoViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\FAQItemViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\NameSearchViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\ApplicationOAuthProvider.cs" />
     <Compile Include="Results\ChallengeResult.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="App_Readme\Elmah.txt" />
     <Content Include="Areas\Baseball\Content\LeagueHome.css" />
     <Content Include="Areas\Baseball\Scripts\entergameresults.js" />
     <Content Include="Areas\Baseball\Scripts\leaders.js" />
@@ -596,15 +693,54 @@
     <Content Include="Areas\Baseball\Scripts\teamstats.js" />
     <Content Include="Areas\Baseball\Scripts\umpires.js" />
     <Content Include="Areas\Baseball\Scripts\workouts.js" />
-    <Content Include="CleanMessageBoard.aspx" />
+    <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
+    <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
+    <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
+    <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
+    <Content Include="Areas\Baseball\Views\League\Home.cshtml" />
+    <Content Include="Areas\Baseball\Views\League\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\League\SettingsView.cshtml" />
+    <Content Include="Areas\Baseball\Views\MemberBusiness\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\PlayerClassified\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Player\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\EnterGameResults.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\ScoreboardView.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
+    <Content Include="Areas\Baseball\Views\Shared\_SeasonStandings.cshtml" />
+    <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Statistics\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Statistics\LeagueLeaders.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\Index.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\RosterCard.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\Schedule.cshtml" />
+    <Content Include="Areas\Baseball\Views\Team\Statistics.cshtml" />
+    <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
+    <Content Include="Areas\Baseball\Views\Web.config" />
+    <Content Include="Areas\Baseball\Views\_ViewStart.cshtml" />
     <Content Include="Content\bootstrap-datepicker.css" />
+    <Content Include="Content\bootstrap-datepicker.min.css" />
+    <Content Include="Content\bootstrap-datepicker.standalone.css" />
+    <Content Include="Content\bootstrap-datepicker.standalone.min.css" />
     <Content Include="Content\bootstrap-datepicker3.css" />
+    <Content Include="Content\bootstrap-datepicker3.min.css" />
+    <Content Include="Content\bootstrap-datepicker3.standalone.css" />
+    <Content Include="Content\bootstrap-datepicker3.standalone.min.css" />
     <Content Include="Content\bootstrap-select.css" />
     <Content Include="Content\bootstrap-select.min.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
-    <Content Include="Content\bootstrap-timepicker\bootstrap-timepicker.css" />
-    <Content Include="Content\bootstrap-timepicker\bootstrap-timepicker.min.css" />
+    <Content Include="Content\bootstrap-timepicker.css" />
+    <Content Include="Content\bootstrap-timepicker.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\font-awesome.css" />
@@ -617,37 +753,41 @@
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Images\Baseball\announcementsample.png" />
+    <Content Include="Images\Baseball\announcementviewsample.png" />
+    <Content Include="Images\Baseball\baseballair.jpg" />
+    <Content Include="Images\Baseball\leaguebackground.jpg" />
+    <Content Include="Images\Baseball\samplesponsor.png" />
+    <Content Include="Images\Baseball\samplestats.png" />
+    <Content Include="Images\Baseball\settings.png" />
+    <Content Include="Images\Baseball\userpoll.png" />
+    <Content Include="Images\Baseball\workoutsample.png" />
     <Content Include="Images\busy.gif" />
     <Content Include="Images\youtube\youtube1.PNG" />
     <Content Include="Images\youtube\youtube2.png" />
     <Content Include="Images\youtube\youtube3.PNG" />
     <Content Include="Images\youtube\youtube4.PNG" />
-    <Content Include="Models\DataClasses.dbml">
-      <Generator>MSLinqToSQLGenerator</Generator>
-      <SubType>Designer</SubType>
-      <LastGenOutput>DataClasses.designer.cs</LastGenOutput>
-    </Content>
-    <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="NuGet\readme.txt" />
     <Content Include="Scripts\bloodhound.js" />
     <Content Include="Scripts\bloodhound.min.js" />
+    <Content Include="Scripts\bootstrap-datepicker.js" />
+    <Content Include="Scripts\bootstrap-datepicker.min.js" />
     <Content Include="Scripts\bootstrap-select.js" />
     <Content Include="Scripts\bootstrap-select.min.js" />
+    <Content Include="Scripts\bootstrap-timepicker.js" />
+    <Content Include="Scripts\bootstrap-timepicker.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Scripts\discussions.js" />
-    <Content Include="Areas\Baseball\Views\Shared\CurrentUserTeamsView.cshtml" />
-    <Content Include="Areas\Baseball\Views\Player\Index.cshtml" />
     <Content Include="App_Code\Header.cshtml" />
-    <Content Include="Areas\Baseball\Views\Team\RosterCard.cshtml" />
-    <Content Include="Areas\Baseball\Views\Team\Schedule.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
-    <Content Include="Areas\Baseball\Views\Team\AddressList.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\EnterGameResults.cshtml" />
     <Content Include="Content\TeamAddressListTemplate.xlsx" />
     <Content Include="Scripts\facebook.js" />
+    <Content Include="Scripts\i18n\defaults-bg_BG.js" />
+    <Content Include="Scripts\i18n\defaults-bg_BG.min.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.min.js" />
+    <Content Include="Scripts\i18n\defaults-da_DK.js" />
+    <Content Include="Scripts\i18n\defaults-da_DK.min.js" />
     <Content Include="Scripts\i18n\defaults-de_DE.js" />
     <Content Include="Scripts\i18n\defaults-de_DE.min.js" />
     <Content Include="Scripts\i18n\defaults-en_US.js" />
@@ -656,41 +796,66 @@
     <Content Include="Scripts\i18n\defaults-es_CL.min.js" />
     <Content Include="Scripts\i18n\defaults-eu.js" />
     <Content Include="Scripts\i18n\defaults-eu.min.js" />
+    <Content Include="Scripts\i18n\defaults-fa_IR.js" />
+    <Content Include="Scripts\i18n\defaults-fa_IR.min.js" />
     <Content Include="Scripts\i18n\defaults-fr_FR.js" />
     <Content Include="Scripts\i18n\defaults-fr_FR.min.js" />
+    <Content Include="Scripts\i18n\defaults-hu_HU.js" />
+    <Content Include="Scripts\i18n\defaults-hu_HU.min.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.min.js" />
+    <Content Include="Scripts\i18n\defaults-ko_KR.js" />
+    <Content Include="Scripts\i18n\defaults-ko_KR.min.js" />
     <Content Include="Scripts\i18n\defaults-nl_NL.js" />
     <Content Include="Scripts\i18n\defaults-nl_NL.min.js" />
     <Content Include="Scripts\i18n\defaults-pl_PL.js" />
     <Content Include="Scripts\i18n\defaults-pl_PL.min.js" />
     <Content Include="Scripts\i18n\defaults-pt_BR.js" />
     <Content Include="Scripts\i18n\defaults-pt_BR.min.js" />
+    <Content Include="Scripts\i18n\defaults-pt_PT.js" />
+    <Content Include="Scripts\i18n\defaults-pt_PT.min.js" />
     <Content Include="Scripts\i18n\defaults-ro_RO.js" />
     <Content Include="Scripts\i18n\defaults-ro_RO.min.js" />
     <Content Include="Scripts\i18n\defaults-ru_RU.js" />
     <Content Include="Scripts\i18n\defaults-ru_RU.min.js" />
+    <Content Include="Scripts\i18n\defaults-sk_SK.js" />
+    <Content Include="Scripts\i18n\defaults-sk_SK.min.js" />
+    <Content Include="Scripts\i18n\defaults-sl_SI.js" />
+    <Content Include="Scripts\i18n\defaults-sl_SI.min.js" />
+    <Content Include="Scripts\i18n\defaults-sv_SE.js" />
+    <Content Include="Scripts\i18n\defaults-sv_SE.min.js" />
+    <Content Include="Scripts\i18n\defaults-tr_TR.js" />
+    <Content Include="Scripts\i18n\defaults-tr_TR.min.js" />
     <Content Include="Scripts\i18n\defaults-ua_UA.js" />
     <Content Include="Scripts\i18n\defaults-ua_UA.min.js" />
     <Content Include="Scripts\i18n\defaults-zh_CN.js" />
     <Content Include="Scripts\i18n\defaults-zh_CN.min.js" />
     <Content Include="Scripts\i18n\defaults-zh_TW.js" />
     <Content Include="Scripts\i18n\defaults-zh_TW.min.js" />
+    <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
+    <Content Include="Scripts\jquery-1.11.3.js" />
+    <Content Include="Scripts\jquery-1.11.3.min.js" />
     <Content Include="Scripts\jquery.cookie.js" />
     <Content Include="Scripts\halloffame.js" />
-    <Content Include="Areas\Baseball\Views\PlayerClassified\Index.cshtml" />
-    <Content Include="fonts\fontawesome-webfont.woff" />
-    <Content Include="fonts\fontawesome-webfont.ttf" />
-    <Content Include="fonts\fontawesome-webfont.eot" />
-    <Content Include="fonts\FontAwesome.otf" />
-    <Content Include="Scripts\bootstrap-select.js.map" />
+    <Content Include="Content\UserAddressListTemplate.xlsx" />
+    <Content Include="Content\ManagerAddressListTemplate.xlsx" />
+    <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
     <Content Include="Content\bootstrap-select.css.map" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
     <Content Include="fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="Content\bootstrap.css.map" />
-    <Content Include="Areas\Baseball\Views\Affiliations\Home.cshtml" />
+    <Content Include="Content\bootstrap-theme.css.map" />
+    <Content Include="fonts\FontAwesome.otf" />
+    <Content Include="fonts\fontawesome-webfont.woff2" />
+    <Content Include="fonts\fontawesome-webfont.woff" />
+    <Content Include="fonts\fontawesome-webfont.ttf" />
+    <Content Include="fonts\fontawesome-webfont.eot" />
+    <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
+    <Content Include="Scripts\bootstrap-select.js.map" />
+    <Content Include="Scripts\jquery-1.11.3.min.map" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
     <Content Include="Scripts\jquery.validate.min.js" />
@@ -698,9 +863,72 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\jsnlog.js" />
     <Content Include="Scripts\jsnlog.min.js" />
-    <Content Include="Scripts\knockout-3.2.0.debug.js" />
-    <Content Include="Scripts\knockout-3.2.0.js" />
+    <Content Include="Scripts\knockout-3.3.0.debug.js" />
+    <Content Include="Scripts\knockout-3.3.0.js" />
+    <Content Include="Scripts\knockout.validation.js" />
+    <Content Include="Scripts\knockout.validation.min.js" />
     <Content Include="Scripts\leaguefaq.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ar.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.az.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.bg.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.bs.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ca.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.cs.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.cy.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.da.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.de.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.el.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.en-GB.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.es.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.et.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.eu.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.fa.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.fi.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.fo.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.fr-CH.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.fr.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.gl.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.he.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.hr.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.hu.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.hy.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.id.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.is.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.it-CH.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.it.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ja.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ka.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.kh.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.kk.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.kr.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.lt.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.lv.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.me.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.mk.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ms.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.nb.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.nl-BE.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.nl.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.no.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.pl.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.pt-BR.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.pt.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ro.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.rs-latin.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.rs.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.ru.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sk.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sl.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sq.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sr-latin.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sr.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sv.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.sw.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.th.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.tr.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.uk.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.vi.min.js" />
+    <Content Include="Scripts\locales\bootstrap-datepicker.zh-TW.min.js" />
     <Content Include="Scripts\memberbusiness.js" />
     <Content Include="Scripts\mindmup-editabletable.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
@@ -708,21 +936,166 @@
     <Content Include="Scripts\moment-with-locales.min.js" />
     <Content Include="Scripts\moment.js" />
     <Content Include="Scripts\moment.min.js" />
-    <Content Include="Scripts\npm.js" />
     <Content Include="Scripts\playersurvey.js" />
     <Content Include="Scripts\hofspotlight.js" />
     <Content Include="Scripts\playersurveyspotlight.js" />
     <Content Include="Scripts\sponsors.js" />
+    <Content Include="Scripts\sponsorspotlight.js" />
     <Content Include="Scripts\tinymce\jquery.tinymce.min.js" />
+    <Content Include="Scripts\tinymce\license.txt" />
+    <Content Include="Scripts\tinymce\plugins\advlist\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\advlist\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\anchor\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\anchor\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\autolink\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\autolink\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\autoresize\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\autoresize\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\autosave\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\autosave\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\bbcode\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\bbcode\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\charmap\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\charmap\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\code\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\code\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\colorpicker\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\colorpicker\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\css\dialog.css" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\buttons.png" />
     <Content Include="Scripts\tinymce\plugins\compat3x\img\icons.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\items.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\menu_arrow.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\menu_check.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\progress.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\img\tabs.gif" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\tiny_mce_popup.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\utils\editable_selects.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\utils\form_utils.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\utils\mctabs.js" />
+    <Content Include="Scripts\tinymce\plugins\compat3x\utils\validate.js" />
+    <Content Include="Scripts\tinymce\plugins\contextmenu\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\contextmenu\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\directionality\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\directionality\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-cool.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-cry.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-embarassed.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-foot-in-mouth.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-frown.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-innocent.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-kiss.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-laughing.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-money-mouth.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-sealed.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-smile.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-surprised.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-tongue-out.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-undecided.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-wink.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-yell.gif" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\emoticons\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\example\dialog.html" />
+    <Content Include="Scripts\tinymce\plugins\example\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\example\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\example_dependency\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\example_dependency\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\fullpage\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\fullpage\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\fullscreen\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\fullscreen\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\hr\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\hr\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\imagetools\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\imagetools\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\image\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\image\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\importcss\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\importcss\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\insertdatetime\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\insertdatetime\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\layer\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\layer\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\legacyoutput\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\legacyoutput\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\link\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\link\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\lists\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\lists\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\media\moxieplayer.swf" />
+    <Content Include="Scripts\tinymce\plugins\media\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\media\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\nonbreaking\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\nonbreaking\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\noneditable\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\noneditable\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\paste\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\paste\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\preview\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\preview\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\print\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\print\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\save\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\save\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\table\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\table\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\template\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\template\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\textcolor\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\textcolor\plugin.min.js" />
     <Content Include="Scripts\tinymce\plugins\textpattern\plugin.js" />
     <Content Include="Scripts\tinymce\plugins\textpattern\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\css\visualblocks.css" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\address.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\article.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\aside.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\blockquote.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\div.gif" />
     <Content Include="Scripts\tinymce\plugins\visualblocks\img\dl.gif" />
-    <Content Include="Scripts\tinymce\skins\lightgray\Content.inline.min.css" />
-    <Content Include="Scripts\tinymce\skins\lightgray\Content.min.css" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\figure.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h1.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h2.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h3.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h4.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h5.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h6.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\hgroup.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\ol.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\p.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\pre.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\section.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\img\ul.gif" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\visualblocks\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\visualchars\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\visualchars\plugin.min.js" />
+    <Content Include="Scripts\tinymce\plugins\wordcount\plugin.js" />
+    <Content Include="Scripts\tinymce\plugins\wordcount\plugin.min.js" />
+    <Content Include="Scripts\tinymce\skins\lightgray\content.inline.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\content.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.svg" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.svg" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\anchor.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\loader.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\object.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\img\trans.gif" />
+    <Content Include="Scripts\tinymce\skins\lightgray\skin.ie7.min.css" />
+    <Content Include="Scripts\tinymce\skins\lightgray\skin.min.css" />
+    <Content Include="Scripts\tinymce\themes\modern\theme.js" />
+    <Content Include="Scripts\tinymce\themes\modern\theme.min.js" />
+    <Content Include="Scripts\tinymce\tinymce.js" />
+    <Content Include="Scripts\tinymce\tinymce.min.js" />
     <Content Include="Scripts\twitter.js" />
     <Content Include="Scripts\typeahead.bundle.js" />
     <Content Include="Scripts\typeahead.bundle.min.js" />
@@ -733,90 +1106,6 @@
     <Content Include="Scripts\videos.js" />
     <Content Include="Scripts\wysiwyg.min.js" />
     <Content Include="Views\Discussions\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\Home.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\ScoreboardView.cshtml" />
-    <Content Include="Areas\Baseball\Views\League\SettingsView.cshtml" />
-    <Content Include="Areas\Baseball\Views\MemberBusiness\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\_SeasonStandings.cshtml" />
-    <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Statistics\LeagueLeaders.cshtml" />
-    <Content Include="Areas\Baseball\Views\Team\Index.cshtml" />
-    <Content Include="Areas\Baseball\Views\Umpire\Umpires.cshtml" />
-    <Content Include="Areas\Baseball\Views\Web.config" />
-    <Content Include="Areas\Baseball\Views\_ViewStart.cshtml" />
-    <Content Include="Areas\Golf\Views\Courses\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Courses\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\CourseTee\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Flights\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Flights\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Golf\GolfHome.cshtml" />
-    <Content Include="Areas\Golf\Views\Individual\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\LeagueHandicaps\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\League\CreateAccount.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Home.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Home.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\League\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\League\LeagueSetup.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\Index.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\PlayerAllScores.cshtml" />
-    <Content Include="Areas\Golf\Views\Player\PlayerAllScores.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\RostersGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\SignPlayer.cshtml" />
-    <Content Include="Areas\Golf\Views\Rosters\SubsIndex.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\CompleteSchedule.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\LeagueStandings.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\LeagueStandings.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MatchResults.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\MobileRecentMatch.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\PreviewMatch.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ScheduleGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowLeagueMatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowMatchResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\ShowMatchResults.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerMatchPreview.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScore.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreView.cshtml" />
-    <Content Include="Areas\Golf\Views\Schedule\_PlayerScoreViewMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\CoursesDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\DayOfWeekSelector.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\EighteenNineSelector.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\IntCollectionData.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\MatchTypeDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\TeamsDropDown.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueResults.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueStandings.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_LeagueStandingsMobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Shared\_ShowMatches.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\Create.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\Index.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\ShowTeam.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\ShowTeam.Mobile.cshtml" />
-    <Content Include="Areas\Golf\Views\Teams\TeamsGrid.cshtml" />
-    <Content Include="Areas\Golf\Views\Web.config" />
-    <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\Leaders.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\RosterView.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
-    <Content Include="Areas\Baseball\Views\Team\Statistics.cshtml" />
-    <Content Include="Scripts\bootstrap-datepicker.js" />
-    <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.js" />
-    <Content Include="Scripts\bootstrap-timepicker\bootstrap-timepicker.min.js" />
     <Content Include="Scripts\handouts.js" />
     <None Include="Properties\PublishProfiles\Local IIS.pubxml" />
     <None Include="Properties\PublishProfiles\walkerhome.org - FTP.pubxml" />
@@ -824,8 +1113,6 @@
     <None Include="Scripts\jquery-1.10.2.intellisense.js" />
     <Content Include="Scripts\announcement.js" />
     <Content Include="Scripts\focusNextItem.js" />
-    <Content Include="Scripts\jquery-1.10.2.js" />
-    <Content Include="Scripts\jquery-1.10.2.min.js" />
     <Content Include="Scripts\jQuery-File-Upload-9.5.4\.gitignore" />
     <Content Include="Scripts\jQuery-File-Upload-9.5.4\angularjs.html" />
     <Content Include="Scripts\jQuery-File-Upload-9.5.4\basic-plus.html" />
@@ -891,62 +1178,9 @@
     <Content Include="Scripts\jquery.unobtrusive-ajax.min.js" />
     <Content Include="Scripts\knockout.mapping-latest.debug.js" />
     <Content Include="Scripts\knockout.mapping-latest.js" />
-    <Content Include="Scripts\knockout.validation.js" />
-    <Content Include="Scripts\knockout.validation.min.js" />
     <Content Include="Scripts\knockout.viewmodel.2.0.3.js" />
     <Content Include="Scripts\knockout.viewmodel.2.0.3.min.js" />
     <Content Include="Scripts\knockoutjs-helpers.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ar.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.az.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.bg.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ca.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.cs.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.cy.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.da.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.de.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.el.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.es.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.et.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.fa.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.fi.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.fr.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.gl.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.he.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.hr.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.hu.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.id.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.is.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.it.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ja.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ka.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.kk.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.kr.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.lt.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.lv.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.mk.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ms.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.nb.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.nl-BE.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.nl.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.no.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.pl.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.pt-BR.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.pt.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ro.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.rs-latin.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.rs.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ru.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.sk.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.sl.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.sq.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.sv.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.sw.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.th.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.tr.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.ua.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.vi.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.zh-CN.js" />
-    <Content Include="Scripts\locales\bootstrap-datepicker.zh-TW.js" />
     <Content Include="Scripts\Map.js" />
     <Content Include="Scripts\photogallery.js" />
     <Content Include="Scripts\respond.js" />
@@ -954,149 +1188,6 @@
     <Content Include="Scripts\respond.matchmedia.addListener.min.js" />
     <Content Include="Scripts\respond.min.js" />
     <Content Include="Scripts\seasonsetup.js" />
-    <Content Include="Scripts\tinymce\license.txt" />
-    <Content Include="Scripts\tinymce\plugins\advlist\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\advlist\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\anchor\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\anchor\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\autolink\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\autolink\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\autoresize\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\autoresize\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\autosave\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\autosave\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\bbcode\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\bbcode\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\charmap\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\charmap\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\code\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\code\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\css\dialog.css" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\buttons.png" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\items.gif" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\menu_arrow.gif" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\menu_check.gif" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\progress.gif" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\img\tabs.gif" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\tiny_mce_popup.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\utils\editable_selects.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\utils\form_utils.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\utils\mctabs.js" />
-    <Content Include="Scripts\tinymce\plugins\compat3x\utils\validate.js" />
-    <Content Include="Scripts\tinymce\plugins\contextmenu\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\contextmenu\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\directionality\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\directionality\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-cool.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-cry.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-embarassed.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-foot-in-mouth.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-frown.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-innocent.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-kiss.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-laughing.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-money-mouth.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-sealed.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-smile.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-surprised.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-tongue-out.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-undecided.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-wink.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\img\smiley-yell.gif" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\emoticons\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\example\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\example\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\example_dependency\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\example_dependency\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\fullpage\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\fullpage\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\fullscreen\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\fullscreen\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\hr\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\hr\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\image\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\image\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\importcss\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\importcss\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\insertdatetime\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\insertdatetime\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\layer\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\layer\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\legacyoutput\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\legacyoutput\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\link\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\link\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\lists\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\lists\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\media\moxieplayer.swf" />
-    <Content Include="Scripts\tinymce\plugins\media\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\media\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\nonbreaking\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\nonbreaking\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\noneditable\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\noneditable\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\pagebreak\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\paste\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\preview\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\preview\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\print\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\print\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\save\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\save\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\searchreplace\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\spellchecker\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\tabfocus\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\table\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\table\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\template\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\template\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\textcolor\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\textcolor\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\css\visualblocks.css" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\address.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\article.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\aside.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\blockquote.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\div.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\figure.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h1.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h2.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h3.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h4.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h5.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\h6.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\hgroup.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\ol.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\p.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\pre.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\section.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\img\ul.gif" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\visualblocks\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\visualchars\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\visualchars\plugin.min.js" />
-    <Content Include="Scripts\tinymce\plugins\wordcount\plugin.js" />
-    <Content Include="Scripts\tinymce\plugins\wordcount\plugin.min.js" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.svg" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.svg" />
-    <Content Include="Scripts\tinymce\skins\lightgray\img\anchor.gif" />
-    <Content Include="Scripts\tinymce\skins\lightgray\img\loader.gif" />
-    <Content Include="Scripts\tinymce\skins\lightgray\img\object.gif" />
-    <Content Include="Scripts\tinymce\skins\lightgray\img\trans.gif" />
-    <Content Include="Scripts\tinymce\skins\lightgray\skin.ie7.min.css" />
-    <Content Include="Scripts\tinymce\skins\lightgray\skin.min.css" />
-    <Content Include="Scripts\tinymce\themes\modern\theme.js" />
-    <Content Include="Scripts\tinymce\themes\modern\theme.min.js" />
-    <Content Include="Scripts\tinymce\tinymce.js" />
-    <Content Include="Scripts\tinymce\tinymce.min.js" />
     <Content Include="Scripts\userdata.js" />
     <Content Include="Scripts\userroles.js" />
     <Content Include="Scripts\welcome.js" />
@@ -1118,7 +1209,6 @@
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
-    <Content Include="Scripts\jquery-1.10.2.min.map" />
     <Content Include="Views\Account\_ChangePasswordPartial.cshtml" />
     <Content Include="Views\Account\_ExternalLoginsListPartial.cshtml" />
     <Content Include="Views\Account\_RemoveAccountPartial.cshtml" />
@@ -1147,20 +1237,10 @@
     <Content Include="Views\Shared\Birthdays.cshtml" />
     <Content Include="Views\Shared\HandoutsView.cshtml" />
     <Content Include="Views\Shared\_bootstrap-wysiwyg-menu.cshtml" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.woff" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.ttf" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.eot" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
-    <Content Include="Scripts\tinymce\langs\readme.md" />
     <Content Include="Views\Shared\Sponsors.cshtml" />
     <Content Include="Views\Account\ResetPassword.cshtml" />
     <Content Include="Views\Account\ResetPwStepTwo.cshtml" />
     <Content Include="Views\Account\PasswordReset.cshtml" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
-    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.json" />
     <Content Include="Scripts\wysiwyg.min.map" />
     <Content Include="Views\HallOfFame\Index.cshtml" />
     <Content Include="Views\PlayerSurvey\Index.cshtml" />
@@ -1170,8 +1250,24 @@
     <Content Include="Views\Shared\VideosView.cshtml" />
     <Content Include="Views\Shared\TwitterView.cshtml" />
     <Content Include="Views\Shared\FacebookView.cshtml" />
-    <Content Include="Scripts\jsnlog.js.map" />
     <Content Include="Views\Shared\HOF.cshtml" />
+    <Content Include="Scripts\knockout.validation.min.js.map" />
+    <Content Include="Scripts\tinymce\langs\readme.md" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.json" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.eot" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.woff" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.ttf" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.eot" />
+    <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
+    <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
+    <Content Include="Scripts\jsnlog.js.map" />
+    <None Include="Web.Azure.config">
+      <DependentUpon>Web.config</DependentUpon>
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -1185,16 +1281,20 @@
     <None Include="Project_Readme.html" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Models\DataClasses.dbml.layout">
-      <DependentUpon>DataClasses.dbml</DependentUpon>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Service Include="{3259AA49-8AA1-44D3-9025-A0B520596A8C}" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Azure|AnyCPU'">
+    <OutputPath>bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />

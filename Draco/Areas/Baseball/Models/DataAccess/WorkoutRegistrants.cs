@@ -53,15 +53,15 @@ namespace DataAccess
                 wr.Phone3 = PhoneUtils.FormatPhoneNumber(PhoneUtils.UnformatPhoneNumber(wr.Phone3));
 
                 dbRegistrant.Name = wr.Name;
-                dbRegistrant.EMail = wr.Email;
+                dbRegistrant.EMail = wr.Email ?? String.Empty;
                 dbRegistrant.Age = wr.Age;
-                dbRegistrant.Phone1 = wr.Phone1;
-                dbRegistrant.Phone2 = wr.Phone2;
-                dbRegistrant.Phone3 = wr.Phone3;
-                dbRegistrant.Phone4 = wr.Phone4;
-                dbRegistrant.Positions = wr.Positions;
+                dbRegistrant.Phone1 = wr.Phone1 ?? String.Empty;
+                dbRegistrant.Phone2 = wr.Phone2 ?? String.Empty;
+                dbRegistrant.Phone3 = wr.Phone3 ?? String.Empty;
+                dbRegistrant.Phone4 = wr.Phone4 ?? String.Empty;
+                dbRegistrant.Positions = wr.Positions ?? String.Empty;
                 dbRegistrant.IsManager = wr.WantToManage;
-                dbRegistrant.WhereHeard = wr.WhereHeard;
+                dbRegistrant.WhereHeard = wr.WhereHeard ?? String.Empty;
 
                 db.SubmitChanges();
                 return true;
@@ -109,12 +109,12 @@ namespace DataAccess
             return true;
 		}
 
-		static public bool RemoveWorkoutRegistrant(WorkoutRegistrant wr)
+		static public bool RemoveWorkoutRegistrant(long id)
 		{
             DB db = DBConnection.GetContext();
 
             var dbWr = (from w in db.WorkoutRegistrations
-                        where w.Id == wr.Id
+                        where w.Id == id
                         select w).SingleOrDefault();
 
             if (dbWr != null)
@@ -129,9 +129,13 @@ namespace DataAccess
 
         static public String EmailRegistrants(long workoutId, String subject, String message)
         {
-            string sender = Globals.GetCurrentUserName();
+            string sender = Globals.GetCurrentUserId();
             if (String.IsNullOrEmpty(sender))
                 return String.Empty;
+
+            var currentContact = DataAccess.Contacts.GetContact(sender);
+            if (currentContact == null)
+                return "Invalid sender.";
 
             DB db = DBConnection.GetContext();
 
@@ -149,7 +153,7 @@ namespace DataAccess
             {
                 try
                 {
-                    var address = new MailAddress(reg.EMail);
+                    var address = new MailAddress(reg.EMail, reg.Name);
                     bccList.Add(address);
                 }
                 catch(Exception)
@@ -168,7 +172,7 @@ namespace DataAccess
                     Subject = subject
                 };
 
-                var failedSends = Globals.MailMessage(sender, bccList, data);
+                var failedSends = Globals.MailMessage(new MailAddress(currentContact.Email, currentContact.FullNameFirst), bccList, data);
                 foreach(var failedSend in failedSends)
                 {
                     result.Append(failedSend.Address);

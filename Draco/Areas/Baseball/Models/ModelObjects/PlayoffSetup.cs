@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace ModelObjects
@@ -8,100 +9,23 @@ namespace ModelObjects
 /// </summary>
 	public class PlayoffSetup
 	{
-		private long m_id = 0;
-		private long m_leagueId = 0;
-		private int m_numTeams = 0;
-		private bool m_active = false;
-		private string m_description = String.Empty;
+        public long Id { get; set; } // id (Primary key)
+        public long LeagueSeasonId { get; set; } // LeagueSeasonId
+        public int NumTeams { get; set; } // NumTeams
+        public string Description { get; set; } // Description
+        public bool Active { get; set; } // Active
 
-		public PlayoffSetup()
-		{
-		}
+        // Reverse navigation
+        public virtual ICollection<PlayoffBracket> PlayoffBrackets { get; set; } // PlayoffBracket.FK_PlayoffBracket_PlayoffSetup
+        public virtual ICollection<PlayoffSeed> PlayoffSeeds { get; set; } // PlayoffSeeds.FK_PlayoffSeeds_PlayoffSetup
 
-		public PlayoffSetup(long id, long leagueId, int numTeams, String description, bool active)
-		{
-			m_id = id;
-			m_leagueId = leagueId;
-			m_numTeams = numTeams;
-			m_description = description;
-			m_active = active;
-		}
+        // Foreign keys
+        public virtual LeagueSeason LeagueSeason { get; set; } // FK_PlayoffSetup_LeagueSeason
 
-		public long Id
-		{
-			get
-			{
-				return m_id;
-			}
-
-			set
-			{
-				m_id = value;
-			}
-		}
-
-        public long LeagueId
-		{
-			get
-			{
-				return m_leagueId;
-			}
-
-			set
-			{
-				m_leagueId = value;
-			}
-		}
-
-        public string LeagueName
+        public PlayoffSetup()
         {
-            get
-            {
-                return DataAccess.Leagues.GetLeagueName(m_leagueId);
-            }
-            set
-            {
-            }
+            PlayoffBrackets = new List<PlayoffBracket>();
+            PlayoffSeeds = new List<PlayoffSeed>();
         }
-
-        public int NumTeams
-		{
-			get
-			{
-				return m_numTeams;
-			}
-
-			set
-			{
-				m_numTeams = value;
-			}
-		}
-
-        public bool Active
-		{
-			get
-			{
-				return m_active;
-			}
-
-			set
-			{
-				m_active = value;
-			}
-		}
-
-        public string Description
-		{
-			get
-			{
-				return m_description;
-			}
-
-			set
-			{
-				m_description = value;
-			}
-		}
-
 	}
 }

@@ -7,91 +7,19 @@ namespace ModelObjects
     /// </summary>
     public class MessagePost
     {
-        public MessagePost()
-        {
-        }
+        public long Id { get; set; } // id (Primary key)
+        public long TopicId { get; set; } // TopicId
+        public int PostOrder { get; set; } // PostOrder
+        public long ContactCreatorId { get; set; } // ContactCreatorId
+        public DateTime PostDate { get; set; } // PostDate
+        public string PostText { get; set; } // PostText
+        public DateTime EditDate { get; set; } // EditDate
+        public string PostSubject { get; set; } // PostSubject
+        public long CategoryId { get; set; } // CategoryId
 
-        public MessagePost(long id, long topicId, int postOrder, long creatorContactId, 
-                            DateTime postDate, string postText, DateTime editDate,
-                            string subject, long catId)
-        {
-            Id = id;
-            TopicId = topicId;
-            Order = postOrder;
-            CreatorContactId = creatorContactId;
-            CreateDate = postDate;
-            Text = postText;
-            EditDate = editDate;
-            Subject = subject;
-            CategoryId = catId;
-        }
-
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long TopicId
-        {
-            get;
-            set;
-        }
-
-        public int Order
-        {
-            get;
-            set;
-        }
-
-        public long CreatorContactId
-        {
-            get;
-            set;
-        }
-
-        public String CreatorName
-        {
-            get;
-            set;
-        }
-
-        public String PhotoUrl
-        {
-            get
-            {
-                return ModelObjects.Contact.GetPhotoURL(CreatorContactId);
-            }
-        }
-
-        public DateTime CreateDate
-        {
-            get;
-            set;
-        }
-
-        public string Text
-        {
-            get;
-            set;
-        }
-
-        public DateTime EditDate
-        {
-            get;
-            set;
-        }
-
-        public string Subject
-        {
-            get;
-            set;
-        }
-
-        public long CategoryId
-        {
-            get;
-            set;
-        }
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_MessagePost_Contacts
+        public virtual MessageTopic MessageTopic { get; set; } // FK_MessagePost_MessageTopic
+        public virtual MessageCategory MessageCategory { get; set; }
     }
 }

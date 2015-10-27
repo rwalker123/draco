@@ -1,18 +1,22 @@
-﻿using System;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
+﻿using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels;
+using System;
+using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class LeagueController : Controller
+    public class LeagueController : DBController
     {
+        public LeagueController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Baseball/League/
-
         public ActionResult Index(long? accountId)
         {
             long aId = accountId.GetValueOrDefault(0);
@@ -21,7 +25,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Home", new { accountId = aId });
             }
 
-            return View(new SportsManager.Baseball.ViewModels.LeagueIndexViewModel());
+            return View(new LeagueIndexViewModel(this));
         }
 
         [HttpPost]
@@ -33,7 +37,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             }
             catch
             {
-                return View(new SportsManager.Baseball.ViewModels.LeagueIndexViewModel());
+                return View(new LeagueIndexViewModel(this));
             }
         }
 
@@ -92,25 +96,20 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
                 Account account = new Account();
-                account.AccountName = vm.LeagueName;
-                account.AccountURL = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
+                account.Name = vm.LeagueName;
+                account.Url = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
                 account.TimeZoneId = vm.TimeZone;
                 //account.OwnerUserId = User.Identity.GetUserId();
-                account.AccountTypeId = (long)Account.AccountType.Baseball;
+                account.AccountTypeId = 1; // baseball
 
-                newAccountId = DataAccess.Accounts.AddAccount(account);
-            }
+                Db.Accounts.Add(account);
+                Db.SaveChanges();
 
-            // returns the new accountId if 0, something failed.
-            if (newAccountId == 0)
-            {
                 ViewData["TimeZones"] = vm.TimeZones;
                 return View(vm);
             }
-            else
-            {
-                return RedirectToAction("Home", new { accountId = newAccountId });
-            }
+
+            return RedirectToAction("Home", new { accountId = newAccountId });
         }
     }
 }

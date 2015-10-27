@@ -1,5 +1,3 @@
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
@@ -8,40 +6,13 @@ namespace ModelObjects
 	/// </summary>
 	public class ProfileQuestionAnswer
 	{
-		public ProfileQuestionAnswer()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long PlayerId { get; set; } // PlayerId
+        public long QuestionId { get; set; } // QuestionId
+        public string Answer { get; set; } // Answer
 
-		public ProfileQuestionAnswer(long id, long playerId, long questionId, string answer)
-		{
-            id = Id;
-			PlayerId = playerId;
-			QuestionId = questionId;
-			Answer = answer;
-		}
-
-        public long Id
-        {
-            get;
-            set;
-        }
-
-        public long PlayerId
-        {
-            get;
-            set;
-        }
-
-        public long QuestionId
-        {
-            get;
-            set;
-        }
-
-        public string Answer
-        {
-            get;
-            set;
-        }
-	}
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_PlayerProfile_Contacts
+        public virtual ProfileQuestionItem ProfileQuestion { get; set; } // FK_PlayerProfile_ProfileQuestion
+    }
 }

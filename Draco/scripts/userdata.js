@@ -347,10 +347,12 @@ var UsersClass = function (accountId, pageSize, firstYear) {
 
     self.initFirstYear();
 
+    // Keep in sync with exportToExcel
     self.availableFilters = ko.observableArray([
         { id: 'LastName', name: "Last Name", isNumber: false },
         { id: 'FirstName', name: "First Name", isNumber: false },
         { id: 'FirstYear', name: "First Year Played", isNumber: true },
+        { id: 'BirthDate', name: "Birth Year", isNumber: false, isDate: true },
         { id: 'Zip', name: "Zip Code", isNumber: false },
     ]);
 
@@ -390,9 +392,11 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             return item.id == self.filterField();
         });
         var isNumberField = false;
+        var isDateField = false;
 
         if (selectedField) {
             isNumberField = selectedField.isNumber;
+            isDateField = selectedField.isDate;
         }
 
         if (self.availableOperations().length == 0) {
@@ -401,7 +405,7 @@ var UsersClass = function (accountId, pageSize, firstYear) {
             });
         }
 
-        if (isNumberField) {
+        if (isNumberField || isDateField) {
             if (self.availableOperations().length != self.commonOperations.length) {
                 $.each(self.stringOnlyOperations, function (index, item) {
                     self.availableOperations.remove(item);
@@ -590,6 +594,34 @@ var UsersClass = function (accountId, pageSize, firstYear) {
         self.populateUsers(null, null, true);
     }
 
+    self.exportToExcel = function () {
+        var selectedField = ko.utils.arrayFirst(self.availableFilters(), function (item) {
+            return item.id == self.filterField();
+        });
+        var isNumberField = selectedField.isNumber;
+        var isDateField = selectedField.isDate;
+
+        url = window.config.rootUri + '/Account/exportaddresslist/' + self.accountId;
+        url += '?order=' + self.filterSort();
+        if (self.filterOp() == 'startswith' ||
+            self.filterOp() == 'endswith') {
+            if (!isNumberField && !isDateField) // only strings for this type.
+                url += '&filter=' + self.filterField() + "," + self.filterOp() + ",'" + self.filterValue() + "'";
+        }
+        else {
+            if (isDateField)
+                url += '&filter=' + self.filterField() + ',' + self.filterOp();
+            else
+                url += '&filter=' + self.filterField() + ',' + self.filterOp();
+
+            if (isNumberField || isDateField)
+                url += "," + self.filterValue();
+            else
+                url += ",'" + self.filterValue() + "'";
+        }
+
+        window.location.href = url;
+    }
 
     self.populateUsers = function (url, isPrev, isFilter) {
         var data, calculatePages, updateNavigation = true;
@@ -603,22 +635,25 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                     return item.id == self.filterField();
                 });
                 var isNumberField = selectedField.isNumber;
+                var isDateField = selectedField.isDate;
 
                 url = window.config.rootUri + '/odata/ContactsOData/?accountId=' + self.accountId + '&$inlinecount=allpages';
                 url += '&$orderby=LastName ' + self.filterSort() + ', FirstName ' + self.filterSort();
                 if (self.filterOp() == 'startswith' ||
                     self.filterOp() == 'endswith') {
-                    if (!isNumberField)
+                    if (!isNumberField && !isDateField && self.filterValue() != "") // only strings for this type.
                         url += '&$filter=' + self.filterOp() + '(' + self.filterField() + ", '" + self.filterValue() + "')";
-                    else
-                        url += '&$filter=' + self.filterOp() + '(' + self.filterField() + ", " + self.filterValue() + ")";
                 }
                 else {
-                    url += '&$filter=' + self.filterField() + ' ' + self.filterOp();
-                    if (!isNumberField)
-                        url += " '" + self.filterValue() + "'";
+                    if (isDateField)
+                        url += '&$filter=year(' + self.filterField() + ') ' + self.filterOp();
                     else
+                        url += '&$filter=' + self.filterField() + ' ' + self.filterOp();
+
+                    if (isNumberField || isDateField)
                         url += " " + self.filterValue();
+                    else
+                        url += " '" + self.filterValue() + "'";
                 }
 
                 self.currentPageNo(1);

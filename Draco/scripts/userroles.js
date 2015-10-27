@@ -32,7 +32,7 @@ var AdminTypeViewModel = function(data)
         if (!self.selectedUser())
             return;
 
-        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AddToRole';
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/UserRoles';
 
         var roleData;
         var roleDataText;
@@ -75,7 +75,7 @@ var AdminTypeViewModel = function(data)
     self.selectedUser = ko.observable();
 
     self.populateAdminList = function () {
-        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/AdminsForRole/' + self.Id();
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/UserRoles/' + self.Id();
 
         $.ajax({
             type: 'GET',
@@ -89,13 +89,14 @@ var AdminTypeViewModel = function(data)
     }
 
     self.removeUserFromRole = function (vm) {
-        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/DeleteFromRole';
+        var url = window.config.rootUri + '/api/UserRolesAPI/' + self.AccountId() + '/UserRoles';
 
         $.ajax({
             type: 'DELETE',
             url: url,
             data: {
-                ContactId: vm.Id,
+                AccountId: self.AccountId(),
+                ContactId: vm.ContactId,
                 RoleId: vm.RoleId,
                 RoleData: vm.RoleData
             },
@@ -271,7 +272,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
         });
     }
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UserRolesAPI/' + self.accountId + '/SearchContacts',
@@ -296,7 +297,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             },
         });
     }

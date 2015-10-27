@@ -18,26 +18,44 @@
 
     <div class="panel-body">
 
-        <div class="modal fade" id="deleteWorkoutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                        <h4 class="modal-title">Confirm Delete Workout</h4>
-                    </div>
-                    <div class="modal-body" >
-                        You are about to delete a workout. All data associated with the workout and registrations will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmWorkoutDeleteBtn">Continue</button>
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+        @if (Model.IsAdmin)
+        {
+            <div class="modal fade" id="deleteWorkoutModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title">Confirm Delete Workout</h4>
+                        </div>
+                        <div class="modal-body">
+                            You are about to delete a workout. All data associated with the workout and registrations will be permanently deleted. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmWorkoutDeleteBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        @if (Model.IsAdmin)
-        {
+            <div class="modal fade" id="deleteWorkoutRegModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title">Confirm Delete Workout Registrant</h4>
+                        </div>
+                        <div class="modal-body">
+                            You are about to delete a workout registrant. You cannot undo this operation. Are you sure you want to continue?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal" id="confirmWorkoutRegDeleteBtn">Continue</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <form class="form-horizontal" style="display:none" data-bind="visible: editWhereHeard">
                 <div class="form-group">
                     <div class="col-sm-10">
@@ -80,7 +98,7 @@
                     <label for="WorkoutTime" class="control-label col-sm-2">time</label>
                     <div class="col-sm-8">
                         <div class="bootstrap-timepicker">
-                            <input id="WorkoutTime" class="form-control add-on" data-bind="timepicker: WorkoutDate.TimeText, timepickerOptions: {minuteStep: 5, showInputs: false, disableFocus: true}" type="text">
+                            <input id="WorkoutTime" class="form-control add-on" data-bind="timepicker: WorkoutDate.TimeText, timepickerOptions: {template: false, minuteStep: 5, showInputs: false}" type="text" />
                         </div>
                     </div>
                 </div>
@@ -135,7 +153,7 @@
 
                 </form>
 
-                <form class="form-horizontal" data-bind="visible: editRegistrantsMode">
+                <form class="form-horizontal" data-bind="visible: editRegistrantsMode() && !registerForWorkout()">
                     <div class="form-group">
                         <button class="btn btn-default" data-bind="click: stopRegistrantEdit" title="done editing registrants">Done Editing Registrants</button>
                     </div>
@@ -164,8 +182,8 @@
                                     <td data-bind="html: Positions"></td>
                                     <td data-bind="html: WhereHeard"></td>
                                     <td>
-                                        <button class="btn btn-default btn-sm" data-bind="click: editRegistrant" title="edit registrant"><span class="glyphicon glyphicon-edit"></span></button>
-                                        <button class="btn btn-danger btn-sm" data-bind="click: removeRegistrant" title="permantly delete registrant"><span class="glyphicon glyphicon-remove"></span></button>
+                                        <button class="btn btn-default btn-sm" data-bind="click: $parent.editRegistrant" title="edit registrant"><span class="glyphicon glyphicon-edit"></span></button>
+                                        <button class="btn btn-danger btn-sm" data-bind="click: $parent.removeRegistrant" title="permantly delete registrant"><span class="glyphicon glyphicon-remove"></span></button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -175,6 +193,7 @@
                 
                 <div data-bind="visible: viewMode">
                     <button type="button" class="btn btn-info" data-bind="click: sendEmailMode, visible: NumRegistered() > 0" title="send email to registrants"><span class="fa fa-envelope"></span></button>
+                    <button type="button" class="btn btn-default" data-bind="click: exportRegistrants, visible: NumRegistered() > 0" title="export registrant list to excel"><span class="glyphicon glyphicon-export"></span></button>
 
                     @if (!String.IsNullOrEmpty((String)ViewData["TwitterAccountName"]))
                     {
@@ -185,58 +204,57 @@
                     <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteWorkout" title="permantly delete workout"><span class="glyphicon glyphicon-remove"></span></button>
                 </div>
             }
-            else
-            {
-                <form class="form-horizontal" data-bind="visible: registerForWorkout, with: registerData">
-                    <h3>Register for <span data-bind="html: $parent.Description"></span></h3>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">name</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
-                        </div>
+            <form class="form-horizontal" data-bind="visible: registerForWorkout, with: registerData">
+                <h3>Register for <span data-bind="html: $parent.Description"></span></h3>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">name</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Name" id="registerWorkout_Name" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">age</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Age" type="number" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">age</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Age" type="number" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">positions</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Positions" type="text" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">positions</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Positions" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">phone</label>
-                        <div class="col-sm-10">
-                            <input data-bind="phoneNumber: Phone1, uniqueId: $parent.Id" type="text" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">phone</label>
+                    <div class="col-sm-10">
+                        <input data-bind="phoneNumber: Phone1, uniqueId: $parent.Id" type="text" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">email</label>
-                        <div class="col-sm-10">
-                            <input data-bind="uniqueId: $parent.Id, value: Email" type="email" class="form-control" />
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">email</label>
+                    <div class="col-sm-10">
+                        <input data-bind="uniqueId: $parent.Id, value: Email" type="email" class="form-control" />
                     </div>
-                    <div class="form-group">
-                        <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">where heard</label>
-                        <div class="col-sm-10">
-                            <select data-bind="uniqueId: $parent.Id, selectPicker: WhereHeard, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
-                        </div>
+                </div>
+                <div class="form-group">
+                    <label data-bind="uniqueFor: $parent.Id" class="control-label col-sm-2">where heard</label>
+                    <div class="col-sm-10">
+                        <select data-bind="uniqueId: $parent.Id, selectPicker: WhereHeard, selectPickerOptions: {optionsArray: $root.whereHeardOptions}" data-container=" body"></select>
                     </div>
-                    <div class="form-group">
-                        <div class="col-sm-2">
-                        </div>
-                        <div class="col-sm-10">
-                            <label class="control-label"><input type="checkbox" data-bind="checked: WantToManage" /> interested in managing</label>
-                        </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-sm-2">
                     </div>
+                    <div class="col-sm-10">
+                        <label class="control-label"><input type="checkbox" data-bind="checked: WantToManage" /> interested in managing</label>
+                    </div>
+                </div>
                                         
-                    <button type="button" class="btn btn-success" data-bind="click: $parent.registerWorkoutData" title="save changes"><span class="glyphicon glyphicon-ok"></span></button> 
-                    <button type="button" class="btn btn-danger" data-bind="click: $parent.endRegisterForWorkout($parent)" title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
-                </form>
-                
+                <button type="button" class="btn btn-success" data-bind="click: $parent.registerWorkoutData" title="save changes"><span class="glyphicon glyphicon-ok"></span></button> 
+                <button type="button" class="btn btn-danger" data-bind="click: $parent.endRegisterForWorkout" title="cancel changes"><span class="glyphicon glyphicon-remove"></span></button>
+            </form>
+            @if (!Model.IsAdmin)
+            {
                 <button type="button" data-bind="visible: !registerForWorkout(), click: startRegisterForWorkout" class="btn btn-success">Register for <span data-bind="html: Description"></span></button>
             }
         </li>

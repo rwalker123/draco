@@ -58,11 +58,7 @@ var UmpireViewModel = function (data, accountId) {
     ko.mapping.fromJS(data, self.mapping, self);
 
     self.fullName = ko.computed(function () {
-        var fullName = self.LastName() + ', ' + self.FirstName();
-        if (self.MiddleName())
-            fullName += ' ' + self.MiddleName();
-
-        return fullName;
+        return self.Contact.FullName();
     });
 
     self.fileUploaderUrl = ko.computed(function () {
@@ -92,7 +88,7 @@ var UmpiresClass = function (accountId) {
         return self.selectedPlayer() != null;
     }, self);
 
-    self.getPlayers = function (query, cb) {
+    self.getPlayers = function (query, syncResults, asyncResults) {
 
         $.ajax({
             url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/AvailableUmpires',
@@ -117,7 +113,7 @@ var UmpiresClass = function (accountId) {
                         LastName: item.LastName
                     }
                 });
-                cb(results);
+                asyncResults(results);
             }
         });
     }
@@ -128,7 +124,7 @@ var UmpiresClass = function (accountId) {
 
         $.ajax({
             type: "POST",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + self.selectedPlayer().Id,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpires/' + self.selectedPlayer().Id,
             dataType: "json",
             success: function (data) {
                 var vm = new UmpireViewModel(data, self.accountId);
@@ -148,7 +144,7 @@ var UmpiresClass = function (accountId) {
     self.populateUmpires = function () {
         $.ajax({
             type: "GET",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId,
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpires',
             success: function (data) {
                 var mappedUsers = $.map(data, function (item) {
                     return new UmpireViewModel(item, item.AccountId);
@@ -163,7 +159,7 @@ var UmpiresClass = function (accountId) {
         // make Ajax call to save.
         $.ajax({
             type: "DELETE",
-            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpire/' + umpire.Id(),
+            url: window.config.rootUri + '/api/UmpireAPI/' + self.accountId + '/umpires/' + umpire.Id(),
             success: function (data) {
                 // remove from data model.
                 self.umpires.remove(umpire);

@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,29 +7,15 @@ namespace ModelObjects
 	/// </summary>
 	public class Affiliation
 	{
-		private long m_id = 0;
-		private string m_name = string.Empty;
+        public long Id { get; set; } // Id (Primary key)
+        public string Name { get; set; } // Name
 
-		public Affiliation()
-		{
-		}
+        // Reverse navigation
+        public virtual ICollection<Account> Accounts { get; set; } // Accounts.FK_Affiliations_Accounts
 
-		public Affiliation(long id, string name )
-		{
-			m_id = id;
-			m_name = name;
-		}
-
-		public long Id
-		{
-			get { return m_id; }
-			set { m_id = value; }
-		}
-
-		public string Name
-		{
-			get { return m_name; }
-			set { m_name = value; }
-		}
-	}
+        public Affiliation()
+        {
+            Accounts = new List<Account>();
+        }
+    }
 }

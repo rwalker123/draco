@@ -1,35 +1,51 @@
-﻿using SportsManager.Models;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Models;
+using SportsManager.ViewModels.API;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Web.Http;
 
 namespace SportsManager.Controllers
 {
-    public class LeagueFAQAPIController : ApiController
+    public class LeagueFAQAPIController : DBApiController
     {
+        public LeagueFAQAPIController(DB db) : base(db)
+        {
+        }
+
         [AcceptVerbs("GET"), HttpGet]
         [ActionName("faqs")]
         public HttpResponseMessage GetFAQs(long accountId)
         {
-            var faqs = DataAccess.LeagueFAQ.GetFAQ(accountId);
-            return Request.CreateResponse<IQueryable<ModelObjects.LeagueFAQItem>>(HttpStatusCode.OK, faqs);
+            var faqs = Db.LeagueFaqs.Where(f => f.AccountId == accountId).AsEnumerable();
+            
+            var vm = Mapper.Map<IEnumerable<LeagueFAQItem>, FAQItemViewModel[]>(faqs); 
+            return Request.CreateResponse<FAQItemViewModel[]>(HttpStatusCode.OK, vm);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PostFAQ(long accountId, ModelObjects.LeagueFAQItem faq)
+        public async Task<HttpResponseMessage> PostFAQ(long accountId, FAQItemViewModel faq)
         {
-            faq.AccountId = accountId;
-
-            if (ModelState.IsValid && faq != null)
+            if (ModelState.IsValid)
             {
-                var faqAdded = DataAccess.LeagueFAQ.AddFAQ(faq);
-                if (faqAdded)
+                var dbFaq = new LeagueFAQItem()
                 {
-                    return Request.CreateResponse<ModelObjects.LeagueFAQItem>(HttpStatusCode.OK, faq);
-                }
+                    AccountId = accountId,
+                    Question = faq.Question,
+                    Answer = faq.Answer
+                };
+
+                Db.LeagueFaqs.Add(dbFaq);
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
+                return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -38,17 +54,24 @@ namespace SportsManager.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage PutFAQ(long accountId, ModelObjects.LeagueFAQItem faq)
+        public async Task<HttpResponseMessage> PutFAQ(long accountId, FAQItemViewModel faq)
         {
-            faq.AccountId = accountId;
-
-            if (ModelState.IsValid && faq != null)
+            if (ModelState.IsValid)
             {
-                var faqUpdated = DataAccess.LeagueFAQ.ModifyFAQ(faq);
-                if (faqUpdated)
-                {
-                    return Request.CreateResponse<ModelObjects.LeagueFAQItem>(HttpStatusCode.OK, faq);
-                }
+                var dbFaq = await Db.LeagueFaqs.FindAsync(faq.Id);
+                if (dbFaq == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (dbFaq.AccountId != accountId)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+                dbFaq.Answer = faq.Answer;
+                dbFaq.Question = faq.Question;
+
+                await Db.SaveChangesAsync();
+
+                var vm = Mapper.Map<LeagueFAQItem, FAQItemViewModel>(dbFaq);
+                return Request.CreateResponse<FAQItemViewModel>(HttpStatusCode.OK, vm);
             }
 
             return Request.CreateResponse(HttpStatusCode.BadRequest);
@@ -57,14 +80,19 @@ namespace SportsManager.Controllers
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("faqs")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public HttpResponseMessage DeleteFAQ(long accountId, long id)
+        public async Task<HttpResponseMessage> DeleteFAQ(long accountId, long id)
         {
-            var faqRemoved = DataAccess.LeagueFAQ.RemoveFAQ(id);
-            if (faqRemoved)
-            {
-                return Request.CreateResponse<long>(HttpStatusCode.OK, id);
-            }
-            return Request.CreateResponse(HttpStatusCode.NotFound);
+            var faq = await Db.LeagueFaqs.FindAsync(id);
+            if (faq == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (faq.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            Db.LeagueFaqs.Remove(faq);
+            await Db.SaveChangesAsync();
+
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
     }
 }

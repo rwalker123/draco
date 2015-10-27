@@ -14,16 +14,16 @@
     }
 
     <div data-bind="visible: viewMode()">
-        <img onerror="this.style.display = 'none';" src="@Model.Team.TeamLogoURL" class="img-rounded" />
-        @if (Model.IsAdmin)
-        {
-            <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
-                <i class="glyphicon glyphicon-upload"></i>
-                <input class="form-control" type="file" data-maxfilesize="1">
-            </span>
-        }
+        <h1>
+            <img onerror="this.style.display = 'none';" src="@Model.Team.Team.TeamLogoURL" class="img-rounded" />
+            @if (Model.IsAdmin)
+            {
+                <span data-bind="imageUploader: fileUploaderUrl" class="btn btn-default fileinput-button" title="upload player photo">
+                    <i class="glyphicon glyphicon-upload"></i>
+                    <input class="form-control" type="file" data-maxfilesize="1">
+                </span>
+            }
 
-        <h1 style="display: inline-block;">
             @Model.LeagueName <span data-bind="html: teamName"></span>
         </h1>
     </div>
@@ -295,55 +295,55 @@ else
 
         @if (Model.ShowHandouts)
         {
-            <text>
-        var handoutElem = document.getElementById("handouts");
-        if (handoutElem) {
-            var handoutData = new HandoutViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
-            ko.applyBindings(handoutData, handoutElem);
-        }
+        <text>
+            var handoutElem = document.getElementById("handouts");
+            if (handoutElem) {
+                var handoutData = new HandoutViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+                ko.applyBindings(handoutData, handoutElem);
+            }
         </text>
         }
 
         @if (Model.ShowPhotoGallery)
         {
-            <text>
-        InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
+        <text>
+            InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
         </text>
         }
 
         @if (Model.ShowRoster)
         {
-            <text>
-        InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id, @Model.FirstYear );
+        <text>
+            InitRosterViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(),  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id, @Model.FirstYear );
         </text>
         }
 
         @if (Model.ShowScoreboard)
         {
-            <text>
-        initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
+        <text>
+            initScoreboardViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
         }
 
         @if (Model.ShowLeaders)
         {
-            <text>
-        initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        <text>
+            initLeadersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
         }
 
         @if (Model.ShowSponsors)
         {
-            <text>
-        initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
+        <text>
+            initSponsorsViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);
         </text>
         }
 
         @if (Model.VideosEnabled && Model.ShowVideos)
         {
-            <text>
-            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', @Model.Team.Id);
-            </text>
+        <text>
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', '@Model.DefaultVideo', @Model.AutoPlayVideo.ToString().ToLower(), @Model.Team.Id);
+        </text>
         }
 
         InitManagersViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsTeamAdmin.ToString().ToLower(), @Model.Team.Id);

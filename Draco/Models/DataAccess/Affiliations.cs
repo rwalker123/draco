@@ -1,5 +1,4 @@
 using ModelObjects;
-using SportsManager;
 using System;
 using System.Linq;
 
@@ -15,7 +14,7 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
             return (from a in db.Affiliations
-                    select new Affiliation(a.Id, a.Name));
+                    select a);
 		}
 
         static public Affiliation GetAffiliation(long id)
@@ -65,14 +64,10 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
 
-            var dbAff = (from a in db.Affiliations
-                         where a.Id == affiliation.Id
-                         select a).SingleOrDefault();
-            if (dbAff == null)
-                return false;
+            db.Affiliations.Attach(affiliation);
+            db.Entry(affiliation).State = System.Data.Entity.EntityState.Modified;
 
-            dbAff.Name = affiliation.Name;
-            db.SubmitChanges();
+            db.SaveChanges();
 
             return true;
 		}
@@ -81,15 +76,9 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
 
-            var dbAff = new SportsManager.Model.Affiliation()
-            {
-                Name = affiliation.Name
-            };
+            db.Affiliations.Add(affiliation);
+            db.SaveChanges();
 
-            db.Affiliations.InsertOnSubmit(dbAff);
-            db.SubmitChanges();
-
-            affiliation.Id = dbAff.Id;
             return true;
         }
 
@@ -97,14 +86,8 @@ namespace DataAccess
 		{
             DB db = DBConnection.GetContext();
 
-            var dbAff = (from a in db.Affiliations
-                         where a.Id == affiliation.Id
-                         select a).SingleOrDefault();
-            if (dbAff == null)
-                return false;
-
-            db.Affiliations.DeleteOnSubmit(dbAff);
-            db.SubmitChanges();
+            db.Affiliations.Remove(affiliation);
+            db.SaveChanges();
 
             return true;
         }

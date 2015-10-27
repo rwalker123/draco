@@ -7,52 +7,35 @@ namespace ModelObjects
 	/// </summary>
 	public class Field
 	{
-		public Field()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Name { get; set; } // Name
+        public string ShortName { get; set; } // ShortName
+        public string Comment { get; set; } // Comment
+        public string Address { get; set; } // Address
+        public string City { get; set; } // City
+        public string State { get; set; } // State
+        public string ZipCode { get; set; } // ZipCode
+        public string Directions { get; set; } // Directions
+        public string RainoutNumber { get; set; } // RainoutNumber
+        public string Latitude { get; set; } // Latitude
+        public string Longitude { get; set; } // Longitude
+        //public DbGeography LocationGeo { get; set; }
 
-		public Field(long fieldId)
-		{
-			Id = fieldId;
-		}
+        public virtual ICollection<Game> LeagueSchedules { get; set; } // LeagueSchedule.FK_LeagueSchedule_AvailableFields
+        public virtual ICollection<FieldContact> FieldContacts { get; set; } // FieldContacts.FK_FieldContacts_AvailableFields
+        public virtual ICollection<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement.FK_WorkoutAnnouncement_AvailableFields
 
-		public Field(long fieldId, long accountId, string fieldName, string shortName,
-					string fieldComment, string address, string city, string state, string zipCode,
-					string directions, string rainoutNumber, string latitude, string longitude)
-		{
-			AccountId = accountId;
-			Id = fieldId;
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_AvailableFields_Accounts
+        
+        public Field()
+        {
+            FieldContacts = new List<FieldContact>();
+            WorkoutAnnouncements = new List<WorkoutAnnouncement>();
+            LeagueSchedules = new List<Game>();
+            //LocationGeo = DbGeography.PointFromText("POINT(" + longitude + " " + latitude + ")", 4326);
+        }
 
-			Name = fieldName;
-			ShortName = shortName;
-			Comment = fieldComment;
-			Address = address;
-			City = city;
-			State = state;
-			ZipCode = zipCode;
-			Directions = directions;
-			RainoutNumber = rainoutNumber;
-
-			Latitude = latitude;
-			Longitude = longitude;
-		}
-
-		public long Id { get; set; }
-		public long AccountId { get; set; }
-
-		public string Name { get; set; }
-		public string ShortName { get; set; }
-		public string Address { get; set; }
-		public string City { get; set; }
-		public string State { get; set; }
-		public string ZipCode { get; set; }
-		public string RainoutNumber { get; set; }
-		public string Directions { get; set; }
-		public string Comment { get; set; }
-
-		public string Latitude { get; set; }
-		public string Longitude { get; set; }
-
-		public IList<FieldContact> Contacts { get; set; }
 	}
 }

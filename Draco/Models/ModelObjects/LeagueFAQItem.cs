@@ -1,4 +1,3 @@
-using System;
 
 namespace ModelObjects
 {
@@ -7,40 +6,12 @@ namespace ModelObjects
 /// </summary>
 	public class LeagueFAQItem
 	{
-		public LeagueFAQItem()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Question { get; set; } // Question
+        public string Answer { get; set; } // Answer
 
-		public LeagueFAQItem(long faqId, string faqQuestion, string faqAnswer, long accountId)
-		{
-			AccountId = accountId;
-		    Id = faqId;
-			Question = faqQuestion;
-			Answer = faqAnswer;
-		}
-
-		public long Id
-		{
-            get;
-            set;
-		}
-
-		public long AccountId
-		{
-            get;
-            set;
-        }
-
-		public string Question
-		{
-            get;
-            set;
-        }
-
-		public string Answer
-		{
-            get;
-            set;
-        }
-	}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_LeagueFAQ_Accounts
+    }
 }

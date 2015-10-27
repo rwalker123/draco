@@ -68,7 +68,10 @@ namespace DataAccess
 							FirstName = r.Contact.FirstName,
 							LastName = r.Contact.LastName,
 							MiddleName = r.Contact.MiddleName,
-							PhotoURL = Contact.GetPhotoURL(r.Contact.Id)
+							PhotoURL = Contact.GetPhotoURL(r.Contact.Id),
+                            FirstYear = r.Contact.FirstYear.GetValueOrDefault(0),
+                            Zip = r.Contact.Zip,
+                            BirthDate = r.Contact.DateOfBirth
 						}).FirstOrDefault();
 			}
 			else
@@ -81,7 +84,10 @@ namespace DataAccess
 							FirstName = rs.Roster.Contact.FirstName,
 							LastName = rs.Roster.Contact.LastName,
 							MiddleName = rs.Roster.Contact.MiddleName,
-							PhotoURL = Contact.GetPhotoURL(rs.Roster.Contact.Id)
+                            PhotoURL = Contact.GetPhotoURL(rs.Roster.Contact.Id),
+                            FirstYear = rs.Roster.Contact.FirstYear.GetValueOrDefault(0),
+                            Zip = rs.Roster.Contact.Zip,
+                            BirthDate = rs.Roster.Contact.DateOfBirth
 						}).FirstOrDefault();
 			}
 		}
@@ -210,7 +216,10 @@ namespace DataAccess
 						FirstName = c.FirstName,
 						LastName = c.LastName,
 						MiddleName = c.MiddleName,
-						PhotoURL = Contact.GetPhotoURL(c.Id)
+                        PhotoURL = Contact.GetPhotoURL(c.Id),
+                        FirstYear = c.FirstYear.GetValueOrDefault(0),
+                        Zip = c.Zip,
+                        BirthDate = c.DateOfBirth
 					});
 		}
 
@@ -400,6 +409,21 @@ namespace DataAccess
             return true;
 		}
 
+        static public bool ReleaseAllPlayers(long teamSeasonId)
+        {
+            DB db = DBConnection.GetContext();
+
+            var dbPlayers = (from rs in db.RosterSeasons
+                            where rs.TeamSeasonId == teamSeasonId
+                            select rs);
+
+            foreach(var p in dbPlayers)
+                p.Inactive = true;
+
+            db.SubmitChanges();
+            return true;
+        }
+
 		static public bool ReleasePlayer(long playerSeasonId)
 		{
             DB db = DBConnection.GetContext();
@@ -567,7 +591,10 @@ namespace DataAccess
                         FirstName = co.FirstName,
                         MiddleName = co.MiddleName,
                         LastName = co.LastName,
-                        PhotoURL = Contact.GetPhotoURL(co.Id)
+                        PhotoURL = Contact.GetPhotoURL(co.Id),
+                        FirstYear = co.FirstYear.GetValueOrDefault(0),
+                        Zip = co.Zip,
+                        BirthDate = co.DateOfBirth
                     }).Distinct();
         }
 

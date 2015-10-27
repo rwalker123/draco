@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,59 +7,18 @@ namespace ModelObjects
 	/// </summary>
     public class PhotoGalleryAlbum
     {
-        private long m_id;
-        private long m_accountId;
-        private string m_title;
-        private long m_albumId;
-        private long m_teamId;
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Title { get; set; } // Title
+        public long ParentAlbumId { get; set; } // ParentAlbumId
+        public long TeamId { get; set; } // TeamId
+
+        // Reverse navigation
+        public virtual ICollection<PhotoGalleryItem> Photos { get; set; } // PhotoGallery.FK_PhotoGallery_PhotoGalleryAlbum
 
         public PhotoGalleryAlbum()
         {
-        }
-
-        public PhotoGalleryAlbum(long id, string title, long accountId, long albumId, long teamId)
-        {
-            m_id = id;
-            m_accountId = accountId;
-            m_title = title;
-            m_albumId = albumId;
-            m_teamId = teamId;
-        }
-
-        public long Id
-        {
-            get { return m_id; }
-            set { m_id = value; }
-        }
-
-        public long ParentAlbumId
-        {
-            get { return m_albumId; }
-            set { m_albumId = value; }
-        }
-
-        public long AccountId
-        {
-            get { return m_accountId; }
-            set { m_accountId = value; }
-        }
-
-        public string Title
-        {
-            get { return m_title; }
-            set { m_title = value; }
-        }
-
-        public long TeamId
-        {
-            get { return m_teamId; }
-            set { m_teamId = value; }
-        }
-
-        public long PhotoCount
-        {
-            get;
-            set;
+            Photos = new List<PhotoGalleryItem>();
         }
     }
 }

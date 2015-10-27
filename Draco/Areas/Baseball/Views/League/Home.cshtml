@@ -140,6 +140,7 @@
 </div>
 
 <div class="container-fluid">
+
     @if (Model.ContactId == 0 && Model.ShowFAQMessage)
     { 
     <div class="row center-block text-center">
@@ -152,7 +153,16 @@
     }
     
     <div class="row">
+
         <div class="col-md-8"> <!-- column 1-->
+            @if (Model.ShowSponsorSpotlight)
+            {
+                <div class="row">
+                    <div class="col-sm-12">
+                        @{Html.RenderPartial("SponsorSpotlightView", new SportsManager.ViewModels.SponsorSpotlightViewModel(Model.Controller, Model.AccountId));}
+                    </div>
+                </div>
+            }
             @if (Model.ShowWorkouts)
             {
                 <div class="row">
@@ -323,6 +333,11 @@ else
     <script type="text/javascript" src="~/Scripts/playersurveyspotlight.js"></script>
 }
 
+@if (Model.ShowSponsorSpotlight)
+{
+    <script type="text/javascript" src="~/Scripts/sponsorspotlight.js"></script>
+}
+
 @if (Model.ShowHOF)
 {
     <script type="text/javascript" src="~/Scripts/hofspotlight.js"></script>
@@ -400,12 +415,19 @@ else
 
         initKOHelpers();
 
-        InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]');
+        InitViewModels(@Model.AccountId, '@Model.AccountName', @Model.FirstYear, '@ViewData["TwitterAccountName"]', '@Model.AccountLogoUrl');
 
         @if (Model.ShowPlayerInterview)
         {
             <text>
             InitPlayerSurveySpotlightViewModel(@Model.AccountId);
+            </text>
+        }
+
+        @if (Model.ShowSponsorSpotlight)
+        {
+            <text>
+            InitSponsorSpotlightViewModel(@Model.AccountId);
             </text>
         }
 
@@ -486,7 +508,7 @@ else
         @if (Model.VideosEnabled && Model.ShowVideos)
         {
             <text>
-            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId');
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', '@Model.DefaultVideo', @Model.AutoPlayVideo.ToString().ToLower());
             </text>
         }
 

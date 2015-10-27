@@ -4,22 +4,22 @@ using System.Linq;
 
 namespace DataAccess
 {
-/// <summary>
-/// Summary description for LeagueFAQ
-/// </summary>
-	static public class LeagueFAQ
-	{
-		static public LeagueFAQItem GetFAQItem(long faqId)
-		{
+    /// <summary>
+    /// Summary description for LeagueFAQ
+    /// </summary>
+    static public class LeagueFAQ
+    {
+        static public LeagueFAQItem GetFAQItem(long faqId)
+        {
             DB db = DBConnection.GetContext();
 
             return (from faq in db.LeagueFAQs
                     where faq.id == faqId
                     select new LeagueFAQItem(faq.id, faq.Question, faq.Answer, faq.AccountId)).SingleOrDefault();
-		}
+        }
 
-		static public IQueryable<LeagueFAQItem> GetFAQ(long accountId)
-		{
+        static public IQueryable<LeagueFAQItem> GetFAQ(long accountId)
+        {
             DB db = DBConnection.GetContext();
 
             return (from faq in db.LeagueFAQs
@@ -27,8 +27,8 @@ namespace DataAccess
                     select new LeagueFAQItem(faq.id, faq.Question, faq.Answer, faq.AccountId));
         }
 
-		static public bool ModifyFAQ(LeagueFAQItem modFaq)
-		{
+        static public bool ModifyFAQ(LeagueFAQItem modFaq)
+        {
             DB db = DBConnection.GetContext();
 
             var dbFaq = (from faq in db.LeagueFAQs
@@ -44,10 +44,10 @@ namespace DataAccess
             db.SubmitChanges();
 
             return true;
-		}
+        }
 
-		static public bool AddFAQ(LeagueFAQItem faq)
-		{
+        static public bool AddFAQ(LeagueFAQItem faq)
+        {
             DB db = DBConnection.GetContext();
 
             var dbFaq = new SportsManager.Model.LeagueFAQ();
@@ -61,10 +61,10 @@ namespace DataAccess
             faq.Id = dbFaq.id;
 
             return true;
-		}
+        }
 
-		static public bool RemoveFAQ(long faqId)
-		{
+        static public bool RemoveFAQ(long faqId)
+        {
             DB db = DBConnection.GetContext();
 
             var dbFaq = (from faq in db.LeagueFAQs
@@ -77,6 +77,6 @@ namespace DataAccess
             db.SubmitChanges();
 
             return true;
-		}
-	}
+        }
+    }
 }

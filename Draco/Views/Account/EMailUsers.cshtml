@@ -56,7 +56,7 @@
                     </div>
                     <div data-bind="fadeVisible: toOptionsAvailable" class="form-group">
                         <div data-bind="visible: toField() == 5" class="col-sm-12">
-                            <input type="text" id="toOptionsInput" class="form-control" data-bind="typeahead: { datasets: { source: getPlayers, displayKey: 'label' }, target: selectPlayer, options: { highlight: true } }" placeholder="type last name to begin search" />
+                            <input type="text" id="toOptionsInput" class="form-control" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectPlayer, options: { highlight: true } }" placeholder="type last name to begin search" />
                         </div>
                     </div>
                    <div class="form-group">
@@ -247,7 +247,7 @@ else
 
         }
 
-        self.getPlayers = function (query, cb) {
+        self.getPlayers = function (query, syncResults, asyncResults) {
 
             $.ajax({
                 url: window.config.rootUri + '/api/UserRolesAPI/@Model.AccountId/SearchContacts',
@@ -273,7 +273,7 @@ else
                             selected: ko.observable()
                         }
                     });
-                    cb(results);
+                    asyncResults(results);
                 },
             });
         }
@@ -320,7 +320,7 @@ else
                     $.each(teams, function () {
                         self.availableToData.push({
                             id: this.Id,
-                            text: this.Name,
+                            text: this.LeagueName + ' ' + this.Name,
                             logo: this.TeamLogoURL,
                             hasLogo: !!this.TeamLogoURL,
                             selected: ko.observable(false)
@@ -340,12 +340,12 @@ else
                     }
 
                     $.each(managers, function () {
-                        var fullName = this.LastName + ", " + this.FirstName;
+                        var fullName = this.Contact.LastName + ", " + this.Contact.FirstName;
                         if (this.MiddleName)
-                            fullName += " " + this.MiddleName;
+                            fullName += " " + this.Contact.MiddleName;
 
                         self.availableToData.push({
-                            id: this.Id,
+                            id: this.Contact.Id,
                             text: fullName,
                             logo: this.TeamLogoURL,
                             hasLogo: !!this.TeamLogoURL,

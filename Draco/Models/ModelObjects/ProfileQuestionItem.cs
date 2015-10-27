@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -7,40 +7,20 @@ namespace ModelObjects
 /// </summary>
 	public class ProfileQuestionItem
 	{
-		public ProfileQuestionItem()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long CategoryId { get; set; } // CategoryId
+        public string Question { get; set; } // Question
+        public int QuestionNum { get; set; } // QuestionNum
 
-		public ProfileQuestionItem(long id, long catId, string question, int num)
-		{
-			Id = id;
-			CategoryId = catId;
-			Question = question;
-			QuestionNum = num;
-		}
+        // Reverse navigation
+        public virtual ICollection<ProfileQuestionAnswer> PlayerProfiles { get; set; } // PlayerProfile.FK_PlayerProfile_ProfileQuestion
 
-		public long Id
-		{
-			get;
-			set;
-		}
-
-		public long CategoryId
-		{
-			get;
-			set;
-		}
-
-		public string Question
-		{
-			get;
-			set;
-		}
-
-		public int QuestionNum
-		{
-			get;
-			set;
-		}
+        // Foreign keys
+        public virtual ProfileCategoryItem ProfileCategory { get; set; } // FK_ProfileQuestion_ProfileCategory
+        
+        public ProfileQuestionItem()
+        {
+            PlayerProfiles = new List<ProfileQuestionAnswer>();
+        }
 	}
 }

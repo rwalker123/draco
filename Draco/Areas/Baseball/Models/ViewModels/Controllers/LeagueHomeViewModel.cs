@@ -1,0 +1,226 @@
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.ViewModels;
+using System;
+using System.Linq;
+
+namespace SportsManager.Baseball.ViewModels
+{
+    public class LeagueHomeViewModel : AccountViewModel
+    {
+        public LeagueHomeViewModel(DBController c, long accountId)
+            : base(c, accountId)
+        {
+            SeasonName = c.GetCurrentSeason(AccountId)?.Name;
+            if (Account != null)
+            {
+                FirstYear = (Account.FirstYear == 0) ? DateTime.Now.Year : Account.FirstYear;
+                YouTubeUserId = Account.YouTubeUserId; // "GoogleDevelopers";  // "lopPrnYe7Vgh6u_TYPFHmQ"; 
+                if (!String.IsNullOrEmpty(YouTubeUserId))
+                {
+                    DefaultVideo = Account.DefaultVideo;
+                    AutoPlayVideo = Account.AutoPlayVideo;
+                }
+            }
+            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
+            ShowPhotoGallery = IsAdmin || c.Db.PhotoGalleries.Where(pg => pg.AccountId == accountId).Any();
+
+            ShowHandouts = IsAdmin || c.Db.AccountHandouts.Where(ah => ah.AccountId == accountId).Any();
+            var now = DateTime.Now.AddDays(-1);
+
+            ShowWorkouts = IsAdmin || c.Db.WorkoutAnnouncements.Where(wa => wa.AccountId == accountId && wa.WorkoutDate >= now).Any();
+            ShowSponsors = IsAdmin || c.Db.Sponsors.Where(sp => sp.AccountId == accountId && sp.TeamId == 0).Any();
+            ShowFAQMessage = c.Db.LeagueFaqs.Where(faq => faq.AccountId == accountId).Any();
+            
+            var showFacebookLike = false;
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
+            ShowFacebookLike = showFacebookLike;
+
+            var showPlayerSurvey = false;
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
+
+            var hasPlayerInterview = (from pp in c.Db.PlayerProfiles
+                                      join r in c.Db.Rosters on pp.PlayerId equals r.ContactId
+                                      join rs in c.Db.RosterSeasons on r.Id equals rs.PlayerId
+                                      join ts in c.Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
+                                      join ls in c.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
+                                      where r.AccountId == accountId && ls.SeasonId == CurrentSeasonId
+                                      select pp).Distinct();
+
+            ShowPlayerInterview = showPlayerSurvey && hasPlayerInterview.Any();
+
+            var showHOF = false;
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowHOF"), out showHOF);
+            ShowHOF = showHOF && c.Db.Hofs.Where(hof => hof.AccountId == accountId).Any();
+
+            var hasLeaderCats = c.Db.DisplayLeagueLeaders.Where(ll => ll.AccountId == accountId && ll.TeamId == 0).Any();
+            ShowLeagueLeaders = IsAdmin || hasLeaderCats;
+            ShowAnnouncements = true;
+            ShowBirthdays = true;
+            ShowWelcomeMessages = true;
+            ShowScoreboard = true;
+            ShowUserPoll = IsAdmin || c.Db.VoteQuestions.Where(vq => vq.AccountId == accountId && vq.Active).Any();
+
+            UserTeams = c.GetCurrentUserTeams(accountId);
+
+            var showSponsorSpotlight = false;
+            bool.TryParse(c.GetAccountSetting(accountId, "ShowSponsorSpotlight"), out showSponsorSpotlight);
+            ShowSponsorSpotlight = showSponsorSpotlight && Account.Sponsors.Any();
+
+            TwitterEnabled = false;
+            FacebookEnabled = false;
+            VideosEnabled = true;
+        }
+
+        public Sponsor SponsorSpotlight
+        {
+            get;
+            private set;
+        }
+
+        public IQueryable<TeamSeason> UserTeams
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowWelcomeMessages
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowAnnouncements
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowFacebookLike
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowScoreboard
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowBirthdays
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowHOF
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowHandouts
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowWorkouts
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowUserPoll
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowPlayerInterview
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowLeagueLeaders
+        {
+            get;
+            private set;
+
+        }
+
+        public bool ShowSponsors
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowSponsorSpotlight
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowFAQMessage
+        {
+            get;
+            private set;
+        }
+
+        public bool TwitterEnabled
+        {
+            get;
+            private set;
+        }
+
+        public bool FacebookEnabled
+        {
+            get;
+            private set;
+        }
+
+        public bool VideosEnabled
+        {
+            get;
+            private set;
+        }
+
+        public bool ShowVideos
+        {
+            get;
+            private set;
+        }
+
+        public string DefaultVideo 
+        { 
+            get; 
+            private set; 
+        }
+
+        public bool AutoPlayVideo 
+        { 
+            get; 
+            private set; 
+        }
+
+        public bool ShowPhotoGallery
+        {
+            get;
+            private set;
+        }
+
+        public string SeasonName
+        {
+            get;
+            private set;
+        }
+
+        public string YouTubeUserId
+        {
+            get;
+            private set;
+        }
+    }
+}

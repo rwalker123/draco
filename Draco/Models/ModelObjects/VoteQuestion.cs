@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ModelObjects
 {
@@ -9,58 +7,22 @@ namespace ModelObjects
 /// </summary>
 	public class VoteQuestion
 	{
-		public VoteQuestion()
-		{
-		}
+        public long Id { get; set; } // id (Primary key)
+        public long AccountId { get; set; } // AccountId
+        public string Question { get; set; } // Question
+        public bool Active { get; set; } // Active
 
-		public VoteQuestion(long id, string question, bool active, long accountId)
-		{
-			Id = id;
-			AccountId = accountId;
-			Question = question;
-			Active = active;
-		}
+        // Reverse navigation
+        public virtual ICollection<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers.FK_VoteAnswers_VoteQuestion
+        public virtual ICollection<VoteOption> VoteOptions { get; set; } // VoteOptions.FK_VoteOptions_VoteQuestion
 
-		public long Id
-		{
-			get;
-			set;
-		}
+        // Foreign keys
+        public virtual Account Account { get; set; } // FK_VoteQuestion_Accounts
 
-		public long AccountId
-		{
-			get;
-			set;
-		}
-
-		public string Question
-		{
-			get;
-			set;
-		}
-
-		public bool Active
-		{
-			get;
-			set;
-		}
-
-        public IEnumerable<VoteResults> Results
+        public VoteQuestion()
         {
-            get;
-            set;
+            VoteAnswers = new List<VoteAnswer>();
+            VoteOptions = new List<VoteOption>();
         }
-
-        public bool HasVoted
-        {
-            get;
-            set;
-        }
-
-        public long OptionSelected
-        {
-            get;
-            set;
-        }
-	}
+    }
 }

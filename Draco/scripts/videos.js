@@ -1,17 +1,13 @@
 ﻿var ytViewModel;
 
-function initVideosViewModel(accountId, isAdmin, youTubeId, teamId) {
+function initVideosViewModel(accountId, isAdmin, youTubeId, defaultVideo, autoPlay, teamId) {
 
-    ytViewModel = new youTubeViewModel(accountId, isAdmin, youTubeId, teamId);
+    ytViewModel = new youTubeViewModel(accountId, isAdmin, youTubeId, defaultVideo, autoPlay, teamId);
     ko.applyBindings(ytViewModel, document.getElementById("videos"));
 
     // 2. This code loads the IFrame Player API code asynchronously.
     var tag = document.createElement('script');
 
-    // This is a protocol-relative URL as described here:
-    //     http://paulirish.com/2010/the-protocol-relative-url/
-    // If you're testing a local page accessed via a file:/// URL, please set tag.src to
-    //     "https://www.youtube.com/iframe_api" instead.
     tag.src = "//www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -42,64 +38,11 @@ function onYouTubeIframeAPIReady() {
             'onStateChange': onPlayerStateChange
         }
     });
-
-    loadVideos(ytViewModel.userId());
-}
-
-function loadVideos(youTubeId) {
-
-    ytViewModel.videoEntries(null);
-
-    $.ajax({
-        dataType: "json",
-        url: 'http://gdata.youtube.com/feeds/users/' + youTubeId + '/uploads?alt=json-in-script&max-results=50&callback=?',
-        success: function (data) {
-
-            var feed = data.feed;
-            var entries = feed.entry || [];
-
-            var mappedEntries = $.map(entries, function (entry) {
-                return new Object ({
-                    title: entry.title.$t,
-                    thumbnailUrl: entry.media$group.media$thumbnail[0].url,
-                    playerUrl: entry.media$group.media$content[0].url // entries[i].id.$t.match('[^/]*$');
-                });
-            });
-
-            ytViewModel.videoEntries(mappedEntries);
-
-            if (!ytViewModel.isAdmin) {
-                if (entries.length == 0) {
-                    $('#videos').hide();
-                    return;
-                }
-            }
-
-            //var videoHeight = '';
-            //if (isAdmin) {
-            //    // set the height of the video list if admin.
-            //    videoHeight = " style='height: 240px'";
-            //}
-
-            //$('#videos2').html('');
-            //var html = ['<ul class="videos"' + videoHeight + '>'];
-            //for (var i = 0; i < entries.length; i++) {
-            //    var entry = entries[i];
-            //    var title = entry.title.$t.substr(0, 20);
-            //    var thumbnailUrl = entries[i].media$group.media$thumbnail[0].url;
-            //    var playerUrl = entries[i].media$group.media$content[0].url; // entries[i].id.$t.match('[^/]*$');
-            //    html.push('<li onclick="loadVideo(\'', playerUrl, '\', true)">',
-            //              '<span class="titlec">', title, '...</span><br /><img src="',
-            //              thumbnailUrl, '" style="width:130px;height:97px;cursor:pointer" />', '</span></li>');
-            //}
-            //html.push('</ul><br style="clear: left;"/>');
-            //$('#videos2').html(html.join(''));
-        }
-    });
 }
 
 // 4. The API will call this function when the video player is ready.
 function onPlayerReady(event) {
+    ytViewModel.loadVideos(ytViewModel.userId());
 }
 
 // 5. The API calls this function when the player's state changes.
@@ -112,7 +55,7 @@ function stopVideo() {
 }
 
 // you tube view model
-var youTubeViewModel = function (accountId, isAdmin, id, teamId) {
+var youTubeViewModel = function (accountId, isAdmin, id, defaultVideo, autoPlay, teamId) {
     var self = this;
 
     self.accountId = accountId;
@@ -125,14 +68,74 @@ var youTubeViewModel = function (accountId, isAdmin, id, teamId) {
     self.videosVisible = ko.observable(true);
     self.videoEntries = ko.observableArray();
 
+    self.defaultVideo = ko.observable(defaultVideo);
+    self.autoPlay = ko.observable(autoPlay);
+    self.autoPlay.subscribe(function () {
+
+        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId;
+
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/autoplayvideo';
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: {
+                Id: self.autoPlay() ? "1": "0"
+            },
+            success: function () {
+            }
+        });
+    });
+
+    self.runVideoOnChange = true;
+
     self.selectedVideo = ko.observable();
     self.selectedVideo.subscribe(function () {
-        loadVideo(self.selectedVideo());
+        if (self.runVideoOnChange)
+            loadVideo(self.selectedVideo());
     });
 
     self.editYouTube = function () {
         self.savedId = self.userId();
         self.viewMode(false);
+    }
+
+    self.initializeDefaultVideo = function () {
+        if (!self.videoEntries().length || !self.defaultVideo())
+            return;
+
+        var defaultVideo = ko.utils.arrayFirst(self.videoEntries(), function (v) {
+            return v.title == self.defaultVideo();
+        });
+
+        self.runVideoOnChange = false;
+        self.selectedVideo(defaultVideo);
+        $(".videoPicker").selectpicker("refresh");
+        self.runVideoOnChange = true;
+    }
+
+    self.makeDefaultSelection = function () {
+        var selectedVideo = (self.selectedVideo() ? self.selectedVideo().title : '');
+
+        var url = window.config.rootUri + '/api/AccountAPI/' + self.accountId;
+
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/defaultvideo';
+
+        $.ajax({
+            type: "PUT",
+            url: url,
+            data: {
+                Id: selectedVideo
+            },
+            success: function () {
+            }
+        });
     }
 
     self.saveUserId = function () {
@@ -150,7 +153,7 @@ var youTubeViewModel = function (accountId, isAdmin, id, teamId) {
                 Id: self.userId()
             },
             success: function (userId) {
-                loadVideos(userId);
+                self.loadVideos(userId);
                 self.viewMode(true);
             }
         });
@@ -165,6 +168,41 @@ var youTubeViewModel = function (accountId, isAdmin, id, teamId) {
 
     self.toggleShowHelp = function () {
         self.showHelp(!self.showHelp());
+    }
+
+    self.loadVideos = function(youTubeId) {
+
+        ytViewModel.videoEntries.removeAll();
+        var url = window.config.rootUri + '/api/YouTubeAPI/' + self.accountId;
+
+        if (self.teamId)
+            url = url + '/team/' + self.teamId;
+
+        url = url + '/videos';
+
+
+        $.ajax({
+            type: "GET",
+            url: url,
+            success: function (videos) {
+                ytViewModel.videoEntries(videos);
+
+                if (!ytViewModel.isAdmin) {
+                    if (videos.length == 0) {
+                        $('#videos').hide();
+                        return;
+                    }
+                }
+
+                ytViewModel.initializeDefaultVideo();
+
+                if (ytViewModel.autoPlay())
+                    loadVideo(ytViewModel.selectedVideo());
+                else if (ytViewModel.selectedVideo())
+                    player.cueVideoByUrl(ytViewModel.selectedVideo().playerUrl);
+
+            }
+        });
     }
 }
 

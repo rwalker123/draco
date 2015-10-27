@@ -120,7 +120,7 @@ var UserProfileClass = function (accountId, contactId) {
     }
 
     self.saveEditInfo = function (userData) {
-        if (!userData.isValid())
+        if (!self.editUser.isValid())
             return;
 
         var data = userData.toJS();

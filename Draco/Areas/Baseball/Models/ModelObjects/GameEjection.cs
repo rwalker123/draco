@@ -1,5 +1,3 @@
-using System;
-using System.Configuration;
 
 namespace ModelObjects
 {
@@ -8,62 +6,17 @@ namespace ModelObjects
     /// </summary>
     public class GameEjection
     {
-        private long m_id = 0;
-        private long m_leagueSeasonId = 0;
-        private long m_gameId = 0;
-        private long m_umpireId = 0;
-        private long m_playerSeasonId = 0;
-        private string m_comments = string.Empty;
+        public long Id { get; set; } // id (Primary key)
+        public long LeagueSeasonId { get; set; } // leagueSeasonId
+        public long GameId { get; set; } // gameId
+        public long PlayerSeasonId { get; set; } // playerSeasonId
+        public long UmpireId { get; set; } // umpireId
+        public string Comments { get; set; } // comments
 
-
-        public GameEjection()
-        {
-        }
-
-        public GameEjection(long id, long leagueSeasonId, long gameId, long playerSeasonId, long umpireId, string comments)
-        {
-            m_id = id;
-            m_leagueSeasonId = leagueSeasonId;
-            m_gameId = gameId;
-            m_umpireId = umpireId;
-            m_playerSeasonId = playerSeasonId;
-            m_comments = comments;
-        }
-
-        public long Id
-        {
-            get { return m_id; }
-            set { m_id = value; }
-        }
-
-        public long LeagueSeasonId
-        {
-            get { return m_leagueSeasonId; }
-            set { m_leagueSeasonId = value; }
-        }
-
-        public long GameId
-        {
-            get { return m_gameId; }
-            set { m_gameId = value; }
-        }
-
-        public long UmpireId
-        {
-            get { return m_umpireId; }
-            set { m_umpireId = value; }
-        }
-
-        public long PlayerSeasonId
-        {
-            get { return m_playerSeasonId; }
-            set { m_playerSeasonId = value; }
-        }
-
-        public string Comments
-        {
-            get { return m_comments; }
-            set { m_comments = value; }
-        }
+        // Foreign keys
+        public virtual Game LeagueSchedule { get; set; } // FK_GameEjections_LeagueSchedule
+        public virtual LeagueSeason LeagueSeason { get; set; } // FK_GameEjections_LeagueSeason
+        public virtual Umpire LeagueUmpire { get; set; } // FK_GameEjections_LeagueUmpires
+        public virtual PlayerSeason RosterSeason { get; set; } // FK_GameEjections_RosterSeason
     }
 }

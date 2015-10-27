@@ -24,61 +24,43 @@ namespace ModelObjects
 		//    Tournament = 1
 		//}
 
-		public Game()
-		{
-            AwayPlayersPresent = new List<long>();
-            HomePlayersPresent = new List<long>();
-		}
+        public long Id { get; set; } // id (Primary key)
+        public DateTime GameDate { get; set; } // GameDate
+        public long HTeamId { get; set; } // HTeamId
+        public long VTeamId { get; set; } // VTeamId
+        public int HScore { get; set; } // HScore
+        public int VScore { get; set; } // VScore
+        public string Comment { get; set; } // Comment
+        public long FieldId { get; set; } // FieldId
+        public long LeagueId { get; set; } // LeagueId
+        public int GameStatus { get; set; } // GameStatus
+        public long GameType { get; set; } // GameType
+        public long Umpire1 { get; set; } // Umpire1
+        public long Umpire2 { get; set; } // Umpire2
+        public long Umpire3 { get; set; } // Umpire3
+        public long Umpire4 { get; set; } // Umpire4
 
-		public Game(long leagueId, long gameId, DateTime gameDate, 
-			long hTeamId, long vTeamId, int hScore, int vScore, string comment,
-			long fieldId, int gameStatus, long gameType,
-			long umpire1, long umpire2, long umpire3, long umpire4)
-		{
-            AwayPlayersPresent = new List<long>();
-            HomePlayersPresent = new List<long>();
-            
-            Id = gameId;
-			LeagueId = leagueId;
-			GameDate = gameDate; // .ToString("d");
-			HomeTeamId = hTeamId;
-			AwayTeamId = vTeamId;
-			AwayScore = vScore;
-			HomeScore = hScore;
-			FieldId = fieldId;
-			GameStatus = gameStatus;
-			Comment = comment;
-			GameType = gameType;
+        // Reverse navigation
+        public virtual ICollection<GameBatStats> Batstatsums { get; set; } // batstatsum.FK_batstatsum_LeagueSchedule
+        //public virtual ICollection<Fieldstatsum> Fieldstatsums { get; set; } // fieldstatsum.FK_fieldstatsum_LeagueSchedule
+        public virtual ICollection<GameEjection> GameEjections { get; set; } // GameEjections.FK_GameEjections_LeagueSchedule
+        public virtual ICollection<GameRecap> GameRecaps { get; set; } // Many to many mapping
+        public virtual ICollection<GamePitchStats> Pitchstatsums { get; set; } // pitchstatsum.FK_pitchstatsum_LeagueSchedule
+        public virtual ICollection<PlayerRecap> PlayerRecaps { get; set; } // Many to many mapping
+        public virtual Field AvailableField { get; set; }
 
-			Umpire1 = umpire1;
-			Umpire2 = umpire2;
-			Umpire3 = umpire3;
-			Umpire4 = umpire4;
-		}
-
-		public long Id { get; set; }
-		public long LeagueId { get; set; }
-		public DateTime GameDate { get; set; }
-		public long HomeTeamId { get; set; }
-		public long AwayTeamId { get; set; }
-		public int HomeScore { get; set; }
-		public int AwayScore { get; set; }
-		public string Comment { get; set; }
-		public long FieldId { get; set; }
-		public long GameType { get; set; }
-		public int GameStatus { get; set; }
-		public long Umpire1 { get; set; }
-		public long Umpire2 { get; set; }
-		public long Umpire3 { get; set; }
-		public long Umpire4 { get; set; }
-        public bool HasGameRecap { get; set; }
-
-        public string HomeTeamName { get; set; }
-        public string AwayTeamName { get; set; }
-        public string FieldName { get; set; }
-        public string LeagueName { get; set; }
-        public IEnumerable<long> HomePlayersPresent { get; set; }
-        public IEnumerable<long> AwayPlayersPresent { get; set; }
+        // Foreign keys
+        public virtual LeagueSeason LeagueSeason { get; set; } // FK_LeagueSchedule_LeagueSeason
+        
+        public Game()
+        {
+            Batstatsums = new List<GameBatStats>();
+            //Fieldstatsums = new List<Fieldstatsum>();
+            GameEjections = new List<GameEjection>();
+            GameRecaps = new List<GameRecap>();
+            Pitchstatsums = new List<GamePitchStats>();
+            PlayerRecaps = new List<PlayerRecap>();
+        }
 
 		public string GameStatusText
 		{
@@ -126,7 +108,7 @@ namespace ModelObjects
 						return string.Empty;
 				}
 			}
-		}
+        }
 
 		public long GameWinner
 		{
@@ -134,23 +116,26 @@ namespace ModelObjects
 			{
 				long ret = -1;
 
-				if (IsGameComplete())
+				if (IsGameComplete)
 				{
-					if (HomeScore > AwayScore)
-						ret = HomeTeamId;
-					else if (HomeScore < AwayScore)
-						ret = AwayTeamId;
-					else if (HomeScore == AwayScore)
+					if (HScore > VScore)
+						ret = HTeamId;
+					else if (HScore < VScore)
+						ret = VTeamId;
+					else if (HScore == VScore)
 						ret = 0;
 				}
 
 				return ret;
 			}
-		}
+        }
 
-		public bool IsGameComplete()
+		public bool IsGameComplete
 		{
-			return (GameStatus == 1 || GameStatus == 4);
-		}
+            get
+            {
+                return (GameStatus == 1 || GameStatus == 4);
+            }
+        }
 	}
 }

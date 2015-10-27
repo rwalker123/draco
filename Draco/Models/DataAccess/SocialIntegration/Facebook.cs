@@ -1,10 +1,6 @@
-﻿
-using System;
+﻿using System;
 using System.Linq;
 using System.Web.SessionState;
-
-using SportsManager;
-using SportsManager.Model;
 
 namespace DataAccess.SocialIntegration
 {
@@ -32,7 +28,7 @@ namespace DataAccess.SocialIntegration
             if (account != null)
             {
                 account.FacebookFanPage = pageName;
-                db.SubmitChanges();
+                db.SaveChanges();
                 return true;
             }
 
@@ -53,7 +49,7 @@ namespace DataAccess.SocialIntegration
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return apiKey;
@@ -73,7 +69,7 @@ namespace DataAccess.SocialIntegration
             }
             catch (Exception ex)
             {
-                Globals.LogException(ex);
+                Elmah.ErrorSignal.FromCurrentContext().Raise(ex);
             }
 
             return secretKey;

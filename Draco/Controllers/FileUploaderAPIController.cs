@@ -1,23 +1,24 @@
-﻿using System;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Models;
+using SportsManager.Models.Helpers;
+using SportsManager.ViewModels.API;
+using System;
 using System.Configuration;
-using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Net;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Http;
-using ModelObjects;
-using SportsManager.Models;
-using System.Text;
 
 namespace SportsManager.Controllers
 {
-    public class FileUploaderAPIController : ApiController
+    public class FileUploaderAPIController : DBApiController
     {
         // try to keep all at a 16 x 9 format
         private readonly Size largeImageSize = new Size(800, 450); // "50" units 16 x 50 = 800
@@ -33,6 +34,10 @@ namespace SportsManager.Controllers
             Normal,
             Absolute,
             Maximum
+        }
+
+        public FileUploaderAPIController(DB db) : base(db)
+        {
         }
 
         [AcceptVerbs("DELETE"), HttpDelete]
@@ -54,26 +59,45 @@ namespace SportsManager.Controllers
         [ActionName("PhotoGallery")]
         public async Task<HttpResponseMessage> TeamPhotoGallery(long accountId, long teamSeasonId)
         {
-            if (accountId == 0)
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+            if (accountId == 0 || teamSeasonId == 0)
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
 
-            if (teamSeasonId== 0)
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
-
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            var teamAlbums = DataAccess.PhotoGallery.GetTeamPhotoAlbums(accountId, team.TeamId);
-            // this is should never happen as GetTeamPhotoAlbums should create the album if it doesn't exist.
+            var teamAlbums = Db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
+            // if team album doesn't exist yet, create it.
             if (!teamAlbums.Any())
-                return Request.CreateResponse(HttpStatusCode.NotFound);
+            {
+                var newTeamAlbum = new PhotoGalleryAlbum()
+                {
+                    AccountId = accountId,
+                    ParentAlbumId = 0,
+                    Title = team.LeagueSeason.League.Name + " " + team.Name,
+                    TeamId = team.TeamId
+                };
+
+                Db.PhotoGalleryAlbums.Add(newTeamAlbum);
+                Db.SaveChanges();
+
+                teamAlbums = Db.PhotoGalleryAlbums.Where(pa => pa.AccountId == accountId && pa.TeamId == team.TeamId);
+                // this is should never happen as we just created the team album.
+                if (!teamAlbums.Any())
+                    Request.CreateResponse(HttpStatusCode.NotFound);
+            }
 
             var teamAlbum = teamAlbums.First();
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
             var formData = multipartData.FormData;
+
+            if (teamAlbum.Photos.Count() > Int32.Parse(ConfigurationManager.AppSettings["MaxPhotosPerAlbum"]))
+            {
+                File.Delete(file.LocalFileName);
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
+            }
 
             PhotoGalleryItem item = new PhotoGalleryItem()
             {
@@ -87,25 +111,36 @@ namespace SportsManager.Controllers
             if (String.IsNullOrEmpty(item.Title))
                 item.Title = System.IO.Path.GetFileNameWithoutExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' }));
 
-            bool rc = DataAccess.PhotoGallery.AddPhoto(item);
-
-            if (rc)
+            try
             {
+                Db.PhotoGalleries.Add(item);
+                Db.SaveChanges();
+
                 HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
+
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
                 if (msg.IsSuccessStatusCode)
-                    return Request.CreateResponse<PhotoGalleryItem>(HttpStatusCode.OK, item);
+                {
+                    var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(item);
+                    return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
+                }
                 else
                 {
-                    await DataAccess.PhotoGallery.RemovePhoto(item);
+                    Db.PhotoGalleries.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
-            }
-            else
-            {
-                File.Delete(file.LocalFileName);
-            }
 
-            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
+            }
+            catch
+            {
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -113,12 +148,15 @@ namespace SportsManager.Controllers
         [ActionName("PhotoGallery")]
         public async Task<HttpResponseMessage> PhotoGallery(long accountId)
         {
-            if (accountId == 0)
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
-
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
             var formData = multipartData.FormData;
+
+            if (accountId == 0)
+            {
+                File.Delete(file.LocalFileName);
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
+            }
 
             PhotoGalleryItem item = new PhotoGalleryItem()
             {
@@ -129,28 +167,46 @@ namespace SportsManager.Controllers
                 AccountId = accountId
             };
 
+            var numPhotos = Db.PhotoGalleries.Where(pg => pg.AccountId == accountId && pg.AlbumId == item.AlbumId).Count();
+            if (numPhotos > Int32.Parse(ConfigurationManager.AppSettings["MaxPhotosPerAlbum"]))
+            {
+                File.Delete(file.LocalFileName);
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
+            }
+
             if (String.IsNullOrEmpty(item.Title))
                 item.Title = System.IO.Path.GetFileNameWithoutExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' }));
 
-            bool rc = DataAccess.PhotoGallery.AddPhoto(item);
-
-            if (rc)
+            try
             {
+                Db.PhotoGalleries.Add(item);
+                Db.SaveChanges();
+
                 HttpResponseMessage msg = await ProcessUploadRequest(file, accountId, item.PhotoURL, ImageFormat.Jpeg, largeImageSize, eSizeType.Maximum, true, item.PhotoThumbURL, largeImageThumbSize);
+
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
                 if (msg.IsSuccessStatusCode)
-                    return Request.CreateResponse<PhotoGalleryItem>(HttpStatusCode.OK, item);
+                {
+                    var vm = Mapper.Map<PhotoGalleryItem, PhotoViewModel>(item);
+                    return Request.CreateResponse<PhotoViewModel>(HttpStatusCode.OK, vm);
+                }
                 else
                 {
-                    await DataAccess.PhotoGallery.RemovePhoto(item);
+                    Db.PhotoGalleries.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
             }
-            else
+            catch
             {
-                File.Delete(file.LocalFileName);
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
             }
 
-            return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Maximum Photos in the given album reached.");
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -166,33 +222,43 @@ namespace SportsManager.Controllers
 
             String fileName = file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' });
 
-            AccountHandout item = new AccountHandout()
+            AccountHandout dbHandout = new AccountHandout()
             {
                 Id = 0,
                 Description = formData["Description"],
                 FileName = fileName,
-                ReferenceId = accountId
+                AccountId = accountId
             };
 
-            bool rc = DataAccess.AccountHandouts.AddAccountHandout(item);
-
-            if (rc)
+            try
             {
-                var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
+                Db.AccountHandouts.Add(dbHandout);
+                Db.SaveChanges();
+
+                var msg = await ProcessUploadRequest(file, accountId, dbHandout.HandoutURL);
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
                 if (msg.IsSuccessStatusCode)
-                    return Request.CreateResponse<AccountHandout>(HttpStatusCode.OK, item);
+                {
+                    var vm = Mapper.Map<AccountHandout, HandoutViewModel>(dbHandout);
+                    return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
+                }
                 else
                 {
-                    await DataAccess.AccountHandouts.RemoveAccountHandout(item);
+                    Db.AccountHandouts.Remove(dbHandout);
+                    Db.SaveChanges();
+
                     return msg;
                 }
             }
-            else
+            catch
             {
-                File.Delete(file.LocalFileName);
-            }
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -202,7 +268,7 @@ namespace SportsManager.Controllers
             if (accountId == 0)
                 return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "");
 
-            var team = DataAccess.Teams.GetTeam(teamSeasonId);
+            var team = Db.TeamsSeasons.Find(teamSeasonId);
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -217,28 +283,37 @@ namespace SportsManager.Controllers
                 Id = 0,
                 Description = formData["Description"],
                 FileName = fileName,
-                ReferenceId = team.TeamId
+                TeamId = team.TeamId
             };
 
-            bool rc = DataAccess.TeamHandouts.AddTeamHandout(item);
-
-            if (rc)
+            try
             {
+                Db.TeamHandouts.Add(item);
+                Db.SaveChanges();
                 var msg = await ProcessUploadRequest(file, accountId, item.HandoutURL);
+                
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
+
                 if (msg.IsSuccessStatusCode)
-                    return Request.CreateResponse<TeamHandout>(HttpStatusCode.OK, item);
+                {
+                    var vm = Mapper.Map<TeamHandout, HandoutViewModel>(item);
+                    return Request.CreateResponse<HandoutViewModel>(HttpStatusCode.OK, vm);
+                }
                 else
                 {
-                    await DataAccess.TeamHandouts.RemoveTeamHandout(item);
+                    Db.TeamHandouts.Remove(item);
+                    Db.SaveChanges();
                     return msg;
                 }
             }
-            else
+            catch
             {
-                File.Delete(file.LocalFileName);
-            }
+                if (File.Exists(file.LocalFileName))
+                    File.Delete(file.LocalFileName);
 
-            return Request.CreateResponse(HttpStatusCode.BadRequest);
+                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            }
         }
 
         [AcceptVerbs("POST"), HttpPost]
@@ -255,28 +330,28 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> ContactPhoto(long accountId, long id)
         {
-            ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
+            Contact c = Db.Contacts.Find(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, c.PhotoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, PhotoURLHelper.GetPhotoURL(c.Id), ImageFormat.Png, smallImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> ContactLargePhoto(long accountId, long id)
         {
-            ModelObjects.Contact c = DataAccess.Contacts.GetContact(id);
+            ModelObjects.Contact c = Db.Contacts.Find(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, c.LargePhotoURL, ImageFormat.Png, mediumPhotoImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, PhotoURLHelper.GetLargePhotoURL(c.Id), ImageFormat.Png, mediumPhotoImageSize, eSizeType.Maximum);
         }
 
 
@@ -284,35 +359,35 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> TeamLogo(long accountId, long id)
         {
-            Team t = DataAccess.Teams.GetTeamSeason(id);
+            TeamSeason t = Db.TeamsSeasons.Find(id);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, t.TeamLogoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.Team.TeamLogoURL, ImageFormat.Png, smallImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> TeamPhoto(long accountId, long id)
         {
-            Team t = DataAccess.Teams.GetTeamSeason(id);
+            TeamSeason t = Db.TeamsSeasons.Find(id);
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
-            return await ProcessUploadRequest(file, accountId, t.TeamPhotoURL, ImageFormat.Jpeg, mediumImageSize, eSizeType.Maximum);
+            return await ProcessUploadRequest(file, accountId, t.Team.TeamPhotoURL, ImageFormat.Jpeg, mediumImageSize, eSizeType.Maximum);
         }
 
         [AcceptVerbs("POST"), HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> AccountLargeLogo(long accountId)
         {
-            Account a = DataAccess.Accounts.GetAccount(accountId);
+            Account a = Db.Accounts.Find(accountId);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
@@ -324,7 +399,7 @@ namespace SportsManager.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public async Task<HttpResponseMessage> SponsorLogo(long accountId, long id)
         {
-            ModelObjects.Sponsor s = DataAccess.Sponsors.GetSponsor(id);
+            Sponsor s = Db.Sponsors.Find(id);
             if (s == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -372,6 +447,7 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
             }
         }
@@ -385,6 +461,7 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
                 return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, e);
             }
         }
@@ -397,6 +474,11 @@ namespace SportsManager.Controllers
             {
                 String fileExt = Path.GetExtension(file.Headers.ContentDisposition.FileName.Trim(new char[] { '"' })).ToLowerInvariant();
                 string imageExtensions = ConfigurationManager.AppSettings["ImageExtensions"];
+                if (imageExtensions == null)
+                {
+                    throw new Exception("imageExtensions is null, check ImageExtensions AppSetting");
+                }
+
                 if (!imageExtensions.Contains(fileExt) || !IsImageFile(file.LocalFileName))
                 {
                     File.Delete(file.LocalFileName);
@@ -463,6 +545,8 @@ namespace SportsManager.Controllers
             }
             catch (System.Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
+
                 if (File.Exists(file.LocalFileName))
                     File.Delete(file.LocalFileName);
 
@@ -499,8 +583,9 @@ namespace SportsManager.Controllers
                     return true;
                 }
             }
-            catch
+            catch(Exception e)
             {
+                Elmah.ErrorSignal.FromCurrentContext().Raise(e);
             }
 
             return false;
