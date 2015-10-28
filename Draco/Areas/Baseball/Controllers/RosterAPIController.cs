@@ -56,14 +56,6 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (team == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            long affiliationId = (from a in Db.Accounts
-                                  where a.Id == accountId
-                                  select a.AffiliationId).SingleOrDefault();
-
-            var aIds = (from a in Db.Accounts
-                        where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
-                        select a.Id);
-
             var cIds = (from ts in Db.TeamsSeasons
                         join rs in Db.RosterSeasons on ts.Id equals rs.TeamSeasonId
                         join r in Db.Rosters on rs.PlayerId equals r.Id
@@ -71,7 +63,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                         select r.ContactId);
 
             var contacts = (from c in Db.Contacts
-                            where aIds.Contains(c.CreatorAccountId) &&
+                            where c.CreatorAccountId == accountId &&
                             !cIds.Contains(c.Id) &&
                             (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
                             (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
@@ -394,8 +386,6 @@ namespace SportsManager.Areas.Baseball.Controllers
         }
         private IQueryable<Contact> GetAvailableManagers(long accountId, TeamSeason ts, string firstName, string lastName)
         {
-            long affiliationId = Db.Accounts.Find(accountId).AffiliationId;
-
             var cIds = Db.TeamSeasonManagers.Where(tsm => tsm.TeamSeasonId == ts.Id).Select(tsm => tsm.ContactId);
 
             return (from rs in Db.RosterSeasons

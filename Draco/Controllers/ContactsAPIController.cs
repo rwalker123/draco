@@ -36,16 +36,8 @@ namespace SportsManager.Controllers
         [EnableQuery(PageSize = PageSize)]
         public IQueryable<ContactNameViewModel> Get(long accountId)
         {
-            long affId = (from a in m_db.Accounts
-                          where a.Id == accountId
-                          select a.AffiliationId).SingleOrDefault();
-
-            var affiliationAccounts = (from a in m_db.Accounts
-                                       where a.Id == accountId || a.AffiliationId == affId
-                                       select a.Id);
-
             return m_db.Contacts
-                    .Where(c => affiliationAccounts.Contains(c.CreatorAccountId))
+                    .Where(c => c.CreatorAccountId == accountId)
                     .Select(c => new ContactNameViewModel()
                     {
                         Id = c.Id,
@@ -95,19 +87,11 @@ namespace SportsManager.Controllers
         [ActionName("DoesContactNameExist")]
         public HttpResponseMessage GetDoesContactNameExist(long accountId, long id, [FromUri]NameViewModel nvm)
         {
-            long affid = (from a in Db.Accounts
-                          where a.Id == accountId
-                          select a.AffiliationId).SingleOrDefault();
-
-            var affAccounts = (from a in Db.Accounts
-                               where a.Id == accountId || (affid != 1 && a.AffiliationId == affid)
-                               select a.Id);
-
             var doesExist = (from c in Db.Contacts
                              where String.Compare(nvm.FirstName, c.FirstName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
                                    String.Compare(nvm.LastName, c.LastName, StringComparison.CurrentCultureIgnoreCase) == 0 &&
                                    ((nvm.MiddleName == null && c.MiddleName == null) || String.Compare(nvm.MiddleName, c.MiddleName, StringComparison.CurrentCultureIgnoreCase) == 0) &&
-                                   affAccounts.Contains(c.CreatorAccountId)
+                                   c.CreatorAccountId == accountId
                              select c).Any();
 
             return Request.CreateResponse<bool>(HttpStatusCode.OK, doesExist);

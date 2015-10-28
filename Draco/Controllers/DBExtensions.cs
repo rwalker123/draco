@@ -297,12 +297,12 @@ namespace SportsManager.Controllers
             return db.Db.Contacts.Where(c => c.UserId == userId && c.CreatorAccountId == accountId).SingleOrDefault();
         }
 
-        static public String GetFirstNameFromUserName(this IDb db, string userName)
+        static public String GetFirstNameFromUserName(this IDb db, long accountId, string userName)
         {
             string userId = Globals.GetCurrentUserId();
 
             String firstName = (from c in db.Db.Contacts
-                                where c.UserId == userId
+                                where c.UserId == userId && c.CreatorAccountId == accountId
                                 select c.FirstName).SingleOrDefault();
             if (String.IsNullOrEmpty(firstName))
                 return userName;
@@ -388,16 +388,8 @@ namespace SportsManager.Controllers
 
         static public IQueryable<Contact> GetContacts(this IDb db, long accountId)
         {
-            long affId = (from a in db.Db.Accounts
-                          where a.Id == accountId
-                          select a.AffiliationId).SingleOrDefault();
-
-            var affiliationAccounts = (from a in db.Db.Accounts
-                                       where a.Id == accountId || (affId != 1 && a.AffiliationId == affId)
-                                       select a.Id);
-
             return (from c in db.Db.Contacts
-                    where affiliationAccounts.Contains(c.CreatorAccountId)
+                    where c.CreatorAccountId == accountId
                     select c);
         }
 
