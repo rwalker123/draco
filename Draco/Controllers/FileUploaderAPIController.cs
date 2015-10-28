@@ -334,6 +334,10 @@ namespace SportsManager.Controllers
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];
 
@@ -347,6 +351,10 @@ namespace SportsManager.Controllers
             ModelObjects.Contact c = Db.Contacts.Find(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             var multipartData = await prep();
             MultipartFileData file = multipartData.FileData[0];

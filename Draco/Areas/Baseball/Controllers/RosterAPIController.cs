@@ -95,6 +95,10 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
             var rosterPlayer = Db.Rosters.Where(r => r.ContactId == id).SingleOrDefault();
             if (rosterPlayer == null)
             {
@@ -291,6 +295,10 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             if (ts.Team.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             var isManager = c.TeamSeasonManagers.Where(tsm => tsm.TeamSeasonId == ts.Id).Any();
             if (isManager)

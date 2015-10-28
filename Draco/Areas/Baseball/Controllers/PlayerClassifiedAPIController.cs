@@ -40,7 +40,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         {
             if (ModelState.IsValid)
             {
-                var contact = this.GetCurrentContact();
+                var contact = this.GetCurrentContact(accountId);
                 if (contact == null)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -83,7 +83,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 bool isAdmin = this.IsAccountAdmin(accountId, Globals.GetCurrentUserId());
                 if (!isAdmin)
                 {
-                    var contact = this.GetCurrentContact();
+                    var contact = this.GetCurrentContact(accountId);
                     if (contact == null || contact.Id != dbPlayerWanted.CreatedByContactId)
                         return Request.CreateResponse(HttpStatusCode.Forbidden);
                 }
@@ -115,7 +115,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             bool isAdmin = this.IsAccountAdmin(accountId, Globals.GetCurrentUserId());
             if (!isAdmin)
             {
-                var contact = this.GetCurrentContact();
+                var contact = this.GetCurrentContact(accountId);
                 if (contact == null || contact.Id != dbPlayerWanted.CreatedByContactId)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }
@@ -309,7 +309,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             string accountName = String.Empty;
             string fromEmail = String.Empty;
 
-            var sender = this.GetCurrentContact();
+            var sender = this.GetCurrentContact(tw.AccountId);
             if (sender == null)
                 return;
 

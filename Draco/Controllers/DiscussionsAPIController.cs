@@ -26,7 +26,7 @@ namespace SportsManager.Controllers
             var categories = Db.MessageCategories.Where(mc => mc.AccountId == accountId && !mc.IsTeam).ToList();
 
             String userId = Globals.GetCurrentUserId();
-            Contact contact = this.GetCurrentContact();
+            Contact contact = this.GetCurrentContact(accountId);
 
             bool isAdmin = false;
 
@@ -158,7 +158,7 @@ namespace SportsManager.Controllers
             {
                 topic.CategoryId = categoryId;
                 topic.CreatorContactId = 0;
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
                 if (contact != null)
                 {
                     topic.CreatorContactId = contact.Id;
@@ -239,7 +239,7 @@ namespace SportsManager.Controllers
                 post.TopicId = topic.Id;
                 post.CategoryId = topic.CategoryId;
                 post.CreatorContactId = 0;
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
                 if (contact != null)
                 {
                     post.CreatorContactId = contact.Id;
@@ -297,7 +297,7 @@ namespace SportsManager.Controllers
                 var userId = Globals.GetCurrentUserId();
                 if (!this.IsAccountAdmin(accountId, userId))
                 {
-                    var contactId = Db.Contacts.Where(u => u.UserId == userId).Select(u => u.Id).SingleOrDefault();
+                    var contactId = Db.Contacts.Where(u => u.UserId == userId && u.CreatorAccountId == accountId).Select(u => u.Id).SingleOrDefault();
                     if (dbPost.ContactCreatorId != contactId)
                     {
                         return Request.CreateResponse(HttpStatusCode.Forbidden);
@@ -336,7 +336,7 @@ namespace SportsManager.Controllers
             var userId = Globals.GetCurrentUserId();
             if (!this.IsAccountAdmin(accountId, userId))
             {
-                var contactId = Db.Contacts.Where(u => u.UserId == userId).Select(u => u.Id).SingleOrDefault();
+                var contactId = Db.Contacts.Where(u => u.UserId == userId && u.CreatorAccountId == accountId).Select(u => u.Id).SingleOrDefault();
                 if (dbPost.ContactCreatorId != contactId)
                 {
                     return Request.CreateResponse(HttpStatusCode.Forbidden);

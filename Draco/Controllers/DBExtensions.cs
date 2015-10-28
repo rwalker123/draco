@@ -45,7 +45,7 @@ namespace SportsManager.Controllers
                                       select r.Id).Single();
 
                         var contactId = (from c in db.Db.Contacts
-                                         where c.UserId == userId
+                                         where c.UserId == userId && c.CreatorAccountId == accountId
                                          select c.Id).SingleOrDefault();
 
                         if (contactId == 0)
@@ -89,7 +89,7 @@ namespace SportsManager.Controllers
 
                 if (!isTeamAdmin)
                 {
-                    var contact = db.GetCurrentContact();
+                    var contact = db.GetCurrentContact(accountId);
                     if (contact != null)
                     {
                         // first check to see if this user the manager, they get admin rights to the team.
@@ -131,7 +131,7 @@ namespace SportsManager.Controllers
                 string userId = Globals.GetCurrentUserId();
 
                 var contactId = (from c in db.Db.Contacts
-                                 where c.UserId == userId
+                                 where c.UserId == userId && c.CreatorAccountId == accountId
                                  select c.Id).SingleOrDefault();
 
                 return (account.OwnerId == contactId);
@@ -157,7 +157,7 @@ namespace SportsManager.Controllers
 
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
-                var contact = db.Db.Contacts.Where(c => c.UserId == aspNetUserId).SingleOrDefault();
+                var contact = db.Db.Contacts.Where(c => c.UserId == aspNetUserId && c.CreatorAccountId == accountId).SingleOrDefault();
                 if (contact == null)
                     return false;
 
@@ -176,7 +176,7 @@ namespace SportsManager.Controllers
 
         }
 
-        static public bool IsTeamMember(this IDb db, long teamSeasonId, string aspNetUserId = null)
+        static public bool IsTeamMember(this IDb db, long accountId, long teamSeasonId, string aspNetUserId = null)
         {
             bool isTeamMember = false;
 
@@ -187,7 +187,7 @@ namespace SportsManager.Controllers
 
             if (!String.IsNullOrEmpty(aspNetUserId))
             {
-                var contact = db.Db.Contacts.Where(c => c.UserId == aspNetUserId).SingleOrDefault();
+                var contact = db.Db.Contacts.Where(c => c.UserId == aspNetUserId && c.CreatorAccountId == accountId).SingleOrDefault();
                 if (contact == null)
                     return false;
                 isTeamMember = db.IsTeamMember(contact.Id, teamSeasonId);
@@ -248,7 +248,7 @@ namespace SportsManager.Controllers
                 return null;
 
             var contactId = (from c in db.Db.Contacts
-                             where c.UserId == aspNetUserId
+                             where c.UserId == aspNetUserId && c.CreatorAccountId == accountId
                              select c.Id).SingleOrDefault();
 
             if (contactId == 0)
@@ -288,13 +288,13 @@ namespace SportsManager.Controllers
         }
 
 
-        public static Contact GetCurrentContact(this IDb db)
+        public static Contact GetCurrentContact(this IDb db, long accountId)
         {
             String userId = Globals.GetCurrentUserId();
             if (userId == null)
                 return null;
 
-            return db.Db.Contacts.Where(c => c.UserId == userId).SingleOrDefault();
+            return db.Db.Contacts.Where(c => c.UserId == userId && c.CreatorAccountId == accountId).SingleOrDefault();
         }
 
         static public String GetFirstNameFromUserName(this IDb db, string userName)
@@ -320,7 +320,7 @@ namespace SportsManager.Controllers
 
         public static IQueryable<TeamSeason> GetCurrentUserTeams(this IDb db, long accountId)
         {
-            var contact = db.GetCurrentContact();
+            var contact = db.GetCurrentContact(accountId);
 
             if (contact == null)
                 return null;
@@ -670,7 +670,7 @@ namespace SportsManager.Controllers
 
             string senderFullName;
 
-            var contact = db.GetCurrentContact();
+            var contact = db.GetCurrentContact(accountId);
             if (contact == null)
                 senderFullName = currentUser;
             else
@@ -734,7 +734,7 @@ namespace SportsManager.Controllers
 
             string accountName = db.Db.Accounts.Find(accountId)?.Name;
 
-            var contact = db.GetCurrentContact();
+            var contact = db.GetCurrentContact(accountId);
             if (contact == null)
             {
                 // check to see if in AspNetUserRoles as Administrator

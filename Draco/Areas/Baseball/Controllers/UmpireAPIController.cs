@@ -67,6 +67,10 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
             var dbUmp = new Umpire()
             {
                 AccountId = accountId,

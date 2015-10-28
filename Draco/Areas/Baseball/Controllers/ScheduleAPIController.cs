@@ -182,7 +182,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 await Db.SaveChangesAsync();
 
                 if (emailResult)
-                    SendGameResultEmail(dbGame);
+                    SendGameResultEmail(accountId, dbGame);
 
                 if (game.GameStatus >= 1)
                 {
@@ -387,7 +387,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             return Request.CreateResponse(HttpStatusCode.BadRequest);
         }
 
-        private int SendGameResultEmail(Game g)
+        private int SendGameResultEmail(long accountId, Game g)
         {
             int numSent = 0;
 
@@ -434,7 +434,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 string homeTeam = Db.TeamsSeasons.Find(g.HTeamId)?.Name;
                 string awayTeam = Db.TeamsSeasons.Find(g.VTeamId)?.Name;
 
-                var currentContact = this.GetCurrentContact();
+                var currentContact = this.GetCurrentContact(accountId);
                 if (currentContact == null)
                     return 0;
 

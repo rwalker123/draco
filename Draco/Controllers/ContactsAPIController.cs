@@ -83,6 +83,10 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> GetContactDetails(long accountId, long id)
         {
             var contact = await Db.Contacts.FindAsync(id);
+            if (contact.CreatorAccountId != accountId)
+                if (contact == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
             var vm = Mapper.Map<Contact, ContactViewModel>(contact);
             return Request.CreateResponse<ContactViewModel>(HttpStatusCode.OK, vm);
         }
@@ -197,10 +201,13 @@ namespace SportsManager.Controllers
         [ActionName("resetpassword")]
         public async Task<HttpResponseMessage> ResetPassword(long accountId, long id)
         {
-
             Contact c = await Db.Contacts.FindAsync(id);
             if (c != null)
             {
+                if (c.CreatorAccountId != accountId)
+                    if (c == null)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+
                 await ResetPassword(accountId, c);
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
@@ -216,6 +223,13 @@ namespace SportsManager.Controllers
         public async Task<HttpResponseMessage> RegisterAccount(long accountId, long id)
         {
             var contact = await Db.Contacts.FindAsync(id);
+            if (contact == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (contact.CreatorAccountId != accountId)
+                if (contact == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
+
             try
             {
                 var userId = await RegisterUser(contact);
@@ -241,6 +255,10 @@ namespace SportsManager.Controllers
                 var contact = await Db.Contacts.FindAsync(vm.Id);
                 if (contact == null)
                     return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+                if (contact.CreatorAccountId != accountId)
+                    if (contact == null)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
 
                 try
                 {
@@ -343,6 +361,10 @@ namespace SportsManager.Controllers
             var contact = await Db.Contacts.FindAsync(id);
             if (contact != null)
             {
+                if (contact.CreatorAccountId != accountId)
+                    if (contact == null)
+                        return Request.CreateResponse(HttpStatusCode.Forbidden);
+
                 if (!String.IsNullOrEmpty(contact.UserId))
                 {
                     var userManager = Globals.GetUserManager();
@@ -407,7 +429,7 @@ namespace SportsManager.Controllers
             string accountName = String.Empty;
             MailAddress fromEmail;
 
-            var sender = this.GetCurrentContact();
+            var sender = this.GetCurrentContact(accountId);
             if (sender == null)
             {
                 accountName = Db.Accounts.Find(accountId)?.Name;

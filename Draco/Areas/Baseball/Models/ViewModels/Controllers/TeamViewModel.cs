@@ -21,7 +21,7 @@ namespace SportsManager.Baseball.ViewModels
             IsTeamAdmin = c.IsTeamAdmin(accountId, id);
             IsTeamPhotoAdmin = c.IsTeamPhotoAdmin(accountId, id);
 
-            IsTeamMember = c.IsTeamMember(id);
+            IsTeamMember = c.IsTeamMember(accountId, id);
 
             if (Team != null)
             {
