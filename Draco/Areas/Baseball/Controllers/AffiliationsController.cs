@@ -1,10 +1,16 @@
-﻿using SportsManager.Baseball.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels;
+using SportsManager.Controllers;
 using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {
-    public class AffiliationsController : Controller
+    public class AffiliationsController : DBController
     {
+        public AffiliationsController(DB db) : base(db)
+        {
+        }
+
         // GET: Baseball/Affiliations
         public ActionResult Index()
         {
