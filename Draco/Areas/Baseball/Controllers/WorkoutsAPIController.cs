@@ -434,7 +434,7 @@ namespace SportsManager.Baseball.Controllers
 
         private String EmailRegistrants(WorkoutAnnouncement wa, String subject, String message)
         {
-            var currentContact = this.GetCurrentContact();
+            var currentContact = this.GetCurrentContact(wa.AccountId);
             if (currentContact == null)
                 return "Invalid sender.";
 

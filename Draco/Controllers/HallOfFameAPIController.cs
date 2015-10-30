@@ -153,20 +153,12 @@ namespace SportsManager.Controllers
         {
             int pageSize = 20;
 
-            long affiliationId = (from a in Db.Accounts
-                                  where a.Id == accountId
-                                  select a.AffiliationId).SingleOrDefault();
-
-            var aIds = (from a in Db.Accounts
-                        where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
-                        select a.Id);
-
             var hofIds = (from h in Db.Hofs
                           where h.AccountId == accountId
                           select h.ContactId);
 
             var available = (from c in Db.Contacts
-                             where aIds.Contains(c.CreatorAccountId) && !hofIds.Contains(c.Id) &&
+                             where c.CreatorAccountId == accountId && !hofIds.Contains(c.Id) &&
                               (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
                               (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
                              orderby c.LastName, c.FirstName, c.MiddleName

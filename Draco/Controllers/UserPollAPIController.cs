@@ -41,7 +41,7 @@ namespace SportsManager.Controllers
         [ActionName("recordVote")]
         public async Task<HttpResponseMessage> RecordVote(long accountId, long id, RecordVoteResultViewModel vr)
         {
-            var contact = this.GetCurrentContact();
+            var contact = this.GetCurrentContact(accountId);
 
             // only current signed in user can vote.
             if (contact == null || vr.ContactId != contact.Id)

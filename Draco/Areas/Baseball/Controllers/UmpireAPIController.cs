@@ -35,19 +35,11 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("AvailableUmpires")]
         public HttpResponseMessage AvailableUmpires(long accountId, [FromUri]NameSearchViewModel nsvm)
         {
-            long affiliationId = (from a in Db.Accounts
-                                  where a.Id == accountId
-                                  select a.AffiliationId).SingleOrDefault();
-
-            var aIds = (from a in Db.Accounts
-                        where a.Id == accountId || (affiliationId != 1 && a.AffiliationId == affiliationId)
-                        select a.Id);
-
             var cIds = (from lu in Db.LeagueUmpires
                         select lu.ContactId);
 
             var cs = (from c in Db.Contacts
-                      where aIds.Contains(c.CreatorAccountId) &&
+                      where c.CreatorAccountId == accountId &&
                       !cIds.Contains(c.Id) &&
                       (nsvm.FirstName == null || nsvm.LastName == "" || c.FirstName.Contains(nsvm.FirstName)) &&
                       (nsvm.LastName == null || nsvm.LastName == "" || c.LastName.Contains(nsvm.LastName))
@@ -66,6 +58,10 @@ namespace SportsManager.Areas.Baseball.Controllers
             var c = await Db.Contacts.FindAsync(id);
             if (c == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (c.CreatorAccountId != accountId)
+                if (c == null)
+                    return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             var dbUmp = new Umpire()
             {

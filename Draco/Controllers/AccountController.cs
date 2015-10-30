@@ -151,7 +151,7 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 // find the contact and compare values.
-                var contact = Db.Contacts.Find(model.PlayerId);
+                var contact = Db.Contacts.Where(c => c.Id == model.PlayerId && c.CreatorAccountId == model.RegisterAccountId).SingleOrDefault();
                 if (contact == null)
                 {
                     ModelState.AddModelError("PlayerName", "Could not find player. Please try another name or contact your league administrator.");

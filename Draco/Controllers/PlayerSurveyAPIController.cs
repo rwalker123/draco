@@ -249,7 +249,7 @@ namespace SportsManager.Controllers
             if (ModelState.IsValid)
             {
                 var aspNetUserId = Globals.GetCurrentUserId();
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
 
                 var isAccountAdmin = this.IsAccountAdmin(accountId, aspNetUserId);
                 if (contact.Id != id && !isAccountAdmin)

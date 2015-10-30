@@ -8,7 +8,7 @@
         var c = ViewContext.Controller as DBController;
         if (c != null)
         {
-            userName = c.GetFirstNameFromUserName(User.Identity.GetUserName());
+            userName = c.GetFirstNameFromUserName((long)ViewData["AccountId"], User.Identity.GetUserName());
         }
 
         @Html.AntiForgeryToken()

@@ -63,7 +63,7 @@ namespace SportsManager.Controllers
         {
             if (ModelState.IsValid)
             {
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
                 if (contact == null)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -113,7 +113,7 @@ namespace SportsManager.Controllers
                 if (mb == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
                 if (contact == null || mb.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
 
@@ -152,7 +152,7 @@ namespace SportsManager.Controllers
 
             if (!this.IsAccountAdmin(accountId, userId))
             {
-                Contact contact = this.GetCurrentContact();
+                Contact contact = this.GetCurrentContact(accountId);
                 if (contact == null || dbSponsor.ContactId != contact.Id)
                     return Request.CreateResponse(HttpStatusCode.Forbidden);
             }

@@ -8,7 +8,7 @@ namespace SportsManager.ViewModels
         public EMailUsersViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
-            var currentUser = c.GetCurrentContact();
+            var currentUser = c.GetCurrentContact(accountId);
             Email = currentUser.Email;
             UserName = currentUser.FirstName + " " + currentUser.LastName;
             PhotoUrl = PhotoURLHelper.GetPhotoURL(currentUser.Id);

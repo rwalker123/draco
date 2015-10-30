@@ -101,7 +101,7 @@ namespace SportsManager.Baseball.Controllers
                               select new MailAddress(c.Email, c.FirstName + " " + c.LastName));
 
                 var currentUserId = Globals.GetCurrentUserId();
-                var fromContact = Db.Contacts.Where(c => c.UserId == currentUserId).SingleOrDefault();
+                var fromContact = this.GetCurrentContact(accountId);
                 if (fromContact == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
