@@ -8,6 +8,7 @@
 
     @Html.EditorForModel()
                           
-	<input type="submit" value="Create" />@Html.ActionLink("Cancel", "Index", "League", new { area = (string)ViewBag.Area }, null)
+	<input type="submit" class="btn btn-success" value="Create" />
+    @Html.ActionLink("Cancel", "Index", "League", new { area = (string)ViewBag.Area }, new { @class = "btn btn-danger" })
 }
 

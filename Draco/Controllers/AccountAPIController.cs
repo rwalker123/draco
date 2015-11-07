@@ -168,38 +168,24 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
-        public HttpResponseMessage AccountOwner(long accountId, IdData userId)
+        public HttpResponseMessage AccountOwner(long accountId, long id)
         {
-            if (userId == null || String.IsNullOrWhiteSpace(userId.Id))
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
-
             Account a = Db.Accounts.Find(accountId);
             if (a == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            a.OwnerId = Int32.Parse(userId.Id);
+            Contact c = Db.Contacts.Find(id);
+            if (c == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-            long id = (from acc in Db.Accounts
-                    where String.Compare(acc.Name, a.Name, StringComparison.CurrentCultureIgnoreCase) == 0
-                    select a.Id).SingleOrDefault();
+            if (String.IsNullOrEmpty(c.UserId))
+                return Request.CreateResponse(HttpStatusCode.ExpectationFailed);
 
-            if (id == 0)
-            {
-                if (!this.IsValidAccountName(a.Id, a.Name))
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Invalid account name");
-            }
-            else if (id != a.Id)
-            {
-                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Account name already used.");
-            }
+            a.OwnerUserId = c.UserId;
 
             Db.SaveChanges();
 
-            var response = new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(userId.Id ?? String.Empty)
-            };
-            return response;
+            return Request.CreateResponse<long>(HttpStatusCode.OK, id);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

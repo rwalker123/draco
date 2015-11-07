@@ -31,17 +31,17 @@
                     to change it back. Only the new account owner will be able to change it back.
                 </div>
                 <h4>Change Account Owner</h4>
-                <p class="help-block">type last name to begin search</p>
-                <form class="form-inline" role="form">
-                    <div class="input-group col-sm-12">
-                        var searchTerm = this.term;
-                        <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectedNewOwner, options: { highlight: true } }" />
-                        <div class="input-group-btn">
-                            <button type="button" class="btn btn-success" data-bind="click: changeAccountOwner" title="change account owner"><span class="glyphicon glyphicon-ok"></span></button>
-                            <button type="button" class="btn btn-danger" data-bind="click: cancelChangeAccountOwner" title="cancel change account owner"><span class="glyphicon glyphicon-remove"></span></button>
+                <div class="row" style="margin-bottom: 20px">
+                    <div class="col-sm-12">
+                        <div class="input-group">
+                            <input class="form-control" placeholder="Find contact (type last name)" data-bind="typeahead: { datasets: { source: getPlayers, async: true, display: 'label', limit: 10 }, target: selectedNewOwner, options: { highlight: true } }" />
+                            <div class="input-group-btn">
+                                <button type="button" class="btn btn-success" data-bind="click: changeAccountOwner" title="change account owner"><span class="glyphicon glyphicon-ok"></span></button>
+                                <button type="button" class="btn btn-danger" data-bind="click: cancelChangeAccountOwner" title="cancel change account owner"><span class="glyphicon glyphicon-remove"></span></button>
+                            </div>
                         </div>
                     </div>
-                </form>
+                </div>
                 <hr />
             </div>
         </div>

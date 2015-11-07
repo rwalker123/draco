@@ -92,42 +92,27 @@ namespace SportsManager.Areas.Baseball.Controllers
             string userId = User.Identity.GetUserId();
             bool updateModel = TryUpdateModel(vm);
 
-            System.Diagnostics.Debug.Assert(false, "Create a contact and use that for OwnerUserId below");
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
                 Account account = new Account();
                 account.Name = vm.LeagueName;
                 account.TimeZoneId = vm.TimeZone;
-                //account.OwnerId = Globals.GetuserId;
+                account.OwnerUserId = userId;
                 account.AccountTypeId = 1; // baseball
 
                 Db.Accounts.Add(account);
-                Db.SaveChanges();
 
-                Contact c = new Contact()
+                if (!String.IsNullOrEmpty(vm.URL))
                 {
-                    UserId = userId,
-                    CreatorAccountId = account.Id,
-                    FirstName = String.Empty,
-                    LastName = String.Empty,
-                    MiddleName = String.Empty,
-                    Email = String.Empty,
-                    Phone1 = String.Empty,
-                    Phone2 = String.Empty,
-                    Phone3 = String.Empty,
-                    StreetAddress = String.Empty,
-                    City = String.Empty,
-                    State = String.Empty,
-                    Zip = String.Empty,
-                    IsFemale = false,
-                    DateOfBirth = DateTime.MinValue,
-                    FirstYear = 0
-                };
+                    var aUrl = new AccountURL()
+                    {
+                        Id = 0,
+                        URL = vm.URL,
+                        Account = account
+                    };
+                    Db.AccountsURL.Add(aUrl);
+                }
 
-                Db.Contacts.Add(c);
-                Db.SaveChanges();
-
-                account.OwnerId = c.Id;
                 Db.SaveChanges();
 
                 ViewData["TimeZones"] = vm.TimeZones;

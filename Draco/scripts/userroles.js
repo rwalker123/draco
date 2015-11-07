@@ -257,10 +257,7 @@ var UserRoleViewModel = function(accountId, currentUserId, accountAdminId, accou
     self.performChangeOwner = function() {
         $.ajax({
             type: "PUT",
-            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/AccountOwner',
-            data: {
-                Id: self.selectedNewOwner().Id
-            },
+            url: window.config.rootUri + '/api/AccountAPI/' + self.accountId + '/AccountOwner/' + self.selectedNewOwner().Id,
             success: function (newOwner) {
                 if (self.currentUserId != newOwner) {
                     self.isAccountOwner(false);
