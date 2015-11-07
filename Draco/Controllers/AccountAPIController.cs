@@ -96,66 +96,74 @@ namespace SportsManager.Controllers
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("POST"), HttpPost]
-        public HttpResponseMessage AccountUrl(long accountId, UriData url)
+        [ActionName("AccountUrl")]
+        public HttpResponseMessage PostAccountUrl(long accountId, AccountUrlViewModel url)
         {
-            url.Uri = url.Uri.ToLower();
-            if (ModelState.IsValid)
+            url.URL = url.URL.ToLower();
+            Account a = Db.Accounts.Find(accountId);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
+
+            if (a.AccountsURL.Where(au => au.URL.ToLower() == url.URL).Any())
+                return Request.CreateResponse(HttpStatusCode.Conflict);
+
+            AccountURL newUrl = new AccountURL()
             {
-                Account a = Db.Accounts.Find(accountId);
-                if (a == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                Account = a,
+                URL = url.URL
+            };
 
-                if (!String.IsNullOrWhiteSpace(a.Url))
-                    a.Url += ";";
+            Db.AccountsURL.Add(newUrl);
+            Db.SaveChanges();
 
-                a.Url += url.Uri;
-                a.Url = a.Url.Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
+            var aUrl = new AccountUrlViewModel()
+            {
+                Id = newUrl.Id,
+                AccountId = newUrl.AccountId,
+                URL = newUrl.URL
+            };
+            return Request.CreateResponse<AccountUrlViewModel>(HttpStatusCode.OK, aUrl);
+        }
 
-                Db.SaveChanges();
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [AcceptVerbs("PUT"), HttpPut]
+        [ActionName("AccountUrl")]
+        public HttpResponseMessage PutAccountUrl(long accountId, AccountUrlViewModel url)
+        {
+            url.URL = url.URL.ToLower();
+             var aUrl = Db.AccountsURL.Find(url);
+            if (aUrl == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(url.Uri ?? String.Empty)
-                };
-                return response;
-            }
+            if (aUrl.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            var modelStateErrors = ModelState.Keys.SelectMany(key => ModelState[key].Errors);
-            if (modelStateErrors.Any())
-                return Request.CreateResponse(HttpStatusCode.BadRequest, modelStateErrors.First().ErrorMessage);
-            else
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            var a = Db.Accounts.Find(accountId);
+            if (a.AccountsURL.Where(au => au.URL.ToLower() == url.URL).Any())
+                return Request.CreateResponse(HttpStatusCode.Conflict);
+
+            aUrl.URL = url.URL;
+            Db.SaveChanges();
+
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("AccountUrl")]        
-        public HttpResponseMessage DeleteAccountUrl(long accountId, UriData url)
+        public HttpResponseMessage DeleteAccountUrl(long accountId, long id)
         {
-            if (ModelState.IsValid)
-            {
-                Account a = Db.Accounts.Find(accountId);
-                if (a == null)
-                    return Request.CreateResponse(HttpStatusCode.NotFound);
+            AccountURL a = Db.AccountsURL.Find(id);
+            if (a == null)
+                return Request.CreateResponse(HttpStatusCode.NotFound);
 
-                if (a.Url.Contains(url.Uri))
-                {
-                    a.Url = a.Url.Replace(url.Uri, String.Empty).Replace(";;", ";").TrimEnd(new char[] { ';' }).TrimStart(new char[] { ';' });
-                    Db.SaveChanges();
-                }
+            if (a.AccountId != accountId)
+                return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-                var response = new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(url.Uri ?? String.Empty)
-                };
-                return response;
-            }
+            Db.AccountsURL.Remove(a);
+            Db.SaveChanges();
 
-            var modelStateErrors = ModelState.Keys.SelectMany(key => ModelState[key].Errors);
-            if (modelStateErrors.Any())
-                return Request.CreateResponse(HttpStatusCode.BadRequest, modelStateErrors.First().ErrorMessage);
-            else
-                return Request.CreateResponse(HttpStatusCode.BadRequest);
+            return Request.CreateResponse(HttpStatusCode.OK);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]

@@ -16,13 +16,6 @@ public class KeyValueData : IdData
     public string Value { get; set; }
 }
 
-public class UriData
-{
-    [Required]
-    [RegularExpression(@"^http(s?)\:\/\/[0-9a-zA-Z]([-.\w]*[0-9a-zA-Z])*(:(0-9)*)*(\/?)([a-zA-Z0-9\-\.\?\,\'\/\\\+&amp;%\$#_]*)?$", ErrorMessage = "URL format is wrong")]
-    public string Uri { get; set; }
-}
-
 public class ScriptData
 {
     public string Script { get; set; }

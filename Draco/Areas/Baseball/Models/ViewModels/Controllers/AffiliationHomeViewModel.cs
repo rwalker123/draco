@@ -13,13 +13,8 @@ namespace SportsManager.Baseball.ViewModels
         {
             db = c.Db;
 
-            Affiliation = (from a in db.Affiliations
-                           where a.Id == affiliationId
-                           select a).SingleOrDefault();
-
-            AffiliatedLeagues = (from a in db.Accounts
-                                 where a.AffiliationId == affiliationId
-                                 select a);
+            Affiliation = db.Affiliations.Find(affiliationId);
+            AffiliatedLeagues = Affiliation.Accounts;
         }
 
         public IEnumerable<Account> AffiliatedLeagues

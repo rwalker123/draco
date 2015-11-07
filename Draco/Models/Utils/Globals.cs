@@ -176,8 +176,7 @@ static public class Globals
         viewData["AccountLogoUrl"] = account.LargeLogoURL;
         viewData["AccountName"] = account.Name;
         viewData["AccountId"] = account.Id;
-        var accountUrls = account.Url.Split(new char[] { ';' });
-        viewData["AccountUrl"] = accountUrls.Length > 0 ? accountUrls[0] : String.Empty;
+        viewData["AccountUrl"] = account.AccountsURL.FirstOrDefault()?.URL ?? String.Empty;
 
         string twitterAccountName = account.TwitterAccountName;
         if (!String.IsNullOrEmpty(twitterAccountName))

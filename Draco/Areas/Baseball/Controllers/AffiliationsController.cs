@@ -14,7 +14,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         // GET: Baseball/Affiliations
         public ActionResult Index()
         {
-            return View();
+            return View(new AffiliationIndexViewModel(this));
         }
 
         public ActionResult Home(long accountId)

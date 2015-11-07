@@ -9,6 +9,7 @@ namespace ModelObjects
 	{
         public long Id { get; set; } // Id (Primary key)
         public string Name { get; set; } // Name
+        public string URL { get; set; }
 
         // Reverse navigation
         public virtual ICollection<Account> Accounts { get; set; } // Accounts.FK_Affiliations_Accounts

@@ -31,7 +31,7 @@ namespace SportsManager.Baseball.ViewModels
             ShowWorkouts = IsAdmin || c.Db.WorkoutAnnouncements.Where(wa => wa.AccountId == accountId && wa.WorkoutDate >= now).Any();
             ShowSponsors = IsAdmin || c.Db.Sponsors.Where(sp => sp.AccountId == accountId && sp.TeamId == 0).Any();
             ShowFAQMessage = c.Db.LeagueFaqs.Where(faq => faq.AccountId == accountId).Any();
-            
+
             var showFacebookLike = false;
             bool.TryParse(c.GetAccountSetting(accountId, "ShowFacebookLike"), out showFacebookLike);
             ShowFacebookLike = showFacebookLike;
@@ -67,39 +67,45 @@ namespace SportsManager.Baseball.ViewModels
             bool.TryParse(c.GetAccountSetting(accountId, "ShowSponsorSpotlight"), out showSponsorSpotlight);
             ShowSponsorSpotlight = showSponsorSpotlight && Account.Sponsors.Any();
 
+            ShowAffiliation = false;
+            Affiliation = Account.Affiliation;
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = true;
         }
 
+        public bool ShowAffiliation
+        {
+            get;
+        }
+        public Affiliation Affiliation
+        {
+            get;
+        }
+
         public Sponsor SponsorSpotlight
         {
             get;
-            private set;
         }
 
         public IQueryable<TeamSeason> UserTeams
         {
             get;
-            private set;
         }
 
         public bool ShowWelcomeMessages
         {
             get;
-            private set;
         }
 
         public bool ShowAnnouncements
         {
             get;
-            private set;
         }
 
         public bool ShowFacebookLike
         {
             get;
-            private set;
         }
 
         public bool ShowScoreboard
@@ -111,116 +117,97 @@ namespace SportsManager.Baseball.ViewModels
         public bool ShowBirthdays
         {
             get;
-            private set;
         }
 
         public bool ShowHOF
         {
             get;
-            private set;
         }
 
         public bool ShowHandouts
         {
             get;
-            private set;
         }
 
         public bool ShowWorkouts
         {
             get;
-            private set;
         }
 
         public bool ShowUserPoll
         {
             get;
-            private set;
         }
 
         public bool ShowPlayerInterview
         {
             get;
-            private set;
         }
 
         public bool ShowLeagueLeaders
         {
             get;
-            private set;
 
         }
 
         public bool ShowSponsors
         {
             get;
-            private set;
         }
 
         public bool ShowSponsorSpotlight
         {
             get;
-            private set;
         }
 
         public bool ShowFAQMessage
         {
             get;
-            private set;
         }
 
         public bool TwitterEnabled
         {
             get;
-            private set;
         }
 
         public bool FacebookEnabled
         {
             get;
-            private set;
         }
 
         public bool VideosEnabled
         {
             get;
-            private set;
         }
 
         public bool ShowVideos
         {
             get;
-            private set;
         }
 
         public string DefaultVideo 
         { 
             get; 
-            private set; 
         }
 
         public bool AutoPlayVideo 
         { 
             get; 
-            private set; 
         }
 
         public bool ShowPhotoGallery
         {
             get;
-            private set;
         }
 
         public string SeasonName
         {
             get;
-            private set;
         }
 
         public string YouTubeUserId
         {
             get;
-            private set;
         }
     }
 }

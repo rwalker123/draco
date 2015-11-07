@@ -24,7 +24,6 @@ namespace ModelObjects
         public long Id { get; set; } // Id (Primary key)
         public long OwnerId { get; set; } // OwnerId
         public string Name { get; set; } // Name
-        public string Url { get; set; } // URL
         public int FirstYear { get; set; } // FirstYear
         public long AccountTypeId { get; set; } // AccountTypeId
         public long AffiliationId { get; set; } // AffiliationId
@@ -43,6 +42,7 @@ namespace ModelObjects
         public virtual HOFNominationSetup HofNominationSetup { get; set; } // HOFNominationSetup.FK_HOFNominationSetup_Accounts
         public virtual ICollection<AccountHandout> AccountHandouts { get; set; } // AccountHandouts.FK_AccountHandouts_Accounts
         public virtual ICollection<AccountSetting> AccountSettings { get; set; } // Many to many mapping
+        public virtual ICollection<AccountURL> AccountsURL { get; set; } // Many to many mapping
         public virtual ICollection<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome.FK_AccountWelcome_Accounts
         public virtual ICollection<Field> AvailableFields { get; set; } // AvailableFields.FK_AvailableFields_Accounts
         public virtual ICollection<DivisionDefinition> DivisionDefs { get; set; } // DivisionDefs.FK_DivisionDefs_Accounts

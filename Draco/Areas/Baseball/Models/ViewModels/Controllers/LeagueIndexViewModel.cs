@@ -26,13 +26,9 @@ namespace SportsManager.Baseball.ViewModels
             IQueryable<Account> baseballLeagues = m_db.Accounts.Where(a => a.AccountTypeId == 1);
             foreach (var l in baseballLeagues)
             {
-                if (!String.IsNullOrEmpty(l.Url))
+                if (l.AccountsURL.Any())
                 {
-                    string[] urls = l.Url.Split(new char[] { ';' });
-                    if (urls.Length > 0)
-                        items.Add(new SelectListItem() { Text = l.Name, Value = urls[0] });
-                    else
-                        items.Add(new SelectListItem() { Text = l.Name, Value = l.Id.ToString() });
+                    items.Add(new SelectListItem() { Text = l.Name, Value = l.AccountsURL.First().URL });
                 }
                 else
                 {

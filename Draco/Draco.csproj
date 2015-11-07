@@ -546,6 +546,7 @@
     <Compile Include="Models\Filters\ModelStateValidationAttribute.cs" />
     <Compile Include="Models\Helpers\PhotoURLHelper.cs" />
     <Compile Include="Models\Helpers\RoleDataHelper.cs" />
+    <Compile Include="Models\ModelObjects\AccountURL.cs" />
     <Compile Include="Models\ModelObjects\AspNetRole.cs" />
     <Compile Include="Models\ModelObjects\AspNetUser.cs" />
     <Compile Include="Models\ModelObjects\HOFMember.cs" />
@@ -553,6 +554,7 @@
     <Compile Include="Models\ModelObjects\HOFNominationSetup.cs" />
     <Compile Include="Models\Utils\DateTimeExtensions.cs" />
     <Compile Include="Models\ViewModels\API\AccountSettingViewModel.cs" />
+    <Compile Include="Models\ViewModels\API\AccountUrlViewModel.cs" />
     <Compile Include="Models\ViewModels\API\AccountViewModel.cs" />
     <Compile Include="Models\ViewModels\API\ContactRoleViewModel.cs" />
     <Compile Include="Models\ViewModels\API\HandoutViewModel.cs" />
@@ -1268,13 +1270,15 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
     <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Views\Shared\_CreateAccount.cshtml" />
+    <Content Include="Views\Shared\EditorTemplates\TimeZoneDropDown.cshtml" />
+    <Content Include="Views\Shared\_GoogleHorizontalAd.cshtml" />
     <None Include="Web.Azure.config">
       <DependentUpon>Web.config</DependentUpon>
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="App_Data\" />
     <Folder Include="Areas\Baseball\Views\Workouts\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>

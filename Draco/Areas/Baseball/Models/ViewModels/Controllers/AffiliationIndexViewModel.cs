@@ -9,12 +9,11 @@ namespace SportsManager.Baseball.ViewModels
     {
         DB db;
 
-        public AffiliationIndexViewModel(DBController c, long affiliationId)
+        public AffiliationIndexViewModel(DBController c)
         {
             db = c.Db;
 
-            Affiliations = (from a in db.Affiliations
-                           select a);
+            Affiliations = db.Affiliations;
         }
 
         public IEnumerable<Affiliation> Affiliations

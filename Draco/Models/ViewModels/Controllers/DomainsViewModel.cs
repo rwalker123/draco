@@ -11,16 +11,12 @@ namespace SportsManager.ViewModels
             : base(c, accountId)
         {
             Account a = c.Db.Accounts.Find(accountId);
-            if (String.IsNullOrWhiteSpace(a.Url))
-                AccountUrls = new List<string>();
-            else
-                AccountUrls = new List<string>(a.Url.Split(new char[] { ';' }));
+            AccountUrls = a.AccountsURL;
         }
 
-        public List<string> AccountUrls
+        public IEnumerable<AccountURL> AccountUrls
         {
             get;
-            private set;
         }
     }
 }

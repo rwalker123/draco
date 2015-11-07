@@ -106,10 +106,9 @@
                 <text>Home</text>
             } 
             <small style="color: white" data-bind="visible: hasYear">est. <span data-bind="text: FirstYear"></span></small>
-            @if (Model.Account.AffiliationId > 1)
+            @if (Model.ShowAffiliation && Model.Account.AffiliationId > 1)
             {
-                <br /><small style="color: white">Affiliated with 
-                @Html.ActionLink(Model.Affiliation.Name, "Home", "Affiliations", new { area = "baseball", accountId = Model.Affiliation.Id }, new { @class = "btn btn-success" })</small>
+                @Html.ActionLink(Model.Affiliation.Name, "Home", "Affiliations", new { area = "baseball", accountId = Model.Affiliation.Id }, new { @class = "btn btn-success" })
             }
             </h2>
 
