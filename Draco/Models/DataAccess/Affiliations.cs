@@ -17,6 +17,23 @@ namespace DataAccess
                     select a);
 		}
 
+        static public Affiliation GetAffiliation(long id)
+        {
+            DB db = DBConnection.GetContext();
+            return (from a in db.Affiliations
+                    where a.Id == id
+                    select new Affiliation(a.Id, a.Name)).SingleOrDefault();
+        }
+
+        static public IQueryable<Account> GetAffiliatedLeagues(long id)
+        {
+            DB db = DBConnection.GetContext();
+            return (from a in db.Accounts
+                    where a.AffiliationId == id
+                    select new Account(a.Id, a.Name, a.URL, a.OwnerId, a.FirstYear, a.AccountTypeId, a.AffiliationId, a.TimeZoneId));
+        }
+
+
 		static public bool IsValidName(string organizationName)
 		{
 			bool validOrganizationName = true;

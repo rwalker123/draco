@@ -33,7 +33,7 @@
         <form class="form-inline" role="form">
             <div class="form-group col-sm-12">
                 <div class="input-group col-sm-12">
-                    <input data-bind="value: $data" type="url" class="form-control" placeholder="ex: http://www.yourdomain.com" />
+                    <input readonly="readonly" data-bind="value: URL" type="url" class="form-control" placeholder="ex: http://www.yourdomain.com" />
                     <span class="input-group-btn">
                         <button type="button" class="btn btn-danger" data-bind="click: $parent.deleteUrl" title="delete mapped URL"><span class="glyphicon glyphicon-remove"></span></button>
                     </span>
@@ -63,11 +63,13 @@
 
         self.updateUrl = function(url) {
             $.ajax({
-                type: "POST",
-                url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
-                data: {
-                    Uri: url
-                },
+                type: "PUT",
+                url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl/' + url.Id,
+                data: JSON.stringify({
+                    Id: url.Id,
+                    AccountId: url.AccountId,
+                    URL: url.URL
+                }),
                 success: function (accountUrl) {
                 }
             });
@@ -77,16 +79,13 @@
 
             $.ajax({
                 type: "DELETE",
-                url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
-                data: {
-                    Uri: url
-                },
-                success: function (accountName) {
-                    var item = ko.utils.arrayFirst(self.mappedUrls(), function(item) {
-                        return url == item();
+                url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl/' + url.Id,
+                success: function () {
+                    var foundUrl = ko.utils.arrayFirst(self.mappedUrls(), function (aUrl) {
+                        return (url.Id == aUrl().Id);
                     });
-                    
-                    self.mappedUrls.remove(item);
+
+                    self.mappedUrls.remove(foundUrl);
                 }
             });
         }
@@ -101,7 +100,12 @@
         @foreach (var url in Model.AccountUrls)
         {
             <text>
-            var x = ko.observable('@url');
+            var accountUrl = {
+                Id: @url.Id,
+                AccountId: @url.AccountId,
+                URL: '@url.URL'
+            };
+            var x = ko.observable(accountUrl);
             x.subscribe(function(vm) {
                 vm.updateUrl(vm);
             });
@@ -116,12 +120,15 @@
         if (!vm.newUrl())
             return;
 
+        var data = {
+            Id: 0,
+            AccountId: @Model.AccountId,
+            URL: vm.newUrl()
+        };
         $.ajax({
             type: "POST",
             url: window.config.rootUri + '/api/AccountAPI/@Model.AccountId/AccountUrl',
-            data: {
-                Uri: vm.newUrl
-            },
+            data: data,
             success: function (accountUrl) {
                 window.location.hash = 'update';
                 var x = ko.observable(accountUrl);

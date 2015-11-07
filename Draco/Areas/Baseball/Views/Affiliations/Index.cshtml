@@ -1,0 +1,22 @@
+﻿@using System.Web.Optimization
+@model SportsManager.Baseball.ViewModels.AffiliationIndexViewModel
+
+@{
+    ViewBag.Title = "Affiliations Home";
+}
+<div class="jumbotron">
+    <h1>@ViewBag.Title.</h1>
+</div>
+
+@Html.DropDownList("affiliations", new SelectList(Model.Affiliations, "Id", "Name"), new { })
+
+@section scripts
+{
+
+    <script type="text/javascript">
+
+    $(document).ready(function () {
+    });
+
+    </script>
+}

@@ -49,9 +49,9 @@ namespace SportsManager
             var db = DependencyResolver.Current.GetService<DB>();
 
             string url = httpContext.Request.Headers["HOST"];
-            long accountId = (from a in db.Accounts
-                              where a.Url.Contains(url)
-                              select a.Id).SingleOrDefault();
+            long accountId = (from a in db.AccountsURL
+                              where a.URL.Contains(url.ToLower())
+                              select a.AccountId).SingleOrDefault();
 
             String virtualPath = System.Web.VirtualPathUtility.ToAbsolute("~/").TrimEnd(slashSep);
 

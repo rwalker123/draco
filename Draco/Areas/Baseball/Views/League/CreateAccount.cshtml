@@ -1,19 +1,21 @@
 ﻿@model SportsManager.ViewModels.LeagueCreateAccountViewModel
 
 @{
-	ViewBag.Title = "Create Baseball League";
+    ViewBag.Title = "Create ezBaseballLeague.com Account";
 }
-
-@section menu {
-}
-
-@section head {
-}
+<div class="jumbotron" style="background: url('/Images/baseball/leaguebackground.jpg') no-repeat #000000; background-size: auto; background-position: right">
+    <h1>@ViewBag.Title</h1>
+    <h2>Baseball League Management made easy.</h2>
+</div>
 
 
-<h1>@ViewBag.Title</h1>
-
-@{
-    ViewBag.Area = "baseball";
-	Html.RenderPartial("_CreateAccount");
-}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            @{
+                ViewBag.Area = "baseball";
+                Html.RenderPartial("_CreateAccount");
+            }
+        </div>
+    </div>
+</div>

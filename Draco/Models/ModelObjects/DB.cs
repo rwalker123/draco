@@ -56,6 +56,7 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new AccountConfiguration());
             modelBuilder.Configurations.Add(new AccountHandoutConfiguration());
             modelBuilder.Configurations.Add(new AccountSettingConfiguration());
+            modelBuilder.Configurations.Add(new AccountsURLConfiguration());
             modelBuilder.Configurations.Add(new AccountTypeConfiguration());
             modelBuilder.Configurations.Add(new AccountWelcomeConfiguration());
             modelBuilder.Configurations.Add(new AffiliationConfiguration());
@@ -118,6 +119,7 @@ namespace ModelObjects
         public DbSet<Account> Accounts { get; set; } // Accounts
         public DbSet<AccountHandout> AccountHandouts { get; set; } // AccountHandouts
         public DbSet<AccountSetting> AccountSettings { get; set; } // AccountSettings
+        public DbSet<AccountURL> AccountsURL { get; set; } // AccountsURL
         public DbSet<AccountType> AccountTypes { get; set; } // AccountTypes
         public DbSet<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome
         public DbSet<Affiliation> Affiliations { get; set; } // Affiliations
@@ -200,7 +202,6 @@ namespace ModelObjects
             Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
             Property(x => x.OwnerId).HasColumnName("OwnerId").IsRequired();
             Property(x => x.Name).HasColumnName("Name").IsRequired().IsUnicode(false).HasMaxLength(75);
-            Property(x => x.Url).HasColumnName("URL").IsRequired().IsUnicode(false).HasMaxLength(200);
             Property(x => x.FirstYear).HasColumnName("FirstYear").IsRequired();
             Property(x => x.AccountTypeId).HasColumnName("AccountTypeId").IsRequired();
             Property(x => x.AffiliationId).HasColumnName("AffiliationId").IsRequired();
@@ -252,6 +253,22 @@ namespace ModelObjects
 
             // Foreign keys
             HasRequired(a => a.Account).WithMany(b => b.AccountSettings).HasForeignKey(c => c.AccountId); // FK_AccountSettings_Accounts
+        }
+    }
+
+    // AccountsURL
+    internal class AccountsURLConfiguration : EntityTypeConfiguration<AccountURL>
+    {
+        public AccountsURLConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".AccountsURL");
+            HasKey(x => x.Id);
+
+            Property(x => x.AccountId).HasColumnName("AccountId").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.None);
+            Property(x => x.URL).HasColumnName("URL").IsRequired().IsUnicode(false).HasMaxLength(200);
+
+            // Foreign keys
+            HasRequired(a => a.Account).WithMany(b => b.AccountsURL).HasForeignKey(c => c.AccountId); // FK_AccountsURL_Accounts
         }
     }
 

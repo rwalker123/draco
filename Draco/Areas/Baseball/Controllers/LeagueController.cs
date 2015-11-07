@@ -97,12 +97,37 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 Account account = new Account();
                 account.Name = vm.LeagueName;
-                account.Url = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
                 account.TimeZoneId = vm.TimeZone;
-                //account.OwnerUserId = User.Identity.GetUserId();
+                //account.OwnerId = Globals.GetuserId;
                 account.AccountTypeId = 1; // baseball
 
                 Db.Accounts.Add(account);
+                Db.SaveChanges();
+
+                Contact c = new Contact()
+                {
+                    UserId = userId,
+                    CreatorAccountId = account.Id,
+                    FirstName = String.Empty,
+                    LastName = String.Empty,
+                    MiddleName = String.Empty,
+                    Email = String.Empty,
+                    Phone1 = String.Empty,
+                    Phone2 = String.Empty,
+                    Phone3 = String.Empty,
+                    StreetAddress = String.Empty,
+                    City = String.Empty,
+                    State = String.Empty,
+                    Zip = String.Empty,
+                    IsFemale = false,
+                    DateOfBirth = DateTime.MinValue,
+                    FirstYear = 0
+                };
+
+                Db.Contacts.Add(c);
+                Db.SaveChanges();
+
+                account.OwnerId = c.Id;
                 Db.SaveChanges();
 
                 ViewData["TimeZones"] = vm.TimeZones;

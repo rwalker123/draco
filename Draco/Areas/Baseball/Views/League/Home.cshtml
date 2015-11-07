@@ -67,7 +67,7 @@
                         <button type="button" class="btn btn-danger" data-bind="click: $root.cancelEdit"><span class="glyphicon glyphicon-remove"></span></button>
                     </div>
                 </div>
-            </form>
+            </form>            
         }
 
         <div data-bind="with: accountViewModel, visible: viewMode">
@@ -87,6 +87,22 @@
                     </span>
                 }
             }
+
+            @if (Model.ShowAffiliation && Model.Account.AffiliationId > 1)
+            {
+                <div class="small">
+                    Proud member of the
+                    @if (String.IsNullOrEmpty(Model.Affiliation.URL))
+                    {
+                        @Html.ActionLink(Model.Affiliation.Name, "Home", "Affiliations", new { area = "baseball", accountId = Model.Affiliation.Id }, new { @class = "btn btn-success" })
+                    }
+                    else
+                    {
+                        <a class="btn btn-success" href="@Model.Affiliation.URL">@Model.Affiliation.Name</a>
+                    }
+                </div>
+            }
+
 
         @if (Model.IsAdmin)
         {
