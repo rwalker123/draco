@@ -129,12 +129,7 @@ namespace SportsManager.Controllers
             if (account != null)
             {
                 string userId = Globals.GetCurrentUserId();
-
-                var contactId = (from c in db.Db.Contacts
-                                 where c.UserId == userId && c.CreatorAccountId == accountId
-                                 select c.Id).SingleOrDefault();
-
-                return (account.OwnerId == contactId);
+                return (account.OwnerUserId == userId);
             }
 
             return false;

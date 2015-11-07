@@ -272,13 +272,25 @@ namespace SportsManager.Areas.Baseball.Controllers
             string fromEmail = String.Empty;
 
             var a = Db.Accounts.Find(tw.AccountId);
-            var sender = Db.Contacts.Find(a.OwnerId);
-            if (sender == null)
+            if (a == null)
                 return;
 
-            senderFullName = sender.FullNameFirst;
+            var sender = Db.Contacts.Where(c => c.UserId == a.OwnerUserId).SingleOrDefault();
+            if (sender == null)
+            {
+                var email = Db.AspNetUsers.Where(aUser => aUser.Id == a.OwnerUserId).Select(aUser => aUser.UserName).SingleOrDefault();
+                if (String.IsNullOrEmpty(email))
+                    return;
+
+                senderFullName = email;
+                fromEmail = email;
+            }
+            else
+            {
+                senderFullName = sender.FullNameFirst;
+                fromEmail = sender.Email;
+            }
             accountName = a.Name;
-            fromEmail = sender.Email;
 
             string subject = String.Format(registerTeamSubject, accountName);
 

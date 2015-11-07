@@ -200,7 +200,7 @@ namespace ModelObjects
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
-            Property(x => x.OwnerId).HasColumnName("OwnerId").IsRequired();
+            Property(x => x.OwnerUserId).HasColumnName("OwnerUserId").IsRequired().IsUnicode(false).HasMaxLength(128);
             Property(x => x.Name).HasColumnName("Name").IsRequired().IsUnicode(false).HasMaxLength(75);
             Property(x => x.FirstYear).HasColumnName("FirstYear").IsRequired();
             Property(x => x.AccountTypeId).HasColumnName("AccountTypeId").IsRequired();

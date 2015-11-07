@@ -4,25 +4,25 @@ using System.Collections.Generic;
 
 namespace ModelObjects
 {
-	/// <summary>
-	/// Summary description for Account
-	/// </summary>
-	public class Account
-	{
-		public enum eAccountType
-		{
-			Baseball = 1,
-			Bowling = 2,
-			Golf = 3,
-			FitnessClub = 4,
-			GolfIndividual = 5
-		}
+    /// <summary>
+    /// Summary description for Account
+    /// </summary>
+    public class Account
+    {
+        public enum eAccountType
+        {
+            Baseball = 1,
+            Bowling = 2,
+            Golf = 3,
+            FitnessClub = 4,
+            GolfIndividual = 5
+        }
 
         private string m_smallLogoName = "SmallLogo.png";
-		private string m_largeLogoName = "LargeLogo.png";
+        private string m_largeLogoName = "LargeLogo.png";
 
         public long Id { get; set; } // Id (Primary key)
-        public long OwnerId { get; set; } // OwnerId
+        public String OwnerUserId { get; set; }
         public string Name { get; set; } // Name
         public int FirstYear { get; set; } // FirstYear
         public long AccountTypeId { get; set; } // AccountTypeId
