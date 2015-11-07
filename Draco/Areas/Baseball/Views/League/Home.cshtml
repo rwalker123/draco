@@ -88,6 +88,22 @@
                 }
             }
 
+            @if (Model.ShowAffiliation && Model.Account.AffiliationId > 1)
+            {
+                <div class="small">
+                    Proud member of the
+                    @if (String.IsNullOrEmpty(Model.Affiliation.URL))
+                    {
+                        @Html.ActionLink(Model.Affiliation.Name, "Home", "Affiliations", new { area = "baseball", accountId = Model.Affiliation.Id }, new { @class = "btn btn-success" })
+                    }
+                    else
+                    {
+                        <a class="btn btn-success" href="@Model.Affiliation.URL">@Model.Affiliation.Name</a>
+                    }
+                </div>
+            }
+
+
         @if (Model.IsAdmin)
         {
             @*<span class="btn btn-default fileinput-button" title="upload league logo">
@@ -106,10 +122,6 @@
                 <text>Home</text>
             } 
             <small style="color: white" data-bind="visible: hasYear">est. <span data-bind="text: FirstYear"></span></small>
-            @if (Model.ShowAffiliation && Model.Account.AffiliationId > 1)
-            {
-                @Html.ActionLink(Model.Affiliation.Name, "Home", "Affiliations", new { area = "baseball", accountId = Model.Affiliation.Id }, new { @class = "btn btn-success" })
-            }
             </h2>
 
             @if (Model.CurrentSeasonId == 0 && Model.IsAdmin)

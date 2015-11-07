@@ -67,7 +67,7 @@ namespace SportsManager.Baseball.ViewModels
             bool.TryParse(c.GetAccountSetting(accountId, "ShowSponsorSpotlight"), out showSponsorSpotlight);
             ShowSponsorSpotlight = showSponsorSpotlight && Account.Sponsors.Any();
 
-            ShowAffiliation = false;
+            ShowAffiliation = true;
             Affiliation = Account.Affiliation;
             TwitterEnabled = false;
             FacebookEnabled = false;
