@@ -12,7 +12,7 @@ namespace SportsManager.Baseball.ViewModels
             AccountId = accountId;
 
             if (!String.IsNullOrWhiteSpace(lastNameSearchTerm))
-                FoundPlayers = c.Db.Rosters.Where(r => r.AccountId == accountId && r.Contact.LastName.Contains(lastNameSearchTerm))
+                FoundPlayers = c.Db.Rosters.Where(r => r.Contact.CreatorAccountId == accountId && r.Contact.LastName.Contains(lastNameSearchTerm))
                     .OrderBy(r => r.Contact.LastName).ThenBy(r => r.Contact.FirstName).ThenBy(r => r.Contact.MiddleName).Select(r => r.Contact);
         }
 

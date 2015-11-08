@@ -1615,12 +1615,10 @@ namespace ModelObjects
             HasKey(x => x.Id);
 
             Property(x => x.Id).HasColumnName("id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
-            Property(x => x.AccountId).HasColumnName("AccountId").IsRequired();
             Property(x => x.ContactId).HasColumnName("ContactId").IsRequired();
             Property(x => x.SubmittedDriversLicense).HasColumnName("SubmittedDriversLicense").IsRequired();
 
             // Foreign keys
-            HasRequired(a => a.Account).WithMany(b => b.Rosters).HasForeignKey(c => c.AccountId); // FK_Roster_Accounts
             HasRequired(a => a.Contact).WithMany(b => b.Rosters).HasForeignKey(c => c.ContactId); // FK_Roster_Contacts
         }
     }

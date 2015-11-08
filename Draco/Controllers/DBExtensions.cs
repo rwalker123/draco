@@ -348,7 +348,7 @@ namespace SportsManager.Controllers
             long currentSeasonId = db.GetCurrentSeasonId(accountId);
 
             // get user id from username.
-            var contactId = db.Db.Contacts.Where(c => c.Email == userName).Select(c => c.Id).SingleOrDefault();
+            var contactId = db.Db.Contacts.Where(c => c.CreatorAccountId == accountId && c.Email == userName).Select(c => c.Id).SingleOrDefault();
             // if not contact, can't be a team admin.
             if (contactId != 0)
             {

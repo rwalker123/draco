@@ -70,7 +70,17 @@ namespace SportsManager.Baseball.Controllers
         [ActionName("LeagueTeams")]
         public HttpResponseMessage GetLeagueTeams(long accountId, long? id = null)
         {
-            long seasonId = (id.HasValue && id.GetValueOrDefault() != 0) ? id.Value : Db.CurrentSeasons.Find(accountId).SeasonId;
+            long seasonId = 0;
+            if (id.HasValue)
+            {
+                seasonId = id.Value;
+            }
+            else
+            {
+                var curSeason = Db.CurrentSeasons.Find(accountId);
+                if (curSeason != null)
+                    seasonId = curSeason.SeasonId;
+            }
 
             var teams = (from ls in Db.LeagueSeasons
                     join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
@@ -266,11 +276,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public async Task<HttpResponseMessage> LeagueSetup(long accountId, LeagueSetupViewModel leagueData)
+        public async Task<HttpResponseMessage> LeagueSetup(long accountId, long id, LeagueSetupViewModel leagueData)
         {
             if (ModelState.IsValid)
             {
-                var season = await Db.Seasons.FindAsync(leagueData.SeasonId);
+                var season = await Db.Seasons.FindAsync(id);
                 if (season == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 
@@ -294,7 +304,7 @@ namespace SportsManager.Baseball.Controllers
                 LeagueSeason leagueSeason = new LeagueSeason()
                 {
                     League = leagueDef,
-                    SeasonId = leagueData.SeasonId
+                    SeasonId = id
                 };
 
                 Db.LeagueSeasons.Add(leagueSeason);
@@ -322,11 +332,11 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("LeagueSetup")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public async Task<HttpResponseMessage> UpdateLeagueSetup(long accountId, LeagueSetupViewModel leagueData)
+        public async Task<HttpResponseMessage> UpdateLeagueSetup(long accountId, long id, LeagueSetupViewModel leagueData)
         {
             if (ModelState.IsValid)
             {
-                var leagueDef = await Db.LeagueSeasons.FindAsync(leagueData.Id);
+                var leagueDef = await Db.LeagueSeasons.FindAsync(id);
                 if (leagueDef == null)
                     return Request.CreateResponse(HttpStatusCode.NotFound);
 

@@ -242,7 +242,7 @@ namespace SportsManager
                 .ForMember(vm => vm.CanEdit, opt => opt.Ignore());
 
             Mapper.CreateMap<PlayerSeason, PlayerViewModel>()
-                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.AccountId))
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.Contact.CreatorAccountId))
                 .ForMember(vm => vm.TeamId, opt => opt.MapFrom(model => model.TeamSeasonId))
                 .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
                 .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid).FirstOrDefault()))

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
@@ -23,6 +24,12 @@ namespace SportsManager.ViewModels
             private set;
         }
 
+        [DisplayName("First Name"), Required, StringLength(75)]
+        public string FirstName { get; set; }
+        [DisplayName("Last Name"), Required, StringLength(75)]
+        public string LastName { get; set; }
+        [DisplayName("Date of Birth"), Required]
+        public DateTime DateOfBirth { get; set; }
         [DisplayName("League Name"), Required, StringLength(75)]
         public string LeagueName { get; set; }
         //[DataType(DataType.Url), Url]

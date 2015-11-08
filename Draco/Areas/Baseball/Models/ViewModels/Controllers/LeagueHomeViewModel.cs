@@ -41,10 +41,11 @@ namespace SportsManager.Baseball.ViewModels
 
             var hasPlayerInterview = (from pp in c.Db.PlayerProfiles
                                       join r in c.Db.Rosters on pp.PlayerId equals r.ContactId
+                                      join co in c.Db.Contacts on r.ContactId equals co.Id
                                       join rs in c.Db.RosterSeasons on r.Id equals rs.PlayerId
                                       join ts in c.Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                                       join ls in c.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                                      where r.AccountId == accountId && ls.SeasonId == CurrentSeasonId
+                                      where co.CreatorAccountId == accountId && ls.SeasonId == CurrentSeasonId
                                       select pp).Distinct();
 
             ShowPlayerInterview = showPlayerSurvey && hasPlayerInterview.Any();
