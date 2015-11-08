@@ -61,7 +61,7 @@ namespace SportsManager.Baseball.ViewModels
                     join rs in Controller.Db.RosterSeasons on r.Id equals rs.PlayerId
                     join ts in Controller.Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                     join ls in Controller.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                    where r.AccountId == accountId && ls.SeasonId == CurrentSeasonId &&
+                    where c.CreatorAccountId == accountId && ls.SeasonId == CurrentSeasonId &&
                     ts.Id == id && !rs.Inactive
                     select pp).Any();
         }

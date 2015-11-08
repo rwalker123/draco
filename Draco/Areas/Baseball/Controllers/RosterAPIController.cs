@@ -96,7 +96,6 @@ namespace SportsManager.Areas.Baseball.Controllers
             {
                 rosterPlayer = new Player()
                 {
-                    AccountId = accountId,
                     Contact = c,
                     SubmittedDriversLicense = false
                 };
@@ -198,7 +197,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (p.TeamSeasonId != teamSeasonId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            if (p.Roster.AccountId != accountId)
+            if (p.Roster.Contact.CreatorAccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             int playerNum = 0;
@@ -225,7 +224,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (p.TeamSeasonId != teamSeasonId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            if (p.Roster.AccountId != accountId)
+            if (p.Roster.Contact.CreatorAccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             p.Inactive = true;
@@ -247,7 +246,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             if (p.TeamSeasonId != teamSeasonId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
-            if (p.Roster.AccountId != accountId)
+            if (p.Roster.Contact.CreatorAccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
 
             RemovePlayer(p);

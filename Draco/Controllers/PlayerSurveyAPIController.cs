@@ -39,7 +39,7 @@ namespace SportsManager.Controllers
                 join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
                 join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                 join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                where r.AccountId == accountId && ls.SeasonId == currentSeasonId
+                where c.CreatorAccountId == accountId && ls.SeasonId == currentSeasonId
                 select c).Distinct()
                           .OrderBy(x => x.LastName)
                           .ThenBy(x => x.FirstName)
@@ -63,7 +63,7 @@ namespace SportsManager.Controllers
                     join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
                     join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                     join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                    where r.AccountId == accountId && ls.SeasonId == currentSeasonId &&
+                    where c.CreatorAccountId == accountId && ls.SeasonId == currentSeasonId &&
                     ts.Id == id && !rs.Inactive
                     select pp.PlayerId).Distinct();
 
@@ -108,7 +108,7 @@ namespace SportsManager.Controllers
                 join rs in Db.RosterSeasons on r.Id equals rs.PlayerId
                 join ts in Db.TeamsSeasons on rs.TeamSeasonId equals ts.Id
                 join ls in Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
-                where r.AccountId == accountId && ls.SeasonId == currentSeasonId
+                where c.CreatorAccountId == accountId && ls.SeasonId == currentSeasonId
                 select pp).Distinct();
 
             int count = qry.Count();

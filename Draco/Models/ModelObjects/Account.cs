@@ -57,7 +57,6 @@ namespace ModelObjects
         public virtual ICollection<PhotoGalleryItem> PhotoGalleries { get; set; } // PhotoGallery.FK_PhotoGallery_Accounts
         public virtual ICollection<PlayersWantedClassified> PlayersWantedClassifieds { get; set; } // PlayersWantedClassified.FK_PlayersWantedClassified_Accounts
         public virtual ICollection<ProfileCategoryItem> ProfileCategories { get; set; } // ProfileCategory.FK_ProfileCategory_Accounts
-        public virtual ICollection<Player> Rosters { get; set; } // Roster.FK_Roster_Accounts
         public virtual ICollection<Season> Seasons { get; set; } // Season.FK_Season_Accounts
         public virtual ICollection<Sponsor> Sponsors { get; set; } // Sponsors.FK_Sponsors_Accounts
         public virtual ICollection<Team> Teams { get; set; } // Teams.FK_Teams_Accounts
@@ -87,7 +86,6 @@ namespace ModelObjects
             PhotoGalleries = new List<PhotoGalleryItem>();
             PlayersWantedClassifieds = new List<PlayersWantedClassified>();
             ProfileCategories = new List<ProfileCategoryItem>();
-            Rosters = new List<Player>();
             Seasons = new List<Season>();
             Sponsors = new List<Sponsor>();
             Teams = new List<Team>();

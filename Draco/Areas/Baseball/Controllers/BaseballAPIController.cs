@@ -58,7 +58,7 @@ namespace SportsManager.Baseball.Controllers
         {
             var p = (from r in Db.Rosters
                      join c in Db.Contacts on r.ContactId equals c.Id
-                     where r.AccountId == accountId && c.LastName.Contains(term)
+                     where c.CreatorAccountId == accountId && c.LastName.Contains(term)
                      orderby c.LastName, c.FirstName, c.MiddleName
                      select r).Take(20);
 
