@@ -85,8 +85,6 @@ namespace SportsManager.Areas.Baseball.Controllers
         [HttpPost, Authorize]
         public ActionResult CreateAccount(FormCollection collection)
         {
-            long newAccountId = 0;
-
             LeagueCreateAccountViewModel vm = new LeagueCreateAccountViewModel();
 
             string userId = User.Identity.GetUserId();
@@ -94,11 +92,23 @@ namespace SportsManager.Areas.Baseball.Controllers
 
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
-                Account account = new Account();
-                account.Name = vm.LeagueName;
-                account.TimeZoneId = vm.TimeZone;
-                account.OwnerUserId = userId;
-                account.AccountTypeId = 1; // baseball
+                Account account = new Account()
+                {
+                    Name = vm.LeagueName,
+                    TimeZoneId = vm.TimeZone,
+                    OwnerUserId = userId,
+                    AccountTypeId = (long)Account.eAccountType.Baseball,
+                    AffiliationId = 0,
+                    TwitterOauthToken = String.Empty,
+                    TwitterOauthSecretKey = String.Empty,
+                    TwitterAccountName = String.Empty,
+                    TwitterWidgetScript = String.Empty,
+                    YouTubeUserId = String.Empty,
+                    FacebookFanPage = String.Empty,
+                    DefaultVideo = String.Empty,
+                    AutoPlayVideo = false,
+                    FirstYear = DateTime.Now.Year
+                };
 
                 Db.Accounts.Add(account);
 
@@ -115,11 +125,36 @@ namespace SportsManager.Areas.Baseball.Controllers
 
                 Db.SaveChanges();
 
+                // create a contact for the owner.
+                Contact c = new Contact()
+                {
+                    Email = User.Identity.GetUserName(),
+                    FirstName = vm.FirstName,
+                    LastName = vm.LastName,
+                    MiddleName = String.Empty,
+                    CreatorAccountId = account.Id,
+                    UserId = userId,
+                    Phone1 = String.Empty,
+                    Phone2 = String.Empty,
+                    Phone3 = String.Empty,
+                    StreetAddress = String.Empty,
+                    City = String.Empty,
+                    State = String.Empty,
+                    Zip = String.Empty,
+                    FirstYear = DateTime.Now.Year,
+                    DateOfBirth = vm.DateOfBirth,
+                    IsFemale = false
+
+                };
+
+                Db.Contacts.Add(c);
+                Db.SaveChanges();
+
                 ViewData["TimeZones"] = vm.TimeZones;
-                return View(vm);
+                return RedirectToAction("Home", new { accountId = account.Id });
             }
 
-            return RedirectToAction("Home", new { accountId = newAccountId });
+            return View(vm);
         }
     }
 }
