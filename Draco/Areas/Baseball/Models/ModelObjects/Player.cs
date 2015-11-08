@@ -25,14 +25,5 @@ namespace ModelObjects
             PlayerSeasonAffiliationDues = new List<PlayerSeasonAffiliationDue>();
             RosterSeasons = new List<PlayerSeason>();
         }
-
-		public int Age
-		{
-			get
-			{
-                return Globals.CalculateAge(Contact.DateOfBirth);
-			}
-		}
-
 	}
 }
