@@ -131,8 +131,8 @@
       <HintPath>..\packages\Google.Apis.1.9.3\lib\net40\Google.Apis.PlatformServices.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Google.Apis.YouTube.v3, Version=1.9.2.150, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
-      <HintPath>..\packages\Google.Apis.YouTube.v3.1.9.2.1500\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.YouTube.v3.dll</HintPath>
+    <Reference Include="Google.Apis.YouTube.v3, Version=1.9.2.151, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
+      <HintPath>..\packages\Google.Apis.YouTube.v3.1.9.2.1510\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.YouTube.v3.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.GData.Client, Version=2.2.0.0, Culture=neutral, PublicKeyToken=04a59ca9b0273830, processorArchitecture=MSIL">
@@ -256,8 +256,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.3.1.0\lib\net40\Microsoft.WindowsAzure.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.Storage, Version=6.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\WindowsAzure.Storage.6.0.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.Storage, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.Storage.6.1.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -265,7 +265,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="StackExchange.Redis.StrongName, Version=1.0.316.0, Culture=neutral, PublicKeyToken=c219ff1ca8c2ce46, processorArchitecture=MSIL">
-      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.481\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
+      <HintPath>..\packages\StackExchange.Redis.StrongName.1.0.488\lib\net45\StackExchange.Redis.StrongName.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -1258,7 +1258,11 @@
     <Content Include="Views\Shared\FacebookView.cshtml" />
     <Content Include="Views\Shared\HOF.cshtml" />
     <Content Include="Scripts\knockout.validation.min.js.map" />
-    <Content Include="Scripts\tinymce\langs\readme.md" />
+    <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
+    <Content Include="Scripts\jsnlog.js.map" />
+    <Content Include="Views\Shared\_CreateAccount.cshtml" />
+    <Content Include="Views\Shared\EditorTemplates\TimeZoneDropDown.cshtml" />
+    <Content Include="Views\Shared\_GoogleHorizontalAd.cshtml" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.json" />
@@ -1268,11 +1272,7 @@
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.json" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce-small.eot" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\readme.md" />
-    <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
-    <Content Include="Scripts\jsnlog.js.map" />
-    <Content Include="Views\Shared\_CreateAccount.cshtml" />
-    <Content Include="Views\Shared\EditorTemplates\TimeZoneDropDown.cshtml" />
-    <Content Include="Views\Shared\_GoogleHorizontalAd.cshtml" />
+    <Content Include="Scripts\tinymce\langs\readme.md" />
     <None Include="Web.Azure.config">
       <DependentUpon>Web.config</DependentUpon>
       <SubType>Designer</SubType>
