@@ -6,7 +6,6 @@ using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Net.Mail;
 using System.Net.Mime;
@@ -14,29 +13,13 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-using System.Web.UI.WebControls;
 
 /// <summary>
 /// Summary description for Globals
 /// </summary>
 static public class Globals
 {
-	static private String m_appRootDir = String.Empty;
-	static private String m_lastException = String.Empty;
-
-	static public String LastException
-	{
-		get { return m_lastException; }
-		set { m_lastException = value; }
-	}
-
-	static public String AppRootDir
-	{
-		get { return m_appRootDir; }
-		set { m_appRootDir = value; }
-	}
-
-    static public string uploadDirRoot = null;
+    static private string uploadDirRoot = null;
 	static public string UploadDirRoot
 	{
 		get 
@@ -48,11 +31,6 @@ static public class Globals
 
             return uploadDirRoot;
         }
-	}
-
-	static public string LogFile
-	{
-		get { return ConfigurationManager.AppSettings["LogFile"]; }
 	}
 
     public static string GetURLFromRequest(HttpRequest request)
@@ -139,25 +117,7 @@ static public class Globals
 		return failedSends;
 	}
 
-	public static void SetFailedSendsLabel(List<MailAddress> failedSends, Label errorLabel)
-	{
-		if (failedSends.Count > 0)
-		{
-			System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
-			sb.Append("Failure sending your message has to " + failedSends.Count + " contacts. Delivery failed to the following Email addresses:<br/>");
-
-			foreach (MailAddress ma in failedSends)
-			{
-				sb.Append("<br/>" + ma.Address);
-			}
-
-			errorLabel.Text = sb.ToString();
-			errorLabel.Visible = true;
-		}
-	}
-
-    public static void SetupAccountViewData(long accountId, ViewDataDictionary viewData)
+	public static void SetupAccountViewData(long accountId, ViewDataDictionary viewData)
     {
         var db = DependencyResolver.Current.GetService<DB>();
 

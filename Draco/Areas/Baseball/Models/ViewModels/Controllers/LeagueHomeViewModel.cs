@@ -64,8 +64,8 @@ namespace SportsManager.Baseball.ViewModels
 
             UserTeams = c.GetCurrentUserTeams(accountId);
 
-            String userId = Globals.GetCurrentUserId();
-            if (!String.IsNullOrEmpty(userId))
+            string userId = Globals.GetCurrentUserId();
+            if (!string.IsNullOrEmpty(userId))
             {
                 OtherAccounts = (from contact in Controller.Db.Contacts
                                     join a in Controller.Db.Accounts on contact.CreatorAccountId equals a.Id

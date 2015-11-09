@@ -718,7 +718,6 @@
     <Content Include="Areas\Baseball\Views\Shared\TeamManager.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\UpcomingGames.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\WorkoutsView.cshtml" />
-    <Content Include="Areas\Baseball\Views\Shared\_DisplayPlayer.cshtml" />
     <Content Include="Areas\Baseball\Views\Shared\_SeasonStandings.cshtml" />
     <Content Include="Areas\Baseball\Views\Standings\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Statistics\Index.cshtml" />

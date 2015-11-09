@@ -8,6 +8,12 @@ namespace SportsManager.Baseball.ViewModels
 {
     public class PlayerViewModel : SportsManager.ViewModels.AccountViewModel
     {
+        public class AccountWithContactId
+        {
+            public Account Account { get; set; }
+            public long ContactId { get; set; }
+        }
+
         public enum IdType { ContactId, RosterSeasonId, RosterId };
 
         public PlayerViewModel(DBController c, long accountId, long id, IdType idType)
@@ -43,6 +49,20 @@ namespace SportsManager.Baseball.ViewModels
             var pitchStatsHelper = new PitchStatsHelper(c.Db);
             PitchStats = pitchStatsHelper.GetPitchPlayerCareer(id, isIdSeasonId);
             PitchStatsTotals = pitchStatsHelper.GetPitchPlayerCareerTotal(id, isIdSeasonId);
+
+            string userId = Globals.GetCurrentUserId();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                OtherAccounts = (from contact in Controller.Db.Contacts
+                                 join a in Controller.Db.Accounts on contact.CreatorAccountId equals a.Id
+                                 where contact.UserId == userId && contact.CreatorAccountId != AccountId
+                                 select new AccountWithContactId()
+                                 {
+                                     Account = a,
+                                     ContactId = contact.Id
+                                 });
+            }
+
         }
 
         public IQueryable<CareerBatStatsViewModel> BatStats { get; private set; }
@@ -53,5 +73,6 @@ namespace SportsManager.Baseball.ViewModels
 
         public Contact Contact { get; set; }
 
+        public IQueryable<AccountWithContactId> OtherAccounts { get; }
     }
 }
