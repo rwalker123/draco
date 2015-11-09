@@ -96,7 +96,8 @@ namespace SportsManager
             Mapper.CreateMap<Contact, ContactViewModel>()
                 .ForMember(vm => vm.Age, opt => opt.MapFrom(model => model.DateOfBirth.Age()))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Id)))
-                .ForMember(vm => vm.LargePhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetLargePhotoURL(model.Id)));
+                .ForMember(vm => vm.LargePhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetLargePhotoURL(model.Id)))
+                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Rosters.Any() ? model.Rosters.First().FirstYear : 0));
 
             Mapper.CreateMap<Contact, ContactNameViewModel>()
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Id)))
@@ -106,7 +107,6 @@ namespace SportsManager
                 .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
-                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth))
                 .ForMember(vm => vm.RoleDataText, opt => opt.MapFrom(model => RoleDataHelper.GetRoleDataText(model)))
@@ -216,7 +216,6 @@ namespace SportsManager
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.ContactId)))
-                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Contact.DateOfBirth));
 
@@ -226,7 +225,6 @@ namespace SportsManager
                 .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Roster.Contact.LastName))
                 .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Roster.Contact.MiddleName))
                 .ForMember(vm => vm.PhotoURL, opt => opt.MapFrom(model => PhotoURLHelper.GetPhotoURL(model.Roster.ContactId)))
-                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Roster.Contact.FirstYear))
                 .ForMember(vm => vm.Zip, opt => opt.MapFrom(model => model.Roster.Contact.Zip))
                 .ForMember(vm => vm.BirthDate, opt => opt.MapFrom(model => model.Roster.Contact.DateOfBirth));
 
@@ -247,7 +245,8 @@ namespace SportsManager
                 .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
                 .ForMember(vm => vm.AffiliationDuesPaid, opt => opt.MapFrom(model => model.Roster.PlayerSeasonAffiliationDues.Where(psa => psa.SeasonId == model.TeamSeason.LeagueSeason.SeasonId).Select(psa => psa.AffiliationDuesPaid).FirstOrDefault()))
                 .ForMember(vm => vm.Contact, opt => opt.MapFrom(model => model.Roster.Contact))
-                .ForMember(vm => vm.GamesPlayed, opt => opt.MapFrom(model => model.PlayerRecaps.Count));
+                .ForMember(vm => vm.GamesPlayed, opt => opt.MapFrom(model => model.PlayerRecaps.Count))
+                .ForMember(vm => vm.FirstYear, opt => opt.MapFrom(model => model.Roster.FirstYear));
 
             Mapper.CreateMap<AccountSetting, AccountSettingViewModel>();
 

@@ -293,7 +293,7 @@
                             </td>
                             <td colspan="2">
                                 <abbr title="Birthdate">B: </abbr><span data-bind="html: Contact.DateOfBirth.Formatted"></span><br />
-                                <abbr title="First Year">FY: </abbr><span data-bind="html: Contact.FirstYear"></span><br />
+                                <abbr title="First Year">FY: </abbr><span data-bind="html: FirstYear"></span><br />
                                 <abbr title="Gender">G: </abbr><span data-bind="html: Contact.IsFemale() ? 'Female' : 'Male'"></span><br />
 
                             </td>
@@ -303,24 +303,24 @@
 
                         <!-- ko if: $root.currentEditPlayer().Id() == Id()-->
 
-                        <tr data-bind="with: $root.currentEditPlayer().Contact">
+                        <tr>
                             <td colspan="2">
-                                    <input class="form-control" type="text" data-bind='value: StreetAddress' placeholder="address" />
-                                    <input class="form-control" type="text" data-bind='value: City' placeholder="city"/>
-                                    <select id="StatePicker" data-bind="selectPicker: State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
-                                    <input class="form-control" type="text" data-bind='value: Zip' placeholder="zip code"/>
+                                    <input class="form-control" type="text" data-bind='value: $root.currentEditPlayer().Contact.StreetAddress' placeholder="address" />
+                                    <input class="form-control" type="text" data-bind='value: $root.currentEditPlayer().Contact.City' placeholder="city"/>
+                                    <select id="StatePicker" data-bind="selectPicker: $root.currentEditPlayer().Contact.State, selectPickerOptions: {optionsArray: $root.availableStates}, optionsText: 'name', optionsValue: 'abbrev', optionsCaption: 'Choose state...'"></select>
+                                    <input class="form-control" type="text" data-bind='value: $root.currentEditPlayer().Contact.Zip' placeholder="zip code"/>
                             </td>
                             <td colspan="2">
-                                <input class="form-control" type="text" data-bind="value: Email" placeholder="email address"/>
-                                <abbr title="Cell Phone">C: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone2" placeholder="cell phone" />
-                                <abbr title="Work Phone">W: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone3" placeholder="work phone" />
-                                <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: Phone1" placeholder="home phone" />
+                                <input class="form-control" type="text" data-bind="value: $root.currentEditPlayer().Contact.Email" placeholder="email address"/>
+                                <abbr title="Cell Phone">C: </abbr><input class="form-control" type="text" data-bind="phoneNumber: $root.currentEditPlayer().Contact.Phone2" placeholder="cell phone" />
+                                <abbr title="Work Phone">W: </abbr><input class="form-control" type="text" data-bind="phoneNumber: $root.currentEditPlayer().Contact.Phone3" placeholder="work phone" />
+                                <abbr title="Home Phone">H: </abbr><input class="form-control" type="text" data-bind="phoneNumber: $root.currentEditPlayer().Contact.Phone1" placeholder="home phone" />
                             </td>
                             <td colspan="2">
-                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: DateOfBirth, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" />
-                                <select id="FirstYearSelect" data-bind="selectPicker: FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
+                                <abbr title="Birthdate">B: </abbr><input class="form-control" type="text" data-bind="datepicker: $root.currentEditPlayer().Contact.DateOfBirth, datepickerOptions: { format: 'MM dd, yyyy', autoclose: true, startView: 2 }" />
+                                <select id="FirstYearSelect" data-bind="selectPicker: $root.currentEditPlayer().FirstYear, selectPickerOptions: { optionsArray: $root.availableYears }, optionsText: 'name', optionsValue: 'name', optionsCaption: 'Choose first year...'"></select><br />
 
-                                <select id="GenderSelect" data-bind="selectPicker: IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
+                                <select id="GenderSelect" data-bind="selectPicker: $root.currentEditPlayer().Contact.IsFemale, selectPickerOptions: { optionsArray: $root.availableGenders }, optionsText: 'name', optionsValue: 'id', optionsCaption: 'Choose gender...'"></select><br />
 
                             </td>
                         </tr>

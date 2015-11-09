@@ -451,7 +451,6 @@ namespace ModelObjects
             Property(x => x.City).HasColumnName("City").IsOptional().IsUnicode(false).HasMaxLength(25);
             Property(x => x.State).HasColumnName("State").IsOptional().IsUnicode(false).HasMaxLength(25);
             Property(x => x.Zip).HasColumnName("Zip").IsOptional().IsUnicode(false).HasMaxLength(15);
-            Property(x => x.FirstYear).HasColumnName("FirstYear").IsOptional();
             Property(x => x.DateOfBirth).HasColumnName("DateOfBirth").IsRequired();
             Property(x => x.IsFemale).HasColumnName("IsFemale").IsOptional();
             Property(x => x.Email).HasColumnName("Email").IsOptional().IsUnicode(false).HasMaxLength(50);
@@ -1617,6 +1616,7 @@ namespace ModelObjects
             Property(x => x.Id).HasColumnName("id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
             Property(x => x.ContactId).HasColumnName("ContactId").IsRequired();
             Property(x => x.SubmittedDriversLicense).HasColumnName("SubmittedDriversLicense").IsRequired();
+            Property(x => x.FirstYear).HasColumnName("FirstYear").IsOptional();
 
             // Foreign keys
             HasRequired(a => a.Contact).WithMany(b => b.Rosters).HasForeignKey(c => c.ContactId); // FK_Roster_Contacts

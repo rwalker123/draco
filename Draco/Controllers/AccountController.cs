@@ -162,7 +162,7 @@ namespace SportsManager.Controllers
                     {
                         ModelState.AddModelError("PlayerName", "Player is already registered.");
                     }
-                    else if (contact.DateOfBirth != model.BirthDate || contact.FirstYear != model.FirstYear)
+                    else if (contact.DateOfBirth != model.BirthDate)
                     {
                         ModelState.AddModelError("", "Verification information does not match our records. Please try again or contact your league administrator.");
                     }
@@ -195,6 +195,7 @@ namespace SportsManager.Controllers
             }
 
             model.AccountId = model.RegisterAccountId;
+            model.Controller = this;
             ViewData["AccountId"] = model.AccountId;
             ViewData["AccountName"] = model.AccountName;
 

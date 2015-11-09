@@ -23,7 +23,7 @@ namespace ModelObjects
         public string City { get; set; } // City
         public string State { get; set; } // State
         public string Zip { get; set; } // Zip
-        public int? FirstYear { get; set; } // FirstYear
+        //public int? FirstYear { get; set; } // FirstYear
         public DateTime DateOfBirth { get; set; } // DateOfBirth
         public bool? IsFemale { get; set; } // IsFemale
         public string Email { get; set; } // Email

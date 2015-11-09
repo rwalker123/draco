@@ -14,5 +14,6 @@ namespace SportsManager.ViewModels.API
         public DateTime DateAdded { get; set; }
         public string AffiliationDuesPaid { get; set; }  
         public int GamesPlayed { get; set; }  
+        public int FirstYear { get; set; }
     }
 }

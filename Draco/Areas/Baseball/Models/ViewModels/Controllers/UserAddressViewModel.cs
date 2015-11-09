@@ -156,7 +156,6 @@ namespace SportsManager.Baseball.ViewModels
                 CreateCell(row, "E" + index, contact.State);
                 CreateCell(row, "F" + index, contact.Zip);
                 CreateCell(row, "G" + index, contact.DateOfBirth.ToShortDateString());
-                CreateCell(row, "H" + index, contact.FirstYear.ToString());
                 CreateCell(row, "I" + index, contact.Phone3);
                 CreateCell(row, "J" + index, contact.Phone2);
                 CreateCell(row, "K" + index, contact.Phone1);

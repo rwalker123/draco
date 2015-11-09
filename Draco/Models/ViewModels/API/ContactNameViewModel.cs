@@ -29,7 +29,6 @@ namespace SportsManager.ViewModels.API
                 photoUrl = value;
             }
         }
-        public int FirstYear { get; set; }
         public string Zip { get; set; }
         public DateTime BirthDate { get; set; }
     }

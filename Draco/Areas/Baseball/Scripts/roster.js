@@ -98,6 +98,7 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
         AffiliationDuesPaid: '',
         SubmittedWaiver: false,
         SubmittedDriversLicense: false,
+        FirstYear: 0,
         Contact: {
             Id: 0,
             Email: '',
@@ -112,7 +113,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
             City: '',
             State: '',
             Zip: '',
-            FirstYear: 0,
             DateOfBirth: new Date(),
             IsFemale: false,
             UserId: '',
@@ -191,7 +191,6 @@ var RosterViewModel = function (accountId, isAdmin, isTeamAdmin, teamId, firstYe
                 State: '',
                 Zip: '',
                 DateOfBirth: moment(new Date()).format('MMMM D, YYYY'),
-                FirstYear: (new Date()).getFullYear(),
                 Phone1: '',
                 Phone2: '',
                 Phone3: '',

@@ -97,7 +97,8 @@ namespace SportsManager.Areas.Baseball.Controllers
                 rosterPlayer = new Player()
                 {
                     Contact = c,
-                    SubmittedDriversLicense = false
+                    SubmittedDriversLicense = false,
+                    FirstYear = DateTime.Now.Year
                 };
 
                 Db.Rosters.Add(rosterPlayer);
@@ -150,6 +151,7 @@ namespace SportsManager.Areas.Baseball.Controllers
             rs.PlayerNumber = p.PlayerNumber;
 
             rs.Roster.SubmittedDriversLicense = p.SubmittedDriversLicense;
+            rs.Roster.FirstYear = p.FirstYear;
 
             var seasonId = this.GetCurrentSeasonId(accountId);
 
