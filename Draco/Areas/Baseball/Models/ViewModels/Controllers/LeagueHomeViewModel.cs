@@ -64,6 +64,15 @@ namespace SportsManager.Baseball.ViewModels
 
             UserTeams = c.GetCurrentUserTeams(accountId);
 
+            String userId = Globals.GetCurrentUserId();
+            if (!String.IsNullOrEmpty(userId))
+            {
+                OtherAccounts = (from contact in Controller.Db.Contacts
+                                    join a in Controller.Db.Accounts on contact.CreatorAccountId equals a.Id
+                                    where contact.UserId == userId && contact.CreatorAccountId != AccountId
+                                    select a);
+            }
+
             var showSponsorSpotlight = false;
             bool.TryParse(c.GetAccountSetting(accountId, "ShowSponsorSpotlight"), out showSponsorSpotlight);
             ShowSponsorSpotlight = showSponsorSpotlight && Account.Sponsors.Any();
@@ -75,6 +84,11 @@ namespace SportsManager.Baseball.ViewModels
             VideosEnabled = true;
 
             RegisteredForAccount = AccountController.UserRegisteredForAccount(accountId);
+        }
+
+        public IQueryable<Account> OtherAccounts
+        {
+            get;
         }
 
         public bool RegisteredForAccount

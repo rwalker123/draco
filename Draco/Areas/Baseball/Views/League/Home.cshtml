@@ -277,6 +277,13 @@
 
     <div class="col-md-4"> <!-- second column -->
 
+    @if (Model.OtherAccounts != null && Model.OtherAccounts.Any())
+    {
+        <div class="col-md-12">
+            @{Html.RenderPartial("CurrentOtherAccountsView", Model.OtherAccounts);}
+        </div>
+    }
+
     @if (Model.UserTeams != null && Model.UserTeams.Any())
     {
         <div class="col-md-12">

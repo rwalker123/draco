@@ -1,0 +1,23 @@
+﻿@model IQueryable<ModelObjects.Account>
+
+
+<div class="panel panel-success">
+    <div class="panel-heading">
+        <h3 class="panel-title" style="float: left;">Your Accounts</h3>
+        <div style="clear:both"></div>
+    </div>
+
+    <div class="panel-body">
+        <div class="list-group">
+            @foreach (var a in Model)
+            {
+                var url = a.GetURL();
+                if (!String.IsNullOrEmpty(url))
+                {
+                    <a href='@url' class="list-group-item">@a.Name</a>
+                }
+            }
+        </div>
+    </div>
+</div>
+
