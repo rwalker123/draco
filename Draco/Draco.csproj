@@ -700,7 +700,6 @@
     <Content Include="Areas\Baseball\Views\Baseball\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\Fields\Fields.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSchedule\ScheduleMain.cshtml" />
-    <Content Include="Areas\Baseball\Views\LeagueSeason\Create.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueSeason\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\LeagueTeams\Index.cshtml" />
     <Content Include="Areas\Baseball\Views\League\CreateAccount.cshtml" />
@@ -1260,7 +1259,6 @@
     <Content Include="Views\Shared\SponsorSpotlightView.cshtml" />
     <Content Include="Scripts\jsnlog.js.map" />
     <Content Include="Views\Shared\_CreateAccount.cshtml" />
-    <Content Include="Views\Shared\EditorTemplates\TimeZoneDropDown.cshtml" />
     <Content Include="Views\Shared\_GoogleHorizontalAd.cshtml" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.woff" />
     <Content Include="Scripts\tinymce\skins\lightgray\fonts\tinymce.ttf" />

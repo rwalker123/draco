@@ -16,6 +16,7 @@ namespace SportsManager.ViewModels
                 timeZones.Add(new SelectListItem() { Text = s.DisplayName, Value = s.Id });
 
             TimeZones = timeZones;
+            DateOfBirth = DateTime.Parse(DateTime.Now.ToShortDateString());
         }
 
         public IEnumerable<SelectListItem> TimeZones
@@ -32,7 +33,7 @@ namespace SportsManager.ViewModels
         public DateTime DateOfBirth { get; set; }
         [DisplayName("League Name"), Required, StringLength(75)]
         public string LeagueName { get; set; }
-        //[DataType(DataType.Url), Url]
+        [DataType(DataType.Url), Url]
         public string URL { get; set; }
         [UIHint("TimeZoneDropDown")]
         public string TimeZone { get; set; }
