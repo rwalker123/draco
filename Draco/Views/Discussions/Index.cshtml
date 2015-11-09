@@ -50,6 +50,17 @@
 
 <div class="container-fluid" id="discussions">
 
+    @if (!Model.RegisteredForAccount)
+    {
+        <div class="row center-block text-center">
+            <div class="col-sm-12">
+                <div class="alert alert-danger">
+                    <b>You are logged in but not registered with the @Model.AccountName, click @Html.ActionLink("Register", "Register", "Account", new { area = "", accountId = Model.AccountId }, htmlAttributes: new { id = "registerLink" }) if you are a member of this league.</b>
+                </div>
+            </div>
+        </div>
+    }
+
     @if (Model.ShowPlayerClassified)
     {
         <div class="row center-block text-center">
@@ -250,7 +261,7 @@
                 <button type="button" class="btn btn-primary" data-bind="click: $root.startEditTopic">start discussion</button>
             </div>
             <div data-bind="ifnot: canCreateTopic">
-                <div class="alert alert-info">Login to start a discussion group.</div>
+                <div class="alert alert-info">Login/Register to start a discussion group.</div>
             </div>
 
             <div class="alert alert-info" data-bind="visible: topics().length == 0 && topics.loaded()">

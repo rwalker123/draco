@@ -16,6 +16,10 @@
             <li>
                 @Html.ActionLink("Hello " + userName + "!", "Manage", "Account", new { area = "", accountId = ViewData["AccountId"] }, htmlAttributes: new { title = "Manage" })
             </li>
+            @if (!AccountController.UserRegisteredForAccount(Model))
+            {
+                <li>@Html.ActionLink("Register", "Register", "Account", new { area = "", accountId = ViewData["AccountId"] }, htmlAttributes: new { id = "registerLink" })</li>
+            }
             <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
         </ul>
     }

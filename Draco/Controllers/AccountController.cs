@@ -35,6 +35,16 @@ namespace SportsManager.Controllers
             return View(new UserRolesViewModel(this, accountId));
         }
 
+        // helper method to determine if the logged in user is registered
+        // for the given account.
+        static public bool UserRegisteredForAccount(long accountId)
+        {
+            var db = DependencyResolver.Current.GetService<DB>();
+
+            var userId = Globals.GetCurrentUserId();
+            return db.Contacts.Where(c => c.UserId == userId && c.CreatorAccountId == accountId).Any();
+        }
+
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult Domains(long accountId)
         {
@@ -148,6 +158,17 @@ namespace SportsManager.Controllers
         {
             ModelState["Controller"].Errors.Clear();
 
+            var currentUser = Globals.GetCurrentUserId();
+
+            if (!String.IsNullOrEmpty(currentUser))
+            {
+                model.Password = "nanana";
+                model.ConfirmPassword = "nanana";
+                model.Email = "na@na.com";
+                ModelState.Clear();
+                TryValidateModel(model);
+            }
+
             if (ModelState.IsValid)
             {
                 // find the contact and compare values.
@@ -162,9 +183,16 @@ namespace SportsManager.Controllers
                     {
                         ModelState.AddModelError("PlayerName", "Player is already registered.");
                     }
-                    else if (contact.DateOfBirth != model.BirthDate)
+                    else if (contact.DateOfBirth != model.BirthDate || contact.Rosters.FirstOrDefault()?.FirstYear != model.FirstYear)
                     {
                         ModelState.AddModelError("", "Verification information does not match our records. Please try again or contact your league administrator.");
+                    }
+                    else if (!String.IsNullOrEmpty(currentUser))
+                    {
+                        contact.UserId = currentUser;
+                        contact.Email = Globals.GetCurrentUserName();
+                        Db.SaveChanges();
+                        return RedirectToAction("Index", "Home");
                     }
                     else
                     {

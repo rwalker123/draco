@@ -73,8 +73,14 @@ namespace SportsManager.Baseball.ViewModels
             TwitterEnabled = false;
             FacebookEnabled = false;
             VideosEnabled = true;
+
+            RegisteredForAccount = AccountController.UserRegisteredForAccount(accountId);
         }
 
+        public bool RegisteredForAccount
+        {
+            get;
+        }
         public bool ShowAffiliation
         {
             get;

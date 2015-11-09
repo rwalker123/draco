@@ -31,8 +31,11 @@ namespace SportsManager.ViewModels
                 // number of teams requesting players.
                 NumberOfTeamRequests = c.Db.PlayersWantedClassifieds.Where(pwc => pwc.AccountId == accountId).Count();
             }
+
+            RegisteredForAccount = AccountController.UserRegisteredForAccount(accountId);
         }
 
+        public bool RegisteredForAccount { get; }
         public bool DisplayPosterPhoto { get; private set; }
         public bool ShowMemberBusiness { get; private set; }
         public bool ShowPlayerClassified { get; private set; }
