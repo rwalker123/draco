@@ -629,7 +629,6 @@ namespace SportsManager.Controllers
             contact.City = vm.City;
             contact.State = vm.State;
             contact.Zip = vm.Zip;
-            contact.FirstYear = vm.FirstYear;
             contact.DateOfBirth = vm.DateOfBirth;
             contact.IsFemale = vm.IsFemale;
             contact.Email = vm.Email;

@@ -206,7 +206,7 @@ namespace SportsManager.Controllers
                 a.TwitterOauthSecretKey = String.Empty;
                 a.TwitterOauthToken = String.Empty;
             }
-            a.TwitterAccountName = accountData.TwitterAccountName;
+            a.TwitterAccountName = accountData.TwitterAccountName ?? string.Empty;
             Db.SaveChanges();
 
             return Request.CreateResponse<AccountViewModel>(HttpStatusCode.OK, accountData);

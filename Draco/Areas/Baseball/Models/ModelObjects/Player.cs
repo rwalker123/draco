@@ -11,6 +11,7 @@ namespace ModelObjects
         //public long AccountId { get; set; } // AccountId
         public long ContactId { get; set; } // ContactId
         public bool SubmittedDriversLicense { get; set; } // SubmittedDriversLicense
+        public int FirstYear { get; set; }
 
         // Reverse navigation
         public virtual ICollection<PlayerSeasonAffiliationDue> PlayerSeasonAffiliationDues { get; set; } // Many to many mapping

@@ -1,6 +1,8 @@
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Web;
 
 namespace ModelObjects
 {
@@ -149,5 +151,36 @@ namespace ModelObjects
                 return Storage.Provider.GetUrl(Globals.UploadDirRoot + "Accounts/" + Id + "/Logo/" + m_smallLogoName);
 			}
 		}
-	}
+
+        public string GetURL()
+        {
+            var accountURL = AccountsURL.FirstOrDefault();
+            var url = string.Empty;
+            if (accountURL == null || String.IsNullOrEmpty(accountURL.URL))
+            {
+                // must build a url to the internal link.
+                return String.Format(AccountType.FilePath, HttpContext.Current.Request.Url.Authority, Id);
+            }
+            else
+            {
+                return accountURL.URL;
+            }
+        }
+
+        public string GetURL(string path)
+        {
+            var accountURL = AccountsURL.FirstOrDefault();
+            var url = string.Empty;
+            if (accountURL == null || String.IsNullOrEmpty(accountURL.URL))
+            {
+                // must build a url to the internal link.
+                return "//" + HttpContext.Current.Request.Url.Authority + path;
+            }
+            else
+            {
+                return accountURL.URL + path;
+            }
+        }
+
+    }
 }

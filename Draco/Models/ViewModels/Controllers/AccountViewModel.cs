@@ -65,7 +65,7 @@ namespace SportsManager.ViewModels
         public DBController Controller
         {
             get;
-            private set;
+            set;
         }
 
         [ScaffoldColumn(false)]

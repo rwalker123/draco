@@ -141,7 +141,6 @@ namespace SportsManager.Areas.Baseball.Controllers
                     City = String.Empty,
                     State = String.Empty,
                     Zip = String.Empty,
-                    FirstYear = DateTime.Now.Year,
                     DateOfBirth = vm.DateOfBirth,
                     IsFemale = false
 

@@ -19,3 +19,20 @@
         </div>
     </div>
 </div>
+
+@section scripts
+{
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $('#TimeZone').selectpicker();
+        $('#DateOfBirth').datepicker({
+            format: 'MM dd, yyyy',
+            autoclose: true,
+            startView: 2
+        });
+        $('#DateOfBirth').datepicker("setDate", new Date);
+    });
+
+</script>
+}

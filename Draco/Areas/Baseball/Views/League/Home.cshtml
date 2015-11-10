@@ -152,6 +152,17 @@
 
 <div class="container-fluid">
 
+    @if (!Model.RegisteredForAccount)
+    {
+        <div class="row center-block text-center">
+            <div class="col-sm-12">
+                <div class="alert alert-danger">
+                    <b>You are logged in but not registered with the @Model.AccountName, click @Html.ActionLink("Register", "Register", "Account", new { area = "", accountId = ViewData["AccountId"] }, htmlAttributes: new { id = "registerLink" }) if you are a member of this league.</b>
+                </div>
+            </div>
+        </div>
+    }
+
     @if (Model.ContactId == 0 && Model.ShowFAQMessage)
     { 
     <div class="row center-block text-center">
@@ -265,6 +276,13 @@
     </div>
 
     <div class="col-md-4"> <!-- second column -->
+
+    @if (Model.OtherAccounts != null && Model.OtherAccounts.Any())
+    {
+        <div class="col-md-12">
+            @{Html.RenderPartial("CurrentOtherAccountsView", Model.OtherAccounts);}
+        </div>
+    }
 
     @if (Model.UserTeams != null && Model.UserTeams.Any())
     {

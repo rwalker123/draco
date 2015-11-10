@@ -45,7 +45,6 @@ namespace SportsManager.Controllers
                         MiddleName = c.MiddleName,
                         LastName = c.LastName,
                         BirthDate = c.DateOfBirth,
-                        FirstYear = c.FirstYear ?? 0,
                         Zip = c.Zip
                     }).AsQueryable();
         }
@@ -130,7 +129,6 @@ namespace SportsManager.Controllers
                         City = vm.City,
                         State = vm.State,
                         Zip = vm.Zip,
-                        FirstYear = vm.FirstYear,
                         DateOfBirth = vm.DateOfBirth,
                         IsFemale = vm.IsFemale
                     };
@@ -252,6 +250,10 @@ namespace SportsManager.Controllers
                         registerIfNeeded = true;
 
                     await this.UpdateContact(accountId, contact, vm, registerIfNeeded);
+
+                    var r = contact.Rosters.FirstOrDefault();
+                    if (r != null)
+                        r.FirstYear = vm.FirstYear;
 
                     await Db.SaveChangesAsync();
 

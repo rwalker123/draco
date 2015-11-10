@@ -32,6 +32,21 @@
         </div>
     </div>
     <div class="row">
+        <div class="list-group">
+        @if (Model.OtherAccounts != null && Model.OtherAccounts.Any())
+        {
+            foreach (var a in Model.OtherAccounts)
+            {
+                var url = a.Account.GetURL("/baseball/player/contact/" + a.Account.Id.ToString() + "/" + a.ContactId.ToString());
+                if (!String.IsNullOrEmpty(url))
+                {
+                    <a href='@url' class="list-group-item">View <b>@a.Account.Name Stats</b> (clicking here will redirect you to @a.Account.Name)</a>
+                }
+            }
+        }
+        </div>
+    </div>
+    <div class="row">
         <ul class="nav nav-tabs">
             <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
             <li><a href="#pitching" data-toggle="tab">Pitching</a></li>

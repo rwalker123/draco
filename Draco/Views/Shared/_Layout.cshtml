@@ -62,7 +62,7 @@
                             Html.RenderPartial("AccountMenu", ViewData["AccountId"]);
                         }
                     </ul>
-                    @Html.Partial("_LoginPartial")
+                    @Html.Partial("_LoginPartial", ViewData["AccountId"])
                 </div>
             </div>
         </div>
