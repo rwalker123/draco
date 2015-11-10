@@ -544,6 +544,7 @@
     <Compile Include="Models\AccountBindingModels.cs" />
     <Compile Include="Models\AccountModels.cs" />
     <Compile Include="Models\Filters\ModelStateValidationAttribute.cs" />
+    <Compile Include="Models\Helpers\DBHelper.cs" />
     <Compile Include="Models\Helpers\PhotoURLHelper.cs" />
     <Compile Include="Models\Helpers\RoleDataHelper.cs" />
     <Compile Include="Models\ModelObjects\AccountURL.cs" />

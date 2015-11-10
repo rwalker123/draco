@@ -123,7 +123,7 @@ namespace SportsManager
 
             Mapper.CreateMap<MessageCategory, MessageCategoryViewModel>()
                 .ForMember(vm => vm.Order, opt => opt.MapFrom(model => model.CategoryOrder))
-                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.CategoryName))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.IsTeam ? string.Format(model.CategoryName, DBHelper.GetTeamName(model.AccountId)) : model.CategoryName))
                 .ForMember(vm => vm.Description, opt => opt.MapFrom(model => model.CategoryDescription))
                 .ForMember(vm => vm.LastPost, opt => opt.MapFrom(model => model.MessagePosts.OrderByDescending(mp => mp.PostDate).FirstOrDefault()))
                 .ForMember(vm => vm.NumberOfThreads, opt => opt.MapFrom(model => model.MessageTopics.LongCount()));

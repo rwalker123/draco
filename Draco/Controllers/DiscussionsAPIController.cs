@@ -384,7 +384,7 @@ namespace SportsManager.Controllers
 
         private IEnumerable<MessageCategory> GetContactTeamCategoriesWithDetails(long accountId, Contact contact, bool isAdmin)
         {
-            IQueryable<long> teamIds;
+            IList<long> teamIds;
 
             if (isAdmin)
             {
@@ -394,7 +394,7 @@ namespace SportsManager.Controllers
                            join l in Db.Leagues on ls.LeagueId equals l.Id
                            join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
                            where cs.AccountId == accountId
-                           select ts.TeamId).Distinct();
+                           select ts.TeamId).Distinct().ToList();
             }
             else
             {
@@ -421,7 +421,7 @@ namespace SportsManager.Controllers
                                 where c.CreatorAccountId == accountId && cr.ContactId == contact.Id &&
                                 (ur.Name == "TeamAdmin" || ur.Name == "TeamPhotoAdmin")
                                 select cr.RoleData)
-                               ).Distinct();
+                               ).Distinct().ToList();
             }
 
             List<MessageCategory> cats = new List<MessageCategory>();
@@ -469,28 +469,5 @@ namespace SportsManager.Controllers
 
             return null;
         }
-
-        private String GetTeamNameFromTeamId(long teamId)
-        {
-            var team = Db.Teams.Find(teamId);
-            if (team == null)
-                return null;
-
-            var currentSeason = this.GetCurrentSeasonId(team.AccountId);
-            if (currentSeason == 0)
-                return null;
-
-            var currentLeagues = Db.LeagueSeasons.Where(ls => ls.SeasonId == currentSeason).Select(ls => ls.Id);
-
-            var teamSeason = Db.TeamsSeasons.Where(ts => ts.TeamId == team.Id && currentLeagues.Contains(ts.LeagueSeasonId)).SingleOrDefault();
-            if (teamSeason == null)
-                return null;
-
-            return (from ls in Db.LeagueSeasons
-                    join l in Db.Leagues on ls.LeagueId equals l.Id
-                    where ls.Id == teamSeason.LeagueSeasonId
-                    select l.Name + " " + teamSeason.Name).SingleOrDefault();
-        }
-
     }
 }
