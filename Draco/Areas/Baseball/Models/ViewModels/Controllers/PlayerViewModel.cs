@@ -51,7 +51,7 @@ namespace SportsManager.Baseball.ViewModels
             PitchStatsTotals = pitchStatsHelper.GetPitchPlayerCareerTotal(id, isIdSeasonId);
 
             string userId = Globals.GetCurrentUserId();
-            if (!string.IsNullOrEmpty(userId))
+            if (!string.IsNullOrEmpty(userId) && Contact != null && Contact.UserId == userId)
             {
                 OtherAccounts = (from contact in Controller.Db.Contacts
                                  join a in Controller.Db.Accounts on contact.CreatorAccountId equals a.Id
