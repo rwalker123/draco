@@ -785,6 +785,13 @@
     <Content Include="App_Code\Header.cshtml" />
     <Content Include="Content\TeamAddressListTemplate.xlsx" />
     <Content Include="Scripts\facebook.js" />
+    <Content Include="Areas\Baseball\Views\Affiliations\Home.cshtml" />
+    <Content Include="Areas\Baseball\Views\Affiliations\Index.cshtml" />
+    <Content Include="Scripts\bootstrap-select.js.map" />
+    <Content Include="Content\bootstrap-select.css.map" />
+    <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
+    <Content Include="Scripts\i18n\defaults-ar_AR.js" />
+    <Content Include="Scripts\i18n\defaults-ar_AR.min.js" />
     <Content Include="Scripts\i18n\defaults-bg_BG.js" />
     <Content Include="Scripts\i18n\defaults-bg_BG.min.js" />
     <Content Include="Scripts\i18n\defaults-cs_CZ.js" />
@@ -805,6 +812,8 @@
     <Content Include="Scripts\i18n\defaults-fr_FR.min.js" />
     <Content Include="Scripts\i18n\defaults-hu_HU.js" />
     <Content Include="Scripts\i18n\defaults-hu_HU.min.js" />
+    <Content Include="Scripts\i18n\defaults-id_ID.js" />
+    <Content Include="Scripts\i18n\defaults-id_ID.min.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.js" />
     <Content Include="Scripts\i18n\defaults-it_IT.min.js" />
     <Content Include="Scripts\i18n\defaults-ko_KR.js" />
@@ -835,9 +844,6 @@
     <Content Include="Scripts\i18n\defaults-zh_CN.min.js" />
     <Content Include="Scripts\i18n\defaults-zh_TW.js" />
     <Content Include="Scripts\i18n\defaults-zh_TW.min.js" />
-    <Content Include="Areas\Baseball\Views\Affiliations\Home.cshtml" />
-    <Content Include="Areas\Baseball\Views\Affiliations\Index.cshtml" />
-    <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\jquery-1.11.3.js" />
     <Content Include="Scripts\jquery-1.11.3.min.js" />
     <Content Include="Scripts\jquery.cookie.js" />
@@ -845,7 +851,6 @@
     <Content Include="Content\UserAddressListTemplate.xlsx" />
     <Content Include="Content\ManagerAddressListTemplate.xlsx" />
     <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
-    <Content Include="Content\bootstrap-select.css.map" />
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />
     <Content Include="fonts\glyphicons-halflings-regular.woff" />
     <Content Include="fonts\glyphicons-halflings-regular.ttf" />
@@ -859,7 +864,6 @@
     <Content Include="fonts\fontawesome-webfont.eot" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\ezBaseballLeague - Web Deploy.pubxml" />
-    <Content Include="Scripts\bootstrap-select.js.map" />
     <Content Include="Scripts\jquery-1.11.3.min.map" />
     <None Include="Scripts\jquery.validate-vsdoc.js" />
     <Content Include="Scripts\jquery.validate.js" />
