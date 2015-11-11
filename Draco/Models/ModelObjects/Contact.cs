@@ -1,5 +1,4 @@
-using SportsManager.Models.Helpers;
-using SportsManager.Models.Utils;
+using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 
@@ -44,6 +43,15 @@ namespace ModelObjects
         public virtual ICollection<Player> Rosters { get; set; } // Roster.FK_Roster_Contacts
         public virtual ICollection<TeamManager> TeamSeasonManagers { get; set; } // TeamSeasonManager.FK_TeamSeasonManager_Contacts
         public virtual ICollection<VoteAnswer> VoteAnswers { get; set; } // VoteAnswers.FK_VoteAnswers_Contacts
+        public virtual ICollection<GolfCourseForContact> GolfCourseForContacts { get; set; } // GolfCourseForContact.FK_GolfCourseForContact_Contacts
+        public virtual ICollection<GolferStatsConfiguration> GolferStatsConfigurations { get; set; } // GolferStatsConfiguration.FK_GolferStatsConfiguration_Contacts
+        public virtual ICollection<GolferStatsValue> GolferStatsValues { get; set; } // GolferStatsValue.FK_GolferStatsValue_Contacts
+        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups_PresidentId { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Contacts
+        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups_SecretaryId { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Contacts2
+        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups_TreasurerId { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Contacts3
+        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups_VicePresidentId { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Contacts1
+        public virtual ICollection<GolfRoster> GolfRosters { get; set; } // GolfRoster.FK_GolfRoster_Contacts
+        public virtual ICollection<GolfScore> GolfScores { get; set; } // GolfScore.FK_GolfScore_Contacts
 
         public Contact()
         {
@@ -60,6 +68,15 @@ namespace ModelObjects
             Rosters = new List<Player>();
             TeamSeasonManagers = new List<TeamManager>();
             VoteAnswers = new List<VoteAnswer>();
+            GolfCourseForContacts = new List<GolfCourseForContact>();
+            GolferStatsConfigurations = new List<GolferStatsConfiguration>();
+            GolferStatsValues = new List<GolferStatsValue>();
+            GolfLeagueSetups_PresidentId = new List<GolfLeagueSetup>();
+            GolfLeagueSetups_SecretaryId = new List<GolfLeagueSetup>();
+            GolfLeagueSetups_TreasurerId = new List<GolfLeagueSetup>();
+            GolfLeagueSetups_VicePresidentId = new List<GolfLeagueSetup>();
+            GolfRosters = new List<GolfRoster>();
+            GolfScores = new List<GolfScore>();
         }
 
         public string FullName

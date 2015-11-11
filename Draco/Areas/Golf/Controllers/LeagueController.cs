@@ -1,15 +1,21 @@
 ﻿using System;
+using System.Linq;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
 using ModelObjects;
 using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
 using SportsManager.ViewModels;
+using SportsManager.Controllers;
 
 namespace SportsManager.Areas.Golf.Controllers
 {
-    public class LeagueController : Controller
+    public class LeagueController : DBController
     {
+        public LeagueController(DB db) : base(db)
+        {
+        }
+
         //
         // GET: /Golf/League/
 
@@ -20,18 +26,18 @@ namespace SportsManager.Areas.Golf.Controllers
                 return RedirectToAction("Home", new { accountId = accountId });
             }
 
-            return View(new SportsManager.Golf.ViewModels.LeagueIndexViewModel());
+            return View(new LeagueIndexViewModel(this));
         }
 
         public ActionResult Home(long accountId)
         {
-            long seasonId = DataAccess.Seasons.GetCurrentSeason(accountId);
+            long seasonId = this.GetCurrentSeasonId(accountId);
             if (seasonId == 0)
                 return RedirectToAction("Index", "Season", new { area = "", accountId = accountId });
 
             ViewData["SeasonId"] = seasonId;
 
-            var vm = new SportsManager.Golf.ViewModels.LeagueHomeViewModel(this, accountId, seasonId);
+            var vm = new LeagueHomeViewModel(this, accountId, seasonId);
 
             ViewBag.IsMobile = MobileHelpers.IsMobileDevice(Request);
 
@@ -51,43 +57,81 @@ namespace SportsManager.Areas.Golf.Controllers
         [HttpPost, Authorize]
         public ActionResult CreateAccount(FormCollection formData)
         {
-            long newAccountId = 0;
-
             LeagueCreateAccountViewModel vm = new LeagueCreateAccountViewModel();
 
-            bool updateModel = TryUpdateModel(vm);
             string userId = User.Identity.GetUserId();
-
-            System.Diagnostics.Debug.Assert(false, "Create a contact and use that for OwnerUserId below");
+            bool updateModel = TryUpdateModel(vm);
 
             if (!String.IsNullOrEmpty(userId) && updateModel)
             {
-                Account account = new Account();
-                account.AccountName = vm.LeagueName;
-                account.AccountURL = (String.IsNullOrWhiteSpace(vm.URL) ? String.Empty : vm.URL);
-                account.TimeZoneId = vm.TimeZone;
-                //account.OwnerUserId = userId;
-                account.AccountTypeId = (long)Account.AccountType.Golf;
+                Account account = new Account()
+                {
+                    Name = vm.LeagueName,
+                    TimeZoneId = vm.TimeZone,
+                    OwnerUserId = userId,
+                    AccountTypeId = (long)Account.eAccountType.Golf,
+                    AffiliationId = 0,
+                    TwitterOauthToken = String.Empty,
+                    TwitterOauthSecretKey = String.Empty,
+                    TwitterAccountName = String.Empty,
+                    TwitterWidgetScript = String.Empty,
+                    YouTubeUserId = String.Empty,
+                    FacebookFanPage = String.Empty,
+                    DefaultVideo = String.Empty,
+                    AutoPlayVideo = false,
+                    FirstYear = DateTime.Now.Year
+                };
 
-                newAccountId = DataAccess.Accounts.AddAccount(account);
-            }
+                Db.Accounts.Add(account);
 
-            // returns the new accountId if 0, something failed.
-            if (newAccountId == 0)
-            {
+                if (!String.IsNullOrEmpty(vm.URL))
+                {
+                    var aUrl = new AccountURL()
+                    {
+                        Id = 0,
+                        URL = vm.URL,
+                        Account = account
+                    };
+                    Db.AccountsURL.Add(aUrl);
+                }
+
+                Db.SaveChanges();
+
+                // create a contact for the owner.
+                Contact c = new Contact()
+                {
+                    Email = User.Identity.GetUserName(),
+                    FirstName = vm.FirstName,
+                    LastName = vm.LastName,
+                    MiddleName = String.Empty,
+                    CreatorAccountId = account.Id,
+                    UserId = userId,
+                    Phone1 = String.Empty,
+                    Phone2 = String.Empty,
+                    Phone3 = String.Empty,
+                    StreetAddress = String.Empty,
+                    City = String.Empty,
+                    State = String.Empty,
+                    Zip = String.Empty,
+                    DateOfBirth = vm.DateOfBirth,
+                    IsFemale = false
+
+                };
+
+                Db.Contacts.Add(c);
+                Db.SaveChanges();
+
                 ViewData["TimeZones"] = vm.TimeZones;
-                return View(vm);
+                return RedirectToAction("Home", new { accountId = account.Id });
             }
-            else
-            {
-                return RedirectToAction("Home", new { accountId = newAccountId });
-            }
+
+            return View(vm);
         }
 
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult LeagueSetup(long accountId)
         {
-            GolfLeagueSetupViewModel vm = new GolfLeagueSetupViewModel(accountId);
+            GolfLeagueSetupViewModel vm = new GolfLeagueSetupViewModel(this, accountId);
             return View(vm);
         }
 
@@ -95,17 +139,46 @@ namespace SportsManager.Areas.Golf.Controllers
         [HttpPost]
         public ActionResult LeagueSetup(long accountId, FormCollection form)
         {
-            GolfLeagueSetupViewModel vm = new GolfLeagueSetupViewModel(accountId);
+            GolfLeagueSetupViewModel vm = new GolfLeagueSetupViewModel(this, accountId);
 
             if (TryUpdateModel(vm))
             {
-                SportsManager.Model.GolfLeagueSetup gls = vm.GetSetupFromViewModel(accountId);
-                bool updateSuccess = DataAccess.Golf.GolfLeagues.UpdateGolfLeagueSetup(gls);
+                GolfLeagueSetup gls = vm.GetSetupFromViewModel(accountId);
+                bool updateSuccess = UpdateGolfLeagueSetup(gls);
                 if (updateSuccess)
                     return RedirectToAction("LeagueSetup");
             }
 
             return View(vm);
         }
+
+        private bool UpdateGolfLeagueSetup(GolfLeagueSetup gls)
+        {
+            if (gls.AccountId <= 0)
+                return false;
+
+            DB db = this.Db;
+
+            var curGls = (from a in db.GolfLeagueSetups
+                          where a.AccountId == gls.AccountId
+                          select a).SingleOrDefault();
+
+            if (curGls == null)
+            {
+                db.GolfLeagueSetups.Add(gls);
+                db.SaveChanges();
+            }
+            else
+            {
+                curGls.FirstTeeTime = gls.FirstTeeTime;
+                curGls.HolesPerMatch = gls.HolesPerMatch;
+                curGls.TimeBetweenTeeTimes = gls.TimeBetweenTeeTimes;
+                curGls.LeagueDay = gls.LeagueDay;
+                db.SaveChanges();
+            }
+
+            return true;
+        }
+
     }
 }

@@ -1,3 +1,4 @@
+using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
@@ -48,8 +49,8 @@ namespace ModelObjects
         public virtual ICollection<AccountWelcome> AccountWelcomes { get; set; } // AccountWelcome.FK_AccountWelcome_Accounts
         public virtual ICollection<Field> AvailableFields { get; set; } // AvailableFields.FK_AvailableFields_Accounts
         public virtual ICollection<DivisionDefinition> DivisionDefs { get; set; } // DivisionDefs.FK_DivisionDefs_Accounts
-        //public virtual ICollection<GolfLeagueCours> GolfLeagueCours { get; set; } // Many to many mapping
-        //public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Accounts
+        public virtual ICollection<GolfLeagueCourse> GolfLeagueCourse { get; set; } // Many to many mapping
+        public virtual ICollection<GolfLeagueSetup> GolfLeagueSetups { get; set; } // GolfLeagueSetup.FK_GolfLeagueSetup_Accounts
         public virtual ICollection<HOFMember> Hofs { get; set; } // hof.FK_hof_Accounts
         public virtual ICollection<HOFNomination> HofNominations { get; set; } // HOFNomination.FK_HOFNomination_Accounts
         public virtual ICollection<LeagueDefinition> Leagues { get; set; } // League.FK_League_Accounts
@@ -94,10 +95,12 @@ namespace ModelObjects
             TeamsWantedClassifieds = new List<TeamsWantedClassified>();
             VoteQuestions = new List<VoteQuestion>();
             WorkoutAnnouncements = new List<WorkoutAnnouncement>();
+            GolfLeagueCourse = new List<GolfLeagueCourse>();
+            GolfLeagueSetups = new List<GolfLeagueSetup>();
         }
 
 
-		public TimeZoneInfo TimeZoneInfo
+        public TimeZoneInfo TimeZoneInfo
 		{
 			get
 			{

@@ -4,13 +4,11 @@
 	ViewBag.Title = "Golf League";
 }
 
-@section menu {
-}
-
-@section head {
-}
-
-<h1>@ViewBag.Title</h1>
+<div class="jumbotron" style="background: url('/Images/golf/leaguebackground.jpg') no-repeat #000000; background-size: auto; background-position: right">
+    <h1>ezGolfLeague.com</h1>
+    <h2>Baseball League Management made easy.</h2>
+    <p>@Html.ActionLink("Get Started Today!", "CreateAccount", "League", new { area = "baseball" }, new { @class = "btn btn-primary" })</p>
+</div>
 
 @using (Html.BeginForm())
 { 

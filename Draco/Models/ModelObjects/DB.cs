@@ -1,4 +1,7 @@
-﻿using System;
+﻿#define GOLF
+
+using SportsManager.Models;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Configuration;
 using System.Data.Entity;
@@ -114,6 +117,20 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new VoteQuestionConfiguration());
             modelBuilder.Configurations.Add(new WorkoutAnnouncementConfiguration());
             modelBuilder.Configurations.Add(new WorkoutRegistrationConfiguration());
+#if GOLF
+            modelBuilder.Configurations.Add(new GolfCourseConfiguration());
+            modelBuilder.Configurations.Add(new GolfCourseForContactConfiguration());
+            modelBuilder.Configurations.Add(new GolferStatsConfigurationConfiguration());
+            modelBuilder.Configurations.Add(new GolferStatsValueConfiguration());
+            modelBuilder.Configurations.Add(new GolfLeagueCourseConfiguration());
+            modelBuilder.Configurations.Add(new GolfLeagueSetupConfiguration());
+            modelBuilder.Configurations.Add(new GolfMatchConfiguration());
+            modelBuilder.Configurations.Add(new GolfRosterConfiguration());
+            modelBuilder.Configurations.Add(new GolfScoreConfiguration());
+            modelBuilder.Configurations.Add(new GolfMatchScoreConfiguration());
+            modelBuilder.Configurations.Add(new GolfStatDefConfiguration());
+            modelBuilder.Configurations.Add(new GolfTeeInformationConfiguration());
+#endif
         }
 
         public DbSet<Account> Accounts { get; set; } // Accounts
@@ -179,16 +196,21 @@ namespace ModelObjects
         public DbSet<VoteQuestion> VoteQuestions { get; set; } // VoteQuestion
         public DbSet<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement
         public DbSet<WorkoutRegistrant> WorkoutRegistrations { get; set; } // WorkoutRegistration
-    }
 
-    internal class GolfDB : DbContext
-    {
-        public GolfDB()
-            : base(ConfigurationManager.ConnectionStrings["webDBConnection"].ConnectionString)
-        {
-        }
-
-        // TODO:
+#if GOLF
+        public DbSet<GolfCourse> GolfCourses { get; set; }
+        public DbSet<GolfCourseForContact> GolfCourseForContacts { get; set; }
+        public DbSet<GolferStatsConfiguration> GolferStatsConfigurations { get; set; }
+        public DbSet<GolferStatsValue> GolferStatsValues { get; set; }
+        public DbSet<GolfLeagueCourse> GolfLeagueCourses { get; set; }
+        public DbSet<GolfLeagueSetup> GolfLeagueSetups { get; set; }
+        public DbSet<GolfMatch> GolfMatches { get; set; }
+        public DbSet<GolfRoster> GolfRosters { get; set; }
+        public DbSet<GolfScore> GolfScores { get; set; }
+        public DbSet<GolfMatchScore> GolfMatchScores { get; set; }
+        public DbSet<GolfStatDef> GolfStatDefs { get; set; }
+        public DbSet<GolfTeeInformation> GolfTeeInformations { get; set; }
+#endif
     }
 
 #region Configurations
@@ -784,9 +806,9 @@ namespace ModelObjects
     }
 
     // GolfLeagueCourses
-    internal class GolfLeagueCoursConfiguration : EntityTypeConfiguration<GolfLeagueCours>
+    internal class GolfLeagueCourseConfiguration : EntityTypeConfiguration<GolfLeagueCourse>
     {
-        public GolfLeagueCoursConfiguration(string schema = "dbo")
+        public GolfLeagueCourseConfiguration(string schema = "dbo")
         {
             ToTable(schema + ".GolfLeagueCourses");
             HasKey(x => new { x.AccountId, x.CourseId });
@@ -797,7 +819,7 @@ namespace ModelObjects
             Property(x => x.DefaultWomansTee).HasColumnName("DefaultWomansTee").IsOptional();
 
             // Foreign keys
-            HasRequired(a => a.Account).WithMany(b => b.GolfLeagueCours).HasForeignKey(c => c.AccountId); // FK_GolfLeagueCourses_Accounts
+            HasRequired(a => a.Account).WithMany(b => b.GolfLeagueCourse).HasForeignKey(c => c.AccountId); // FK_GolfLeagueCourses_Accounts
             HasRequired(a => a.GolfCourse).WithMany(b => b.GolfLeagueCours).HasForeignKey(c => c.CourseId); // FK_GolfLeagueCourses_GolfCourse
         }
     }

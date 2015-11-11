@@ -5,7 +5,7 @@ namespace ModelObjects
 	/// <summary>
 	/// Summary description for LeagueNewsItem.
 	/// </summary>
-	public partial class LeagueNewsItem
+	public class LeagueNewsItem
 	{
         public long Id { get; set; } // id (Primary key)
         public long AccountId { get; set; } // AccountId

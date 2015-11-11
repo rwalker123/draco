@@ -1,13 +1,59 @@
-﻿using System;
+﻿using ModelObjects;
+using System;
+using System.Collections.Generic;
 
-namespace SportsManager.Model
+namespace SportsManager.Models
 {
 	/// <summary>
 	/// Summary description for GolfScore
 	/// </summary>
-	public partial class GolfScore
+	public class GolfScore
 	{
-		public enum eHolesPlayed { Eighteen = 0, Front9 = 1, Back9 = 2 };
+        public long Id { get; set; } // Id (Primary key)
+        public long CourseId { get; set; } // CourseId
+        public long ContactId { get; set; } // ContactId
+        public long TeeId { get; set; } // TeeId
+        public DateTime DatePlayed { get; set; } // DatePlayed
+        public int HolesPlayed { get; set; } // HolesPlayed
+        public int TotalScore { get; set; } // TotalScore
+        public bool TotalsOnly { get; set; } // TotalsOnly
+        public int HoleScore1 { get; set; } // HoleScore1
+        public int HoleScore2 { get; set; } // HoleScore2
+        public int HoleScore3 { get; set; } // HoleScore3
+        public int HoleScore4 { get; set; } // HoleScore4
+        public int HoleScore5 { get; set; } // HoleScore5
+        public int HoleScore6 { get; set; } // HoleScore6
+        public int HoleScore7 { get; set; } // HoleScore7
+        public int HoleScore8 { get; set; } // HoleScore8
+        public int HoleScore9 { get; set; } // HoleScore9
+        public int HoleScore10 { get; set; } // HoleScore10
+        public int HoleScore11 { get; set; } // HoleScore11
+        public int HoleScore12 { get; set; } // HoleScore12
+        public int HoleScore13 { get; set; } // HoleScore13
+        public int HoleScore14 { get; set; } // HoleScore14
+        public int HoleScore15 { get; set; } // HoleScore15
+        public int HoleScore16 { get; set; } // HoleScore16
+        public int HoleScore17 { get; set; } // HoleScore17
+        public int HoleScore18 { get; set; } // HoleScore18
+        public double? StartIndex { get; set; } // StartIndex
+        public double? StartIndex9 { get; set; } // StartIndex9
+
+        // Reverse navigation
+        public virtual ICollection<GolferStatsValue> GolferStatsValues { get; set; } // GolferStatsValue.FK_GolferStatsValue_GolfScore
+        public virtual ICollection<GolfMatchScore> GolfMatchScores { get; set; } // Many to many mapping
+
+        // Foreign keys
+        public virtual Contact Contact { get; set; } // FK_GolfScore_Contacts
+        public virtual GolfCourse GolfCourse { get; set; } // FK_GolfScore_GolfCourse
+        public virtual GolfTeeInformation GolfTeeInformation { get; set; } // FK_GolfScore_GolfTeeInformation
+
+        public GolfScore()
+        {
+            GolferStatsValues = new List<GolferStatsValue>();
+            GolfMatchScores = new List<GolfMatchScore>();
+        }
+
+        public enum eHolesPlayed { Eighteen = 0, Front9 = 1, Back9 = 2 };
 
 		public double GetRating()
 		{

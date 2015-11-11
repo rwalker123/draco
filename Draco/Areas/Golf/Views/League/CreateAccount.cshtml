@@ -1,19 +1,38 @@
 ﻿@model SportsManager.ViewModels.LeagueCreateAccountViewModel
 
 @{
-	ViewBag.Title = "Create Golf League";
+    ViewBag.Title = "Create ezGolfLeague.com Account";
 }
-
-@section menu {
-}
-
-@section head {
-}
+<div class="jumbotron" style="background: url('/Images/golf/leaguebackground.jpg') no-repeat #000000; background-size: auto; background-position: right">
+    <h1>@ViewBag.Title</h1>
+    <h2>Golf League Management made easy.</h2>
+</div>
 
 
-<h1>@ViewBag.Title</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12">
+            @{
+                ViewBag.Area = "golf";
+                Html.RenderPartial("_CreateAccount");
+            }
+        </div>
+    </div>
+</div>
 
-@{
-    ViewBag.Area = "golf";
-    Html.RenderPartial("_CreateAccount");
+@section scripts
+{
+    <script type="text/javascript">
+
+    $(document).ready(function () {
+        $('#TimeZone').selectpicker();
+        $('#DateOfBirth').datepicker({
+            format: 'MM dd, yyyy',
+            autoclose: true,
+            startView: 2
+        });
+        $('#DateOfBirth').datepicker("setDate", new Date);
+    });
+
+    </script>
 }

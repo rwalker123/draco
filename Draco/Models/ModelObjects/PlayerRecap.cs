@@ -1,7 +1,7 @@
 ﻿
 namespace ModelObjects
 {
-    public partial class PlayerRecap
+    public class PlayerRecap
     {
         public long PlayerId { get; set; } // PlayerId (Primary key)
         public long TeamId { get; set; } // TeamId (Primary key)

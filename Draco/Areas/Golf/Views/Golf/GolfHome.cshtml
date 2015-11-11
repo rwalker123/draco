@@ -4,28 +4,29 @@
 	ViewBag.Title = "ezRecSports.com Golf";
 }
 
-<div style="text-align:center">
-<h1>@ViewBag.Title</h1>
-<p style="margin-right:20%;margin-left:20%">
-    If Golf is your game, you have come to the right place. Whether you want track your scores 
-    or run an entire league, we have the site for you. With our intuitive easy to use interface, you can setup your account or league 
-    to suite your needs. With social site integration, statistics, schedules, announcements, photos, and much more, we have the features
-    you need! To get started select from the links below.
-</p>
+<div class="jumbotron">
+    <h1>@ViewBag.Title</h1>
+    <p class="lead">
+        If Golf is your game, you have come to the right place. Whether you want track your scores
+        or run an entire league, we have the site for you.
+    </p>
+    <p>
+        With our intuitive easy to use interface, you can setup your account or league
+        to suite your needs. With social site integration, statistics, schedules, announcements, photos, and much more, we have the features
+        you need! To get started select from the links below.
+    </p>
 </div>
 
-<h1 style="text-align:center">Select Individual or League!</h1>
-<table style="margin-left:auto;margin-right:auto">
-<tr>
-<td>
-<a href="@Url.Action("Index", "Individual", new { area = "golf" }, null)"><img alt="Individual Golf Scores" title="Individual Golf Scores" style="width:256px" src='@Url.Content("~/Images/golf/GolfIndividual.png")' />
-<p style="text-align:center;font-weight:bolder;font-size:larger;">Individual</p>
-</a>
-</td>
-<td>
-<a href="@Url.Action("Index", "League", new { area = "golf" }, null)"><img alt="Golf League" title="League" style="width:256px" src='@Url.Content("~/Images/golf/GolfLeague.png")' />
-<p style="text-align:center;font-weight:bolder;font-size:larger;">League</p>
-</a>
-</td>
-</tr>
-</table>
+<div class="row">
+    <div class="col-md-4">
+        <h2>Team</h2>
+        <p>Track individual Players.</p>
+        <a class="btn btn-default" href="@Url.Action("Index", "Individual", new { area = "golf" }, null)">Learn more &raquo;</a>
+    </div>
+
+    <div class="col-md-4">
+        <h2>League</h2>
+        <p>Track your your league.</p>
+        <p><a class="btn btn-default" href="@Url.Action("Index", "League", new { area = "golf" }, null)">Learn more &raquo;</a></p>
+    </div>
+</div>

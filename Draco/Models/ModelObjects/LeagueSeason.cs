@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SportsManager.Models;
+using System.Collections.Generic;
 
 namespace ModelObjects
 {
@@ -11,7 +12,7 @@ namespace ModelObjects
         // Reverse navigation
         public virtual ICollection<DivisionSeason> DivisionSeasons { get; set; } // DivisionSeason.FK_DivisionSeason_LeagueSeason
         public virtual ICollection<GameEjection> GameEjections { get; set; } // GameEjections.FK_GameEjections_LeagueSeason
-        //public virtual ICollection<GolfMatch> GolfMatches { get; set; } // GolfMatch.FK_GolfMatch_LeagueSeason
+        public virtual ICollection<GolfMatch> GolfMatches { get; set; } // GolfMatch.FK_GolfMatch_LeagueSeason
         public virtual ICollection<LeagueEvent> LeagueEvents { get; set; } // LeagueEvents.FK_LeagueEvents_LeagueSeason
         public virtual ICollection<Game> LeagueSchedules { get; set; } // LeagueSchedule.FK_LeagueSchedule_LeagueSeason
         public virtual ICollection<PlayoffSetup> PlayoffSetups { get; set; } // PlayoffSetup.FK_PlayoffSetup_LeagueSeason
@@ -25,7 +26,7 @@ namespace ModelObjects
         {
             DivisionSeasons = new List<DivisionSeason>();
             GameEjections = new List<GameEjection>();
-            //GolfMatches = new List<GolfMatch>();
+            GolfMatches = new List<GolfMatch>();
             LeagueEvents = new List<LeagueEvent>();
             LeagueSchedules = new List<Game>();
             PlayoffSetups = new List<PlayoffSetup>();

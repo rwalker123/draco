@@ -1,5 +1,4 @@
-﻿using SportsManager.ViewModels;
-using System.Web.Mvc;
+﻿using System.Web.Mvc;
 
 namespace SportsManager.Areas.Baseball.Controllers
 {

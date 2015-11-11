@@ -508,6 +508,39 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
+    <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
+    <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
+    <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
+    <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseForContact.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsConfiguration.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsValue.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfLeagueCourse.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfLeagueSetup.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfMatch.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfMatchScore.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfRoster.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfScore.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfStatDef.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeInformation.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\CompletedMatchViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\DBExtensions.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfCourseViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfLeagueSetupViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfMatchViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfScoreViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfTeeViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueIndexViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueHomeViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\FlightViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueMatchResultsViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueStandingsViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\MatchResultsViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerHandicapViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerHoleSkinViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerScoreViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerViewModel.cs" />
     <Compile Include="Controllers\BackupSiteAPIController.cs" />
     <Compile Include="Controllers\CleanupMessageBoardAPIController.cs" />
     <Compile Include="Controllers\DBApiController.cs" />
@@ -837,6 +870,13 @@
     <Content Include="Scripts\i18n\defaults-zh_TW.min.js" />
     <Content Include="Areas\Baseball\Views\Affiliations\Home.cshtml" />
     <Content Include="Areas\Baseball\Views\Affiliations\Index.cshtml" />
+    <Content Include="Areas\Golf\Views\Golf\GolfHome.cshtml" />
+    <Content Include="Areas\Golf\Views\League\Index.cshtml" />
+    <Content Include="Areas\Golf\Views\League\Home.cshtml" />
+    <Content Include="Areas\Golf\Views\League\CreateAccount.cshtml" />
+    <Content Include="Areas\Golf\Views\League\LeagueSetup.cshtml" />
+    <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
+    <Content Include="Areas\Golf\Views\Web.config" />
     <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\jquery-1.11.3.js" />
     <Content Include="Scripts\jquery-1.11.3.min.js" />
@@ -1279,6 +1319,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Areas\Baseball\Views\Workouts\" />
+    <Folder Include="Areas\Golf\Models\ViewModels\API\" />
     <Folder Include="Views\Oauth\" />
   </ItemGroup>
   <ItemGroup>
