@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
 
     public class LeagueIndexViewModel

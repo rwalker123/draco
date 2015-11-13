@@ -1,4 +1,4 @@
-﻿@model SportsManager.Golf.ViewModels.LeagueHomeViewModel
+﻿@model SportsManager.Golf.ViewModels.Controllers.LeagueHomeViewModel
 @using MvcContrib.UI.Grid;
 
 @{
@@ -33,17 +33,9 @@
 
     <div id="leagueschedule">
 
-        @{
-            var flights = Model.RetrieveFlights();
-        }
-        @foreach (var flight in flights)
+        @foreach (var flight in Model.Flights)
         {
-            ViewBag.FlightId = flight.FlightId;
-
-            if (flights.Count() > 1)
-            {
-                <h4>@flight.Name</h4>
-            }
+            <h4>@flight.Name</h4>
 
             <table>
                 <tr>

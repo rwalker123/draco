@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class GolfCoursesViewModel : AccountViewModel
     {

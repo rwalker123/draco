@@ -2,7 +2,7 @@
 using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.Golf.Models;
-using SportsManager.Golf.ViewModels;
+using SportsManager.Golf.ViewModels.Controllers;
 using SportsManager.Models;
 using System.Collections.Generic;
 using System.Linq;

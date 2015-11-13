@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class MatchResultsViewModel : AccountViewModel
     {

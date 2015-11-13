@@ -1,25 +1,26 @@
-﻿using System.Linq;
-using System.Web.Mvc;
+﻿using AutoMapper;
 using ModelObjects;
-using SportsManager.Golf.ViewModels;
+using SportsManager.Controllers;
+using SportsManager.Golf.ViewModels.Controllers;
 using SportsManager.Models;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace SportsManager.Golf.Controllers
 {
-	public class FlightsController : DBController
+    public class FlightsController : DBController
 	{
+        public FlightsController(DB db) : base(db)
+        {
+        }
+
 		//
 		// GET: /Golf/Flights/{accountId}
 		public ActionResult Index(long accountId, long id)
 		{
-			var flights = DataAccess.Leagues.GetLeagues(id);
-
-			var vm = (from f in flights
-					  select new FlightViewModel(accountId, id, f.Id)
-					  {
-						  Name = f.Name
-					  });
+			var flight = Db.LeagueSeasons.Find(id);
+            var vm = Mapper.Map<LeagueSeason, FlightViewModel>(flight);
 
 			return View(vm);
 		}
@@ -31,27 +32,30 @@ namespace SportsManager.Golf.Controllers
 		{
 			ViewData["Title"] = "Create Flight";
 
-			return View(new FlightViewModel(accountId, id, 0));
+            return View(new FlightViewModel()
+            {
+                AccountId = accountId,
+                SeasonId = id
+            });
 		}
 
 		//
 		// POST: /Golf/Flights/Create/{accountId}/{id}
 		[HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Create(long accountId, long id, FormCollection collection)
+		public ActionResult Create(long accountId, long id, FlightViewModel vm)
 		{
-			FlightViewModel vm = new FlightViewModel(accountId, id, 0);
-
-			if (TryUpdateModel(vm))
+			if (ModelState.IsValid)
 			{
-				ModelObjects.League newLeague = new ModelObjects.League()
-				{
-					AccountId = accountId,
-					Name = vm.Name
-				};
+                var account = Db.Accounts.Find(accountId);
+				//LeagueSeason newLeague = new LeagueSeason()
+    //            { 
+				//	AccountId = accountId,
+				//	Name = vm.Name
+				//};
 
-				long leagueSeasonId = DataAccess.Leagues.AddLeague(newLeague, id);
-				if (leagueSeasonId > 0)
+				//long leagueSeasonId = DataAccess.Leagues.AddLeague(newLeague, id);
+				//if (leagueSeasonId > 0)
 					return RedirectToAction("Index", new { accountId = accountId, id = id });
 			}
 
@@ -60,44 +64,45 @@ namespace SportsManager.Golf.Controllers
 			return View(vm);
 		}
 
-		//
-		// GET: /Golf/Flights/Edit/{accountId}/{id}
-		[SportsManagerAuthorize(Roles = "AccountAdmin")]
+        //
+        // GET: /Golf/Flights/Edit/{accountId}/{id}
+        [HttpGet]
+        [SportsManagerAuthorize(Roles = "AccountAdmin")]
 		public ActionResult Edit(long accountId, long seasonId, long id)
 		{
 			ViewData["Title"] = "Edit Flight";
 
-			ModelObjects.League flight = DataAccess.Leagues.GetLeague(id);
-			if (flight == null)
-				return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
+            //ModelObjects.League flight = DataAccess.Leagues.GetLeague(id);
+            //if (flight == null)
+            //	return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
 
-			var flightViewModel = new FlightViewModel(accountId, seasonId, id)
-			{
-				Name = flight.Name
-			};
+            //var flightViewModel = new FlightViewModel(accountId, seasonId, id)
+            //{
+            //	Name = flight.Name
+            //};
 
-			return View("Create", flightViewModel);
+            var leagueSeason = Db.LeagueSeasons.Find(id);
+            var vm = Mapper.Map<LeagueSeason, FlightViewModel>(leagueSeason);
+			return View("Create", vm);
 		}
 
 		//
 		// POST: /Golf/Flights/Edit/{accountId}/{id}
 		[HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Edit(long accountId, long seasonId, long id, FormCollection collection)
+		public ActionResult Edit(long accountId, long seasonId, long id, FlightViewModel vm)
 		{
-			FlightViewModel vm = new FlightViewModel(accountId, seasonId, id);
-
-			if (TryUpdateModel(vm))
+			if (ModelState.IsValid)
 			{
-				ModelObjects.League league = new ModelObjects.League()
-				{
-					Id = vm.FlightId,
-					Name = vm.Name,
-					AccountId = vm.AccountId
-				};
+				//ModelObjects.League league = new ModelObjects.League()
+				//{
+				//	Id = vm.FlightId,
+				//	Name = vm.Name,
+				//	AccountId = vm.AccountId
+				//};
 
-				bool modifySuccess = DataAccess.Leagues.ModifyLeague(league);
-				if (modifySuccess)
+				//bool modifySuccess = DataAccess.Leagues.ModifyLeague(league);
+				//if (modifySuccess)
 					return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
 			}
 
@@ -107,10 +112,10 @@ namespace SportsManager.Golf.Controllers
 		}
 
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public async Task<ActionResult> Delete(long accountId, long seasonId, long id)
+		public ActionResult Delete(long accountId, long seasonId, long id)
 		{
-			League l = DataAccess.Leagues.GetLeague(id);
-			bool success = await DataAccess.Leagues.RemoveLeague(l.Id);
+            //League l = DataAccess.Leagues.GetLeague(id);
+            bool success = true; // await DataAccess.Leagues.RemoveLeague(l.Id);
 
 			if (Request.IsAjaxRequest())
 			{

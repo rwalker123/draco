@@ -3,7 +3,7 @@ using Elmah;
 using ModelObjects;
 using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Golf.Models;
-using SportsManager.Golf.ViewModels;
+using SportsManager.Golf.ViewModels.Controllers;
 using SportsManager.Models;
 using SportsManager.Models.Helpers;
 using SportsManager.Models.Utils;
@@ -333,6 +333,12 @@ namespace SportsManager
             Mapper.CreateMap<GolfTeeInformation, GolfTeeViewModel>()
                 .ForMember(vm => vm.TeeId, opt => opt.MapFrom(model => model.Id))
                 .ForMember(vm => vm.HoleDistances, opt => opt.MapFrom(model => model.HoleDistances.OrderBy(hd => hd.HoleNo).Select(hd => hd.Distance)));
+
+            Mapper.CreateMap<LeagueSeason, FlightViewModel>()
+                .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.League.AccountId))
+                .ForMember(vm => vm.SeasonId, opt => opt.MapFrom(model => model.Season.Id))
+                .ForMember(vm => vm.FlightId, opt => opt.MapFrom(model => model.Id))
+                .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.League.Name));
 
             Mapper.AssertConfigurationIsValid();
         }

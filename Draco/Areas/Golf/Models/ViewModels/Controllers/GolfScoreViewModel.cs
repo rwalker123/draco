@@ -4,7 +4,7 @@ using SportsManager.Golf.Models;
 using System;
 using System.Collections.Generic;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class GolfScoreViewModel
 	{

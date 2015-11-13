@@ -2,7 +2,7 @@
 using DataAccess.Golf;
 using SportsManager.Model;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class PreviewMatchPlayerViewModel
     {

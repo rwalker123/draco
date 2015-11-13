@@ -1,12 +1,13 @@
-﻿using System;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using SportsManager.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using SportsManager.Controllers;
-using SportsManager.Models;
-using SportsManager.ViewModels;
-using SportsManager.Golf.Models;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class LeagueHomeViewModel : AccountViewModel
     {
@@ -22,18 +23,13 @@ namespace SportsManager.Golf.ViewModels
             private set;
         }
 
-        public IEnumerable<FlightViewModel> RetrieveFlights()
+        public FlightViewModel[] Flights
         {
-            var flights = Controller.Db.LeagueSeasons.Where(ls => ls.SeasonId == Season.Id);
-
-            return (from f in flights
-                    select new FlightViewModel()
-                    {
-                        AccountId = AccountId,
-                        SeasonId = Season.Id,
-                        FlightId = f.Id,
-                        Name = f.League.Name
-                    });
+            get
+            {
+                var flights = Controller.Db.LeagueSeasons.Where(ls => ls.SeasonId == Season.Id);
+                return Mapper.Map<IQueryable<LeagueSeason>, FlightViewModel[]>(flights);
+            }
         }
 
         /// <summary>

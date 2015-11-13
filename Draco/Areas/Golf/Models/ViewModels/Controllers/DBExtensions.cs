@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using SportsManager.Controllers;
 using SportsManager.Golf.Models;
-using SportsManager.Golf.ViewModels;
+using SportsManager.Golf.ViewModels.Controllers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

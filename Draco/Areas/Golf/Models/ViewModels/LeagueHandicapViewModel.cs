@@ -4,7 +4,7 @@ using SportsManager.Model;
 using SportsManager.ViewModels;
 using System.Web.Mvc;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
 	public class LeagueHandicapViewModel : AccountViewModel
 	{

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SportsManager.Model;
 
-namespace SportsManager.Golf.ViewModels
+namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class PreviewMatchViewModel
     {

@@ -518,6 +518,7 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
     <Compile Include="Areas\Golf\Controllers\CoursesController.cs" />
     <Compile Include="Areas\Golf\Controllers\CourseTeeController.cs" />
+    <Compile Include="Areas\Golf\Controllers\FlightsController.cs" />
     <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
     <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
     <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
@@ -903,6 +904,8 @@
     <Content Include="Areas\Golf\Views\Courses\Create.cshtml" />
     <Content Include="Areas\Golf\Views\Courses\Index.cshtml" />
     <Content Include="Areas\Golf\Views\CourseTee\Create.cshtml" />
+    <Content Include="Areas\Golf\Views\Flights\Create.cshtml" />
+    <Content Include="Areas\Golf\Views\Flights\Index.cshtml" />
     <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\jquery-1.11.3.js" />
     <Content Include="Scripts\jquery-1.11.3.min.js" />
