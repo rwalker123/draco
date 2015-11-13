@@ -1,6 +1,6 @@
 using System;
 
-namespace ModelObjects
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
 	/// <summary>
 	/// Summary description for TeamStanding

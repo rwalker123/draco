@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using ModelObjects;
-using SportsManager.ViewModels.API;
-using SportsManager.Utils;
-using System.Web.Mvc;
-using System.Linq;
+﻿using ModelObjects;
+using SportsManager.Baseball.Utils;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Models.Helpers;
+using SportsManager.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class LeagueLeadersViewModel
     {

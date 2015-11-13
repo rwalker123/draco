@@ -1,7 +1,7 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
 using SportsManager.Controllers;
+using SportsManager.Golf.Models;
 using SportsManager.Golf.ViewModels;
-using SportsManager.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -282,14 +282,15 @@ namespace SportsManager.Golf
 
         static public void AddTees(this IDb db, GolfCourseViewModel gcvm)
         {
-            IEnumerable<GolfTeeInformation> teeInfos = GetTeesForCourse(db, gcvm.CourseId);
+            var teeInfos = GetTeesForCourse(db, gcvm.CourseId);
             foreach (GolfTeeInformation teeInfo in teeInfos)
             {
-                gcvm.Tees.Add(GolfTeeViewModel.GetCourseTeeViewModel(teeInfo));
+                var vm = Mapper.Map<GolfTeeInformation, GolfTeeViewModel>(teeInfo);
+                gcvm.Tees.Add(vm);
             }
         }
 
-        static private IEnumerable<GolfTeeInformation> GetTeesForCourse(IDb db, long courseId)
+        static private IQueryable<GolfTeeInformation> GetTeesForCourse(IDb db, long courseId)
         {
             return (from ti in db.Db.GolfTeeInformations
                     where ti.CourseId == courseId

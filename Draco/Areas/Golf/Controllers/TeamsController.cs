@@ -6,9 +6,9 @@ using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
 using System.Threading.Tasks;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-    public class TeamsController : Controller
+    public class TeamsController : DBController
     {
         //
         // GET: /Golf/Teams/Index

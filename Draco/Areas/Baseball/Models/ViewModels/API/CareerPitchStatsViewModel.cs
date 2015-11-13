@@ -1,5 +1,5 @@
 
-namespace SportsManager.ViewModels.API
+namespace SportsManager.Baseball.ViewModels.API
 {
     /// <summary>
     /// Summary description for GameCareerPitchStats

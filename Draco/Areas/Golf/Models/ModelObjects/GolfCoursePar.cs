@@ -1,4 +1,4 @@
-﻿namespace SportsManager.Models
+﻿namespace SportsManager.Golf.Models
 {
     public class GolfCoursePar
     {
@@ -6,6 +6,7 @@
         public long GolfCourseId { get; set; }
         public int HoleNo { get; set; }
         public int Par { get; set; }
+        public int Handicap { get; set; }
 
         public virtual GolfCourse Course { get; set; }
     }

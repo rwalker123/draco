@@ -1,13 +1,13 @@
-﻿using System;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using SportsManager.Models;
-using ModelObjects;
-using SportsManager.Controllers;
 
 namespace SportsManager.Golf.ViewModels
 {
-	public class PlayerHandicapViewModel 
+    public class PlayerHandicapViewModel 
 	{
         private IDb DB { get; }
 

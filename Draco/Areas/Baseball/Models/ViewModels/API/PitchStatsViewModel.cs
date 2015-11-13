@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace SportsManager.ViewModels.API
+namespace SportsManager.Baseball.ViewModels.API
 {
     public class PitchStatsViewModelComparer : IComparer<PitchStatsViewModel>
     {

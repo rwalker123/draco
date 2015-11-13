@@ -8,11 +8,10 @@ using DocumentFormat.OpenXml;
 using System;
 using System.IO;
 using SportsManager.Controllers;
-using SportsManager.ViewModels.API;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
-    public class UserAddressViewModel : SportsManager.ViewModels.AccountViewModel
+    public class UserAddressViewModel : AccountViewModel
     {
         IQueryable<Contact> m_contacts;
 

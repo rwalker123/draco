@@ -1,10 +1,10 @@
-﻿using System;
+﻿using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using SportsManager.ViewModels;
+using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using SportsManager.Models;
-using SportsManager.ViewModels;
-using SportsManager.Controllers;
 
 namespace SportsManager.Golf.ViewModels
 {

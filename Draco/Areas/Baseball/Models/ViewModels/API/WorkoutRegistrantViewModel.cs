@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SportsManager.ViewModels.API
+namespace SportsManager.Baseball.ViewModels.API
 {
     public class WorkoutRegistrantViewModel
     {

@@ -1,14 +1,15 @@
-﻿using System;
-using System.Linq;
-using System.Web.Mvc;
-using Microsoft.AspNet.Identity;
+﻿using Microsoft.AspNet.Identity;
 using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
 using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
 using SportsManager.ViewModels;
-using SportsManager.Controllers;
+using System;
+using System.Linq;
+using System.Web.Mvc;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
     public class LeagueController : DBController
     {

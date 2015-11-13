@@ -1,5 +1,5 @@
 ﻿
-@model SportsManager.Baseball.ViewModels.ScheduleViewModel
+@model SportsManager.Baseball.ViewModels.Controllers.ScheduleViewModel
 @using System.Web.Optimization
 
 @{
@@ -189,7 +189,7 @@
                 </div>
             </form>
 
-            Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.EnterGameResults()
+            Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.Controllers.EnterGameResults()
             {
                 ShowTweetResults = Model.EnableTweet,
                 TrackGamesPlayed = Model.TrackGamesPlayed

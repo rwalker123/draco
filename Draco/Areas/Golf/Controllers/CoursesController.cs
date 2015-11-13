@@ -1,15 +1,17 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
 using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
-using SportsManager.Controllers;
-using ModelObjects;
-using SportsManager.Golf;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.Mvc;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-	public class CoursesController : DBController
+    public class CoursesController : DBController
 	{
         public CoursesController(DB db) : base(db)
         {
@@ -36,25 +38,29 @@ namespace SportsManager.Areas.Golf.Controllers
 
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
 		[HttpPost]
-		public ActionResult Create(long accountId, FormCollection collection)
+		public ActionResult Create(long accountId, GolfCourseViewModel vm)
 		{
-			GolfCourseViewModel vm = new GolfCourseViewModel();
-
-			if (TryUpdateModel(vm))
+			if (ModelState.IsValid)
 			{
-				GolfCourse gc = GetCourseFromViewModel(vm);
-                Db.GolfCourses.Add(gc);
-
-                GolfLeagueCourse glc = new GolfLeagueCourse()
+                if (vm.MensPar.Count >= vm.NumberOfHoles &&
+                    vm.MensHandicap.Count >= vm.NumberOfHoles &&
+                    vm.WomensPar.Count >= vm.NumberOfHoles &&
+                    vm.WomensHandicap.Count >= vm.NumberOfHoles)
                 {
-                    AccountId = accountId,
-                    GolfCourse = gc
-				};
+                    GolfCourse gc = CreateCourseFromViewModel(vm);
+                    Db.GolfCourses.Add(gc);
 
-                Db.GolfLeagueCourses.Add(glc);
-                Db.SaveChanges();
+                    GolfLeagueCourse glc = new GolfLeagueCourse()
+                    {
+                        AccountId = accountId,
+                        GolfCourse = gc
+                    };
 
-                return RedirectToAction("Index", new { accountId = accountId });
+                    Db.GolfLeagueCourses.Add(glc);
+                    Db.SaveChanges();
+
+                    return RedirectToAction("Index", new { accountId = accountId });
+                }
 			}
 
 			ViewData["Title"] = "Create";
@@ -75,24 +81,93 @@ namespace SportsManager.Areas.Golf.Controllers
             Globals.SetupAccountViewData(accountId, this.ViewData);
 
             GolfCourse gc = Db.GolfCourses.Find(id);
-			return View("Create", GolfCourseViewModel.GetCourseViewModel(gc));
+            var vm = Mapper.Map<GolfCourse, GolfCourseViewModel>(gc);
+			return View("Create", vm);
 		}
 
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
 		[HttpPost]
-		public ActionResult Edit(long accountId, long id, FormCollection collection)
+		public ActionResult Edit(long accountId, long id, GolfCourseViewModel vm)
 		{
-			GolfCourseViewModel vm = new GolfCourseViewModel()
-			{
-				CourseId = id
-			};
+            if (ModelState.IsValid)
+            {
+                var gc = Db.GolfCourses.Find(id);
+                if (gc != null)
+                {
+                    if (vm.MensPar.Count >= vm.NumberOfHoles &&
+                        vm.MensHandicap.Count >= vm.NumberOfHoles &&
+                        vm.WomensPar.Count >= vm.NumberOfHoles &&
+                        vm.WomensHandicap.Count >= vm.NumberOfHoles)
+                    {
+                        if (vm.NumberOfHoles != gc.NumberOfHoles)
+                        {
+                            bool remove = vm.NumberOfHoles < gc.NumberOfHoles;
+                            int increment = remove ? -1 : 1;
+                            for (int i = gc.NumberOfHoles; i != vm.NumberOfHoles; i += increment)
+                            {
+                                if (remove)
+                                {
+                                    Db.GolfCourseMenPars.Remove(gc.MensPars[i - 1]);
+                                    Db.GolfCourseWomenPars.Remove(gc.WomensPars[i - 1]);
+                                }
+                                else
+                                {
+                                    gc.MensPars.Add(new GolfCourseMenPar()
+                                    {
+                                        Course = gc,
+                                        HoleNo = i + 1,
+                                        Par = 0,
+                                        Handicap = 0
+                                    });
+                                    gc.WomensPars.Add(new GolfCourseWomenPar()
+                                    {
+                                        Course = gc,
+                                        HoleNo = i + 1,
+                                        Par = 0,
+                                        Handicap = 0
+                                    });
+                                }
+                            }
+                        }
 
-			if (TryUpdateModel(vm))
-			{
-				GolfCourse gc = GetCourseFromViewModel(vm);
-				ModifyGolfCourse(gc);
-				return RedirectToAction("Index", new { accountId = accountId });
-			}
+                        gc.Name = vm.Name;
+                        gc.Address = vm.Address;
+                        gc.City = vm.City;
+                        gc.State = vm.State;
+                        gc.Zip = vm.Zip;
+                        gc.Designer = vm.Designer;
+                        gc.NumberOfHoles = vm.NumberOfHoles;
+
+                        vm.MensPar.Zip(gc.MensPars, (first, second) =>
+                        {
+                            second.Par = first;
+                            return second;
+                        }).ToList();
+
+                        vm.MensHandicap.Zip(gc.MensPars, (first, second) =>
+                        {
+                            second.Handicap = first;
+                            return second;
+                        }).ToList();
+
+                        vm.WomensPar.Zip(gc.WomensPars, (first, second) =>
+                        {
+                            second.Par = first;
+                            return second;
+                        }).ToList();
+
+                        vm.WomensHandicap.Zip(gc.WomensPars, (first, second) =>
+                        {
+                            second.Handicap = first;
+                            return second;
+                        }).ToList();
+
+                        Db.SaveChanges();
+
+                        return RedirectToAction("Index", new { accountId = accountId });
+                    }
+                }
+            }
 
 			ViewData["Title"] = "Edit";
 
@@ -142,33 +217,36 @@ namespace SportsManager.Areas.Golf.Controllers
 
 			ViewData["ValidNumberOfHoles"] = validNumberOfHoles;
 		}
-        private void ModifyGolfCourse(GolfCourse course)
+        private GolfCourse CreateCourseFromViewModel(GolfCourseViewModel vm)
         {
-            GolfCourse dbCourse = Db.GolfCourses.Find(course.Id);
-
-            dbCourse.Name = course.Name;
-            dbCourse.Address = course.Address;
-            dbCourse.City = course.City;
-            dbCourse.State = course.State;
-            dbCourse.Zip = dbCourse.Zip;
-            dbCourse.Designer = course.Designer;
-            dbCourse.Country = dbCourse.Country;
-            dbCourse.YearBuilt = dbCourse.YearBuilt;
-            dbCourse.NumberOfHoles = course.NumberOfHoles;
-
-            Db.SaveChanges();
-        }
-
-        private GolfCourse GetCourseFromViewModel(GolfCourseViewModel vm)
-        {
-            return new GolfCourse()
+            var gc = new GolfCourse()
             {
                 Id = vm.CourseId,
                 Name = vm.Name,
-                NumberOfHoles = vm.NumberOfHoles,
+                NumberOfHoles = vm.NumberOfHoles
             };
 
-        }
 
+            for (int holeNo = 1; holeNo <= vm.NumberOfHoles; ++holeNo)
+            {
+                gc.MensPars.Add(new GolfCourseMenPar()
+                {
+                    Course = gc,
+                    Par = vm.MensPar[holeNo-1],
+                    Handicap = vm.MensHandicap[holeNo-1],
+                    HoleNo = holeNo
+                });
+
+                gc.WomensPars.Add(new GolfCourseWomenPar()
+                {
+                    Course = gc,
+                    Par = vm.WomensPar[holeNo - 1],
+                    Handicap = vm.WomensHandicap[holeNo - 1],
+                    HoleNo = holeNo
+                });
+            }
+
+            return gc;
+        }
     }
 }

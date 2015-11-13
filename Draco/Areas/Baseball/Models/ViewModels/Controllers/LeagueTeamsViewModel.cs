@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class LeagueTeamsViewModel : AccountViewModel
     {

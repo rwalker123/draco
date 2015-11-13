@@ -1,4 +1,6 @@
-﻿namespace SportsManager.ViewModels.API
+﻿using SportsManager.ViewModels.API;
+
+namespace SportsManager.Baseball.ViewModels.API
 {
     public class UmpireViewModel
     {

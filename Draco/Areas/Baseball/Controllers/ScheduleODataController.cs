@@ -1,14 +1,10 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using ModelObjects;
-using SportsManager.ViewModels.API;
-using System.Collections.Generic;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using System.Linq;
 using System.Web.Http;
 using System.Web.Http.OData;
-using System.Web.Http.OData.Query;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class ScheduleODataController : ODataController
     {

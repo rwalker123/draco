@@ -1,6 +1,6 @@
 ﻿using System.Web.Mvc;
 
-namespace SportsManager.Areas.Golf
+namespace SportsManager.Golf
 {
 	public class GolfAreaRegistration : AreaRegistration
 	{

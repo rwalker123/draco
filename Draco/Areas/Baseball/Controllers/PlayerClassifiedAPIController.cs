@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Controllers;
-using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -12,7 +12,7 @@ using System.Net.Mail;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class PlayerClassifiedAPIController : DBApiController
     {

@@ -4,12 +4,6 @@
     ViewBag.Title = ViewData["Title"];
 }
 
-@section menu {
-}
-
-@section head {
-}
-
 
 <h1>@ViewBag.Title</h1>
 
@@ -18,6 +12,7 @@
 }
 
 @using (Html.BeginForm()) {
+    @Html.AntiForgeryToken()
 
      <div>
         <fieldset>
@@ -28,7 +23,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.TeeColor)
-                @Html.ValidationMessageFor(c => c.TeeColor)
             </div>
 
             <div class="editor-label">
@@ -36,7 +30,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.MensRating)
-                @Html.ValidationMessageFor(c => c.MensRating)
             </div>
 
             <div class="editor-label">
@@ -44,7 +37,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.MensSlope)
-                @Html.ValidationMessageFor(c => c.MensSlope)
             </div>
 
             <div class="editor-label">
@@ -52,7 +44,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.WomensRating)
-                @Html.ValidationMessageFor(c => c.WomensRating)
             </div>
 
             <div class="editor-label">
@@ -60,7 +51,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.WomensSlope)
-                @Html.ValidationMessageFor(c => c.WomensSlope)
             </div>
 
             <div class="editor-label">
@@ -68,10 +58,10 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.HoleDistances)
-                @Html.ValidationMessageFor(c => c.HoleDistances)
             </div>
 
             <p>
+                @Html.ValidationSummary()
                 <input type="submit" value="Save" />
                 @Html.ActionLink("Cancel", "Index", "Courses", new { accountId = ViewBag.AccountId }, null)
             </p>

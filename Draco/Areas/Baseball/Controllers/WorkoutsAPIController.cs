@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using LinqToTwitter;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.Models.Utils;
-using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Configuration;

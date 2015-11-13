@@ -1,9 +1,9 @@
-﻿using System.Web.Mvc;
-using SportsManager.Baseball.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers;
-using ModelObjects;
+using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class StandingsController : DBController
     {

@@ -1,8 +1,8 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Controllers;
 using SportsManager.Models;
-using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;

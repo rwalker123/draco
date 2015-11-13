@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
 
-namespace SportsManager.ViewModels.API
+namespace SportsManager.Baseball.ViewModels.API
 {
     public class FieldViewModel
     {

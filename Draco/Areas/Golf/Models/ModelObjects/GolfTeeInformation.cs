@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SportsManager.Models
+namespace SportsManager.Golf.Models
 {
 	public class GolfTeeInformation
 	{
@@ -36,15 +36,15 @@ namespace SportsManager.Models
         {
             get
             {
-                return MenSlopeRatings.Where(s => s.NineHoleIndex == -1).Select(s => s.Rating).SingleOrDefault();
+                return MenSlopeRatings.Where(s => s.NineHoleIndex == 0).Select(s => s.Rating).SingleOrDefault();
             }
         }
 
-        public double MensSlope
+        public int MensSlope
         {
             get
             {
-                return MenSlopeRatings.Where(s => s.NineHoleIndex == -1).Select(s => s.Slope).SingleOrDefault();
+                return MenSlopeRatings.Where(s => s.NineHoleIndex == 0).Select(s => s.Slope).SingleOrDefault();
             }
         }
 
@@ -52,15 +52,15 @@ namespace SportsManager.Models
         {
             get
             {
-                return WomenSlopeRatings.Where(s => s.NineHoleIndex == -1).Select(s => s.Rating).SingleOrDefault();
+                return WomenSlopeRatings.Where(s => s.NineHoleIndex == 0).Select(s => s.Rating).SingleOrDefault();
             }
         }
 
-        public double WomensSlope
+        public int WomensSlope
         {
             get
             {
-                return WomenSlopeRatings.Where(s => s.NineHoleIndex == -1).Select(s => s.Slope).SingleOrDefault();
+                return WomenSlopeRatings.Where(s => s.NineHoleIndex == 0).Select(s => s.Slope).SingleOrDefault();
             }
         }
 

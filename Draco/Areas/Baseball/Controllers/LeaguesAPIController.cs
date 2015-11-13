@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels.API;

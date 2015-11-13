@@ -1,5 +1,5 @@
 ﻿@using System.Web.Optimization
-@model SportsManager.Baseball.ViewModels.LeagueHomeViewModel
+@model SportsManager.Baseball.ViewModels.Controllers.LeagueHomeViewModel
 
 @{
     ViewBag.Title = @Model.AccountName + " Home";
@@ -189,7 +189,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        @{Html.RenderPartial("WorkoutsView", new SportsManager.Baseball.ViewModels.WorkoutsViewModel(Model.Controller, Model.AccountId));}
+                        @{Html.RenderPartial("WorkoutsView", new SportsManager.Baseball.ViewModels.Controllers.WorkoutsViewModel(Model.Controller, Model.AccountId));}
                     </div>
                 </div>
             }
@@ -301,14 +301,14 @@
     @if (Model.ShowScoreboard)
     { 
         <div class="col-md-12">
-            @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId));}
+            @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.Controllers.ScoreboardViewModel(Model.Controller, Model.AccountId));}
         </div>
     }
 
     @if (Model.ShowLeagueLeaders)
     {
         <div class="col-md-12">
-            @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId));}
+            @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.Controllers.LeadersViewModel(Model.Controller, Model.AccountId));}
         </div>
     }
 

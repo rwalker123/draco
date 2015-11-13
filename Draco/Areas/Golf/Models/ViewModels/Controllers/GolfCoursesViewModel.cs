@@ -1,5 +1,5 @@
 ﻿using SportsManager.Controllers;
-using SportsManager.Models;
+using SportsManager.Golf.Models;
 using SportsManager.ViewModels;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

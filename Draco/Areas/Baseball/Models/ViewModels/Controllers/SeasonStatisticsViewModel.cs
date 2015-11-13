@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class SeasonStatisticsViewModel : AccountViewModel
     {

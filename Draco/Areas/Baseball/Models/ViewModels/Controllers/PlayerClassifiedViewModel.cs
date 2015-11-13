@@ -2,7 +2,7 @@
 using SportsManager.ViewModels;
 using System.Configuration;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class PlayerClassifiedViewModel : AccountViewModel
     {

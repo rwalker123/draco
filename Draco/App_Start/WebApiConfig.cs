@@ -1,5 +1,6 @@
 ﻿using BasicAuthentication.Filters;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Models.Filters;
 using SportsManager.ViewModels.API;
 using System.Linq;

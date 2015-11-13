@@ -1,7 +1,4 @@
-﻿
-using SportsManager.Controllers;
-using SportsManager.Models;
-using SportsManager.ViewModels;
+﻿using SportsManager.Models;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -29,7 +26,7 @@ namespace SportsManager.Golf.ViewModels
 		[StringLength(50)]
 		public string Designer { get; set; }
 
-		[Required, Range(9, 18), DisplayName("Number of Holes")]
+		[Required, Range(9, 36), DisplayName("Number of Holes")]
 		public int NumberOfHoles { get; set; }
 
 		[StringLength(50)]
@@ -58,18 +55,5 @@ namespace SportsManager.Golf.ViewModels
 
 		[ScaffoldColumn(false)]
 		public IList<GolfTeeViewModel> Tees { get; private set; }
-
-        public static GolfCourseViewModel GetCourseViewModel(GolfCourse course)
-		{
-			GolfCourseViewModel vm = new GolfCourseViewModel()
-			{
-				CourseId = course.Id,
-				Name = course.Name,
-				NumberOfHoles = course.NumberOfHoles
-			};
-
-			return vm;
-		}
-
 	}
 }

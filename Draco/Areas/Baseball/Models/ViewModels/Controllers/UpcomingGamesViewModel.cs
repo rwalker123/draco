@@ -3,7 +3,7 @@ using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System.Linq;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class UpcomingGamesViewModel : AccountViewModel
     {

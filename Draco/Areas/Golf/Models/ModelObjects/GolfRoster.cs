@@ -1,7 +1,7 @@
 ﻿using ModelObjects;
 using System.Collections.Generic;
 
-namespace SportsManager.Models
+namespace SportsManager.Golf.Models
 {
     public class GolfRoster
     {

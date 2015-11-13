@@ -1,4 +1,5 @@
 ﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
@@ -6,7 +7,7 @@ using System.Linq;
 using System.Linq.Dynamic;
 using System.Text;
 
-namespace SportsManager.Utils
+namespace SportsManager.Baseball.Utils
 {
     public class PitchStatsHelper : StatsHelper
     {

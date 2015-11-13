@@ -1,7 +1,7 @@
 ﻿
 using ModelObjects;
 
-namespace SportsManager.Models
+namespace SportsManager.Golf.Models
 {
     public class GolfMatchScore
     {

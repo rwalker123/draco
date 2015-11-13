@@ -5,9 +5,9 @@ using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
 using System.Threading.Tasks;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-	public class FlightsController : Controller
+	public class FlightsController : DBController
 	{
 		//
 		// GET: /Golf/Flights/{accountId}

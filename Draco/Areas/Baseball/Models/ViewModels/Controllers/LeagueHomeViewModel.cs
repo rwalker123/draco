@@ -4,7 +4,7 @@ using SportsManager.ViewModels;
 using System;
 using System.Linq;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class LeagueHomeViewModel : AccountViewModel
     {

@@ -1,10 +1,10 @@
 ﻿using ModelObjects;
-using SportsManager.Baseball.ViewModels;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers;
 using System.Linq;
 using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class StatisticsController : DBController
     {

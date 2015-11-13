@@ -1,5 +1,4 @@
-﻿@model GolfCoursesViewModel
-@using SportsManager.Golf.ViewModels;
+﻿@model SportsManager.Golf.ViewModels.GolfCoursesViewModel
 
 @{
     ViewBag.Title = "Courses";
@@ -19,7 +18,7 @@
         continue;
     }
     <div id="GolfCoursesGrid">
-    <table>
+    <table border="1">
     <tr>
         <td>
             @course.GolfCourse.Name 
@@ -58,7 +57,7 @@
 
     @foreach (var mensPar in course.GolfCourse.MensPars)
     {
-        <td>@mensPar</td>
+        <td>@mensPar.Par</td>
         totalPar += mensPar.Par;
         sidePar += mensPar.Par;
         if (curIndex == 9)
@@ -85,7 +84,7 @@
     curIndex = 0;
     }
     <tr><td>Mens Handicap</td>
-    @foreach (var mensHandicap in course.GolfCourse.MensHandicaps)
+    @foreach (var mensHandicap in course.GolfCourse.MensPars)
     {
         <td>@mensHandicap.Handicap</td>
         curIndex++;
@@ -112,7 +111,7 @@
 
     @foreach (var womensPar in course.GolfCourse.WomensPars)
     {
-        <td>@womensPar</td>
+        <td>@womensPar.Par</td>
         totalPar += womensPar.Par;
         sidePar += womensPar.Par;
         if (curIndex == 9)
@@ -139,7 +138,7 @@
     curIndex = 0;
     }
     <tr><td>Womens Handicap</td>
-    @foreach (var womensHandicap in course.GolfCourse.WomensHandicaps)
+    @foreach (var womensHandicap in course.GolfCourse.WomensPars)
     {
         <td>@womensHandicap.Handicap</td>
         curIndex++;

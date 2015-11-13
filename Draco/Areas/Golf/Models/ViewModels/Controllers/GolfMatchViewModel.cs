@@ -1,4 +1,4 @@
-﻿using SportsManager.Models;
+﻿using SportsManager.Golf.Models;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;

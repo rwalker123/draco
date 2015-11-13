@@ -1,6 +1,6 @@
 ﻿using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class BaseballController : Controller
     {

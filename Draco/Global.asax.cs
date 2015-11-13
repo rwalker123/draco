@@ -1,15 +1,18 @@
 ﻿using AutoMapper;
 using Elmah;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
+using SportsManager.Golf.Models;
+using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
+using SportsManager.Models.Helpers;
 using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
 using System.Data.Entity;
+using System.Linq;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using System.Linq;
-using SportsManager.Models.Helpers;
 
 namespace SportsManager
 {
@@ -239,7 +242,7 @@ namespace SportsManager
             Mapper.CreateMap<TeamsWantedClassified, TeamWantedViewModel>()
                 .ForMember(vm => vm.CanEdit, opt => opt.Ignore());
 
-            Mapper.CreateMap<PlayerSeason, PlayerViewModel>()
+            Mapper.CreateMap<PlayerSeason, Baseball.ViewModels.API.PlayerViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Roster.Contact.CreatorAccountId))
                 .ForMember(vm => vm.TeamId, opt => opt.MapFrom(model => model.TeamSeasonId))
                 .ForMember(vm => vm.SubmittedDriversLicense, opt => opt.MapFrom(model => model.Roster.SubmittedDriversLicense))
@@ -318,6 +321,18 @@ namespace SportsManager
             //Mapper.CreateMap<PlayoffBracket, PlayoffBracketViewModel>();
             //Mapper.CreateMap<PlayoffGame, PlayoffGameViewModel>();
             //Mapper.CreateMap<PlayoffSeed, PlayoffSeedViewModel>();
+
+            Mapper.CreateMap<GolfCourse, GolfCourseViewModel>()
+                .ForMember(vm => vm.CourseId, opt => opt.MapFrom(model => model.Id))
+                .ForMember(vm => vm.MensPar, opt => opt.MapFrom(model => model.MensPars.OrderBy(mp => mp.HoleNo).Select(mp => mp.Par)))
+                .ForMember(vm => vm.MensHandicap, opt => opt.MapFrom(model => model.MensPars.OrderBy(mp => mp.HoleNo).Select(mp => mp.Handicap)))
+                .ForMember(vm => vm.WomensPar, opt => opt.MapFrom(model => model.WomensPars.OrderBy(mp => mp.HoleNo).Select(mp => mp.Par)))
+                .ForMember(vm => vm.WomensHandicap, opt => opt.MapFrom(model => model.WomensPars.OrderBy(mp => mp.HoleNo).Select(mp => mp.Handicap)))
+                .ForMember(vm => vm.Tees, opt => opt.MapFrom(model => model.GolfTeeInformations));
+
+            Mapper.CreateMap<GolfTeeInformation, GolfTeeViewModel>()
+                .ForMember(vm => vm.TeeId, opt => opt.MapFrom(model => model.Id))
+                .ForMember(vm => vm.HoleDistances, opt => opt.MapFrom(model => model.HoleDistances.OrderBy(hd => hd.HoleNo).Select(hd => hd.Distance)));
 
             Mapper.AssertConfigurationIsValid();
         }

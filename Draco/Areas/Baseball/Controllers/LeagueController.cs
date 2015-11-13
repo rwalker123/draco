@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNet.Identity;
 using ModelObjects;
-using SportsManager.Baseball.ViewModels;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels;
 using System;
 using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class LeagueController : DBController
     {

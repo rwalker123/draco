@@ -9,7 +9,7 @@ using ModelObjects;
 using SportsManager.ViewModels.API;
 using System.Threading.Tasks;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class TeamAPIController : DBApiController
     {

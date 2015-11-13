@@ -1,6 +1,4 @@
-﻿#define GOLF
-
-using SportsManager.Models;
+﻿using SportsManager.Golf.Models;
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Configuration;
@@ -117,12 +115,10 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new VoteQuestionConfiguration());
             modelBuilder.Configurations.Add(new WorkoutAnnouncementConfiguration());
             modelBuilder.Configurations.Add(new WorkoutRegistrationConfiguration());
-#if GOLF
+
             modelBuilder.Configurations.Add(new GolfCourseConfiguration());
             modelBuilder.Configurations.Add(new GolfCourseMenParConfiguration());
-            modelBuilder.Configurations.Add(new GolfCourseMenHandicapConfiguration());
             modelBuilder.Configurations.Add(new GolfCourseWomenParConfiguration());
-            modelBuilder.Configurations.Add(new GolfCourseWomenHandicapConfiguration());
             modelBuilder.Configurations.Add(new GolfCourseForContactConfiguration());
             modelBuilder.Configurations.Add(new GolferStatsConfigurationConfiguration());
             modelBuilder.Configurations.Add(new GolferStatsValueConfiguration());
@@ -137,7 +133,6 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new GolfTeeHoleDistanceConfiguration());
             modelBuilder.Configurations.Add(new GolfTeeMenSlopeRatingConfiguration());
             modelBuilder.Configurations.Add(new GolfTeeWomenSlopeRatingConfiguration());
-#endif
         }
 
         public DbSet<Account> Accounts { get; set; } // Accounts
@@ -204,12 +199,9 @@ namespace ModelObjects
         public DbSet<WorkoutAnnouncement> WorkoutAnnouncements { get; set; } // WorkoutAnnouncement
         public DbSet<WorkoutRegistrant> WorkoutRegistrations { get; set; } // WorkoutRegistration
 
-#if GOLF
         public DbSet<GolfCourse> GolfCourses { get; set; }
         public DbSet<GolfCourseMenPar> GolfCourseMenPars { get; set; }
-        public DbSet<GolfCourseMenHandicap> GolfCourseMenHandicaps { get; set; }
         public DbSet<GolfCourseWomenPar> GolfCourseWomenPars { get; set; }
-        public DbSet<GolfCourseWomenHandicap> GolfCourseWomenHandicaps { get; set; }
         public DbSet<GolfCourseForContact> GolfCourseForContacts { get; set; }
         public DbSet<GolferStatsConfiguration> GolferStatsConfigurations { get; set; }
         public DbSet<GolferStatsValue> GolferStatsValues { get; set; }
@@ -224,7 +216,6 @@ namespace ModelObjects
         public DbSet<GolfTeeHoleDistance> GolfTeeHoleDistances { get; set; }
         public DbSet<GolfTeeMenSlopeRating> GolfTeeMenSlopeRatings { get; set; }
         public DbSet<GolfTeeWomenSlopeRating> GolfTeeWomenSlopeRatings { get; set; }
-#endif
     }
 
     #region Configurations
@@ -669,7 +660,7 @@ namespace ModelObjects
             HasRequired(a => a.TeamsSeason).WithMany(b => b.GameRecaps).HasForeignKey(c => c.TeamId); // FK_GameRecap_TeamsSeason
         }
     }
-#if GOLF
+
     // GolfCourse
     internal class GolfCourseConfiguration : EntityTypeConfiguration<GolfCourse>
     {
@@ -703,6 +694,7 @@ namespace ModelObjects
             Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
             Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
             Property(x => x.Par).HasColumnName("Par").IsRequired();
+            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
 
             HasRequired(a => a.Course).WithMany(b => b.MensPars).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseMensPar_GolfCourse
         }
@@ -720,43 +712,9 @@ namespace ModelObjects
             Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
             Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
             Property(x => x.Par).HasColumnName("Par").IsRequired();
+            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
 
             HasRequired(a => a.Course).WithMany(b => b.WomensPars).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseWomensPar_GolfCourse
-        }
-    }
-
-    // GolfCourseMenHandicap
-    internal class GolfCourseMenHandicapConfiguration : EntityTypeConfiguration<GolfCourseMenHandicap>
-    {
-        public GolfCourseMenHandicapConfiguration(string schema = "dbo")
-        {
-            ToTable(schema + ".GolfCourseMenHandicaps");
-            HasKey(x => x.Id);
-
-            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
-            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
-            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
-            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
-
-            HasRequired(a => a.Course).WithMany(b => b.MensHandicaps).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseMensHandicap_GolfCourse
-        }
-    }
-
-
-    // GolfCourseWomenHandicap
-    internal class GolfCourseWomenHandicapConfiguration : EntityTypeConfiguration<GolfCourseWomenHandicap>
-    {
-        public GolfCourseWomenHandicapConfiguration(string schema = "dbo")
-        {
-            ToTable(schema + ".GolfCourseWomenHandicaps");
-            HasKey(x => x.Id);
-
-            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
-            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
-            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
-            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
-
-            HasRequired(a => a.Course).WithMany(b => b.WomensHandicaps).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseWomensHandicap_GolfCourse
         }
     }
 
@@ -1097,7 +1055,6 @@ namespace ModelObjects
         }
     }
 
-#endif
 
     // hof
     internal class HofConfiguration : EntityTypeConfiguration<HOFMember>

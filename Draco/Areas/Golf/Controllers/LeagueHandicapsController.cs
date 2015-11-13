@@ -1,9 +1,9 @@
 ﻿using System.Web.Mvc;
 using SportsManager.Golf.ViewModels;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-	public class LeagueHandicapsController : Controller
+	public class LeagueHandicapsController : DBController
 	{
 		//
 		// GET: /Golf/LeagueHandicaps/

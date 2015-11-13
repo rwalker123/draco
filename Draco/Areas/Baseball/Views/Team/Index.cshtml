@@ -1,4 +1,4 @@
-﻿@model SportsManager.Baseball.ViewModels.TeamViewModel
+﻿@model SportsManager.Baseball.ViewModels.Controllers.TeamViewModel
 @using System.Web.Optimization;
 
 @{
@@ -60,13 +60,13 @@
         { 
             <div class="row">
                 <div class="col-md-12">
-                    @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                    @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.Controllers.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                 </div>
             </div>
         }
             <div class="row">
                 <div class="col-md-12">
-                    @{Html.RenderPartial("TeamManager", new SportsManager.Baseball.ViewModels.ManagersViewModel(Model.Controller, Model.AccountId, Model.Team.Id, Model.IsTeamMember));}
+                    @{Html.RenderPartial("TeamManager", new SportsManager.Baseball.ViewModels.Controllers.ManagersViewModel(Model.Controller, Model.AccountId, Model.Team.Id, Model.IsTeamMember));}
                 </div>
             </div>
 
@@ -74,7 +74,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.LeadersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                        @{Html.RenderPartial("Leaders", new SportsManager.Baseball.ViewModels.Controllers.LeadersViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                     </div>
                 </div>
             }
@@ -83,7 +83,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                        @{Html.RenderPartial("UpcomingGames", new SportsManager.Baseball.ViewModels.Controllers.UpcomingGamesViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                     </div>
                 </div>
             }
@@ -92,7 +92,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.ScoreboardViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                        @{Html.RenderPartial("ScoreboardView", new SportsManager.Baseball.ViewModels.Controllers.ScoreboardViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                     </div>
                 </div>
             }
@@ -178,7 +178,7 @@
             {
                 <div class="row">
                     <div class="col-md-12">
-                        @{Html.RenderPartial("RosterView", new SportsManager.Baseball.ViewModels.RosterViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
+                        @{Html.RenderPartial("RosterView", new SportsManager.Baseball.ViewModels.Controllers.RosterViewModel(Model.Controller, Model.AccountId, Model.Team.Id));}
                     </div>
                 </div>                
             }

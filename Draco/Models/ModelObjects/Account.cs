@@ -1,4 +1,4 @@
-using SportsManager.Models;
+using SportsManager.Golf.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
 using ModelObjects;
-using SportsManager.Baseball.ViewModels;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers.Attributes;
 using SportsManager.Models;
 using SportsManager.ViewModels;

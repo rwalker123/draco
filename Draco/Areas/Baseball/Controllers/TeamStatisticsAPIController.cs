@@ -1,8 +1,9 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Baseball.Utils;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.Controllers;
 using SportsManager.Models;
-using SportsManager.Utils;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class TeamStatisticsAPIController : DBApiController
     {

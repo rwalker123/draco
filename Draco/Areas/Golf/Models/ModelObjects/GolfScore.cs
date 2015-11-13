@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SportsManager.Models
+namespace SportsManager.Golf.Models
 {
 	/// <summary>
 	/// Summary description for GolfScore

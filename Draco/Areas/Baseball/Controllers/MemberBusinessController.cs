@@ -3,7 +3,7 @@ using SportsManager.Controllers;
 using SportsManager.ViewModels;
 using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
 	public class MemberBusinessController : DBController
 	{

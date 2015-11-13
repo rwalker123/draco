@@ -70,7 +70,7 @@ namespace SportsManager
                     routeData.Values["action"] = "Index";
 
                     routeData.DataTokens["area"] = "Baseball";
-                    routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Baseball.Controllers" };
+                    routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Baseball.Controllers" };
                     return routeData;
                 }
                 return null;
@@ -107,7 +107,7 @@ namespace SportsManager
                 routeData.Values["accountId"] = accountId;
 
                 routeData.DataTokens["area"] = "Baseball";
-                routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Baseball.Controllers" };
+                routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Baseball.Controllers" };
                 return routeData;
             }
             else if (accountType.Id == 3)
@@ -119,7 +119,7 @@ namespace SportsManager
                 routeData.Values["accountId"] = accountId;
 
                 routeData.DataTokens["area"] = "Golf";
-                routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Areas.Golf.Controllers" };
+                routeData.DataTokens["namespaces"] = new string[] { "SportsManager.Golf.Controllers" };
                 return routeData;
             }
 

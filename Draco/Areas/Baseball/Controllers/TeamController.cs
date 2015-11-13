@@ -1,13 +1,12 @@
-﻿using System.Collections.Generic;
-using System.Web.Mvc;
-using ModelObjects;
-using SportsManager.Baseball.ViewModels;
-using System.IO;
-using SportsManager.Models;
-using SportsManager.Controllers.Attributes;
+﻿using ModelObjects;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers;
+using SportsManager.Controllers.Attributes;
+using SportsManager.Models;
+using System.IO;
+using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class TeamController : DBController
     {
@@ -29,7 +28,7 @@ namespace SportsManager.Areas.Baseball.Controllers
                 return RedirectToAction("Index", "Baseball");
             }
 
-            return View(new SportsManager.Baseball.ViewModels.TeamViewModel(this, aId, teamSeasonId));
+            return View(new TeamViewModel(this, aId, teamSeasonId));
         }
 
         //
@@ -40,7 +39,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("statistics")]
         public ActionResult GetStatistics(long accountId, long id)
         {
-            return View(new SportsManager.Baseball.ViewModels.TeamStatisticsViewModel(this, accountId, id /*teamSeasonId*/));
+            return View(new TeamStatisticsViewModel(this, accountId, id /*teamSeasonId*/));
         }
 
         //
@@ -51,7 +50,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("rostercard")]
         public ActionResult RosterCard(long accountId, long id)
         {
-            return View(new SportsManager.Baseball.ViewModels.RosterCardViewModel(this, accountId, id /*teamSeasonId*/));
+            return View(new RosterCardViewModel(this, accountId, id /*teamSeasonId*/));
         }
 
         //
@@ -92,7 +91,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("schedule")]
         public ActionResult Schedule(long accountId, long id)
         {
-            return View(new SportsManager.Baseball.ViewModels.TeamScheduleViewModel(this, accountId, id /*teamSeasonId*/));
+            return View(new TeamScheduleViewModel(this, accountId, id /*teamSeasonId*/));
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using ModelObjects;
-using SportsManager.Models;
+using SportsManager.Golf.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

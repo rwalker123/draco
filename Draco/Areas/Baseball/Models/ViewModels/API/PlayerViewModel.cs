@@ -1,6 +1,7 @@
-﻿using System;
+﻿using SportsManager.ViewModels.API;
+using System;
 
-namespace SportsManager.ViewModels.API
+namespace SportsManager.Baseball.ViewModels.API
 {
     public class PlayerViewModel
     {

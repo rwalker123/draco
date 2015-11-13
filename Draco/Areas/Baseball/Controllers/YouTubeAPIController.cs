@@ -10,7 +10,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web.Http;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class YouTubeAPIController : DBApiController
     {

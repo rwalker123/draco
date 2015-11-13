@@ -3,7 +3,7 @@ using SportsManager.Controllers;
 using System;
 using System.Linq;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class PlayerSearchViewModel
     {

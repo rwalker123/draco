@@ -1,7 +1,7 @@
 ﻿using SportsManager.Controllers;
 using SportsManager.ViewModels;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class RosterViewModel : AccountViewModel
     {

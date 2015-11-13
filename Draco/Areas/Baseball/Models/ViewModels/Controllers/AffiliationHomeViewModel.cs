@@ -1,9 +1,8 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
     public class AffiliationHomeViewModel
     {

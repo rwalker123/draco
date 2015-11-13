@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using SportsManager.ViewModels;
 using SportsManager.Controllers;
 using SportsManager.Models;
+using SportsManager.ViewModels;
+using SportsManager.Golf.Models;
 
 namespace SportsManager.Golf.ViewModels
 {

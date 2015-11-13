@@ -1,4 +1,4 @@
-﻿@model SportsManager.Baseball.ViewModels.ScoreboardViewModel
+﻿@model SportsManager.Baseball.ViewModels.Controllers.ScoreboardViewModel
 
 @using System.Collections.Generic;
 <div class="panel panel-default">
@@ -46,7 +46,7 @@
                             <h4 class="modal-title">Enter Game Results</h4>
                         </div>
                         <div class="modal-body" style="max-height: 480px;overflow:auto">
-                            @{Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.EnterGameResults
+                            @{Html.RenderPartial("EnterGameResults", new SportsManager.Baseball.ViewModels.Controllers.EnterGameResults
                               {
                                   ShowTweetResults = Model.ShowTweetResults,
                                   TrackGamesPlayed = Model.TrackGamesPlayed

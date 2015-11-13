@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.API;
 using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SportsManager.Utils
+namespace SportsManager.Baseball.Utils
 {
     public class LeaderStatRecord
     {

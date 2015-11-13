@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SportsManager.Models
+namespace SportsManager.Golf.Models
 {
 	/// <summary>
 	/// Summary description for GolfCourse
@@ -28,9 +28,7 @@ namespace SportsManager.Models
         public virtual ICollection<GolfTeeInformation> GolfTeeInformations { get; set; } // GolfTeeInformation.FK_GolfTeeInformation_GolfCourse
 
         public virtual IList<GolfCourseMenPar> MensPars { get; set; }
-        public virtual IList<GolfCourseMenHandicap> MensHandicaps { get; set; }
         public virtual IList<GolfCourseWomenPar> WomensPars { get; set; }
-        public virtual IList<GolfCourseWomenHandicap> WomensHandicaps { get; set; }
 
         public GolfCourse()
         {
@@ -40,9 +38,7 @@ namespace SportsManager.Models
             GolfScores = new List<GolfScore>();
             GolfTeeInformations = new List<GolfTeeInformation>();
             MensPars = new List<GolfCourseMenPar>();
-            MensHandicaps = new List<GolfCourseMenHandicap>();
             WomensPars = new List<GolfCourseWomenPar>();
-            WomensHandicaps = new List<GolfCourseWomenHandicap>();
         }
 
         public string NameCity
@@ -93,7 +89,7 @@ namespace SportsManager.Models
 
 		public void MensHandicap(int holeNo, int handicapVal)
 		{
-            var mp = (from m in this.MensHandicaps
+            var mp = (from m in this.MensPars
                       where m.HoleNo == holeNo
                       select m).SingleOrDefault();
             if (mp != null)
@@ -102,7 +98,7 @@ namespace SportsManager.Models
 
         public void WomansHandicap(int holeNo, int handicapVal)
 		{
-            var mp = (from m in this.WomensHandicaps
+            var mp = (from m in this.WomensPars
                       where m.HoleNo == holeNo
                       select m).SingleOrDefault();
             if (mp != null)
@@ -143,7 +139,7 @@ namespace SportsManager.Models
 
         public int MensHandicap(int holeNo)
 		{
-            var mp = (from m in this.MensHandicaps
+            var mp = (from m in this.MensPars
                       where m.HoleNo == holeNo
                       select m).SingleOrDefault();
             if (mp != null)
@@ -154,7 +150,7 @@ namespace SportsManager.Models
 
 		public int WomansHandicap(int holeNo)
 		{
-            var mp = (from m in this.WomensHandicaps
+            var mp = (from m in this.WomensPars
                       where m.HoleNo == holeNo
                       select m).SingleOrDefault();
             if (mp != null)

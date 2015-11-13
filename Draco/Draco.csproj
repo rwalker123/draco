@@ -517,13 +517,13 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
     <Compile Include="Areas\Golf\Controllers\CoursesController.cs" />
+    <Compile Include="Areas\Golf\Controllers\CourseTeeController.cs" />
     <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
     <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
     <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
     <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseForContact.cs" />
-    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseHandicap.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCoursePar.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsConfiguration.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsValue.cs" />
@@ -902,6 +902,7 @@
     <Content Include="Areas\Golf\Views\Shared\_ShowMatches.cshtml" />
     <Content Include="Areas\Golf\Views\Courses\Create.cshtml" />
     <Content Include="Areas\Golf\Views\Courses\Index.cshtml" />
+    <Content Include="Areas\Golf\Views\CourseTee\Create.cshtml" />
     <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\jquery-1.11.3.js" />
     <Content Include="Scripts\jquery-1.11.3.min.js" />

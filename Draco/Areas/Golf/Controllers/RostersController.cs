@@ -5,9 +5,9 @@ using SportsManager.Golf.ViewModels;
 using SportsManager.Model;
 using SportsManager.Models;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-	public class RostersController : Controller
+	public class RostersController : DBController
 	{
 		//
 		// GET: /Golf/Rosters/

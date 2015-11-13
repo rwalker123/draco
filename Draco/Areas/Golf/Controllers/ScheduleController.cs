@@ -6,9 +6,9 @@ using SportsManager.Golf.ViewModels;
 using SportsManager.Model;
 using SportsManager.Models;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
-    public class ScheduleController : Controller
+    public class ScheduleController : DBController
     {
         //
         // GET: /Golf/Schedule/

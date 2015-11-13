@@ -1,9 +1,10 @@
-﻿using System;
+﻿using AutoMapper;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using SportsManager.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using SportsManager.Models;
-using SportsManager.ViewModels;
-using SportsManager.Controllers;
 
 namespace SportsManager.Golf.ViewModels
 {
@@ -34,7 +35,7 @@ namespace SportsManager.Golf.ViewModels
                 GolfCourse course = Controller.Db.GolfCourses.Find(GolfMatch.CourseId.GetValueOrDefault(0));
                 if (course != null)
                 {
-                    Course = GolfCourseViewModel.GetCourseViewModel(course);
+                    Course = Mapper.Map<GolfCourse, GolfCourseViewModel>(course);
                     Controller.AddTees(Course);
                 }
 

@@ -1,12 +1,13 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
-using SportsManager.Utils;
-using SportsManager.ViewModels.API;
+using SportsManager.Baseball.Utils;
+using SportsManager.Baseball.ViewModels.API;
 using System.Linq;
+using SportsManager.ViewModels;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
-    public class PlayerViewModel : SportsManager.ViewModels.AccountViewModel
+    public class PlayerViewModel : AccountViewModel
     {
         public class AccountWithContactId
         {

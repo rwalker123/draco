@@ -3,16 +3,15 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using ModelObjects;
 using SportsManager.Controllers;
-using SportsManager.ViewModels;
-using SportsManager.ViewModels.API;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SportsManager.ViewModels;
 
-namespace SportsManager.Baseball.ViewModels
+namespace SportsManager.Baseball.ViewModels.Controllers
 {
-    public class TeamAddressViewModel : SportsManager.ViewModels.AccountViewModel
+    public class TeamAddressViewModel : AccountViewModel
     {
         public TeamAddressViewModel(DBController c, long accountId, long teamSeasonId)
             : base(c, accountId)

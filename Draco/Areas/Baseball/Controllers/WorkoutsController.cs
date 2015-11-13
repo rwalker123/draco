@@ -1,12 +1,12 @@
 ﻿using ModelObjects;
-using SportsManager.Baseball.Controllers;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Controllers;
 using SportsManager.Models;
 using System;
 using System.IO;
 using System.Web.Mvc;
 
-namespace SportsManager.Areas.Baseball.Controllers
+namespace SportsManager.Baseball.Controllers
 {
     public class WorkoutsController : DBController
     {
@@ -47,7 +47,7 @@ namespace SportsManager.Areas.Baseball.Controllers
         [ActionName("ExportRegistrants")]
         public FileStreamResult ExportRegistrants(long accountId, long id)
         {
-            var vm = new SportsManager.Baseball.ViewModels.WorkoutsViewModel(this, accountId, id);
+            var vm = new WorkoutsViewModel(this, accountId, id);
             FileStream strm = vm.ExportRegistrantsToExcel();
             this.TempData["tempFileName"] = strm.Name;
             var fs = new FileStreamResult(strm, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

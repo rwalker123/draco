@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNet.Identity;
 using ModelObjects;
+using SportsManager.Baseball.ViewModels.Controllers;
 using SportsManager.Models;
 using SportsManager.ViewModels.API;
 using System;

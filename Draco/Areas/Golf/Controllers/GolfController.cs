@@ -1,6 +1,6 @@
 ﻿using System.Web.Mvc;
 
-namespace SportsManager.Areas.Golf.Controllers
+namespace SportsManager.Golf.Controllers
 {
     public class GolfController : Controller
 	{

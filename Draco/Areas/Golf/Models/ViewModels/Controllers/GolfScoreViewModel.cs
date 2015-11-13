@@ -1,13 +1,12 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
-using SportsManager.Models;
-using SportsManager.ViewModels;
+using SportsManager.Golf.Models;
 using System;
 using System.Collections.Generic;
 
 namespace SportsManager.Golf.ViewModels
 {
-	public class GolfScoreViewModel
+    public class GolfScoreViewModel
 	{
         IDb DB { get; }
 
