@@ -248,6 +248,10 @@
       <HintPath>..\packages\Microsoft.Bcl.Async.1.0.168\lib\net40\Microsoft.Threading.Tasks.Extensions.Desktop.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.Web.Mvc, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mvc2Futures.2.0.50217.0\lib\Microsoft.Web.Mvc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Web.RedisSessionStateProvider, Version=1.6.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Web.RedisSessionStateProvider.1.6.5\lib\net40\Microsoft.Web.RedisSessionStateProvider.dll</HintPath>
       <Private>True</Private>
@@ -258,6 +262,10 @@
     </Reference>
     <Reference Include="Microsoft.WindowsAzure.Storage, Version=6.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WindowsAzure.Storage.6.1.0\lib\net40\Microsoft.WindowsAzure.Storage.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MvcContrib, Version=2.0.95.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MvcContrib.2.0.95.0\lib\MvcContrib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=7.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -508,12 +516,15 @@
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UpcomingGamesViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\UserAddressViewModel.cs" />
     <Compile Include="Areas\Baseball\Models\ViewModels\Controllers\WorkoutsViewModel.cs" />
+    <Compile Include="Areas\Golf\Controllers\CoursesController.cs" />
     <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
     <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
     <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
     <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseForContact.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseHandicap.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfCoursePar.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsConfiguration.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolferStatsValue.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfLeagueCourse.cs" />
@@ -523,9 +534,12 @@
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfRoster.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfScore.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfStatDef.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeHoleDistance.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeInformation.cs" />
+    <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeSlopeRating.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\CompletedMatchViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\DBExtensions.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfCoursesViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfCourseViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfLeagueSetupViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfMatchViewModel.cs" />
@@ -877,6 +891,17 @@
     <Content Include="Areas\Golf\Views\League\LeagueSetup.cshtml" />
     <Content Include="Areas\Golf\Views\_ViewStart.cshtml" />
     <Content Include="Areas\Golf\Views\Web.config" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\CoursesDropDown.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\DayOfWeekSelector.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\EighteenNineSelector.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\IntCollectionData.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\MatchTypeDropDown.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\EditorTemplates\TeamsDropDown.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\_LeagueResults.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\_LeagueStandings.cshtml" />
+    <Content Include="Areas\Golf\Views\Shared\_ShowMatches.cshtml" />
+    <Content Include="Areas\Golf\Views\Courses\Create.cshtml" />
+    <Content Include="Areas\Golf\Views\Courses\Index.cshtml" />
     <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\jquery-1.11.3.js" />
     <Content Include="Scripts\jquery-1.11.3.min.js" />

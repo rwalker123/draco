@@ -59,30 +59,7 @@ namespace SportsManager.Golf.ViewModels
 				CourseId = vm.CourseId,
 				TeeColor = vm.TeeColor,
 				TeeName = String.Empty,
-				MensRating = vm.MensRating,
-				MensSlope = vm.MensSlope,
-				WomansRating = vm.WomensRating,
-				WomansSlope = vm.WomensSlope
 			};
-
-			teeInfo.DistanceHole1 = vm.HoleDistances[0];
-			teeInfo.DistanceHole2 = vm.HoleDistances[1];
-			teeInfo.DistanceHole3 = vm.HoleDistances[2];
-			teeInfo.DistanceHole4 = vm.HoleDistances[3];
-			teeInfo.DistanceHole5 = vm.HoleDistances[4];
-			teeInfo.DistanceHole6 = vm.HoleDistances[5];
-			teeInfo.DistanceHole7 = vm.HoleDistances[6];
-			teeInfo.DistanceHole8 = vm.HoleDistances[7];
-			teeInfo.DistanceHole9 = vm.HoleDistances[8];
-			teeInfo.DistanceHole10 = vm.HoleDistances[9];
-			teeInfo.DistanceHole11 = vm.HoleDistances[10];
-			teeInfo.DistanceHole12 = vm.HoleDistances[11];
-			teeInfo.DistanceHole13 = vm.HoleDistances[12];
-			teeInfo.DistanceHole14 = vm.HoleDistances[13];
-			teeInfo.DistanceHole15 = vm.HoleDistances[14];
-			teeInfo.DistanceHole16 = vm.HoleDistances[15];
-			teeInfo.DistanceHole17 = vm.HoleDistances[16];
-			teeInfo.DistanceHole18 = vm.HoleDistances[17];
 
 			return teeInfo;
 		}
@@ -93,30 +70,7 @@ namespace SportsManager.Golf.ViewModels
 			{
 				TeeId = teeInfo.Id,
 				TeeColor = teeInfo.TeeColor,
-				MensRating = teeInfo.MensRating,
-				MensSlope = teeInfo.MensSlope,
-				WomensRating = teeInfo.WomansRating,
-				WomensSlope = teeInfo.WomansSlope
 			};
-
-			vm.HoleDistances[0] = teeInfo.DistanceHole1;
-			vm.HoleDistances[1] = teeInfo.DistanceHole2;
-			vm.HoleDistances[2] = teeInfo.DistanceHole3;
-			vm.HoleDistances[3] = teeInfo.DistanceHole4;
-			vm.HoleDistances[4] = teeInfo.DistanceHole5;
-			vm.HoleDistances[5] = teeInfo.DistanceHole6;
-			vm.HoleDistances[6] = teeInfo.DistanceHole7;
-			vm.HoleDistances[7] = teeInfo.DistanceHole8;
-			vm.HoleDistances[8] = teeInfo.DistanceHole9;
-			vm.HoleDistances[9] = teeInfo.DistanceHole10;
-			vm.HoleDistances[10] = teeInfo.DistanceHole11;
-			vm.HoleDistances[11] = teeInfo.DistanceHole12;
-			vm.HoleDistances[12] = teeInfo.DistanceHole13;
-			vm.HoleDistances[13] = teeInfo.DistanceHole14;
-			vm.HoleDistances[14] = teeInfo.DistanceHole15;
-			vm.HoleDistances[15] = teeInfo.DistanceHole16;
-			vm.HoleDistances[16] = teeInfo.DistanceHole17;
-			vm.HoleDistances[17] = teeInfo.DistanceHole18;
 
 			return vm;
 		}

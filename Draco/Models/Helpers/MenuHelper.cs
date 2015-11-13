@@ -10,15 +10,6 @@ namespace SportsManager.Models.Helpers
 {
     public static class MenuHelper
     {
-        public enum eAccountType
-        {
-            Baseball = 1,
-            Bowling = 2,
-            Golf = 3,
-            FitnessClub = 4,
-            GolfIndividual = 5
-        }
-
         public class MenuItem
         {
             private List<MenuItem> m_subMenuItems = new List<MenuItem>();
@@ -70,7 +61,7 @@ namespace SportsManager.Models.Helpers
         /// <returns></returns>
         public static IEnumerable<MenuItem> GetAccountHomeTypeMenu(long accountType, long accountId)
         {
-            if (accountType == (long)eAccountType.Baseball)
+            if (accountType == (long)Account.eAccountType.Baseball)
             {
                 string homeurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                 new RouteValueDictionary(new { area = "baseball", controller = "League", action = "Home", accountId = accountId })).VirtualPath;
@@ -97,7 +88,7 @@ namespace SportsManager.Models.Helpers
         {
             var db = new dbHelper();
 
-            if (accountType == (long)eAccountType.Baseball)
+            if (accountType == (long)Account.eAccountType.Baseball)
             {
                 string teamsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "baseball", controller = "LeagueTeams", action = "Index", accountId = accountId })).VirtualPath;
@@ -190,15 +181,22 @@ namespace SportsManager.Models.Helpers
 	            };
 
             }
-            else if (accountType == (long)eAccountType.Golf)
+            else if (accountType == (long)Account.eAccountType.Golf)
             {
-                string homeurl = RouteTable.Routes.GetVirtualPath(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                    new RouteValueDictionary(new { area = "golf", controller = "League", action = "Home", accountId = accountId })).VirtualPath;
+                string coursesurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                    new RouteValueDictionary(new { area = "golf", controller = "Courses", action = "Index", accountId = accountId })).VirtualPath;
 
-                return new List<MenuHelper.MenuItem>()
-	            {
-		            new MenuHelper.MenuItem(homeurl, "Home", "Home Page"),
-	            };
+                string discussionsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                    new RouteValueDictionary(new { area = "", controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
+
+                var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
+
+                var coursesMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(coursesurl, "Courses", "Courses");
+                return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
+                {
+                    coursesMenu,
+                    forumsMenu
+                };
             }
 
             return new List<MenuHelper.MenuItem>();

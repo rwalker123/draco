@@ -26,8 +26,11 @@ namespace SportsManager.Golf.ViewModels
             var flights = Controller.Db.LeagueSeasons.Where(ls => ls.SeasonId == Season.Id);
 
             return (from f in flights
-                    select new FlightViewModel(AccountId, Season.Id, f.Id)
+                    select new FlightViewModel()
                     {
+                        AccountId = AccountId,
+                        SeasonId = Season.Id,
+                        FlightId = f.Id,
                         Name = f.League.Name
                     });
         }

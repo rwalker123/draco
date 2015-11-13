@@ -5,21 +5,18 @@ namespace SportsManager.Golf.ViewModels
 {
 	public class FlightViewModel
 	{
-		public FlightViewModel(long accountId, long seasonId, long id)
+		public FlightViewModel()
 		{
-			AccountId = accountId;
-			SeasonId = seasonId;
-			FlightId = id;
 		}
 
 		[ScaffoldColumn(false)]
-		public long FlightId { get; private set; }
+		public long FlightId { get; set; }
 
 		[ScaffoldColumn(false)]
-		public long AccountId { get; private set; }
+		public long AccountId { get; set; }
 
 		[ScaffoldColumn(false)]
-		public long SeasonId { get; private set; }
+		public long SeasonId { get; set; }
 
 		[Required, DisplayName("Flight Name"), StringLength(25)]
 		public string Name { get; set; }

@@ -1,25 +1,37 @@
-﻿@model IEnumerable<SportsManager.Golf.ViewModels.GolfCourseViewModel>
+﻿@model GolfCoursesViewModel
 @using SportsManager.Golf.ViewModels;
 
 @{
     ViewBag.Title = "Courses";
 }
 
-<h1>@ViewBag.Title</h1>
+<div class="jumbotron">
+    @Header.DisplayHeader(@ViewBag.Title, Model.AccountName, Model.AccountLogoUrl)
+</div>
+
 
 <div id="BasicGrid">
 
-@foreach (SportsManager.Golf.ViewModels.GolfCourseViewModel vm in Model)
-{ 
+@foreach (var course in Model.Courses)
+{
+    if (course.GolfCourse == null)
+    {
+        continue;
+    }
     <div id="GolfCoursesGrid">
     <table>
-    <tr><td>@vm.Name @Html.ActionLink("Edit", "Edit", "Courses", new { AccountId = ViewBag.AccountId, id = vm.CourseId }, null) @Html.ActionLink("Delete", "Delete", "Courses", new { AccountId = ViewBag.AccountId, id = vm.CourseId }, null)</td>
-    @for (int i = 1; i <= vm.NumberOfHoles; i++)
+    <tr>
+        <td>
+            @course.GolfCourse.Name 
+            @Html.ActionLink("Edit", "Edit", "Courses", new { AccountId = Model.AccountId, id = course.CourseId }, null) 
+            @Html.ActionLink("Delete", "Delete", "Courses", new { AccountId = Model.AccountId, id = course.CourseId }, null)
+        </td>
+    @for (int i = 1; i <= course.GolfCourse.NumberOfHoles; i++)
     {
         <td>@i</td>
         if (i == 9)
         {
-            if (vm.NumberOfHoles > 9)
+            if (course.GolfCourse.NumberOfHoles > 9)
             { 
                 <td>Out</td>
             }
@@ -30,7 +42,7 @@
         }
     }
     
-    @if (vm.NumberOfHoles > 9)
+    @if (course.GolfCourse.NumberOfHoles > 9)
     { 
         <td>In</td>
         <td>Total</td>
@@ -44,16 +56,16 @@
     int curIndex = 1;
     }
 
-    @foreach (int mensPar in vm.MensPar)
+    @foreach (var mensPar in course.GolfCourse.MensPars)
     {
         <td>@mensPar</td>
-        totalPar += mensPar;
-        sidePar += mensPar;
+        totalPar += mensPar.Par;
+        sidePar += mensPar.Par;
         if (curIndex == 9)
         {
             <td>@sidePar</td> 
             sidePar = 0;
-            if (vm.NumberOfHoles == 9)
+            if (course.GolfCourse.NumberOfHoles == 9)
             { 
                 break;
             }
@@ -61,7 +73,7 @@
         curIndex++;
     }
 
-    @if (vm.NumberOfHoles > 9)
+    @if (course.GolfCourse.NumberOfHoles > 9)
     {
         <td>@sidePar</td> 
         <td>@totalPar</td>
@@ -73,14 +85,14 @@
     curIndex = 0;
     }
     <tr><td>Mens Handicap</td>
-    @foreach (int mensHandicap in vm.MensHandicap)
+    @foreach (var mensHandicap in course.GolfCourse.MensHandicaps)
     {
-        <td>@mensHandicap</td>
+        <td>@mensHandicap.Handicap</td>
         curIndex++;
         if (curIndex == 9)
         {
             <td></td> 
-            if (vm.NumberOfHoles == 9)
+            if (course.GolfCourse.NumberOfHoles == 9)
             {
                 break;
             }
@@ -98,16 +110,16 @@
     curIndex = 1;
     }
 
-    @foreach (int womensPar in vm.WomensPar)
+    @foreach (var womensPar in course.GolfCourse.WomensPars)
     {
         <td>@womensPar</td>
-        totalPar += womensPar;
-        sidePar += womensPar;
+        totalPar += womensPar.Par;
+        sidePar += womensPar.Par;
         if (curIndex == 9)
         {
             <td>@sidePar</td> 
             sidePar = 0;
-            if (vm.NumberOfHoles == 9)
+            if (course.GolfCourse.NumberOfHoles == 9)
             {
                 break;
             }
@@ -115,7 +127,7 @@
         curIndex++;
     }
 
-    @if (vm.NumberOfHoles > 9)
+    @if (course.GolfCourse.NumberOfHoles > 9)
     {
         <td>@sidePar</td> 
         <td>@totalPar</td>
@@ -127,14 +139,14 @@
     curIndex = 0;
     }
     <tr><td>Womens Handicap</td>
-    @foreach (int womensHandicap in vm.WomensHandicap)
+    @foreach (var womensHandicap in course.GolfCourse.WomensHandicaps)
     {
-        <td>@womensHandicap</td>
+        <td>@womensHandicap.Handicap</td>
         curIndex++;
         if (curIndex == 9)
         {
             <td></td> 
-            if (vm.NumberOfHoles == 9)
+            if (course.GolfCourse.NumberOfHoles == 9)
             {
                 break;
             }
@@ -146,7 +158,7 @@
     </tr>
 
 
-    @foreach (GolfTeeViewModel tee in vm.Tees)
+    @foreach (var tee in course.GolfCourse.GolfTeeInformations)
     {
         curIndex = 0;
         int sideDistance = 0;
@@ -164,12 +176,12 @@
             
             </td> 
 
-            @foreach (int holeDistance in tee.HoleDistances)
+            @foreach (var holeDistance in tee.HoleDistances)
             {
-                sideDistance += holeDistance;
-                totalDistance += holeDistance;
+                sideDistance += holeDistance.Distance;
+                totalDistance += holeDistance.Distance;
                 
-                <td>@holeDistance</td>
+                <td>@holeDistance.Distance</td>
                 
                 curIndex++;
 
@@ -177,32 +189,32 @@
                 {
                     <td>@sideDistance</td> 
                     sideDistance = 0;
-                    if (vm.NumberOfHoles == 9)
+                    if (course.GolfCourse.NumberOfHoles == 9)
                     {
                         break;
                     }
                 }
             }
 
-            @if (vm.NumberOfHoles > 9)
+            @if (course.GolfCourse.NumberOfHoles > 9)
             {
                 <td>@sideDistance</td> 
                 <td>@totalDistance</td>
             }
 
-            <td>@Html.ActionLink("Edit", "Edit", "CourseTee", new { AccountId = ViewBag.AccountId, id = tee.TeeId }, null)</td>
-            <td>@Html.ActionLink("Delete", "Delete", "CourseTee", new { AccountId = ViewBag.AccountId, id = tee.TeeId }, null)</td>
+            <td>@Html.ActionLink("Edit", "Edit", "CourseTee", new { AccountId = Model.AccountId, id = tee.Id }, null)</td>
+            <td>@Html.ActionLink("Delete", "Delete", "CourseTee", new { AccountId = Model.AccountId, id = tee.Id }, null)</td>
         </tr>        
     }
 
-    <tr><td>@Html.ActionLink("Create Tee", "Create", "CourseTee", new { AccountId = ViewBag.AccountId, id = vm.CourseId }, null)</td></tr>
+    <tr><td>@Html.ActionLink("Create Tee", "Create", "CourseTee", new { AccountId = Model.AccountId, id = course.CourseId}, null)</td></tr>
     </table>
     </div>
 }
 
 </div>
 
-@Html.ActionLink("Create", "Create", "Courses", new { accountId = ViewBag.AccountId }, null)
+@Html.ActionLink("Create", "Create", "Courses", new { accountId = Model.AccountId }, null)
 
 
 

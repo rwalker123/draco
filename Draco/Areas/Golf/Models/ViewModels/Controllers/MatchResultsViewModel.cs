@@ -34,8 +34,8 @@ namespace SportsManager.Golf.ViewModels
                 GolfCourse course = Controller.Db.GolfCourses.Find(GolfMatch.CourseId.GetValueOrDefault(0));
                 if (course != null)
                 {
-                    Course = GolfCourseViewModel.GetCourseViewModel(Controller, 0, course);
-                    Course.AddTees();
+                    Course = GolfCourseViewModel.GetCourseViewModel(course);
+                    Controller.AddTees(Course);
                 }
 
                 CoursePlayed = course?.Name;

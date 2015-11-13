@@ -119,6 +119,10 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new WorkoutRegistrationConfiguration());
 #if GOLF
             modelBuilder.Configurations.Add(new GolfCourseConfiguration());
+            modelBuilder.Configurations.Add(new GolfCourseMenParConfiguration());
+            modelBuilder.Configurations.Add(new GolfCourseMenHandicapConfiguration());
+            modelBuilder.Configurations.Add(new GolfCourseWomenParConfiguration());
+            modelBuilder.Configurations.Add(new GolfCourseWomenHandicapConfiguration());
             modelBuilder.Configurations.Add(new GolfCourseForContactConfiguration());
             modelBuilder.Configurations.Add(new GolferStatsConfigurationConfiguration());
             modelBuilder.Configurations.Add(new GolferStatsValueConfiguration());
@@ -130,6 +134,9 @@ namespace ModelObjects
             modelBuilder.Configurations.Add(new GolfMatchScoreConfiguration());
             modelBuilder.Configurations.Add(new GolfStatDefConfiguration());
             modelBuilder.Configurations.Add(new GolfTeeInformationConfiguration());
+            modelBuilder.Configurations.Add(new GolfTeeHoleDistanceConfiguration());
+            modelBuilder.Configurations.Add(new GolfTeeMenSlopeRatingConfiguration());
+            modelBuilder.Configurations.Add(new GolfTeeWomenSlopeRatingConfiguration());
 #endif
         }
 
@@ -199,6 +206,10 @@ namespace ModelObjects
 
 #if GOLF
         public DbSet<GolfCourse> GolfCourses { get; set; }
+        public DbSet<GolfCourseMenPar> GolfCourseMenPars { get; set; }
+        public DbSet<GolfCourseMenHandicap> GolfCourseMenHandicaps { get; set; }
+        public DbSet<GolfCourseWomenPar> GolfCourseWomenPars { get; set; }
+        public DbSet<GolfCourseWomenHandicap> GolfCourseWomenHandicaps { get; set; }
         public DbSet<GolfCourseForContact> GolfCourseForContacts { get; set; }
         public DbSet<GolferStatsConfiguration> GolferStatsConfigurations { get; set; }
         public DbSet<GolferStatsValue> GolferStatsValues { get; set; }
@@ -210,10 +221,13 @@ namespace ModelObjects
         public DbSet<GolfMatchScore> GolfMatchScores { get; set; }
         public DbSet<GolfStatDef> GolfStatDefs { get; set; }
         public DbSet<GolfTeeInformation> GolfTeeInformations { get; set; }
+        public DbSet<GolfTeeHoleDistance> GolfTeeHoleDistances { get; set; }
+        public DbSet<GolfTeeMenSlopeRating> GolfTeeMenSlopeRatings { get; set; }
+        public DbSet<GolfTeeWomenSlopeRating> GolfTeeWomenSlopeRatings { get; set; }
 #endif
     }
 
-#region Configurations
+    #region Configurations
     internal class AccountConfiguration : EntityTypeConfiguration<Account>
     {
         public AccountConfiguration(string schema = "dbo")
@@ -674,78 +688,75 @@ namespace ModelObjects
             Property(x => x.State).HasColumnName("State").IsOptional().IsUnicode(false).HasMaxLength(50);
             Property(x => x.Zip).HasColumnName("Zip").IsOptional().IsUnicode(false).HasMaxLength(20);
             Property(x => x.Country).HasColumnName("Country").IsOptional().IsUnicode(false).HasMaxLength(30);
-            Property(x => x.MensPar1).HasColumnName("MensPar1").IsRequired();
-            Property(x => x.MensPar2).HasColumnName("MensPar2").IsRequired();
-            Property(x => x.MensPar3).HasColumnName("MensPar3").IsRequired();
-            Property(x => x.MensPar4).HasColumnName("MensPar4").IsRequired();
-            Property(x => x.MensPar5).HasColumnName("MensPar5").IsRequired();
-            Property(x => x.MensPar6).HasColumnName("MensPar6").IsRequired();
-            Property(x => x.MensPar7).HasColumnName("MensPar7").IsRequired();
-            Property(x => x.MensPar8).HasColumnName("MensPar8").IsRequired();
-            Property(x => x.MensPar9).HasColumnName("MensPar9").IsRequired();
-            Property(x => x.MensPar10).HasColumnName("MensPar10").IsRequired();
-            Property(x => x.MensPar11).HasColumnName("MensPar11").IsRequired();
-            Property(x => x.MensPar12).HasColumnName("MensPar12").IsRequired();
-            Property(x => x.MensPar13).HasColumnName("MensPar13").IsRequired();
-            Property(x => x.MensPar14).HasColumnName("MensPar14").IsRequired();
-            Property(x => x.MensPar15).HasColumnName("MensPar15").IsRequired();
-            Property(x => x.MensPar16).HasColumnName("MensPar16").IsRequired();
-            Property(x => x.MensPar17).HasColumnName("MensPar17").IsRequired();
-            Property(x => x.MensPar18).HasColumnName("MensPar18").IsRequired();
-            Property(x => x.WomansPar1).HasColumnName("WomansPar1").IsRequired();
-            Property(x => x.WomansPar2).HasColumnName("WomansPar2").IsRequired();
-            Property(x => x.WomansPar3).HasColumnName("WomansPar3").IsRequired();
-            Property(x => x.WomansPar4).HasColumnName("WomansPar4").IsRequired();
-            Property(x => x.WomansPar5).HasColumnName("WomansPar5").IsRequired();
-            Property(x => x.WomansPar6).HasColumnName("WomansPar6").IsRequired();
-            Property(x => x.WomansPar7).HasColumnName("WomansPar7").IsRequired();
-            Property(x => x.WomansPar8).HasColumnName("WomansPar8").IsRequired();
-            Property(x => x.WomansPar9).HasColumnName("WomansPar9").IsRequired();
-            Property(x => x.WomansPar10).HasColumnName("WomansPar10").IsRequired();
-            Property(x => x.WomansPar11).HasColumnName("WomansPar11").IsRequired();
-            Property(x => x.WomansPar12).HasColumnName("WomansPar12").IsRequired();
-            Property(x => x.WomansPar13).HasColumnName("WomansPar13").IsRequired();
-            Property(x => x.WomansPar14).HasColumnName("WomansPar14").IsRequired();
-            Property(x => x.WomansPar15).HasColumnName("WomansPar15").IsRequired();
-            Property(x => x.WomansPar16).HasColumnName("WomansPar16").IsRequired();
-            Property(x => x.WomansPar17).HasColumnName("WomansPar17").IsRequired();
-            Property(x => x.WomansPar18).HasColumnName("WomansPar18").IsRequired();
-            Property(x => x.MensHandicap1).HasColumnName("MensHandicap1").IsRequired();
-            Property(x => x.MensHandicap2).HasColumnName("MensHandicap2").IsRequired();
-            Property(x => x.MensHandicap3).HasColumnName("MensHandicap3").IsRequired();
-            Property(x => x.MensHandicap4).HasColumnName("MensHandicap4").IsRequired();
-            Property(x => x.MensHandicap5).HasColumnName("MensHandicap5").IsRequired();
-            Property(x => x.MensHandicap6).HasColumnName("MensHandicap6").IsRequired();
-            Property(x => x.MensHandicap7).HasColumnName("MensHandicap7").IsRequired();
-            Property(x => x.MensHandicap8).HasColumnName("MensHandicap8").IsRequired();
-            Property(x => x.MensHandicap9).HasColumnName("MensHandicap9").IsRequired();
-            Property(x => x.MensHandicap10).HasColumnName("MensHandicap10").IsRequired();
-            Property(x => x.MensHandicap11).HasColumnName("MensHandicap11").IsRequired();
-            Property(x => x.MensHandicap12).HasColumnName("MensHandicap12").IsRequired();
-            Property(x => x.MensHandicap13).HasColumnName("MensHandicap13").IsRequired();
-            Property(x => x.MensHandicap14).HasColumnName("MensHandicap14").IsRequired();
-            Property(x => x.MensHandicap15).HasColumnName("MensHandicap15").IsRequired();
-            Property(x => x.MensHandicap16).HasColumnName("MensHandicap16").IsRequired();
-            Property(x => x.MensHandicap17).HasColumnName("MensHandicap17").IsRequired();
-            Property(x => x.MensHandicap18).HasColumnName("MensHandicap18").IsRequired();
-            Property(x => x.WomansHandicap1).HasColumnName("WomansHandicap1").IsRequired();
-            Property(x => x.WomansHandicap2).HasColumnName("WomansHandicap2").IsRequired();
-            Property(x => x.WomansHandicap3).HasColumnName("WomansHandicap3").IsRequired();
-            Property(x => x.WomansHandicap4).HasColumnName("WomansHandicap4").IsRequired();
-            Property(x => x.WomansHandicap5).HasColumnName("WomansHandicap5").IsRequired();
-            Property(x => x.WomansHandicap6).HasColumnName("WomansHandicap6").IsRequired();
-            Property(x => x.WomansHandicap7).HasColumnName("WomansHandicap7").IsRequired();
-            Property(x => x.WomansHandicap8).HasColumnName("WomansHandicap8").IsRequired();
-            Property(x => x.WomansHandicap9).HasColumnName("WomansHandicap9").IsRequired();
-            Property(x => x.WomansHandicap10).HasColumnName("WomansHandicap10").IsRequired();
-            Property(x => x.WomansHandicap11).HasColumnName("WomansHandicap11").IsRequired();
-            Property(x => x.WomansHandicap12).HasColumnName("WomansHandicap12").IsRequired();
-            Property(x => x.WomansHandicap13).HasColumnName("WomansHandicap13").IsRequired();
-            Property(x => x.WomansHandicap14).HasColumnName("WomansHandicap14").IsRequired();
-            Property(x => x.WomansHandicap15).HasColumnName("WomansHandicap15").IsRequired();
-            Property(x => x.WomansHandicap16).HasColumnName("WomansHandicap16").IsRequired();
-            Property(x => x.WomansHandicap17).HasColumnName("WomansHandicap17").IsRequired();
-            Property(x => x.WomansHandicap18).HasColumnName("WomansHandicap18").IsRequired();
+        }
+    }
+
+    // GolfCourseMenPar
+    internal class GolfCourseMenParConfiguration : EntityTypeConfiguration<GolfCourseMenPar>
+    {
+        public GolfCourseMenParConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfCourseMenPars");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
+            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
+            Property(x => x.Par).HasColumnName("Par").IsRequired();
+
+            HasRequired(a => a.Course).WithMany(b => b.MensPars).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseMensPar_GolfCourse
+        }
+    }
+
+    // GolfCourseWomenPar
+    internal class GolfCourseWomenParConfiguration : EntityTypeConfiguration<GolfCourseWomenPar>
+    {
+        public GolfCourseWomenParConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfCourseWomenPars");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
+            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
+            Property(x => x.Par).HasColumnName("Par").IsRequired();
+
+            HasRequired(a => a.Course).WithMany(b => b.WomensPars).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseWomensPar_GolfCourse
+        }
+    }
+
+    // GolfCourseMenHandicap
+    internal class GolfCourseMenHandicapConfiguration : EntityTypeConfiguration<GolfCourseMenHandicap>
+    {
+        public GolfCourseMenHandicapConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfCourseMenHandicaps");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
+            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
+            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
+
+            HasRequired(a => a.Course).WithMany(b => b.MensHandicaps).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseMensHandicap_GolfCourse
+        }
+    }
+
+
+    // GolfCourseWomenHandicap
+    internal class GolfCourseWomenHandicapConfiguration : EntityTypeConfiguration<GolfCourseWomenHandicap>
+    {
+        public GolfCourseWomenHandicapConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfCourseWomenHandicaps");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfCourseId).HasColumnName("GolfCourseId").IsRequired();
+            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
+            Property(x => x.Handicap).HasColumnName("Handicap").IsRequired();
+
+            HasRequired(a => a.Course).WithMany(b => b.WomensHandicaps).HasForeignKey(c => c.GolfCourseId); // FK_GolfCourseWomensHandicap_GolfCourse
         }
     }
 
@@ -820,7 +831,7 @@ namespace ModelObjects
 
             // Foreign keys
             HasRequired(a => a.Account).WithMany(b => b.GolfLeagueCourse).HasForeignKey(c => c.AccountId); // FK_GolfLeagueCourses_Accounts
-            HasRequired(a => a.GolfCourse).WithMany(b => b.GolfLeagueCours).HasForeignKey(c => c.CourseId); // FK_GolfLeagueCourses_GolfCourse
+            HasRequired(a => a.GolfCourse).WithMany(b => b.GolfLeagueCourse).HasForeignKey(c => c.CourseId); // FK_GolfLeagueCourses_GolfCourse
         }
     }
 
@@ -1026,42 +1037,66 @@ namespace ModelObjects
             Property(x => x.CourseId).HasColumnName("CourseId").IsRequired();
             Property(x => x.TeeColor).HasColumnName("TeeColor").IsRequired().IsUnicode(false).HasMaxLength(20);
             Property(x => x.TeeName).HasColumnName("TeeName").IsRequired().IsUnicode(false).HasMaxLength(20);
-            Property(x => x.MensRating).HasColumnName("MensRating").IsRequired();
-            Property(x => x.MensSlope).HasColumnName("MensSlope").IsRequired();
-            Property(x => x.WomansRating).HasColumnName("WomansRating").IsRequired();
-            Property(x => x.WomansSlope).HasColumnName("WomansSlope").IsRequired();
-            Property(x => x.MensRatingFront9).HasColumnName("MensRatingFront9").IsRequired();
-            Property(x => x.MensSlopeFront9).HasColumnName("MensSlopeFront9").IsRequired();
-            Property(x => x.WomansRatingFront9).HasColumnName("WomansRatingFront9").IsRequired();
-            Property(x => x.WomansSlopeFront9).HasColumnName("WomansSlopeFront9").IsRequired();
-            Property(x => x.MensRatingBack9).HasColumnName("MensRatingBack9").IsRequired();
-            Property(x => x.MensSlopeBack9).HasColumnName("MensSlopeBack9").IsRequired();
-            Property(x => x.WomansRatingBack9).HasColumnName("WomansRatingBack9").IsRequired();
-            Property(x => x.WomansSlopeBack9).HasColumnName("WomansSlopeBack9").IsRequired();
-            Property(x => x.DistanceHole1).HasColumnName("DistanceHole1").IsRequired();
-            Property(x => x.DistanceHole2).HasColumnName("DistanceHole2").IsRequired();
-            Property(x => x.DistanceHole3).HasColumnName("DistanceHole3").IsRequired();
-            Property(x => x.DistanceHole4).HasColumnName("DistanceHole4").IsRequired();
-            Property(x => x.DistanceHole5).HasColumnName("DistanceHole5").IsRequired();
-            Property(x => x.DistanceHole6).HasColumnName("DistanceHole6").IsRequired();
-            Property(x => x.DistanceHole7).HasColumnName("DistanceHole7").IsRequired();
-            Property(x => x.DistanceHole8).HasColumnName("DistanceHole8").IsRequired();
-            Property(x => x.DistanceHole9).HasColumnName("DistanceHole9").IsRequired();
-            Property(x => x.DistanceHole10).HasColumnName("DistanceHole10").IsRequired();
-            Property(x => x.DistanceHole11).HasColumnName("DistanceHole11").IsRequired();
-            Property(x => x.DistanceHole12).HasColumnName("DistanceHole12").IsRequired();
-            Property(x => x.DistanceHole13).HasColumnName("DistanceHole13").IsRequired();
-            Property(x => x.DistanceHole14).HasColumnName("DistanceHole14").IsRequired();
-            Property(x => x.DistanceHole15).HasColumnName("DistanceHole15").IsRequired();
-            Property(x => x.DistanceHole16).HasColumnName("DistanceHole16").IsRequired();
-            Property(x => x.DistanceHole17).HasColumnName("DistanceHole17").IsRequired();
-            Property(x => x.DistanceHole18).HasColumnName("DistanceHole18").IsRequired();
             Property(x => x.Priority).HasColumnName("Priority").IsRequired();
 
             // Foreign keys
             HasRequired(a => a.GolfCourse).WithMany(b => b.GolfTeeInformations).HasForeignKey(c => c.CourseId); // FK_GolfTeeInformation_GolfCourse
         }
     }
+
+    // GolfTeeHoleDistanceConfiguration
+    internal class GolfTeeHoleDistanceConfiguration : EntityTypeConfiguration<GolfTeeHoleDistance>
+    {
+        public GolfTeeHoleDistanceConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfTeeHoleDistances");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfTeeId).HasColumnName("GolfTeeId").IsRequired();
+            Property(x => x.HoleNo).HasColumnName("HoleNo").IsRequired();
+            Property(x => x.Distance).HasColumnName("Distance").IsRequired();
+
+            HasRequired(a => a.Tee).WithMany(b => b.HoleDistances).HasForeignKey(c => c.GolfTeeId); // FK_GolfCourseMensPar_GolfCourse
+        }
+    }
+
+    // GolfTeeMenSlopeRatingConfiguration
+    internal class GolfTeeMenSlopeRatingConfiguration : EntityTypeConfiguration<GolfTeeMenSlopeRating>
+    {
+        public GolfTeeMenSlopeRatingConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfTeeMenSlopeRating");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfTeeId).HasColumnName("GolfTeeId").IsRequired();
+            Property(x => x.Rating).HasColumnName("Rating").IsRequired();
+            Property(x => x.Slope).HasColumnName("Slope").IsRequired();
+            Property(x => x.NineHoleIndex).HasColumnName("NineHoleIndex").IsRequired();
+
+            HasRequired(a => a.Tee).WithMany(b => b.MenSlopeRatings).HasForeignKey(c => c.GolfTeeId); // FK_GolfCourseMensPar_GolfCourse
+        }
+    }
+
+    // GolfTeeWomenSlopeRatingConfiguration
+    internal class GolfTeeWomenSlopeRatingConfiguration : EntityTypeConfiguration<GolfTeeWomenSlopeRating>
+    {
+        public GolfTeeWomenSlopeRatingConfiguration(string schema = "dbo")
+        {
+            ToTable(schema + ".GolfTeeWomenSlopeRating");
+            HasKey(x => x.Id);
+
+            Property(x => x.Id).HasColumnName("Id").IsRequired().HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+            Property(x => x.GolfTeeId).HasColumnName("GolfTeeId").IsRequired();
+            Property(x => x.Rating).HasColumnName("Rating").IsRequired();
+            Property(x => x.Slope).HasColumnName("Slope").IsRequired();
+            Property(x => x.NineHoleIndex).HasColumnName("NineHoleIndex").IsRequired();
+
+            HasRequired(a => a.Tee).WithMany(b => b.WomenSlopeRatings).HasForeignKey(c => c.GolfTeeId); // FK_GolfCourseWomensPar_GolfCourse
+        }
+    }
+
 #endif
 
     // hof

@@ -1,5 +1,6 @@
 ﻿using ModelObjects;
 using SportsManager.Controllers;
+using SportsManager.Golf.ViewModels;
 using SportsManager.Models;
 using System;
 using System.Collections.Generic;
@@ -269,5 +270,34 @@ namespace SportsManager.Golf
 
             return lowestScoresUsed;
         }
+        static public IQueryable<GolfCourse> GetLeagueCourses(this IDb db, long accountId)
+        {
+            return (from gcc in db.Db.GolfLeagueCourses
+                    join gc in db.Db.GolfCourses on gcc.CourseId equals gc.Id
+                    into j1
+                    from gcc_gc in j1
+                    where gcc.AccountId == accountId
+                    select gcc_gc);
+        }
+
+        static public void AddTees(this IDb db, GolfCourseViewModel gcvm)
+        {
+            IEnumerable<GolfTeeInformation> teeInfos = GetTeesForCourse(db, gcvm.CourseId);
+            foreach (GolfTeeInformation teeInfo in teeInfos)
+            {
+                gcvm.Tees.Add(GolfTeeViewModel.GetCourseTeeViewModel(teeInfo));
+            }
+        }
+
+        static private IEnumerable<GolfTeeInformation> GetTeesForCourse(IDb db, long courseId)
+        {
+            return (from ti in db.Db.GolfTeeInformations
+                    where ti.CourseId == courseId
+                    orderby ti.Priority ascending
+                    select ti);
+        }
+
+
+
     }
 }

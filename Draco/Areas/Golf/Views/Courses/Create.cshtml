@@ -4,12 +4,6 @@
     ViewBag.Title = ViewData["Title"];
 }
 
-@section menu {
-}
-
-@section head {
-}
-
 
 <h1>@ViewBag.Title</h1>
 
@@ -18,6 +12,7 @@
 }
 
 @using (Html.BeginForm()) {
+    @Html.AntiForgeryToken()
 
      <div>
         <fieldset>
@@ -28,7 +23,6 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.Name)
-                @Html.ValidationMessageFor(c => c.Name)
             </div>
 
             <div class="editor-label">
@@ -42,32 +36,29 @@
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.MensPar)
-                @Html.ValidationMessageFor(c => c.MensPar)
             </div>
             <div class="editor-label">
                 @Html.LabelFor(c => c.MensHandicap)                
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.MensHandicap)
-                @Html.ValidationMessageFor(c => c.MensHandicap)
             </div>
             <div class="editor-label">
                 @Html.LabelFor(c => c.WomensPar)                
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.WomensPar)
-                @Html.ValidationMessageFor(c => c.WomensPar)
             </div>
             <div class="editor-label">
                 @Html.LabelFor(c => c.WomensHandicap)                
             </div>
             <div class="editor-field">
                 @Html.EditorFor(c => c.WomensHandicap)
-                @Html.ValidationMessageFor(c => c.WomensHandicap)
             </div>
 
             
             <p>
+                @Html.ValidationSummary()
                 <input type="submit" value="Save" />
                 @Html.ActionLink("Cancel", "Index", "Courses", new { accountId = ViewBag.AccountId }, null)
             </p>

@@ -52,7 +52,7 @@
                     </button>
                     @if (!String.IsNullOrEmpty((String)ViewData["AccountName"]))
                     {
-                        @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = "Baseball", accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
+                        @Html.ActionLink((String)ViewData["AccountName"], "Home", "League", new { area = ViewData["AccountType"], accountId = ViewData["AccountId"] }, new { @class = "navbar-brand" });
                     }
                 </div>
                 <div class="navbar-menu navbar-collapse collapse">

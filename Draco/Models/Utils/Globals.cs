@@ -135,6 +135,7 @@ static public class Globals
     {
         viewData["AccountLogoUrl"] = account.LargeLogoURL;
         viewData["AccountName"] = account.Name;
+        viewData["AccountType"] = account.AccountType.Name;
         viewData["AccountId"] = account.Id;
         viewData["AccountUrl"] = account.AccountsURL.FirstOrDefault()?.URL ?? String.Empty;
 
