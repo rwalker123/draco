@@ -1,20 +1,24 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Web.Mvc;
-using ModelObjects;
-using SportsManager.Golf.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Controllers;
 using SportsManager.Models;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace SportsManager.Golf.Controllers
 {
     public class TeamsController : DBController
     {
+        public TeamsController(DB db) : base(db)
+        {
+
+        }
         //
         // GET: /Golf/Teams/Index
         public ActionResult Index(long accountId, long seasonId, long id)
         {
-            IEnumerable<League> leagues = DataAccess.Leagues.GetLeagues(seasonId);
+            var leagues = Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
             ViewData["Leagues"] = new SelectList(leagues, "Id", "Name", id);
 
             return View();

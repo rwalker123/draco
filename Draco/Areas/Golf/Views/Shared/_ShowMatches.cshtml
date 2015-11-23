@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SportsManager.Golf.ViewModels.GolfMatchViewModel>
+﻿@model IEnumerable<SportsManager.Golf.ViewModels.Controllers.GolfMatchViewModel>
 
 @{
     DateTime curDate = DateTime.MinValue;
@@ -25,7 +25,7 @@
     if (match.MatchDate != curDate)
     { 
         curDate = match.MatchDate;
-        firstIncompleteDate = DataAccess.Golf.GolfMatches.GetMostRecentUncompletedDate(match.FlightId);
+        firstIncompleteDate = match.GetMostRecentUncompletedDate(match.FlightId);
         
         <h5>@curDate.ToString("MMMM dd, yyyy")</h5>
     }

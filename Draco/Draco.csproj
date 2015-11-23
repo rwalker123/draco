@@ -522,6 +522,11 @@
     <Compile Include="Areas\Golf\Controllers\GolfController.cs" />
     <Compile Include="Areas\Golf\Controllers\IndividualController.cs" />
     <Compile Include="Areas\Golf\Controllers\LeagueController.cs" />
+    <Compile Include="Areas\Golf\Controllers\LeagueHandicapsController.cs" />
+    <Compile Include="Areas\Golf\Controllers\PlayerController.cs" />
+    <Compile Include="Areas\Golf\Controllers\RostersController.cs" />
+    <Compile Include="Areas\Golf\Controllers\ScheduleController.cs" />
+    <Compile Include="Areas\Golf\Controllers\TeamsController.cs" />
     <Compile Include="Areas\Golf\GolfAreaRegistration.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourse.cs" />
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfCourseForContact.cs" />
@@ -540,6 +545,7 @@
     <Compile Include="Areas\Golf\Models\ModelObjects\GolfTeeSlopeRating.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\CompletedMatchViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\DBExtensions.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\FlightsViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfCoursesViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfCourseViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\GolfLeagueSetupViewModel.cs" />
@@ -556,6 +562,11 @@
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerHoleSkinViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerScoreViewModel.cs" />
     <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PlayerViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\TeamViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueHandicapViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\LeagueScheduleViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PreviewMatchPlayerViewModel.cs" />
+    <Compile Include="Areas\Golf\Models\ViewModels\Controllers\PreviewMatchViewModel.cs" />
     <Compile Include="Controllers\BackupSiteAPIController.cs" />
     <Compile Include="Controllers\CleanupMessageBoardAPIController.cs" />
     <Compile Include="Controllers\DBApiController.cs" />

@@ -1,14 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using AutoMapper;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
-using SportsManager.Golf.ViewModels;
-using SportsManager.Model;
 using SportsManager.Models;
+using SportsManager.Controllers;
+using ModelObjects;
+using SportsManager.Golf.ViewModels.Controllers;
+using SportsManager.Golf.Models;
+using SportsManager.ViewModels.API;
 
 namespace SportsManager.Golf.Controllers
 {
 	public class RostersController : DBController
 	{
+        public RostersController(DB db) : base(db)
+        {
+
+        }
 		//
 		// GET: /Golf/Rosters/
 
@@ -17,7 +25,7 @@ namespace SportsManager.Golf.Controllers
 			ViewBag.flightId = flightId;
 			ViewBag.teamId = id;
 
-			IEnumerable<ModelObjects.League> leagues = DataAccess.Leagues.GetLeagues(seasonId);
+            var leagues = Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
 			ViewData["Leagues"] = new SelectList(leagues, "Id", "Name", flightId);
 
 			return View();
@@ -29,30 +37,21 @@ namespace SportsManager.Golf.Controllers
 			ViewBag.teamId = id;
 
 			// subs list "Roster" is just like normal roster except team id is 0.
-			IEnumerable<GolfRoster> players = DataAccess.Golf.GolfRosters.GetSubs(seasonId);
-
-			// convert to TeamViewModel
-			IEnumerable<PlayerViewModel> tvm = (from p in players
-												select new PlayerViewModel(p));
-
+			var players = this.GetSubs(seasonId);
+            var tvm = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PlayerViewModel>>(players);
 
 			return View(tvm);
 		}
 
 		[OutputCache(Duration = 0, VaryByParam = "None")]
-		public ActionResult GetAvailableSubs(long accountId, long id /* seasonId */)
+        [HttpGet]
+		public ActionResult AvailableSubs(long accountId, long id /* seasonId */)
 		{
-			var players = DataAccess.Golf.GolfRosters.GetSubs(id);
+			var players = this.GetSubs(id);
 
-			// convert to TeamViewModel
-			var jsonData = (from p in players
-							select new
-							{
-								value = p.Id,
-								name = p.Contact.LastName + ", " + p.Contact.FirstName
-							});
+            var vm = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<ContactNameViewModel>>(players);
 
-			return Json(jsonData, JsonRequestBehavior.AllowGet);
+			return Json(vm, JsonRequestBehavior.AllowGet);
 		}
 
 		[OutputCache(Duration = 0, VaryByParam = "None")]
@@ -60,11 +59,8 @@ namespace SportsManager.Golf.Controllers
 		{
 			ViewData["FlightId"] = flightId;
 
-			IEnumerable<GolfRoster> players = DataAccess.Golf.GolfRosters.GetRoster(id);
-
-			// convert to TeamViewModel
-			IEnumerable<PlayerViewModel> tvm = (from p in players
-												select new PlayerViewModel(p));
+            var players = Db.GolfRosters.Where(gr => gr.TeamSeasonId == id && gr.IsActive);
+            var tvm = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PlayerViewModel>>(players);
 
 			return PartialView("RostersGrid", tvm);
 		}
@@ -77,18 +73,13 @@ namespace SportsManager.Golf.Controllers
 			ViewBag.FlightId = flightId;
 			ViewBag.TeamId = id;
 
-			IEnumerable<Model.Contact> players;
+			IQueryable<Contact> players;
 			if (id == 0)
-				players = DataAccess.Golf.GolfRosters.GetAvailableSubs(accountId, seasonId);
+				players = this.GetAvailableSubs(accountId, seasonId);
 			else
-				players = DataAccess.Golf.GolfRosters.GetAvailableGolfers(accountId, flightId);
+				players = this.GetAvailableGolfers(accountId, flightId);
 
-			var playerData = (from p in players
-							  select new
-							  {
-								  Id = p.Id,
-								  Name = p.LastName + ", " + p.FirstName
-							  });
+            var playerData = Mapper.Map<IQueryable<Contact>, IEnumerable<ContactNameViewModel>>(players);
 
 			if (!playerData.Any())
 			{
@@ -100,7 +91,7 @@ namespace SportsManager.Golf.Controllers
 			}
 
 			ViewData["Players"] = new SelectList(playerData, "Id", "Name");
-			ViewData["TeamName"] = DataAccess.Teams.GetTeamName(id);
+            ViewData["TeamName"] = Db.TeamsSeasons.Find(id)?.Name;
 
 			return View();
 		}
@@ -116,7 +107,7 @@ namespace SportsManager.Golf.Controllers
 			long contactId = 0;
 			if (long.TryParse(collection["players"], out contactId))
 			{
-				bool success = DataAccess.Golf.GolfRosters.SignPlayer(seasonId, id, contactId);
+				bool success = SignPlayer(seasonId, id, contactId);
 				if (success)
 				{
 					// team id of 0 means a sub.
@@ -128,21 +119,16 @@ namespace SportsManager.Golf.Controllers
 			}
 
 			// id == 0, get available subs.
-			IEnumerable<Model.Contact> players;
+			IQueryable<Contact> players;
 			if (id == 0)
-				players = DataAccess.Golf.GolfRosters.GetAvailableSubs(accountId, seasonId);
+				players = this.GetAvailableSubs(accountId, seasonId);
 			else
-				players = DataAccess.Golf.GolfRosters.GetAvailableGolfers(accountId, flightId);
+				players = this.GetAvailableGolfers(accountId, flightId);
 
-			var playerData = (from p in players
-							  select new
-							  {
-								  Id = p.Id,
-								  Name = p.LastName + ", " + p.FirstName
-							  });
+            var playerData = Mapper.Map<IQueryable<Contact>, IEnumerable<ContactNameViewModel>>(players);
 
 			ViewData["Players"] = new SelectList(playerData, "Id", "Name");
-			ViewData["TeamName"] = DataAccess.Teams.GetTeamName(id);
+            ViewData["TeamName"] = Db.TeamsSeasons.Find(id)?.Name;
 
 			return View();
 		}
@@ -156,25 +142,23 @@ namespace SportsManager.Golf.Controllers
 
 			// id should be leagueSeasonId
 			ViewData["Title"] = "Create Player";
-			return View(new PlayerViewModel(new GolfRoster() { TeamSeasonId = id }));
+            return View(new PlayerViewModel(this.Db, id));
 		}
 
 		//
 		// POST: /Golf/Teams/{lid}/Create
 		[HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Create(long accountId, long seasonId, long flightId, long id, FormCollection collection)
+		public ActionResult Create(long accountId, long seasonId, long flightId, long id, PlayerViewModel vm)
 		{
 			ViewBag.FlightId = flightId;
 			ViewBag.TeamId = id;
 
-			PlayerViewModel vm = new PlayerViewModel(new GolfRoster() { TeamSeasonId = id });
-
 			if (TryUpdateModel(vm))
 			{
-				SportsManager.Model.GolfRoster newRosterPlayer = new GolfRoster()
+				var newRosterPlayer = new GolfRoster()
 				{
-					Contact = new Model.Contact()
+					Contact = new Contact()
 					{
 						CreatorAccountId = accountId,
 						LastName = vm.LastName,
@@ -189,15 +173,12 @@ namespace SportsManager.Golf.Controllers
 					SubSeasonId = (id == 0) ? seasonId : 0,
 				};
 
-				long rosterId = DataAccess.Golf.GolfRosters.AddRosterPlayer(newRosterPlayer);
-				if (rosterId > 0)
-				{
-					// team id of 0 means a sub.
-					if (id == 0)
-						return RedirectToAction("SubsIndex", new { accountId = accountId, seasonId = seasonId, id = id });
-					else
-						return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, flightId = flightId, id = id });
-				}
+                Db.GolfRosters.Add(newRosterPlayer);
+				// team id of 0 means a sub.
+				if (id == 0)
+					return RedirectToAction("SubsIndex", new { accountId = accountId, seasonId = seasonId, id = id });
+				else
+					return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, flightId = flightId, id = id });
 			}
 
 			ViewData["Title"] = "Create Player";
@@ -210,8 +191,9 @@ namespace SportsManager.Golf.Controllers
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
 		public ActionResult Edit(long accountId, long seasonId, long flightId, long teamId, long id)
 		{
-			Model.GolfRoster playerRoster = DataAccess.Golf.GolfRosters.GetRosterPlayer(id);
-			PlayerViewModel tvm = new PlayerViewModel(playerRoster);
+            var playerRoster = Db.GolfRosters.Find(id);
+
+            PlayerViewModel tvm = Mapper.Map<GolfRoster, PlayerViewModel>(playerRoster);
 			ViewData["Title"] = "Edit Player";
 
 			return View("Create", tvm);
@@ -222,31 +204,29 @@ namespace SportsManager.Golf.Controllers
 
 		[HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Edit(long accountId, long seasonId, long flightId, long teamId, long id, FormCollection collection)
+		public ActionResult Edit(long accountId, long seasonId, long flightId, long teamId, long id, PlayerViewModel vm)
 		{
-			Model.GolfRoster playerRoster = DataAccess.Golf.GolfRosters.GetRosterPlayer(id);
-			PlayerViewModel vm = new PlayerViewModel(playerRoster);
-
 			if (TryUpdateModel(vm))
 			{
-				// update from the viewmodel.
-				playerRoster.Contact.FirstName = vm.FirstName;
-				playerRoster.Contact.LastName = vm.LastName;
-				playerRoster.Contact.MiddleName = vm.MiddleName;
-				playerRoster.Contact.IsFemale = vm.IsFemale;
-				playerRoster.InitialDifferential = vm.InitialDifferential;
-				playerRoster.IsSub = (teamId == 0);
-				playerRoster.SubSeasonId = (teamId == 0) ? seasonId : 0;
+                var playerRoster = Db.GolfRosters.Find(id);
+                if (playerRoster != null)
+                {
+                    // update from the viewmodel.
+                    playerRoster.Contact.FirstName = vm.FirstName;
+                    playerRoster.Contact.LastName = vm.LastName;
+                    playerRoster.Contact.MiddleName = vm.MiddleName;
+                    playerRoster.Contact.IsFemale = vm.IsFemale;
+                    playerRoster.InitialDifferential = vm.InitialDifferential;
+                    playerRoster.IsSub = (teamId == 0);
+                    playerRoster.SubSeasonId = (teamId == 0) ? seasonId : 0;
 
-				bool modifySuccess = DataAccess.Golf.GolfRosters.ModifyRosterPlayer(playerRoster);
-				if (modifySuccess)
-				{
-					// team id of 0 means a sub.
-					if (teamId == 0)
-						return RedirectToAction("SubsIndex", new { accountId = accountId, seasonId = seasonId, id = teamId });
-					else
-						return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, flightId = flightId, id = id });
-				}
+                    Db.SaveChanges();
+                    // team id of 0 means a sub.
+                    if (teamId == 0)
+                        return RedirectToAction("SubsIndex", new { accountId = accountId, seasonId = seasonId, id = teamId });
+                    else
+                        return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, flightId = flightId, id = id });
+                }
 			}
 
 			ViewData["Title"] = "Edit Team";
@@ -274,7 +254,7 @@ namespace SportsManager.Golf.Controllers
 
 		private ActionResult DeleteOrRemovePlayer(long accountId, long seasonId, long flightId, long teamId, long id, bool deleteContact, bool asSub = false)
 		{
-			bool success = DataAccess.Golf.GolfRosters.RemoveRosterPlayer(id, deleteContact, asSub);
+			bool success = RemoveRosterPlayer(id, deleteContact, asSub);
 
 			if (Request.IsAjaxRequest())
 			{
@@ -288,7 +268,156 @@ namespace SportsManager.Golf.Controllers
 				else
 					return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, flightId = flightId, id = id });
 			}
-
 		}
-	}
+
+        private IQueryable<Contact> GetAvailableGolfers(long accountId, long flightId)
+        {
+            var playersOnTeam = (from ls in Db.LeagueSeasons
+                                 join ts in Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                 join gr in Db.GolfRosters on ts.Id equals gr.TeamSeasonId
+                                 where ls.Id == flightId && gr.IsActive == true
+                                 select gr.ContactId).Distinct();
+
+            // if you aren't on a team, you can be signed.
+            return (from c in Db.Contacts
+                    where c.CreatorAccountId == accountId && !playersOnTeam.Contains(c.Id)
+                    select c);
+        }
+
+        private bool SignPlayer(long seasonId, long teamSeasonId, long contactId)
+        {
+            // trying to sign a sub.
+            if (teamSeasonId == 0)
+            {
+                GolfRoster subPlayer = (from gr in Db.GolfRosters
+                                        where gr.IsSub == true && gr.SubSeasonId == seasonId && gr.ContactId == contactId
+                                        select gr).SingleOrDefault();
+                if (subPlayer != null)
+                {
+                    subPlayer.IsActive = true;
+                    Db.SaveChanges();
+                }
+                else
+                {
+                    subPlayer = new GolfRoster()
+                    {
+                        ContactId = (int)contactId,
+                        TeamSeasonId = teamSeasonId,
+                        IsActive = true,
+                        IsSub = true,
+                        SubSeasonId = seasonId
+                    };
+
+                    Db.GolfRosters.Add(subPlayer);
+                    Db.SaveChanges();
+                }
+            }
+            else
+            {
+                // is player already on team but inactive?
+                GolfRoster rosterPlayer = (from gr in Db.GolfRosters
+                                           where gr.TeamSeasonId == teamSeasonId && gr.ContactId == contactId
+                                           select gr).SingleOrDefault();
+                if (rosterPlayer != null)
+                {
+                    rosterPlayer.IsActive = true;
+                    Db.SaveChanges();
+                }
+                else
+                {
+                    // see if player is listed as a sub. 
+                    rosterPlayer = (from gr in Db.GolfRosters
+                                    where gr.IsSub == true && gr.SubSeasonId == seasonId && gr.ContactId == contactId
+                                    select gr).SingleOrDefault();
+
+                    if (rosterPlayer != null)
+                    {
+                        rosterPlayer.IsActive = true;
+                        rosterPlayer.TeamSeasonId = teamSeasonId;
+                        rosterPlayer.IsSub = false;
+                        rosterPlayer.SubSeasonId = 0;
+
+                        Db.SaveChanges();
+                    }
+                    else
+                    {
+                        rosterPlayer = new GolfRoster()
+                        {
+                            ContactId = (int)contactId,
+                            TeamSeasonId = teamSeasonId,
+                            IsActive = true,
+                            IsSub = false,
+                            SubSeasonId = 0
+                        };
+
+                        Db.GolfRosters.Add(rosterPlayer);
+                        Db.SaveChanges();
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private bool RemoveRosterPlayer(long rosterPlayerId, bool deleteContact, bool asSub)
+        {
+            GolfRoster rosterPlayer = (from gr in Db.GolfRosters
+                                       where gr.Id == rosterPlayerId
+                                       select gr).SingleOrDefault();
+
+            if (rosterPlayer == null)
+                return false;
+
+            // put into sub list, don't need to delete anything.
+            if (asSub)
+            {
+                rosterPlayer.TeamSeasonId = 0;
+                rosterPlayer.IsActive = true;
+                Db.SaveChanges();
+
+                return true;
+            }
+
+            long contactId = rosterPlayer.ContactId;
+
+            // can only delete if player doesn't have any scores for the team.
+            bool hasAnyScoresForTeam = (from gms in Db.GolfMatchScores
+                                        where gms.PlayerId == rosterPlayerId && rosterPlayer.TeamSeasonId == gms.TeamId
+                                        select gms).Any();
+
+            if (hasAnyScoresForTeam)
+                rosterPlayer.IsActive = false;
+            else
+                Db.GolfRosters.Remove(rosterPlayer);
+
+            // submit this much, check to see if we can delete contact next.
+            Db.SaveChanges();
+
+            // check to see if we can delete the contact, we can if they have no scores and are not on any team.
+            if (!hasAnyScoresForTeam && deleteContact)
+            {
+                bool onAnyTeams = (from gr in Db.GolfRosters
+                                   where gr.ContactId == contactId
+                                   select gr).Any();
+
+                bool hasAnyScores = (from gs in Db.GolfScores
+                                     where gs.ContactId == contactId
+                                     select gs).Any();
+
+                if (!onAnyTeams && !hasAnyScores)
+                {
+                    Contact dbContact = (from c in Db.Contacts
+                                         where c.Id == contactId
+                                         select c).Single();
+
+                    Db.Contacts.Remove(dbContact);
+
+                    Db.SaveChanges();
+                }
+            }
+
+            return true;
+        }
+
+    }
 }

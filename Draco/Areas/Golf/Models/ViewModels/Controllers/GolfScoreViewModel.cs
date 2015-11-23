@@ -261,41 +261,5 @@ namespace SportsManager.Golf.ViewModels.Controllers
 		{
 			m_holeScores[holeNo] = holeScore;
 		}
-
-		internal static GolfScore GolfScoreFromViewModel(DB db, GolfScoreViewModel x)
-		{
-			GolfRoster rp = db.GolfRosters.Find(x.PlayerId);
-			return new GolfScore()
-			{
-				CourseId = x.CourseId,
-				ContactId = rp.ContactId,
-				TeeId = x.TeeId,
-				DatePlayed = x.DatePlayed,
-				HolesPlayed = x.HolesPlayed,
-				TotalScore = x.TotalScore,
-				TotalsOnly = false,
-				HoleScore1 = x.HoleScore(1),
-				HoleScore2 = x.HoleScore(2),
-				HoleScore3 = x.HoleScore(3),
-				HoleScore4 = x.HoleScore(4),
-				HoleScore5 = x.HoleScore(5),
-				HoleScore6 = x.HoleScore(6),
-				HoleScore7 = x.HoleScore(7),
-				HoleScore8 = x.HoleScore(8),
-				HoleScore9 = x.HoleScore(9),
-				HoleScore10 = x.HoleScore(10),
-				HoleScore11 = x.HoleScore(11),
-				HoleScore12 = x.HoleScore(12),
-				HoleScore13 = x.HoleScore(13),
-				HoleScore14 = x.HoleScore(14),
-				HoleScore15 = x.HoleScore(15),
-				HoleScore16 = x.HoleScore(16),
-				HoleScore17 = x.HoleScore(17),
-				HoleScore18 = x.HoleScore(18),
-			};
-
-		}
-
-
 	}
 }

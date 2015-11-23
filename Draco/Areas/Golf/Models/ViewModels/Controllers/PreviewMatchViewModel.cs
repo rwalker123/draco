@@ -1,18 +1,25 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using SportsManager.Model;
+using SportsManager.Golf.Models;
+using SportsManager.ViewModels;
+using SportsManager.Controllers;
 
 namespace SportsManager.Golf.ViewModels.Controllers
 {
-    public class PreviewMatchViewModel
+    public class PreviewMatchViewModel : AccountViewModel
     {
-        public PreviewMatchViewModel(long matchId)
+        public PreviewMatchViewModel(DBController db, long accountId) : base(db, accountId)
         {
-            InitializeMatch(DataAccess.Golf.GolfMatches.GetMatch(matchId));
+
+        }
+        public PreviewMatchViewModel(DBController db, long accountId, long matchId) : base(db, accountId)
+        {
+            InitializeMatch(db.Db.GolfMatches.Find(matchId));
         }
 
-        public PreviewMatchViewModel(GolfMatch match)
+        public PreviewMatchViewModel(DBController db, long accountId, GolfMatch match) : base(db, accountId)
         {
             InitializeMatch(match);
         }
@@ -25,18 +32,17 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
             if (GolfMatch != null)
             {
-                GolfCourse course = DataAccess.Golf.GolfCourses.GetCourse(GolfMatch.CourseId.GetValueOrDefault(0));
+                GolfCourse course = Controller.Db.GolfCourses.Find(GolfMatch.CourseId.GetValueOrDefault(0));
                 if (course != null)
                 {
-                    Course = GolfCourseViewModel.GetCourseViewModel(0, course);
+                    Course = Mapper.Map<GolfCourse, GolfCourseViewModel>(course);
                     Course.AddTees();
+                    CoursePlayed = course.Name;
+                    CourseId = course.Id;
                 }
 
-                CoursePlayed = DataAccess.Golf.GolfCourses.GetCourseName(GolfMatch.CourseId.GetValueOrDefault(0));
-                CourseId = GolfMatch.CourseId.GetValueOrDefault(0);
-
-                Team1Name = DataAccess.Teams.GetTeamName(GolfMatch.Team1);
-                Team2Name = DataAccess.Teams.GetTeamName(GolfMatch.Team2);
+                Team1Name = GolfMatch.TeamsSeason_Team1?.Name;
+                Team2Name = GolfMatch.TeamsSeason_Team2?.Name;
 
                 Team1Id = GolfMatch.Team1;
                 Team2Id = GolfMatch.Team2;
@@ -49,19 +55,17 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
                 long accountId = GolfMatch.LeagueSeason.League.AccountId;
 
-                IEnumerable<GolfRoster> team1Players = DataAccess.Golf.GolfRosters.GetRoster(Team1Id);
-                Team1Players = (from t1 in team1Players
-                                select new PreviewMatchPlayerViewModel(t1, GolfMatch, DataAccess.Golf.GolfLeagues.GetDefaultCourseTee(accountId, CourseId, t1.Contact.IsFemale.GetValueOrDefault()), 9));
+                var team1Players = Controller.Db.GolfRosters.Where(gr => gr.TeamSeasonId == Team1Id);
+                Team1Players = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PreviewMatchPlayerViewModel>>(team1Players);
 
-                IEnumerable<GolfRoster> team2Players = DataAccess.Golf.GolfRosters.GetRoster(Team2Id);
-                Team2Players = (from t2 in team2Players
-                                select new PreviewMatchPlayerViewModel(t2, GolfMatch, DataAccess.Golf.GolfLeagues.GetDefaultCourseTee(accountId, CourseId, t2.Contact.IsFemale.GetValueOrDefault()), 9));
+                var team2Players = Controller.Db.GolfRosters.Where(gr => gr.TeamSeasonId == Team2Id);
+                Team2Players = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PreviewMatchPlayerViewModel>>(team2Players);
             }
         }
 
         private GolfTeeInformation GetDefaultTeeInfo(long accountId, long courseId, bool isFemale)
         {
-            return DataAccess.Golf.GolfLeagues.GetDefaultCourseTee(accountId, courseId, isFemale);
+            return Controller.GetDefaultCourseTee(accountId, courseId, isFemale);
         }
 
         private GolfMatch GolfMatch { get; set; }
@@ -103,11 +107,8 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
         public IEnumerable<PlayerViewModel> GetAvailableSubs(long seasonId)
         {
-            IEnumerable<GolfRoster> subs = DataAccess.Golf.GolfRosters.GetSubs(seasonId);
-
-            // convert to TeamViewModel
-            return (from s in subs
-                    select new PlayerViewModel(s));
+            var subs = Controller.GetSubs(seasonId);
+            return Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PlayerViewModel>>(subs);
         }
     }
 }

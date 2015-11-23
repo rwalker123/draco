@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.Golf.Models;
 using SportsManager.Golf.ViewModels.Controllers;
@@ -126,6 +127,32 @@ namespace SportsManager.Golf
             return (from gr in db.Db.GolfRosters
                     where gr.IsSub && gr.SubSeasonId == seasonId && gr.IsActive == true
                     select gr);
+        }
+
+        public static IQueryable<Contact> GetAvailableSubs(this IDb db, long accountId, long seasonId)
+        {
+            var playersOnTeam = (from ls in db.Db.LeagueSeasons
+                                 join ts in db.Db.TeamsSeasons on ls.Id equals ts.LeagueSeasonId
+                                 join gr in db.Db.GolfRosters on ts.Id equals gr.TeamSeasonId
+                                 where gr.IsActive == true && ls.SeasonId == seasonId
+                                 select gr.ContactId).Distinct();
+
+            var currentSubs = (from gr in db.Db.GolfRosters
+                               where gr.IsSub && gr.SubSeasonId == seasonId && gr.IsActive == true
+                               select gr.ContactId);
+
+            // if you aren't on a team, you can be signed.
+            return (from c in db.Db.Contacts
+                    where c.CreatorAccountId == accountId && !playersOnTeam.Contains(c.Id) && !currentSubs.Contains(c.Id)
+                    select c);
+        }
+
+
+        public static GolfRoster GetRosterPlayer(this IDb db, long rosterPlayerId)
+        {
+            return (from gr in db.Db.GolfRosters
+                    where gr.Id == rosterPlayerId
+                    select gr).SingleOrDefault();
         }
 
         static public IQueryable<GolfMatch> GetCompletedMatches(this IDb db, long flightId)
@@ -298,7 +325,34 @@ namespace SportsManager.Golf
                     select ti);
         }
 
+        /// <summary>
+        /// Each golf score keeps a record of the players handicap index when the round started, this
+        /// is to allow ESC calculations. This is a problem because the start index is based on the
+        /// previous scores, so if a previous score changes, all subsequent start indexes are invalid.
+        /// This method will recalculate the start index of scores entered after the given score.
+        /// </summary>
+        /// <param name="s"></param>
+        public static void UpdateIndexForSubsequentScores(this IDb db, GolfScore s)
+        {
+            double? startIndex = db.CalculateHandicapIndexOnDate(s.ContactId, s.DatePlayed);
+            double? startIndex9 = db.CalculateHandicapIndexOnDate(s.ContactId, s.DatePlayed, for9Holes: true);
 
+            // get list of next matches ordered by date.
+            var futureMatches = (from gs in db.Db.GolfScores
+                                 where gs.ContactId == s.ContactId && gs.DatePlayed > s.DatePlayed
+                                 orderby gs.DatePlayed ascending
+                                 select gs);
+
+            foreach (GolfScore golfScore in futureMatches)
+            {
+                golfScore.StartIndex = startIndex;
+                golfScore.StartIndex9 = startIndex9;
+                startIndex = db.CalculateHandicapIndexOnDate(s.ContactId, golfScore.DatePlayed);
+                startIndex9 = db.CalculateHandicapIndexOnDate(s.ContactId, golfScore.DatePlayed, for9Holes: true);
+            }
+
+            db.Db.SaveChanges();
+        }
 
     }
 }

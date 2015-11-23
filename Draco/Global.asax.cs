@@ -81,7 +81,7 @@ namespace SportsManager
                 .ForMember(vm => vm.TeamName, opt => opt.MapFrom(model => model.TeamsSeason.Name))
                 .ForMember(vm => vm.LeagueName, opt => opt.MapFrom(model => model.TeamsSeason.LeagueSeason.League.Name));
 
-            Mapper.CreateMap<TeamSeason, TeamViewModel>()
+            Mapper.CreateMap<TeamSeason, ViewModels.API.TeamViewModel>()
                 .ForMember(vm => vm.AccountId, opt => opt.MapFrom(model => model.Team.AccountId))
                 .ForMember(vm => vm.TeamLogoURL, opt => opt.MapFrom(model => model.Team.TeamLogoURL))
                 .ForMember(vm => vm.LeagueName, opt => opt.MapFrom(model => model.LeagueSeason.League.Name));
@@ -339,6 +339,20 @@ namespace SportsManager
                 .ForMember(vm => vm.SeasonId, opt => opt.MapFrom(model => model.Season.Id))
                 .ForMember(vm => vm.FlightId, opt => opt.MapFrom(model => model.Id))
                 .ForMember(vm => vm.Name, opt => opt.MapFrom(model => model.League.Name));
+
+            Mapper.CreateMap<GolfMatch, GolfMatchViewModel>()
+                .ForMember(vm => vm.MatchId, opt => opt.MapFrom(model => model.Id))
+                .ForMember(vm => vm.Team1Name, opt => opt.MapFrom(model => model.TeamsSeason_Team1.Name))
+                .ForMember(vm => vm.Team2Name, opt => opt.MapFrom(model => model.TeamsSeason_Team2.Name))
+                .ForMember(vm => vm.CourseName, opt => opt.MapFrom(model => model.GolfCourse.Name))
+                .ForMember(vm => vm.FlightId, opt => opt.MapFrom(model => model.LeagueId));
+
+            Mapper.CreateMap<GolfRoster, Golf.ViewModels.Controllers.PlayerViewModel>();
+
+            Mapper.CreateMap<GolfRoster, PreviewMatchPlayerViewModel>();
+            ///Team1Players = (from t1 in team1Players
+            ///                select new PreviewMatchPlayerViewModel(t1, GolfMatch, DataAccess.Golf.GolfLeagues.GetDefaultCourseTee(accountId, CourseId, t1.Contact.IsFemale.GetValueOrDefault()), 9));
+
 
             Mapper.AssertConfigurationIsValid();
         }

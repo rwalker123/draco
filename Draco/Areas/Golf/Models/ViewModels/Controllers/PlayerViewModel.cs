@@ -30,6 +30,15 @@ namespace SportsManager.Golf.ViewModels.Controllers
                 MiddleName = rosterPlayer.Contact.MiddleName;
             }
         }
+        public PlayerViewModel(DB db, long teamSeasonId)
+        {
+            DB = db;
+
+            RosterPlayer = new GolfRoster()
+            {
+                TeamSeasonId = teamSeasonId
+            };
+        }
 
         public class PlayerScoreViewModel
         {

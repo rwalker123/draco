@@ -1,10 +1,18 @@
-﻿using System.Web.Mvc;
-using SportsManager.Golf.ViewModels;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using SportsManager.Golf.ViewModels.Controllers;
+using System.Web.Mvc;
 
 namespace SportsManager.Golf.Controllers
 {
     public class PlayerController : DBController
     {
+        public PlayerController(DB db) : base(db)
+        {
+
+        }
         //
         // GET: /Golf/Player/
 
@@ -12,7 +20,8 @@ namespace SportsManager.Golf.Controllers
         {
             ViewData["SeasonId"] = seasonId;
 
-            PlayerViewModel vm = new PlayerViewModel(DataAccess.Golf.GolfRosters.GetRosterPlayer(id));
+            var rosterPlayer = this.GetRosterPlayer(id);
+            var vm = Mapper.Map<GolfRoster, PlayerViewModel>(rosterPlayer);
 
             vm.GetPlayerScoresForHandicap();
 
@@ -23,7 +32,9 @@ namespace SportsManager.Golf.Controllers
         {
             ViewData["SeasonId"] = seasonId;
 
-            PlayerViewModel vm = new PlayerViewModel(DataAccess.Golf.GolfRosters.GetRosterPlayer(id));
+            var rosterPlayer = this.GetRosterPlayer(id);
+            var vm = Mapper.Map<GolfRoster, PlayerViewModel>(rosterPlayer);
+
             vm.GetAllPlayerScores();
 
             return View(vm);

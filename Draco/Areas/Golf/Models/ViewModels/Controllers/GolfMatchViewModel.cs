@@ -1,34 +1,17 @@
-﻿using SportsManager.Golf.Models;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Web.Mvc;
 
 namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class GolfMatchViewModel 
     {
-        public GolfMatchViewModel(long id)
+        public GolfMatchViewModel()
         {
-            MatchId = id;
-
-            MatchTime = DateTime.Now;
-            MatchDate = DateTime.Now;
-        }
-
-        public GolfMatchViewModel(GolfMatch gm)
-            : this(gm.Id)
-        {
-            CourseId = gm.CourseId.GetValueOrDefault(0);
-            MatchTime = gm.MatchTime;
-            MatchDate = gm.MatchDate;
-            MatchType = gm.MatchType;
-            MatchStatus = gm.MatchStatus;
-            Team1 = gm.Team1;
-            Team2 = gm.Team2;
-            Team1Name = gm.TeamsSeason_Team1.Name;
-            Team2Name = gm.TeamsSeason_Team2.Name;
-            CourseName = gm.GolfCourse?.Name;
-            FlightId = gm.LeagueId;
         }
 
         [ScaffoldColumn(false)]
@@ -70,22 +53,25 @@ namespace SportsManager.Golf.ViewModels.Controllers
         public bool IsComplete { get { return MatchStatus == 1; } }
 
         [ScaffoldColumn(false)]
-        public long FlightId { get; private set; }
+        public long FlightId { get; set; }
 
-        internal static GolfMatch GolfMatchFromViewModel(GolfMatchViewModel vm)
+        private class TempDb : IDb
         {
-            return new GolfMatch()
+            public TempDb()
             {
-                Id = vm.MatchId,
-                CourseId = vm.CourseId,
-                MatchDate = vm.MatchDate,
-                MatchTime = vm.MatchTime,
-                MatchType = vm.MatchType,
-                Team1 = vm.Team1,
-                Team2 = vm.Team2,
-                MatchStatus = vm.MatchStatus,
-                LeagueId = vm.FlightId
-            };
+                Db = DependencyResolver.Current.GetService<DB>();
+            }
+
+            public DB Db
+            {
+                get;
+            }
+        }
+
+        public DateTime GetMostRecentUncompletedDate(long flightId)
+        {
+            var t = new TempDb();
+            return t.GetMostRecentUncompletedDate(flightId);   
         }
     }
 }

@@ -183,18 +183,13 @@ namespace SportsManager.Models.Helpers
             }
             else if (accountType == (long)Account.eAccountType.Golf)
             {
-                string coursesurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
-                                    new RouteValueDictionary(new { area = "golf", controller = "Courses", action = "Index", accountId = accountId })).VirtualPath;
-
                 string discussionsurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
                                     new RouteValueDictionary(new { area = "", controller = "Discussions", action = "Index", accountId = accountId })).VirtualPath;
 
                 var forumsMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(discussionsurl, "Discussions", "Community");
 
-                var coursesMenu = new SportsManager.Models.Helpers.MenuHelper.MenuItem(coursesurl, "Courses", "Courses");
                 return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
                 {
-                    coursesMenu,
                     forumsMenu
                 };
             }

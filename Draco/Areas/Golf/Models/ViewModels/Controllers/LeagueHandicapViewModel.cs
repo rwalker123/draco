@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using SportsManager.Model;
 using SportsManager.ViewModels;
-using System.Web.Mvc;
+using SportsManager.Golf.Models;
+using SportsManager.Controllers;
+using System.Linq;
 
 namespace SportsManager.Golf.ViewModels.Controllers
 {
@@ -12,13 +13,13 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
 		List<DateTime> m_allDates = new List<DateTime>();
 
-		public LeagueHandicapViewModel(Controller c, long accountId, long flightId)
+		public LeagueHandicapViewModel(DBController c, long accountId, long flightId)
             : base(c, accountId)
 		{
 			DateTime curDate = DateTime.MaxValue;
 
 			// get match scores ordered by Date.
-			IEnumerable<GolfMatchScore> matchScores = DataAccess.Golf.GolfMatches.GetCompletedMatchScores(flightId);
+			IEnumerable<GolfMatchScore> matchScores = GetCompletedMatchScores(flightId);
 
 			foreach (var score in matchScores)
 			{
@@ -33,7 +34,7 @@ namespace SportsManager.Golf.ViewModels.Controllers
 					m_players[score.GolfRoster] = new Dictionary<DateTime, GolfScoreViewModel>();
 				}
 
-				m_players[score.GolfRoster][curDate] = new GolfScoreViewModel(score.GolfScore, score.GolfRoster);
+				m_players[score.GolfRoster][curDate] = new GolfScoreViewModel(Controller, score.GolfScore, score.GolfRoster);
 			}
 		}
 
@@ -48,7 +49,7 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
 			foreach (var player in m_players.Keys)
 			{
-				players.Add(new PlayerViewModel(player));
+				players.Add(new PlayerViewModel(Controller.Db, player));
 			}
 
 			return players;
@@ -68,5 +69,17 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
 			return playerScoreList;
 		}
-	}
+
+        private IQueryable<GolfMatchScore> GetCompletedMatchScores(long flightId)
+        {
+            return (from gm in Controller.Db.GolfMatches
+                    join gms in Controller.Db.GolfMatchScores on gm.Id equals gms.MatchId
+                    join gs in Controller.Db.GolfScores on gms.ScoreId equals gs.Id
+                    where gm.LeagueId == flightId && gm.MatchStatus == 1
+                    orderby gm.MatchDate
+                    select gms);
+
+        }
+
+    }
 }

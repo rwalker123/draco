@@ -19,10 +19,7 @@ namespace SportsManager.Golf.Controllers
 		// GET: /Golf/Flights/{accountId}
 		public ActionResult Index(long accountId, long id)
 		{
-			var flight = Db.LeagueSeasons.Find(id);
-            var vm = Mapper.Map<LeagueSeason, FlightViewModel>(flight);
-
-			return View(vm);
+			return View(new FlightsViewModel(this, accountId, id));
 		}
 
 		//
@@ -31,6 +28,8 @@ namespace SportsManager.Golf.Controllers
 		public ActionResult Create(long accountId, long id)
 		{
 			ViewData["Title"] = "Create Flight";
+
+            Globals.SetupAccountViewData(accountId, this.ViewData);
 
             return View(new FlightViewModel()
             {
@@ -43,25 +42,48 @@ namespace SportsManager.Golf.Controllers
 		// POST: /Golf/Flights/Create/{accountId}/{id}
 		[HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
-		public ActionResult Create(long accountId, long id, FlightViewModel vm)
+		public async Task<ActionResult> Create(long accountId, long id, FlightViewModel vm)
 		{
 			if (ModelState.IsValid)
 			{
-                var account = Db.Accounts.Find(accountId);
-				//LeagueSeason newLeague = new LeagueSeason()
-    //            { 
-				//	AccountId = accountId,
-				//	Name = vm.Name
-				//};
+                var season = await Db.Seasons.FindAsync(id);
+                if (season != null)
+                {
+                    if (season.AccountId == accountId)
+                    {
+                        var leagueDef = (from ld in Db.Leagues
+                                         where ld.AccountId == accountId && ld.Name == vm.Name
+                                         select ld).SingleOrDefault();
+                        if (leagueDef == null)
+                        {
+                            leagueDef = new LeagueDefinition()
+                            {
+                                AccountId = accountId,
+                                Name = vm.Name
+                            };
 
-				//long leagueSeasonId = DataAccess.Leagues.AddLeague(newLeague, id);
-				//if (leagueSeasonId > 0)
-					return RedirectToAction("Index", new { accountId = accountId, id = id });
+                            Db.Leagues.Add(leagueDef);
+                        }
+
+                        LeagueSeason newLeague = new LeagueSeason()
+                        {
+                            League = leagueDef,
+                            Season = season
+                        };
+
+                        Db.LeagueSeasons.Add(newLeague);
+                        Db.SaveChanges();
+
+                        if (newLeague.Id > 0)
+                            return RedirectToAction("Index", new { accountId = accountId, id = id });
+                    }
+                }
 			}
 
 			ViewData["Title"] = "Create Flight";
 
-			return View(vm);
+            Globals.SetupAccountViewData(accountId, this.ViewData);
+            return View(vm);
 		}
 
         //
@@ -72,50 +94,59 @@ namespace SportsManager.Golf.Controllers
 		{
 			ViewData["Title"] = "Edit Flight";
 
-            //ModelObjects.League flight = DataAccess.Leagues.GetLeague(id);
-            //if (flight == null)
-            //	return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
+            var season = Db.Seasons.Find(seasonId);
+            if (season != null && season.AccountId == accountId)
+            {
+                var flight = Db.LeagueSeasons.Find(id);
+                if (flight != null)
+                {
+                    var vm = Mapper.Map<LeagueSeason, FlightViewModel>(flight);
+                    Globals.SetupAccountViewData(accountId, this.ViewData);
+                    return View("Create", vm);
+                }
+            }
 
-            //var flightViewModel = new FlightViewModel(accountId, seasonId, id)
-            //{
-            //	Name = flight.Name
-            //};
+            return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
+        }
 
-            var leagueSeason = Db.LeagueSeasons.Find(id);
-            var vm = Mapper.Map<LeagueSeason, FlightViewModel>(leagueSeason);
-			return View("Create", vm);
-		}
-
-		//
-		// POST: /Golf/Flights/Edit/{accountId}/{id}
-		[HttpPost]
+        //
+        // POST: /Golf/Flights/Edit/{accountId}/{id}
+        [HttpPost]
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
 		public ActionResult Edit(long accountId, long seasonId, long id, FlightViewModel vm)
 		{
-			if (ModelState.IsValid)
-			{
-				//ModelObjects.League league = new ModelObjects.League()
-				//{
-				//	Id = vm.FlightId,
-				//	Name = vm.Name,
-				//	AccountId = vm.AccountId
-				//};
+            if (ModelState.IsValid)
+            {
+                var ls = Db.LeagueSeasons.Find(id);
+                if (ls != null && ls.SeasonId == seasonId && ls.Season.AccountId == accountId)
+                {
+                    ls.League.Name = vm.Name;
+                    Db.SaveChanges();
 
-				//bool modifySuccess = DataAccess.Leagues.ModifyLeague(league);
-				//if (modifySuccess)
-					return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
-			}
+                    return RedirectToAction("Index", new { accountId = accountId, id = seasonId });
+                }
+            }
 
 			ViewData["Title"] = "Edit Flight";
+            Globals.SetupAccountViewData(accountId, this.ViewData);
 
-			return View("Create", vm);
+            return View("Create", vm);
 		}
 
 		[SportsManagerAuthorize(Roles = "AccountAdmin")]
 		public ActionResult Delete(long accountId, long seasonId, long id)
 		{
-            //League l = DataAccess.Leagues.GetLeague(id);
-            bool success = true; // await DataAccess.Leagues.RemoveLeague(l.Id);
+            bool success = false;
+            var ls = Db.LeagueSeasons.Find(id); 
+            if (ls != null && ls.SeasonId == seasonId && ls.Season.AccountId == accountId)
+            {
+
+                if (ls.League.LeagueSeasons.Count == 1)
+                    Db.Leagues.Remove(ls.League);
+
+                Db.LeagueSeasons.Remove(ls);
+                Db.SaveChanges();
+            }
 
 			if (Request.IsAjaxRequest())
 			{

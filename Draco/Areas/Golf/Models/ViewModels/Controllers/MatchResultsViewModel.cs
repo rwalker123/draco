@@ -308,7 +308,7 @@ namespace SportsManager.Golf.ViewModels.Controllers
         public int MatchType { get; private set; }
 
         public string Comment { get; private set; }
-        public int MatchStatus { get; private set; }
+        public int MatchStatus { get; set; }
 
         public string CoursePlayed { get; private set; }
         public long CourseId { get; private set; }

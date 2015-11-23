@@ -4,13 +4,6 @@
 	ViewBag.Title = ViewData["Title"];
 }
 
-@section menu {
-}
-
-@section head {
-}
-
-
 <h1>@ViewBag.Title</h1>
 
 @{
@@ -18,8 +11,11 @@
 }
 
 @using (Html.BeginForm()) {
+    @Html.AntiForgeryToken()
 
-    @Html.EditorForModel()            
+    @Html.EditorForModel()
+                
+    @Html.ValidationSummary()
     <input type="submit" value="Save" />
     @Html.ActionLink("Cancel", "Index", "Flights", new { accountId = @Model.AccountId, id = @Model.SeasonId }, null)
 }

@@ -42,14 +42,15 @@ namespace SportsManager.Golf.ViewModels.Controllers
             // get a single recently completed match.
             GolfMatch recentMatch = Controller.GetMostRecentCompleted(flightId);
 
-            // get all other completed matches on same day as recentMatch above.
-            IEnumerable<GolfMatch> matches = Controller.GetCompletedMatches(flightId, recentMatch.MatchDate);
-            CompletedMatches = (from m in matches
-                                select new GolfMatchViewModel(m));
-
-            // get the results for the most recent completed match date.
             if (recentMatch != null)
+            {
+                // get all other completed matches on same day as recentMatch above.
+                var matches = Controller.GetCompletedMatches(flightId, recentMatch.MatchDate);
+                CompletedMatches = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(matches);
+
+                // get the results for the most recent completed match date.
                 return new LeagueMatchResultsViewModel(Controller, AccountId, flightId, recentMatch.MatchDate);
+            }
 
             return null;
         }
@@ -61,10 +62,8 @@ namespace SportsManager.Golf.ViewModels.Controllers
         /// <returns></returns>
         public IEnumerable<GolfMatchViewModel> GetNextMatch(long flightId)
         {
-            IEnumerable<GolfMatch> upcomingMatches = Controller.GetMostRecentUncompleted(flightId);
-
-            return (from gm in upcomingMatches
-                    select new GolfMatchViewModel(gm));
+            var upcomingMatches = Controller.GetMostRecentUncompleted(flightId);
+            return Mapper.Map<IEnumerable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(upcomingMatches);           
         }
 
         /// <summary>

@@ -1,15 +1,22 @@
-﻿using System;
+﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
-using SportsManager.Golf.ViewModels;
-using SportsManager.Model;
 using SportsManager.Models;
+using SportsManager.Controllers;
+using ModelObjects;
+using SportsManager.Golf.ViewModels.Controllers;
+using SportsManager.Golf.Models;
 
 namespace SportsManager.Golf.Controllers
 {
     public class ScheduleController : DBController
     {
+        public ScheduleController(DB db) : base(db)
+        {
+
+        }
         //
         // GET: /Golf/Schedule/
         [OutputCache(Duration = 0, VaryByParam = "None")]
@@ -17,8 +24,12 @@ namespace SportsManager.Golf.Controllers
         {
             ViewBag.FlightId = id;
 
-            IEnumerable<ModelObjects.League> leagues = DataAccess.Leagues.GetLeagues(seasonId);
-            ViewData["Leagues"] = new SelectList(leagues, "Id", "Name", id);
+            var season = Db.Seasons.Find(seasonId);
+            if (season != null && season.AccountId == accountId)
+            {
+                var leagues = Db.LeagueSeasons.Where(ls => ls.SeasonId == seasonId);
+                ViewData["Leagues"] = new SelectList(leagues, "Id", "Name", id);
+            }
 
             return View();
         }
@@ -28,11 +39,10 @@ namespace SportsManager.Golf.Controllers
         {
             ViewData["FlightId"] = id;
 
-            IEnumerable<GolfMatch> golfMatches = DataAccess.Golf.GolfMatches.GetMatches(id);
+            var golfMatches = Db.GolfMatches.Where(gm => gm.LeagueId == id);
 
             // convert to TeamViewModel
-            IEnumerable<GolfMatchViewModel> tvm = (from gm in golfMatches
-                                                   select new GolfMatchViewModel(gm));
+            var tvm = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(golfMatches);
 
             return PartialView("ScheduleGrid", tvm);
         }
@@ -50,35 +60,34 @@ namespace SportsManager.Golf.Controllers
             ViewData["Teams"] = GetTeamsList(id);
             ViewData["ForCreate"] = true;
 
-            return View(new GolfMatchViewModel(new GolfMatch()));
+            return View(new GolfMatchViewModel()
+            {
+                FlightId = id
+            });
         }
 
         //
         // POST: /Golf/Schedule/Create
         [HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public ActionResult Create(long accountId, long seasonId, long id, FormCollection collection)
+        public ActionResult Create(long accountId, long seasonId, long id, GolfMatchViewModel vm)
         {
-            GolfMatchViewModel vm = new GolfMatchViewModel(0);
-
-            if (TryUpdateModel(vm))
+            if (ModelState.IsValid)
             {
-                GolfMatch gm = GolfMatchViewModel.GolfMatchFromViewModel(vm);
+                GolfMatch gm = GolfMatchFromViewModel(vm);
                 gm.LeagueId = id;
                 gm.MatchStatus = 0;
                 gm.Comment = String.Empty;
 
-                long matchId = DataAccess.Golf.GolfMatches.AddMatch(gm);
-                if (matchId > 0)
+                Db.GolfMatches.Add(gm);
+                Db.SaveChanges();
+                if (collection["continueWithMore"] != null && collection["continueWithMore"] == "1")
                 {
-                    if (collection["continueWithMore"] != null && collection["continueWithMore"] == "1")
-                    {
-                        vm.MatchTime = vm.MatchTime.Add(new TimeSpan(0, 6, 0));
-                    }
-                    else
-                    {
-                        return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
-                    }
+                    vm.MatchTime = vm.MatchTime.Add(new TimeSpan(0, 6, 0));
+                }
+                else
+                {
+                    return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
                 }
             }
 
@@ -102,7 +111,8 @@ namespace SportsManager.Golf.Controllers
 
             ViewBag.FlightId = flightId;
 
-            GolfMatchViewModel vm = new GolfMatchViewModel(DataAccess.Golf.GolfMatches.GetMatch(id));
+            var golfMatch = Db.GolfMatches.Find(id);
+            var vm = Mapper.Map<GolfMatch, GolfMatchViewModel>(golfMatch);
 
             ViewData["Courses"] = GetCourseList(accountId);
             ViewData["Teams"] = GetTeamsList(flightId);
@@ -115,19 +125,19 @@ namespace SportsManager.Golf.Controllers
         // POST: /Golf/Schedule/Create
         [HttpPost]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public ActionResult Edit(long accountId, long seasonId, long flightId, long id, FormCollection collection)
+        public ActionResult Edit(long accountId, long seasonId, long flightId, long id, GolfMatchViewModel vm)
         {
-            GolfMatchViewModel vm = new GolfMatchViewModel(id);
-
-            if (TryUpdateModel(vm))
+            if (ModelState.IsValid)
             {
-                GolfMatch gm = GolfMatchViewModel.GolfMatchFromViewModel(vm);
-                gm.LeagueId = flightId;
-                gm.Comment = String.Empty;
+                GolfMatch gm = Db.GolfMatches.Find(id);
+                if (gm != null && gm.LeagueId == flightId)
+                {
+                    gm.Comment = String.Empty;
 
-                bool updateSuccess = DataAccess.Golf.GolfMatches.UpdateMatch(gm, updateStatus: false);
-                if (updateSuccess)
-                    return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = flightId });
+                    bool updateSuccess = UpdateMatch(gm, vm, updateStatus: false);
+                    if (updateSuccess)
+                        return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = flightId });
+                }
             }
 
             ViewBag.Title = "Create Match";
@@ -145,7 +155,7 @@ namespace SportsManager.Golf.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult Delete(long accountId, long seasonId, long flightId, long id)
         {
-            bool success = DataAccess.Golf.GolfMatches.RemoveMatch(id);
+            bool success = RemoveMatch(id);
 
             if (Request.IsAjaxRequest())
             {
@@ -161,7 +171,8 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult MatchResults(long accountId, long seasonId, long flightId, long id)
         {
-            MatchResultsViewModel vm = new MatchResultsViewModel(id);
+            
+            MatchResultsViewModel vm = new MatchResultsViewModel(this, accountId, id);
             vm.InitializeFromDB();
 
             BuildCourseList(accountId, vm.CourseId);
@@ -175,24 +186,23 @@ namespace SportsManager.Golf.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult MatchResults(long accountId, long seasonId, long flightId, long id, FormCollection formCollection)
         {
-            MatchResultsViewModel vm = new MatchResultsViewModel(id);
+            MatchResultsViewModel vm = new MatchResultsViewModel(this, accountId, id);
 
             UpdateMatchResultsFromForm(vm, formCollection);
+            vm.MatchStatus = 1;
 
-            GolfMatch gm = new GolfMatch()
+            GolfMatchViewModel gmvm = new GolfMatchViewModel()
             {
-                Id = vm.MatchId,
+                MatchId = vm.MatchId,
                 Team1 = vm.Team1Id,
                 Team2 = vm.Team2Id,
-                LeagueId = flightId,
+                FlightId = flightId,
                 MatchDate = vm.MatchDate,
                 MatchTime = vm.MatchTime,
                 CourseId = vm.CourseId,
                 MatchStatus = 1, // 1 = complete.
-                MatchType = vm.MatchType,
-                Comment = vm.Comment
+                MatchType = vm.MatchType
             };
-
             Dictionary<long, Dictionary<long, GolfScore>> scoreUpdates = new Dictionary<long, Dictionary<long, GolfScore>>();
 
             var team1Scores = new Dictionary<long, GolfScore>();
@@ -200,7 +210,7 @@ namespace SportsManager.Golf.Controllers
 
             foreach (GolfScoreViewModel golfScoreVM in vm.Team1Scores)
             {
-                team1Scores[golfScoreVM.PlayerId] = GolfScoreViewModel.GolfScoreFromViewModel(golfScoreVM);
+                team1Scores[golfScoreVM.PlayerId] = GolfScoreFromViewModel(golfScoreVM);
             }
 
             var team2Scores = new Dictionary<long, GolfScore>();
@@ -208,12 +218,14 @@ namespace SportsManager.Golf.Controllers
 
             foreach (GolfScoreViewModel golfScoreVM in vm.Team2Scores)
             {
-                team2Scores[golfScoreVM.PlayerId] = GolfScoreViewModel.GolfScoreFromViewModel(golfScoreVM);
+                team2Scores[golfScoreVM.PlayerId] = GolfScoreFromViewModel(golfScoreVM);
             }
 
-            DataAccess.Golf.GolfMatches.UpdateMatchScores(gm, scoreUpdates);
+            var gm = Db.GolfMatches.Find(id);
 
-            DataAccess.Golf.GolfMatches.UpdateMatch(gm);
+            UpdateMatchScores(gm, scoreUpdates);
+
+            UpdateMatch(gm, gmvm);
 
             return RedirectToAction("Home", "League", new { area = "Golf", accountId = accountId });
         }
@@ -221,7 +233,7 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult LeagueStandings(long accountId, long seasonId, long id)
         {
-            LeagueStandingsViewModel vm = new LeagueStandingsViewModel(accountId, seasonId, id);
+            LeagueStandingsViewModel vm = new LeagueStandingsViewModel(this, accountId, seasonId, id);
 
             ViewBag.FlightId = id;
 
@@ -231,7 +243,7 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult MobileRecentMatch(long accountId, long seasonId, long id)
         {
-            CompletedMatchViewModel vm = new CompletedMatchViewModel(accountId, seasonId, id);
+            CompletedMatchViewModel vm = new CompletedMatchViewModel(this, accountId, seasonId, id);
 
             ViewBag.FlightId = id;
 
@@ -241,18 +253,17 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult ShowLeagueMatchResults(long accountId, long seasonId, long flightId, long id)
         {
-            GolfMatch match = DataAccess.Golf.GolfMatches.GetMatch(id);
-            LeagueMatchResultsViewModel vm = new LeagueMatchResultsViewModel(accountId, flightId, match.MatchDate);
+            GolfMatch match = Db.GolfMatches.Find(id);
+            LeagueMatchResultsViewModel vm = new LeagueMatchResultsViewModel(this, accountId, flightId, match.MatchDate);
 
             ViewBag.FlightId = flightId;
-
             return View(vm);
         }
 
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult ShowMatchResults(long accountId, long seasonId, long flightId, long id)
         {
-            MatchResultsViewModel vm = new MatchResultsViewModel(id);
+            MatchResultsViewModel vm = new MatchResultsViewModel(this, accountId, id);
             vm.InitializeMatchResults(accountId);
 
             ViewBag.FlightId = flightId;
@@ -263,7 +274,7 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult PreviewMatch(long accountId, long seasonId, long flightId, long id)
         {
-            PreviewMatchViewModel vm = new PreviewMatchViewModel(id);
+            PreviewMatchViewModel vm = new PreviewMatchViewModel(this, accountId, id);
 
             BuildCourseList(accountId, vm.CourseId);
 
@@ -286,15 +297,9 @@ namespace SportsManager.Golf.Controllers
 
         private void BuildCourseList(long accountId, long selectedCourseId)
         {
-            IEnumerable<GolfCourse> courses = DataAccess.Golf.GolfCourses.GetLeagueCourses(accountId);
+            var courses = this.GetLeagueCourses(accountId);
 
-            var coursesVM = (from c in courses
-                             select new GolfCourseViewModel(accountId)
-                             {
-                                 CourseId = c.Id,
-                                 Name = c.Name
-                             });
-
+            var coursesVM = Mapper.Map<IQueryable<GolfCourse>, IEnumerable<GolfCourseViewModel>>(courses);
             ViewData["Courses"] = new SelectList(coursesVM, "CourseId", "Name", selectedCourseId);
         }
 
@@ -358,8 +363,8 @@ namespace SportsManager.Golf.Controllers
                 {
                     playerId = (playerIdToSub.ContainsKey(playerTeamId.Key)) ? playerIdToSub[playerTeamId.Key] : playerTeamId.Key;
                 }
-                GolfRoster player = DataAccess.Golf.GolfRosters.GetRosterPlayer(playerId);
-                GolfScoreViewModel scoreVM = new GolfScoreViewModel(player)
+                GolfRoster player = this.GetRosterPlayer(playerId);
+                GolfScoreViewModel scoreVM = new GolfScoreViewModel(this, player)
                 {
                     CourseId = courseId,
                     DatePlayed = vm.MatchDate,
@@ -385,26 +390,200 @@ namespace SportsManager.Golf.Controllers
             }
         }
 
-        private static IEnumerable<SelectListItem> GetCourseList(long accountId)
+        private IEnumerable<SelectListItem> GetCourseList(long accountId)
         {
             List<SelectListItem> courses = new List<SelectListItem>();
             courses.Add(new SelectListItem() { Text = "Select Course", Value = "0" });
 
-            foreach (var s in DataAccess.Golf.GolfCourses.GetLeagueCourses(accountId))
+            foreach (var s in this.GetLeagueCourses(accountId))
                 courses.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
 
             return courses;
         }
 
-        private static IEnumerable<SelectListItem> GetTeamsList(long flightId)
+        private IEnumerable<SelectListItem> GetTeamsList(long flightId)
         {
             List<SelectListItem> teams = new List<SelectListItem>();
 
-            foreach (var s in DataAccess.Teams.GetTeams(flightId))
+            foreach (var s in Db.Teams.GetTeams(flightId))
                 teams.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
 
             return teams;
         }
 
+        private GolfMatch GolfMatchFromViewModel(GolfMatchViewModel vm)
+        {
+            return new GolfMatch()
+            {
+                Id = vm.MatchId,
+                CourseId = vm.CourseId,
+                MatchDate = vm.MatchDate,
+                MatchTime = vm.MatchTime,
+                MatchType = vm.MatchType,
+                Team1 = vm.Team1,
+                Team2 = vm.Team2,
+                MatchStatus = vm.MatchStatus,
+                LeagueId = vm.FlightId
+            };
+        }
+
+        private bool UpdateMatch(GolfMatch dbGolfMatch, GolfMatchViewModel vm, bool updateStatus = true)
+        {
+            dbGolfMatch.MatchDate = vm.MatchDate;
+            dbGolfMatch.MatchTime = vm.MatchTime;
+            dbGolfMatch.MatchType = vm.MatchType;
+            if (updateStatus)
+                dbGolfMatch.MatchStatus = vm.MatchStatus;
+            dbGolfMatch.Team1 = vm.Team1;
+            dbGolfMatch.Team2 = vm.Team2;
+            dbGolfMatch.CourseId = vm.CourseId;
+            //dbGolfMatch.Comment = vm.Comment;
+
+            // if any of these change any results have to be removed.
+            if (dbGolfMatch.Team1 != vm.Team1 ||
+                dbGolfMatch.Team2 != vm.Team2 ||
+                dbGolfMatch.CourseId != vm.CourseId)
+            {
+                var matchScores = (from gms in Db.GolfMatchScores
+                                   where gms.MatchId == dbGolfMatch.Id
+                                   select gms);
+
+                var golfScores = (from gms in Db.GolfMatchScores
+                                  join gs in Db.GolfScores on gms.ScoreId equals gs.Id
+                                  where gms.MatchId == dbGolfMatch.Id
+                                  select gs);
+
+                Db.GolfScores.RemoveRange(golfScores);
+                Db.GolfMatchScores.RemoveRange(matchScores);
+
+                dbGolfMatch.MatchStatus = 0;
+            }
+            // if date changes update the scores DatePlayed.
+            else if (dbGolfMatch.MatchDate != vm.MatchDate)
+            {
+                var golfScores = (from gms in Db.GolfMatchScores
+                                  join gs in Db.GolfScores on gms.ScoreId equals gs.Id
+                                  where gms.MatchId == dbGolfMatch.Id
+                                  select gs);
+
+                foreach (GolfScore score in golfScores)
+                {
+                    score.DatePlayed = vm.MatchDate;
+                }
+            }
+
+            Db.SaveChanges();
+
+            return true;
+        }
+
+        private bool RemoveMatch(long matchId)
+        {
+            GolfMatch dbGolfMatch = (from gm in Db.GolfMatches
+                                     where gm.Id == matchId
+                                     select gm).SingleOrDefault();
+            if (dbGolfMatch == null)
+                return false;
+
+            // remove scores entered for this match.
+            var golfMatchScores = (from gms in Db.GolfMatchScores
+                                   where gms.MatchId == dbGolfMatch.Id
+                                   select gms);
+
+            var golfScores = (from gms in Db.GolfMatchScores
+                              join gs in Db.GolfScores on gms.ScoreId equals gs.Id
+                              where gms.MatchId == dbGolfMatch.Id
+                              select gs);
+
+            Db.GolfScores.RemoveRange(golfScores);
+            Db.GolfMatchScores.RemoveRange(golfMatchScores);
+            Db.GolfMatches.Remove(dbGolfMatch);
+
+            Db.SaveChanges();
+
+            return true;
+        }
+
+        private GolfScore GolfScoreFromViewModel(GolfScoreViewModel x)
+        {
+            GolfRoster rp = Db.GolfRosters.Find(x.PlayerId);
+            return new GolfScore()
+            {
+                CourseId = x.CourseId,
+                Contact = rp.Contact,
+                TeeId = x.TeeId,
+                DatePlayed = x.DatePlayed,
+                HolesPlayed = x.HolesPlayed,
+                TotalScore = x.TotalScore,
+                TotalsOnly = false,
+                HoleScore1 = x.HoleScore(1),
+                HoleScore2 = x.HoleScore(2),
+                HoleScore3 = x.HoleScore(3),
+                HoleScore4 = x.HoleScore(4),
+                HoleScore5 = x.HoleScore(5),
+                HoleScore6 = x.HoleScore(6),
+                HoleScore7 = x.HoleScore(7),
+                HoleScore8 = x.HoleScore(8),
+                HoleScore9 = x.HoleScore(9),
+                HoleScore10 = x.HoleScore(10),
+                HoleScore11 = x.HoleScore(11),
+                HoleScore12 = x.HoleScore(12),
+                HoleScore13 = x.HoleScore(13),
+                HoleScore14 = x.HoleScore(14),
+                HoleScore15 = x.HoleScore(15),
+                HoleScore16 = x.HoleScore(16),
+                HoleScore17 = x.HoleScore(17),
+                HoleScore18 = x.HoleScore(18),
+            };
+
+        }
+
+        private bool UpdateMatchScores(GolfMatch match, IDictionary<long, Dictionary<long, GolfScore>> teamIdToRosterPlayerScores)
+        {
+            // remove all existing match scores, assume the scores passed in are entire set for match.
+            var oldMatchScores = (from gm in Db.GolfMatchScores
+                                  where gm.MatchId == match.Id
+                                  select gm);
+
+            var oldGolfScores = (from gm in Db.GolfMatchScores
+                                 join gs in Db.GolfScores on gm.ScoreId equals gs.Id
+                                 where gm.MatchId == match.Id
+                                 select gs);
+
+            Db.GolfMatchScores.RemoveRange(oldMatchScores);
+            Db.GolfScores.RemoveRange(oldGolfScores);
+            Db.SaveChanges();
+
+            foreach (var t in teamIdToRosterPlayerScores)
+            {
+                foreach (var r in t.Value)
+                {
+                    GolfScore gs = r.Value;
+
+                    // get the start index to use for this round.
+                    gs.StartIndex = this.CalculateHandicapIndexOnDate(gs.ContactId, gs.DatePlayed);
+                    gs.StartIndex9 = this.CalculateHandicapIndexOnDate(gs.ContactId, gs.DatePlayed, for9Holes: true);
+                    Db.GolfScores.Add(gs);
+                    Db.SaveChanges();
+
+                    // update future scores.
+                    this.UpdateIndexForSubsequentScores(gs);
+
+                    GolfMatchScore gms = new GolfMatchScore()
+                    {
+                        MatchId = match.Id,
+                        TeamId = t.Key,
+                        PlayerId = r.Key,
+                        ScoreId = gs.Id
+                    };
+
+                    Db.GolfMatchScores.Add(gms);
+                }
+            }
+
+            Db.SaveChanges();
+
+            return true;
+        }
     }
 }

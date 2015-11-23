@@ -1,10 +1,16 @@
-﻿using System.Web.Mvc;
-using SportsManager.Golf.ViewModels;
+﻿using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.ViewModels.Controllers;
+using System.Web.Mvc;
 
 namespace SportsManager.Golf.Controllers
 {
-	public class LeagueHandicapsController : DBController
+    public class LeagueHandicapsController : DBController
 	{
+        public LeagueHandicapsController(DB db) : base(db)
+        {
+
+        }
 		//
 		// GET: /Golf/LeagueHandicaps/
 

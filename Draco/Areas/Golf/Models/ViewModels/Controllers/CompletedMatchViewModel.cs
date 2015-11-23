@@ -1,4 +1,5 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Controllers;
 using SportsManager.Golf.Models;
 using SportsManager.ViewModels;
@@ -21,9 +22,8 @@ namespace SportsManager.Golf.ViewModels.Controllers
 
             if (recentMatch != null)
             {
-                IEnumerable<GolfMatch> matches = GetCompletedMatchesRegularSeason(flightId, recentMatch.MatchDate);
-                CompletedMatches = (from m in matches
-                                    select new GolfMatchViewModel(m));
+                var matches = GetCompletedMatchesRegularSeason(flightId, recentMatch.MatchDate);
+                CompletedMatches = Mapper.Map<IEnumerable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(matches);
 
                 LeagueMatchResults = new LeagueMatchResultsViewModel(Controller, accountId, flightId, recentMatch.MatchDate);
             }

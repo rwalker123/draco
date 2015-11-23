@@ -1,4 +1,4 @@
-﻿@model IEnumerable<SportsManager.Golf.ViewModels.FlightViewModel>
+﻿@model SportsManager.Golf.ViewModels.Controllers.FlightsViewModel
 @using MvcContrib.UI.Grid;
            
 @{
@@ -9,7 +9,7 @@
 
 <div id="BasicGrid">
 
-@Html.Grid(Model).AutoGenerateColumns().Columns(extraCols => 
+@Html.Grid(Model.Flights).AutoGenerateColumns().Columns(extraCols => 
     {
         extraCols.For(x => Html.ActionLink("edit", "Edit", new { accountId = x.AccountId, seasonId = x.SeasonId, id = x.FlightId }));
         extraCols.For(x => Html.ActionLink("delete", "Delete", new { accountId = x.AccountId, seasonId = x.SeasonId, id = x.FlightId }));
