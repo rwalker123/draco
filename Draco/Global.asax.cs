@@ -347,9 +347,25 @@ namespace SportsManager
                 .ForMember(vm => vm.CourseName, opt => opt.MapFrom(model => model.GolfCourse.Name))
                 .ForMember(vm => vm.FlightId, opt => opt.MapFrom(model => model.LeagueId));
 
-            Mapper.CreateMap<GolfRoster, Golf.ViewModels.Controllers.PlayerViewModel>();
+            Mapper.CreateMap<GolfRoster, Golf.ViewModels.Controllers.PlayerViewModel>()
+                .ForMember(vm => vm.PlayerScores, opt => opt.Ignore())
+                .ForMember(vm => vm.FirstName, opt => opt.MapFrom(model => model.Contact.FirstName))
+                .ForMember(vm => vm.LastName, opt => opt.MapFrom(model => model.Contact.LastName))
+                .ForMember(vm => vm.MiddleName, opt => opt.MapFrom(model => model.Contact.MiddleName))
+                .ForMember(vm => vm.IsFemale, opt => opt.MapFrom(model => model.Contact.IsFemale))
+                .ForMember(vm => vm.AverageDiffs, opt => opt.Ignore())
+                .ForMember(vm => vm.HandicapIndex, opt => opt.Ignore());
 
-            Mapper.CreateMap<GolfRoster, PreviewMatchPlayerViewModel>();
+
+
+            Mapper.CreateMap<GolfRoster, PreviewMatchPlayerViewModel>()
+                .ForMember(vm => vm.IsFemale, opt => opt.MapFrom(model => model.Contact.IsFemale))
+                .ForMember(vm => vm.CourseHandicap, opt => opt.Ignore())
+                .ForMember(vm => vm.Player, opt => opt.Ignore())
+                .ForMember(vm => vm.Match, opt => opt.Ignore())
+                .ForMember(vm => vm.HolesPlayed, opt => opt.Ignore())
+                .ForMember(vm => vm.GolfTeeInformation, opt => opt.Ignore())
+                .ForMember(vm => vm.GolfCourse, opt => opt.Ignore());
             ///Team1Players = (from t1 in team1Players
             ///                select new PreviewMatchPlayerViewModel(t1, GolfMatch, DataAccess.Golf.GolfLeagues.GetDefaultCourseTee(accountId, CourseId, t1.Contact.IsFemale.GetValueOrDefault()), 9));
 
