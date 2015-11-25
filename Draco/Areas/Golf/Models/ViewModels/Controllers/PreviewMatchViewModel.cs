@@ -16,15 +16,15 @@ namespace SportsManager.Golf.ViewModels.Controllers
         }
         public PreviewMatchViewModel(DBController db, long accountId, long matchId) : base(db, accountId)
         {
-            InitializeMatch(db.Db.GolfMatches.Find(matchId));
+            InitializeMatch(db, db.Db.GolfMatches.Find(matchId));
         }
 
         public PreviewMatchViewModel(DBController db, long accountId, GolfMatch match) : base(db, accountId)
         {
-            InitializeMatch(match);
+            InitializeMatch(db, match);
         }
 
-        private void InitializeMatch(GolfMatch match)
+        private void InitializeMatch(IDb db, GolfMatch match)
         {
             MatchId = match.Id;
 
@@ -36,7 +36,7 @@ namespace SportsManager.Golf.ViewModels.Controllers
                 if (course != null)
                 {
                     Course = Mapper.Map<GolfCourse, GolfCourseViewModel>(course);
-                    Course.AddTees();
+                    db.AddTees(Course);
                     CoursePlayed = course.Name;
                     CourseId = course.Id;
                 }

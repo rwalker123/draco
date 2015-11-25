@@ -81,14 +81,15 @@ namespace SportsManager.Golf.Controllers
 
                 Db.GolfMatches.Add(gm);
                 Db.SaveChanges();
-                if (collection["continueWithMore"] != null && collection["continueWithMore"] == "1")
-                {
-                    vm.MatchTime = vm.MatchTime.Add(new TimeSpan(0, 6, 0));
-                }
-                else
-                {
-                    return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
-                }
+                System.Diagnostics.Debug.Assert(false, "fix this");
+                //if (collection["continueWithMore"] != null && collection["continueWithMore"] == "1")
+                //{
+                //    vm.MatchTime = vm.MatchTime.Add(new TimeSpan(0, 6, 0));
+                //}
+                //else
+                //{
+                //    return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
+                //}
             }
 
             ViewBag.Title = "Create Match";
@@ -286,7 +287,7 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult CompleteSchedule(long accountId, long seasonId, long id)
         {
-            LeagueScheduleViewModel vm = new LeagueScheduleViewModel(accountId, id);
+            LeagueScheduleViewModel vm = new LeagueScheduleViewModel(this, accountId, id);
 
             ViewBag.FlightId = id;
 
@@ -403,12 +404,11 @@ namespace SportsManager.Golf.Controllers
 
         private IEnumerable<SelectListItem> GetTeamsList(long flightId)
         {
-            List<SelectListItem> teams = new List<SelectListItem>();
+            var teams = Db.TeamsSeasons.Where(ts => ts.LeagueSeasonId == flightId);
+            return Mapper.Map<IQueryable<TeamSeason>, IEnumerable<SelectListItem>>(teams);
 
-            foreach (var s in Db.Teams.GetTeams(flightId))
-                teams.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
-
-            return teams;
+            //foreach (var s in Db.Teams.GetTeams(flightId))
+            //    teams.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
         }
 
         private GolfMatch GolfMatchFromViewModel(GolfMatchViewModel vm)

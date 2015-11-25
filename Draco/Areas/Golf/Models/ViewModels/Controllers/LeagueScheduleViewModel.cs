@@ -1,25 +1,26 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using AutoMapper;
+using Microsoft.AspNet.Identity;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using SportsManager.Model;
 
 namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class LeagueScheduleViewModel
     {
-        public LeagueScheduleViewModel(long accountId, long flightId)
+        public LeagueScheduleViewModel(IDb db, long accountId, long flightId)
         {
-            IEnumerable<GolfMatch> completedMatches = DataAccess.Golf.GolfMatches.GetCompletedMatches(flightId);
+            var completedMatches = db.GetCompletedMatches(flightId);
 
-            CompletedMatches = (from cm in completedMatches
-                                select new GolfMatchViewModel(cm));
+            CompletedMatches = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(completedMatches);
 
-            IEnumerable<GolfMatch> upcomingMatches = DataAccess.Golf.GolfMatches.GetNotCompletedMatches(flightId);
+            var upcomingMatches = db.GetNotCompletedMatches(flightId);
 
-            UpcomingMatches = (from um in upcomingMatches
-                               select new GolfMatchViewModel(um));
+            UpcomingMatches = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(upcomingMatches);
 
+            IsAdmin = db.IsAccountAdmin(accountId, HttpContext.Current.User.Identity.GetUserId());
             AccountId = accountId;
             FlightId = flightId;
         }
@@ -30,9 +31,9 @@ namespace SportsManager.Golf.ViewModels.Controllers
         private long AccountId { get; set; }
         private long FlightId { get; set; }
 
-        public bool IsAdmin()
+        public bool IsAdmin
         {
-            return DataAccess.Accounts.IsAccountAdmin(AccountId, HttpContext.Current.User.Identity.GetUserId());
+            get;
         }
     }
 

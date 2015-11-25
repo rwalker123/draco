@@ -163,6 +163,31 @@ namespace SportsManager.Golf
                     select gm);
         }
 
+        static public IQueryable<GolfMatch> GetNotCompletedMatches(this IDb db, long flightId)
+        {
+            return (from gm in db.Db.GolfMatches
+                    where gm.LeagueId == flightId && gm.MatchStatus != 1
+                    orderby gm.MatchDate
+                    select gm);
+        }
+
+        static public IQueryable<GolfMatch> GetNotCompletedMatchesForTeam(this IDb db, long teamSeasonId)
+        {
+            return (from gm in db.Db.GolfMatches
+                    where (gm.Team1 == teamSeasonId || gm.Team2 == teamSeasonId) && gm.MatchStatus != 1
+                    orderby gm.MatchDate
+                    select gm);
+        }
+
+        static public IQueryable<GolfMatch> GetCompletedMatchesForTeam(this IDb db, long teamSeasonId)
+        {
+            return (from gm in db.Db.GolfMatches
+                    where (gm.Team1 == teamSeasonId || gm.Team2 == teamSeasonId) && gm.MatchStatus == 1
+                    orderby gm.MatchDate
+                    select gm);
+        }
+
+
         static public IQueryable<GolfMatch> GetCompletedMatches(this IDb db, long flightId, DateTime onDate)
         {
             return (from gm in db.Db.GolfMatches
@@ -170,7 +195,7 @@ namespace SportsManager.Golf
                     select gm);
         }
 
-        static public IEnumerable<GolfMatch> GetMostRecentUncompleted(this IDb db, long flightId)
+        static public IQueryable<GolfMatch> GetMostRecentUncompleted(this IDb db, long flightId)
         {
             var recentMatch = (from gm in db.Db.GolfMatches
                                where gm.LeagueId == flightId && gm.MatchStatus == 0
@@ -183,7 +208,7 @@ namespace SportsManager.Golf
                         orderby gm.MatchDate ascending
                         select gm);
 
-            return new List<GolfMatch>();
+            return new List<GolfMatch>().AsQueryable();
         }
 
         static public DateTime GetMostRecentUncompletedDate(this IDb db, long flightId)

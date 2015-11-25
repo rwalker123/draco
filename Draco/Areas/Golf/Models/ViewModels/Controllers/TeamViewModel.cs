@@ -1,20 +1,21 @@
-﻿using System.Collections.Generic;
+﻿using AutoMapper;
+using ModelObjects;
+using SportsManager.Controllers;
+using SportsManager.Golf.Models;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using SportsManager.Model;
-using SportsManager.ViewModels;
-using System.Web.Mvc;
 
 namespace SportsManager.Golf.ViewModels.Controllers
 {
     public class TeamViewModel 
     {
-        public TeamViewModel(long accountId, long seasonId, ModelObjects.Team team)
+        public TeamViewModel(long accountId, long seasonId, TeamSeason team)
         {
             AccountId = accountId;
             SeasonId = seasonId;
             Name = team.Name;
-            LeagueSeasonId = team.LeagueId;
+            LeagueSeasonId = team.LeagueSeasonId;
             TeamSeasonId = team.Id;
         }
 
@@ -25,28 +26,24 @@ namespace SportsManager.Golf.ViewModels.Controllers
             LeagueSeasonId = flightId;
         }
 
-        public void FillTeamMembers()
+        public void FillTeamMembers(DB db)
         {
-            IEnumerable<GolfRoster> players = DataAccess.Golf.GolfRosters.GetRoster(TeamSeasonId);
-
-            TeamMembers = (from p in players
-                           select new PlayerViewModel(p)).ToList();
+            var players = db.GolfRosters.Where(gr => gr.TeamSeasonId == TeamSeasonId && gr.IsActive);
+            TeamMembers = Mapper.Map<IQueryable<GolfRoster>, IEnumerable<PlayerViewModel>>(players); 
 
             foreach (var tm in TeamMembers)
                 tm.GetPlayerScoresForHandicap();
         }
 
-        public void FillScheduleData()
+        public void FillScheduleData(IDb db)
         {
-            IEnumerable<GolfMatch> upcomingMatches = DataAccess.Golf.GolfMatches.GetNotCompletedMatchesForTeam(TeamSeasonId);
+            var upcomingMatches = db.GetNotCompletedMatchesForTeam(TeamSeasonId);
 
-            UpcomingMatches = (from um in upcomingMatches
-                               select new GolfMatchViewModel(um));
+            UpcomingMatches = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(upcomingMatches);
 
-            IEnumerable<GolfMatch> completedMatches = DataAccess.Golf.GolfMatches.GetCompletedMatchesForTeam(TeamSeasonId);
+            var completedMatches = db.GetCompletedMatchesForTeam(TeamSeasonId);
 
-            CompletedMatches = (from cm in completedMatches
-                                select new GolfMatchViewModel(cm));
+            CompletedMatches = Mapper.Map<IQueryable<GolfMatch>, IEnumerable<GolfMatchViewModel>>(completedMatches);
         }
 
         [ScaffoldColumn(false)]

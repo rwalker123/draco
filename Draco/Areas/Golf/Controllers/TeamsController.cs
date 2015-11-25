@@ -1,5 +1,7 @@
-﻿using ModelObjects;
+﻿using AutoMapper;
+using ModelObjects;
 using SportsManager.Controllers;
+using SportsManager.Golf.ViewModels.Controllers;
 using SportsManager.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,25 +28,29 @@ namespace SportsManager.Golf.Controllers
 
         public ActionResult ShowTeam(long accountId, long seasonId, long id)
         {
-            TeamViewModel vm = new TeamViewModel(accountId, seasonId, DataAccess.Teams.GetTeam(id));
-            vm.FillTeamMembers();
-            vm.FillScheduleData();
+            var teamSeason = Db.TeamsSeasons.Find(id);
+            if (teamSeason != null)
+            {
+                TeamViewModel vm = new TeamViewModel(accountId, seasonId, teamSeason);
+                vm.FillTeamMembers(Db);
+                vm.FillScheduleData(this);
 
-            ViewData["FlightId"] = vm.LeagueSeasonId;
+                ViewData["FlightId"] = vm.LeagueSeasonId;
 
-            ViewBag.IsMobile = MobileHelpers.IsMobileDevice(Request);
+                ViewBag.IsMobile = MobileHelpers.IsMobileDevice(Request);
 
-            return View(vm);
+                return View(vm);
+            }
+            return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
         }
 
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public ActionResult GetTeamsGrid(long accountId, long seasonId, long id)
         {
-            IEnumerable<Team> teams = DataAccess.Teams.GetTeams(id);
+            var teams = Db.TeamsSeasons.Where(ts => ts.LeagueSeasonId == id);
 
             // convert to TeamViewModel
-            IEnumerable<TeamViewModel> tvm = (from t in teams
-                                              select new TeamViewModel(accountId, seasonId, t));
+            var tvm = Mapper.Map<IQueryable<TeamSeason>, IEnumerable<TeamViewModel>>(teams); 
 
             return PartialView("TeamsGrid", tvm);
         }
@@ -52,17 +58,12 @@ namespace SportsManager.Golf.Controllers
         [OutputCache(Duration = 0, VaryByParam = "None")]
         public JsonResult GetTeams(long accountId, long seasonId, long id)
         {
-            IEnumerable<Team> teams = DataAccess.Teams.GetTeams(id);
+            var teams = Db.TeamsSeasons.Where(ts => ts.LeagueSeasonId == id);
 
             // convert to TeamViewModel
-            var jsonData = (from t in teams
-                            select new
-                            {
-                                value = t.Id,
-                                name = t.Name
-                            });
+            var tvm = Mapper.Map<IQueryable<TeamSeason>, IEnumerable<TeamViewModel>>(teams);
 
-            return Json(jsonData, JsonRequestBehavior.AllowGet);
+            return Json(tvm, JsonRequestBehavior.AllowGet);
         }
 
         //
@@ -87,17 +88,24 @@ namespace SportsManager.Golf.Controllers
 
             if (TryUpdateModel(vm))
             {
-                ModelObjects.Team newTeam = new ModelObjects.Team()
+                Team nt = new Team()
                 {
                     AccountId = accountId,
-                    LeagueId = id,
-                    DivisionId = 0,
-                    Name = vm.Name,
                     YouTubeUserId = string.Empty
                 };
 
-                long teamSeasonId = DataAccess.Teams.AddTeam(newTeam);
-                if (teamSeasonId > 0)
+                TeamSeason newTeam = new TeamSeason()
+                {
+                    LeagueSeasonId = id,
+                    DivisionSeasonId = 0,
+                    Name = vm.Name,
+                    Team = nt
+                };
+
+                Db.TeamsSeasons.Add(newTeam);
+                Db.SaveChanges();
+
+                if (newTeam.Id > 0)
                     return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
             }
 
@@ -110,8 +118,8 @@ namespace SportsManager.Golf.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult Edit(int accountId, long seasonId, long id)
         {
-            Team t = DataAccess.Teams.GetTeam(id);
-            TeamViewModel tvm = new TeamViewModel(accountId, seasonId, t);
+            var t = Db.TeamsSeasons.Find(id);
+            var tvm = Mapper.Map<TeamSeason, TeamViewModel>(t);
 
             ViewData["Title"] = "Edit Team";
 
@@ -125,21 +133,15 @@ namespace SportsManager.Golf.Controllers
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
         public ActionResult Edit(long accountId, long seasonId, long id, FormCollection collection)
         {
-            TeamViewModel vm = new TeamViewModel(accountId, seasonId, DataAccess.Teams.GetTeam(id));
+            var teamSeason = Db.TeamsSeasons.Find(id);
+            TeamViewModel vm = new TeamViewModel(accountId, seasonId, teamSeason);
 
             if (TryUpdateModel(vm))
             {
-                ModelObjects.Team newTeam = new ModelObjects.Team()
-                {
-                    Id = vm.TeamSeasonId,
-                    DivisionId = 0,
-                    Name = vm.Name,
-                    YouTubeUserId = string.Empty
-                };
+                teamSeason.Name = vm.Name;
+                Db.SaveChanges();
 
-                bool modifySuccess = DataAccess.Teams.ModifyTeam(newTeam);
-                if (modifySuccess)
-                    return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
+                return RedirectToAction("Index", new { accountId = accountId, seasonId = seasonId, id = id });
             }
 
             ViewData["Title"] = "Edit Team";
@@ -152,8 +154,14 @@ namespace SportsManager.Golf.Controllers
         {
             try
             {
-                Team t = DataAccess.Teams.GetTeam(id);
-                bool success = await DataAccess.Teams.RemoveTeam(t);
+                bool success = false;
+                TeamSeason ts = Db.TeamsSeasons.Find(id);
+                if (ts != null)
+                {
+                    Db.TeamsSeasons.Remove(ts);
+                    await Db.SaveChangesAsync();
+                    success = true;
+                }
 
                 if (Request.IsAjaxRequest())
                 {

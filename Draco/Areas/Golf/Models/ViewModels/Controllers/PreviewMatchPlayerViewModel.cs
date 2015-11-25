@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using DataAccess.Golf;
-using SportsManager.Model;
 using SportsManager.Golf.Models;
 using SportsManager.Controllers;
 
@@ -22,7 +20,7 @@ namespace SportsManager.Golf.ViewModels.Controllers
             GolfTeeInformation = teeInfo;
 
             double startIndex = GolfScore.GetStartIndex(db.CalculateHandicapIndexOnDate(player.Contact.Id, match.MatchDate, true), IsFemale);
-            CourseHandicap = db.CalculateCourseHandicap(startIndex, teeInfo.GetSlope(IsFemale, HolesPlayed));
+            CourseHandicap = GolfScore.CalculateCourseHandicap(startIndex, teeInfo.GetSlope(IsFemale, HolesPlayed));
 
             // get per hole handicaps for player.
             int perHoleHandicap = (int)(CourseHandicap / (double)HolesPlayed);
