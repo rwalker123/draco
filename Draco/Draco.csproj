@@ -848,6 +848,14 @@
     <Content Include="Areas\Baseball\Views\Affiliations\Index.cshtml" />
     <Content Include="Scripts\bootstrap-select.js.map" />
     <Content Include="Content\bootstrap-select.css.map" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap.min.css.map" />
+    <Content Include="Content\bootstrap.css.map" />
+    <Content Include="Content\bootstrap-theme.min.css.map" />
+    <Content Include="Content\bootstrap-theme.css.map" />
     <None Include="Scripts\jquery-1.11.3-vsdoc.js" />
     <Content Include="Scripts\i18n\defaults-ar_AR.js" />
     <Content Include="Scripts\i18n\defaults-ar_AR.min.js" />
@@ -934,12 +942,6 @@
     <Content Include="Content\UserAddressListTemplate.xlsx" />
     <Content Include="Content\ManagerAddressListTemplate.xlsx" />
     <Content Include="Content\WorkoutRegistrationListTemplate.xlsx" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff2" />
-    <Content Include="fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap.css.map" />
-    <Content Include="Content\bootstrap-theme.css.map" />
     <Content Include="fonts\FontAwesome.otf" />
     <Content Include="fonts\fontawesome-webfont.woff2" />
     <Content Include="fonts\fontawesome-webfont.woff" />
