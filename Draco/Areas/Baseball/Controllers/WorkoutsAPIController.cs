@@ -7,6 +7,7 @@ using SportsManager.Models;
 using SportsManager.Models.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Configuration;
 using System.IO;
 using System.Linq;
@@ -236,8 +237,10 @@ namespace SportsManager.Baseball.Controllers
 
         public class EmailData
         {
-            public String Subject;
-            public String Message;
+            [Required]
+            public string Subject { get; set; }
+            [Required]
+            public string Message { get; set; }
         }
 
         [AcceptVerbs("GET"), HttpGet]
@@ -261,7 +264,7 @@ namespace SportsManager.Baseball.Controllers
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("email")]
         [SportsManagerAuthorize(Roles = "AccountAdmin")]
-        public async Task<HttpResponseMessage> EmailRegistrants(long accountId, long id, EmailData emailData)
+        public async Task<HttpResponseMessage> EmailRegistrants(long accountId, long id, [FromBody]EmailData emailData)
         {
             if (ModelState.IsValid)
             {
