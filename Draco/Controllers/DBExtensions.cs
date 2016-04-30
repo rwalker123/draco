@@ -102,7 +102,7 @@ namespace SportsManager.Controllers
                                         select tsm);
 
                         isTeamAdmin = (from m in managers
-                                       where m.Id == contact.Id
+                                       where m.ContactId == contact.Id
                                        select m).Any();
 
 

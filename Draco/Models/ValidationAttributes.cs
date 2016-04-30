@@ -65,9 +65,12 @@ namespace SportsManager.Models
                             if (this.Roles.Contains("LeagueAdmin"))
                             {
                                 long leagueSeasonId;
-                                var sId = actionContext.ControllerContext.RouteData.Values["leagueSeasonId"];
-                                if (sId != null && long.TryParse(sId.ToString(), out leagueSeasonId))
+                                object sId;
+                                if (actionContext.ControllerContext.RouteData.Values.TryGetValue("leagueSeasonId", out sId))
                                 {
+                                    if (long.TryParse(sId.ToString(), out leagueSeasonId))
+                                    {
+                                    }
                                 }
                             }
                         }
@@ -77,14 +80,17 @@ namespace SportsManager.Models
                             if (this.Roles.Contains("TeamAdmin") || this.Roles.Contains("TeamPhotoAdmin"))
                             {
                                 long teamSeasonId;
-                                var sId = actionContext.ControllerContext.RouteData.Values["teamSeasonId"];
-                                if (sId != null && long.TryParse(sId.ToString(), out teamSeasonId))
+                                object sId;
+                                if (actionContext.ControllerContext.RouteData.Values.TryGetValue("teamSeasonId", out sId))
                                 {
-                                    if (this.Roles.Contains("TeamAdmin"))
-                                        isAuthorized = this.IsTeamAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
-                                    
-                                    if (!isAuthorized && this.Roles.Contains("TeamPhotoAdmin"))
-                                        isAuthorized = this.IsTeamPhotoAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                    if (sId != null && long.TryParse(sId.ToString(), out teamSeasonId))
+                                    {
+                                        if (this.Roles.Contains("TeamAdmin"))
+                                            isAuthorized = this.IsTeamAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+
+                                        if (!isAuthorized && this.Roles.Contains("TeamPhotoAdmin"))
+                                            isAuthorized = this.IsTeamPhotoAdmin(accountId, teamSeasonId, user.Identity.GetUserId());
+                                    }
                                 }
                             }
                         }
