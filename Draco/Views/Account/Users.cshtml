@@ -228,6 +228,10 @@
         </div>
     </div>
 
+    <div data-bind="if: Id.showGenericErrorMsg">
+        <div class="alert alert-danger" data-bind="html: Id.genericErrorMsg"></div>
+    </div>
+
     <div class="form-group" style="margin-top:10px;margin-bottom:20px" data-bind="visible: Id.detailsVisible">
         <button type="button" class="btn btn-success" data-bind="click: $root.updateOrCreateContact"><span class="glyphicon glyphicon-ok"></span></button>
         <button type="button" class="btn btn-danger" data-bind="click: cancelContact"><span class="glyphicon glyphicon-remove"></span></button><br />

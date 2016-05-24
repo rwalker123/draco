@@ -522,6 +522,16 @@ var UsersClass = function (accountId, pageSize, firstYear) {
                         userData.Id.nameExistsError(true);
                 }
                 else {
+                    try{
+                        var errorObj = JSON.parse(xhr.responseText);
+                        if (errorObj.ExceptionMessage)
+                            userData.addGenericError(errorObj.ExceptionMessage);
+                        else
+                            userData.addGenericError(xhr.responseText);
+
+                    } catch(ex) {
+                        userData.addGenericError(xhr.responseText);
+                    }
                     reportAjaxError(url, xhr, ajaxOptions, thrownError);
                 }
             }

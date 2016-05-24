@@ -554,18 +554,29 @@ namespace SportsManager.Controllers
 
                 // if user id does not equal contact.UserId something is wrong. The email in the Users
                 // table is the same as this contact, but it is a different user id.
-                if (user != null && String.Compare(user.Id, contact.UserId) != 0)
+                if (user != null && !String.IsNullOrEmpty(contact.UserId) && String.Compare(user.Id, contact.UserId) != 0)
                     throw new Exception(String.Format("Internal Error: contact id = {0}, userId = {1}, doesn't match users table user id = {2}", vm.Id, vm.UserId, user.Id));
 
                 if (user == null)
                 {
                     // not registered. See if new email is specfied and we want to register.
-                    if (!String.IsNullOrEmpty(newEmail) && registerIfNeeded)
+                    if (!String.IsNullOrEmpty(newEmail))
                     {
-                        // need to create the account.
-                        vm.UserId = await db.CreateAndEmailAccount(accountId, new MailAddress(newEmail, vm.FullName));
-                        if (!String.IsNullOrEmpty(vm.UserId))
+                        // is newEmail registered
+                        var newUser = await userManager.FindByNameAsync(newEmail);
+                        if (newUser != null)
+                        {
+                            // new email is already registered, use it.
+                            vm.UserId = newUser.Id;
                             updateUserId = true;
+                        }
+                        // need to create the account.
+                        else if (registerIfNeeded)
+                        {
+                            vm.UserId = await db.CreateAndEmailAccount(accountId, new MailAddress(newEmail, vm.FullName));
+                            if (!String.IsNullOrEmpty(vm.UserId))
+                                updateUserId = true;
+                        }
                     }
                 }
                 else
@@ -577,13 +588,13 @@ namespace SportsManager.Controllers
                         var newUser = await userManager.FindByNameAsync(newEmail);
                         if (newUser != null)
                         {
-                            // something wrong, the email is being used. See if it is used by a contact.
-                            Contact c = db.Db.Contacts.Find(newUser.Id);
+                            // something wrong, the email is being used. See if it is used by a contact in this account.
+                            Contact c = db.Db.Contacts.Where(dbc => dbc.UserId == newUser.Id && dbc.CreatorAccountId == accountId).SingleOrDefault();
                             if (c != null)
                             {
                                 if (String.Compare(c.Email, newEmail, StringComparison.InvariantCultureIgnoreCase) == 0)
                                 {
-                                    throw new Exception(String.Format("{1} Email address is already registered to another contact {0}", c.Id, newEmail));
+                                    throw new Exception(String.Format("{1} Email address is already registered to another contact {0}", c.FullNameFirst, newEmail));
                                 }
                                 else
                                 {
@@ -604,15 +615,16 @@ namespace SportsManager.Controllers
                     }
                     else
                     {
-                        // removed the email, remove the account.
-                        IdentityResult idRes = await userManager.DeleteAsync(user);
-                        if (!idRes.Errors.Any())
-                        {
+                        // removed the email, remove the account. Update: Don't delete the user account, could be used
+                        // by another account.
+                        //IdentityResult idRes = await userManager.DeleteAsync(user);
+                        //if (!idRes.Errors.Any())
+                        //{
                             vm.UserId = null;
                             updateUserId = true;
-                        }
-                        else
-                            throw new Exception(idRes.Errors.First());
+                        //}
+                        //else
+                        //    throw new Exception(idRes.Errors.First());
                     }
                 }
             }
