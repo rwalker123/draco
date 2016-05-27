@@ -279,7 +279,7 @@ namespace SportsManager.Controllers
                     CityStateZip = sponsor.CityStateZip ?? String.Empty,
                     Phone = sponsor.Phone ?? String.Empty,
                     StreetAddress = sponsor.StreetAddress ?? String.Empty,
-                    TeamId = teamSeasonId,
+                    TeamId = team.Id,
                     WebSite = sponsor.Website ?? String.Empty
                 };
 
@@ -320,6 +320,9 @@ namespace SportsManager.Controllers
 
             if (sponsor.AccountId != accountId)
                 return Request.CreateResponse(HttpStatusCode.Forbidden);
+
+            if (sponsor.TeamId != team.Id)
+                return Request.CreateResponse(HttpStatusCode.InternalServerError);
 
             Db.Sponsors.Remove(sponsor);
             await Db.SaveChangesAsync();
