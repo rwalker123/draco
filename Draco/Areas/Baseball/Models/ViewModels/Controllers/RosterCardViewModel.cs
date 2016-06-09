@@ -14,7 +14,7 @@ namespace SportsManager.Baseball.ViewModels.Controllers
             Team = c.Db.TeamsSeasons.Find(teamSeasonId);
             if (Team != null)
             {
-                Players = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId && !rs.Inactive);
+                Players = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId && !rs.Inactive).OrderBy(rs => rs.Roster.Contact.LastName).ThenBy(rs => rs.Roster.Contact.FirstName);
                 LeagueTeamName = (from ts in c.Db.TeamsSeasons
                                   join ls in c.Db.LeagueSeasons on ts.LeagueSeasonId equals ls.Id
                                   join l in c.Db.Leagues on ls.LeagueId equals l.Id
