@@ -17,7 +17,7 @@ namespace SportsManager.Baseball.ViewModels.Controllers
             : base(c, accountId)
         {
             Team = c.Db.TeamsSeasons.Find(teamSeasonId);
-            SeasonPlayers = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId && !rs.Inactive);
+            SeasonPlayers = c.Db.RosterSeasons.Where(rs => rs.TeamSeasonId == teamSeasonId && !rs.Inactive).OrderBy(x => x.Roster.Contact.LastName).ThenBy(x => x.Roster.Contact.FirstName).ThenBy(x => x.Roster.Contact.MiddleName);
         }
 
         public TeamSeason Team { get; private set; }
