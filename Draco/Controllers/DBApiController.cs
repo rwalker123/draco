@@ -33,6 +33,7 @@ namespace SportsManager.Controllers
                                  select l);
 
             m_db.Leagues.RemoveRange(unusedLeagues);
+            m_db.SaveChanges();
         }
 
         protected void RemoveUnusedContacts(long accountId)
@@ -55,6 +56,7 @@ namespace SportsManager.Controllers
                                   select c);
             // member business blocking
             m_db.Contacts.RemoveRange(unusedContacts);
+            m_db.SaveChanges();
         }
 
         protected void RemoveLeagueSeason(LeagueSeason ls)
@@ -70,6 +72,7 @@ namespace SportsManager.Controllers
             }
 
             m_db.LeagueSeasons.Remove(ls);
+            m_db.SaveChanges();
         }
 
         private void RemoveSeasonTeam(TeamSeason t)
@@ -94,6 +97,7 @@ namespace SportsManager.Controllers
                                    select dd);
 
             m_db.DivisionDefs.RemoveRange(unusedDivisions);
+            m_db.SaveChanges();
         }
 
     }
