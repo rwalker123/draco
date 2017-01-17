@@ -45,7 +45,8 @@ namespace SportsManager.Controllers
                         MiddleName = c.MiddleName,
                         LastName = c.LastName,
                         BirthDate = c.DateOfBirth,
-                        Zip = c.Zip
+                        Zip = c.Zip,
+                        FirstYear = c.Rosters.FirstOrDefault() != null ? c.Rosters.FirstOrDefault().FirstYear : 0
                     }).AsQueryable();
         }
     }

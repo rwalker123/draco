@@ -31,6 +31,9 @@ namespace SportsManager.ViewModels.API
         }
         public string Zip { get; set; }
         public DateTime BirthDate { get; set; }
+        
+        // so it can be searched.
+        public int FirstYear { get; set; }
     }
 
     public class ContactNameRoleViewModel : ContactNameViewModel
