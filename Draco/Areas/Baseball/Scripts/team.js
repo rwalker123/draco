@@ -53,7 +53,7 @@ self.TeamViewModel = function (accountId, teamSeasonId, teamId, teamName, isAdmi
     }
 
     self.fileUploaderUrl = ko.computed(function () {
-        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.teamId;
+        return window.config.rootUri + '/api/FileUploaderAPI/' + self.accountId + '/TeamLogo/' + self.teamSeasonId;
     });
 
 }
