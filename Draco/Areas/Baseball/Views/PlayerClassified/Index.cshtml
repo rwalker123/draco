@@ -87,8 +87,8 @@
             Your registration information will stay on this site for @Model.DaysToKeep days. After @Model.DaysToKeep days you will have to re-register.
         </div>
         <div class="form-group">
-            <button class="btn btn-success" type="button" title="register your information" data-bind="click: $root.saveRegisterPlayer"><span class="glyphicon glyphicon-ok"></span></button>
-            <button class="btn btn-danger" type="button" title="cancel changes" data-bind="click: $root.cancelRegisterPlayer"><span class="glyphicon glyphicon-remove"></span></button>
+            <button class="btn btn-success" type="button" title="register your information" data-bind="enable: !$root.isSaving(), click: $root.saveRegisterPlayer"><span class="glyphicon glyphicon-ok"></span></button>
+            <button class="btn btn-danger" type="button" title="cancel changes" data-bind="enable: !$root.isSaving(), click: $root.cancelRegisterPlayer"><span class="glyphicon glyphicon-remove"></span></button>
         </div>
     </form>
 

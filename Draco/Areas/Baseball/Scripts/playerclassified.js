@@ -167,6 +167,7 @@ var PlayerClassifiedsViewModel = function (accountId, isAdmin, contactId) {
     self.isAdmin = isAdmin;
     self.contactId = contactId;
     self.contact = ko.observable();
+    self.isSaving = ko.observable(false);
 
     self.playersLooking = ko.observableArray();
     self.teamsLooking = ko.observableArray();
@@ -241,6 +242,8 @@ var PlayerClassifiedsViewModel = function (accountId, isAdmin, contactId) {
             url = url + '/?r=' + window.location;
         }
 
+        self.isSaving(true);
+
         $.ajax({
             type: type,
             url: url,
@@ -257,9 +260,12 @@ var PlayerClassifiedsViewModel = function (accountId, isAdmin, contactId) {
                 else {
                     self.playersLooking.push(new PlayerRegisterViewModel(registeredPlayer));
                 }
-
+            },
+            complete: function () {
+                self.isSaving(false);
                 self.cancelRegisterPlayer();
             }
+
         });
     }
 

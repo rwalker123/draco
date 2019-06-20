@@ -180,11 +180,19 @@ namespace SportsManager.Baseball.Controllers
                 Db.TeamsWantedClassifieds.Add(tw);
                 await Db.SaveChangesAsync();
 
-                // email user with access code so they can edit the entry.
-                EmailTeamRegistration(tw, refererUrl + "?c=" + tw.AccessCode);
+                try
+                {
+                    // email user with access code so they can edit the entry.
+                    EmailTeamRegistration(tw, refererUrl + "?c=" + tw.AccessCode);
 
-                // email list of "teams" looking for players about this new entry.
-                EmailTeamsLookingForPlayers(tw);
+                    // email list of "teams" looking for players about this new entry.
+                    EmailTeamsLookingForPlayers(tw);
+
+                }
+                catch(Exception)
+                {
+
+                }
 
                 var vm = Mapper.Map<TeamsWantedClassified, TeamWantedViewModel>(tw);
                 return Request.CreateResponse<TeamWantedViewModel>(HttpStatusCode.Created, vm);
@@ -275,7 +283,7 @@ namespace SportsManager.Baseball.Controllers
             if (a == null)
                 return;
 
-            var sender = Db.Contacts.Where(c => c.UserId == a.OwnerUserId).SingleOrDefault();
+            var sender = Db.Contacts.Where(c => c.UserId == a.OwnerUserId).FirstOrDefault();
             if (sender == null)
             {
                 var email = Db.AspNetUsers.Where(aUser => aUser.Id == a.OwnerUserId).Select(aUser => aUser.UserName).SingleOrDefault();
