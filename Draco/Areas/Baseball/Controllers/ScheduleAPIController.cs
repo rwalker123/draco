@@ -264,6 +264,10 @@ namespace SportsManager.Baseball.Controllers
                     Status responseTweet = await ctx.TweetAsync(tweet);
                     return Request.CreateResponse(HttpStatusCode.OK);
                 }
+                catch(HttpRequestException ex)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.InternalServerError, ex);
+                }
                 catch (TwitterQueryException ex)
                 {
                     // if we get an authentication error, try to have the user log in.

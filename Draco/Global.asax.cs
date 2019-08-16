@@ -10,6 +10,7 @@ using SportsManager.Models.Utils;
 using SportsManager.ViewModels.API;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
@@ -53,6 +54,8 @@ namespace SportsManager
 
         protected void Application_Start()
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             AreaRegistration.RegisterAllAreas();
             //GlobalConfiguration.Configure(WebApiConfig.Register);
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);

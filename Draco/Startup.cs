@@ -5,6 +5,7 @@ using Microsoft.Owin;
 using ModelObjects;
 using Owin;
 using System;
+using System.Net;
 using System.Reflection;
 using System.Web.Http;
 using System.Web.Mvc;
@@ -17,6 +18,8 @@ namespace SportsManager
     {
         public void Configuration(IAppBuilder app)
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             // AutoFac IOC
             var builder = new ContainerBuilder();
 
