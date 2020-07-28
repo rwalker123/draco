@@ -1,7 +1,7 @@
-﻿function InitPhotoGalleryViewModel(accountId, isAdmin, teamId) {
+﻿function InitPhotoGalleryViewModel(accountId, isAdmin, isPhotoAdmin, teamId) {
     var photoGalleryElem = document.getElementById("photoGallery");
     if (photoGalleryElem) {
-        var photoGalleryVM = new PhotoGalleryViewModel(accountId, isAdmin, teamId);
+        var photoGalleryVM = new PhotoGalleryViewModel(accountId, isAdmin, isPhotoAdmin, teamId);
         photoGalleryVM.init();
         ko.applyBindings(photoGalleryVM, photoGalleryElem);
     }
@@ -37,7 +37,7 @@ var PhotoViewModel = function (data) {
     }
 }
 
-var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
+var PhotoGalleryViewModel = function (accountId, isAdmin, isPhotoAdmin, teamId) {
     var self = this;
 
     self.selectedFileNameDefaultText = "Select a file or drag/drop an image here.";
@@ -45,6 +45,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     self.accountId = accountId;
     self.teamId = teamId;
     self.isAdmin = isAdmin;
+    self.isPhotoAdmin = isPhotoAdmin;
     self.viewMode = ko.observable(true);
     self.selectedFileName = ko.observable(self.selectedFileNameDefaultText);
     self.photoGalleryTitle = ko.observable("");
@@ -74,7 +75,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     self.init = function () {
         if (!self.teamId) {
             self.loadPhotoAlbums();
-            if (isAdmin)
+            if (isAdmin || isPhotoAdmin)
                 self.loadEditablePhotoAlbums();
         }
         else {
@@ -132,7 +133,7 @@ var PhotoGalleryViewModel = function (accountId, isAdmin, teamId) {
     }
 
     self.startEditMode = function () {
-        if (self.isAdmin) {
+        if (self.isAdmin || self.isPhotoAdmin) {
             if (self.viewMode())
                 self.viewMode(false);
             else

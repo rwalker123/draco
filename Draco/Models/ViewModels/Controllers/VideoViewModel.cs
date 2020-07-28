@@ -17,11 +17,20 @@ namespace SportsManager.ViewModels
             {
                 IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId);
             }
+
+            if (!IsAdmin)
+            {
+                IsAdmin = c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
+            }
         }
 
         public VideoViewModel(DBController c, long accountId)
             : base(c, accountId)
         {
+            if (!IsAdmin)
+            {
+                IsAdmin = c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
+            }
         }
     }
 }

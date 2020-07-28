@@ -470,7 +470,7 @@ else
         @if (Model.ShowPhotoGallery)
         {
             <text>
-            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower());
+            InitPhotoGalleryViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), @Model.IsPhotoAdmin.ToString().ToLower());
             </text>
         }
 
@@ -537,7 +537,7 @@ else
         @if (Model.VideosEnabled && Model.ShowVideos)
         {
             <text>
-            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower(), '@Model.YouTubeUserId', '@Model.DefaultVideo', @Model.AutoPlayVideo.ToString().ToLower());
+            initVideosViewModel(@Model.AccountId, @Model.IsAdmin.ToString().ToLower() || @Model.IsPhotoAdmin.ToString().ToLower(), '@Model.YouTubeUserId', '@Model.DefaultVideo', @Model.AutoPlayVideo.ToString().ToLower());
             </text>
         }
 

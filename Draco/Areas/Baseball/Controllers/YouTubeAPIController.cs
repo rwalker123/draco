@@ -61,7 +61,7 @@ namespace SportsManager.Baseball.Controllers
             // Retrieve the contentDetails part of the channel resource for the authenticated user's channel.
             var channelsListResponse = await channelsListRequest.ExecuteAsync();
 
-            if (!channelsListResponse.Items.Any())
+            if (channelsListResponse.Items == null || !channelsListResponse.Items.Any())
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
             var videos = new List<Object>();

@@ -22,7 +22,8 @@ namespace SportsManager.Baseball.ViewModels.Controllers
                     AutoPlayVideo = Account.AutoPlayVideo;
                 }
             }
-            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin;
+            IsPhotoAdmin = c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
+            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin || IsPhotoAdmin;
             ShowPhotoGallery = IsAdmin || c.Db.PhotoGalleries.Where(pg => pg.AccountId == accountId).Any();
 
             ShowHandouts = IsAdmin || c.Db.AccountHandouts.Where(ah => ah.AccountId == accountId).Any();
@@ -229,6 +230,11 @@ namespace SportsManager.Baseball.ViewModels.Controllers
         public string YouTubeUserId
         {
             get;
+        }
+
+        public bool IsPhotoAdmin
+        {
+            get; private set;
         }
     }
 }

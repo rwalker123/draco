@@ -109,7 +109,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> UpdatePhoto(long accountId, int id, PhotoViewModel item)
         {
             if (ModelState.IsValid)
@@ -148,7 +148,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("PUT"), HttpPut]
         [ActionName("photos")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin, TeamAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> UpdateTeamPhoto(long accountId, long teamSeasonId, int id, PhotoViewModel item)
         {
             if (ModelState.IsValid)
@@ -201,7 +201,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("photos")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> DeletePhoto(long accountId, long id)
         {
             var photo = await Db.PhotoGalleries.FindAsync(id);
@@ -220,7 +220,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("photos")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin, TeamAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> DeleteTeamPhoto(long accountId, long teamSeasonId, long id)
         {
             var team = await Db.TeamsSeasons.FindAsync(teamSeasonId);
@@ -312,7 +312,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("DELETE"), HttpDelete]
         [ActionName("albums")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> DeletePhotoAlbum(long accountId, long id)
         {
             var pa = await Db.PhotoGalleryAlbums.FindAsync(id);
@@ -334,7 +334,7 @@ namespace SportsManager.Controllers
 
         [AcceptVerbs("POST"), HttpPost]
         [ActionName("albums")]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         public async Task<HttpResponseMessage> PostPhotoAlbum(long accountId, IdData name)
         {
             if (name == null)

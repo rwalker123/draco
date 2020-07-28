@@ -212,7 +212,7 @@ namespace SportsManager.Controllers
             return Request.CreateResponse<AccountViewModel>(HttpStatusCode.OK, accountData);
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage YouTubeUserId(long accountId, IdData youTubeUserId)
         {
@@ -231,7 +231,7 @@ namespace SportsManager.Controllers
             return Request.CreateResponse(HttpStatusCode.NotFound);
         }
 
-        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin, TeamAdmin, TeamPhotoAdmin")]
         [AcceptVerbs("PUT"), HttpPut]
         public HttpResponseMessage YouTubeUserId(long accountId, long teamSeasonId, IdData youTubeUserId)
         {

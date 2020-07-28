@@ -60,7 +60,15 @@ namespace SportsManager.Models
                             isAuthorized = this.IsAccountAdmin(accountId, user.Identity.GetUserId());
                         }
 
-                        if (!isAuthorized)
+						if (!isAuthorized)
+						{
+							if (this.Roles.Contains("AccountPhotoAdmin"))
+							{
+								isAuthorized = this.IsPhotoAdmin(accountId, user.Identity.GetUserId());
+							}
+						}
+
+						if (!isAuthorized)
                         {
                             if (this.Roles.Contains("LeagueAdmin"))
                             {

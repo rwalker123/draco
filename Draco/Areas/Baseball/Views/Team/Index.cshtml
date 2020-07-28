@@ -307,7 +307,7 @@ else
         @if (Model.ShowPhotoGallery)
         {
         <text>
-            InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower() || @Model.IsTeamPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
+            InitPhotoGalleryViewModel(@Model.AccountId,  @Model.IsAdmin.ToString().ToLower() || @Model.IsTeamAdmin.ToString().ToLower(), @Model.IsTeamPhotoAdmin.ToString().ToLower() || @Model.IsAccountPhotoAdmin.ToString().ToLower(), @Model.Team.Id );
         </text>
         }
 

@@ -19,7 +19,7 @@ namespace SportsManager.ViewModels
             // account admins can edit team photos, team admins, and team photo admins can as well.
             if (!IsAdmin)
             {
-                IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId) || c.IsTeamPhotoAdmin(accountId, teamSeasonId);
+                IsAdmin = c.IsTeamAdmin(accountId, teamSeasonId) || c.IsTeamPhotoAdmin(accountId, teamSeasonId) || c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
             }
         }
 
@@ -29,11 +29,16 @@ namespace SportsManager.ViewModels
             IsTeamEdit = false;
 
             HasPhotos = c.Db.PhotoGalleries.Where(pg => pg.AccountId == accountId).Any();
+            if (!IsAdmin)
+            {
+                IsAdmin = c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
+            }
         }
 
         public bool HasPhotos { get; private set; }
 
         public bool IsTeamEdit { get; private set; }
 
+        public bool IsPhotoAdmin { get; private set; }
     }
 }

@@ -35,10 +35,12 @@ namespace SportsManager.Baseball.ViewModels.Controllers
             ShowUserInfoOnRosterPage = showUserInfoOnRosterPage;
 
             TeamId = teamSeasonId;
+
+            IsTeamPhotoAdmin = IsAdmin || IsTeamAdmin || c.IsTeamPhotoAdmin(accountId, teamSeasonId) || c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
         }
 
         public bool IsTeamAdmin { get; private set; }
-
+        public bool IsTeamPhotoAdmin { get; private set; }
         public bool ShowWaiverStatus { get; private set; }
         public bool ShowIdStatus { get; private set; }
         public bool TrackGamesPlayed { get; private set; }

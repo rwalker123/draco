@@ -20,6 +20,7 @@ namespace SportsManager.Baseball.ViewModels.Controllers
 
             IsTeamAdmin = c.IsTeamAdmin(accountId, id);
             IsTeamPhotoAdmin = c.IsTeamPhotoAdmin(accountId, id);
+            IsAccountPhotoAdmin = c.IsPhotoAdmin(accountId, Globals.GetCurrentUserId());
 
             IsTeamMember = c.IsTeamMember(accountId, id);
 
@@ -38,8 +39,8 @@ namespace SportsManager.Baseball.ViewModels.Controllers
             ShowAnnouncements = IsTeamMember || IsAdmin || IsTeamAdmin;
 
             var hasTeamPhotos = c.Db.PhotoGalleryAlbums.Where(pga => pga.TeamId == id).SingleOrDefault()?.Photos.Any();
-            
-            ShowPhotoGallery = IsAdmin || IsTeamAdmin || IsTeamPhotoAdmin || hasTeamPhotos.GetValueOrDefault();
+
+            ShowPhotoGallery = IsAdmin || IsAccountPhotoAdmin || IsTeamAdmin || IsTeamPhotoAdmin || hasTeamPhotos.GetValueOrDefault();
             ShowLeaders = true;
             ShowSponsors = IsAdmin || IsTeamAdmin || Team.Team.Sponsors.Any();
             ShowRoster = true;
@@ -49,7 +50,7 @@ namespace SportsManager.Baseball.ViewModels.Controllers
             bool.TryParse(c.GetAccountSetting(accountId, "ShowPlayerSurvey"), out showPlayerSurvey);
             ShowPlayerInterview = showPlayerSurvey && HasPlayerProfiles(accountId, id);
 
-            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin || IsTeamAdmin;
+            ShowVideos = !String.IsNullOrEmpty(YouTubeUserId) || IsAdmin || IsTeamAdmin || IsAccountPhotoAdmin || IsTeamPhotoAdmin;
             VideosEnabled = true;
         }
 
@@ -85,21 +86,12 @@ namespace SportsManager.Baseball.ViewModels.Controllers
         public string DefaultVideo { get; private set; }
         public bool AutoPlayVideo { get; private set; }
 
-        public bool IsTeamPhotoAdmin
-        {
-            get;
-            private set;
-        }
+        public bool IsTeamPhotoAdmin { get; private set; }
 
-        public bool IsTeamAdmin
-        {
-            get; private set;
-        }
+        public bool IsTeamAdmin { get; private set; }
+        public bool IsAccountPhotoAdmin { get; private set; }
 
-        public bool IsTeamMember
-        {
-            get; private set;
-        }
+        public bool IsTeamMember { get; private set; }
 
         public bool FromLeagueAccount
         {

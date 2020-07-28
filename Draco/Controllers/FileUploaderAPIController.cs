@@ -55,7 +55,7 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [SportsManagerAuthorize(Roles = "AccountAdmin, TeamAdmin, TeamPhotoAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin, TeamAdmin, TeamPhotoAdmin")]
         [ActionName("PhotoGallery")]
         public async Task<HttpResponseMessage> TeamPhotoGallery(long accountId, long teamSeasonId)
         {
@@ -378,10 +378,10 @@ namespace SportsManager.Controllers
         }
 
         [AcceptVerbs("POST"), HttpPost]
-        [SportsManagerAuthorize(Roles = "AccountAdmin")]
+        [SportsManagerAuthorize(Roles = "AccountAdmin, AccountPhotoAdmin, TeamPhotoAdmin")]
         public async Task<HttpResponseMessage> TeamPhoto(long accountId, long id)
         {
-            TeamSeason t = Db.TeamsSeasons.Find(id);
+            TeamSeason t = Db.TeamsSeasons.Find(id); 
             if (t == null)
                 return Request.CreateResponse(HttpStatusCode.NotFound);
 
