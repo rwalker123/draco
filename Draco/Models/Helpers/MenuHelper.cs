@@ -166,20 +166,20 @@ namespace SportsManager.Models.Helpers
                     leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(hofurl, "Hall of Fame", "Hall of Fame Page"));
                 }
 
+                var menu = new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
+                {
+                    teamsMenu,
+                    leagueMenu,
+                    scheduleMenu,
+                    forumsMenu
+                };
+
                 if (db.Db.LeagueFaqs.Where(lf => lf.AccountId == accountId).Any())
                 {
-                    leagueMenu.AddSubMenu(new SportsManager.Models.Helpers.MenuHelper.MenuItem(faqurl, "League FAQ", "FAQ Page"));
+                    menu.Add(new SportsManager.Models.Helpers.MenuHelper.MenuItem(faqurl, "FAQ", "FAQ"));
                 }
 
-                return new List<SportsManager.Models.Helpers.MenuHelper.MenuItem>()
-	            {
-                    //homeMenu,
-		            teamsMenu,
-                    leagueMenu,
-		            scheduleMenu,
-		            forumsMenu		            
-	            };
-
+                return menu;
             }
             else if (accountType == (long)Account.eAccountType.Golf)
             {

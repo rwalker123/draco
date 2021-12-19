@@ -16,6 +16,24 @@
 
     <div class="panel-body">
 
+        @{
+            String faqurl = "";
+
+            var db = DependencyResolver.Current.GetService<ModelObjects.DB>();
+            if (db.LeagueFaqs.Where(lf => lf.AccountId == Model.AccountId).Any())
+            {
+
+                faqurl = RouteTable.Routes.GetVirtualPathForArea(((MvcHandler)HttpContext.Current.CurrentHandler).RequestContext,
+                                    new RouteValueDictionary(new { area = "", controller = "LeagueFAQ", action = "Index", accountId = Model.AccountId })).VirtualPath;
+            }
+
+            if (!faqurl.IsEmpty())
+            {
+                <h4>Please visit the <strong><a href="@faqurl">FAQ</a></strong> to learn more about the league.</h4>
+            }
+
+        }
+
         @if (Model.IsAdmin)
         {
 
@@ -113,7 +131,7 @@
                     <div class="clearfix"></div>
                 }
                 <div data-bind="html: Text"></div>
-           </div>
+            </div>
         </div>
     </div>
 </div>
