@@ -53,6 +53,55 @@
             </div>
         </form>
     </div>
+    <div class="row-fluid" data-bind="if: selectedGame() > 0">
+        <div>
+            <table id="batStatsTable" class="table table-striped statsTable">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                        <th>5</th>
+                        <th>6</th>
+                        <th>7</th>
+                        <th>R</th>
+                        <th>H</th>
+                        <th>E</th>
+                    </tr>
+                </thead>
+                <tbody data-bind="with: boxScore, validationOptions: { insertMessages: false }">
+                    <tr>
+                        <td class="nameField" data-bind="html: awayTeam.name"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn1"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn2"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn3"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn4"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn5"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn6"></td>
+                        <td class="statField" data-bind="editablefield: awayTeam.inn7"></td>
+                        <td data-readonly="true" data-bind="html: awayTeam.R"></td>
+                        <td data-readonly="true" data-bind="html: awayTeam.H"></td>
+                        <td data-readonly="true" data-bind="html: awayTeam.E"></td>
+                    </tr>
+                    <tr dat-bind="with: boxScore.homeTeam">
+                        <td class="nameField" data-bind="html: homeTeam.name"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn1"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn2"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn3"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn4"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn5"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn6"></td>
+                        <td class="statField" data-bind="editablefield: homeTeam.inn7"></td>
+                        <td data-readonly="true" data-bind="html: homeTeam.R"></td>
+                        <td data-readonly="true" data-bind="html: homeTeam.H"></td>
+                        <td data-readonly="true" data-bind="html: homeTeam.E"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="row-fluid">
         <ul class="nav nav-tabs">
             <li class="active"><a href="#batting" data-toggle="tab">Batting</a></li>
@@ -109,23 +158,23 @@
                                 <td class="nameField" data-readonly="true">
                                     <a data-bind="html: PlayerName.LastName(), attr: { title: PlayerName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId() }"></a>
                                 </td>
-                                <td class="statField" data-type='number' data-bind="editablefield: AB"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: H"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: R"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: D"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: T"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: HR"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: RBI"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: SO"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: BB"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: SB"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: CS"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: SH"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: SF"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: RE"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: INTR"></td>
-                                <td class="statField" data-type='number' data-bind="editablefield: LOB"></td>
+                                <td class="statField" data-bind="editablefield: AB"></td>
+                                <td class="statField" data-bind="editablefield: H"></td>
+                                <td class="statField" data-bind="editablefield: R"></td>
+                                <td class="statField" data-bind="editablefield: D"></td>
+                                <td class="statField" data-bind="editablefield: T"></td>
+                                <td class="statField" data-bind="editablefield: HR"></td>
+                                <td class="statField" data-bind="editablefield: RBI"></td>
+                                <td class="statField" data-bind="editablefield: SO"></td>
+                                <td class="statField" data-bind="editablefield: BB"></td>
+                                <td class="statField" data-bind="editablefield: HBP"></td>
+                                <td class="statField" data-bind="editablefield: SB"></td>
+                                <td class="statField" data-bind="editablefield: CS"></td>
+                                <td class="statField" data-bind="editablefield: SH"></td>
+                                <td class="statField" data-bind="editablefield: SF"></td>
+                                <td class="statField" data-bind="editablefield: RE"></td>
+                                <td class="statField" data-bind="editablefield: INTR"></td>
+                                <td class="statField" data-bind="editablefield: LOB"></td>
                                 <td data-readonly="true" data-bind="html: TB.dynamicVal"></td>
                                 <td data-readonly="true" data-bind="html: PA.dynamicVal"></td>
                                 <td data-readonly="true" data-bind="html: OBA.dynamicVal"></td>
@@ -230,21 +279,21 @@
                                     <td class="nameField" data-readonly="true">
                                         <a data-bind="html: PlayerName.LastName(), attr: { title: PlayerName, href: window.config.rootUri + '/baseball/player/season/@Model.AccountId/' + PlayerId() }"></a>
                                     </td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: W"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: L"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: S"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: IPDecimal"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: BF"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: H"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: R"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: ER"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: D"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: T"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: HR"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: SO"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: BB"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: HBP"></td>
-                                    <td class="statField" data-type='number' data-bind="editablefield: SC"></td>
+                                    <td class="statField" data-bind="editablefield: W"></td>
+                                    <td class="statField" data-bind="editablefield: L"></td>
+                                    <td class="statField" data-bind="editablefield: S"></td>
+                                    <td class="statField" data-bind="editablefield: IPDecimal"></td>
+                                    <td class="statField" data-bind="editablefield: BF"></td>
+                                    <td class="statField" data-bind="editablefield: H"></td>
+                                    <td class="statField" data-bind="editablefield: R"></td>
+                                    <td class="statField" data-bind="editablefield: ER"></td>
+                                    <td class="statField" data-bind="editablefield: D"></td>
+                                    <td class="statField" data-bind="editablefield: T"></td>
+                                    <td class="statField" data-bind="editablefield: HR"></td>
+                                    <td class="statField" data-bind="editablefield: SO"></td>
+                                    <td class="statField" data-bind="editablefield: BB"></td>
+                                    <td class="statField" data-bind="editablefield: HBP"></td>
+                                    <td class="statField" data-bind="editablefield: SC"></td>
                                     <td data-readonly="true" data-bind="html: K9.dynamicVal"></td>
                                     <td data-readonly="true" data-bind="html: BB9.dynamicVal"></td>
                                     <td data-readonly="true" data-bind="html: OBA.dynamicVal"></td>

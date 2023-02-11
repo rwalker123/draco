@@ -12,6 +12,62 @@
     }
 }
 
+var BoxScoreVM = function (data, parent, accountId) {
+    var self = this;
+
+    self.accountId = accountId;
+    // make a function to prevent object thinking it changed when
+    // the parent changes.
+    self.parent = function () {
+        return parent;
+    };
+
+    // mappings to handle special cases in parsing the object.
+    self.mapping = {
+        //'LastPost': {
+        //    create: function (options) {
+        //        if (options.data)
+        //            return ko.observable(new MessagePostViewModel(options.data, self.userId, self.isAdmin));
+        //        else
+        //            return ko.observable();
+        //    }
+        //    update: function (options) {
+        //        return options.data;
+        //    }
+        //}
+    }
+
+    ko.mapping.fromJS(data, self.mapping, self);
+
+    self.firstChange = true;
+
+    // track changes so we know what to save.
+    self.hasChanged = ko.computed(function () {
+
+        ko.toJS(self);
+
+        if (self.firstChange) {
+            self.firstChange = false;
+            return;
+        }
+
+        self.saveChanges();
+    });
+
+    self.saveChanges = function (asSync) {
+
+    }
+
+    self.update = function (data) {
+        ko.mapping.fromJS(data, self);
+    }
+
+    self.toJS = function () {
+        var js = ko.mapping.toJS(self);
+        return js;
+    }
+}
+
 var PlayerBatStatsVM = function (data, parent, accountId) {
 
     var self = this;
@@ -366,10 +422,12 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     self.selectedGame = ko.observable();
     self.selectedGame.subscribe(function () {
 
-        if (self.selectedGame() == 0)
-        {
+        if (self.selectedGame() == 0) {
             $('#statsTab a:first').tab('show');
+        } else {
+            self.getBoxScore();
         }
+
         self.getPlayersBatStats();
         self.getPlayersPitchStats();
         self.getGameSummary();
@@ -382,6 +440,7 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
     self.availableBatPlayers = ko.observableArray();
     self.playerBatStats = ko.observableArray();
     self.batStatsTotals = ko.observable();
+    self.boxScore = ko.observable();
     self.isBatLoading = ko.observable(false);
     self.isPitchLoading = ko.observable(false);
 
@@ -452,6 +511,38 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
         });
 
         self.getBatStatsTotals();
+    }
+
+    self.getBoxScore = function () {
+        self.boxScore(new BoxScoreVM({
+            awayTeam: {
+                name: 'Braves',
+                inn1: 10,
+                inn2: 20,
+                inn3: 30,
+                inn4: 40,
+                inn5: 50,
+                inn6: 60,
+                inn7: 70,
+                R: 100,
+                H: 200,
+                E: 50
+            },
+            homeTeam: {
+                name: 'Reds',
+                inn1: 1,
+                inn2: 2,
+                inn3: 3,
+                inn4: 4,
+                inn5: 5,
+                inn6: 6,
+                inn7: 7,
+                R: 10,
+                H: 20,
+                E: 5
+            }
+
+        }, self, self.accountId));
     }
 
     self.getBatStatsTotals = function () {
@@ -622,7 +713,6 @@ var TeamStatsVM = function (accountId, teamSeasonId, isAdmin, isTeamAdmin) {
         });
 
     };
-
 
     self.getPitchStatsTotals = function () {
         var url = window.config.rootUri + '/api/TeamStatisticsAPI/' + self.accountId + '/Team/' + self.teamSeasonId + '/gamepitchstatstotals';
