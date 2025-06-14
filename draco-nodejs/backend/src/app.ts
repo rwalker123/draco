@@ -11,6 +11,8 @@ dotenv.config();
 // import { accountsRouter } from './routes/accounts';
 // import { teamsRouter } from './routes/teams';
 // import { playersRouter } from './routes/players';
+import testDatabaseRouter from './routes/testdatabase';
+import { bigIntSerializer } from './middleware/bigint-serializer';
 
 const app = express();
 
@@ -27,6 +29,9 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Global BigInt serialization middleware
+app.use(bigIntSerializer);
+
 // Health check endpoint
 app.get('/health', (req: any, res: any) => {
   res.status(200).json({ 
@@ -41,6 +46,7 @@ app.get('/health', (req: any, res: any) => {
 // app.use('/api/accounts', accountsRouter);
 // app.use('/api/teams', teamsRouter);
 // app.use('/api/players', playersRouter);
+app.use('/api/testdatabase', testDatabaseRouter);
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {

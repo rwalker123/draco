@@ -1,0 +1,1312 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accounthandouts {
+  id          BigInt   @id(map: "idx_16981_pk_accounthandouts")
+  description String
+  filename    String
+  accountid   BigInt
+  accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accounthandouts_accounts")
+
+  @@index([accountid], map: "idx_16981_ix_accounthandouts_column")
+}
+
+model accounts {
+  id                      BigInt                    @id(map: "idx_16986_pk_accounts")
+  name                    String
+  firstyear               Int
+  accounttypeid           BigInt
+  affiliationid           BigInt
+  timezoneid              String
+  twitteraccountname      String
+  twitteroauthtoken       String
+  twitteroauthsecretkey   String
+  youtubeuserid           String?
+  facebookfanpage         String?
+  twitterwidgetscript     String?
+  defaultvideo            String                    @default("")
+  autoplayvideo           Boolean                   @default(false)
+  owneruserid             String?
+  accounthandouts         accounthandouts[]
+  aspnetusers             aspnetusers?              @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
+  accounttypes            accounttypes              @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
+  accountsettings         accountsettings[]
+  accountsurl             accountsurl[]
+  accountwelcome          accountwelcome[]
+  availablefields         availablefields[]
+  currentseason           currentseason?
+  divisiondefs            divisiondefs[]
+  golfleaguecourses       golfleaguecourses[]
+  golfleaguesetup         golfleaguesetup[]
+  hof                     hof[]
+  hofnomination           hofnomination[]
+  hofnominationsetup      hofnominationsetup?
+  league                  league[]
+  leaguefaq               leaguefaq[]
+  leaguenews              leaguenews[]
+  leagueumpires           leagueumpires[]
+  photogallery            photogallery[]
+  playerswantedclassified playerswantedclassified[]
+  profilecategory         profilecategory[]
+  season                  season[]
+  sponsors                sponsors[]
+  teams                   teams[]
+  teamswantedclassified   teamswantedclassified[]
+  votequestion            votequestion[]
+  workoutannouncement     workoutannouncement[]
+}
+
+model accountsettings {
+  accountid    BigInt
+  settingkey   String
+  settingvalue String
+  accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsettings_accounts")
+
+  @@id([accountid, settingkey], map: "idx_16993_pk_accountsettings")
+}
+
+model accountsurl {
+  id        BigInt   @id(map: "idx_16998_pk_accountsurl")
+  accountid BigInt
+  url       String
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsurl_accounts")
+}
+
+model accounttypes {
+  id                BigInt     @id(map: "idx_17003_pk_accounttypes")
+  name              String
+  filepath          String
+  facebookappid     String
+  facebooksecretkey String
+  twitterappid      String
+  twittersecret     String
+  accounts          accounts[]
+}
+
+model accountwelcome {
+  id          BigInt   @id(map: "idx_17008_pk_accountwelcome")
+  accountid   BigInt
+  orderno     Int      @db.SmallInt
+  captionmenu String
+  welcometext String
+  teamid      BigInt?
+  accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountwelcome_accounts")
+  teams       teams?   @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accountwelcome_teams")
+
+  @@index([accountid], map: "idx_17008_ix_accountwelcome_accountid")
+  @@index([teamid], map: "idx_17008_ix_accountwelcome_teamid")
+}
+
+model affiliations {
+  id   BigInt @id(map: "idx_17013_pk_affiliations")
+  name String @unique(map: "idx_17013_ix_affiliations")
+  url  String @default("")
+}
+
+model aspnetroles {
+  id              String            @id(map: "idx_17019_pk_dbo_aspnetroles")
+  name            String
+  aspnetuserroles aspnetuserroles[]
+}
+
+model aspnetuserclaims {
+  id          BigInt      @id(map: "idx_17025_pk_dbo_aspnetuserclaims") @default(autoincrement())
+  claimtype   String?
+  claimvalue  String?
+  userid      String
+  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserclaims_dbo_aspnetusers_user_id")
+
+  @@index([userid], map: "idx_17025_ix_user_id")
+}
+
+model aspnetuserlogins {
+  userid        String
+  loginprovider String
+  providerkey   String
+  aspnetusers   aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserlogins_dbo_aspnetusers_userid")
+
+  @@id([userid, loginprovider, providerkey], map: "idx_17031_pk_dbo_aspnetuserlogins")
+  @@index([userid], map: "idx_17031_ix_userid")
+}
+
+model aspnetuserroles {
+  userid      String
+  roleid      String
+  aspnetroles aspnetroles @relation(fields: [roleid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserroles_dbo_aspnetroles_roleid")
+  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserroles_dbo_aspnetusers_userid")
+
+  @@id([userid, roleid], map: "idx_17036_pk_dbo_aspnetuserroles")
+  @@index([roleid], map: "idx_17036_ix_roleid")
+  @@index([userid], map: "idx_17036_ix_userid")
+}
+
+model aspnetusers {
+  id                   String             @id(map: "idx_17041_pk_dbo_aspnetusers")
+  email                String?
+  emailconfirmed       Boolean
+  passwordhash         String?
+  securitystamp        String?
+  phonenumber          String?
+  phonenumberconfirmed Boolean
+  twofactorenabled     Boolean
+  lockoutenddateutc    DateTime?          @db.Timestamptz(6)
+  lockoutenabled       Boolean
+  accessfailedcount    Int
+  username             String?            @unique(map: "idx_17041_NonClusteredIndex-20160521-223420")
+  accounts             accounts[]
+  aspnetuserclaims     aspnetuserclaims[]
+  aspnetuserlogins     aspnetuserlogins[]
+  aspnetuserroles      aspnetuserroles[]
+}
+
+model availablefields {
+  id                  BigInt                @id(map: "idx_17046_pk_availablefields")
+  accountid           BigInt
+  name                String
+  shortname           String
+  comment             String
+  address             String
+  city                String
+  state               String
+  zipcode             String
+  directions          String
+  rainoutnumber       String
+  latitude            String
+  longitude           String
+  accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_availablefields_accounts")
+  fieldcontacts       fieldcontacts[]
+  workoutannouncement workoutannouncement[]
+
+  @@index([accountid], map: "idx_17046_ix_availablefields_accountid")
+}
+
+model batstatsum {
+  id             BigInt         @id(map: "idx_17051_pk_batstatsum")
+  playerid       BigInt
+  gameid         BigInt
+  teamid         BigInt
+  ab             Int
+  h              Int
+  r              Int
+  B2             Int            @map("2B")
+  B3             Int            @map("3B")
+  hr             Int
+  rbi            Int
+  so             Int
+  bb             Int
+  re             Int
+  hbp            Int
+  intr           Int
+  sf             Int
+  sh             Int
+  sb             Int
+  cs             Int
+  lob            Int
+  tb             Int?
+  pa             Int?
+  obadenominator Int?
+  obanumerator   Int?
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_batstatsum_leagueschedule")
+  rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_batstatsum_rosterseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_batstatsum_teamsseason")
+
+  @@unique([playerid, gameid, teamid], map: "idx_17051_ix_batstatsum")
+  @@index([playerid], map: "idx_17051_ix_batstatsum_playerid")
+  @@index([teamid], map: "idx_17051_ix_batstatsum_teamseasonid")
+  @@index([gameid], map: "idx_17051_ix_gameid")
+}
+
+model contactroles {
+  id        BigInt   @id(map: "idx_17054_pk_contactroles")
+  contactid BigInt
+  roleid    String
+  roledata  BigInt
+  accountid BigInt
+  contacts  contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_contactroles_contacts")
+
+  @@index([contactid], map: "idx_17054_ix_contactroles_contactid")
+}
+
+model contacts {
+  id                                                        BigInt                     @id(map: "idx_17059_pk_contacts")
+  userid                                                    String?
+  lastname                                                  String
+  firstname                                                 String
+  middlename                                                String?
+  phone1                                                    String?
+  phone2                                                    String?
+  phone3                                                    String?
+  creatoraccountid                                          BigInt
+  streetaddress                                             String?
+  city                                                      String?
+  state                                                     String?
+  zip                                                       String?
+  dateofbirth                                               DateTime                   @db.Timestamptz(6)
+  isfemale                                                  Boolean?                   @default(false)
+  email                                                     String?
+  contactroles                                              contactroles[]
+  fieldcontacts                                             fieldcontacts[]
+  golfcourseforcontact                                      golfcourseforcontact[]
+  golferstatsconfiguration                                  golferstatsconfiguration[]
+  golferstatsvalue                                          golferstatsvalue[]
+  golfleaguesetup_golfleaguesetup_presidentidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_presidentidTocontacts")
+  golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
+  golfleaguesetup_golfleaguesetup_secretaryidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_secretaryidTocontacts")
+  golfleaguesetup_golfleaguesetup_treasureridTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_treasureridTocontacts")
+  golfroster                                                golfroster[]
+  golfscore                                                 golfscore[]
+  hof                                                       hof[]
+  leagueumpires                                             leagueumpires[]
+  memberbusiness                                            memberbusiness[]
+  messagepost                                               messagepost[]
+  messagetopic                                              messagetopic[]
+  playerprofile                                             playerprofile[]
+  playerswantedclassified                                   playerswantedclassified[]
+  roster                                                    roster[]
+  teamseasonmanager                                         teamseasonmanager[]
+  voteanswers                                               voteanswers[]
+
+  @@unique([lastname, firstname, middlename, creatoraccountid], map: "idx_17059_ix_contacts")
+  @@index([userid, creatoraccountid], map: "idx_17059_ix_contacts_userid")
+}
+
+model currentseason {
+  seasonid  BigInt
+  accountid BigInt   @id(map: "idx_17065_pk_currentseason")
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_currentseason_accounts")
+
+  @@index([accountid], map: "idx_17065_ix_currentseason_accountid")
+}
+
+model displayleagueleaders {
+  fieldname   String
+  accountid   BigInt
+  teamid      BigInt
+  isbatleader Boolean
+
+  @@id([fieldname, isbatleader, accountid, teamid], map: "idx_17068_pk_displayleagueleaders")
+}
+
+model divisiondefs {
+  id             BigInt           @id(map: "idx_17073_pk_divisiondefs")
+  accountid      BigInt
+  name           String
+  accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_divisiondefs_accounts")
+  divisionseason divisionseason[]
+
+  @@index([accountid], map: "idx_17073_ix_divisiondefs_accountid")
+}
+
+model divisionseason {
+  id             BigInt       @id(map: "idx_17078_pk_divisionseason")
+  divisionid     BigInt
+  leagueseasonid BigInt
+  priority       Int
+  divisiondefs   divisiondefs @relation(fields: [divisionid], references: [id], onDelete: Cascade, map: "fk_divisionseason_divisiondefs")
+  leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_divisionseason_leagueseason")
+
+  @@index([divisionid], map: "idx_17078_ix_divisionseason_divisionid")
+  @@index([leagueseasonid], map: "idx_17078_ix_divisionseason_leagueseasonid")
+}
+
+model fieldcontacts {
+  id              BigInt          @id(map: "idx_17081_pk_fieldcontacts")
+  fieldid         BigInt
+  contactid       BigInt
+  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_fieldcontacts_availablefields")
+  contacts        contacts        @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_fieldcontacts_contacts")
+
+  @@index([contactid], map: "idx_17081_ix_fieldcontacts_contactid")
+  @@index([fieldid], map: "idx_17081_ix_fieldcontacts_fieldid")
+}
+
+model fieldstatsum {
+  id             BigInt         @id(map: "idx_17084_pk_fieldstatsum")
+  playerid       BigInt
+  gameid         BigInt
+  teamid         BigInt
+  pos            Int
+  ip             Int
+  ip2            Int
+  po             Int
+  a              Int
+  e              Int
+  pb             Int
+  sb             Int
+  cs             Int
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_fieldstatsum_leagueschedule")
+  rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_fieldstatsum_rosterseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fieldstatsum_teamsseason")
+
+  @@unique([playerid, gameid, teamid, pos], map: "idx_17084_ix_fieldstatsum")
+  @@index([gameid], map: "idx_17084_ix_fieldstatsum_gameid")
+  @@index([playerid], map: "idx_17084_ix_fieldstatsum_playerid")
+  @@index([teamid], map: "idx_17084_ix_fieldstatsum_teamid")
+}
+
+model gameejections {
+  id             BigInt         @id(map: "idx_17087_pk_gameejections")
+  leagueseasonid BigInt
+  gameid         BigInt
+  playerseasonid BigInt
+  umpireid       BigInt
+  comments       String
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_gameejections_leagueschedule")
+  leagueseason   leagueseason   @relation(fields: [leagueseasonid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_gameejections_leagueseason")
+  rosterseason   rosterseason   @relation(fields: [playerseasonid], references: [id], onDelete: Cascade, map: "fk_gameejections_rosterseason")
+
+  @@index([gameid], map: "idx_17087_ix_gameejections_gameid")
+  @@index([leagueseasonid], map: "idx_17087_ix_gameejections_leagueseasonid")
+  @@index([playerseasonid], map: "idx_17087_ix_gameejections_playerseasonid")
+  @@index([umpireid], map: "idx_17087_ix_gameejections_umpireid")
+}
+
+model gamerecap {
+  gameid         BigInt
+  teamid         BigInt
+  recap          String
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_gamerecap_leagueschedule")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_gamerecap_teamsseason")
+
+  @@id([gameid, teamid], map: "idx_17092_pk_gamerecap")
+}
+
+model golfcourse {
+  id                   BigInt                 @id(map: "idx_17097_pk_golfcourse")
+  name                 String
+  designer             String?
+  yearbuilt            Int?
+  numberofholes        Int
+  address              String?
+  city                 String?
+  state                String?
+  zip                  String?
+  country              String?
+  menspar1             Int
+  menspar2             Int
+  menspar3             Int
+  menspar4             Int
+  menspar5             Int
+  menspar6             Int
+  menspar7             Int
+  menspar8             Int
+  menspar9             Int
+  menspar10            Int
+  menspar11            Int
+  menspar12            Int
+  menspar13            Int
+  menspar14            Int
+  menspar15            Int
+  menspar16            Int
+  menspar17            Int
+  menspar18            Int
+  womanspar1           Int
+  womanspar2           Int
+  womanspar3           Int
+  womanspar4           Int
+  womanspar5           Int
+  womanspar6           Int
+  womanspar7           Int
+  womanspar8           Int
+  womanspar9           Int
+  womanspar10          Int
+  womanspar11          Int
+  womanspar12          Int
+  womanspar13          Int
+  womanspar14          Int
+  womanspar15          Int
+  womanspar16          Int
+  womanspar17          Int
+  womanspar18          Int
+  menshandicap1        Int
+  menshandicap2        Int
+  menshandicap3        Int
+  menshandicap4        Int
+  menshandicap5        Int
+  menshandicap6        Int
+  menshandicap7        Int
+  menshandicap8        Int
+  menshandicap9        Int
+  menshandicap10       Int
+  menshandicap11       Int
+  menshandicap12       Int
+  menshandicap13       Int
+  menshandicap14       Int
+  menshandicap15       Int
+  menshandicap16       Int
+  menshandicap17       Int
+  menshandicap18       Int
+  womanshandicap1      Int
+  womanshandicap2      Int
+  womanshandicap3      Int
+  womanshandicap4      Int
+  womanshandicap5      Int
+  womanshandicap6      Int
+  womanshandicap7      Int
+  womanshandicap8      Int
+  womanshandicap9      Int
+  womanshandicap10     Int
+  womanshandicap11     Int
+  womanshandicap12     Int
+  womanshandicap13     Int
+  womanshandicap14     Int
+  womanshandicap15     Int
+  womanshandicap16     Int
+  womanshandicap17     Int
+  womanshandicap18     Int
+  golfcourseforcontact golfcourseforcontact[]
+  golfleaguecourses    golfleaguecourses[]
+  golfmatch            golfmatch[]
+  golfscore            golfscore[]
+  golfteeinformation   golfteeinformation[]
+}
+
+model golfcourseforcontact {
+  id         BigInt     @id(map: "idx_17102_pk_golfcourseforcontact")
+  contactid  BigInt
+  courseid   BigInt
+  contacts   contacts   @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfcourseforcontact_contacts")
+  golfcourse golfcourse @relation(fields: [courseid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfcourseforcontact_golfcourse")
+
+  @@index([contactid], map: "idx_17102_ix_golfcourseforcontact_contactid")
+  @@index([courseid], map: "idx_17102_ix_golfcourseforcontact_courseid")
+}
+
+model golferstatsconfiguration {
+  id          BigInt      @id(map: "idx_17105_pk_golferstatsconfiguration")
+  contactid   BigInt
+  statid      BigInt
+  contacts    contacts    @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsconfiguration_contacts")
+  golfstatdef golfstatdef @relation(fields: [statid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsconfiguration_golfstatdef")
+
+  @@index([contactid], map: "idx_17105_ix_golferstatsconfiguration_contactid")
+  @@index([statid], map: "idx_17105_ix_golferstatsconfiguration_statid")
+}
+
+model golferstatsvalue {
+  id        BigInt    @id(map: "idx_17108_pk_golferstatsvalue")
+  scoreid   BigInt
+  contactid BigInt
+  holeno    Int
+  value     String
+  contacts  contacts  @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsvalue_contacts")
+  golfscore golfscore @relation(fields: [scoreid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsvalue_golfscore")
+
+  @@index([contactid], map: "idx_17108_ix_golferstatsvalue_contactid")
+  @@index([scoreid], map: "idx_17108_ix_golferstatsvalue_scoreid")
+}
+
+model golfleaguecourses {
+  accountid        BigInt
+  courseid         BigInt
+  defaultmenstee   BigInt?
+  defaultwomanstee BigInt?
+  accounts         accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfleaguecourses_accounts")
+  golfcourse       golfcourse @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfleaguecourses_golfcourse")
+
+  @@id([accountid, courseid], map: "idx_17113_pk_golfleaguecourses")
+}
+
+model golfleaguesetup {
+  id                                                 BigInt   @id(map: "idx_17116_pk_golfleaguesetup")
+  accountid                                          BigInt
+  presidentid                                        BigInt
+  vicepresidentid                                    BigInt
+  secretaryid                                        BigInt
+  treasurerid                                        BigInt
+  leagueday                                          Int
+  firstteetime                                       DateTime @db.Timestamptz(6)
+  timebetweenteetimes                                Int
+  holespermatch                                      Int
+  teeoffformat                                       Int
+  indnetperholepts                                   Int
+  indnetperninepts                                   Int
+  indnetpermatchpts                                  Int
+  indnettotalholespts                                Int
+  indnetagainstfieldpts                              Int
+  indnetagainstfielddescpts                          Int
+  indactperholepts                                   Int
+  indactperninepts                                   Int
+  indactpermatchpts                                  Int
+  indacttotalholespts                                Int
+  indactagainstfieldpts                              Int
+  indactagainstfielddescpts                          Int
+  teamnetperholepts                                  Int
+  teamnetperninepts                                  Int
+  teamnetpermatchpts                                 Int
+  teamnettotalholespts                               Int
+  teamnetagainstfieldpts                             Int
+  teamactperholepts                                  Int
+  teamactperninepts                                  Int
+  teamactpermatchpts                                 Int
+  teamacttotalholespts                               Int
+  teamactagainstfieldpts                             Int
+  teamagainstfielddescpts                            Int
+  teamnetbestballperholepts                          Int
+  teamactbestballperholepts                          Int
+  useteamscoring                                     Boolean
+  useindividualscoring                               Boolean
+  accounts                                           accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_accounts")
+  contacts_golfleaguesetup_presidentidTocontacts     contacts @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts")
+  contacts_golfleaguesetup_vicepresidentidTocontacts contacts @relation("golfleaguesetup_vicepresidentidTocontacts", fields: [vicepresidentid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts1")
+  contacts_golfleaguesetup_secretaryidTocontacts     contacts @relation("golfleaguesetup_secretaryidTocontacts", fields: [secretaryid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts2")
+  contacts_golfleaguesetup_treasureridTocontacts     contacts @relation("golfleaguesetup_treasureridTocontacts", fields: [treasurerid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts3")
+
+  @@index([accountid], map: "idx_17116_ix_golfleaguesetup_accountid")
+}
+
+model golfmatch {
+  id                                       BigInt            @id(map: "idx_17119_pk_golfmatch")
+  team1                                    BigInt
+  team2                                    BigInt
+  leagueid                                 BigInt
+  matchdate                                DateTime          @db.Timestamptz(6)
+  matchtime                                DateTime          @db.Timestamptz(6)
+  courseid                                 BigInt?           @default(0)
+  matchstatus                              Int
+  matchtype                                Int
+  comment                                  String
+  golfcourse                               golfcourse?       @relation(fields: [courseid], references: [id], onDelete: SetDefault, onUpdate: NoAction, map: "fk_golfmatch_golfcourse")
+  leagueseason                             leagueseason      @relation(fields: [leagueid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfmatch_leagueseason")
+  teamsseason_golfmatch_team2Toteamsseason teamsseason       @relation("golfmatch_team2Toteamsseason", fields: [team2], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatch_teams")
+  teamsseason_golfmatch_team1Toteamsseason teamsseason       @relation("golfmatch_team1Toteamsseason", fields: [team1], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatch_teamsseason")
+  golfmatchscores                          golfmatchscores[]
+
+  @@index([leagueid], map: "idx_17119_ix_golfmatch_leagueid")
+  @@index([team1], map: "idx_17119_ix_golfmatch_team1")
+  @@index([team2], map: "idx_17119_ix_golfmatch_team2")
+}
+
+model golfmatchscores {
+  matchid     BigInt
+  teamid      BigInt
+  playerid    BigInt
+  scoreid     BigInt
+  golfmatch   golfmatch   @relation(fields: [matchid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfmatch")
+  golfroster  golfroster  @relation(fields: [playerid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfroster")
+  golfscore   golfscore   @relation(fields: [scoreid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfscore")
+  teamsseason teamsseason @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_teamsseason")
+
+  @@id([matchid, teamid, playerid, scoreid], map: "idx_17125_pk_golfmatchscores")
+}
+
+model golfroster {
+  id                  BigInt            @id(map: "idx_17128_pk_golfroster")
+  contactid           BigInt
+  teamseasonid        BigInt
+  isactive            Boolean
+  initialdifferential Float?
+  issub               Boolean           @default(false)
+  subseasonid         BigInt?
+  golfmatchscores     golfmatchscores[]
+  contacts            contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfroster_contacts")
+  teamsseason         teamsseason       @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_golfroster_teamsseason")
+
+  @@index([teamseasonid], map: "idx_17128_ix_golfroster")
+}
+
+model golfscore {
+  id                 BigInt             @id(map: "idx_17132_pk_golfscore")
+  courseid           BigInt
+  contactid          BigInt
+  teeid              BigInt
+  dateplayed         DateTime           @db.Timestamptz(6)
+  holesplayed        Int
+  totalscore         Int
+  totalsonly         Boolean
+  holescore1         Int
+  holescore2         Int
+  holescore3         Int
+  holescore4         Int
+  holescore5         Int
+  holescore6         Int
+  holescore7         Int
+  holescore8         Int
+  holescore9         Int
+  holescore10        Int
+  holescore11        Int
+  holescore12        Int
+  holescore13        Int
+  holescore14        Int
+  holescore15        Int
+  holescore16        Int
+  holescore17        Int
+  holescore18        Int
+  startindex         Float?
+  startindex9        Float?
+  golferstatsvalue   golferstatsvalue[]
+  golfmatchscores    golfmatchscores[]
+  contacts           contacts           @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfscore_contacts")
+  golfcourse         golfcourse         @relation(fields: [courseid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfscore_golfcourse")
+  golfteeinformation golfteeinformation @relation(fields: [teeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfscore_golfteeinformation")
+
+  @@index([contactid], map: "idx_17132_ix_golfscore_contactid")
+  @@index([courseid], map: "idx_17132_ix_golfscore_courseid")
+  @@index([teeid], map: "idx_17132_ix_golfscore_teeid")
+}
+
+model golfstatdef {
+  id                       BigInt                     @id(map: "idx_17135_pk_golfstatdef")
+  name                     String
+  shortname                String
+  datatype                 Int
+  iscalculated             Boolean
+  isperholevalue           Boolean
+  formulacode              String
+  validationcode           String
+  listvalues               String
+  golferstatsconfiguration golferstatsconfiguration[]
+}
+
+model golfteeinformation {
+  id                 BigInt      @id(map: "idx_17140_pk_golfteeinformation")
+  courseid           BigInt
+  teecolor           String
+  teename            String
+  mensrating         Float
+  mensslope          Float
+  womansrating       Float
+  womansslope        Float
+  mensratingfront9   Float
+  mensslopefront9    Float
+  womansratingfront9 Float
+  womansslopefront9  Float
+  mensratingback9    Float
+  mensslopeback9     Float
+  womansratingback9  Float
+  womansslopeback9   Float
+  distancehole1      Int
+  distancehole2      Int
+  distancehole3      Int
+  distancehole4      Int
+  distancehole5      Int
+  distancehole6      Int
+  distancehole7      Int
+  distancehole8      Int
+  distancehole9      Int
+  distancehole10     Int
+  distancehole11     Int
+  distancehole12     Int
+  distancehole13     Int
+  distancehole14     Int
+  distancehole15     Int
+  distancehole16     Int
+  distancehole17     Int
+  distancehole18     Int
+  priority           Int         @default(0)
+  golfscore          golfscore[]
+  golfcourse         golfcourse  @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfteeinformation_golfcourse")
+
+  @@index([courseid], map: "idx_17140_ix_golfteeinformation_courseid")
+}
+
+model hof {
+  id           BigInt   @id(map: "idx_17146_pk_hof")
+  accountid    BigInt
+  yearinducted Int
+  contactid    BigInt
+  bio          String
+  accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hof_accounts")
+  contacts     contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_hof_contacts")
+
+  @@index([accountid], map: "idx_17146_ix_hof_accountid")
+  @@index([contactid], map: "idx_17146_ix_hof_contactid")
+}
+
+model hofnomination {
+  id          BigInt   @id(map: "idx_17151_pk_hofnomination")
+  accountid   BigInt
+  nominator   String
+  phonenumber String
+  email       String
+  nominee     String
+  reason      String
+  accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hofnomination_accounts")
+
+  @@index([accountid], map: "idx_17151_ix_hofnomination_accountid")
+}
+
+model hofnominationsetup {
+  accountid        BigInt   @id(map: "idx_17156_pk_hofnominationsetup")
+  enablenomination Boolean
+  criteriatext     String
+  accounts         accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hofnominationsetup_accounts")
+}
+
+model league {
+  id           BigInt         @id(map: "idx_17161_pk_league2")
+  accountid    BigInt
+  name         String
+  accounts     accounts       @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_league_accounts")
+  leagueseason leagueseason[]
+
+  @@index([accountid], map: "idx_17161_ix_league_accountid")
+}
+
+model leagueevents {
+  id             BigInt       @id(map: "idx_17166_pk_leagueevents")
+  eventdate      DateTime     @db.Timestamptz(6)
+  description    String
+  leagueseasonid BigInt
+  leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
+
+  @@index([leagueseasonid], map: "idx_17166_ix_leagueevents_leagueseasonid")
+}
+
+model leaguefaq {
+  id        BigInt   @id(map: "idx_17171_pk_leaguefaq")
+  accountid BigInt
+  question  String
+  answer    String
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leaguefaq_accounts")
+
+  @@index([accountid], map: "idx_17171_ix_leaguefaq_accountid")
+}
+
+model leaguenews {
+  id              BigInt   @id(map: "idx_17176_pk_leaguenews")
+  accountid       BigInt
+  date            DateTime @db.Timestamptz(6)
+  title           String
+  text            String
+  specialannounce Boolean
+  accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leaguenews_accounts")
+
+  @@index([accountid], map: "idx_17176_ix_leaguenews_accountid")
+}
+
+model leagueschedule {
+  id            BigInt          @id(map: "idx_17181_pk_leagueschedule")
+  gamedate      DateTime        @db.Timestamptz(6)
+  hteamid       BigInt
+  vteamid       BigInt
+  hscore        Int
+  vscore        Int
+  comment       String
+  fieldid       BigInt          @default(0)
+  leagueid      BigInt
+  gamestatus    Int
+  gametype      BigInt
+  umpire1       BigInt
+  umpire2       BigInt
+  umpire3       BigInt
+  umpire4       BigInt
+  batstatsum    batstatsum[]
+  fieldstatsum  fieldstatsum[]
+  gameejections gameejections[]
+  gamerecap     gamerecap[]
+  leagueseason  leagueseason    @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
+  pitchstatsum  pitchstatsum[]
+  playerrecap   playerrecap[]
+
+  @@index([fieldid], map: "idx_17181_ix_leagueschedule_fieldid")
+  @@index([gamedate], map: "idx_17181_ix_leagueschedule_gamedate")
+  @@index([hteamid], map: "idx_17181_ix_leagueschedule_hteamid")
+  @@index([leagueid], map: "idx_17181_ix_leagueschedule_leagueid")
+  @@index([vteamid], map: "idx_17181_ix_leagueschedule_vteamid")
+}
+
+model leagueseason {
+  id             BigInt           @id(map: "idx_17187_pk_leagueseason2")
+  leagueid       BigInt
+  seasonid       BigInt
+  divisionseason divisionseason[]
+  gameejections  gameejections[]
+  golfmatch      golfmatch[]
+  leagueevents   leagueevents[]
+  leagueschedule leagueschedule[]
+  league         league           @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueseason_league")
+  season         season           @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_leagueseason_season")
+  playoffsetup   playoffsetup[]
+  teamsseason    teamsseason[]
+
+  @@index([leagueid], map: "idx_17187_ix_leagueseason_leagueid")
+  @@index([seasonid], map: "idx_17187_ix_leagueseason_seasonid")
+}
+
+model leagueumpires {
+  id        BigInt   @id(map: "idx_17190_pk_leagueumpires")
+  accountid BigInt
+  contactid BigInt
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_accounts")
+  contacts  contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_contacts")
+
+  @@index([accountid], map: "idx_17190_ix_leagueumpires_accountid")
+  @@index([contactid], map: "idx_17190_ix_leagueumpires_contactid")
+}
+
+model memberbusiness {
+  id            BigInt   @id(map: "idx_17193_pk_memberbusiness")
+  contactid     BigInt
+  name          String
+  streetaddress String
+  citystatezip  String
+  description   String
+  email         String
+  phone         String
+  fax           String
+  website       String
+  contacts      contacts @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_memberbusiness_contacts")
+
+  @@index([contactid], map: "idx_17193_ix_memberbusiness_contactid")
+}
+
+model messagecategory {
+  id                  BigInt         @id(map: "idx_17198_pk_messagecategory")
+  accountid           BigInt
+  categoryorder       Int
+  categoryname        String
+  categorydescription String
+  allowanonymouspost  Boolean
+  allowanonymoustopic Boolean
+  isteam              Boolean
+  ismoderated         Boolean
+  messagepost         messagepost[]
+  messagetopic        messagetopic[]
+
+  @@index([accountid], map: "idx_17198_ix_messagecategory_accountid")
+}
+
+model messagepost {
+  id               BigInt          @id(map: "idx_17203_pk_messagepost")
+  topicid          BigInt
+  postorder        Int
+  contactcreatorid BigInt
+  postdate         DateTime        @db.Timestamptz(6)
+  posttext         String
+  editdate         DateTime        @db.Timestamptz(6)
+  postsubject      String
+  categoryid       BigInt
+  contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: Cascade, map: "fk_messagepost_contacts")
+  messagecategory  messagecategory @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_messagepost_messagecategory")
+  messagetopic     messagetopic    @relation(fields: [topicid], references: [id], onDelete: Cascade, map: "fk_messagepost_messagetopic")
+
+  @@index([categoryid], map: "idx_17203_ix_messagepost_categoryid")
+  @@index([contactcreatorid], map: "idx_17203_ix_messagepost_contactcreatorid")
+  @@index([topicid], map: "idx_17203_ix_messagepost_topicid")
+}
+
+model messagetopic {
+  id               BigInt          @id(map: "idx_17208_pk_messagetopic")
+  categoryid       BigInt
+  contactcreatorid BigInt
+  topiccreatedate  DateTime        @db.Timestamptz(6)
+  topic            String
+  stickytopic      Boolean
+  numberofviews    BigInt
+  messagepost      messagepost[]
+  contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_messagetopic_contacts")
+  messagecategory  messagecategory @relation(fields: [categoryid], references: [id], onDelete: Cascade, map: "fk_messagetopic_messagecategory")
+
+  @@index([categoryid], map: "idx_17208_ix_messagetopic_categoryid")
+  @@index([contactcreatorid], map: "idx_17208_ix_messagetopic_contactcreatorid")
+}
+
+model photogallery {
+  id        BigInt   @id(map: "idx_17213_pk_photogallery")
+  accountid BigInt
+  title     String
+  caption   String
+  albumid   BigInt
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
+
+  @@index([accountid], map: "idx_17213_ix_photogallery_accountid")
+  @@index([albumid], map: "idx_17213_ix_photogallery_albumid")
+}
+
+model photogalleryalbum {
+  id            BigInt @id(map: "idx_17218_pk_photogalleryalbum")
+  accountid     BigInt
+  title         String
+  parentalbumid BigInt
+  teamid        BigInt
+
+  @@index([accountid], map: "idx_17218_ix_photogalleryalbum_accountid")
+  @@index([parentalbumid], map: "idx_17218_ix_photogalleryalbum_parentalbumid")
+  @@index([teamid], map: "idx_17218_ix_photogalleryalbum_teamid")
+}
+
+model pitchstatsum {
+  id             BigInt         @id(map: "idx_17223_pk_pitchstatsum")
+  playerid       BigInt
+  gameid         BigInt
+  teamid         BigInt
+  ip             Int
+  ip2            Int
+  bf             Int
+  w              Int
+  l              Int
+  s              Int
+  h              Int
+  r              Int
+  er             Int
+  B2             Int            @map("2B")
+  B3             Int            @map("3B")
+  hr             Int
+  so             Int
+  bb             Int
+  wp             Int
+  hbp            Int
+  bk             Int
+  sc             Int
+  tb             Int?
+  ab             Int?
+  whipnumerator  Int?
+  ipnumerator    Int?
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_pitchstatsum_leagueschedule")
+  rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_pitchstatsum_rosterseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pitchstatsum_teamsseason")
+
+  @@unique([playerid, gameid, teamid], map: "idx_17223_ix_pitchstatsum")
+  @@index([gameid], map: "idx_17223_ix_gameid")
+  @@index([playerid], map: "idx_17223_ix_pitchstatsum_playerid")
+  @@index([teamid], map: "idx_17223_ix_pitchstatsum_teamid")
+}
+
+model playerprofile {
+  id              BigInt          @id(map: "idx_17226_pk_playerprofile")
+  playerid        BigInt
+  questionid      BigInt
+  answer          String
+  contacts        contacts        @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerprofile_contacts")
+  profilequestion profilequestion @relation(fields: [questionid], references: [id], onDelete: Cascade, map: "fk_playerprofile_profilequestion")
+
+  @@index([playerid], map: "idx_17226_ix_playerprofile_playerid")
+  @@index([questionid], map: "idx_17226_ix_playerprofile_questionid")
+}
+
+model playerrecap {
+  playerid       BigInt
+  teamid         BigInt
+  gameid         BigInt
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playerrecap_leagueschedule")
+  rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerrecap_rosterseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_playerrecap_teamsseason")
+
+  @@id([playerid, teamid, gameid], map: "idx_17231_pk_playerrecap")
+}
+
+model playerseasonaffiliationdues {
+  playerid            BigInt
+  seasonid            BigInt
+  affiliationduespaid String
+  roster              roster @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerseasonaffiliationdues_roster")
+  season              season @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_playerseasonaffiliationdues_season")
+
+  @@id([playerid, seasonid], map: "idx_17234_pk_playerseasonaffiliationdues")
+}
+
+model playerswantedclassified {
+  id                 BigInt   @id(map: "idx_17239_pk_playerswantedclassified")
+  accountid          BigInt
+  datecreated        DateTime @db.Date
+  createdbycontactid BigInt
+  teameventname      String
+  description        String
+  positionsneeded    String
+  accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_accounts")
+  contacts           contacts @relation(fields: [createdbycontactid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_contacts")
+}
+
+model playoffbracket {
+  id               BigInt        @id(map: "idx_17244_pk_playoffbracket")
+  playoffid        BigInt
+  team1id          BigInt
+  team1idtype      String
+  team2id          BigInt
+  team2idtype      String
+  gameno           Int
+  roundno          Int
+  numgamesinseries Int
+  playoffsetup     playoffsetup  @relation(fields: [playoffid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playoffbracket_playoffsetup")
+  playoffgame      playoffgame[]
+
+  @@index([playoffid], map: "idx_17244_ix_playoffbracket_playoffid")
+}
+
+model playoffgame {
+  id             BigInt         @id(map: "idx_17249_pk_playoffgame")
+  bracketid      BigInt
+  fieldid        BigInt
+  gamedate       DateTime       @db.Timestamptz(6)
+  gametime       DateTime       @db.Timestamptz(6)
+  gameid         BigInt
+  playoffid      BigInt
+  seriesgameno   Int
+  team1hometeam  Boolean
+  playoffbracket playoffbracket @relation(fields: [bracketid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playoffgame_playoffgame")
+
+  @@index([gameid], map: "idx_17249_ix_playoffgame_gameid")
+  @@index([playoffid], map: "idx_17249_ix_playoffgame_playoffid")
+}
+
+model playoffseeds {
+  id           BigInt       @id(map: "idx_17252_pk_playoffseeds")
+  playoffid    BigInt
+  teamid       BigInt
+  seedno       Int
+  playoffsetup playoffsetup @relation(fields: [playoffid], references: [id], onDelete: Cascade, map: "fk_playoffseeds_playoffsetup")
+
+  @@index([playoffid], map: "idx_17252_ix_playoffseeds_playoffid")
+}
+
+model playoffsetup {
+  id             BigInt           @id(map: "idx_17255_pk_playoffsetup")
+  leagueseasonid BigInt
+  numteams       Int
+  description    String
+  active         Boolean
+  playoffbracket playoffbracket[]
+  playoffseeds   playoffseeds[]
+  leagueseason   leagueseason     @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_playoffsetup_leagueseason")
+
+  @@index([leagueseasonid], map: "idx_17255_ix_playoffsetup_leagueseasonid")
+}
+
+model profilecategory {
+  id              BigInt            @id(map: "idx_17260_pk_profilecategory")
+  accountid       BigInt
+  categoryname    String
+  priority        Int
+  accounts        accounts          @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_profilecategory_accounts")
+  profilequestion profilequestion[]
+
+  @@index([accountid], map: "idx_17260_ix_profilecategory_accountid")
+}
+
+model profilequestion {
+  id              BigInt          @id(map: "idx_17265_pk_profilequestion")
+  categoryid      BigInt
+  question        String
+  questionnum     Int
+  playerprofile   playerprofile[]
+  profilecategory profilecategory @relation(fields: [categoryid], references: [id], onDelete: Cascade, map: "fk_profilequestion_profilecategory")
+
+  @@index([categoryid], map: "idx_17265_ix_profilequestion_categoryid")
+}
+
+model roster {
+  id                          BigInt                        @id(map: "idx_17270_pk_roster")
+  contactid                   BigInt
+  submitteddriverslicense     Boolean
+  firstyear                   Int                           @default(0)
+  playerseasonaffiliationdues playerseasonaffiliationdues[]
+  contacts                    contacts                      @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_roster_contacts")
+  rosterseason                rosterseason[]
+
+  @@index([contactid], map: "idx_17270_ix_roster_contactid")
+}
+
+model rosterseason {
+  id              BigInt          @id(map: "idx_17274_pk_rosterseason")
+  playerid        BigInt
+  teamseasonid    BigInt
+  playernumber    Int
+  inactive        Boolean
+  submittedwaiver Boolean
+  dateadded       DateTime?       @db.Timestamptz(6)
+  batstatsum      batstatsum[]
+  fieldstatsum    fieldstatsum[]
+  gameejections   gameejections[]
+  pitchstatsum    pitchstatsum[]
+  playerrecap     playerrecap[]
+  roster          roster          @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_rosterseason_roster")
+
+  @@unique([playerid, teamseasonid], map: "idx_17274_ix_rosterseason")
+  @@index([playerid], map: "idx_17274_ix_rosterseason_playerid")
+  @@index([teamseasonid], map: "idx_17274_ix_rosterseason_teamseasonid")
+}
+
+model season {
+  id                          BigInt                        @id(map: "idx_17277_pk_season")
+  accountid                   BigInt
+  name                        String
+  leagueseason                leagueseason[]
+  playerseasonaffiliationdues playerseasonaffiliationdues[]
+  accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_season_accounts")
+
+  @@index([accountid], map: "idx_17277_ix_season_accountid")
+}
+
+model sponsors {
+  id            BigInt   @id(map: "idx_17282_pk_sponsors")
+  accountid     BigInt
+  name          String
+  streetaddress String
+  citystatezip  String
+  description   String
+  email         String
+  phone         String
+  fax           String
+  website       String
+  teamid        BigInt
+  accounts      accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sponsors_accounts")
+
+  @@index([accountid], map: "idx_17282_ix_sponsors_accountid")
+  @@index([teamid], map: "idx_17282_ix_sponsors_teamid")
+}
+
+model teamhandouts {
+  id          BigInt @id(map: "idx_17287_pk_teamhandouts")
+  description String
+  filename    String
+  teamid      BigInt
+  teams       teams  @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamhandouts_teams")
+
+  @@index([teamid], map: "idx_17287_ix_teamhandouts_teamid")
+}
+
+model teamnews {
+  id              BigInt   @id(map: "idx_17292_pk_teamnews")
+  teamid          BigInt
+  date            DateTime @db.Timestamptz(6)
+  text            String
+  title           String
+  specialannounce Boolean
+  teams           teams    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamnews_teams")
+
+  @@index([teamid], map: "idx_17292_ix_teamnews_teamid")
+}
+
+model teams {
+  id             BigInt           @id(map: "idx_17297_pk_teams")
+  accountid      BigInt
+  webaddress     String
+  youtubeuserid  String?
+  defaultvideo   String           @default("")
+  autoplayvideo  Boolean          @default(false)
+  accountwelcome accountwelcome[]
+  teamhandouts   teamhandouts[]
+  teamnews       teamnews[]
+  accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teams_accounts")
+  teamsseason    teamsseason[]
+
+  @@index([accountid], map: "idx_17297_ix_teams_accountid")
+}
+
+model teamseasonmanager {
+  id           BigInt      @id(map: "idx_17304_pk_teamseasonmanager")
+  teamseasonid BigInt
+  contactid    BigInt
+  contacts     contacts    @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_contacts")
+  teamsseason  teamsseason @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_teamsseason")
+
+  @@index([contactid], map: "idx_17304_ix_teamseasonmanager_contactid")
+  @@index([teamseasonid], map: "idx_17304_ix_teamseasonmanager_teamseasonid")
+}
+
+model teamsseason {
+  id                                     BigInt              @id(map: "idx_17307_pk_teamsseason")
+  leagueseasonid                         BigInt
+  teamid                                 BigInt
+  name                                   String
+  divisionseasonid                       BigInt
+  batstatsum                             batstatsum[]
+  fieldstatsum                           fieldstatsum[]
+  gamerecap                              gamerecap[]
+  golfmatch_golfmatch_team2Toteamsseason golfmatch[]         @relation("golfmatch_team2Toteamsseason")
+  golfmatch_golfmatch_team1Toteamsseason golfmatch[]         @relation("golfmatch_team1Toteamsseason")
+  golfmatchscores                        golfmatchscores[]
+  golfroster                             golfroster[]
+  pitchstatsum                           pitchstatsum[]
+  playerrecap                            playerrecap[]
+  teamseasonmanager                      teamseasonmanager[]
+  leagueseason                           leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
+  teams                                  teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
+
+  @@index([divisionseasonid], map: "idx_17307_ix_teamsseason_divisionseasonid")
+  @@index([leagueseasonid], map: "idx_17307_ix_teamsseason_leagueseasonid")
+  @@index([teamid], map: "idx_17307_ix_teamsseason_teamid")
+}
+
+model teamswantedclassified {
+  id              BigInt   @id(map: "idx_17312_pk_teamswantedclassified")
+  accountid       BigInt
+  datecreated     DateTime @db.Date
+  name            String
+  email           String
+  phone           String
+  experience      String
+  positionsplayed String
+  accesscode      String   @db.Uuid
+  birthdate       DateTime @db.Date
+  accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teamswantedclassified_accounts")
+}
+
+model voteanswers {
+  id           BigInt       @id(map: "idx_17317_pk_voteanswers")
+  questionid   BigInt
+  optionid     BigInt
+  contactid    BigInt
+  contacts     contacts     @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_voteanswers_contacts")
+  voteoptions  voteoptions  @relation(fields: [optionid], references: [id], onDelete: Cascade, map: "fk_voteanswers_voteoptions")
+  votequestion votequestion @relation(fields: [questionid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_voteanswers_votequestion")
+
+  @@unique([questionid, contactid], map: "idx_17317_ix_voteanswers")
+  @@index([contactid], map: "idx_17317_ix_voteanswers_contactid")
+  @@index([optionid], map: "idx_17317_ix_voteanswers_optionid")
+  @@index([questionid], map: "idx_17317_ix_voteanswers_questionid")
+}
+
+model voteoptions {
+  id           BigInt        @id(map: "idx_17320_pk_voteoptions")
+  questionid   BigInt
+  optiontext   String
+  priority     Int
+  voteanswers  voteanswers[]
+  votequestion votequestion  @relation(fields: [questionid], references: [id], onDelete: Cascade, map: "fk_voteoptions_votequestion")
+
+  @@index([questionid], map: "idx_17320_ix_voteoptions_questionid")
+}
+
+model votequestion {
+  id          BigInt        @id(map: "idx_17325_pk_votequestion")
+  accountid   BigInt
+  question    String
+  active      Boolean
+  voteanswers voteanswers[]
+  voteoptions voteoptions[]
+  accounts    accounts      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_votequestion_accounts")
+
+  @@index([accountid], map: "idx_17325_ix_votequestion_accountid")
+}
+
+model workoutannouncement {
+  id                  BigInt                @id(map: "idx_17330_pk_workoutannouncement")
+  accountid           BigInt
+  workoutdesc         String
+  workoutdate         DateTime              @db.Timestamptz(6)
+  fieldid             BigInt
+  comments            String
+  accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_workoutannouncement_accounts")
+  availablefields     availablefields       @relation(fields: [fieldid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_workoutannouncement_availablefields")
+  workoutregistration workoutregistration[]
+
+  @@index([accountid], map: "idx_17330_ix_workoutannouncement_accountid")
+}
+
+model workoutregistration {
+  id                  BigInt              @id(map: "idx_17335_pk_workoutregistration")
+  name                String
+  email               String
+  age                 Int
+  phone1              String
+  phone2              String
+  phone3              String
+  phone4              String
+  positions           String
+  ismanager           Boolean
+  workoutid           BigInt
+  dateregistered      DateTime            @db.Timestamptz(6)
+  whereheard          String
+  workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
+
+  @@index([workoutid], map: "idx_17335_ix_workoutregistration_workoutid")
+}
