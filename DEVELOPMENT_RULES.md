@@ -1,43 +1,60 @@
-# Development Rules
+# Development Rules for Draco Node.js Migration
 
-## Directory Navigation
+## 🚨 CRITICAL: Directory Navigation Rules
 
-### Rule: Always navigate to the correct directory before running npm commands
+### Rule 1: ALWAYS Check Directory Before Running Commands
+**BEFORE running any npm command, ALWAYS:**
+1. Check current directory with `pwd`
+2. Verify you're in the correct directory for the task
+3. Navigate to the correct directory if needed
 
-**Problem**: Running npm commands from the wrong directory causes errors like:
-```
-npm error code ENOENT
-npm error syscall open
-npm error path /Users/raywalker/source/Draco/package.json
-npm error errno -2
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory
-```
+### Rule 2: Directory Structure
+- **Backend commands**: Must be run from `/Users/raywalker/source/Draco/draco-nodejs/backend`
+- **Frontend commands**: Must be run from `/Users/raywalker/source/Draco/draco-nodejs/frontend`
+- **Root commands**: Must be run from `/Users/raywalker/source/Draco`
 
-**Solution**: Always change to the correct directory first:
+### Rule 3: Use Directory-Specific Scripts
+- Use `run-backend.sh` for backend commands
+- Use `run-frontend.sh` for frontend commands
+- These scripts enforce correct directory navigation
 
+### Rule 4: Verification Steps
+**ALWAYS run these commands before npm commands:**
 ```bash
 # For backend
-cd draco-nodejs/backend
-npm start
-npm run build
-npm run dev
+cd draco-nodejs/backend && pwd && npm <command>
 
-# For frontend (when created)
-cd draco-nodejs/frontend
-npm start
-npm run build
+# For frontend  
+cd draco-nodejs/frontend && pwd && npm <command>
 ```
 
-**Current Project Structure**:
+### Rule 5: Error Prevention
+- If you see "ENOENT: no such file or directory, open '/Users/raywalker/source/Draco/package.json'" 
+- STOP immediately
+- Check current directory with `pwd`
+- Navigate to correct directory before retrying
+
+## 📁 Directory Map
 ```
 /Users/raywalker/source/Draco/
 ├── draco-nodejs/
-│   ├── backend/          # Backend Node.js/Express app
-│   │   ├── src/
-│   │   ├── dist/
-│   │   ├── package.json
-│   │   └── tsconfig.json
-│   └── frontend/         # Frontend React app (to be created)
+│   ├── backend/          ← Backend npm commands
+│   └── frontend/         ← Frontend npm commands
+└── [other files]         ← Root git commands
 ```
 
-**Remember**: The terminal working directory must match the location of the package.json file you want to use. 
+## 🔧 Helper Scripts
+- `run-backend.sh` - Enforces backend directory navigation
+- `run-frontend.sh` - Enforces frontend directory navigation
+
+## ⚠️ Common Mistakes to Avoid
+1. Running `npm start` from root directory
+2. Running `npm install` from wrong directory
+3. Forgetting to check `pwd` before commands
+4. Not using the helper scripts
+
+## ✅ Success Checklist
+- [ ] Current directory verified with `pwd`
+- [ ] Correct directory for the task
+- [ ] Command executed successfully
+- [ ] No "ENOENT" errors 
