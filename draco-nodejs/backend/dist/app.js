@@ -5,6 +5,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 dotenv.config();
+const testdatabase_1 = require("./routes/testdatabase");
+const bigint_serializer_1 = require("./middleware/bigint-serializer");
 const app = express();
 app.use(helmet());
 app.use(cors({
@@ -13,6 +15,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(bigint_serializer_1.bigIntSerializer);
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'OK',
@@ -20,6 +23,7 @@ app.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     });
 });
+app.use('/api/testdatabase', testdatabase_1.default);
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
     res.status(err.status || 500).json({
