@@ -166,4 +166,84 @@ router.post('/verify', async (req: Request, res: Response, next: NextFunction) =
   }
 });
 
+/**
+ * POST /api/auth/change-password
+ * Change user password (requires authentication)
+ */
+router.post('/change-password', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+      return;
+    }
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+      return;
+    }
+
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+      return;
+    }
+
+    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+    
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * POST /api/auth/refresh
+ * Refresh JWT token
+ */
+router.post('/refresh', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+      return;
+    }
+
+    const result = await authService.refreshToken(req.user.id);
+    
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(401).json(result);
+    }
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 export default router; 

@@ -246,6 +246,108 @@ export class AuthService {
   }
 
   /**
+   * Change user password
+   */
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<AuthResponse> {
+    try {
+      // Find user
+      const user = await prisma.aspnetusers.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found'
+        };
+      }
+
+      // Verify current password
+      if (!user.passwordhash) {
+        return {
+          success: false,
+          message: 'User has no password set'
+        };
+      }
+
+      const isCurrentPasswordValid = await this.verifyPassword(currentPassword, user.passwordhash);
+      if (!isCurrentPasswordValid) {
+        return {
+          success: false,
+          message: 'Current password is incorrect'
+        };
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+      // Update password
+      await prisma.aspnetusers.update({
+        where: { id: userId },
+        data: { passwordhash: hashedNewPassword }
+      });
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+    } catch (error) {
+      console.error('Change password error:', error);
+      return {
+        success: false,
+        message: 'An error occurred while changing password'
+      };
+    }
+  }
+
+  /**
+   * Refresh JWT token
+   */
+  async refreshToken(userId: string): Promise<AuthResponse> {
+    try {
+      // Find user
+      const user = await prisma.aspnetusers.findUnique({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        return {
+          success: false,
+          message: 'User not found'
+        };
+      }
+
+      // Check if user is locked out
+      if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
+        return {
+          success: false,
+          message: 'Account is temporarily locked'
+        };
+      }
+
+      // Generate new token
+      const token = this.generateToken(user.id, user.username || '');
+
+      return {
+        success: true,
+        message: 'Token refreshed successfully',
+        token,
+        user: {
+          id: user.id,
+          username: user.username || '',
+          email: user.email || ''
+        }
+      };
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      return {
+        success: false,
+        message: 'An error occurred while refreshing token'
+      };
+    }
+  }
+
+  /**
    * Verify password against hash
    */
   private async verifyPassword(password: string, hash: string): Promise<boolean> {
