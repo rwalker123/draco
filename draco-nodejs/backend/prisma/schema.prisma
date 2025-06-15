@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -164,6 +163,7 @@ model aspnetusers {
   aspnetuserclaims     aspnetuserclaims[]
   aspnetuserlogins     aspnetuserlogins[]
   aspnetuserroles      aspnetuserroles[]
+  passwordresettokens  passwordresettokens[]
 }
 
 model availablefields {
@@ -1309,4 +1309,18 @@ model workoutregistration {
   workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
 
   @@index([workoutid], map: "idx_17335_ix_workoutregistration_workoutid")
+}
+
+model passwordresettokens {
+  id        String   @id @default(cuid())
+  userid    String
+  token     String   @unique
+  expiresat DateTime
+  used      Boolean  @default(false)
+  createdat DateTime @default(now())
+  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade)
+
+  @@index([userid])
+  @@index([token])
+  @@index([expiresat])
 }
