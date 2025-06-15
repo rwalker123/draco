@@ -41,13 +41,20 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/password-reset/request`, {
-        email
+      const response = await axios.post(`${API_BASE_URL}/api/passwordReset/request`, {
+        email,
+        testMode: true
       });
 
       if (response.data.success) {
-        setSuccess(response.data.message);
-        setActiveStep(1);
+        if (response.data.testData) {
+          setSuccess(`Password reset token generated (TEST MODE): ${response.data.testData.token}`);
+          setToken(response.data.testData.token);
+          setActiveStep(1);
+        } else {
+          setSuccess(response.data.message);
+          setActiveStep(1);
+        }
       } else {
         setError(response.data.message || 'Failed to request password reset');
       }
@@ -68,7 +75,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/password-reset/verify/${token}`);
+      const response = await axios.get(`${API_BASE_URL}/api/passwordReset/verify/${token}`);
 
       if (response.data.success) {
         setSuccess('Token verified successfully');
@@ -103,7 +110,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/password-reset/reset`, {
+      const response = await axios.post(`${API_BASE_URL}/api/passwordReset/reset`, {
         token,
         newPassword
       });
