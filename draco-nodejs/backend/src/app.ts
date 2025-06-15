@@ -12,6 +12,8 @@ dotenv.config();
 // import { teamsRouter } from './routes/teams';
 // import { playersRouter } from './routes/players';
 import testDatabaseRouter from './routes/testdatabase';
+import authRouter from './routes/auth';
+import passwordResetRouter from './routes/passwordReset';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 
 const app = express();
@@ -27,7 +29,7 @@ app.use(cors({
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Global BigInt serialization middleware
 app.use(bigIntSerializer);
@@ -47,6 +49,8 @@ app.get('/health', (req: any, res: any) => {
 // app.use('/api/teams', teamsRouter);
 // app.use('/api/players', playersRouter);
 app.use('/api/testdatabase', testDatabaseRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/passwordReset', passwordResetRouter);
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
@@ -55,6 +59,14 @@ app.use((err: any, req: any, res: any, next: any) => {
   res.status(err.status || 500).json({
     error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
     ...(process.env.NODE_ENV !== 'production' && { stack: err.stack })
+  });
+});
+
+// 404 handler
+app.use('*', (req: any, res: any) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
   });
 });
 
