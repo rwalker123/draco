@@ -19,6 +19,15 @@
   - [x] Resolve path-to-regexp routing errors
   - [x] Server successfully running on port 5000 with health endpoint
 
+### Phase 2: Core API Development
+- [x] **Authentication System**
+  - [x] Legacy ASP.NET password hash migration and verification
+  - [x] Password migration to bcrypt with temporary password assignment
+  - [x] Login endpoint (`/api/auth/login`) with JWT token
+  - [x] Password reset flow (request, verify, reset) tested and working
+  - [x] Password reset token model and logic
+  - [x] Password reset tested with known user and new password
+
 ## 📋 PENDING TASKS
 
 ### Phase 1: Foundation & Infrastructure (Weeks 1-4)
@@ -48,8 +57,8 @@
 #### 1.3 Backend Architecture
 - [x] Create basic Express.js application structure ✅
 - [x] Set up middleware (CORS, Helmet, JSON parsing) ✅
-- [ ] Create route structure for:
-  - [ ] Authentication (`/api/auth`)
+- [x] Create route structure for:
+  - [x] Authentication (`/api/auth`)
   - [ ] Accounts (`/api/accounts`)
   - [ ] Teams (`/api/teams`)
   - [ ] Players (`/api/players`)
@@ -61,15 +70,21 @@
 
 #### 2.1 Authentication System
 - [x] Install authentication dependencies: `jsonwebtoken`, `bcrypt` ✅
-- [ ] Create User model with Prisma
-- [ ] Implement AuthService with login/register methods
-- [ ] Create JWT middleware for route protection
-- [ ] Implement password hashing with bcrypt
-- [ ] Create authentication routes:
-  - [ ] POST `/api/auth/login`
-  - [ ] POST `/api/auth/register`
+- [x] Create User model with Prisma
+- [x] Implement AuthService with login/register methods
+- [x] Create JWT middleware for route protection
+- [x] Implement password hashing with bcrypt
+- [x] Create authentication routes:
+  - [x] POST `/api/auth/login`
+  - [x] POST `/api/auth/register` (pending full implementation)
   - [ ] POST `/api/auth/logout`
   - [ ] GET `/api/auth/me` (get current user)
+- [x] Password reset endpoints:
+  - [x] POST `/api/passwordReset/request`
+  - [x] GET `/api/passwordReset/verify/:token`
+  - [x] POST `/api/passwordReset/reset`
+- [x] Password reset flow tested and confirmed working
+- [x] Legacy password migration and reset tested for known user
 
 #### 2.2 Account Management API
 - [ ] Create Account model and relationships
