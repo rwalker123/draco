@@ -15,6 +15,7 @@ import testDatabaseRouter from './routes/testdatabase';
 import authRouter from './routes/auth';
 import passwordResetRouter from './routes/passwordReset';
 import roleTestRouter from './routes/roleTest';
+import accountsRouter from './routes/accounts';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/roleTest', roleTestRouter);
+app.use('/api/accounts', accountsRouter);
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {

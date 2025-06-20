@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
-    "dev": "nodemon",
+    "dev": "nodemon --exec npm start",
     "build": "tsc",
     "clean": "rm -rf dist",
     "migrate-passwords": "ts-node scripts/migrate-passwords.ts",
