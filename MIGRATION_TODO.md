@@ -126,6 +126,77 @@
 - [ ] Create contact routes for user profile management
 - [ ] Implement contact search and filtering
 
+#### 2.5 Role Management & Authorization
+- [ ] **Role System Analysis & Design**
+  - [ ] Analyze existing role structure: `aspnetroles`, `aspnetuserroles`, `contactroles`
+  - [ ] Understand global vs account-specific vs context-specific roles
+  - [ ] Design role hierarchy and permissions model
+  - [ ] Map legacy role types: AccountAdmin, LeagueAdmin, TeamAdmin, TeamPhotoAdmin, etc.
+
+- [ ] **Role Management API**
+  - [ ] Create RoleService for role operations
+  - [ ] Implement global role assignment endpoints (`/api/roles/assign`, `/api/roles/remove`)
+  - [ ] Implement account-specific role endpoints (`/api/accounts/:accountId/roles`)
+  - [ ] Implement context-specific role endpoints (team/league roles)
+  - [ ] Add role validation and business logic
+
+- [ ] **Authorization Middleware**
+  - [ ] Enhance existing `requireRole` middleware
+  - [ ] Add account-specific role checking
+  - [ ] Add context-specific role checking (team/league level)
+  - [ ] Implement role hierarchy (Administrator > AccountAdmin > TeamAdmin)
+  - [ ] Add role caching for performance
+
+- [ ] **Role Management UI**
+  - [ ] Create role management dashboard (admin only)
+  - [ ] Add user role assignment interface
+  - [ ] Add account-specific role management
+  - [ ] Add team/league role management
+  - [ ] Implement role-based UI visibility
+
+- [ ] **Role Migration & Setup**
+  - [ ] Migrate existing roles from legacy system
+  - [ ] Set up default roles for new accounts
+  - [ ] Create role seeding scripts
+  - [ ] Add role audit logging
+
+- [ ] **Integration with Existing APIs**
+  - [ ] Add role checks to Account Management API
+  - [ ] Add role checks to Team & Player Management API
+  - [ ] Add role checks to File Upload API
+  - [ ] Implement role-based data filtering
+
+#### 2.6 Route Protection & Authorization
+- [ ] **Contact Role-Based Route Protection**
+  - [ ] Implement contact role checking middleware
+  - [ ] Add account-level route protection (AccountAdmin, AccountUser)
+  - [ ] Add team-level route protection (TeamAdmin, TeamUser)
+  - [ ] Add league-level route protection (LeagueAdmin, LeagueUser)
+  - [ ] Implement context-aware authorization (user can only access their account's data)
+  - [ ] Add role-based API endpoint filtering
+
+- [ ] **Frontend Route Protection**
+  - [ ] Create protected route components for React Router
+  - [ ] Implement role-based navigation visibility
+  - [ ] Add route guards for account-specific pages
+  - [ ] Add route guards for team-specific pages
+  - [ ] Implement role-based component rendering
+  - [ ] Add unauthorized access handling
+
+- [ ] **API Security Enhancement**
+  - [ ] Add rate limiting for sensitive endpoints
+  - [ ] Implement request validation for role-based operations
+  - [ ] Add audit logging for role changes
+  - [ ] Implement session management
+  - [ ] Add CSRF protection
+
+- [ ] **Authorization Testing**
+  - [ ] Create tests for role-based access control
+  - [ ] Test account boundary enforcement
+  - [ ] Test team boundary enforcement
+  - [ ] Test unauthorized access scenarios
+  - [ ] Validate role hierarchy enforcement
+
 ### Phase 3: Frontend Development (Weeks 13-20)
 
 #### 3.1 React Application Structure
@@ -303,10 +374,11 @@
 
 ## 🎯 PRIORITY TASKS (Next Steps)
 
-1. **Account Management API** - Create Account model and implement CRUD operations
-2. **Team & Player Management** - Implement team and player endpoints
-3. **Frontend API Integration** - Connect React frontend to backend APIs
-4. **Core API Development** - Complete remaining API endpoints
+1. **Role Management & Authorization** - Implement role system first (prerequisite for route protection)
+2. **Route Protection & Authorization** - Implement contact role-based route protection
+3. **Account Management API** - Create Account model and implement CRUD operations with role-based access
+4. **Team & Player Management** - Implement team and player endpoints with role-based access
+5. **Frontend API Integration** - Connect React frontend to backend APIs with role-based UI
 
 ## 📊 PROGRESS TRACKING
 
@@ -321,7 +393,7 @@
 
 ## 📝 NOTES
 
-- Database migration completed using pgloader ✅
+- Database migration completed using sqlpipe and sql scripts ✅
 - Backend project structure created with Express.js and TypeScript ✅
 - All core dependencies installed ✅
 - Basic Express application with middleware and error handling created ✅

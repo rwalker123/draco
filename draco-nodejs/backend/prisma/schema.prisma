@@ -8,38 +8,38 @@ datasource db {
 }
 
 model accounthandouts {
-  id          BigInt   @id(map: "idx_16981_pk_accounthandouts")
-  description String
-  filename    String
+  id          BigInt   @id @default(autoincrement())
+  description String   @db.VarChar(255)
+  filename    String   @db.VarChar(255)
   accountid   BigInt
   accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accounthandouts_accounts")
-
-  @@index([accountid], map: "idx_16981_ix_accounthandouts_column")
 }
 
 model accounts {
-  id                      BigInt                    @id(map: "idx_16986_pk_accounts")
-  name                    String
-  firstyear               Int
+  id                      BigInt                    @id @default(autoincrement())
+  name                    String                    @db.VarChar(75)
+  firstyear               Int                       @default(0)
   accounttypeid           BigInt
   affiliationid           BigInt
-  timezoneid              String
-  twitteraccountname      String
-  twitteroauthtoken       String
-  twitteroauthsecretkey   String
-  youtubeuserid           String?
-  facebookfanpage         String?
-  twitterwidgetscript     String?
-  defaultvideo            String                    @default("")
+  timezoneid              String                    @db.VarChar(50)
+  twitteraccountname      String                    @db.VarChar(50)
+  twitteroauthtoken       String                    @db.VarChar(50)
+  twitteroauthsecretkey   String                    @db.VarChar(50)
+  youtubeuserid           String?                   @db.VarChar(50)
+  facebookfanpage         String?                   @db.VarChar(50)
+  twitterwidgetscript     String?                   @db.VarChar(512)
+  defaultvideo            String                    @default("") @db.VarChar(50)
   autoplayvideo           Boolean                   @default(false)
-  owneruserid             String?
+  owneruserid             String?                   @db.VarChar(128)
   accounthandouts         accounthandouts[]
-  aspnetusers             aspnetusers?              @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
   accounttypes            accounttypes              @relation(fields: [accounttypeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounttypes_accounts")
+  aspnetusers             aspnetusers?              @relation(fields: [owneruserid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accounts_aspnetusers")
   accountsettings         accountsettings[]
   accountsurl             accountsurl[]
   accountwelcome          accountwelcome[]
   availablefields         availablefields[]
+  contactroles            contactroles[]
+  contacts                contacts[]
   currentseason           currentseason?
   divisiondefs            divisiondefs[]
   golfleaguecourses       golfleaguecourses[]
@@ -64,139 +64,111 @@ model accounts {
 
 model accountsettings {
   accountid    BigInt
-  settingkey   String
-  settingvalue String
+  settingkey   String   @db.VarChar(25)
+  settingvalue String   @db.VarChar(25)
   accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsettings_accounts")
 
-  @@id([accountid, settingkey], map: "idx_16993_pk_accountsettings")
+  @@id([accountid, settingkey])
 }
 
 model accountsurl {
-  id        BigInt   @id(map: "idx_16998_pk_accountsurl")
+  id        BigInt   @id @default(autoincrement())
   accountid BigInt
-  url       String
+  url       String   @db.VarChar(200)
   accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountsurl_accounts")
 }
 
 model accounttypes {
-  id                BigInt     @id(map: "idx_17003_pk_accounttypes")
-  name              String
-  filepath          String
-  facebookappid     String
-  facebooksecretkey String
-  twitterappid      String
-  twittersecret     String
+  id                BigInt     @id @default(autoincrement())
+  name              String     @db.VarChar(75)
+  filepath          String     @db.VarChar(255)
+  facebookappid     String     @db.VarChar(50)
+  facebooksecretkey String     @db.VarChar(50)
+  twitterappid      String     @db.VarChar(50)
+  twittersecret     String     @db.VarChar(50)
   accounts          accounts[]
 }
 
 model accountwelcome {
-  id          BigInt   @id(map: "idx_17008_pk_accountwelcome")
+  id          BigInt   @id @default(autoincrement())
   accountid   BigInt
   orderno     Int      @db.SmallInt
-  captionmenu String
+  captionmenu String   @db.VarChar(50)
   welcometext String
   teamid      BigInt?
   accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_accountwelcome_accounts")
   teams       teams?   @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_accountwelcome_teams")
-
-  @@index([accountid], map: "idx_17008_ix_accountwelcome_accountid")
-  @@index([teamid], map: "idx_17008_ix_accountwelcome_teamid")
 }
 
 model affiliations {
-  id   BigInt @id(map: "idx_17013_pk_affiliations")
-  name String @unique(map: "idx_17013_ix_affiliations")
-  url  String @default("")
+  id   BigInt @id @default(autoincrement())
+  name String @unique @db.VarChar(75)
+  url  String @db.VarChar(200)
 }
 
 model aspnetroles {
-  id              String            @id(map: "idx_17019_pk_dbo_aspnetroles")
-  name            String
+  id              String            @id @db.VarChar(128)
+  name            String            @db.VarChar(256)
   aspnetuserroles aspnetuserroles[]
 }
 
-model aspnetuserclaims {
-  id          BigInt      @id(map: "idx_17025_pk_dbo_aspnetuserclaims") @default(autoincrement())
-  claimtype   String?
-  claimvalue  String?
-  userid      String
-  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserclaims_dbo_aspnetusers_user_id")
-
-  @@index([userid], map: "idx_17025_ix_user_id")
-}
-
-model aspnetuserlogins {
-  userid        String
-  loginprovider String
-  providerkey   String
-  aspnetusers   aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserlogins_dbo_aspnetusers_userid")
-
-  @@id([userid, loginprovider, providerkey], map: "idx_17031_pk_dbo_aspnetuserlogins")
-  @@index([userid], map: "idx_17031_ix_userid")
-}
-
 model aspnetuserroles {
-  userid      String
-  roleid      String
-  aspnetroles aspnetroles @relation(fields: [roleid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserroles_dbo_aspnetroles_roleid")
-  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dbo_aspnetuserroles_dbo_aspnetusers_userid")
+  userid      String      @db.VarChar(128)
+  roleid      String      @db.VarChar(128)
+  aspnetroles aspnetroles @relation(fields: [roleid], references: [id], onDelete: Cascade, map: "fk_dbo_aspnetuserroles_dbo_aspnetroles_roleid")
+  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade, map: "fk_dbo_aspnetuserroles_dbo_aspnetusers_userid")
 
-  @@id([userid, roleid], map: "idx_17036_pk_dbo_aspnetuserroles")
-  @@index([roleid], map: "idx_17036_ix_roleid")
-  @@index([userid], map: "idx_17036_ix_userid")
+  @@id([userid, roleid])
 }
 
 model aspnetusers {
-  id                   String             @id(map: "idx_17041_pk_dbo_aspnetusers")
-  email                String?
+  id                   String            @id @db.VarChar(128)
+  email                String?           @db.VarChar(256)
   emailconfirmed       Boolean
   passwordhash         String?
   securitystamp        String?
-  phonenumber          String?
+  phonenumber          String?           @db.VarChar(30)
   phonenumberconfirmed Boolean
   twofactorenabled     Boolean
-  lockoutenddateutc    DateTime?          @db.Timestamptz(6)
+  lockoutenddateutc    DateTime?         @db.Timestamptz(6)
   lockoutenabled       Boolean
   accessfailedcount    Int
-  username             String?            @unique(map: "idx_17041_NonClusteredIndex-20160521-223420")
+  username             String?           @unique(map: "uq_aspnetusers_username") @db.VarChar(256)
   accounts             accounts[]
-  aspnetuserclaims     aspnetuserclaims[]
-  aspnetuserlogins     aspnetuserlogins[]
   aspnetuserroles      aspnetuserroles[]
-  passwordresettokens  passwordresettokens[]
 }
 
 model availablefields {
-  id                  BigInt                @id(map: "idx_17046_pk_availablefields")
+  id                  BigInt                @id @default(autoincrement())
   accountid           BigInt
-  name                String
-  shortname           String
-  comment             String
-  address             String
-  city                String
-  state               String
-  zipcode             String
-  directions          String
-  rainoutnumber       String
-  latitude            String
-  longitude           String
+  name                String                @db.VarChar(25)
+  shortname           String                @db.VarChar(5)
+  comment             String                @db.VarChar(255)
+  address             String                @db.VarChar(255)
+  city                String                @db.VarChar(25)
+  state               String                @db.VarChar(25)
+  zipcode             String                @db.VarChar(10)
+  directions          String                @db.VarChar(255)
+  rainoutnumber       String                @db.VarChar(15)
+  latitude            String                @db.VarChar(25)
+  longitude           String                @db.VarChar(25)
   accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_availablefields_accounts")
   fieldcontacts       fieldcontacts[]
+  leagueschedule      leagueschedule[]
+  playoffgame         playoffgame[]
   workoutannouncement workoutannouncement[]
-
-  @@index([accountid], map: "idx_17046_ix_availablefields_accountid")
 }
 
 model batstatsum {
-  id             BigInt         @id(map: "idx_17051_pk_batstatsum")
+  id             BigInt         @id
   playerid       BigInt
   gameid         BigInt
   teamid         BigInt
   ab             Int
   h              Int
   r              Int
-  B2             Int            @map("2B")
-  B3             Int            @map("3B")
+  d              Int
+  t              Int
   hr             Int
   rbi            Int
   so             Int
@@ -209,57 +181,54 @@ model batstatsum {
   sb             Int
   cs             Int
   lob            Int
-  tb             Int?
-  pa             Int?
-  obadenominator Int?
-  obanumerator   Int?
+  tb             Int?           @default(dbgenerated("((((d * 2) + (t * 3)) + (hr * 4)) + (((h - d) - t) - hr))"))
+  pa             Int?           @default(dbgenerated("((((ab + bb) + hbp) + (sh + sf)) + intr)"))
+  obadenominator Int?           @default(dbgenerated("((ab + bb) + hbp)"))
+  obanumerator   Int?           @default(dbgenerated("((h + bb) + hbp)"))
   leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_batstatsum_leagueschedule")
   rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_batstatsum_rosterseason")
-  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_batstatsum_teamsseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_batstatsum_teamsseason")
 
-  @@unique([playerid, gameid, teamid], map: "idx_17051_ix_batstatsum")
-  @@index([playerid], map: "idx_17051_ix_batstatsum_playerid")
-  @@index([teamid], map: "idx_17051_ix_batstatsum_teamseasonid")
-  @@index([gameid], map: "idx_17051_ix_gameid")
+  @@unique([playerid, gameid, teamid])
 }
 
 model contactroles {
-  id        BigInt   @id(map: "idx_17054_pk_contactroles")
+  id        BigInt   @id @default(autoincrement())
   contactid BigInt
-  roleid    String
+  roleid    String   @db.VarChar(128)
   roledata  BigInt
   accountid BigInt
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade)
   contacts  contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_contactroles_contacts")
-
-  @@index([contactid], map: "idx_17054_ix_contactroles_contactid")
 }
 
 model contacts {
-  id                                                        BigInt                     @id(map: "idx_17059_pk_contacts")
-  userid                                                    String?
-  lastname                                                  String
-  firstname                                                 String
-  middlename                                                String?
-  phone1                                                    String?
-  phone2                                                    String?
-  phone3                                                    String?
+  id                                                        BigInt                     @id @default(autoincrement())
+  userid                                                    String?                    @db.VarChar(128)
+  lastname                                                  String                     @db.VarChar(25)
+  firstname                                                 String                     @db.VarChar(25)
+  middlename                                                String?                    @db.VarChar(25)
+  phone1                                                    String?                    @db.VarChar(14)
+  phone2                                                    String?                    @db.VarChar(14)
+  phone3                                                    String?                    @db.VarChar(14)
   creatoraccountid                                          BigInt
-  streetaddress                                             String?
-  city                                                      String?
-  state                                                     String?
-  zip                                                       String?
-  dateofbirth                                               DateTime                   @db.Timestamptz(6)
+  streetaddress                                             String?                    @db.VarChar(75)
+  city                                                      String?                    @db.VarChar(25)
+  state                                                     String?                    @db.VarChar(25)
+  zip                                                       String?                    @db.VarChar(15)
+  dateofbirth                                               DateTime                   @db.Timestamp(6)
   isfemale                                                  Boolean?                   @default(false)
-  email                                                     String?
+  email                                                     String?                    @db.VarChar(50)
   contactroles                                              contactroles[]
+  accounts                                                  accounts                   @relation(fields: [creatoraccountid], references: [id], onDelete: NoAction, onUpdate: NoAction)
   fieldcontacts                                             fieldcontacts[]
   golfcourseforcontact                                      golfcourseforcontact[]
   golferstatsconfiguration                                  golferstatsconfiguration[]
   golferstatsvalue                                          golferstatsvalue[]
   golfleaguesetup_golfleaguesetup_presidentidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_presidentidTocontacts")
-  golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
   golfleaguesetup_golfleaguesetup_secretaryidTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_secretaryidTocontacts")
   golfleaguesetup_golfleaguesetup_treasureridTocontacts     golfleaguesetup[]          @relation("golfleaguesetup_treasureridTocontacts")
+  golfleaguesetup_golfleaguesetup_vicepresidentidTocontacts golfleaguesetup[]          @relation("golfleaguesetup_vicepresidentidTocontacts")
   golfroster                                                golfroster[]
   golfscore                                                 golfscore[]
   hof                                                       hof[]
@@ -273,62 +242,52 @@ model contacts {
   teamseasonmanager                                         teamseasonmanager[]
   voteanswers                                               voteanswers[]
 
-  @@unique([lastname, firstname, middlename, creatoraccountid], map: "idx_17059_ix_contacts")
-  @@index([userid, creatoraccountid], map: "idx_17059_ix_contacts_userid")
+  @@unique([lastname, firstname, middlename, creatoraccountid])
 }
 
 model currentseason {
   seasonid  BigInt
-  accountid BigInt   @id(map: "idx_17065_pk_currentseason")
-  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_currentseason_accounts")
-
-  @@index([accountid], map: "idx_17065_ix_currentseason_accountid")
+  accountid BigInt   @id
+  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_currentseason_accounts")
 }
 
 model displayleagueleaders {
-  fieldname   String
+  fieldname   String  @db.VarChar(50)
   accountid   BigInt
   teamid      BigInt
   isbatleader Boolean
 
-  @@id([fieldname, isbatleader, accountid, teamid], map: "idx_17068_pk_displayleagueleaders")
+  @@id([fieldname, isbatleader, accountid, teamid])
 }
 
 model divisiondefs {
-  id             BigInt           @id(map: "idx_17073_pk_divisiondefs")
+  id             BigInt           @id @default(autoincrement())
   accountid      BigInt
-  name           String
+  name           String           @db.VarChar(25)
   accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_divisiondefs_accounts")
   divisionseason divisionseason[]
-
-  @@index([accountid], map: "idx_17073_ix_divisiondefs_accountid")
 }
 
 model divisionseason {
-  id             BigInt       @id(map: "idx_17078_pk_divisionseason")
+  id             BigInt        @id @default(autoincrement())
   divisionid     BigInt
   leagueseasonid BigInt
   priority       Int
-  divisiondefs   divisiondefs @relation(fields: [divisionid], references: [id], onDelete: Cascade, map: "fk_divisionseason_divisiondefs")
-  leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_divisionseason_leagueseason")
-
-  @@index([divisionid], map: "idx_17078_ix_divisionseason_divisionid")
-  @@index([leagueseasonid], map: "idx_17078_ix_divisionseason_leagueseasonid")
+  divisiondefs   divisiondefs  @relation(fields: [divisionid], references: [id], onDelete: Cascade, map: "fk_divisionseason_divisiondefs")
+  leagueseason   leagueseason  @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_divisionseason_leagueseason")
+  teamsseason    teamsseason[]
 }
 
 model fieldcontacts {
-  id              BigInt          @id(map: "idx_17081_pk_fieldcontacts")
+  id              BigInt          @id @default(autoincrement())
   fieldid         BigInt
   contactid       BigInt
-  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_fieldcontacts_availablefields")
   contacts        contacts        @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_fieldcontacts_contacts")
-
-  @@index([contactid], map: "idx_17081_ix_fieldcontacts_contactid")
-  @@index([fieldid], map: "idx_17081_ix_fieldcontacts_fieldid")
+  availablefields availablefields @relation(fields: [fieldid], references: [id], onDelete: Cascade, map: "fk_fieldcontacts_availablefields")
 }
 
 model fieldstatsum {
-  id             BigInt         @id(map: "idx_17084_pk_fieldstatsum")
+  id             BigInt         @id @default(autoincrement())
   playerid       BigInt
   gameid         BigInt
   teamid         BigInt
@@ -343,29 +302,22 @@ model fieldstatsum {
   cs             Int
   leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_fieldstatsum_leagueschedule")
   rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_fieldstatsum_rosterseason")
-  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fieldstatsum_teamsseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_fieldstatsum_teamsseason")
 
-  @@unique([playerid, gameid, teamid, pos], map: "idx_17084_ix_fieldstatsum")
-  @@index([gameid], map: "idx_17084_ix_fieldstatsum_gameid")
-  @@index([playerid], map: "idx_17084_ix_fieldstatsum_playerid")
-  @@index([teamid], map: "idx_17084_ix_fieldstatsum_teamid")
+  @@unique([playerid, gameid, teamid, pos])
 }
 
 model gameejections {
-  id             BigInt         @id(map: "idx_17087_pk_gameejections")
+  id             BigInt         @id @default(autoincrement())
   leagueseasonid BigInt
   gameid         BigInt
   playerseasonid BigInt
-  umpireid       BigInt
+  umpireid       BigInt?
   comments       String
+  leagueumpires  leagueumpires? @relation(fields: [umpireid], references: [id], map: "fk_gameejections_umpireid")
   leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_gameejections_leagueschedule")
   leagueseason   leagueseason   @relation(fields: [leagueseasonid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_gameejections_leagueseason")
   rosterseason   rosterseason   @relation(fields: [playerseasonid], references: [id], onDelete: Cascade, map: "fk_gameejections_rosterseason")
-
-  @@index([gameid], map: "idx_17087_ix_gameejections_gameid")
-  @@index([leagueseasonid], map: "idx_17087_ix_gameejections_leagueseasonid")
-  @@index([playerseasonid], map: "idx_17087_ix_gameejections_playerseasonid")
-  @@index([umpireid], map: "idx_17087_ix_gameejections_umpireid")
 }
 
 model gamerecap {
@@ -373,22 +325,22 @@ model gamerecap {
   teamid         BigInt
   recap          String
   leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_gamerecap_leagueschedule")
-  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_gamerecap_teamsseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_gamerecap_teamsseason")
 
-  @@id([gameid, teamid], map: "idx_17092_pk_gamerecap")
+  @@id([gameid, teamid])
 }
 
 model golfcourse {
-  id                   BigInt                 @id(map: "idx_17097_pk_golfcourse")
-  name                 String
-  designer             String?
+  id                   BigInt                 @id @default(autoincrement())
+  name                 String                 @db.VarChar(100)
+  designer             String?                @db.VarChar(50)
   yearbuilt            Int?
   numberofholes        Int
-  address              String?
-  city                 String?
-  state                String?
-  zip                  String?
-  country              String?
+  address              String?                @db.VarChar(50)
+  city                 String?                @db.VarChar(50)
+  state                String?                @db.VarChar(50)
+  zip                  String?                @db.VarChar(20)
+  country              String?                @db.VarChar(30)
   menspar1             Int
   menspar2             Int
   menspar3             Int
@@ -469,38 +421,29 @@ model golfcourse {
 }
 
 model golfcourseforcontact {
-  id         BigInt     @id(map: "idx_17102_pk_golfcourseforcontact")
+  id         BigInt     @id @default(autoincrement())
   contactid  BigInt
   courseid   BigInt
-  contacts   contacts   @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfcourseforcontact_contacts")
-  golfcourse golfcourse @relation(fields: [courseid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfcourseforcontact_golfcourse")
-
-  @@index([contactid], map: "idx_17102_ix_golfcourseforcontact_contactid")
-  @@index([courseid], map: "idx_17102_ix_golfcourseforcontact_courseid")
+  contacts   contacts   @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfcourseforcontact_contacts")
+  golfcourse golfcourse @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfcourseforcontact_golfcourse")
 }
 
 model golferstatsconfiguration {
-  id          BigInt      @id(map: "idx_17105_pk_golferstatsconfiguration")
+  id          BigInt      @id @default(autoincrement())
   contactid   BigInt
   statid      BigInt
-  contacts    contacts    @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsconfiguration_contacts")
-  golfstatdef golfstatdef @relation(fields: [statid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsconfiguration_golfstatdef")
-
-  @@index([contactid], map: "idx_17105_ix_golferstatsconfiguration_contactid")
-  @@index([statid], map: "idx_17105_ix_golferstatsconfiguration_statid")
+  contacts    contacts    @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golferstatsconfiguration_contacts")
+  golfstatdef golfstatdef @relation(fields: [statid], references: [id], onDelete: Cascade, map: "fk_golferstatsconfiguration_golfstatdef")
 }
 
 model golferstatsvalue {
-  id        BigInt    @id(map: "idx_17108_pk_golferstatsvalue")
+  id        BigInt    @id @default(autoincrement())
   scoreid   BigInt
   contactid BigInt
   holeno    Int
-  value     String
-  contacts  contacts  @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsvalue_contacts")
-  golfscore golfscore @relation(fields: [scoreid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golferstatsvalue_golfscore")
-
-  @@index([contactid], map: "idx_17108_ix_golferstatsvalue_contactid")
-  @@index([scoreid], map: "idx_17108_ix_golferstatsvalue_scoreid")
+  value     String    @db.VarChar(100)
+  contacts  contacts  @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golferstatsvalue_contacts")
+  golfscore golfscore @relation(fields: [scoreid], references: [id], onDelete: Cascade, map: "fk_golferstatsvalue_golfscore")
 }
 
 model golfleaguecourses {
@@ -508,21 +451,21 @@ model golfleaguecourses {
   courseid         BigInt
   defaultmenstee   BigInt?
   defaultwomanstee BigInt?
-  accounts         accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfleaguecourses_accounts")
-  golfcourse       golfcourse @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfleaguecourses_golfcourse")
+  accounts         accounts   @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguecourses_accounts")
+  golfcourse       golfcourse @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfleaguecourses_golfcourse")
 
-  @@id([accountid, courseid], map: "idx_17113_pk_golfleaguecourses")
+  @@id([accountid, courseid])
 }
 
 model golfleaguesetup {
-  id                                                 BigInt   @id(map: "idx_17116_pk_golfleaguesetup")
+  id                                                 BigInt   @id
   accountid                                          BigInt
   presidentid                                        BigInt
   vicepresidentid                                    BigInt
   secretaryid                                        BigInt
   treasurerid                                        BigInt
   leagueday                                          Int
-  firstteetime                                       DateTime @db.Timestamptz(6)
+  firstteetime                                       DateTime @db.Timestamp(6)
   timebetweenteetimes                                Int
   holespermatch                                      Int
   teeoffformat                                       Int
@@ -553,35 +496,29 @@ model golfleaguesetup {
   teamactbestballperholepts                          Int
   useteamscoring                                     Boolean
   useindividualscoring                               Boolean
-  accounts                                           accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_accounts")
-  contacts_golfleaguesetup_presidentidTocontacts     contacts @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts")
-  contacts_golfleaguesetup_vicepresidentidTocontacts contacts @relation("golfleaguesetup_vicepresidentidTocontacts", fields: [vicepresidentid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts1")
-  contacts_golfleaguesetup_secretaryidTocontacts     contacts @relation("golfleaguesetup_secretaryidTocontacts", fields: [secretaryid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts2")
-  contacts_golfleaguesetup_treasureridTocontacts     contacts @relation("golfleaguesetup_treasureridTocontacts", fields: [treasurerid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfleaguesetup_contacts3")
-
-  @@index([accountid], map: "idx_17116_ix_golfleaguesetup_accountid")
+  accounts                                           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_accounts")
+  contacts_golfleaguesetup_presidentidTocontacts     contacts @relation("golfleaguesetup_presidentidTocontacts", fields: [presidentid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_contacts")
+  contacts_golfleaguesetup_secretaryidTocontacts     contacts @relation("golfleaguesetup_secretaryidTocontacts", fields: [secretaryid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_contacts2")
+  contacts_golfleaguesetup_treasureridTocontacts     contacts @relation("golfleaguesetup_treasureridTocontacts", fields: [treasurerid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_contacts3")
+  contacts_golfleaguesetup_vicepresidentidTocontacts contacts @relation("golfleaguesetup_vicepresidentidTocontacts", fields: [vicepresidentid], references: [id], onDelete: Cascade, map: "fk_golfleaguesetup_contacts1")
 }
 
 model golfmatch {
-  id                                       BigInt            @id(map: "idx_17119_pk_golfmatch")
+  id                                       BigInt            @id @default(autoincrement())
   team1                                    BigInt
   team2                                    BigInt
   leagueid                                 BigInt
-  matchdate                                DateTime          @db.Timestamptz(6)
-  matchtime                                DateTime          @db.Timestamptz(6)
-  courseid                                 BigInt?           @default(0)
+  matchdate                                DateTime          @db.Timestamp(6)
+  matchtime                                DateTime          @db.Timestamp(6)
+  courseid                                 BigInt?
   matchstatus                              Int
   matchtype                                Int
-  comment                                  String
-  golfcourse                               golfcourse?       @relation(fields: [courseid], references: [id], onDelete: SetDefault, onUpdate: NoAction, map: "fk_golfmatch_golfcourse")
-  leagueseason                             leagueseason      @relation(fields: [leagueid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfmatch_leagueseason")
-  teamsseason_golfmatch_team2Toteamsseason teamsseason       @relation("golfmatch_team2Toteamsseason", fields: [team2], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatch_teams")
-  teamsseason_golfmatch_team1Toteamsseason teamsseason       @relation("golfmatch_team1Toteamsseason", fields: [team1], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatch_teamsseason")
+  comment                                  String            @db.VarChar(255)
+  golfcourse                               golfcourse?       @relation(fields: [courseid], references: [id], map: "fk_golfmatch_golfcourse")
+  leagueseason                             leagueseason      @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_golfmatch_leagueseason")
+  teamsseason_golfmatch_team1Toteamsseason teamsseason       @relation("golfmatch_team1Toteamsseason", fields: [team1], references: [id], onDelete: Cascade, map: "fk_golfmatch_teamsseason")
+  teamsseason_golfmatch_team2Toteamsseason teamsseason       @relation("golfmatch_team2Toteamsseason", fields: [team2], references: [id], onDelete: Cascade, map: "fk_golfmatch_teams")
   golfmatchscores                          golfmatchscores[]
-
-  @@index([leagueid], map: "idx_17119_ix_golfmatch_leagueid")
-  @@index([team1], map: "idx_17119_ix_golfmatch_team1")
-  @@index([team2], map: "idx_17119_ix_golfmatch_team2")
 }
 
 model golfmatchscores {
@@ -589,16 +526,16 @@ model golfmatchscores {
   teamid      BigInt
   playerid    BigInt
   scoreid     BigInt
-  golfmatch   golfmatch   @relation(fields: [matchid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfmatch")
-  golfroster  golfroster  @relation(fields: [playerid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfroster")
-  golfscore   golfscore   @relation(fields: [scoreid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_golfscore")
-  teamsseason teamsseason @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfmatchscores_teamsseason")
+  golfmatch   golfmatch   @relation(fields: [matchid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfmatch")
+  golfroster  golfroster  @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfroster")
+  golfscore   golfscore   @relation(fields: [scoreid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_golfscore")
+  teamsseason teamsseason @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_golfmatchscores_teamsseason")
 
-  @@id([matchid, teamid, playerid, scoreid], map: "idx_17125_pk_golfmatchscores")
+  @@id([matchid, teamid, playerid, scoreid])
 }
 
 model golfroster {
-  id                  BigInt            @id(map: "idx_17128_pk_golfroster")
+  id                  BigInt            @id @default(autoincrement())
   contactid           BigInt
   teamseasonid        BigInt
   isactive            Boolean
@@ -607,81 +544,76 @@ model golfroster {
   subseasonid         BigInt?
   golfmatchscores     golfmatchscores[]
   contacts            contacts          @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfroster_contacts")
+  leagueseason        leagueseason?     @relation(fields: [subseasonid], references: [id])
   teamsseason         teamsseason       @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_golfroster_teamsseason")
-
-  @@index([teamseasonid], map: "idx_17128_ix_golfroster")
 }
 
 model golfscore {
-  id                 BigInt             @id(map: "idx_17132_pk_golfscore")
+  id                 BigInt             @id @default(autoincrement())
   courseid           BigInt
   contactid          BigInt
   teeid              BigInt
-  dateplayed         DateTime           @db.Timestamptz(6)
+  dateplayed         DateTime           @db.Timestamp(6)
   holesplayed        Int
   totalscore         Int
   totalsonly         Boolean
-  holescore1         Int
-  holescore2         Int
-  holescore3         Int
-  holescore4         Int
-  holescore5         Int
-  holescore6         Int
-  holescore7         Int
-  holescore8         Int
-  holescore9         Int
-  holescore10        Int
-  holescore11        Int
-  holescore12        Int
-  holescore13        Int
-  holescore14        Int
-  holescore15        Int
-  holescore16        Int
-  holescore17        Int
-  holescore18        Int
+  holescrore1        Int
+  holescrore2        Int
+  holescrore3        Int
+  holescrore4        Int
+  holescrore5        Int
+  holescrore6        Int
+  holescrore7        Int
+  holescrore8        Int
+  holescrore9        Int
+  holescrore10       Int
+  holescrore11       Int
+  holescrore12       Int
+  holescrore13       Int
+  holescrore14       Int
+  holescrore15       Int
+  holescrore16       Int
+  holescrore17       Int
+  holescrore18       Int
   startindex         Float?
   startindex9        Float?
   golferstatsvalue   golferstatsvalue[]
   golfmatchscores    golfmatchscores[]
-  contacts           contacts           @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfscore_contacts")
-  golfcourse         golfcourse         @relation(fields: [courseid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfscore_golfcourse")
-  golfteeinformation golfteeinformation @relation(fields: [teeid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_golfscore_golfteeinformation")
-
-  @@index([contactid], map: "idx_17132_ix_golfscore_contactid")
-  @@index([courseid], map: "idx_17132_ix_golfscore_courseid")
-  @@index([teeid], map: "idx_17132_ix_golfscore_teeid")
+  contacts           contacts           @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_golfscore_contacts")
+  golfcourse         golfcourse         @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfcourse")
+  golfteeinformation golfteeinformation @relation(fields: [teeid], references: [id], onDelete: Cascade, map: "fk_golfscore_golfteeinformation")
 }
 
 model golfstatdef {
-  id                       BigInt                     @id(map: "idx_17135_pk_golfstatdef")
-  name                     String
-  shortname                String
+  id                       BigInt                     @id @default(autoincrement())
+  name                     String                     @db.VarChar(50)
+  shortname                String                     @db.VarChar(5)
   datatype                 Int
   iscalculated             Boolean
   isperholevalue           Boolean
-  formulacode              String
-  validationcode           String
-  listvalues               String
+  formulacode              String                     @db.VarChar(255)
+  validationcode           String                     @db.VarChar(255)
+  listvalues               String                     @db.VarChar(255)
   golferstatsconfiguration golferstatsconfiguration[]
 }
 
 model golfteeinformation {
-  id                 BigInt      @id(map: "idx_17140_pk_golfteeinformation")
+  id                 BigInt      @id @default(autoincrement())
   courseid           BigInt
-  teecolor           String
-  teename            String
+  teecolor           String      @db.VarChar(20)
+  teename            String      @db.VarChar(20)
   mensrating         Float
-  mensslope          Float
+  menslope           Float
   womansrating       Float
-  womansslope        Float
+  womanslope         Float
   mensratingfront9   Float
-  mensslopefront9    Float
+  menslopefront9     Float
   womansratingfront9 Float
-  womansslopefront9  Float
+  womanslopefront9   Float
   mensratingback9    Float
-  mensslopeback9     Float
+  menslopeback9      Float
   womansratingback9  Float
-  womansslopeback9   Float
+  womanslopeback9    Float
   distancehole1      Int
   distancehole2      Int
   distancehole3      Int
@@ -700,241 +632,209 @@ model golfteeinformation {
   distancehole16     Int
   distancehole17     Int
   distancehole18     Int
-  priority           Int         @default(0)
+  priority           Int
   golfscore          golfscore[]
-  golfcourse         golfcourse  @relation(fields: [courseid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_golfteeinformation_golfcourse")
-
-  @@index([courseid], map: "idx_17140_ix_golfteeinformation_courseid")
+  golfcourse         golfcourse  @relation(fields: [courseid], references: [id], onDelete: Cascade, map: "fk_golfteeinformation_golfcourse")
 }
 
 model hof {
-  id           BigInt   @id(map: "idx_17146_pk_hof")
+  id           BigInt   @id @default(autoincrement())
   accountid    BigInt
   yearinducted Int
   contactid    BigInt
   bio          String
   accounts     accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hof_accounts")
   contacts     contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_hof_contacts")
-
-  @@index([accountid], map: "idx_17146_ix_hof_accountid")
-  @@index([contactid], map: "idx_17146_ix_hof_contactid")
 }
 
 model hofnomination {
-  id          BigInt   @id(map: "idx_17151_pk_hofnomination")
+  id          BigInt   @id @default(autoincrement())
   accountid   BigInt
-  nominator   String
-  phonenumber String
-  email       String
-  nominee     String
+  nominator   String   @db.VarChar(50)
+  phonenumber String   @db.VarChar(14)
+  email       String   @db.VarChar(75)
+  nominee     String   @db.VarChar(50)
   reason      String
   accounts    accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hofnomination_accounts")
-
-  @@index([accountid], map: "idx_17151_ix_hofnomination_accountid")
 }
 
 model hofnominationsetup {
-  accountid        BigInt   @id(map: "idx_17156_pk_hofnominationsetup")
+  accountid        BigInt   @id
   enablenomination Boolean
   criteriatext     String
   accounts         accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_hofnominationsetup_accounts")
 }
 
 model league {
-  id           BigInt         @id(map: "idx_17161_pk_league2")
+  id           BigInt         @id @default(autoincrement())
   accountid    BigInt
-  name         String
-  accounts     accounts       @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_league_accounts")
+  name         String         @db.VarChar(25)
+  accounts     accounts       @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_league_accounts")
   leagueseason leagueseason[]
-
-  @@index([accountid], map: "idx_17161_ix_league_accountid")
 }
 
 model leagueevents {
-  id             BigInt       @id(map: "idx_17166_pk_leagueevents")
-  eventdate      DateTime     @db.Timestamptz(6)
-  description    String
+  id             BigInt       @id @default(autoincrement())
+  eventdate      DateTime     @db.Timestamp(6)
+  description    String       @db.VarChar(25)
   leagueseasonid BigInt
   leagueseason   leagueseason @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_leagueevents_leagueseason")
-
-  @@index([leagueseasonid], map: "idx_17166_ix_leagueevents_leagueseasonid")
 }
 
 model leaguefaq {
-  id        BigInt   @id(map: "idx_17171_pk_leaguefaq")
+  id        BigInt   @id @default(autoincrement())
   accountid BigInt
   question  String
   answer    String
   accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leaguefaq_accounts")
-
-  @@index([accountid], map: "idx_17171_ix_leaguefaq_accountid")
 }
 
 model leaguenews {
-  id              BigInt   @id(map: "idx_17176_pk_leaguenews")
+  id              BigInt   @id @default(autoincrement())
   accountid       BigInt
-  date            DateTime @db.Timestamptz(6)
-  title           String
+  date            DateTime @db.Timestamp(6)
+  title           String   @db.VarChar(100)
   text            String
   specialannounce Boolean
   accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leaguenews_accounts")
-
-  @@index([accountid], map: "idx_17176_ix_leaguenews_accountid")
 }
 
 model leagueschedule {
-  id            BigInt          @id(map: "idx_17181_pk_leagueschedule")
-  gamedate      DateTime        @db.Timestamptz(6)
-  hteamid       BigInt
-  vteamid       BigInt
-  hscore        Int
-  vscore        Int
-  comment       String
-  fieldid       BigInt          @default(0)
-  leagueid      BigInt
-  gamestatus    Int
-  gametype      BigInt
-  umpire1       BigInt
-  umpire2       BigInt
-  umpire3       BigInt
-  umpire4       BigInt
-  batstatsum    batstatsum[]
-  fieldstatsum  fieldstatsum[]
-  gameejections gameejections[]
-  gamerecap     gamerecap[]
-  leagueseason  leagueseason    @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
-  pitchstatsum  pitchstatsum[]
-  playerrecap   playerrecap[]
-
-  @@index([fieldid], map: "idx_17181_ix_leagueschedule_fieldid")
-  @@index([gamedate], map: "idx_17181_ix_leagueschedule_gamedate")
-  @@index([hteamid], map: "idx_17181_ix_leagueschedule_hteamid")
-  @@index([leagueid], map: "idx_17181_ix_leagueschedule_leagueid")
-  @@index([vteamid], map: "idx_17181_ix_leagueschedule_vteamid")
+  id                                                  BigInt           @id @default(autoincrement())
+  gamedate                                            DateTime         @db.Timestamp(6)
+  hteamid                                             BigInt
+  vteamid                                             BigInt
+  hscore                                              Int              @default(0)
+  vscore                                              Int              @default(0)
+  comment                                             String           @default("") @db.VarChar(255)
+  fieldid                                             BigInt?
+  leagueid                                            BigInt
+  gamestatus                                          Int
+  gametype                                            BigInt
+  umpire1                                             BigInt?
+  umpire2                                             BigInt?
+  umpire3                                             BigInt?
+  umpire4                                             BigInt?
+  batstatsum                                          batstatsum[]
+  fieldstatsum                                        fieldstatsum[]
+  gameejections                                       gameejections[]
+  gamerecap                                           gamerecap[]
+  availablefields                                     availablefields? @relation(fields: [fieldid], references: [id], map: "fk_leagueschedule_fieldid")
+  leagueumpires_leagueschedule_umpire1Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire1Toleagueumpires", fields: [umpire1], references: [id], map: "fk_leagueschedule_umpire1")
+  leagueumpires_leagueschedule_umpire2Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire2Toleagueumpires", fields: [umpire2], references: [id], map: "fk_leagueschedule_umpire2")
+  leagueumpires_leagueschedule_umpire3Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire3Toleagueumpires", fields: [umpire3], references: [id], map: "fk_leagueschedule_umpire3")
+  leagueumpires_leagueschedule_umpire4Toleagueumpires leagueumpires?   @relation("leagueschedule_umpire4Toleagueumpires", fields: [umpire4], references: [id], map: "fk_leagueschedule_umpire4")
+  leagueseason                                        leagueseason     @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueschedule_leagueseason")
+  pitchstatsum                                        pitchstatsum[]
+  playerrecap                                         playerrecap[]
 }
 
 model leagueseason {
-  id             BigInt           @id(map: "idx_17187_pk_leagueseason2")
+  id             BigInt           @id @default(autoincrement())
   leagueid       BigInt
   seasonid       BigInt
   divisionseason divisionseason[]
   gameejections  gameejections[]
   golfmatch      golfmatch[]
+  golfroster     golfroster[]
   leagueevents   leagueevents[]
   leagueschedule leagueschedule[]
   league         league           @relation(fields: [leagueid], references: [id], onDelete: Cascade, map: "fk_leagueseason_league")
   season         season           @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_leagueseason_season")
   playoffsetup   playoffsetup[]
   teamsseason    teamsseason[]
-
-  @@index([leagueid], map: "idx_17187_ix_leagueseason_leagueid")
-  @@index([seasonid], map: "idx_17187_ix_leagueseason_seasonid")
 }
 
 model leagueumpires {
-  id        BigInt   @id(map: "idx_17190_pk_leagueumpires")
-  accountid BigInt
-  contactid BigInt
-  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_accounts")
-  contacts  contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_contacts")
-
-  @@index([accountid], map: "idx_17190_ix_leagueumpires_accountid")
-  @@index([contactid], map: "idx_17190_ix_leagueumpires_contactid")
+  id                                                   BigInt           @id @default(autoincrement())
+  accountid                                            BigInt
+  contactid                                            BigInt
+  gameejections                                        gameejections[]
+  leagueschedule_leagueschedule_umpire1Toleagueumpires leagueschedule[] @relation("leagueschedule_umpire1Toleagueumpires")
+  leagueschedule_leagueschedule_umpire2Toleagueumpires leagueschedule[] @relation("leagueschedule_umpire2Toleagueumpires")
+  leagueschedule_leagueschedule_umpire3Toleagueumpires leagueschedule[] @relation("leagueschedule_umpire3Toleagueumpires")
+  leagueschedule_leagueschedule_umpire4Toleagueumpires leagueschedule[] @relation("leagueschedule_umpire4Toleagueumpires")
+  accounts                                             accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_accounts")
+  contacts                                             contacts         @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_leagueumpires_contacts")
 }
 
 model memberbusiness {
-  id            BigInt   @id(map: "idx_17193_pk_memberbusiness")
+  id            BigInt   @id @default(autoincrement())
   contactid     BigInt
-  name          String
-  streetaddress String
-  citystatezip  String
+  name          String   @db.VarChar(50)
+  streetaddress String   @db.VarChar(100)
+  citystatezip  String   @db.VarChar(100)
   description   String
-  email         String
-  phone         String
-  fax           String
-  website       String
-  contacts      contacts @relation(fields: [contactid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_memberbusiness_contacts")
-
-  @@index([contactid], map: "idx_17193_ix_memberbusiness_contactid")
+  email         String   @db.VarChar(100)
+  phone         String   @db.VarChar(14)
+  fax           String   @db.VarChar(14)
+  website       String   @db.VarChar(100)
+  contacts      contacts @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_memberbusiness_contacts")
 }
 
 model messagecategory {
-  id                  BigInt         @id(map: "idx_17198_pk_messagecategory")
+  id                  BigInt         @id @default(autoincrement())
   accountid           BigInt
   categoryorder       Int
-  categoryname        String
-  categorydescription String
+  categoryname        String         @db.VarChar(50)
+  categorydescription String         @db.VarChar(255)
   allowanonymouspost  Boolean
   allowanonymoustopic Boolean
   isteam              Boolean
   ismoderated         Boolean
   messagepost         messagepost[]
   messagetopic        messagetopic[]
-
-  @@index([accountid], map: "idx_17198_ix_messagecategory_accountid")
 }
 
 model messagepost {
-  id               BigInt          @id(map: "idx_17203_pk_messagepost")
+  id               BigInt          @id @default(autoincrement())
   topicid          BigInt
   postorder        Int
   contactcreatorid BigInt
-  postdate         DateTime        @db.Timestamptz(6)
+  postdate         DateTime        @db.Timestamp(6)
   posttext         String
-  editdate         DateTime        @db.Timestamptz(6)
-  postsubject      String
+  editdate         DateTime        @db.Timestamp(6)
+  postsubject      String          @db.VarChar(255)
   categoryid       BigInt
+  messagecategory  messagecategory @relation(fields: [categoryid], references: [id], onDelete: Cascade, map: "fk_messagepost_messagecategory")
   contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: Cascade, map: "fk_messagepost_contacts")
-  messagecategory  messagecategory @relation(fields: [categoryid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_messagepost_messagecategory")
   messagetopic     messagetopic    @relation(fields: [topicid], references: [id], onDelete: Cascade, map: "fk_messagepost_messagetopic")
-
-  @@index([categoryid], map: "idx_17203_ix_messagepost_categoryid")
-  @@index([contactcreatorid], map: "idx_17203_ix_messagepost_contactcreatorid")
-  @@index([topicid], map: "idx_17203_ix_messagepost_topicid")
 }
 
 model messagetopic {
-  id               BigInt          @id(map: "idx_17208_pk_messagetopic")
+  id               BigInt          @id @default(autoincrement())
   categoryid       BigInt
   contactcreatorid BigInt
-  topiccreatedate  DateTime        @db.Timestamptz(6)
-  topic            String
+  topiccreatedate  DateTime        @db.Timestamp(6)
+  topic            String          @db.VarChar(255)
   stickytopic      Boolean
   numberofviews    BigInt
   messagepost      messagepost[]
-  contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_messagetopic_contacts")
   messagecategory  messagecategory @relation(fields: [categoryid], references: [id], onDelete: Cascade, map: "fk_messagetopic_messagecategory")
-
-  @@index([categoryid], map: "idx_17208_ix_messagetopic_categoryid")
-  @@index([contactcreatorid], map: "idx_17208_ix_messagetopic_contactcreatorid")
+  contacts         contacts        @relation(fields: [contactcreatorid], references: [id], onDelete: Cascade, map: "fk_messagetopic_contacts")
 }
 
 model photogallery {
-  id        BigInt   @id(map: "idx_17213_pk_photogallery")
-  accountid BigInt
-  title     String
-  caption   String
-  albumid   BigInt
-  accounts  accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
-
-  @@index([accountid], map: "idx_17213_ix_photogallery_accountid")
-  @@index([albumid], map: "idx_17213_ix_photogallery_albumid")
+  id                BigInt             @id @default(autoincrement())
+  accountid         BigInt
+  title             String             @db.VarChar(50)
+  caption           String             @db.VarChar(255)
+  albumid           BigInt?
+  photogalleryalbum photogalleryalbum? @relation(fields: [albumid], references: [id], map: "fk_photogallery_albumid")
+  accounts          accounts           @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_photogallery_accounts")
 }
 
 model photogalleryalbum {
-  id            BigInt @id(map: "idx_17218_pk_photogalleryalbum")
+  id            BigInt         @id @default(autoincrement())
   accountid     BigInt
-  title         String
+  title         String         @db.VarChar(25)
   parentalbumid BigInt
   teamid        BigInt
-
-  @@index([accountid], map: "idx_17218_ix_photogalleryalbum_accountid")
-  @@index([parentalbumid], map: "idx_17218_ix_photogalleryalbum_parentalbumid")
-  @@index([teamid], map: "idx_17218_ix_photogalleryalbum_teamid")
+  photogallery  photogallery[]
 }
 
 model pitchstatsum {
-  id             BigInt         @id(map: "idx_17223_pk_pitchstatsum")
+  id             BigInt         @id
   playerid       BigInt
   gameid         BigInt
   teamid         BigInt
@@ -947,8 +847,8 @@ model pitchstatsum {
   h              Int
   r              Int
   er             Int
-  B2             Int            @map("2B")
-  B3             Int            @map("3B")
+  d              Int
+  t              Int
   hr             Int
   so             Int
   bb             Int
@@ -956,371 +856,320 @@ model pitchstatsum {
   hbp            Int
   bk             Int
   sc             Int
-  tb             Int?
-  ab             Int?
-  whipnumerator  Int?
-  ipnumerator    Int?
+  tb             Int?           @default(dbgenerated("((((d * 2) + (t * 3)) + (hr * 4)) + (((h - d) - t) - hr))"))
+  ab             Int?           @default(dbgenerated("(((bf - bb) - hbp) - sc)"))
+  whipnumerator  Int?           @default(dbgenerated("(h + bb)"))
+  ipnumerator    Int?           @default(dbgenerated("((ip * 3) + ip2)"))
   leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_pitchstatsum_leagueschedule")
   rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_pitchstatsum_rosterseason")
-  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_pitchstatsum_teamsseason")
+  teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_pitchstatsum_teamsseason")
 
-  @@unique([playerid, gameid, teamid], map: "idx_17223_ix_pitchstatsum")
-  @@index([gameid], map: "idx_17223_ix_gameid")
-  @@index([playerid], map: "idx_17223_ix_pitchstatsum_playerid")
-  @@index([teamid], map: "idx_17223_ix_pitchstatsum_teamid")
+  @@unique([playerid, gameid, teamid])
 }
 
 model playerprofile {
-  id              BigInt          @id(map: "idx_17226_pk_playerprofile")
+  id              BigInt          @id @default(autoincrement())
   playerid        BigInt
   questionid      BigInt
   answer          String
   contacts        contacts        @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerprofile_contacts")
   profilequestion profilequestion @relation(fields: [questionid], references: [id], onDelete: Cascade, map: "fk_playerprofile_profilequestion")
-
-  @@index([playerid], map: "idx_17226_ix_playerprofile_playerid")
-  @@index([questionid], map: "idx_17226_ix_playerprofile_questionid")
 }
 
 model playerrecap {
   playerid       BigInt
   teamid         BigInt
   gameid         BigInt
-  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playerrecap_leagueschedule")
+  leagueschedule leagueschedule @relation(fields: [gameid], references: [id], onDelete: Cascade, map: "fk_playerrecap_leagueschedule")
   rosterseason   rosterseason   @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerrecap_rosterseason")
   teamsseason    teamsseason    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_playerrecap_teamsseason")
 
-  @@id([playerid, teamid, gameid], map: "idx_17231_pk_playerrecap")
+  @@id([playerid, teamid, gameid])
 }
 
 model playerseasonaffiliationdues {
   playerid            BigInt
   seasonid            BigInt
-  affiliationduespaid String
+  affiliationduespaid String @db.VarChar(50)
   roster              roster @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_playerseasonaffiliationdues_roster")
   season              season @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_playerseasonaffiliationdues_season")
 
-  @@id([playerid, seasonid], map: "idx_17234_pk_playerseasonaffiliationdues")
+  @@id([playerid, seasonid])
 }
 
 model playerswantedclassified {
-  id                 BigInt   @id(map: "idx_17239_pk_playerswantedclassified")
+  id                 BigInt   @id @default(autoincrement())
   accountid          BigInt
   datecreated        DateTime @db.Date
   createdbycontactid BigInt
-  teameventname      String
+  teameventname      String   @db.VarChar(50)
   description        String
-  positionsneeded    String
+  positionsneeded    String   @db.VarChar(50)
   accounts           accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_accounts")
   contacts           contacts @relation(fields: [createdbycontactid], references: [id], onDelete: Cascade, map: "fk_playerswantedclassified_contacts")
 }
 
 model playoffbracket {
-  id               BigInt        @id(map: "idx_17244_pk_playoffbracket")
+  id               BigInt        @id @default(autoincrement())
   playoffid        BigInt
   team1id          BigInt
-  team1idtype      String
+  team1idtype      String        @db.VarChar(5)
   team2id          BigInt
-  team2idtype      String
+  team2idtype      String        @db.VarChar(5)
   gameno           Int
   roundno          Int
   numgamesinseries Int
-  playoffsetup     playoffsetup  @relation(fields: [playoffid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playoffbracket_playoffsetup")
+  playoffsetup     playoffsetup  @relation(fields: [playoffid], references: [id], onDelete: Cascade, map: "fk_playoffbracket_playoffsetup")
   playoffgame      playoffgame[]
-
-  @@index([playoffid], map: "idx_17244_ix_playoffbracket_playoffid")
 }
 
 model playoffgame {
-  id             BigInt         @id(map: "idx_17249_pk_playoffgame")
-  bracketid      BigInt
-  fieldid        BigInt
-  gamedate       DateTime       @db.Timestamptz(6)
-  gametime       DateTime       @db.Timestamptz(6)
-  gameid         BigInt
-  playoffid      BigInt
-  seriesgameno   Int
-  team1hometeam  Boolean
-  playoffbracket playoffbracket @relation(fields: [bracketid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_playoffgame_playoffgame")
-
-  @@index([gameid], map: "idx_17249_ix_playoffgame_gameid")
-  @@index([playoffid], map: "idx_17249_ix_playoffgame_playoffid")
+  id              BigInt           @id @default(autoincrement())
+  bracketid       BigInt
+  fieldid         BigInt?
+  gamedate        DateTime         @db.Timestamp(6)
+  gametime        DateTime         @db.Timestamp(6)
+  gameid          BigInt
+  playoffid       BigInt
+  seriesgameno    Int
+  team1hometeam   Boolean
+  availablefields availablefields? @relation(fields: [fieldid], references: [id], map: "fk_playoffgame_fieldid")
+  playoffbracket  playoffbracket   @relation(fields: [bracketid], references: [id], onDelete: Cascade, map: "fk_playoffgame_playoffgame")
+  playoffsetup    playoffsetup     @relation(fields: [playoffid], references: [id], onDelete: Cascade)
 }
 
 model playoffseeds {
-  id           BigInt       @id(map: "idx_17252_pk_playoffseeds")
+  id           BigInt       @id @default(autoincrement())
   playoffid    BigInt
   teamid       BigInt
   seedno       Int
   playoffsetup playoffsetup @relation(fields: [playoffid], references: [id], onDelete: Cascade, map: "fk_playoffseeds_playoffsetup")
-
-  @@index([playoffid], map: "idx_17252_ix_playoffseeds_playoffid")
 }
 
 model playoffsetup {
-  id             BigInt           @id(map: "idx_17255_pk_playoffsetup")
+  id             BigInt           @id @default(autoincrement())
   leagueseasonid BigInt
   numteams       Int
-  description    String
+  description    String           @db.VarChar(50)
   active         Boolean
   playoffbracket playoffbracket[]
+  playoffgame    playoffgame[]
   playoffseeds   playoffseeds[]
   leagueseason   leagueseason     @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_playoffsetup_leagueseason")
-
-  @@index([leagueseasonid], map: "idx_17255_ix_playoffsetup_leagueseasonid")
 }
 
 model profilecategory {
-  id              BigInt            @id(map: "idx_17260_pk_profilecategory")
+  id              BigInt            @id @default(autoincrement())
   accountid       BigInt
-  categoryname    String
+  categoryname    String            @db.VarChar(40)
   priority        Int
   accounts        accounts          @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_profilecategory_accounts")
   profilequestion profilequestion[]
-
-  @@index([accountid], map: "idx_17260_ix_profilecategory_accountid")
 }
 
 model profilequestion {
-  id              BigInt          @id(map: "idx_17265_pk_profilequestion")
+  id              BigInt          @id @default(autoincrement())
   categoryid      BigInt
-  question        String
+  question        String          @db.VarChar(255)
   questionnum     Int
   playerprofile   playerprofile[]
   profilecategory profilecategory @relation(fields: [categoryid], references: [id], onDelete: Cascade, map: "fk_profilequestion_profilecategory")
-
-  @@index([categoryid], map: "idx_17265_ix_profilequestion_categoryid")
 }
 
 model roster {
-  id                          BigInt                        @id(map: "idx_17270_pk_roster")
+  id                          BigInt                        @id @default(autoincrement())
   contactid                   BigInt
   submitteddriverslicense     Boolean
-  firstyear                   Int                           @default(0)
+  firstyear                   Int
   playerseasonaffiliationdues playerseasonaffiliationdues[]
-  contacts                    contacts                      @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_roster_contacts")
+  contacts                    contacts                      @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_roster_contacts")
   rosterseason                rosterseason[]
-
-  @@index([contactid], map: "idx_17270_ix_roster_contactid")
 }
 
 model rosterseason {
-  id              BigInt          @id(map: "idx_17274_pk_rosterseason")
+  id              BigInt          @id @default(autoincrement())
   playerid        BigInt
   teamseasonid    BigInt
   playernumber    Int
   inactive        Boolean
   submittedwaiver Boolean
-  dateadded       DateTime?       @db.Timestamptz(6)
+  dateadded       DateTime?       @db.Timestamp(6)
   batstatsum      batstatsum[]
   fieldstatsum    fieldstatsum[]
   gameejections   gameejections[]
   pitchstatsum    pitchstatsum[]
   playerrecap     playerrecap[]
   roster          roster          @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_rosterseason_roster")
-
-  @@unique([playerid, teamseasonid], map: "idx_17274_ix_rosterseason")
-  @@index([playerid], map: "idx_17274_ix_rosterseason_playerid")
-  @@index([teamseasonid], map: "idx_17274_ix_rosterseason_teamseasonid")
+  teamsseason     teamsseason     @relation(fields: [teamseasonid], references: [id], onDelete: Cascade)
 }
 
 model season {
-  id                          BigInt                        @id(map: "idx_17277_pk_season")
+  id                          BigInt                        @id @default(autoincrement())
   accountid                   BigInt
-  name                        String
+  name                        String                        @db.VarChar(25)
   leagueseason                leagueseason[]
   playerseasonaffiliationdues playerseasonaffiliationdues[]
-  accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_season_accounts")
-
-  @@index([accountid], map: "idx_17277_ix_season_accountid")
+  accounts                    accounts                      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_season_accounts")
 }
 
 model sponsors {
-  id            BigInt   @id(map: "idx_17282_pk_sponsors")
+  id            BigInt   @id @default(autoincrement())
   accountid     BigInt
-  name          String
-  streetaddress String
-  citystatezip  String
+  name          String   @db.VarChar(50)
+  streetaddress String   @db.VarChar(100)
+  citystatezip  String   @db.VarChar(100)
   description   String
-  email         String
-  phone         String
-  fax           String
-  website       String
-  teamid        BigInt
-  accounts      accounts @relation(fields: [accountid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_sponsors_accounts")
-
-  @@index([accountid], map: "idx_17282_ix_sponsors_accountid")
-  @@index([teamid], map: "idx_17282_ix_sponsors_teamid")
+  email         String   @db.VarChar(100)
+  phone         String   @db.VarChar(14)
+  fax           String   @db.VarChar(14)
+  website       String   @db.VarChar(100)
+  teamid        BigInt?
+  teams         teams?   @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_sponsors_teamid")
+  accounts      accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_sponsors_accounts")
 }
 
 model teamhandouts {
-  id          BigInt @id(map: "idx_17287_pk_teamhandouts")
-  description String
-  filename    String
+  id          BigInt @id @default(autoincrement())
+  description String @db.VarChar(255)
+  filename    String @db.VarChar(255)
   teamid      BigInt
   teams       teams  @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamhandouts_teams")
-
-  @@index([teamid], map: "idx_17287_ix_teamhandouts_teamid")
 }
 
 model teamnews {
-  id              BigInt   @id(map: "idx_17292_pk_teamnews")
+  id              BigInt   @id @default(autoincrement())
   teamid          BigInt
-  date            DateTime @db.Timestamptz(6)
+  date            DateTime @db.Timestamp(6)
   text            String
-  title           String
+  title           String   @db.VarChar(100)
   specialannounce Boolean
   teams           teams    @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamnews_teams")
-
-  @@index([teamid], map: "idx_17292_ix_teamnews_teamid")
 }
 
 model teams {
-  id             BigInt           @id(map: "idx_17297_pk_teams")
+  id             BigInt           @id @default(autoincrement())
   accountid      BigInt
-  webaddress     String
-  youtubeuserid  String?
-  defaultvideo   String           @default("")
+  webaddress     String           @db.VarChar(100)
+  youtubeuserid  String?          @db.VarChar(100)
+  defaultvideo   String           @default("") @db.VarChar(50)
   autoplayvideo  Boolean          @default(false)
   accountwelcome accountwelcome[]
+  sponsors       sponsors[]
   teamhandouts   teamhandouts[]
   teamnews       teamnews[]
   accounts       accounts         @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teams_accounts")
   teamsseason    teamsseason[]
-
-  @@index([accountid], map: "idx_17297_ix_teams_accountid")
 }
 
 model teamseasonmanager {
-  id           BigInt      @id(map: "idx_17304_pk_teamseasonmanager")
+  id           BigInt      @id @default(autoincrement())
   teamseasonid BigInt
   contactid    BigInt
   contacts     contacts    @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_contacts")
   teamsseason  teamsseason @relation(fields: [teamseasonid], references: [id], onDelete: Cascade, map: "fk_teamseasonmanager_teamsseason")
-
-  @@index([contactid], map: "idx_17304_ix_teamseasonmanager_contactid")
-  @@index([teamseasonid], map: "idx_17304_ix_teamseasonmanager_teamseasonid")
 }
 
 model teamsseason {
-  id                                     BigInt              @id(map: "idx_17307_pk_teamsseason")
+  id                                     BigInt              @id @default(autoincrement())
   leagueseasonid                         BigInt
   teamid                                 BigInt
-  name                                   String
-  divisionseasonid                       BigInt
+  name                                   String              @db.VarChar(25)
+  divisionseasonid                       BigInt?
   batstatsum                             batstatsum[]
   fieldstatsum                           fieldstatsum[]
   gamerecap                              gamerecap[]
-  golfmatch_golfmatch_team2Toteamsseason golfmatch[]         @relation("golfmatch_team2Toteamsseason")
   golfmatch_golfmatch_team1Toteamsseason golfmatch[]         @relation("golfmatch_team1Toteamsseason")
+  golfmatch_golfmatch_team2Toteamsseason golfmatch[]         @relation("golfmatch_team2Toteamsseason")
   golfmatchscores                        golfmatchscores[]
   golfroster                             golfroster[]
   pitchstatsum                           pitchstatsum[]
   playerrecap                            playerrecap[]
+  rosterseason                           rosterseason[]
   teamseasonmanager                      teamseasonmanager[]
+  divisionseason                         divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
   leagueseason                           leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
   teams                                  teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
-
-  @@index([divisionseasonid], map: "idx_17307_ix_teamsseason_divisionseasonid")
-  @@index([leagueseasonid], map: "idx_17307_ix_teamsseason_leagueseasonid")
-  @@index([teamid], map: "idx_17307_ix_teamsseason_teamid")
 }
 
 model teamswantedclassified {
-  id              BigInt   @id(map: "idx_17312_pk_teamswantedclassified")
+  id              BigInt   @id @default(autoincrement())
   accountid       BigInt
   datecreated     DateTime @db.Date
-  name            String
-  email           String
-  phone           String
+  name            String   @db.VarChar(50)
+  email           String   @db.VarChar(50)
+  phone           String   @db.VarChar(15)
   experience      String
-  positionsplayed String
+  positionsplayed String   @db.VarChar(50)
   accesscode      String   @db.Uuid
   birthdate       DateTime @db.Date
   accounts        accounts @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_teamswantedclassified_accounts")
 }
 
 model voteanswers {
-  id           BigInt       @id(map: "idx_17317_pk_voteanswers")
+  id           BigInt       @id @default(autoincrement())
   questionid   BigInt
   optionid     BigInt
   contactid    BigInt
-  contacts     contacts     @relation(fields: [contactid], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_voteanswers_contacts")
+  contacts     contacts     @relation(fields: [contactid], references: [id], onDelete: Cascade, map: "fk_voteanswers_contacts")
   voteoptions  voteoptions  @relation(fields: [optionid], references: [id], onDelete: Cascade, map: "fk_voteanswers_voteoptions")
-  votequestion votequestion @relation(fields: [questionid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_voteanswers_votequestion")
+  votequestion votequestion @relation(fields: [questionid], references: [id], onDelete: Cascade, map: "fk_voteanswers_votequestion")
 
-  @@unique([questionid, contactid], map: "idx_17317_ix_voteanswers")
-  @@index([contactid], map: "idx_17317_ix_voteanswers_contactid")
-  @@index([optionid], map: "idx_17317_ix_voteanswers_optionid")
-  @@index([questionid], map: "idx_17317_ix_voteanswers_questionid")
+  @@unique([questionid, optionid, contactid])
 }
 
 model voteoptions {
-  id           BigInt        @id(map: "idx_17320_pk_voteoptions")
+  id           BigInt        @id @default(autoincrement())
   questionid   BigInt
-  optiontext   String
+  optiontext   String        @db.VarChar(255)
   priority     Int
   voteanswers  voteanswers[]
   votequestion votequestion  @relation(fields: [questionid], references: [id], onDelete: Cascade, map: "fk_voteoptions_votequestion")
-
-  @@index([questionid], map: "idx_17320_ix_voteoptions_questionid")
 }
 
 model votequestion {
-  id          BigInt        @id(map: "idx_17325_pk_votequestion")
+  id          BigInt        @id @default(autoincrement())
   accountid   BigInt
-  question    String
+  question    String        @db.VarChar(255)
   active      Boolean
   voteanswers voteanswers[]
   voteoptions voteoptions[]
   accounts    accounts      @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_votequestion_accounts")
-
-  @@index([accountid], map: "idx_17325_ix_votequestion_accountid")
 }
 
 model workoutannouncement {
-  id                  BigInt                @id(map: "idx_17330_pk_workoutannouncement")
+  id                  BigInt                @id @default(autoincrement())
   accountid           BigInt
   workoutdesc         String
-  workoutdate         DateTime              @db.Timestamptz(6)
-  fieldid             BigInt
+  workoutdate         DateTime              @db.Timestamp(6)
+  fieldid             BigInt?
   comments            String
   accounts            accounts              @relation(fields: [accountid], references: [id], onDelete: Cascade, map: "fk_workoutannouncement_accounts")
-  availablefields     availablefields       @relation(fields: [fieldid], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_workoutannouncement_availablefields")
+  availablefields     availablefields?      @relation(fields: [fieldid], references: [id], map: "fk_workoutannouncement_availablefields")
   workoutregistration workoutregistration[]
-
-  @@index([accountid], map: "idx_17330_ix_workoutannouncement_accountid")
 }
 
 model workoutregistration {
-  id                  BigInt              @id(map: "idx_17335_pk_workoutregistration")
-  name                String
-  email               String
+  id                  BigInt              @id @default(autoincrement())
+  name                String              @db.VarChar(100)
+  email               String              @db.VarChar(100)
   age                 Int
-  phone1              String
-  phone2              String
-  phone3              String
-  phone4              String
-  positions           String
+  phone1              String              @db.VarChar(14)
+  phone2              String              @db.VarChar(14)
+  phone3              String              @db.VarChar(14)
+  phone4              String              @db.VarChar(14)
+  positions           String              @db.VarChar(50)
   ismanager           Boolean
   workoutid           BigInt
-  dateregistered      DateTime            @db.Timestamptz(6)
-  whereheard          String
+  dateregistered      DateTime            @db.Timestamp(6)
+  whereheard          String              @db.VarChar(25)
   workoutannouncement workoutannouncement @relation(fields: [workoutid], references: [id], onDelete: Cascade, map: "fk_workoutregistration_workoutannouncement")
-
-  @@index([workoutid], map: "idx_17335_ix_workoutregistration_workoutid")
 }
 
 model passwordresettokens {
-  id        String   @id @default(cuid())
-  userid    String
-  token     String   @unique
-  expiresat DateTime
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userid    String   @db.VarChar(128)
+  token     String   @db.VarChar(255)
+  expiresat DateTime @db.Timestamptz(6)
   used      Boolean  @default(false)
-  createdat DateTime @default(now())
-  aspnetusers aspnetusers @relation(fields: [userid], references: [id], onDelete: Cascade)
-
-  @@index([userid])
-  @@index([token])
-  @@index([expiresat])
+  createdat DateTime @default(now()) @db.Timestamptz(6)
 }

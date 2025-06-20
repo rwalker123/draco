@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '../../src/generated/prisma';
+import * as jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -150,7 +150,7 @@ export const requireRole = (roleName: string) => {
         include: { aspnetroles: true }
       });
 
-      const hasRole = userRoles.some(userRole => 
+      const hasRole = userRoles.some((userRole: any) => 
         userRole.aspnetroles?.name === roleName
       );
 

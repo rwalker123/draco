@@ -1,0 +1,29 @@
+-- NOTE: This ended up not working, specifically, the latest version of pgloader
+--       would not connect to mssql for some reason. 
+-- To run:
+-- export TDS_MAX_CONN=10
+-- docker run --rm -v ~/source/Draco:/source -it dimitri/pgloader:latest pgloader /source/mssql.database
+
+load database
+    from mssql://SQL2012_152800_ezrecsports_user:Z3aB46yx!@sql2k1202.discountasp.net/SQL2012_152800_ezrecsports
+    into postgresql:///ezrecsports
+
+    --into postgresql://postgres:@host.docker.internal/ezrecsports
+
+    alter schema 'dbo' rename to 'public'
+
+    -- Exclude ASPTemp tables (case insensitive)
+    excluding table names like 'aspstatetemp%' in schema 'dbo'
+
+    -- Set TDS connection limit
+    set work_mem to '128MB'
+    set maintenance_work_mem to '512 MB'
+
+    -- Transform MS SQL functions to PostgreSQL equivalents
+    cast column created.default to "now()" using inline-drop-default,
+         column expires.default to "now()" using inline-drop-default,
+         column lockdate.default to "now()" using inline-drop-default,
+         column lockdatelocal.default to "now()" using inline-drop-default
+         -- column id with identity to bigserial
+
+before load do $$ drop schema if exists public cascade; $$;
