@@ -14,6 +14,7 @@ dotenv.config();
 import testDatabaseRouter from './routes/testdatabase';
 import authRouter from './routes/auth';
 import passwordResetRouter from './routes/passwordReset';
+import roleTestRouter from './routes/roleTest';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 
 const app = express();
@@ -51,6 +52,7 @@ app.get('/health', (req: any, res: any) => {
 app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
+app.use('/api/roleTest', roleTestRouter);
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {

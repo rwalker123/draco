@@ -8,6 +8,7 @@ dotenv.config();
 const testdatabase_1 = require("./routes/testdatabase");
 const auth_1 = require("./routes/auth");
 const passwordReset_1 = require("./routes/passwordReset");
+const roleTest_1 = require("./routes/roleTest");
 const bigint_serializer_1 = require("./middleware/bigint-serializer");
 const app = express();
 app.use(helmet());
@@ -28,6 +29,7 @@ app.get('/health', (req, res) => {
 app.use('/api/testdatabase', testdatabase_1.default);
 app.use('/api/auth', auth_1.default);
 app.use('/api/passwordReset', passwordReset_1.default);
+app.use('/api/roleTest', roleTest_1.default);
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
     res.status(err.status || 500).json({
