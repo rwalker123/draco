@@ -45,7 +45,7 @@ TABLES=(
     "leagueumpires"
     "leagueschedule"
     "roster"
-    "divsiondefs"
+    "divisiondefs"
     "divisionseason"
     "teamsseason"
     "rosterseason"

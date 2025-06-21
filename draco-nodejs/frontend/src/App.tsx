@@ -11,6 +11,7 @@ import AdminDashboard from './components/AdminDashboard';
 import AccountManagement from './components/AccountManagement';
 import ProtectedAccountManagement from './components/ProtectedAccountManagement';
 import ProtectedSeasonManagement from './components/ProtectedSeasonManagement';
+import ProtectedLeagueSeasonManagement from './components/ProtectedLeagueSeasonManagement';
 import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
 import { RequireAuth } from './components/ProtectedRoute';
@@ -37,6 +38,7 @@ function App() {
             </RequireAuth>
           } />
           <Route path="/account/:accountId/seasons" element={<ProtectedSeasonManagement />} />
+          <Route path="/account/:accountId/seasons/:seasonId/league-seasons" element={<ProtectedLeagueSeasonManagement />} />
           <Route path="/permission-test" element={<PermissionTest />} />
           <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>
