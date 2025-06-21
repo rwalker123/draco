@@ -66,6 +66,20 @@
     ```
   - [ ] Test sequence fixes with data insertion operations
 
+- [ ] **Database Schema - DivisionDefs Naming Uniqueness**
+  - [ ] **Decision Required**: Determine approach for division name uniqueness
+    - [ ] **Option A**: Add unique constraint on `divisiondefs.name` per account (recommended)
+      - Ensures division names are unique within each account
+      - Maintains current data structure
+      - Requires adding unique constraint: `UNIQUE(accountid, name)`
+    - [ ] **Option B**: Move division names to `divisionseason` table
+      - Allows same division definition to have different names in different league seasons
+      - Requires schema migration and data restructuring
+      - More flexible but more complex
+  - [ ] **Current Issue**: Division names in `divisiondefs` table are not unique, which could cause confusion
+  - [ ] **Impact**: Affects division creation and management in LeagueSeason Management
+  - [ ] **Priority**: Medium - affects data integrity but not critical functionality
+
 #### 1.3 Backend Architecture
 - [x] Create basic Express.js application structure ✅
 - [x] Set up middleware (CORS, Helmet, JSON parsing) ✅
