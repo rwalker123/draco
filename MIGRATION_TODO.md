@@ -254,6 +254,14 @@
     - [x] Accordion state persistence to keep panels open after operations
     - [x] Immediate UI updates when teams are moved between divisions and unassigned sections
     - [x] Proper error handling for team assignment and removal operations
+  - [ ] **Division Management Enhancements**
+    - [ ] Add division name editing functionality in LeagueSeason Management page
+    - [ ] Implement inline editing or edit dialog for division names
+    - [ ] Add edit button/icon next to division names in division cards
+    - [ ] Integrate with existing division update API endpoint
+    - [ ] Add validation for division name changes (duplicate prevention)
+    - [ ] Implement immediate UI updates after division name changes
+    - [ ] Add proper error handling for division name editing operations
 
 **LeagueSeason Management Implementation Notes:**
 - Successfully implemented comprehensive league season management API with proper RESTful URL structure
