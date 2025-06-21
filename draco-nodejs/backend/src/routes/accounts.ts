@@ -94,6 +94,220 @@ router.get('/',
 );
 
 /**
+ * GET /api/accounts/my-accounts
+ * Get accounts accessible to the current user (Account Admin or Administrator)
+ */
+router.get('/my-accounts',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      
+      // Check if user is global administrator
+      const isAdmin = await roleService.hasRole(userId, 'Administrator', { accountId: undefined });
+      
+      if (isAdmin.hasRole) {
+        // Administrator can see all accounts
+        const accounts = await prisma.accounts.findMany({
+          select: {
+            id: true,
+            name: true,
+            accounttypeid: true,
+            owneruserid: true,
+            firstyear: true,
+            affiliationid: true,
+            timezoneid: true,
+            twitteraccountname: true,
+            youtubeuserid: true,
+            facebookfanpage: true,
+            defaultvideo: true,
+            autoplayvideo: true,
+            accounttypes: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            name: 'asc'
+          }
+        });
+
+        // Get affiliations separately
+        const affiliationIds = [...new Set(accounts.map(acc => acc.affiliationid))];
+        const affiliations = await prisma.affiliations.findMany({
+          where: {
+            id: { in: affiliationIds }
+          },
+          select: {
+            id: true,
+            name: true,
+            url: true
+          }
+        });
+
+        const affiliationMap = new Map(affiliations.map(aff => [aff.id.toString(), aff]));
+
+        // Get contact information for owner users
+        const ownerUserIds = [...new Set(accounts.map(acc => acc.owneruserid).filter(id => id !== null))];
+        const contacts = await prisma.contacts.findMany({
+          where: {
+            userid: { in: ownerUserIds }
+          },
+          select: {
+            userid: true,
+            firstname: true,
+            lastname: true,
+            email: true
+          }
+        });
+
+        const contactMap = new Map(contacts.map(contact => [contact.userid, contact]));
+
+        res.json({
+          success: true,
+          data: {
+            accounts: accounts.map((account: any) => {
+              const contact = contactMap.get(account.owneruserid);
+              return {
+                id: account.id.toString(),
+                name: account.name,
+                accountTypeId: account.accounttypeid.toString(),
+                accountType: account.accounttypes?.name,
+                ownerUserId: account.owneruserid,
+                ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
+                ownerEmail: contact?.email || '',
+                firstYear: account.firstyear,
+                affiliationId: account.affiliationid.toString(),
+                affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
+                timezoneId: account.timezoneid,
+                twitterAccountName: account.twitteraccountname,
+                youtubeUserId: account.youtubeuserid,
+                facebookFanPage: account.facebookfanpage,
+                defaultVideo: account.defaultvideo,
+                autoPlayVideo: account.autoplayvideo
+              };
+            })
+          }
+        });
+      } else {
+        // Account Admin can only see accounts they have access to
+        const userRoles = await roleService.getUserRoles(userId);
+        const accountAdminRoles = userRoles.contactRoles.filter((role: any) => 
+          role.roleId === 'AccountAdmin' && role.accountId
+        );
+        
+        if (accountAdminRoles.length === 0) {
+          res.json({
+            success: true,
+            data: {
+              accounts: []
+            }
+          });
+          return;
+        }
+
+        const accountIds = accountAdminRoles.map((role: any) => role.accountId!);
+        
+        const accounts = await prisma.accounts.findMany({
+          where: {
+            id: { in: accountIds }
+          },
+          select: {
+            id: true,
+            name: true,
+            accounttypeid: true,
+            owneruserid: true,
+            firstyear: true,
+            affiliationid: true,
+            timezoneid: true,
+            twitteraccountname: true,
+            youtubeuserid: true,
+            facebookfanpage: true,
+            defaultvideo: true,
+            autoplayvideo: true,
+            accounttypes: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          },
+          orderBy: {
+            name: 'asc'
+          }
+        });
+
+        // Get affiliations separately
+        const affiliationIds = [...new Set(accounts.map(acc => acc.affiliationid))];
+        const affiliations = await prisma.affiliations.findMany({
+          where: {
+            id: { in: affiliationIds }
+          },
+          select: {
+            id: true,
+            name: true,
+            url: true
+          }
+        });
+
+        const affiliationMap = new Map(affiliations.map(aff => [aff.id.toString(), aff]));
+
+        // Get contact information for owner users
+        const ownerUserIds = [...new Set(accounts.map(acc => acc.owneruserid).filter(id => id !== null))];
+        const contacts = await prisma.contacts.findMany({
+          where: {
+            userid: { in: ownerUserIds }
+          },
+          select: {
+            userid: true,
+            firstname: true,
+            lastname: true,
+            email: true
+          }
+        });
+
+        const contactMap = new Map(contacts.map(contact => [contact.userid, contact]));
+
+        res.json({
+          success: true,
+          data: {
+            accounts: accounts.map((account: any) => {
+              const contact = contactMap.get(account.owneruserid);
+              return {
+                id: account.id.toString(),
+                name: account.name,
+                accountTypeId: account.accounttypeid.toString(),
+                accountType: account.accounttypes?.name,
+                ownerUserId: account.owneruserid,
+                ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
+                ownerEmail: contact?.email || '',
+                firstYear: account.firstyear,
+                affiliationId: account.affiliationid.toString(),
+                affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
+                timezoneId: account.timezoneid,
+                twitterAccountName: account.twitteraccountname,
+                youtubeUserId: account.youtubeuserid,
+                facebookFanPage: account.facebookfanpage,
+                defaultVideo: account.defaultvideo,
+                autoPlayVideo: account.autoplayvideo
+              };
+            })
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error getting my accounts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/accounts/types
  * Get all account types
  */
@@ -803,5 +1017,118 @@ router.delete('/:accountId/users/:contactId/roles/:roleId',
     }
   }
 );
+
+/**
+ * GET /api/accounts/contacts/search
+ * Search contacts by name for autocomplete
+ */
+router.get('/contacts/search',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { q } = req.query; // search query
+      const limit = 10; // maximum results to return
+
+      if (!q || typeof q !== 'string') {
+        res.json({
+          success: true,
+          data: {
+            contacts: []
+          }
+        });
+        return;
+      }
+
+      const contacts = await prisma.contacts.findMany({
+        where: {
+          OR: [
+            {
+              firstname: {
+                contains: q,
+                mode: 'insensitive'
+              }
+            },
+            {
+              lastname: {
+                contains: q,
+                mode: 'insensitive'
+              }
+            },
+            {
+              email: {
+                contains: q,
+                mode: 'insensitive'
+              }
+            }
+          ]
+        },
+        select: {
+          id: true,
+          firstname: true,
+          lastname: true,
+          email: true,
+          userid: true
+        },
+        orderBy: [
+          { lastname: 'asc' },
+          { firstname: 'asc' }
+        ],
+        take: limit
+      });
+
+      res.json({
+        success: true,
+        data: {
+          contacts: contacts.map((contact: any) => ({
+            id: contact.id.toString(),
+            firstName: contact.firstname,
+            lastName: contact.lastname,
+            email: contact.email,
+            userId: contact.userid,
+            displayName: `${contact.firstname} ${contact.lastname}`,
+            searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error searching contacts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/contacts/:userId
+ * Get contact information by user ID
+ */
+router.get('/contacts/:userId', authenticateToken, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const contact = await prisma.contacts.findFirst({
+      where: { userid: userId },
+      select: { userid: true, firstname: true, lastname: true, email: true }
+    });
+    if (!contact) {
+      res.status(404).json({ success: false, message: 'Contact not found' });
+      return;
+    }
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          userId: contact.userid,
+          displayName: `${contact.firstname} ${contact.lastname}`.trim(),
+          searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`.trim(),
+          email: contact.email
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
 
 export default router; 

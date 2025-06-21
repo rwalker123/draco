@@ -180,7 +180,8 @@ CREATE TABLE leagueseason (
     leagueid bigint NOT NULL,
     seasonid bigint NOT NULL,
     FOREIGN KEY (leagueid) REFERENCES league(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (seasonid) REFERENCES season(id) ON UPDATE CASCADE ON DELETE CASCADE
+    FOREIGN KEY (seasonid) REFERENCES season(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT league_season UNIQUE (leagueid, seasonid);
 );
 
 -- Table: leagueumpires
