@@ -7,10 +7,25 @@ import {
   Box,
   Button,
   IconButton,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { SportsSoccer, Menu } from '@mui/icons-material';
+import { 
+  SportsSoccer, 
+  Menu as MenuIcon, 
+  Dashboard, 
+  AdminPanelSettings, 
+  Business,
+  Group,
+  Settings
+} from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
+import { useAccount } from '../context/AccountContext';
 import { useNavigate } from 'react-router-dom';
+import { AdminOnly, AccountAdminOnly } from './RoleBasedNavigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,26 +33,46 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout } = useAuth();
+  const { hasRole } = useRole();
+  const { currentAccount } = useAccount();
   const navigate = useNavigate();
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+    handleMenuClose();
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    handleMenuClose();
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
         <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-          >
-            <Menu />
-          </IconButton>
+          {user && (
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+              onClick={handleMenuOpen}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <SportsSoccer sx={{ mr: 1 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Draco Sports Manager
@@ -47,6 +82,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Typography variant="body1" sx={{ mr: 2 }}>
                 Hello, {user.username}
               </Typography>
+              {currentAccount && (
+                <Typography variant="body2" sx={{ mr: 2 }}>
+                  Account: {currentAccount.name}
+                </Typography>
+              )}
               <Button color="inherit" onClick={handleLogout}>
                 Logout
               </Button>
@@ -58,6 +98,87 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </Toolbar>
       </AppBar>
+
+      {/* Navigation Menu */}
+      {user && (
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'left',
+          }}
+        >
+          <MenuItem onClick={() => handleNavigation('/dashboard')}>
+            <ListItemIcon>
+              <Dashboard fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Dashboard</ListItemText>
+          </MenuItem>
+
+          <AdminOnly>
+            <MenuItem onClick={() => handleNavigation('/admin')}>
+              <ListItemIcon>
+                <AdminPanelSettings fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Admin Dashboard</ListItemText>
+            </MenuItem>
+          </AdminOnly>
+
+          <AccountAdminOnly>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}>
+              <ListItemIcon>
+                <Business fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Account Management</ListItemText>
+            </MenuItem>
+          </AccountAdminOnly>
+
+          {hasRole('672DDF06-21AC-4D7C-B025-9319CC69281A') && (
+            <MenuItem onClick={() => handleNavigation('/league-management')}>
+              <ListItemIcon>
+                <Group fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>League Management</ListItemText>
+            </MenuItem>
+          )}
+
+          {hasRole('777D771B-1CBA-4126-B8F3-DD7F3478D40E') && (
+            <MenuItem onClick={() => handleNavigation('/team-management')}>
+              <ListItemIcon>
+                <Group fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Team Management</ListItemText>
+            </MenuItem>
+          )}
+
+          <MenuItem onClick={() => handleNavigation('/settings')}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Settings</ListItemText>
+          </MenuItem>
+
+          <MenuItem onClick={() => handleNavigation('/permission-test')}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Permission Test</ListItemText>
+          </MenuItem>
+
+          <MenuItem onClick={() => handleNavigation('/role-debug')}>
+            <ListItemIcon>
+              <Settings fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Role Debug</ListItemText>
+          </MenuItem>
+        </Menu>
+      )}
       
       <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
         {children}
