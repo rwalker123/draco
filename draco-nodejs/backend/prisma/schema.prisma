@@ -743,6 +743,8 @@ model leagueseason {
   season         season           @relation(fields: [seasonid], references: [id], onDelete: Cascade, map: "fk_leagueseason_season")
   playoffsetup   playoffsetup[]
   teamsseason    teamsseason[]
+
+  @@unique([seasonid, leagueid])
 }
 
 model leagueumpires {
