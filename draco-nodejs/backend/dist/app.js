@@ -19,6 +19,7 @@ const accounts_1 = require("./routes/accounts");
 const seasons_1 = require("./routes/seasons");
 const leagueSeasons_1 = require("./routes/leagueSeasons");
 const leagues_1 = require("./routes/leagues");
+const divisions_1 = require("./routes/divisions");
 const bigint_serializer_1 = require("./middleware/bigint-serializer");
 const app = express();
 app.use(helmet());
@@ -42,6 +43,7 @@ app.use('/api/passwordReset', passwordReset_1.default);
 app.use('/api/roleTest', roleTest_1.default);
 app.use('/api/accounts/:accountId/leagues', leagues_1.default);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasons_1.default);
+app.use('/api/accounts/:accountId/divisions', divisions_1.default);
 app.use('/api/accounts/:accountId/seasons', seasons_1.default);
 app.use('/api/accounts', accounts_1.default);
 app.use((err, req, res, next) => {

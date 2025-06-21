@@ -14,7 +14,6 @@ import {
   Chip,
   Alert,
   CircularProgress,
-  Grid,
   List,
   ListItem,
   ListItemText,
@@ -35,7 +34,8 @@ import {
   StarBorder as StarBorderIcon,
   Refresh as RefreshIcon,
   Group as GroupIcon,
-  Remove as RemoveIcon
+  Remove as RemoveIcon,
+  Sports as SportsIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -292,7 +292,12 @@ const SeasonManagement: React.FC = () => {
   const openLeagueManagementDialog = (season: Season) => {
     setSelectedSeason(season);
     setSelectedLeague(null);
+    setError(null);
     setLeagueManagementDialogOpen(true);
+  };
+
+  const navigateToLeagueSeasonManagement = (season: Season) => {
+    navigate(`/account/${accountId}/seasons/${season.id}/league-seasons`);
   };
 
   const handleAddLeagueToSeason = async () => {
@@ -648,6 +653,17 @@ const SeasonManagement: React.FC = () => {
                             onClick={() => openLeagueManagementDialog(season)}
                           >
                             <GroupIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
+                      {canManageLeagues && (
+                        <Tooltip title="League Season Management">
+                          <IconButton
+                            size="small"
+                            onClick={() => navigateToLeagueSeasonManagement(season)}
+                          >
+                            <SportsIcon />
                           </IconButton>
                         </Tooltip>
                       )}

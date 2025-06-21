@@ -196,15 +196,61 @@
   - [x] Add account-specific authorization checks with role-based access control
   - [x] Test all endpoints with AccountAdmin role access
 
+- [x] **Division Management API Implementation**
+  - [x] Create divisiondefs model and relationships with Prisma
+  - [x] Implement comprehensive DivisionController with CRUD operations
+  - [x] Create division routes with role-based protection:
+    - [x] GET `/api/accounts/:accountId/divisions` (list all division definitions)
+    - [x] GET `/api/accounts/:accountId/divisions/:divisionId` (get specific division)
+    - [x] POST `/api/accounts/:accountId/divisions` (create new division definition)
+    - [x] PUT `/api/accounts/:accountId/divisions/:divisionId` (update division definition)
+    - [x] DELETE `/api/accounts/:accountId/divisions/:divisionId` (delete division definition)
+  - [x] Create divisionseason model and relationships with Prisma
+  - [x] Implement division season routes with role-based protection:
+    - [x] GET `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions` (list divisions for league season)
+    - [x] POST `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions` (add division to league season)
+    - [x] DELETE `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions/:divisionSeasonId` (remove division from league season)
+  - [x] Implement division validation and business logic
+  - [x] Add account-specific authorization checks with role-based access control
+  - [x] Test all endpoints with AccountAdmin role access
+
+- [x] **LeagueSeason Management Frontend UX**
+  - [x] Create comprehensive LeagueSeasonManagement React component with Material-UI
+  - [x] Implement division management with create, add, and remove operations
+  - [x] Add accordion layout for league seasons with divisions and teams
+  - [x] Create dialogs for division creation and assignment
+  - [x] Add team assignment functionality (UI ready for backend implementation)
+  - [x] Implement responsive design with proper loading states
+  - [x] Add error handling and success messaging
+  - [x] Integrate with existing SeasonManagement component
+  - [x] Add navigation button in season cards for league season management
+  - [x] **Enhanced Add Division Dialog** - Added division creation functionality within the Add Division dialog
+    - [x] "Create New Division" button to switch to division creation mode
+    - [x] Division name input with validation
+    - [x] Priority setting for new divisions
+    - [x] Checkbox to optionally add division to league after creation
+    - [x] Seamless workflow between selecting existing divisions and creating new ones
+    - [x] Error handling for duplicate division names
+    - [x] Immediate UI updates after division creation and assignment
+
 **LeagueSeason Management Implementation Notes:**
-- Successfully implemented league season management API with proper RESTful URL structure
-- Used `/api/accounts/:accountId/seasons/:seasonId/leagues` pattern for hierarchical resource organization
-- Enforced unique constraint on (seasonid, leagueid) to prevent duplicate league entries per season
+- Successfully implemented comprehensive league season management API with proper RESTful URL structure
+- Enhanced existing league season routes to include division and team data in responses
+- Created new division management API with full CRUD operations for division definitions
+- Implemented division season management for adding/removing divisions to/from league seasons
+- Used hierarchical URL structure: `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions`
+- Added proper validation to prevent duplicate divisions in league seasons
+- Implemented business logic to prevent division deletion when teams are assigned
+- Created comprehensive frontend UX with accordion layout for better organization
+- Added division creation and management dialogs with proper form validation
+- Implemented team assignment UI (backend endpoint needs to be created for team assignment)
+- Added responsive design with proper loading states and error handling
+- Integrated with existing SeasonManagement component via dialog
 - All endpoints require AccountAdmin or Administrator role for modifications
-- Account boundary enforcement ensures users can only access leagueSeasons for accounts they have access to
-- LeagueSeason data includes relationships with leagues and seasons
-- Prisma client regeneration resolved schema sync issues
-- All endpoints tested and working with proper authentication and authorization
+- Account boundary enforcement ensures users can only access data for accounts they have access to
+- Database relationships properly maintained: LeagueSeason → DivisionSeason → TeamsSeason
+- Division definitions are reusable across different league seasons
+- Priority system implemented for division ordering within league seasons
 
 #### 2.5 League Management API
 - [x] **League Management API Implementation**
