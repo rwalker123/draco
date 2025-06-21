@@ -5,14 +5,10 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RoleService } from '../services/roleService';
 import { PrismaClient } from '@prisma/client';
-import { initializeRoleIds } from '../config/roles';
 
 const router = Router();
 const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
-
-// Initialize role IDs when the module loads
-initializeRoleIds(prisma).catch(console.error);
 
 /**
  * GET /api/role-test/user-roles

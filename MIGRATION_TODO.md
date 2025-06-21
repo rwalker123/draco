@@ -90,16 +90,32 @@
 - [x] Legacy password migration and reset tested for known user
 
 #### 2.2 Account Management API
-- [ ] Create Account model and relationships
-- [ ] Implement AccountController with CRUD operations
-- [ ] Create account routes:
-  - [ ] GET `/api/accounts/:accountId`
-  - [ ] PUT `/api/accounts/:accountId`
-  - [ ] PUT `/api/accounts/:accountId/twitter`
-  - [ ] POST `/api/accounts/:accountId/urls`
-  - [ ] DELETE `/api/accounts/:accountId/urls/:urlId`
-- [ ] Implement account validation middleware
-- [ ] Add account-specific authorization checks
+- [x] **Account Management API Implementation**
+  - [x] Create Account model and relationships with Prisma
+  - [x] Implement comprehensive AccountController with CRUD operations
+  - [x] Create account routes with role-based protection:
+    - [x] GET `/api/accounts` (Administrator only - lists all accounts)
+    - [x] GET `/api/accounts/types` (get all account types)
+    - [x] GET `/api/accounts/affiliations` (get all affiliations)
+    - [x] GET `/api/accounts/:accountId` (requires account access)
+    - [x] PUT `/api/accounts/:accountId` (AccountAdmin or Administrator)
+    - [x] PUT `/api/accounts/:accountId/twitter` (update Twitter settings)
+    - [x] POST `/api/accounts/:accountId/urls` (add account URLs)
+    - [x] DELETE `/api/accounts/:accountId/urls/:urlId` (remove account URLs)
+  - [x] Implement account validation middleware
+  - [x] Add account-specific authorization checks with role-based access control
+  - [x] Fix role initialization issues and route protection
+  - [x] Test all endpoints with Administrator role access
+
+**Account Management Implementation Notes:**
+- Successfully implemented comprehensive account management API with role-based protection
+- Fixed role initialization issue where role IDs were not being properly populated
+- Updated route protection to use role names instead of role IDs for proper role checking
+- Implemented account boundary enforcement for account-specific endpoints
+- Added support for account types, affiliations, Twitter settings, and URL management
+- All endpoints tested and working with proper authentication and authorization
+- Account data includes relationships with account types and affiliations
+- URLs are managed separately with individual create/delete operations
 
 #### 2.3 Team & Player Management
 - [ ] Create Team and Player models

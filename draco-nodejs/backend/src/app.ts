@@ -2,9 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const { PrismaClient } = require('@prisma/client');
+const { initializeRoleIds } = require('./config/roles');
 
 // Load environment variables
 dotenv.config();
+
+// Initialize Prisma and roles
+const prisma = new PrismaClient();
+
+// Initialize role IDs from database
+initializeRoleIds(prisma).catch((error: any) => {
+  console.error('Failed to initialize role IDs:', error);
+});
 
 // Import routes (will be created later)
 // import { authRouter } from './routes/auth';

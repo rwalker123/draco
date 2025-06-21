@@ -4,7 +4,13 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const { PrismaClient } = require('@prisma/client');
+const { initializeRoleIds } = require('./config/roles');
 dotenv.config();
+const prisma = new PrismaClient();
+initializeRoleIds(prisma).catch((error) => {
+    console.error('Failed to initialize role IDs:', error);
+});
 const testdatabase_1 = require("./routes/testdatabase");
 const auth_1 = require("./routes/auth");
 const passwordReset_1 = require("./routes/passwordReset");
