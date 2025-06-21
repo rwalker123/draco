@@ -53,6 +53,18 @@
 - [x] Set up environment variables for database connection ✅
 - [x] Create global BigInt serialization middleware ✅
 - [x] Test database connectivity with API endpoint ✅
+- [ ] **Database Maintenance - Fix Auto-Increment Sequences**
+  - [ ] Fix auto-increment sequences for tables causing unique constraint violations:
+    - [ ] `batstatsum` table - ID sequence out of sync
+    - [ ] `pitchstatsum` table - ID sequence out of sync  
+    - [ ] `golfleaguesetup` table - ID sequence out of sync
+  - [ ] Run PostgreSQL sequence reset commands:
+    ```sql
+    SELECT setval(pg_get_serial_sequence('batstatsum', 'id'), (SELECT MAX(id) FROM batstatsum));
+    SELECT setval(pg_get_serial_sequence('pitchstatsum', 'id'), (SELECT MAX(id) FROM pitchstatsum));
+    SELECT setval(pg_get_serial_sequence('golfleaguesetup', 'id'), (SELECT MAX(id) FROM golfleaguesetup));
+    ```
+  - [ ] Test sequence fixes with data insertion operations
 
 #### 1.3 Backend Architecture
 - [x] Create basic Express.js application structure ✅
