@@ -28,6 +28,7 @@ import roleTestRouter from './routes/roleTest';
 import accountsRouter from './routes/accounts';
 import seasonsRouter from './routes/seasons';
 import leagueSeasonsRouter from './routes/leagueSeasons';
+import leaguesRouter from './routes/leagues';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 
 const app = express();
@@ -66,6 +67,7 @@ app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/roleTest', roleTestRouter);
+app.use('/api/accounts/:accountId/leagues', leaguesRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
 app.use('/api/accounts', accountsRouter);
