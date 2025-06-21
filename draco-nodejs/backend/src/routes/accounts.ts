@@ -26,7 +26,86 @@ router.get('/',
           id: true,
           name: true,
           accounttypeid: true,
-          owneruserid: true
+          owneruserid: true,
+          firstyear: true,
+          affiliationid: true,
+          timezoneid: true,
+          twitteraccountname: true,
+          youtubeuserid: true,
+          facebookfanpage: true,
+          defaultvideo: true,
+          autoplayvideo: true,
+          accounttypes: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      // Get affiliations separately since there's no direct relationship
+      const affiliationIds = [...new Set(accounts.map(acc => acc.affiliationid))];
+      const affiliations = await prisma.affiliations.findMany({
+        where: {
+          id: { in: affiliationIds }
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true
+        }
+      });
+
+      const affiliationMap = new Map(affiliations.map(aff => [aff.id.toString(), aff]));
+
+      res.json({
+        success: true,
+        data: {
+          accounts: accounts.map((account: any) => ({
+            id: account.id.toString(),
+            name: account.name,
+            accountTypeId: account.accounttypeid.toString(),
+            accountType: account.accounttypes?.name,
+            ownerUserId: account.owneruserid,
+            firstYear: account.firstyear,
+            affiliationId: account.affiliationid.toString(),
+            affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
+            timezoneId: account.timezoneid,
+            twitterAccountName: account.twitteraccountname,
+            youtubeUserId: account.youtubeuserid,
+            facebookFanPage: account.facebookfanpage,
+            defaultVideo: account.defaultvideo,
+            autoPlayVideo: account.autoplayvideo
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error getting accounts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/types
+ * Get all account types
+ */
+router.get('/types',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountTypes = await prisma.accounttypes.findMany({
+        select: {
+          id: true,
+          name: true,
+          filepath: true
         },
         orderBy: {
           name: 'asc'
@@ -36,16 +115,54 @@ router.get('/',
       res.json({
         success: true,
         data: {
-          accounts: accounts.map((account: any) => ({
-            id: account.id.toString(),
-            name: account.name,
-            accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid
+          accountTypes: accountTypes.map((type: any) => ({
+            id: type.id.toString(),
+            name: type.name,
+            filePath: type.filepath
           }))
         }
       });
     } catch (error) {
-      console.error('Error getting accounts:', error);
+      console.error('Error getting account types:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/affiliations
+ * Get all affiliations
+ */
+router.get('/affiliations',
+  authenticateToken,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const affiliations = await prisma.affiliations.findMany({
+        select: {
+          id: true,
+          name: true,
+          url: true
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          affiliations: affiliations.map((affiliation: any) => ({
+            id: affiliation.id.toString(),
+            name: affiliation.name,
+            url: affiliation.url
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error getting affiliations:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
@@ -71,7 +188,34 @@ router.get('/:accountId',
           id: true,
           name: true,
           accounttypeid: true,
-          owneruserid: true
+          owneruserid: true,
+          firstyear: true,
+          affiliationid: true,
+          timezoneid: true,
+          twitteraccountname: true,
+          twitteroauthtoken: true,
+          twitteroauthsecretkey: true,
+          youtubeuserid: true,
+          facebookfanpage: true,
+          twitterwidgetscript: true,
+          defaultvideo: true,
+          autoplayvideo: true,
+          accounttypes: {
+            select: {
+              id: true,
+              name: true,
+              filepath: true
+            }
+          },
+          accountsurl: {
+            select: {
+              id: true,
+              url: true
+            },
+            orderBy: {
+              id: 'asc'
+            }
+          }
         }
       });
 
@@ -83,6 +227,16 @@ router.get('/:accountId',
         return;
       }
 
+      // Get affiliation separately
+      const affiliation = await prisma.affiliations.findUnique({
+        where: { id: account.affiliationid },
+        select: {
+          id: true,
+          name: true,
+          url: true
+        }
+      });
+
       res.json({
         success: true,
         data: {
@@ -90,7 +244,24 @@ router.get('/:accountId',
             id: account.id.toString(),
             name: account.name,
             accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid
+            accountType: account.accounttypes?.name,
+            ownerUserId: account.owneruserid,
+            firstYear: account.firstyear,
+            affiliationId: account.affiliationid.toString(),
+            affiliation: affiliation?.name,
+            timezoneId: account.timezoneid,
+            twitterAccountName: account.twitteraccountname,
+            twitterOauthToken: account.twitteroauthtoken,
+            twitterOauthSecretKey: account.twitteroauthsecretkey,
+            youtubeUserId: account.youtubeuserid,
+            facebookFanPage: account.facebookfanpage,
+            twitterWidgetScript: account.twitterwidgetscript,
+            defaultVideo: account.defaultvideo,
+            autoPlayVideo: account.autoplayvideo,
+            urls: account.accountsurl.map((url: any) => ({
+              id: url.id.toString(),
+              url: url.url
+            }))
           }
         }
       });
@@ -113,7 +284,15 @@ router.post('/',
   routeProtection.requireAdministrator(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { name, accountTypeId, ownerUserId } = req.body;
+      const { 
+        name, 
+        accountTypeId, 
+        ownerUserId, 
+        affiliationId = 1,
+        timezoneId = 'UTC',
+        firstYear,
+        urls = []
+      } = req.body;
 
       if (!name || !accountTypeId || !ownerUserId) {
         res.status(400).json({
@@ -128,9 +307,9 @@ router.post('/',
           name,
           accounttypeid: BigInt(accountTypeId),
           owneruserid: ownerUserId,
-          firstyear: new Date().getFullYear(),
-          affiliationid: BigInt(1), // Default affiliation
-          timezoneid: 'UTC',
+          firstyear: firstYear || new Date().getFullYear(),
+          affiliationid: BigInt(affiliationId),
+          timezoneid: timezoneId,
           twitteraccountname: '',
           twitteroauthtoken: '',
           twitteroauthsecretkey: '',
@@ -139,6 +318,18 @@ router.post('/',
         }
       });
 
+      // Create URLs if provided
+      if (urls.length > 0) {
+        for (const url of urls) {
+          await prisma.accountsurl.create({
+            data: {
+              accountid: account.id,
+              url
+            }
+          });
+        }
+      }
+
       res.status(201).json({
         success: true,
         data: {
@@ -146,7 +337,10 @@ router.post('/',
             id: account.id.toString(),
             name: account.name,
             accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid
+            ownerUserId: account.owneruserid,
+            firstYear: account.firstyear,
+            affiliationId: account.affiliationid.toString(),
+            timezoneId: account.timezoneid
           }
         }
       });
@@ -171,9 +365,21 @@ router.put('/:accountId',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);
-      const { name, accountTypeId } = req.body;
+      const { 
+        name, 
+        accountTypeId, 
+        affiliationId, 
+        timezoneId, 
+        firstYear,
+        youtubeUserId,
+        facebookFanPage,
+        defaultVideo,
+        autoPlayVideo
+      } = req.body;
 
-      if (!name && !accountTypeId) {
+      if (!name && !accountTypeId && !affiliationId && !timezoneId && 
+          firstYear === undefined && !youtubeUserId && !facebookFanPage && 
+          defaultVideo === undefined && autoPlayVideo === undefined) {
         res.status(400).json({
           success: false,
           message: 'At least one field to update is required'
@@ -184,6 +390,13 @@ router.put('/:accountId',
       const updateData: any = {};
       if (name) updateData.name = name;
       if (accountTypeId) updateData.accounttypeid = BigInt(accountTypeId);
+      if (affiliationId) updateData.affiliationid = BigInt(affiliationId);
+      if (timezoneId) updateData.timezoneid = timezoneId;
+      if (firstYear !== undefined) updateData.firstyear = firstYear;
+      if (youtubeUserId !== undefined) updateData.youtubeuserid = youtubeUserId;
+      if (facebookFanPage !== undefined) updateData.facebookfanpage = facebookFanPage;
+      if (defaultVideo !== undefined) updateData.defaultvideo = defaultVideo;
+      if (autoPlayVideo !== undefined) updateData.autoplayvideo = autoPlayVideo;
 
       const account = await prisma.accounts.update({
         where: { id: accountId },
@@ -192,7 +405,14 @@ router.put('/:accountId',
           id: true,
           name: true,
           accounttypeid: true,
-          owneruserid: true
+          owneruserid: true,
+          firstyear: true,
+          affiliationid: true,
+          timezoneid: true,
+          youtubeuserid: true,
+          facebookfanpage: true,
+          defaultvideo: true,
+          autoplayvideo: true
         }
       });
 
@@ -203,12 +423,185 @@ router.put('/:accountId',
             id: account.id.toString(),
             name: account.name,
             accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid
+            ownerUserId: account.owneruserid,
+            firstYear: account.firstyear,
+            affiliationId: account.affiliationid.toString(),
+            timezoneId: account.timezoneid,
+            youtubeUserId: account.youtubeuserid,
+            facebookFanPage: account.facebookfanpage,
+            defaultVideo: account.defaultvideo,
+            autoPlayVideo: account.autoplayvideo
           }
         }
       });
     } catch (error) {
       console.error('Error updating account:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * PUT /api/accounts/:accountId/twitter
+ * Update Twitter settings (Account Admin or Administrator)
+ */
+router.put('/:accountId/twitter',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { 
+        twitterAccountName, 
+        twitterOauthToken, 
+        twitterOauthSecretKey,
+        twitterWidgetScript 
+      } = req.body;
+
+      if (!twitterAccountName && !twitterOauthToken && !twitterOauthSecretKey && !twitterWidgetScript) {
+        res.status(400).json({
+          success: false,
+          message: 'At least one Twitter field to update is required'
+        });
+        return;
+      }
+
+      const updateData: any = {};
+      if (twitterAccountName !== undefined) updateData.twitteraccountname = twitterAccountName;
+      if (twitterOauthToken !== undefined) updateData.twitteroauthtoken = twitterOauthToken;
+      if (twitterOauthSecretKey !== undefined) updateData.twitteroauthsecretkey = twitterOauthSecretKey;
+      if (twitterWidgetScript !== undefined) updateData.twitterwidgetscript = twitterWidgetScript;
+
+      const account = await prisma.accounts.update({
+        where: { id: accountId },
+        data: updateData,
+        select: {
+          id: true,
+          name: true,
+          twitteraccountname: true,
+          twitteroauthtoken: true,
+          twitteroauthsecretkey: true,
+          twitterwidgetscript: true
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          account: {
+            id: account.id.toString(),
+            name: account.name,
+            twitterAccountName: account.twitteraccountname,
+            twitterOauthToken: account.twitteroauthtoken,
+            twitterOauthSecretKey: account.twitteroauthsecretkey,
+            twitterWidgetScript: account.twitterwidgetscript
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error updating Twitter settings:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/accounts/:accountId/urls
+ * Add URL to account (Account Admin or Administrator)
+ */
+router.post('/:accountId/urls',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { url } = req.body;
+
+      if (!url) {
+        res.status(400).json({
+          success: false,
+          message: 'URL is required'
+        });
+        return;
+      }
+
+      const accountUrl = await prisma.accountsurl.create({
+        data: {
+          accountid: accountId,
+          url
+        },
+        select: {
+          id: true,
+          url: true
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          url: {
+            id: accountUrl.id.toString(),
+            url: accountUrl.url
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error adding URL:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/accounts/:accountId/urls/:urlId
+ * Remove URL from account (Account Admin or Administrator)
+ */
+router.delete('/:accountId/urls/:urlId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const urlId = BigInt(req.params.urlId);
+
+      // Verify the URL belongs to the account
+      const existingUrl = await prisma.accountsurl.findFirst({
+        where: {
+          id: urlId,
+          accountid: accountId
+        }
+      });
+
+      if (!existingUrl) {
+        res.status(404).json({
+          success: false,
+          message: 'URL not found or does not belong to this account'
+        });
+        return;
+      }
+
+      await prisma.accountsurl.delete({
+        where: { id: urlId }
+      });
+
+      res.json({
+        success: true,
+        message: 'URL removed successfully'
+      });
+    } catch (error) {
+      console.error('Error removing URL:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
