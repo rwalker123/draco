@@ -19,7 +19,8 @@ import {
   AdminPanelSettings, 
   Business,
   Group,
-  Settings
+  Settings,
+  CalendarMonth
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -134,6 +135,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
             </MenuItem>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}>
+              <ListItemIcon>
+                <CalendarMonth fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Season Management</ListItemText>
+            </MenuItem>
           </AdminOnly>
 
           <AccountAdminOnly>
@@ -148,6 +155,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Business fontSize="small" />
               </ListItemIcon>
               <ListItemText>Current Account</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}>
+              <ListItemIcon>
+                <CalendarMonth fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Season Management</ListItemText>
             </MenuItem>
           </AccountAdminOnly>
 
