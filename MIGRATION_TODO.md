@@ -194,7 +194,52 @@
 - Prisma client regeneration resolved schema sync issues
 - All endpoints tested and working with proper authentication and authorization
 
-#### 2.5 Team & Player Management
+#### 2.5 League Management API
+- [x] **League Management API Implementation**
+  - [x] Create League model and relationships with Prisma
+  - [x] Implement comprehensive LeagueController with CRUD operations
+  - [x] Create league routes with role-based protection using RESTful URL structure:
+    - [x] GET `/api/accounts/:accountId/leagues` (list all leagues for account)
+    - [x] GET `/api/accounts/:accountId/leagues/:leagueId` (get specific league)
+    - [x] POST `/api/accounts/:accountId/leagues` (create new league)
+    - [x] PUT `/api/accounts/:accountId/leagues/:leagueId` (update league name)
+    - [x] DELETE `/api/accounts/:accountId/leagues/:leagueId` (delete league)
+  - [x] Implement league validation and business logic
+  - [x] Add account-specific authorization checks with role-based access control
+  - [x] Fix database sequence issues for auto-incrementing IDs
+  - [x] Test all endpoints with AccountAdmin role access
+
+- [x] **League Management Frontend UX**
+  - [x] Integrate league creation into Season Management component
+  - [x] Add "Create New League" button in Manage Leagues dialog
+  - [x] Implement league creation dialog with name input
+  - [x] Add checkbox to optionally add league to season after creation
+  - [x] Implement league editing functionality with inline dialog
+  - [x] Add error handling for duplicate league names
+  - [x] Implement immediate UI updates after league operations
+  - [x] Add error display within dialogs for better UX
+  - [x] Test all league CRUD operations with proper error handling
+
+**League Management Implementation Notes:**
+- Successfully implemented comprehensive league management API with proper RESTful URL structure
+- Used `/api/accounts/:accountId/leagues` pattern for hierarchical resource organization
+- Enforced unique constraint on league names per account to prevent duplicates
+- All endpoints require AccountAdmin or Administrator role for modifications
+- Account boundary enforcement ensures users can only access leagues for accounts they have access to
+- League data includes relationships with account and leagueSeasons
+- Fixed database sequence issues that were causing unique constraint violations on ID fields
+- All endpoints tested and working with proper authentication and authorization
+- **Frontend UX Features:**
+  - Integrated league creation into existing Season Management workflow
+  - "Create New League" button in Manage Leagues dialog for seamless workflow
+  - League creation dialog with name input and optional season assignment
+  - League editing functionality with inline dialog and immediate updates
+  - Comprehensive error handling for duplicate names and validation errors
+  - Error messages displayed within dialogs for better user experience
+  - Immediate UI updates after league operations without requiring dialog refresh
+  - Integration with existing authentication and role context systems
+
+#### 2.6 Team & Player Management
 - [ ] Create Team and Player models
 - [ ] Implement TeamController with full CRUD
 - [ ] Implement PlayerController with full CRUD
@@ -213,13 +258,13 @@
 - [ ] Implement team/player statistics tracking
 - [ ] Add team logo upload functionality
 
-#### 2.6 Contact Management
+#### 2.7 Contact Management
 - [ ] Create Contact model
 - [ ] Implement ContactController
 - [ ] Create contact routes for user profile management
 - [ ] Implement contact search and filtering
 
-#### 2.7 Role Management & Authorization
+#### 2.8 Role Management & Authorization
 - [x] **Role System Analysis & Design**
   - [x] Analyze existing role structure: `aspnetroles`, `aspnetuserroles`, `contactroles`
   - [x] Understand global vs account-specific vs context-specific roles
@@ -269,7 +314,7 @@
 - Successfully tested role checking with Administrator global role
 - Frontend and backend role systems now properly synchronized
 
-#### 2.8 Route Protection & Authorization
+#### 2.9 Route Protection & Authorization
 - [x] **Contact Role-Based Route Protection**
   - [x] Implement contact role checking middleware
   - [x] Add account-level route protection (AccountAdmin, AccountUser)

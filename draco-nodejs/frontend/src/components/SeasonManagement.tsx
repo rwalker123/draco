@@ -22,7 +22,9 @@ import {
   Divider,
   Tooltip,
   Fab,
-  Snackbar
+  Autocomplete,
+  FormControlLabel,
+  Checkbox
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -31,7 +33,9 @@ import {
   ContentCopy as CopyIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Group as GroupIcon,
+  Remove as RemoveIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -52,6 +56,12 @@ interface Season {
   }>;
 }
 
+interface League {
+  id: string;
+  name: string;
+  accountId: string;
+}
+
 interface SeasonFormData {
   name: string;
 }
@@ -63,6 +73,7 @@ const SeasonManagement: React.FC = () => {
   const { hasRole, hasPermission } = useRole();
 
   const [seasons, setSeasons] = useState<Season[]>([]);
+  const [availableLeagues, setAvailableLeagues] = useState<League[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -72,10 +83,12 @@ const SeasonManagement: React.FC = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
+  const [leagueManagementDialogOpen, setLeagueManagementDialogOpen] = useState(false);
   
   // Form states
   const [formData, setFormData] = useState<SeasonFormData>({ name: '' });
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
+  const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
   // Check permissions
@@ -83,6 +96,7 @@ const SeasonManagement: React.FC = () => {
   const canEdit = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
   const canDelete = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
   const canSetCurrent = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canManageLeagues = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
 
   const fetchSeasons = useCallback(async () => {
     if (!accountId || !token) return;
@@ -106,11 +120,28 @@ const SeasonManagement: React.FC = () => {
     }
   }, [accountId, token]);
 
+  const fetchAvailableLeagues = useCallback(async () => {
+    if (!accountId || !token) return;
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/accounts/${accountId}/leagues`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setAvailableLeagues(response.data.data.leagues);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch available leagues:', err);
+    }
+  }, [accountId, token]);
+
   useEffect(() => {
     if (accountId) {
       fetchSeasons();
+      fetchAvailableLeagues();
     }
-  }, [accountId, fetchSeasons]);
+  }, [accountId, fetchSeasons, fetchAvailableLeagues]);
 
   const handleCreateSeason = async () => {
     if (!accountId || !token || !formData.name.trim()) return;
@@ -258,6 +289,97 @@ const SeasonManagement: React.FC = () => {
     setCopyDialogOpen(true);
   };
 
+  const openLeagueManagementDialog = (season: Season) => {
+    setSelectedSeason(season);
+    setSelectedLeague(null);
+    setLeagueManagementDialogOpen(true);
+  };
+
+  const handleAddLeagueToSeason = async () => {
+    if (!accountId || !token || !selectedSeason || !selectedLeague) return;
+
+    setFormLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
+        { leagueId: selectedLeague.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(`League "${selectedLeague.name}" added to season "${selectedSeason.name}"`);
+        
+        // Update the selectedSeason state with the new league
+        const updatedSeason = {
+          ...selectedSeason,
+          leagues: [
+            ...selectedSeason.leagues,
+            {
+              id: response.data.data.leagueSeason.id,
+              leagueId: selectedLeague.id,
+              leagueName: selectedLeague.name
+            }
+          ]
+        };
+        setSelectedSeason(updatedSeason);
+        
+        setSelectedLeague(null);
+        fetchSeasons();
+      } else {
+        setError(response.data.message || 'Failed to add league to season');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to add league to season');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleRemoveLeagueFromSeason = async (leagueSeasonId: string, leagueName: string) => {
+    if (!accountId || !token || !selectedSeason) return;
+
+    setFormLoading(true);
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues/${leagueSeasonId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(`League "${leagueName}" removed from season "${selectedSeason.name}"`);
+        
+        // Update the selectedSeason state by removing the league
+        const updatedSeason = {
+          ...selectedSeason,
+          leagues: selectedSeason.leagues.filter(league => league.id !== leagueSeasonId)
+        };
+        setSelectedSeason(updatedSeason);
+        
+        fetchSeasons();
+      } else {
+        setError(response.data.message || 'Failed to remove league from season');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to remove league from season');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const closeLeagueManagementDialog = () => {
+    setLeagueManagementDialogOpen(false);
+    setSelectedSeason(null);
+    setSelectedLeague(null);
+  };
+
+  // Get leagues that are not already in the selected season
+  const getAvailableLeaguesForSeason = () => {
+    if (!selectedSeason) return availableLeagues;
+    
+    const seasonLeagueIds = selectedSeason.leagues.map(ls => ls.leagueId);
+    return availableLeagues.filter(league => !seasonLeagueIds.includes(league.id));
+  };
+
   const closeDialogs = () => {
     setCreateDialogOpen(false);
     setEditDialogOpen(false);
@@ -265,6 +387,120 @@ const SeasonManagement: React.FC = () => {
     setCopyDialogOpen(false);
     setFormData({ name: '' });
     setSelectedSeason(null);
+  };
+
+  // Add state for edit dialog
+  const [editLeagueDialogOpen, setEditLeagueDialogOpen] = useState(false);
+  const [leagueToEdit, setLeagueToEdit] = useState<League | null>(null);
+  const [editLeagueName, setEditLeagueName] = useState('');
+
+  // Add state for create league dialog
+  const [createLeagueDialogOpen, setCreateLeagueDialogOpen] = useState(false);
+  const [newLeagueName, setNewLeagueName] = useState('');
+  const [addToSeasonAfterCreate, setAddToSeasonAfterCreate] = useState(true);
+
+  // Handler to open edit dialog
+  const openEditLeagueDialog = (league: League) => {
+    setLeagueToEdit(league);
+    setEditLeagueName(league.name);
+    setError(null);
+    setEditLeagueDialogOpen(true);
+  };
+
+  // Handler to open create league dialog
+  const openCreateLeagueDialog = () => {
+    setNewLeagueName('');
+    setAddToSeasonAfterCreate(true);
+    setError(null);
+    setCreateLeagueDialogOpen(true);
+  };
+
+  // Handler to save league name
+  const handleEditLeague = async () => {
+    if (!accountId || !token || !leagueToEdit || !editLeagueName.trim()) return;
+    setFormLoading(true);
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/accounts/${accountId}/leagues/${leagueToEdit.id}`,
+        { name: editLeagueName.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.data.success) {
+        setSuccessMessage('League updated successfully');
+        setEditLeagueDialogOpen(false);
+        setLeagueToEdit(null);
+        fetchAvailableLeagues();
+        fetchSeasons();
+      } else {
+        setError(response.data.message || 'Failed to update league');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to update league');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handler to create new league
+  const handleCreateLeague = async () => {
+    if (!accountId || !token || !newLeagueName.trim()) return;
+    setFormLoading(true);
+    try {
+      // Create the league
+      const createResponse = await axios.post(
+        `${API_BASE_URL}/api/accounts/${accountId}/leagues`,
+        { name: newLeagueName.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (createResponse.data.success) {
+        const newLeague = createResponse.data.data.league;
+        
+        // If checkbox is checked, add the league to the season
+        if (addToSeasonAfterCreate && selectedSeason) {
+          const addResponse = await axios.post(
+            `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
+            { leagueId: newLeague.id },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (addResponse.data.success) {
+            setSuccessMessage(`League "${newLeague.name}" created and added to season "${selectedSeason.name}"`);
+            
+            // Update the selectedSeason state with the new league
+            if (selectedSeason) {
+              const updatedSeason = {
+                ...selectedSeason,
+                leagues: [
+                  ...selectedSeason.leagues,
+                  {
+                    id: addResponse.data.data.leagueSeason.id,
+                    leagueId: newLeague.id,
+                    leagueName: newLeague.name
+                  }
+                ]
+              };
+              setSelectedSeason(updatedSeason);
+            }
+          } else {
+            setSuccessMessage(`League "${newLeague.name}" created successfully, but failed to add to season`);
+          }
+        } else {
+          setSuccessMessage(`League "${newLeague.name}" created successfully`);
+        }
+
+        setCreateLeagueDialogOpen(false);
+        setNewLeagueName('');
+        fetchAvailableLeagues();
+        fetchSeasons();
+      } else {
+        setError(createResponse.data.message || 'Failed to create league');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to create league');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   if (!accountId) {
@@ -405,6 +641,17 @@ const SeasonManagement: React.FC = () => {
                         </Tooltip>
                       )}
                       
+                      {canManageLeagues && (
+                        <Tooltip title="Manage leagues">
+                          <IconButton
+                            size="small"
+                            onClick={() => openLeagueManagementDialog(season)}
+                          >
+                            <GroupIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      
                       {canEdit && (
                         <Tooltip title="Edit season">
                           <IconButton
@@ -446,6 +693,115 @@ const SeasonManagement: React.FC = () => {
           )}
         </Box>
       )}
+
+      {/* League Management Dialog */}
+      <Dialog 
+        open={leagueManagementDialogOpen} 
+        onClose={closeLeagueManagementDialog} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>
+          Manage Leagues - {selectedSeason?.name}
+        </DialogTitle>
+        <DialogContent>
+          <Box mb={3}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" gutterBottom>
+                Add League to Season
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={openCreateLeagueDialog}
+                startIcon={<AddIcon />}
+                disabled={formLoading}
+              >
+                Create New League
+              </Button>
+            </Box>
+            <Box display="flex" gap={2} alignItems="center">
+              <Autocomplete
+                options={getAvailableLeaguesForSeason()}
+                getOptionLabel={(option) => option.name}
+                value={selectedLeague}
+                onChange={(_, newValue) => setSelectedLeague(newValue)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select League"
+                    variant="outlined"
+                    fullWidth
+                    disabled={formLoading}
+                  />
+                )}
+                disabled={formLoading}
+              />
+              <Button
+                variant="contained"
+                onClick={handleAddLeagueToSeason}
+                disabled={!selectedLeague || formLoading}
+                startIcon={formLoading ? <CircularProgress size={20} /> : <AddIcon />}
+              >
+                Add
+              </Button>
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Current Leagues ({selectedSeason?.leagues.length || 0})
+            </Typography>
+            {selectedSeason?.leagues.length === 0 ? (
+              <Typography variant="body2" color="textSecondary">
+                No leagues are currently assigned to this season.
+              </Typography>
+            ) : (
+              <List>
+                {selectedSeason?.leagues.map((league, index) => (
+                  <React.Fragment key={league.id}>
+                    <ListItem>
+                      <ListItemText
+                        primary={league.leagueName}
+                        secondary={`League ID: ${league.leagueId}`}
+                      />
+                      <ListItemSecondaryAction>
+                        <Tooltip title="Edit league">
+                          <IconButton
+                            edge="end"
+                            onClick={() => openEditLeagueDialog({ id: league.leagueId, name: league.leagueName, accountId: accountId! })}
+                            disabled={formLoading}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Remove from season">
+                          <IconButton
+                            edge="end"
+                            color="error"
+                            onClick={() => handleRemoveLeagueFromSeason(league.id, league.leagueName)}
+                            disabled={formLoading}
+                          >
+                            <RemoveIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                    {index < selectedSeason.leagues.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeLeagueManagementDialog} disabled={formLoading}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Create Season Dialog */}
       <Dialog open={createDialogOpen} onClose={closeDialogs} maxWidth="sm" fullWidth>
@@ -554,6 +910,100 @@ const SeasonManagement: React.FC = () => {
             disabled={formLoading}
           >
             {formLoading ? <CircularProgress size={20} /> : 'Copy'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit League Dialog */}
+      <Dialog open={editLeagueDialogOpen} onClose={() => {
+        setEditLeagueDialogOpen(false);
+        setError(null);
+      }} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit League</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+          <TextField
+            autoFocus
+            margin="dense"
+            label="League Name"
+            fullWidth
+            variant="outlined"
+            value={editLeagueName}
+            onChange={(e) => setEditLeagueName(e.target.value)}
+            disabled={formLoading}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setEditLeagueDialogOpen(false);
+            setError(null);
+          }} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEditLeague}
+            variant="contained"
+            disabled={!editLeagueName.trim() || formLoading}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Update'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create League Dialog */}
+      <Dialog open={createLeagueDialogOpen} onClose={() => {
+        setCreateLeagueDialogOpen(false);
+        setError(null);
+      }} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New League</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+          <TextField
+            autoFocus
+            margin="dense"
+            label="League Name"
+            fullWidth
+            variant="outlined"
+            value={newLeagueName}
+            onChange={(e) => setNewLeagueName(e.target.value)}
+            disabled={formLoading}
+            sx={{ mt: 1, mb: 2 }}
+          />
+          {selectedSeason && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={addToSeasonAfterCreate}
+                  onChange={(e) => setAddToSeasonAfterCreate(e.target.checked)}
+                  disabled={formLoading}
+                />
+              }
+              label={`Add to season "${selectedSeason.name}" after creation`}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setCreateLeagueDialogOpen(false);
+            setError(null);
+          }} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleCreateLeague}
+            variant="contained"
+            disabled={!newLeagueName.trim() || formLoading}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Create'}
           </Button>
         </DialogActions>
       </Dialog>
