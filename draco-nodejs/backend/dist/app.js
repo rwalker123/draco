@@ -16,6 +16,7 @@ const auth_1 = require("./routes/auth");
 const passwordReset_1 = require("./routes/passwordReset");
 const roleTest_1 = require("./routes/roleTest");
 const accounts_1 = require("./routes/accounts");
+const seasons_1 = require("./routes/seasons");
 const bigint_serializer_1 = require("./middleware/bigint-serializer");
 const app = express();
 app.use(helmet());
@@ -37,6 +38,7 @@ app.use('/api/testdatabase', testdatabase_1.default);
 app.use('/api/auth', auth_1.default);
 app.use('/api/passwordReset', passwordReset_1.default);
 app.use('/api/roleTest', roleTest_1.default);
+app.use('/api/accounts/:accountId/seasons', seasons_1.default);
 app.use('/api/accounts', accounts_1.default);
 app.use((err, req, res, next) => {
     console.error('Global error handler:', err);
