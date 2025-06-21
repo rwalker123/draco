@@ -367,6 +367,29 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setExpandedAccordions(newExpanded);
   };
 
+  // Handler to remove team from division
+  const handleRemoveTeamFromDivision = async (teamSeason: TeamSeason, leagueSeason: LeagueSeason) => {
+    if (!accountId || !token) return;
+
+    setFormLoading(true);
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/remove-from-division`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(response.data.data.message);
+        fetchLeagueSeasons(); // Refresh data
+      }
+    } catch (error: any) {
+      console.error('Error removing team from division:', error);
+      setError(error.response?.data?.message || 'Failed to remove team from division');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -511,6 +534,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                   label={team.name}
                                   size="small"
                                   sx={{ mr: 0.5, mb: 0.5 }}
+                                  onDelete={() => handleRemoveTeamFromDivision(team, leagueSeason)}
+                                  disabled={formLoading}
                                 />
                               ))}
                             </Box>
