@@ -7,6 +7,11 @@ import { Dashboard } from './components/Dashboard';
 import { Routes, Route } from 'react-router-dom';
 import PasswordReset from './components/PasswordReset';
 import Login from './components/Login';
+import AdminDashboard from './components/AdminDashboard';
+import AccountManagement from './components/AccountManagement';
+import PermissionTest from './components/PermissionTest';
+import RoleDebug from './components/RoleDebug';
+import { RequireAuth } from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -17,7 +22,16 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<PasswordReset />} />
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={
+            <RequireAuth>
+              <Dashboard />
+            </RequireAuth>
+          } />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/account/:accountId/management" element={<AccountManagement />} />
+          <Route path="/account-management" element={<AccountManagement />} />
+          <Route path="/permission-test" element={<PermissionTest />} />
+          <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>
       </Layout>
     </ThemeProvider>
