@@ -219,7 +219,8 @@
   - [x] Implement division management with create, add, and remove operations
   - [x] Add accordion layout for league seasons with divisions and teams
   - [x] Create dialogs for division creation and assignment
-  - [x] Add team assignment functionality (UI ready for backend implementation)
+  - [x] Add team assignment functionality with backend API integration
+  - [x] Add team removal functionality with backend API integration
   - [x] Implement responsive design with proper loading states
   - [x] Add error handling and success messaging
   - [x] Integrate with existing SeasonManagement component
@@ -232,6 +233,13 @@
     - [x] Seamless workflow between selecting existing divisions and creating new ones
     - [x] Error handling for duplicate division names
     - [x] Immediate UI updates after division creation and assignment
+  - [x] **Team Management Features**
+    - [x] Team assignment to divisions with dropdown selection
+    - [x] Team removal from divisions with one-click delete functionality
+    - [x] Visual team chips with remove (X) icons in division sections
+    - [x] Accordion state persistence to keep panels open after operations
+    - [x] Immediate UI updates when teams are moved between divisions and unassigned sections
+    - [x] Proper error handling for team assignment and removal operations
 
 **LeagueSeason Management Implementation Notes:**
 - Successfully implemented comprehensive league season management API with proper RESTful URL structure
@@ -243,7 +251,19 @@
 - Implemented business logic to prevent division deletion when teams are assigned
 - Created comprehensive frontend UX with accordion layout for better organization
 - Added division creation and management dialogs with proper form validation
-- Implemented team assignment UI (backend endpoint needs to be created for team assignment)
+- **Team Management API Implementation:**
+  - [x] Team assignment to divisions: `PUT /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams/:teamSeasonId/assign-division`
+  - [x] Team removal from divisions: `DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams/:teamSeasonId/remove-from-division`
+  - [x] Proper validation to ensure teams belong to the correct league season
+  - [x] Validation to prevent removing teams that aren't assigned to divisions
+  - [x] Comprehensive error handling and success messaging
+- **Team Management Frontend Features:**
+  - [x] Team assignment dialog with division dropdown selection
+  - [x] Team removal with one-click delete functionality on team chips
+  - [x] Visual feedback with remove (X) icons on team chips in divisions
+  - [x] Accordion state persistence to maintain open panels during operations
+  - [x] Immediate UI updates when teams are moved between sections
+  - [x] Proper loading states and error handling for all team operations
 - Added responsive design with proper loading states and error handling
 - Integrated with existing SeasonManagement component via dialog
 - All endpoints require AccountAdmin or Administrator role for modifications

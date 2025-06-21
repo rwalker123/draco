@@ -982,10 +982,27 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
         where: {
           id: teamSeasonId,
           leagueseasonid: leagueSeasonId
+        },
+        include: {
+          teams: true,
+          divisionseason: {
+            include: {
+              divisiondefs: true
+            }
+          }
         }
       });
       if (!teamSeason) {
         res.status(404).json({ success: false, message: 'Team season not found' });
+        return;
+      }
+
+      // Check if the team is currently assigned to a division
+      if (!teamSeason.divisionseasonid) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Team is not currently assigned to any division' 
+        });
         return;
       }
 
@@ -1003,6 +1020,92 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       });
     } catch (error) {
       console.error('Error assigning team to division:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  }
+);
+
+/**
+ * DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams/:teamSeasonId/remove-from-division
+ * Remove a team from its current division (make it unassigned)
+ */
+router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const leagueSeasonId = BigInt(req.params.leagueSeasonId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the season belongs to this account
+      const season = await prisma.season.findFirst({
+        where: {
+          id: seasonId,
+          accountid: accountId
+        }
+      });
+      if (!season) {
+        res.status(404).json({ success: false, message: 'Season not found' });
+        return;
+      }
+
+      // Verify the league season exists
+      const leagueSeason = await prisma.leagueseason.findFirst({
+        where: {
+          id: leagueSeasonId,
+          seasonid: seasonId
+        }
+      });
+      if (!leagueSeason) {
+        res.status(404).json({ success: false, message: 'League season not found' });
+        return;
+      }
+
+      // Verify the team season exists and belongs to this league season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseasonid: leagueSeasonId
+        },
+        include: {
+          teams: true,
+          divisionseason: {
+            include: {
+              divisiondefs: true
+            }
+          }
+        }
+      });
+      if (!teamSeason) {
+        res.status(404).json({ success: false, message: 'Team season not found' });
+        return;
+      }
+
+      // Check if the team is currently assigned to a division
+      if (!teamSeason.divisionseasonid) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Team is not currently assigned to any division' 
+        });
+        return;
+      }
+
+      // Update the team season to remove it from the division
+      await prisma.teamsseason.update({
+        where: { id: teamSeasonId },
+        data: { divisionseasonid: null }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Team "${teamSeason.name}" has been removed from division "${teamSeason.divisionseason?.divisiondefs.name || 'Unknown Division'}"`
+        }
+      });
+    } catch (error) {
+      console.error('Error removing team from division:', error);
       res.status(500).json({ success: false, message: 'Internal server error' });
     }
   }
