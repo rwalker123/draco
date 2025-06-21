@@ -128,14 +128,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText>Admin Dashboard</ListItemText>
             </MenuItem>
-          </AdminOnly>
-
-          <AccountAdminOnly>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}>
+            <MenuItem onClick={() => handleNavigation('/account-management')}>
               <ListItemIcon>
                 <Business fontSize="small" />
               </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
+            </MenuItem>
+          </AdminOnly>
+
+          <AccountAdminOnly>
+            <MenuItem onClick={() => handleNavigation('/account-management')}>
+              <ListItemIcon>
+                <Business fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Account Management</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}>
+              <ListItemIcon>
+                <Business fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Current Account</ListItemText>
             </MenuItem>
           </AccountAdminOnly>
 

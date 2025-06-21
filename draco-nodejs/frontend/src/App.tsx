@@ -9,6 +9,7 @@ import PasswordReset from './components/PasswordReset';
 import Login from './components/Login';
 import AdminDashboard from './components/AdminDashboard';
 import AccountManagement from './components/AccountManagement';
+import ProtectedAccountManagement from './components/ProtectedAccountManagement';
 import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
 import { RequireAuth } from './components/ProtectedRoute';
@@ -29,7 +30,11 @@ function App() {
           } />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/account/:accountId/management" element={<AccountManagement />} />
-          <Route path="/account-management" element={<AccountManagement />} />
+          <Route path="/account-management" element={
+            <RequireAuth>
+              <ProtectedAccountManagement />
+            </RequireAuth>
+          } />
           <Route path="/permission-test" element={<PermissionTest />} />
           <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>
