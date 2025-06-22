@@ -10,7 +10,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  IconButton,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,16 +21,20 @@ import {
   Breadcrumbs,
   Link,
   Card,
-  CardContent
+  CardContent,
+  FormControlLabel,
+  Checkbox,
+  IconButton
 } from '@mui/material';
 import {
-  Add as AddIcon,
   PersonAdd as PersonAddIcon,
-  PersonRemove as PersonRemoveIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
   Warning as WarningIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  SportsBasketball as SportsIcon,
+  Block as BlockIcon,
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -87,6 +90,11 @@ interface Season {
   name: string;
 }
 
+interface League {
+  id: string;
+  name: string;
+}
+
 interface TeamRosterData {
   teamSeason: TeamSeason;
   rosterMembers: RosterMember[];
@@ -107,11 +115,12 @@ const TeamRosterManagement: React.FC = () => {
   const [rosterData, setRosterData] = useState<TeamRosterData | null>(null);
   const [availablePlayers, setAvailablePlayers] = useState<RosterPlayer[]>([]);
   const [season, setSeason] = useState<Season | null>(null);
+  const [league, setLeague] = useState<League | null>(null);
   
   // Dialog states
-  const [addPlayerDialogOpen, setAddPlayerDialogOpen] = useState(false);
+  const [signPlayerDialogOpen, setSignPlayerDialogOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
-  const [playerNumber, setPlayerNumber] = useState<number>(0);
+  const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
   const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
@@ -134,6 +143,14 @@ const TeamRosterManagement: React.FC = () => {
     phone1: '',
     phone2: '',
     phone3: ''
+  });
+  
+  // Unified roster information dialog states
+  const [rosterFormData, setRosterFormData] = useState({
+    playerNumber: 0,
+    submittedWaiver: false,
+    submittedDriversLicense: false,
+    firstYear: 0
   });
 
   const { token } = useAuth();
@@ -186,67 +203,87 @@ const TeamRosterManagement: React.FC = () => {
     }
   }, [accountId, seasonId, teamSeasonId, token]);
 
-  // Fetch season data for breadcrumbs
+  // Fetch season data
   const fetchSeasonData = useCallback(async () => {
-    if (!accountId || !seasonId || !token) {
-      console.log('Missing required data for fetchSeasonData:', { accountId, seasonId, hasToken: !!token });
-      return;
-    }
+    if (!accountId || !seasonId || !token) return;
 
-    console.log('Fetching season data for:', { accountId, seasonId });
     try {
       const response = await axios.get(
         `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log('Season data response:', response.data);
       if (response.data.success) {
-        setSeason(response.data.data.season);
+        setSeason(response.data.data);
       }
     } catch (error: any) {
       console.error('Error fetching season data:', error);
-      console.error('Error response:', error.response?.data);
     }
   }, [accountId, seasonId, token]);
+
+  // Fetch league data
+  const fetchLeagueData = useCallback(async () => {
+    if (!accountId || !seasonId || !teamSeasonId || !token) return;
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setLeague(response.data.data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching league data:', error);
+    }
+  }, [accountId, seasonId, teamSeasonId, token]);
 
   useEffect(() => {
     console.log('TeamRosterManagement useEffect triggered with:', { accountId, seasonId, teamSeasonId, hasToken: !!token });
     fetchRosterData();
     fetchSeasonData();
-  }, [fetchRosterData, fetchSeasonData, accountId, seasonId, teamSeasonId, token]);
+    fetchLeagueData();
+  }, [fetchRosterData, fetchSeasonData, fetchLeagueData, accountId, seasonId, teamSeasonId, token]);
 
   useEffect(() => {
-    if (addPlayerDialogOpen) {
+    if (signPlayerDialogOpen) {
       fetchAvailablePlayers();
     }
-  }, [addPlayerDialogOpen, fetchAvailablePlayers]);
+  }, [signPlayerDialogOpen, fetchAvailablePlayers]);
 
-  // Handler to add player to roster
-  const handleAddPlayer = async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token || !selectedPlayer) return;
+  const handleSignPlayer = async () => {
+    if (!selectedPlayer || !accountId || !seasonId || !teamSeasonId || !token) {
+      setError('Missing required data');
+      return;
+    }
 
     setFormLoading(true);
+    setError(null);
     try {
       const response = await axios.post(
         `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         {
           playerId: selectedPlayer.id,
-          playerNumber: playerNumber
+          playerNumber: rosterFormData.playerNumber,
+          submittedWaiver: rosterFormData.submittedWaiver,
+          submittedDriversLicense: rosterFormData.submittedDriversLicense,
+          firstYear: rosterFormData.firstYear
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        setAddPlayerDialogOpen(false);
-        setSelectedPlayer(null);
-        setPlayerNumber(0);
+        setSuccessMessage('Player signed successfully');
+        closeSignPlayerDialog();
         fetchRosterData();
+        fetchAvailablePlayers();
+      } else {
+        setError(response.data.message || 'Failed to sign player');
       }
     } catch (error: any) {
-      console.error('Error adding player:', error);
-      setError(error.response?.data?.message || 'Failed to add player to roster');
+      console.error('Error signing player:', error);
+      setError(error.response?.data?.message || 'Failed to sign player');
     } finally {
       setFormLoading(false);
     }
@@ -404,11 +441,17 @@ const TeamRosterManagement: React.FC = () => {
     setSuccessMessage(null);
   };
 
-  // Close add player dialog
-  const closeAddPlayerDialog = () => {
-    setAddPlayerDialogOpen(false);
+  // Close sign player dialog
+  const closeSignPlayerDialog = () => {
+    setSignPlayerDialogOpen(false);
     setSelectedPlayer(null);
-    setPlayerNumber(0);
+    setRosterFormData({
+      playerNumber: 0,
+      submittedWaiver: false,
+      submittedDriversLicense: false,
+      firstYear: 0
+    });
+    setIsSigningNewPlayer(false);
     clearMessages();
   };
 
@@ -438,6 +481,74 @@ const TeamRosterManagement: React.FC = () => {
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     clearMessages();
+  };
+
+  // Open sign player dialog
+  const openSignPlayerDialog = () => {
+    setIsSigningNewPlayer(true);
+    setSelectedPlayer(null);
+    setRosterFormData({
+      playerNumber: 0,
+      submittedWaiver: false,
+      submittedDriversLicense: false,
+      firstYear: 0
+    });
+    setSignPlayerDialogOpen(true);
+  };
+
+  // Open roster dialog
+  const openRosterDialog = (rosterMember: RosterMember) => {
+    setIsSigningNewPlayer(false);
+    setSelectedPlayer(rosterMember.player);
+    setRosterFormData({
+      playerNumber: rosterMember.playerNumber,
+      submittedWaiver: rosterMember.submittedWaiver,
+      submittedDriversLicense: rosterMember.player.submittedDriversLicense,
+      firstYear: rosterMember.player.firstYear
+    });
+    setSignPlayerDialogOpen(true);
+  };
+
+  const handleSaveRosterInfo = async () => {
+    if (!selectedPlayer || !accountId || !seasonId || !teamSeasonId || !token) {
+      setError('Missing required data');
+      return;
+    }
+
+    // Find the roster member to update
+    const rosterMember = rosterData?.rosterMembers.find(member => member.player.id === selectedPlayer.id);
+    if (!rosterMember) {
+      setError('Roster member not found');
+      return;
+    }
+
+    setFormLoading(true);
+    setError(null);
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/update`,
+        {
+          playerNumber: rosterFormData.playerNumber,
+          submittedWaiver: rosterFormData.submittedWaiver,
+          submittedDriversLicense: rosterFormData.submittedDriversLicense,
+          firstYear: rosterFormData.firstYear
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage('Roster information updated successfully');
+        closeSignPlayerDialog();
+        fetchRosterData();
+      } else {
+        setError(response.data.message || 'Failed to update roster information');
+      }
+    } catch (error: any) {
+      console.error('Error updating roster information:', error);
+      setError(error.response?.data?.message || 'Failed to update roster information');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   // Helper function to format phone numbers as (111) 222-3333
@@ -772,33 +883,27 @@ const TeamRosterManagement: React.FC = () => {
       </Breadcrumbs>
 
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" gutterBottom>
-            {rosterData.teamSeason.name} - Team Roster
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Manage team roster members
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Typography variant="h4" component="h1">
+            {league?.name ? `${league.name} – ${rosterData?.teamSeason?.name} Roster` : `${rosterData?.teamSeason?.name} Roster`}
           </Typography>
         </Box>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(`/seasons/${seasonId}/league-management`)}
-            sx={{ mr: 2 }}
-          >
-            Back to League Management
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<PersonAddIcon />}
-            onClick={() => setAddPlayerDialogOpen(true)}
-            disabled={formLoading}
-          >
-            Add Player
-          </Button>
-        </Box>
+      </Box>
+
+      {/* Action Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+        <Button
+          variant="contained"
+          startIcon={<PersonAddIcon />}
+          onClick={openSignPlayerDialog}
+          disabled={formLoading}
+        >
+          Sign Player
+        </Button>
       </Box>
 
       {/* Messages */}
@@ -868,7 +973,7 @@ const TeamRosterManagement: React.FC = () => {
                 <TableCell>Name</TableCell>
                 <TableCell>Contact Info</TableCell>
                 <TableCell>Verification</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -876,9 +981,14 @@ const TeamRosterManagement: React.FC = () => {
                 <TableRow key={member.id}>
                   <TableCell>{member.playerNumber || '-'}</TableCell>
                   <TableCell>
-                    <Typography variant="body2">
-                      {formatName(member.player.contact)}
-                    </Typography>
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        {formatName(member.player.contact)}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        First Year: {member.player.firstYear || 'Not set'}
+                      </Typography>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     {formatContactInfo(member.player.contact)}
@@ -886,31 +996,61 @@ const TeamRosterManagement: React.FC = () => {
                   <TableCell>
                     {formatVerificationInfo(member)}
                   </TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="primary"
-                      onClick={() => openEditDialog(member)}
-                      disabled={formLoading}
-                      title="Edit Player"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      color="warning"
-                      onClick={() => handleReleasePlayer(member)}
-                      disabled={formLoading}
-                      title="Release Player"
-                    >
-                      <PersonRemoveIcon />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => openDeleteDialog(member)}
-                      disabled={formLoading}
-                      title="Delete Player"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                  <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<EditIcon />}
+                        onClick={() => openEditDialog(member)}
+                        sx={{ minWidth: 'auto' }}
+                      >
+                        Edit Info
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<SportsIcon />}
+                        onClick={() => openRosterDialog(member)}
+                        sx={{ minWidth: 'auto' }}
+                      >
+                        Edit Roster
+                      </Button>
+                      {!member.inactive && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="warning"
+                          startIcon={<BlockIcon />}
+                          onClick={() => handleReleasePlayer(member)}
+                          sx={{ minWidth: 'auto' }}
+                        >
+                          Release
+                        </Button>
+                      )}
+                      {member.inactive && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="success"
+                          startIcon={<CheckCircleIcon />}
+                          onClick={() => handleActivatePlayer(member)}
+                          sx={{ minWidth: 'auto' }}
+                        >
+                          Activate
+                        </Button>
+                      )}
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => openDeleteDialog(member)}
+                        sx={{ minWidth: 'auto' }}
+                      >
+                        Delete
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -944,7 +1084,7 @@ const TeamRosterManagement: React.FC = () => {
                   <TableCell>Name</TableCell>
                   <TableCell>Contact Info</TableCell>
                   <TableCell>Verification</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell sx={{ width: '280px', maxWidth: '280px' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -952,9 +1092,14 @@ const TeamRosterManagement: React.FC = () => {
                   <TableRow key={member.id}>
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ textDecoration: 'line-through' }}>
-                        {formatName(member.player.contact)}
-                      </Typography>
+                      <Box>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}>
+                          {formatName(member.player.contact)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          First Year: {member.player.firstYear || 'Not set'}
+                        </Typography>
+                      </Box>
                     </TableCell>
                     <TableCell>
                       {formatContactInfo(member.player.contact)}
@@ -962,31 +1107,61 @@ const TeamRosterManagement: React.FC = () => {
                     <TableCell>
                       {formatVerificationInfo(member)}
                     </TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="primary"
-                        onClick={() => openEditDialog(member)}
-                        disabled={formLoading}
-                        title="Edit Player"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="success"
-                        onClick={() => handleActivatePlayer(member)}
-                        disabled={formLoading}
-                        title="Reactivate Player"
-                      >
-                        <PersonAddIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => openDeleteDialog(member)}
-                        disabled={formLoading}
-                        title="Delete Player"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                    <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<EditIcon />}
+                          onClick={() => openEditDialog(member)}
+                          sx={{ minWidth: 'auto' }}
+                        >
+                          Edit Info
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<SportsIcon />}
+                          onClick={() => openRosterDialog(member)}
+                          sx={{ minWidth: 'auto' }}
+                        >
+                          Edit Roster
+                        </Button>
+                        {!member.inactive && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="warning"
+                            startIcon={<BlockIcon />}
+                            onClick={() => handleReleasePlayer(member)}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Release
+                          </Button>
+                        )}
+                        {member.inactive && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            startIcon={<CheckCircleIcon />}
+                            onClick={() => handleActivatePlayer(member)}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Activate
+                          </Button>
+                        )}
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          startIcon={<DeleteIcon />}
+                          onClick={() => openDeleteDialog(member)}
+                          sx={{ minWidth: 'auto' }}
+                        >
+                          Delete
+                        </Button>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -996,51 +1171,147 @@ const TeamRosterManagement: React.FC = () => {
         </Paper>
       )}
 
-      {/* Add Player Dialog */}
-      <Dialog open={addPlayerDialogOpen} onClose={closeAddPlayerDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>Add Player to Roster</DialogTitle>
+      {/* Unified Sign Player / Edit Roster Dialog */}
+      <Dialog open={signPlayerDialogOpen} onClose={closeSignPlayerDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {isSigningNewPlayer ? 'Sign Player to Roster' : 'Edit Roster Information'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
-            <Autocomplete
-              options={availablePlayers}
-              getOptionLabel={(option) => 
-                `${formatName(option.contact)}${option.contact.email ? ` (${option.contact.email})` : ''}`
-              }
-              value={selectedPlayer}
-              onChange={(_, newValue) => setSelectedPlayer(newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Select Player"
-                  fullWidth
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                />
-              )}
-              noOptionsText={availablePlayers.length === 0 ? "No available players" : "No players found"}
-            />
-            <TextField
-              label="Player Number (Optional)"
-              type="number"
-              value={playerNumber}
-              onChange={(e) => setPlayerNumber(parseInt(e.target.value) || 0)}
-              fullWidth
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
+            {/* Error Alert */}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
+                {error}
+              </Alert>
+            )}
+            
+            {/* Info Alert for signing new players */}
+            {isSigningNewPlayer && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                When you select a player, their existing roster information (first year, driver's license status) will be pre-filled. You can modify these values as needed.
+              </Alert>
+            )}
+            
+            {/* Player Selection (only for signing new players) */}
+            {isSigningNewPlayer && (
+              <Autocomplete
+                options={availablePlayers}
+                getOptionLabel={(option) => 
+                  `${formatName(option.contact)}${option.contact.email ? ` (${option.contact.email})` : ''}`
+                }
+                value={selectedPlayer}
+                onChange={(_, newValue) => {
+                  setSelectedPlayer(newValue);
+                  // Populate form with existing player data when available
+                  if (newValue) {
+                    setRosterFormData({
+                      playerNumber: 0, // Default to 0 for new signings
+                      submittedWaiver: false, // Default to false for new signings
+                      submittedDriversLicense: newValue.submittedDriversLicense || false,
+                      firstYear: newValue.firstYear || 0
+                    });
+                  } else {
+                    // Reset form when no player is selected
+                    setRosterFormData({
+                      playerNumber: 0,
+                      submittedWaiver: false,
+                      submittedDriversLicense: false,
+                      firstYear: 0
+                    });
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Select Player"
+                    fullWidth
+                    variant="outlined"
+                    sx={{ mb: 2 }}
+                  />
+                )}
+                noOptionsText={availablePlayers.length === 0 ? "No available players" : "No players found"}
+              />
+            )}
+            
+            {/* Player Name Display (only for editing existing players) */}
+            {!isSigningNewPlayer && selectedPlayer && (
+              <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                {formatName(selectedPlayer.contact)}
+              </Typography>
+            )}
+            
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField
+                label="Player Number"
+                type="number"
+                value={rosterFormData.playerNumber}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setRosterFormData({ ...rosterFormData, playerNumber: Math.max(0, value) });
+                }}
+                inputProps={{ min: 0 }}
+                fullWidth
+                variant="outlined"
+                helperText="Enter the player's jersey number (0 for no number)"
+                error={rosterFormData.playerNumber < 0}
+              />
+              
+              <TextField
+                label="First Year"
+                type="number"
+                value={rosterFormData.firstYear}
+                onChange={(e) => setRosterFormData({ ...rosterFormData, firstYear: parseInt(e.target.value) || 0 })}
+                fullWidth
+                variant="outlined"
+                helperText={
+                  isSigningNewPlayer && selectedPlayer && selectedPlayer.firstYear 
+                    ? `Pre-filled with existing data: ${selectedPlayer.firstYear}` 
+                    : "Enter the year the player first joined the league"
+                }
+              />
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rosterFormData.submittedWaiver}
+                    onChange={(e) => setRosterFormData({ ...rosterFormData, submittedWaiver: e.target.checked })}
+                  />
+                }
+                label="Submitted Waiver"
+              />
+              
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={rosterFormData.submittedDriversLicense}
+                    onChange={(e) => setRosterFormData({ ...rosterFormData, submittedDriversLicense: e.target.checked })}
+                  />
+                }
+                label={
+                  <Box>
+                    <Typography>Submitted Driver's License</Typography>
+                    {isSigningNewPlayer && selectedPlayer && selectedPlayer.submittedDriversLicense && (
+                      <Typography variant="caption" color="text.secondary">
+                        Pre-filled with existing data
+                      </Typography>
+                    )}
+                  </Box>
+                }
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeAddPlayerDialog} disabled={formLoading}>
+          <Button onClick={closeSignPlayerDialog} disabled={formLoading}>
             Cancel
           </Button>
           <Button
-            onClick={handleAddPlayer}
+            onClick={isSigningNewPlayer ? handleSignPlayer : handleSaveRosterInfo}
             variant="contained"
-            disabled={!selectedPlayer || formLoading}
-            startIcon={formLoading ? <CircularProgress size={20} /> : <AddIcon />}
+            disabled={isSigningNewPlayer ? (!selectedPlayer || formLoading) : formLoading}
+            startIcon={formLoading ? <CircularProgress size={20} /> : (isSigningNewPlayer ? <PersonAddIcon /> : <SportsIcon />)}
           >
-            Add Player
+            {isSigningNewPlayer ? 'Sign Player' : 'Save Roster Info'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1258,4 +1529,4 @@ const TeamRosterManagement: React.FC = () => {
   );
 };
 
-export default TeamRosterManagement; 
+export default TeamRosterManagement;
