@@ -30,7 +30,8 @@ import {
   PersonRemove as PersonRemoveIcon,
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
-  Warning as WarningIcon
+  Warning as WarningIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -113,6 +114,27 @@ const TeamRosterManagement: React.FC = () => {
   const [playerNumber, setPlayerNumber] = useState<number>(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
+  const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
+  const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    firstname: '',
+    lastname: '',
+    middlename: '',
+    email: '',
+    phone1: '',
+    phone2: '',
+    phone3: '',
+    streetaddress: '',
+    city: '',
+    state: '',
+    zip: '',
+    dateofbirth: ''
+  });
+  const [phoneErrors, setPhoneErrors] = useState({
+    phone1: '',
+    phone2: '',
+    phone3: ''
+  });
 
   const { token } = useAuth();
 
@@ -303,10 +325,77 @@ const TeamRosterManagement: React.FC = () => {
     }
   };
 
+  // Handler to edit player
+  const handleEditPlayer = async () => {
+    if (!accountId || !token || !playerToEdit) return;
+
+    // Validate phone numbers before proceeding
+    if (!validateAllPhoneNumbers()) {
+      setError('Please fix phone number format errors before saving');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/accounts/${accountId}/contacts/${playerToEdit.player.contactId}`,
+        editFormData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(response.data.data.message);
+        setEditPlayerDialogOpen(false);
+        setPlayerToEdit(null);
+        setEditFormData({
+          firstname: '',
+          lastname: '',
+          middlename: '',
+          email: '',
+          phone1: '',
+          phone2: '',
+          phone3: '',
+          streetaddress: '',
+          city: '',
+          state: '',
+          zip: '',
+          dateofbirth: ''
+        });
+        setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
+        fetchRosterData();
+      }
+    } catch (error: any) {
+      console.error('Error editing player:', error);
+      setError(error.response?.data?.message || 'Failed to edit player');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   // Open delete dialog
   const openDeleteDialog = (rosterMember: RosterMember) => {
     setPlayerToDelete(rosterMember);
     setDeleteDialogOpen(true);
+  };
+
+  // Open edit dialog
+  const openEditDialog = (rosterMember: RosterMember) => {
+    setPlayerToEdit(rosterMember);
+    setEditFormData({
+      firstname: rosterMember.player.contact.firstname || '',
+      lastname: rosterMember.player.contact.lastname || '',
+      middlename: rosterMember.player.contact.middlename || '',
+      email: rosterMember.player.contact.email || '',
+      phone1: rosterMember.player.contact.phone1 || '',
+      phone2: rosterMember.player.contact.phone2 || '',
+      phone3: rosterMember.player.contact.phone3 || '',
+      streetaddress: rosterMember.player.contact.streetaddress || '',
+      city: rosterMember.player.contact.city || '',
+      state: rosterMember.player.contact.state || '',
+      zip: rosterMember.player.contact.zip || '',
+      dateofbirth: rosterMember.player.contact.dateofbirth || ''
+    });
+    setEditPlayerDialogOpen(true);
   };
 
   // Clear messages
@@ -327,7 +416,78 @@ const TeamRosterManagement: React.FC = () => {
   const closeDeleteDialog = () => {
     setDeleteDialogOpen(false);
     setPlayerToDelete(null);
+  };
+
+  // Close edit dialog
+  const closeEditDialog = () => {
+    setEditPlayerDialogOpen(false);
+    setPlayerToEdit(null);
+    setEditFormData({
+      firstname: '',
+      lastname: '',
+      middlename: '',
+      email: '',
+      phone1: '',
+      phone2: '',
+      phone3: '',
+      streetaddress: '',
+      city: '',
+      state: '',
+      zip: '',
+      dateofbirth: ''
+    });
+    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     clearMessages();
+  };
+
+  // Helper function to format phone numbers as (111) 222-3333
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const phoneNumber = value.replace(/\D/g, '');
+    
+    // Limit to exactly 10 digits
+    const limitedNumber = phoneNumber.slice(0, 10);
+    
+    // Format based on length
+    if (limitedNumber.length === 0) return '';
+    if (limitedNumber.length <= 3) return `(${limitedNumber}`;
+    if (limitedNumber.length <= 6) return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
+    return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6, 10)}`;
+  };
+
+  // Helper function to validate phone numbers
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    const digits = phoneNumber.replace(/\D/g, '');
+    return digits.length === 0 || digits.length === 10;
+  };
+
+  // Helper function to validate all phone numbers
+  const validateAllPhoneNumbers = (): boolean => {
+    const newErrors = {
+      phone1: '',
+      phone2: '',
+      phone3: ''
+    };
+    
+    let isValid = true;
+    
+    if (editFormData.phone1 && !validatePhoneNumber(editFormData.phone1)) {
+      newErrors.phone1 = 'Phone number must be exactly 10 digits';
+      isValid = false;
+    }
+    
+    if (editFormData.phone2 && !validatePhoneNumber(editFormData.phone2)) {
+      newErrors.phone2 = 'Phone number must be exactly 10 digits';
+      isValid = false;
+    }
+    
+    if (editFormData.phone3 && !validatePhoneNumber(editFormData.phone3)) {
+      newErrors.phone3 = 'Phone number must be exactly 10 digits';
+      isValid = false;
+    }
+    
+    setPhoneErrors(newErrors);
+    return isValid;
   };
 
   // Helper function to format all contact information
@@ -728,6 +888,14 @@ const TeamRosterManagement: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <IconButton
+                      color="primary"
+                      onClick={() => openEditDialog(member)}
+                      disabled={formLoading}
+                      title="Edit Player"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
                       color="warning"
                       onClick={() => handleReleasePlayer(member)}
                       disabled={formLoading}
@@ -795,6 +963,14 @@ const TeamRosterManagement: React.FC = () => {
                       {formatVerificationInfo(member)}
                     </TableCell>
                     <TableCell>
+                      <IconButton
+                        color="primary"
+                        onClick={() => openEditDialog(member)}
+                        disabled={formLoading}
+                        title="Edit Player"
+                      >
+                        <EditIcon />
+                      </IconButton>
                       <IconButton
                         color="success"
                         onClick={() => handleActivatePlayer(member)}
@@ -901,6 +1077,180 @@ const TeamRosterManagement: React.FC = () => {
             startIcon={formLoading ? <CircularProgress size={20} /> : <DeleteIcon />}
           >
             Delete Player
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Player Dialog */}
+      <Dialog open={editPlayerDialogOpen} onClose={closeEditDialog} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Player Information</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1 }}>
+            {/* Error Alert */}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
+                {error}
+              </Alert>
+            )}
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                <TextField
+                  label="First Name"
+                  value={editFormData.firstname}
+                  onChange={(e) => setEditFormData({ ...editFormData, firstname: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                  required
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                <TextField
+                  label="Last Name"
+                  value={editFormData.lastname}
+                  onChange={(e) => setEditFormData({ ...editFormData, lastname: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                  required
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                <TextField
+                  label="Middle Name"
+                  value={editFormData.middlename}
+                  onChange={(e) => setEditFormData({ ...editFormData, middlename: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="Home Phone"
+                  value={editFormData.phone1}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone1: formatPhoneNumber(e.target.value) })}
+                  onBlur={() => {
+                    if (editFormData.phone1 && !validatePhoneNumber(editFormData.phone1)) {
+                      setPhoneErrors(prev => ({ ...prev, phone1: 'Phone number must be exactly 10 digits' }));
+                    } else {
+                      setPhoneErrors(prev => ({ ...prev, phone1: '' }));
+                    }
+                  }}
+                  error={!!phoneErrors.phone1}
+                  helperText={phoneErrors.phone1}
+                  fullWidth
+                  variant="outlined"
+                  placeholder="(555) 123-4567"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="Work Phone"
+                  value={editFormData.phone2}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone2: formatPhoneNumber(e.target.value) })}
+                  onBlur={() => {
+                    if (editFormData.phone2 && !validatePhoneNumber(editFormData.phone2)) {
+                      setPhoneErrors(prev => ({ ...prev, phone2: 'Phone number must be exactly 10 digits' }));
+                    } else {
+                      setPhoneErrors(prev => ({ ...prev, phone2: '' }));
+                    }
+                  }}
+                  error={!!phoneErrors.phone2}
+                  helperText={phoneErrors.phone2}
+                  fullWidth
+                  variant="outlined"
+                  placeholder="(555) 123-4567"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="Cell Phone"
+                  value={editFormData.phone3}
+                  onChange={(e) => setEditFormData({ ...editFormData, phone3: formatPhoneNumber(e.target.value) })}
+                  onBlur={() => {
+                    if (editFormData.phone3 && !validatePhoneNumber(editFormData.phone3)) {
+                      setPhoneErrors(prev => ({ ...prev, phone3: 'Phone number must be exactly 10 digits' }));
+                    } else {
+                      setPhoneErrors(prev => ({ ...prev, phone3: '' }));
+                    }
+                  }}
+                  error={!!phoneErrors.phone3}
+                  helperText={phoneErrors.phone3}
+                  fullWidth
+                  variant="outlined"
+                  placeholder="(555) 123-4567"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 100%', minWidth: 0 }}>
+                <TextField
+                  label="Street Address"
+                  value={editFormData.streetaddress}
+                  onChange={(e) => setEditFormData({ ...editFormData, streetaddress: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="City"
+                  value={editFormData.city}
+                  onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="State"
+                  value={editFormData.state}
+                  onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
+                <TextField
+                  label="ZIP Code"
+                  value={editFormData.zip}
+                  onChange={(e) => setEditFormData({ ...editFormData, zip: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                />
+              </Box>
+              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
+                <TextField
+                  label="Date of Birth"
+                  type="date"
+                  value={editFormData.dateofbirth ? editFormData.dateofbirth.split('T')[0] : ''}
+                  onChange={(e) => setEditFormData({ ...editFormData, dateofbirth: e.target.value })}
+                  fullWidth
+                  variant="outlined"
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEditDialog} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleEditPlayer}
+            variant="contained"
+            disabled={!editFormData.firstname || !editFormData.lastname || formLoading}
+            startIcon={formLoading ? <CircularProgress size={20} /> : <EditIcon />}
+          >
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>

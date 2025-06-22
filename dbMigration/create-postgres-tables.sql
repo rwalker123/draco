@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS citext;
+
 -- Table: aspnetusers
 -- This table is used for ASP.NET Identity users
 CREATE TABLE aspnetusers (
@@ -58,9 +60,9 @@ CREATE TABLE accounts(
 CREATE TABLE contacts (
     id bigserial PRIMARY KEY,
     userid varchar(128),
-    lastname varchar(25) NOT NULL,
-    firstname varchar(25) NOT NULL,
-    middlename varchar(25),
+    lastname citext NOT NULL,
+    firstname citext NOT NULL,
+    middlename citext,
     phone1 varchar(14),
     phone2 varchar(14),
     phone3 varchar(14),

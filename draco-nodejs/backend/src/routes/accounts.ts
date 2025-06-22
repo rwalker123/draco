@@ -1131,4 +1131,125 @@ router.get('/contacts/:userId', authenticateToken, async (req: Request, res: Res
   }
 });
 
+/**
+ * PUT /api/accounts/:accountId/contacts/:contactId
+ * Update contact information
+ */
+router.put('/:accountId/contacts/:contactId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const contactId = BigInt(req.params.contactId);
+      const {
+        firstname,
+        lastname,
+        middlename,
+        email,
+        phone1,
+        phone2,
+        phone3,
+        streetaddress,
+        city,
+        state,
+        zip,
+        dateofbirth
+      } = req.body;
+
+      // Validate required fields
+      if (!firstname || !lastname) {
+        res.status(400).json({
+          success: false,
+          message: 'First name and last name are required'
+        });
+        return;
+      }
+
+      // Verify the contact exists and belongs to this account
+      const existingContact = await prisma.contacts.findFirst({
+        where: {
+          id: contactId,
+          creatoraccountid: accountId
+        }
+      });
+
+      if (!existingContact) {
+        res.status(404).json({
+          success: false,
+          message: 'Contact not found'
+        });
+        return;
+      }
+
+      // Update the contact
+      const updatedContact = await prisma.contacts.update({
+        where: { id: contactId },
+        data: {
+          firstname,
+          lastname,
+          middlename: middlename || '',
+          email: email || null,
+          phone1: phone1 || null,
+          phone2: phone2 || null,
+          phone3: phone3 || null,
+          streetaddress: streetaddress || null,
+          city: city || null,
+          state: state || null,
+          zip: zip || null,
+          ...(dateofbirth ? { dateofbirth: new Date(dateofbirth) } : {})
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Contact "${updatedContact.firstname} ${updatedContact.lastname}" updated successfully`,
+          contact: {
+            id: updatedContact.id.toString(),
+            firstname: updatedContact.firstname,
+            lastname: updatedContact.lastname,
+            middlename: updatedContact.middlename,
+            email: updatedContact.email,
+            phone1: updatedContact.phone1,
+            phone2: updatedContact.phone2,
+            phone3: updatedContact.phone3,
+            streetaddress: updatedContact.streetaddress,
+            city: updatedContact.city,
+            state: updatedContact.state,
+            zip: updatedContact.zip,
+            dateofbirth: updatedContact.dateofbirth ? updatedContact.dateofbirth.toISOString() : null
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Error updating contact:', error);
+      
+      // Handle unique constraint violation (duplicate name)
+      if (error.code === 'P2002' && error.meta?.target?.includes('lastname_firstname_middlename_creatoraccountid')) {
+        res.status(400).json({
+          success: false,
+          message: 'A contact with this name already exists in this account'
+        });
+        return;
+      }
+      
+      // Handle other Prisma validation errors
+      if (error.code === 'P2000' || error.code === 'P2001' || error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid data provided for contact update'
+        });
+        return;
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
 export default router; 
