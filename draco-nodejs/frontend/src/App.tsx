@@ -12,6 +12,7 @@ import AccountManagement from './components/AccountManagement';
 import ProtectedAccountManagement from './components/ProtectedAccountManagement';
 import ProtectedSeasonManagement from './components/ProtectedSeasonManagement';
 import ProtectedLeagueSeasonManagement from './components/ProtectedLeagueSeasonManagement';
+import ProtectedTeamRosterManagement from './components/ProtectedTeamRosterManagement';
 import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
 import { RequireAuth } from './components/ProtectedRoute';
@@ -39,6 +40,7 @@ function App() {
           } />
           <Route path="/account/:accountId/seasons" element={<ProtectedSeasonManagement />} />
           <Route path="/account/:accountId/seasons/:seasonId/league-seasons" element={<ProtectedLeagueSeasonManagement />} />
+          <Route path="/account/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster" element={<ProtectedTeamRosterManagement />} />
           <Route path="/permission-test" element={<PermissionTest />} />
           <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>

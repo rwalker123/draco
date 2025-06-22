@@ -30,8 +30,10 @@ import {
   Group as GroupIcon,
   Remove as RemoveIcon,
   Person as PersonIcon,
-  Sports as SportsIcon
+  Sports as SportsIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
@@ -94,6 +96,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
@@ -390,6 +393,11 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   };
 
+  // Handler to navigate to team roster management
+  const handleManageRoster = (teamSeason: TeamSeason) => {
+    navigate(`/account/${accountId}/seasons/${season.id}/teams/${teamSeason.id}/roster`);
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -529,14 +537,33 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                           {division.teams.length > 0 && (
                             <Box mt={1}>
                               {division.teams.map((team) => (
-                                <Chip
-                                  key={team.id}
-                                  label={team.name}
-                                  size="small"
-                                  sx={{ mr: 0.5, mb: 0.5 }}
-                                  onDelete={() => handleRemoveTeamFromDivision(team, leagueSeason)}
-                                  disabled={formLoading}
-                                />
+                                <Box key={team.id} sx={{ display: 'inline-flex', alignItems: 'center', mr: 0.5, mb: 0.5 }}>
+                                  <Chip
+                                    label={team.name}
+                                    size="small"
+                                    sx={{ mr: 0.5 }}
+                                  />
+                                  <Tooltip title="Manage Roster">
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      onClick={() => handleManageRoster(team)}
+                                      disabled={formLoading}
+                                    >
+                                      <PeopleIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Remove from Division">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleRemoveTeamFromDivision(team, leagueSeason)}
+                                      disabled={formLoading}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
                               ))}
                             </Box>
                           )}
@@ -570,18 +597,32 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                 {team.name}
                               </Typography>
                             </Box>
-                            <Button
-                              size="small"
-                              startIcon={<GroupIcon />}
-                              onClick={() => {
-                                if (leagueSeason) {
-                                  openAssignTeamDialog(team, leagueSeason);
-                                }
-                              }}
-                              disabled={formLoading}
-                            >
-                              Assign to Division
-                            </Button>
+                            <Box display="flex" gap={1}>
+                              <Tooltip title="Manage Roster">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={() => handleManageRoster(team)}
+                                  disabled={formLoading}
+                                >
+                                  <PeopleIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Assign to Division">
+                                <IconButton
+                                  size="small"
+                                  color="secondary"
+                                  onClick={() => {
+                                    if (leagueSeason) {
+                                      openAssignTeamDialog(team, leagueSeason);
+                                    }
+                                  }}
+                                  disabled={formLoading}
+                                >
+                                  <GroupIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
                           </Box>
                         </CardContent>
                       </Card>
