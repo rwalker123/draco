@@ -207,7 +207,7 @@ model contacts {
   userid                                                    String?                    @db.VarChar(128)
   lastname                                                  String                     @db.VarChar(25)
   firstname                                                 String                     @db.VarChar(25)
-  middlename                                                String?                    @db.VarChar(25)
+  middlename                                                String                     @db.VarChar(25)
   phone1                                                    String?                    @db.VarChar(14)
   phone2                                                    String?                    @db.VarChar(14)
   phone3                                                    String?                    @db.VarChar(14)

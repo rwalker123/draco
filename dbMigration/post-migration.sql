@@ -151,3 +151,25 @@ SELECT SETVAL('voteoptions_id_seq', (SELECT MAX(id) FROM voteoptions) + 1);
 SELECT SETVAL('voteanswers_id_seq', (SELECT MAX(id) FROM voteanswers) + 1);
 SELECT SETVAL('workoutannouncement_id_seq', (SELECT MAX(id) FROM workoutannouncement) + 1);
 SELECT SETVAL('workoutregistration_id_seq', (SELECT MAX(id) FROM workoutregistration) + 1);
+
+-- fix issues with middle name being null not enforcing the unique constraint on firstname, lastname, middlename
+update public.contacts
+set middlename = 'a'
+where (lastname = 'Brimm' and firstname = 'Alex' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Beyer' and firstname = 'Daniel' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Proodian' and firstname = 'Mark' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Fergestrom' and firstname = 'Mike' and middlename is null and creatoraccountid = 17) OR
+      (lastname = 'Michelz' and firstname = 'Steve' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Wolfe' and firstname = 'Brian' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Whitbeck' and firstname = 'Joel' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Jones' and firstname = 'Eddie' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Davis' and firstname = 'Mike' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Powers' and firstname = 'Jeff' and middlename is null and creatoraccountid = 1) OR
+      (lastname = 'Mick' and firstname = 'Spencer' and middlename is null and creatoraccountid = 1) 
+
+UPDATE public.contacts
+	SET middlename=''
+	WHERE middlename is null;
+
+ALTER TABLE public.contacts
+ALTER COLUMN middlename SET NOT NULL;

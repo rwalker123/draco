@@ -180,6 +180,7 @@ export class AuthService {
               userid: userId,
               firstname: firstName || '',
               lastname: lastName || '',
+              middlename: '', // Required field, use empty string as default
               email,
               creatoraccountid: defaultAccount.id,
               dateofbirth: new Date('1900-01-01') // Default date
