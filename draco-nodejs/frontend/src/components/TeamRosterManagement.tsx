@@ -35,7 +35,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { parse, format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
@@ -330,44 +330,6 @@ const TeamRosterManagement: React.FC = () => {
     clearMessages();
   };
 
-  // Helper function to format dates
-  const formatDate = (dateValue: any) => {
-    if (!dateValue || (typeof dateValue === 'object' && Object.keys(dateValue).length === 0)) {
-      return '-';
-    }
-    try {
-      let date: Date | null = null;
-      if (typeof dateValue === 'string') {
-        // Try with 3-digit milliseconds
-        date = parse(dateValue, 'yyyy-MM-dd HH:mm:ss.SSS', new Date());
-        if (isNaN(date.getTime())) {
-          // Try with 2-digit milliseconds
-          date = parse(dateValue, 'yyyy-MM-dd HH:mm:ss.SS', new Date());
-        }
-        if (isNaN(date.getTime())) {
-          // Try with 1-digit milliseconds
-          date = parse(dateValue, 'yyyy-MM-dd HH:mm:ss.S', new Date());
-        }
-        if (isNaN(date.getTime())) {
-          // Try without milliseconds
-          date = parse(dateValue, 'yyyy-MM-dd HH:mm:ss', new Date());
-        }
-        if (isNaN(date.getTime())) {
-          // Fallback: try replacing space with T for ISO
-          date = new Date(dateValue.replace(' ', 'T'));
-        }
-      } else {
-        date = new Date(dateValue);
-      }
-      if (isNaN(date.getTime())) {
-        return '-';
-      }
-      return format(date, 'P');
-    } catch (error) {
-      return '-';
-    }
-  };
-
   // Helper function to format all contact information
   const formatContactInfo = (contact: Contact) => {
     const info = [];
@@ -523,33 +485,59 @@ const TeamRosterManagement: React.FC = () => {
   const formatVerificationInfo = (member: RosterMember) => {
     const info = [];
     
-    // Date Added
-    const dateAdded = formatDate(member.dateAdded);
-    if (dateAdded !== '-') {
-      info.push(`Added: ${dateAdded}`);
+    // Age and Date of Birth first
+    if (member.player.contact.dateofbirth && typeof member.player.contact.dateofbirth === 'string') {
+      try {
+        const birthDate = parseISO(member.player.contact.dateofbirth);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        // Adjust age if birthday hasn't occurred this year
+        const adjustedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+          ? age - 1 
+          : age;
+        
+        const birthMonthYear = format(birthDate, 'MMM yyyy');
+        
+        info.push(
+          <div key="age">
+            Age: {adjustedAge} ({birthMonthYear})
+          </div>
+        );
+      } catch (error) {
+        console.warn('Invalid date of birth format:', member.player.contact.dateofbirth);
+      }
     }
     
-    // Waiver Status
-    info.push(`Waiver: ${member.submittedWaiver ? 'Submitted' : 'Pending'}`);
+    // Date Added
+    if (member.dateAdded && typeof member.dateAdded === 'string') {
+      try {
+        info.push(
+          <div key="dateadded">
+            Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
+          </div>
+        );
+      } catch (error) {
+        console.warn('Invalid date added format:', member.dateAdded);
+      }
+    }
     
-    // Driver's License Status
-    info.push(`License: ${member.player.submittedDriversLicense ? 'Submitted' : 'Pending'}`);
-    
-    return (
-      <Table size="small" sx={{ minWidth: 0 }}>
-        <TableBody>
-          {info.map((item, index) => (
-            <TableRow key={index} sx={{ '& td': { border: 0, py: 0.5 } }}>
-              <TableCell sx={{ py: 0, px: 0 }}>
-                <Typography variant="body2" fontSize="0.75rem">
-                  {item}
-                </Typography>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    // Submitted Waiver
+    info.push(
+      <div key="waiver">
+        Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
+      </div>
     );
+    
+    // Submitted Driver's License
+    info.push(
+      <div key="license">
+        Submitted Driver's License: {member.player.submittedDriversLicense ? 'Yes' : 'No'}
+      </div>
+    );
+    
+    return info.length > 0 ? info : ['No verification data'];
   };
 
   if (loading) {

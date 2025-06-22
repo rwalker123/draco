@@ -97,6 +97,7 @@ router.get('/:teamSeasonId/roster',
               firstYear: member.roster.firstyear,
               contact: {
                 ...member.roster.contacts,
+                dateofbirth: member.roster.contacts.dateofbirth ? member.roster.contacts.dateofbirth.toISOString() : null,
                 phones: [
                   ...(member.roster.contacts.phone1 ? [{ type: 'home', number: member.roster.contacts.phone1 }] : []),
                   ...(member.roster.contacts.phone2 ? [{ type: 'work', number: member.roster.contacts.phone2 }] : []),
@@ -202,6 +203,7 @@ router.get('/:teamSeasonId/available-players',
             firstYear: player.firstyear,
             contact: {
               ...player.contacts,
+              dateofbirth: player.contacts.dateofbirth ? player.contacts.dateofbirth.toISOString() : null,
               phones: [
                 ...(player.contacts.phone1 ? [{ type: 'home', number: player.contacts.phone1 }] : []),
                 ...(player.contacts.phone2 ? [{ type: 'work', number: player.contacts.phone2 }] : []),
