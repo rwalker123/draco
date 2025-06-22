@@ -7,6 +7,7 @@ import { Dashboard } from './components/Dashboard';
 import { Routes, Route } from 'react-router-dom';
 import PasswordReset from './components/PasswordReset';
 import Login from './components/Login';
+import Signup from './components/Signup';
 import AdminDashboard from './components/AdminDashboard';
 import AccountManagement from './components/AccountManagement';
 import ProtectedAccountManagement from './components/ProtectedAccountManagement';
@@ -15,6 +16,8 @@ import ProtectedLeagueSeasonManagement from './components/ProtectedLeagueSeasonM
 import ProtectedTeamRosterManagement from './components/ProtectedTeamRosterManagement';
 import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
+import Accounts from './components/Accounts';
+import AccountHome from './components/AccountHome';
 import { RequireAuth } from './components/ProtectedRoute';
 
 function App() {
@@ -24,8 +27,12 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<PasswordReset />} />
-          <Route path="/" element={<Login />} />
+          <Route path="/" element={<Accounts />} />
+          <Route path="/accounts" element={<Accounts />} />
+          <Route path="/account/:accountId" element={<Accounts />} />
+          <Route path="/account/:accountId/home" element={<AccountHome />} />
           <Route path="/dashboard" element={
             <RequireAuth>
               <Dashboard />

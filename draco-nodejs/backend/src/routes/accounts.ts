@@ -14,6 +14,247 @@ const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
+ * GET /api/accounts/search
+ * Public search for accounts (no authentication required)
+ */
+router.get('/search',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { q } = req.query; // search query
+      
+      if (!q || typeof q !== 'string') {
+        res.status(400).json({
+          success: false,
+          message: 'Search query is required'
+        });
+        return;
+      }
+
+      const searchTerm = q.trim();
+      
+      // Search accounts by name, type, or affiliation
+      const accounts = await prisma.accounts.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: searchTerm,
+                mode: 'insensitive'
+              }
+            },
+            {
+              accounttypes: {
+                name: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              }
+            }
+          ]
+        },
+        select: {
+          id: true,
+          name: true,
+          accounttypeid: true,
+          firstyear: true,
+          affiliationid: true,
+          timezoneid: true,
+          accounttypes: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          accountsurl: {
+            select: {
+              id: true,
+              url: true
+            },
+            orderBy: {
+              id: 'asc'
+            }
+          }
+        },
+        orderBy: {
+          name: 'asc'
+        },
+        take: 20 // Limit results
+      });
+
+      // Get affiliations separately
+      const affiliationIds = [...new Set(accounts.map(acc => acc.affiliationid))];
+      const affiliations = await prisma.affiliations.findMany({
+        where: {
+          id: { in: affiliationIds }
+        },
+        select: {
+          id: true,
+          name: true,
+          url: true
+        }
+      });
+
+      const affiliationMap = new Map(affiliations.map(aff => [aff.id.toString(), aff]));
+
+      res.json({
+        success: true,
+        data: {
+          accounts: accounts.map((account: any) => ({
+            id: account.id.toString(),
+            name: account.name,
+            accountType: account.accounttypes?.name,
+            firstYear: account.firstyear,
+            affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
+            urls: account.accountsurl.map((url: any) => ({
+              id: url.id.toString(),
+              url: url.url
+            }))
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error searching accounts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/:accountId/public
+ * Get public account information (no authentication required)
+ */
+router.get('/:accountId/public',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      const account = await prisma.accounts.findUnique({
+        where: { id: accountId },
+        select: {
+          id: true,
+          name: true,
+          accounttypeid: true,
+          firstyear: true,
+          affiliationid: true,
+          timezoneid: true,
+          twitteraccountname: true,
+          facebookfanpage: true,
+          accounttypes: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          accountsurl: {
+            select: {
+              id: true,
+              url: true
+            },
+            orderBy: {
+              id: 'asc'
+            }
+          }
+        }
+      });
+
+      if (!account) {
+        res.status(404).json({
+          success: false,
+          message: 'Account not found'
+        });
+        return;
+      }
+
+      // Get affiliation separately
+      const affiliation = await prisma.affiliations.findUnique({
+        where: { id: account.affiliationid },
+        select: {
+          id: true,
+          name: true,
+          url: true
+        }
+      });
+
+      // Get current season
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: { accountid: accountId },
+        select: {
+          seasonid: true
+        }
+      });
+
+      let currentSeason = null;
+      if (currentSeasonRecord) {
+        currentSeason = await prisma.season.findUnique({
+          where: { id: currentSeasonRecord.seasonid },
+          select: {
+            id: true,
+            name: true
+          }
+        });
+      }
+
+      // Get recent seasons
+      const recentSeasons = await prisma.season.findMany({
+        where: {
+          accountid: accountId
+        },
+        select: {
+          id: true,
+          name: true
+        },
+        orderBy: {
+          name: 'desc'
+        },
+        take: 5
+      });
+
+      // Mark current season
+      const seasonsWithCurrentFlag = recentSeasons.map((season: any) => ({
+        id: season.id.toString(),
+        name: season.name,
+        isCurrent: currentSeason ? season.id === currentSeason.id : false
+      }));
+
+      res.json({
+        success: true,
+        data: {
+          account: {
+            id: account.id.toString(),
+            name: account.name,
+            accountType: account.accounttypes?.name,
+            accountTypeId: account.accounttypeid.toString(),
+            firstYear: account.firstyear,
+            affiliation: affiliation?.name,
+            timezoneId: account.timezoneid,
+            twitterAccountName: account.twitteraccountname,
+            facebookFanPage: account.facebookfanpage,
+            urls: account.accountsurl.map((url: any) => ({
+              id: url.id.toString(),
+              url: url.url
+            }))
+          },
+          currentSeason: currentSeason ? {
+            id: currentSeason.id.toString(),
+            name: currentSeason.name
+          } : null,
+          seasons: seasonsWithCurrentFlag
+        }
+      });
+    } catch (error) {
+      console.error('Error getting public account:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
  * GET /api/accounts
  * Get all accounts (Administrator only)
  */
