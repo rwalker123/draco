@@ -116,6 +116,63 @@ router.get('/:teamSeasonId/roster',
 );
 
 /**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/league
+ * Get league information for a team season
+ */
+router.get('/:teamSeasonId/league',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Get the team season with league information
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({ success: false, message: 'Team season not found' });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          id: teamSeason.leagueseason.league.id,
+          name: teamSeason.leagueseason.league.name
+        }
+      });
+    } catch (error) {
+      console.error('League route error:', error);
+      next(error);
+    }
+  }
+);
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/available-players
  * Get all available players (not on any team in this season) for adding to roster
  */
@@ -231,12 +288,21 @@ router.post('/:teamSeasonId/roster',
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
       const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const { playerId, playerNumber } = req.body;
+      const { playerId, playerNumber, submittedWaiver, submittedDriversLicense, firstYear } = req.body;
 
       if (!playerId) {
         res.status(400).json({
           success: false,
           message: 'PlayerId is required'
+        });
+        return;
+      }
+
+      // Validate player number
+      if (playerNumber !== undefined && playerNumber < 0) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Player number must be 0 or greater' 
         });
         return;
       }
@@ -302,6 +368,17 @@ router.post('/:teamSeasonId/roster',
         return;
       }
 
+      // Update player's roster information if provided
+      if (submittedDriversLicense !== undefined || firstYear !== undefined) {
+        await prisma.roster.update({
+          where: { id: BigInt(playerId) },
+          data: {
+            submitteddriverslicense: submittedDriversLicense !== undefined ? submittedDriversLicense : player.submitteddriverslicense,
+            firstyear: firstYear !== undefined ? firstYear : player.firstyear
+          }
+        });
+      }
+
       // Add player to roster
       const newRosterMember = await prisma.rosterseason.create({
         data: {
@@ -309,7 +386,7 @@ router.post('/:teamSeasonId/roster',
           teamseasonid: teamSeasonId,
           playernumber: playerNumber || 0,
           inactive: false,
-          submittedwaiver: false,
+          submittedwaiver: submittedWaiver || false,
           dateadded: new Date()
         },
         include: {
@@ -329,7 +406,7 @@ router.post('/:teamSeasonId/roster',
       res.status(201).json({
         success: true,
         data: {
-          message: `Player "${player.contacts.firstname} ${player.contacts.lastname}" added to team roster`,
+          message: `Player "${player.contacts.firstname} ${player.contacts.lastname}" signed to team roster`,
           rosterMember: {
             id: newRosterMember.id,
             playerNumber: newRosterMember.playernumber,
@@ -340,6 +417,120 @@ router.post('/:teamSeasonId/roster',
               id: newRosterMember.roster.id,
               contactId: newRosterMember.roster.contactid,
               contact: newRosterMember.roster.contacts
+            }
+          }
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+/**
+ * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/:rosterMemberId/update
+ * Update roster member information (player number, waiver status, driver's license, first year)
+ */
+router.put('/:teamSeasonId/roster/:rosterMemberId/update',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const rosterMemberId = BigInt(req.params.rosterMemberId);
+
+      const { playerNumber, submittedWaiver, submittedDriversLicense, firstYear } = req.body;
+
+      // Validate player number
+      if (playerNumber !== undefined && playerNumber < 0) {
+        res.status(400).json({ 
+          success: false, 
+          message: 'Player number must be 0 or greater' 
+        });
+        return;
+      }
+
+      // Verify the roster member exists and belongs to this team season
+      const rosterMember = await prisma.rosterseason.findFirst({
+        where: {
+          id: rosterMemberId,
+          teamseasonid: teamSeasonId,
+          teamsseason: {
+            leagueseason: {
+              seasonid: seasonId,
+              league: {
+                accountid: accountId
+              }
+            }
+          }
+        },
+        include: {
+          roster: {
+            include: {
+              contacts: {
+                select: {
+                  firstname: true,
+                  lastname: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!rosterMember) {
+        res.status(404).json({ success: false, message: 'Roster member not found' });
+        return;
+      }
+
+      // Update roster season data
+      const updatedRosterMember = await prisma.rosterseason.update({
+        where: { id: rosterMemberId },
+        data: {
+          playernumber: playerNumber !== undefined ? playerNumber : rosterMember.playernumber,
+          submittedwaiver: submittedWaiver !== undefined ? submittedWaiver : rosterMember.submittedwaiver
+        },
+        include: {
+          roster: {
+            include: {
+              contacts: {
+                select: {
+                  firstname: true,
+                  lastname: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Update roster data (player-specific data)
+      const updatedRoster = await prisma.roster.update({
+        where: { id: rosterMember.playerid },
+        data: {
+          submitteddriverslicense: submittedDriversLicense !== undefined ? submittedDriversLicense : rosterMember.roster.submitteddriverslicense,
+          firstyear: firstYear !== undefined ? firstYear : rosterMember.roster.firstyear
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Roster information updated for "${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}"`,
+          rosterMember: {
+            id: updatedRosterMember.id,
+            playerNumber: updatedRosterMember.playernumber,
+            inactive: updatedRosterMember.inactive,
+            submittedWaiver: updatedRosterMember.submittedwaiver,
+            dateAdded: updatedRosterMember.dateadded ? updatedRosterMember.dateadded.toISOString() : null,
+            player: {
+              id: updatedRosterMember.roster.id,
+              contactId: updatedRosterMember.roster.contactid,
+              submittedDriversLicense: updatedRoster.submitteddriverslicense,
+              firstYear: updatedRoster.firstyear,
+              contact: updatedRosterMember.roster.contacts
             }
           }
         }

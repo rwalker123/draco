@@ -1227,7 +1227,13 @@ router.put('/:accountId/contacts/:contactId',
       console.error('Error updating contact:', error);
       
       // Handle unique constraint violation (duplicate name)
-      if (error.code === 'P2002' && error.meta?.target?.includes('lastname_firstname_middlename_creatoraccountid')) {
+      if (error.code === 'P2002' && 
+          error.meta?.target && 
+          Array.isArray(error.meta.target) &&
+          error.meta.target.includes('lastname') &&
+          error.meta.target.includes('firstname') &&
+          error.meta.target.includes('middlename') &&
+          error.meta.target.includes('creatoraccountid')) {
         res.status(400).json({
           success: false,
           message: 'A contact with this name already exists in this account'
