@@ -24,7 +24,11 @@ import {
   CardContent,
   FormControlLabel,
   Checkbox,
-  IconButton
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -40,8 +44,69 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
+import { isEmail } from 'validator';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
+// US States and Territories for dropdown
+const US_STATES = [
+  { value: 'AL', label: 'Alabama' },
+  { value: 'AK', label: 'Alaska' },
+  { value: 'AZ', label: 'Arizona' },
+  { value: 'AR', label: 'Arkansas' },
+  { value: 'CA', label: 'California' },
+  { value: 'CO', label: 'Colorado' },
+  { value: 'CT', label: 'Connecticut' },
+  { value: 'DE', label: 'Delaware' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'HI', label: 'Hawaii' },
+  { value: 'ID', label: 'Idaho' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'IN', label: 'Indiana' },
+  { value: 'IA', label: 'Iowa' },
+  { value: 'KS', label: 'Kansas' },
+  { value: 'KY', label: 'Kentucky' },
+  { value: 'LA', label: 'Louisiana' },
+  { value: 'ME', label: 'Maine' },
+  { value: 'MD', label: 'Maryland' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'MI', label: 'Michigan' },
+  { value: 'MN', label: 'Minnesota' },
+  { value: 'MS', label: 'Mississippi' },
+  { value: 'MO', label: 'Missouri' },
+  { value: 'MT', label: 'Montana' },
+  { value: 'NE', label: 'Nebraska' },
+  { value: 'NV', label: 'Nevada' },
+  { value: 'NH', label: 'New Hampshire' },
+  { value: 'NJ', label: 'New Jersey' },
+  { value: 'NM', label: 'New Mexico' },
+  { value: 'NY', label: 'New York' },
+  { value: 'NC', label: 'North Carolina' },
+  { value: 'ND', label: 'North Dakota' },
+  { value: 'OH', label: 'Ohio' },
+  { value: 'OK', label: 'Oklahoma' },
+  { value: 'OR', label: 'Oregon' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'RI', label: 'Rhode Island' },
+  { value: 'SC', label: 'South Carolina' },
+  { value: 'SD', label: 'South Dakota' },
+  { value: 'TN', label: 'Tennessee' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'UT', label: 'Utah' },
+  { value: 'VT', label: 'Vermont' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'WA', label: 'Washington' },
+  { value: 'WV', label: 'West Virginia' },
+  { value: 'WI', label: 'Wisconsin' },
+  { value: 'WY', label: 'Wyoming' },
+  { value: 'DC', label: 'District of Columbia' },
+  { value: 'AS', label: 'American Samoa' },
+  { value: 'GU', label: 'Guam' },
+  { value: 'MP', label: 'Northern Mariana Islands' },
+  { value: 'PR', label: 'Puerto Rico' },
+  { value: 'VI', label: 'U.S. Virgin Islands' }
+];
 
 interface Contact {
   id: string;
@@ -125,6 +190,8 @@ const TeamRosterManagement: React.FC = () => {
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
   const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
   const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
+  const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
+  const [autoSignToRoster, setAutoSignToRoster] = useState(false);
   const [editFormData, setEditFormData] = useState({
     firstname: '',
     lastname: '',
@@ -144,6 +211,7 @@ const TeamRosterManagement: React.FC = () => {
     phone2: '',
     phone3: ''
   });
+  const [emailError, setEmailError] = useState('');
   
   // Unified roster information dialog states
   const [rosterFormData, setRosterFormData] = useState({
@@ -364,46 +432,62 @@ const TeamRosterManagement: React.FC = () => {
 
   // Handler to edit player
   const handleEditPlayer = async () => {
-    if (!accountId || !token || !playerToEdit) return;
+    if (!playerToEdit || !accountId || !token) {
+      setError('Missing required data');
+      return;
+    }
 
-    // Validate phone numbers before proceeding
+    // Validate required fields
+    if (!editFormData.firstname || !editFormData.lastname) {
+      setError('First name and last name are required');
+      return;
+    }
+
+    // Validate email
+    if (!validateEmail(editFormData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone numbers
     if (!validateAllPhoneNumbers()) {
-      setError('Please fix phone number format errors before saving');
+      setError('Please fix phone number errors before saving');
       return;
     }
 
     setFormLoading(true);
+    setError(null);
     try {
       const response = await axios.put(
         `${API_BASE_URL}/api/accounts/${accountId}/contacts/${playerToEdit.player.contactId}`,
-        editFormData,
+        {
+          firstname: editFormData.firstname,
+          lastname: editFormData.lastname,
+          middlename: editFormData.middlename,
+          email: editFormData.email,
+          phone1: editFormData.phone1,
+          phone2: editFormData.phone2,
+          phone3: editFormData.phone3,
+          streetaddress: editFormData.streetaddress,
+          city: editFormData.city,
+          state: editFormData.state,
+          zip: editFormData.zip,
+          dateofbirth: editFormData.dateofbirth
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        setEditPlayerDialogOpen(false);
-        setPlayerToEdit(null);
-        setEditFormData({
-          firstname: '',
-          lastname: '',
-          middlename: '',
-          email: '',
-          phone1: '',
-          phone2: '',
-          phone3: '',
-          streetaddress: '',
-          city: '',
-          state: '',
-          zip: '',
-          dateofbirth: ''
-        });
-        setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
+        setSuccessMessage('Player information updated successfully');
+        closeEditDialog();
         fetchRosterData();
+        fetchAvailablePlayers();
+      } else {
+        setError(response.data.message || 'Failed to update player information');
       }
     } catch (error: any) {
-      console.error('Error editing player:', error);
-      setError(error.response?.data?.message || 'Failed to edit player');
+      console.error('Error updating player:', error);
+      setError(error.response?.data?.message || 'Failed to update player information');
     } finally {
       setFormLoading(false);
     }
@@ -417,6 +501,8 @@ const TeamRosterManagement: React.FC = () => {
 
   // Open edit dialog
   const openEditDialog = (rosterMember: RosterMember) => {
+    setIsCreatingNewPlayer(false);
+    setAutoSignToRoster(false);
     setPlayerToEdit(rosterMember);
     setEditFormData({
       firstname: rosterMember.player.contact.firstname || '',
@@ -430,8 +516,31 @@ const TeamRosterManagement: React.FC = () => {
       city: rosterMember.player.contact.city || '',
       state: rosterMember.player.contact.state || '',
       zip: rosterMember.player.contact.zip || '',
-      dateofbirth: rosterMember.player.contact.dateofbirth || ''
+      dateofbirth: rosterMember.player.contact.dateofbirth ? rosterMember.player.contact.dateofbirth.split('T')[0] : ''
     });
+    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
+    setEditPlayerDialogOpen(true);
+  };
+
+  const openCreatePlayerDialog = () => {
+    setIsCreatingNewPlayer(true);
+    setAutoSignToRoster(true);
+    setPlayerToEdit(null);
+    setEditFormData({
+      firstname: '',
+      lastname: '',
+      middlename: '',
+      email: '',
+      phone1: '',
+      phone2: '',
+      phone3: '',
+      streetaddress: '',
+      city: '',
+      state: '',
+      zip: '',
+      dateofbirth: ''
+    });
+    setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
 
@@ -465,6 +574,8 @@ const TeamRosterManagement: React.FC = () => {
   const closeEditDialog = () => {
     setEditPlayerDialogOpen(false);
     setPlayerToEdit(null);
+    setIsCreatingNewPlayer(false);
+    setAutoSignToRoster(false);
     setEditFormData({
       firstname: '',
       lastname: '',
@@ -480,6 +591,7 @@ const TeamRosterManagement: React.FC = () => {
       dateofbirth: ''
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
+    setEmailError('');
     clearMessages();
   };
 
@@ -551,6 +663,110 @@ const TeamRosterManagement: React.FC = () => {
     }
   };
 
+  const handleCreatePlayer = async () => {
+    if (!accountId || !token) {
+      setError('Missing required data');
+      return;
+    }
+
+    // Validate required fields
+    if (!editFormData.firstname || !editFormData.lastname) {
+      setError('First name and last name are required');
+      return;
+    }
+
+    // Validate email
+    if (!validateEmail(editFormData.email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone numbers
+    if (!validateAllPhoneNumbers()) {
+      setError('Please fix phone number errors before saving');
+      return;
+    }
+
+    setFormLoading(true);
+    setError(null);
+    try {
+      // Create the new player
+      const createResponse = await axios.post(
+        `${API_BASE_URL}/api/accounts/${accountId}/contacts`,
+        {
+          firstname: editFormData.firstname,
+          lastname: editFormData.lastname,
+          middlename: editFormData.middlename,
+          email: editFormData.email,
+          phone1: editFormData.phone1,
+          phone2: editFormData.phone2,
+          phone3: editFormData.phone3,
+          streetaddress: editFormData.streetaddress,
+          city: editFormData.city,
+          state: editFormData.state,
+          zip: editFormData.zip,
+          dateofbirth: editFormData.dateofbirth
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (createResponse.data.success) {
+        const newContact = createResponse.data.data.contact;
+        
+        // Create the roster entry for the new player
+        const rosterResponse = await axios.post(
+          `${API_BASE_URL}/api/accounts/${accountId}/roster`,
+          {
+            contactId: newContact.id,
+            submittedDriversLicense: false,
+            firstYear: 0
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (rosterResponse.data.success) {
+          const newPlayer = rosterResponse.data.data.player;
+          
+          // If auto-sign is enabled, add to team roster
+          if (autoSignToRoster && seasonId && teamSeasonId) {
+            const signResponse = await axios.post(
+              `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+              {
+                playerId: newPlayer.id,
+                playerNumber: 0,
+                submittedWaiver: false,
+                submittedDriversLicense: false,
+                firstYear: 0
+              },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (signResponse.data.success) {
+              setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created and signed to roster successfully`);
+            } else {
+              setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created successfully but failed to sign to roster`);
+            }
+          } else {
+            setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created successfully`);
+          }
+          
+          closeEditDialog();
+          fetchRosterData();
+          fetchAvailablePlayers();
+        } else {
+          setError('Failed to create roster entry for new player');
+        }
+      } else {
+        setError(createResponse.data.message || 'Failed to create player');
+      }
+    } catch (error: any) {
+      console.error('Error creating player:', error);
+      setError(error.response?.data?.message || 'Failed to create player');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   // Helper function to format phone numbers as (111) 222-3333
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
@@ -572,33 +788,37 @@ const TeamRosterManagement: React.FC = () => {
     return digits.length === 0 || digits.length === 10;
   };
 
-  // Helper function to validate all phone numbers
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    if (!email) return true; // Empty email is allowed
+    return isEmail(email);
+  };
+
+  // Validate all phone numbers
   const validateAllPhoneNumbers = (): boolean => {
-    const newErrors = {
+    const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
+    const errors = {
       phone1: '',
       phone2: '',
       phone3: ''
     };
-    
-    let isValid = true;
-    
-    if (editFormData.phone1 && !validatePhoneNumber(editFormData.phone1)) {
-      newErrors.phone1 = 'Phone number must be exactly 10 digits';
-      isValid = false;
+    let hasErrors = false;
+
+    if (editFormData.phone1 && !phoneRegex.test(editFormData.phone1)) {
+      errors.phone1 = 'Phone number must be in format (123) 456-7890';
+      hasErrors = true;
     }
-    
-    if (editFormData.phone2 && !validatePhoneNumber(editFormData.phone2)) {
-      newErrors.phone2 = 'Phone number must be exactly 10 digits';
-      isValid = false;
+    if (editFormData.phone2 && !phoneRegex.test(editFormData.phone2)) {
+      errors.phone2 = 'Phone number must be in format (123) 456-7890';
+      hasErrors = true;
     }
-    
-    if (editFormData.phone3 && !validatePhoneNumber(editFormData.phone3)) {
-      newErrors.phone3 = 'Phone number must be exactly 10 digits';
-      isValid = false;
+    if (editFormData.phone3 && !phoneRegex.test(editFormData.phone3)) {
+      errors.phone3 = 'Phone number must be in format (123) 456-7890';
+      hasErrors = true;
     }
-    
-    setPhoneErrors(newErrors);
-    return isValid;
+
+    setPhoneErrors(errors);
+    return !hasErrors;
   };
 
   // Helper function to format all contact information
@@ -895,7 +1115,15 @@ const TeamRosterManagement: React.FC = () => {
       </Box>
 
       {/* Action Buttons */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<PersonAddIcon />}
+          onClick={openCreatePlayerDialog}
+          disabled={formLoading}
+        >
+          Create Player
+        </Button>
         <Button
           variant="contained"
           startIcon={<PersonAddIcon />}
@@ -1354,13 +1582,30 @@ const TeamRosterManagement: React.FC = () => {
 
       {/* Edit Player Dialog */}
       <Dialog open={editPlayerDialogOpen} onClose={closeEditDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Player Information</DialogTitle>
+        <DialogTitle>
+          {isCreatingNewPlayer ? 'Create New Player' : 'Edit Player Information'}
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 1 }}>
             {/* Error Alert */}
             {error && (
               <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
                 {error}
+              </Alert>
+            )}
+            
+            {/* Auto-sign checkbox for new players */}
+            {isCreatingNewPlayer && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={autoSignToRoster}
+                      onChange={(e) => setAutoSignToRoster(e.target.checked)}
+                    />
+                  }
+                  label="Automatically sign this player to the current team roster after creation"
+                />
               </Alert>
             )}
             
@@ -1399,9 +1644,18 @@ const TeamRosterManagement: React.FC = () => {
                   label="Email"
                   type="email"
                   value={editFormData.email}
-                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                  onChange={(e) => {
+                    setEditFormData({ ...editFormData, email: e.target.value });
+                    if (e.target.value && !validateEmail(e.target.value)) {
+                      setEmailError('Please enter a valid email address');
+                    } else {
+                      setEmailError('');
+                    }
+                  }}
                   fullWidth
                   variant="outlined"
+                  error={!!emailError}
+                  helperText={emailError}
                 />
               </Box>
               <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
@@ -1480,13 +1734,20 @@ const TeamRosterManagement: React.FC = () => {
                 />
               </Box>
               <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="State"
-                  value={editFormData.state}
-                  onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                />
+                <FormControl fullWidth>
+                  <InputLabel>State</InputLabel>
+                  <Select
+                    value={editFormData.state}
+                    onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
+                  >
+                    <MenuItem value="">Select State</MenuItem>
+                    {US_STATES.map((state) => (
+                      <MenuItem key={state.value} value={state.value}>
+                        {state.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Box>
               <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
                 <TextField
@@ -1516,12 +1777,12 @@ const TeamRosterManagement: React.FC = () => {
             Cancel
           </Button>
           <Button
-            onClick={handleEditPlayer}
+            onClick={isCreatingNewPlayer ? handleCreatePlayer : handleEditPlayer}
             variant="contained"
             disabled={!editFormData.firstname || !editFormData.lastname || formLoading}
-            startIcon={formLoading ? <CircularProgress size={20} /> : <EditIcon />}
+            startIcon={formLoading ? <CircularProgress size={20} /> : (isCreatingNewPlayer ? <PersonAddIcon /> : <EditIcon />)}
           >
-            Save Changes
+            {isCreatingNewPlayer ? 'Create Player' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

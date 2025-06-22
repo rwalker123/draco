@@ -6,8 +6,9 @@ import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import { PrismaClient } from '@prisma/client';
+import { isEmail } from 'validator';
 
-const router = Router();
+const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
@@ -1167,6 +1168,17 @@ router.put('/:accountId/contacts/:contactId',
         return;
       }
 
+      // Validate email format if provided
+      if (email) {
+        if (!isEmail(email)) {
+          res.status(400).json({
+            success: false,
+            message: 'Please enter a valid email address'
+          });
+          return;
+        }
+      }
+
       // Verify the contact exists and belongs to this account
       const existingContact = await prisma.contacts.findFirst({
         where: {
@@ -1254,6 +1266,217 @@ router.put('/:accountId/contacts/:contactId',
         success: false,
         message: 'Internal server error'
       });
+    }
+  }
+);
+
+/**
+ * POST /api/accounts/:accountId/contacts
+ * Create a new contact in an account
+ */
+router.post('/:accountId/contacts',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const {
+        firstname,
+        lastname,
+        middlename,
+        email,
+        phone1,
+        phone2,
+        phone3,
+        streetaddress,
+        city,
+        state,
+        zip,
+        dateofbirth
+      } = req.body;
+
+      // Validate required fields
+      if (!firstname || !lastname) {
+        res.status(400).json({
+          success: false,
+          message: 'First name and last name are required'
+        });
+        return;
+      }
+
+      // Validate email format if provided
+      if (email) {
+        if (!isEmail(email)) {
+          res.status(400).json({
+            success: false,
+            message: 'Please enter a valid email address'
+          });
+          return;
+        }
+      }
+
+      // Create the contact
+      const newContact = await prisma.contacts.create({
+        data: {
+          firstname,
+          lastname,
+          middlename: middlename || '',
+          email: email || null,
+          phone1: phone1 || null,
+          phone2: phone2 || null,
+          phone3: phone3 || null,
+          streetaddress: streetaddress || null,
+          city: city || null,
+          state: state || null,
+          zip: zip || null,
+          creatoraccountid: accountId,
+          dateofbirth: dateofbirth ? new Date(dateofbirth) : new Date('1900-01-01')
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          message: `Contact "${newContact.firstname} ${newContact.lastname}" created successfully`,
+          contact: {
+            id: newContact.id.toString(),
+            firstname: newContact.firstname,
+            lastname: newContact.lastname,
+            middlename: newContact.middlename,
+            email: newContact.email,
+            phone1: newContact.phone1,
+            phone2: newContact.phone2,
+            phone3: newContact.phone3,
+            streetaddress: newContact.streetaddress,
+            city: newContact.city,
+            state: newContact.state,
+            zip: newContact.zip,
+            dateofbirth: newContact.dateofbirth ? newContact.dateofbirth.toISOString() : null
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Error creating contact:', error);
+      
+      // Handle unique constraint violation (duplicate name)
+      if (error.code === 'P2002' && 
+          error.meta?.target && 
+          Array.isArray(error.meta.target) &&
+          error.meta.target.includes('lastname') &&
+          error.meta.target.includes('firstname') &&
+          error.meta.target.includes('middlename') &&
+          error.meta.target.includes('creatoraccountid')) {
+        res.status(400).json({
+          success: false,
+          message: 'A contact with this name already exists in this account'
+        });
+        return;
+      }
+      
+      // Handle other Prisma validation errors
+      if (error.code === 'P2000' || error.code === 'P2001' || error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid data provided for contact creation'
+        });
+        return;
+      }
+      
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/accounts/:accountId/roster
+ * Create a new roster entry (player) in an account
+ */
+router.post('/:accountId/roster',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { contactId, submittedDriversLicense, firstYear } = req.body;
+
+      if (!contactId) {
+        res.status(400).json({
+          success: false,
+          message: 'ContactId is required'
+        });
+        return;
+      }
+
+      // Verify the contact exists and belongs to this account
+      const contact = await prisma.contacts.findFirst({
+        where: {
+          id: BigInt(contactId),
+          creatoraccountid: accountId
+        },
+        select: {
+          firstname: true,
+          lastname: true
+        }
+      });
+
+      if (!contact) {
+        res.status(404).json({ success: false, message: 'Contact not found' });
+        return;
+      }
+
+      // Check if a roster entry already exists for this contact
+      const existingRoster = await prisma.roster.findFirst({
+        where: {
+          contactid: BigInt(contactId)
+        }
+      });
+
+      if (existingRoster) {
+        res.status(409).json({
+          success: false,
+          message: 'A roster entry already exists for this contact'
+        });
+        return;
+      }
+
+      // Create the roster entry
+      const newRoster = await prisma.roster.create({
+        data: {
+          contactid: BigInt(contactId),
+          submitteddriverslicense: submittedDriversLicense || false,
+          firstyear: firstYear || 0
+        },
+        include: {
+          contacts: {
+            select: {
+              firstname: true,
+              lastname: true
+            }
+          }
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          message: `Roster entry created for "${newRoster.contacts.firstname} ${newRoster.contacts.lastname}"`,
+          player: {
+            id: newRoster.id.toString(),
+            contactId: newRoster.contactid.toString(),
+            submittedDriversLicense: newRoster.submitteddriverslicense,
+            firstYear: newRoster.firstyear,
+            contact: newRoster.contacts
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error creating roster entry:', error);
+      next(error);
     }
   }
 );
