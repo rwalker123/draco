@@ -11,6 +11,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  Link,
 } from '@mui/material';
 import { 
   SportsSoccer, 
@@ -76,7 +77,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
           <SportsSoccer sx={{ mr: 1 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Draco Sports Manager
+            <Link href="/accounts" sx={{ color: 'inherit', textDecoration: 'none' }}>
+              Draco Sports Manager
+            </Link>
           </Typography>
           {user ? (
             <>
