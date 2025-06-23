@@ -6,21 +6,18 @@ import {
   Button, 
   Card, 
   CardContent, 
-  CardActions,
   Alert,
   CircularProgress,
   Container,
-  Chip,
-  Divider,
-  Link
+  Chip
 } from '@mui/material';
 import { 
-  SportsSoccer, 
   CalendarMonth, 
   Group, 
   Business,
   Visibility as ViewIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -105,6 +102,14 @@ const AccountHome: React.FC = () => {
     }
   };
 
+  const handleAccountSettings = () => {
+    if (user) {
+      navigate(`/account/${accountId}/settings`);
+    } else {
+      navigate('/login');
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
@@ -171,13 +176,22 @@ const AccountHome: React.FC = () => {
           View Seasons
         </Button>
         {user && (
-          <Button
-            variant="outlined"
-            startIcon={<EditIcon />}
-            onClick={handleManageAccount}
-          >
-            Manage Account
-          </Button>
+          <>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleManageAccount}
+            >
+              Manage Account
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<SettingsIcon />}
+              onClick={handleAccountSettings}
+            >
+              Settings
+            </Button>
+          </>
         )}
         {!user && (
           <Button

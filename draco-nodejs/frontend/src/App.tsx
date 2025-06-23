@@ -18,6 +18,8 @@ import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
 import Accounts from './components/Accounts';
 import AccountHome from './components/AccountHome';
+import AccountSettings from './components/AccountSettings';
+import DomainRedirect from './components/DomainRedirect';
 import { RequireAuth } from './components/ProtectedRoute';
 
 function App() {
@@ -29,10 +31,15 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<PasswordReset />} />
-          <Route path="/" element={<Accounts />} />
+          <Route path="/" element={<DomainRedirect />} />
           <Route path="/accounts" element={<Accounts />} />
           <Route path="/account/:accountId" element={<Accounts />} />
           <Route path="/account/:accountId/home" element={<AccountHome />} />
+          <Route path="/account/:accountId/settings" element={
+            <RequireAuth>
+              <AccountSettings />
+            </RequireAuth>
+          } />
           <Route path="/dashboard" element={
             <RequireAuth>
               <Dashboard />

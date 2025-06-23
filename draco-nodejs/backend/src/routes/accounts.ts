@@ -7,6 +7,8 @@ import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import { PrismaClient } from '@prisma/client';
 import { isEmail } from 'validator';
+import validator from 'validator';
+import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -114,6 +116,79 @@ router.get('/search',
       });
     } catch (error) {
       console.error('Error searching accounts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/by-domain
+ * Get account by domain (no authentication required)
+ * Used by domain routing middleware
+ */
+router.get('/by-domain',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const host = req.get('host');
+      
+      if (!host) {
+        res.status(400).json({
+          success: false,
+          message: 'Host header is required'
+        });
+        return;
+      }
+
+      // Look up the host in the accountsurl table with more precise matching
+      const accountUrl = await prisma.accountsurl.findFirst({
+        where: {
+          OR: [
+            { url: host.toLowerCase() },
+            { url: `www.${host.toLowerCase()}` },
+            { url: host.toLowerCase().replace('www.', '') }
+          ]
+        },
+        include: {
+          accounts: {
+            include: {
+              accounttypes: true
+            }
+          }
+        }
+      });
+
+      if (!accountUrl) {
+        res.status(404).json({
+          success: false,
+          message: 'No account found for this domain'
+        });
+        return;
+      }
+
+      const account = accountUrl.accounts;
+
+      res.json({
+        success: true,
+        data: {
+          account: {
+            id: account.id.toString(),
+            name: account.name,
+            accountType: account.accounttypes?.name,
+            accountTypeId: account.accounttypeid.toString(),
+            firstYear: account.firstyear,
+            timezoneId: account.timezoneid,
+            urls: [{
+              id: accountUrl.id.toString(),
+              url: accountUrl.url
+            }]
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error looking up account by domain:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
@@ -969,6 +1044,50 @@ router.put('/:accountId/twitter',
 );
 
 /**
+ * GET /api/accounts/:accountId/urls
+ * Get URLs for account (Account Admin or Administrator)
+ */
+router.get('/:accountId/urls',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      const urls = await prisma.accountsurl.findMany({
+        where: {
+          accountid: accountId
+        },
+        select: {
+          id: true,
+          url: true
+        },
+        orderBy: {
+          id: 'asc'
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          urls: urls.map((url: any) => ({
+            id: url.id.toString(),
+            url: url.url
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error getting account URLs:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
  * POST /api/accounts/:accountId/urls
  * Add URL to account (Account Admin or Administrator)
  */
@@ -989,10 +1108,37 @@ router.post('/:accountId/urls',
         return;
       }
 
+      // Validate URL format using centralized validation
+      if (!isValidAccountUrl(url)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid URL format. Please use http:// or https:// followed by a valid domain.'
+        });
+        return;
+      }
+
+      const normalizedUrl = normalizeUrl(url);
+
+      // Check if URL already exists for this account
+      const existingUrl = await prisma.accountsurl.findFirst({
+        where: {
+          accountid: accountId,
+          url: normalizedUrl
+        }
+      });
+
+      if (existingUrl) {
+        res.status(409).json({
+          success: false,
+          message: 'This URL is already associated with this account'
+        });
+        return;
+      }
+
       const accountUrl = await prisma.accountsurl.create({
         data: {
           accountid: accountId,
-          url
+          url: normalizedUrl
         },
         select: {
           id: true,
@@ -1011,6 +1157,101 @@ router.post('/:accountId/urls',
       });
     } catch (error) {
       console.error('Error adding URL:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * PUT /api/accounts/:accountId/urls/:urlId
+ * Update URL for account (Account Admin or Administrator)
+ */
+router.put('/:accountId/urls/:urlId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const urlId = BigInt(req.params.urlId);
+      const { url } = req.body;
+
+      if (!url) {
+        res.status(400).json({
+          success: false,
+          message: 'URL is required'
+        });
+        return;
+      }
+
+      // Validate URL format using centralized validation
+      if (!isValidAccountUrl(url)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid URL format. Please use http:// or https:// followed by a valid domain.'
+        });
+        return;
+      }
+
+      const normalizedUrl = normalizeUrl(url);
+
+      // Check if URL already exists for this account
+      const existingUrl = await prisma.accountsurl.findFirst({
+        where: {
+          accountid: accountId,
+          url: normalizedUrl,
+          id: { not: urlId }
+        }
+      });
+
+      if (existingUrl) {
+        res.status(409).json({
+          success: false,
+          message: 'This URL is already associated with this account'
+        });
+        return;
+      }
+
+      // Verify the URL belongs to the account
+      const currentUrl = await prisma.accountsurl.findFirst({
+        where: {
+          id: urlId,
+          accountid: accountId
+        }
+      });
+
+      if (!currentUrl) {
+        res.status(404).json({
+          success: false,
+          message: 'URL not found or does not belong to this account'
+        });
+        return;
+      }
+
+      // Update the URL
+      const updatedUrl = await prisma.accountsurl.update({
+        where: { id: urlId },
+        data: { url: normalizedUrl },
+        select: {
+          id: true,
+          url: true
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          url: {
+            id: updatedUrl.id.toString(),
+            url: updatedUrl.url
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error updating URL:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error'
