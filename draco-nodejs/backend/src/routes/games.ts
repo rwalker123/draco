@@ -1,0 +1,522 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { RouteProtection } from '../middleware/routeProtection';
+import { RoleService } from '../services/roleService';
+
+const router = Router({ mergeParams: true });
+const prisma = new PrismaClient();
+const roleService = new RoleService(prisma);
+const routeProtection = new RouteProtection(roleService, prisma);
+
+/**
+ * GET /api/accounts/:accountId/games/scoreboard
+ * Get games for scoreboard display (today, yesterday, previous, recaps)
+ */
+router.get('/scoreboard',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const teamId = req.query.teamId ? BigInt(req.query.teamId as string) : null;
+
+      // Get current season for this account
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: {
+          accountid: accountId
+        }
+      });
+
+      if (!currentSeasonRecord) {
+        res.json({
+          success: true,
+          data: {
+            today: [],
+            yesterday: [],
+            previous: [],
+            recaps: []
+          }
+        });
+        return;
+      }
+
+      const currentSeason = await prisma.season.findUnique({
+        where: {
+          id: currentSeasonRecord.seasonid
+        }
+      });
+
+      if (!currentSeason) {
+        res.json({
+          success: true,
+          data: {
+            today: [],
+            yesterday: [],
+            previous: [],
+            recaps: []
+          }
+        });
+        return;
+      }
+
+      // Calculate date ranges
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      // Base where clause
+      const baseWhere = {
+        leagueseason: {
+          seasonid: currentSeason.id,
+          league: {
+            accountid: accountId
+          }
+        },
+        ...(teamId && {
+          OR: [
+            { hteamid: teamId },
+            { vteamid: teamId }
+          ]
+        })
+      };
+
+      // Get today's games
+      const todayGames = await prisma.leagueschedule.findMany({
+        where: {
+          ...baseWhere,
+          gamedate: {
+            gte: today,
+            lt: tomorrow
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      // Get yesterday's games
+      const yesterdayGames = await prisma.leagueschedule.findMany({
+        where: {
+          ...baseWhere,
+          gamedate: {
+            gte: yesterday,
+            lt: today
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      // Get previous games (last 5 completed games)
+      const previousGames = await prisma.leagueschedule.findMany({
+        where: {
+          ...baseWhere,
+          gamedate: {
+            lt: yesterday
+          },
+          gamestatus: {
+            in: [1, 3, 4] // Final, Postponed, Forfeit
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'desc'
+        },
+        take: 5
+      });
+
+      // Get games with recaps (last 8 days)
+      const eightDaysAgo = new Date(today);
+      eightDaysAgo.setDate(eightDaysAgo.getDate() - 8);
+      
+      const recapGames = await prisma.leagueschedule.findMany({
+        where: {
+          ...baseWhere,
+          gamedate: {
+            gte: eightDaysAgo,
+            lt: today
+          },
+          gamerecap: {
+            some: {}
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      // Helper function to get team names
+      const getTeamNames = async (homeTeamId: bigint, awayTeamId: bigint) => {
+        const teams = await prisma.teamsseason.findMany({
+          where: {
+            id: {
+              in: [homeTeamId, awayTeamId]
+            }
+          },
+          select: {
+            id: true,
+            name: true
+          }
+        });
+
+        const homeTeam = teams.find(t => t.id === homeTeamId);
+        const awayTeam = teams.find(t => t.id === awayTeamId);
+
+        return {
+          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
+          awayTeamName: awayTeam?.name || `Team ${awayTeamId}`
+        };
+      };
+
+      // Helper function to format game data
+      const formatGameData = (game: any, teamNames: any) => ({
+        id: game.id.toString(),
+        date: game.gamedate.toISOString(),
+        time: game.gamedate.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        homeTeamId: game.hteamid.toString(),
+        awayTeamId: game.vteamid.toString(),
+        homeTeamName: teamNames.homeTeamName,
+        awayTeamName: teamNames.awayTeamName,
+        homeScore: game.hscore,
+        awayScore: game.vscore,
+        gameStatus: game.gamestatus,
+        gameStatusText: getGameStatusText(game.gamestatus),
+        leagueName: game.leagueseason.league.name,
+        fieldId: game.fieldid?.toString() || null,
+        fieldName: game.availablefields?.name || null,
+        hasGameRecap: game.gamerecap.length > 0,
+        gameRecaps: game.gamerecap.map((recap: any) => ({
+          teamId: recap.teamid.toString(),
+          recap: recap.recap
+        }))
+      });
+
+      // Helper function to get game status text
+      const getGameStatusText = (status: number): string => {
+        switch (status) {
+          case 0: return 'Scheduled';
+          case 1: return 'Final';
+          case 2: return 'In Progress';
+          case 3: return 'Postponed';
+          case 4: return 'Forfeit';
+          case 5: return 'Did Not Report';
+          default: return 'Unknown';
+        }
+      };
+
+      // Process all games and get team names
+      const processGames = async (games: any[]) => {
+        const processedGames = [];
+        for (const game of games) {
+          const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+          processedGames.push(formatGameData(game, teamNames));
+        }
+        return processedGames;
+      };
+
+      const [todayProcessed, yesterdayProcessed, previousProcessed, recapsProcessed] = await Promise.all([
+        processGames(todayGames),
+        processGames(yesterdayGames),
+        processGames(previousGames),
+        processGames(recapGames)
+      ]);
+
+      res.json({
+        success: true,
+        data: {
+          today: todayProcessed,
+          yesterday: yesterdayProcessed,
+          previous: previousProcessed,
+          recaps: recapsProcessed
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching scoreboard games:', error);
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/:accountId/games/:gameId
+ * Get specific game details
+ */
+router.get('/:gameId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const gameId = BigInt(req.params.gameId);
+
+      const game = await prisma.leagueschedule.findFirst({
+        where: {
+          id: gameId,
+          leagueseason: {
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true,
+              address: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          },
+          batstatsum: {
+            include: {
+              rosterseason: {
+                include: {
+                  roster: {
+                    include: {
+                      contacts: {
+                        select: {
+                          firstname: true,
+                          lastname: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          pitchstatsum: {
+            include: {
+              rosterseason: {
+                include: {
+                  roster: {
+                    include: {
+                      contacts: {
+                        select: {
+                          firstname: true,
+                          lastname: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!game) {
+        res.status(404).json({
+          success: false,
+          message: 'Game not found'
+        });
+        return;
+      }
+
+      // Get team names
+      const teams = await prisma.teamsseason.findMany({
+        where: {
+          id: {
+            in: [game.hteamid, game.vteamid]
+          }
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      });
+
+      const homeTeam = teams.find(t => t.id === game.hteamid);
+      const awayTeam = teams.find(t => t.id === game.vteamid);
+
+      res.json({
+        success: true,
+        data: {
+          id: game.id.toString(),
+          date: game.gamedate.toISOString(),
+          homeTeamId: game.hteamid.toString(),
+          awayTeamId: game.vteamid.toString(),
+          homeTeamName: homeTeam?.name || `Team ${game.hteamid}`,
+          awayTeamName: awayTeam?.name || `Team ${game.vteamid}`,
+          homeScore: game.hscore,
+          awayScore: game.vscore,
+          gameStatus: game.gamestatus,
+          gameStatusText: getGameStatusText(game.gamestatus),
+          leagueName: game.leagueseason.league.name,
+          field: game.availablefields ? {
+            id: game.availablefields.id.toString(),
+            name: game.availablefields.name,
+            address: game.availablefields.address
+          } : null,
+          comment: game.comment,
+          gameRecaps: game.gamerecap.map((recap: any) => ({
+            teamId: recap.teamid.toString(),
+            recap: recap.recap
+          })),
+          battingStats: game.batstatsum.map((stat: any) => ({
+            playerId: stat.playerid.toString(),
+            teamId: stat.teamid.toString(),
+            playerName: `${stat.rosterseason.roster.contacts.firstname} ${stat.rosterseason.roster.contacts.lastname}`,
+            ab: stat.ab,
+            h: stat.h,
+            r: stat.r,
+            rbi: stat.rbi,
+            hr: stat.hr,
+            bb: stat.bb,
+            so: stat.so
+          })),
+          pitchingStats: game.pitchstatsum.map((stat: any) => ({
+            playerId: stat.playerid.toString(),
+            teamId: stat.teamid.toString(),
+            playerName: `${stat.rosterseason.roster.contacts.firstname} ${stat.rosterseason.roster.contacts.lastname}`,
+            ip: stat.ip,
+            ip2: stat.ip2,
+            h: stat.h,
+            r: stat.r,
+            er: stat.er,
+            bb: stat.bb,
+            so: stat.so,
+            w: stat.w,
+            l: stat.l,
+            s: stat.s
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching game details:', error);
+      next(error);
+    }
+  }
+);
+
+// Helper function to get game status text
+const getGameStatusText = (status: number): string => {
+  switch (status) {
+    case 0: return 'Scheduled';
+    case 1: return 'Final';
+    case 2: return 'In Progress';
+    case 3: return 'Postponed';
+    case 4: return 'Forfeit';
+    case 5: return 'Did Not Report';
+    default: return 'Unknown';
+  }
+};
+
+export default router; 

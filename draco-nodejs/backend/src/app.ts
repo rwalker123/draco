@@ -31,6 +31,7 @@ import leagueSeasonsRouter from './routes/leagueSeasons';
 import leaguesRouter from './routes/leagues';
 import divisionsRouter from './routes/divisions';
 import rostersRouter from './routes/rosters';
+import gamesRouter from './routes/games';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 import { domainRouting } from './middleware/domainRouting';
 
@@ -78,6 +79,7 @@ app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRoute
 app.use('/api/accounts/:accountId/divisions', divisionsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', rostersRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
+app.use('/api/accounts/:accountId/games', gamesRouter);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler
