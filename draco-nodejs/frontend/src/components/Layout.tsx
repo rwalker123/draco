@@ -21,7 +21,8 @@ import {
   Business,
   Group,
   Settings,
-  CalendarMonth
+  CalendarMonth,
+  Home
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -70,6 +71,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login', { state: { from: location } });
   };
 
+  const handleHomeClick = () => {
+    navigate('/');
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
@@ -86,9 +91,28 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <MenuIcon />
             </IconButton>
           )}
+          <IconButton
+            size="large"
+            color="inherit"
+            aria-label="home"
+            sx={{ mr: 1 }}
+            onClick={handleHomeClick}
+          >
+            <Home />
+          </IconButton>
           <SportsSoccer sx={{ mr: 1 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <Link href="/accounts" sx={{ color: 'inherit', textDecoration: 'none' }}>
+            <Link 
+              onClick={handleHomeClick}
+              sx={{ 
+                color: 'inherit', 
+                textDecoration: 'none',
+                cursor: 'pointer',
+                '&:hover': {
+                  textDecoration: 'underline'
+                }
+              }}
+            >
               Draco Sports Manager
             </Link>
           </Typography>
@@ -129,6 +153,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             horizontal: 'left',
           }}
         >
+          <MenuItem onClick={() => handleNavigation('/')}>
+            <ListItemIcon>
+              <Home fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Home</ListItemText>
+          </MenuItem>
+
           <MenuItem onClick={() => handleNavigation('/dashboard')}>
             <ListItemIcon>
               <Dashboard fontSize="small" />
