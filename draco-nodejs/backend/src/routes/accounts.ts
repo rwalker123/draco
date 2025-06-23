@@ -2259,7 +2259,7 @@ router.get('/:accountId/recent-games',
         return;
       }
 
-      // Get recent games
+      // Get recent games with more details
       const recentGames = await prisma.leagueschedule.findMany({
         where: {
           leagueseason: {
@@ -2269,11 +2269,68 @@ router.get('/:accountId/recent-games',
             }
           }
         },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true
+            }
+          }
+        },
         orderBy: {
           gamedate: 'desc'
         },
         take: 10
       });
+
+      // Get team names for all games
+      const allTeamIds = new Set<bigint>();
+      recentGames.forEach(game => {
+        allTeamIds.add(game.hteamid);
+        allTeamIds.add(game.vteamid);
+      });
+
+      const teams = await prisma.teamsseason.findMany({
+        where: {
+          id: {
+            in: Array.from(allTeamIds)
+          }
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      });
+
+      const teamMap = new Map(teams.map(team => [team.id, team.name]));
+
+      // Helper function to get game status text
+      const getGameStatusText = (status: number): string => {
+        switch (status) {
+          case 0: return 'Scheduled';
+          case 1: return 'Final';
+          case 2: return 'In Progress';
+          case 3: return 'Postponed';
+          case 4: return 'Forfeit';
+          case 5: return 'Did Not Report';
+          default: return 'Unknown';
+        }
+      };
 
       res.json({
         success: true,
@@ -2281,11 +2338,27 @@ router.get('/:accountId/recent-games',
           games: recentGames.map(game => ({
             id: game.id.toString(),
             date: game.gamedate.toISOString(),
-            homeTeam: `Team ${game.hteamid}`,
-            awayTeam: `Team ${game.vteamid}`,
+            time: game.gamedate.toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: true 
+            }),
+            homeTeamId: game.hteamid.toString(),
+            awayTeamId: game.vteamid.toString(),
+            homeTeamName: teamMap.get(game.hteamid) || `Team ${game.hteamid}`,
+            awayTeamName: teamMap.get(game.vteamid) || `Team ${game.vteamid}`,
             homeScore: game.hscore || 0,
             awayScore: game.vscore || 0,
-            status: game.gamestatus === 1 ? 'completed' : game.gamestatus === 2 ? 'in_progress' : 'scheduled'
+            gameStatus: game.gamestatus,
+            gameStatusText: getGameStatusText(game.gamestatus),
+            leagueName: game.leagueseason.league.name,
+            fieldId: game.fieldid?.toString() || null,
+            fieldName: game.availablefields?.name || null,
+            hasGameRecap: game.gamerecap.length > 0,
+            gameRecaps: game.gamerecap.map((recap: any) => ({
+              teamId: recap.teamid.toString(),
+              recap: recap.recap
+            }))
           }))
         }
       });
