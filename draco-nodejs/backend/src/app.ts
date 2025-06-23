@@ -32,6 +32,7 @@ import leaguesRouter from './routes/leagues';
 import divisionsRouter from './routes/divisions';
 import rostersRouter from './routes/rosters';
 import { bigIntSerializer } from './middleware/bigint-serializer';
+import { domainRouting } from './middleware/domainRouting';
 
 const app = express();
 
@@ -50,6 +51,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Global BigInt serialization middleware
 app.use(bigIntSerializer);
+
+// Domain routing middleware - must come before other routes
+app.use(domainRouting);
 
 // Health check endpoint
 app.get('/health', (req: any, res: any) => {

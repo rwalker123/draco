@@ -159,6 +159,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText>Current Account</ListItemText>
             </MenuItem>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}>
+              <ListItemIcon>
+                <Settings fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Account Settings</ListItemText>
+            </MenuItem>
             <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}>
               <ListItemIcon>
                 <CalendarMonth fontSize="small" />

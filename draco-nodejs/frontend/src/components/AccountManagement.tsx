@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -98,15 +98,8 @@ const AccountManagement: React.FC = () => {
   });
 
   const isGlobalAdmin = hasRole('Administrator');
-  const isAccountAdmin = hasRole('AccountAdmin');
 
-  useEffect(() => {
-    if (token) {
-      loadData();
-    }
-  }, [token]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -156,7 +149,13 @@ const AccountManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (token) {
+      loadData();
+    }
+  }, [token, loadData]);
 
   const handleCreateAccount = async () => {
     try {

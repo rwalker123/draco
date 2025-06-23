@@ -21,7 +21,7 @@ interface AccountContextType {
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const { userRoles } = useRole();
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
