@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login, loading, error } = useAuth();
 
-  // Get the page the user was trying to access before being redirected to login
+  // Get the page the user was trying to access before being redirected to sign in
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   const handleLogin = async () => {
@@ -26,7 +26,7 @@ const Login: React.FC = () => {
     <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" align="center" gutterBottom>
-          Login
+          Sign In
         </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
@@ -57,7 +57,7 @@ const Login: React.FC = () => {
           disabled={loading}
           sx={{ mt: 2 }}
         >
-          {loading ? <CircularProgress size={24} /> : 'Login'}
+          {loading ? <CircularProgress size={24} /> : 'Sign In'}
         </Button>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Link href="/reset-password">Forgot your password?</Link>

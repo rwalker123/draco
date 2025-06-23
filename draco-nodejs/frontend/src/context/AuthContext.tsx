@@ -49,12 +49,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return true;
       } else {
-        setError(response.data.message || 'Login failed');
+        setError(response.data.message || 'Sign in failed');
         setLoading(false);
         return false;
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Sign in failed');
       setLoading(false);
       return false;
     }
