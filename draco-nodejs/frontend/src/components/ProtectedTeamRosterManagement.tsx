@@ -3,11 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import TeamRosterManagement from './TeamRosterManagement';
 import { Box, Typography, Button } from '@mui/material';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 
 const ProtectedTeamRosterManagement: React.FC = () => {
   const { user, loading } = useAuth();
   const { hasRole, hasPermission } = useRole();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -18,7 +19,7 @@ const ProtectedTeamRosterManagement: React.FC = () => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user has required permissions (AccountAdmin or Administrator)

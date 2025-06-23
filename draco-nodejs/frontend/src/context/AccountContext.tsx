@@ -16,6 +16,7 @@ interface AccountContextType {
   setCurrentAccount: (account: Account) => void;
   fetchUserAccounts: () => Promise<void>;
   hasAccessToAccount: (accountId: string) => boolean;
+  clearAccounts: () => void;
 }
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
@@ -80,6 +81,12 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     return userRoles.contactRoles.some(role => role.accountId === accountId);
   };
 
+  const clearAccounts = () => {
+    setCurrentAccount(null);
+    setUserAccounts([]);
+    setError(null);
+  };
+
   return (
     <AccountContext.Provider value={{
       currentAccount,
@@ -88,7 +95,8 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       error,
       setCurrentAccount,
       fetchUserAccounts,
-      hasAccessToAccount
+      hasAccessToAccount,
+      clearAccounts
     }}>
       {children}
     </AccountContext.Provider>

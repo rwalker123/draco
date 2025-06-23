@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress, Link } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loading, error } = useAuth();
+
+  // Get the page the user was trying to access before being redirected to login
+  const from = (location.state as any)?.from?.pathname || '/dashboard';
 
   const handleLogin = async () => {
     const success = await login(email, password);
     if (success) {
-      navigate('/dashboard');
+      // Navigate back to the page they were trying to access, or dashboard as fallback
+      navigate(from, { replace: true });
     }
     // error is handled by context
   };

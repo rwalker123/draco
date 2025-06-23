@@ -26,7 +26,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminOnly, AccountAdminOnly } from './RoleBasedNavigation';
 
 interface LayoutProps {
@@ -34,10 +34,11 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
-  const { hasRole } = useRole();
-  const { currentAccount } = useAccount();
+  const { user, logout, clearAllContexts } = useAuth();
+  const { hasRole, clearRoles } = useRole();
+  const { currentAccount, clearAccounts } = useAccount();
   const navigate = useNavigate();
+  const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -49,14 +50,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    // Clear all contexts first
+    clearAllContexts();
+    clearRoles();
+    clearAccounts();
+    
+    // Logout with page refresh to update all components and access controls
+    logout(true);
     handleMenuClose();
   };
 
   const handleNavigation = (path: string) => {
     navigate(path);
     handleMenuClose();
+  };
+
+  const handleLogin = () => {
+    // Navigate to login while preserving the current location
+    navigate('/login', { state: { from: location } });
   };
 
   return (
@@ -96,7 +107,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </Button>
             </>
           ) : (
-            <Button color="inherit" onClick={() => navigate('/login')}>
+            <Button color="inherit" onClick={handleLogin}>
               Login
             </Button>
           )}

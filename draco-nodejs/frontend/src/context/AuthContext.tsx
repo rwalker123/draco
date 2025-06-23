@@ -15,8 +15,9 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (username: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: (refreshPage?: boolean) => void;
   fetchUser: () => Promise<void>;
+  clearAllContexts: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -59,9 +60,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = (refreshPage: boolean = false) => {
     setToken(null);
     setUser(null);
+    localStorage.removeItem('jwtToken');
+    
+    if (refreshPage) {
+      // Refresh the current page to update all components and access controls
+      window.location.reload();
+    }
+  };
+
+  const clearAllContexts = () => {
+    setToken(null);
+    setUser(null);
+    setError(null);
     localStorage.removeItem('jwtToken');
   };
 
@@ -86,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, error, login, logout, fetchUser }}>
+    <AuthContext.Provider value={{ user, token, loading, error, login, logout, fetchUser, clearAllContexts }}>
       {children}
     </AuthContext.Provider>
   );

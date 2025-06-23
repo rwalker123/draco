@@ -10,7 +10,7 @@ import {
   Link,
   Container
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -25,6 +25,7 @@ const Signup: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -90,7 +91,7 @@ const Signup: React.FC = () => {
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => {
-          navigate('/login');
+          navigate('/login', { state: { from: location } });
         }, 2000);
       } else {
         const data = await response.json();
