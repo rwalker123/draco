@@ -14,7 +14,7 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import { Search as SearchIcon, Visibility as ViewIcon, Add as AddIcon } from '@mui/icons-material';
+import { Search as SearchIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

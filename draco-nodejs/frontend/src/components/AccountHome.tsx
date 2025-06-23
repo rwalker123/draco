@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BaseballAccountHome from './BaseballAccountHome';
 
 interface Account {
   id: string;
@@ -135,6 +136,11 @@ const AccountHome: React.FC = () => {
         </Box>
       </Container>
     );
+  }
+
+  // Render baseball-specific home page for baseball accounts
+  if (account.accountType.toLowerCase() === 'baseball') {
+    return <BaseballAccountHome />;
   }
 
   const currentSeason = seasons.find(s => s.isCurrent);

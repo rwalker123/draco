@@ -255,21 +255,35 @@ router.get('/:accountId/public',
 
       // Get current season
       const currentSeasonRecord = await prisma.currentseason.findUnique({
-        where: { accountid: accountId },
-        select: {
-          seasonid: true
+        where: {
+          accountid: accountId
         }
       });
 
-      let currentSeason = null;
-      if (currentSeasonRecord) {
-        currentSeason = await prisma.season.findUnique({
-          where: { id: currentSeasonRecord.seasonid },
-          select: {
-            id: true,
-            name: true
+      if (!currentSeasonRecord) {
+        res.json({
+          success: true,
+          data: {
+            teams: []
           }
         });
+        return;
+      }
+
+      const currentSeason = await prisma.season.findUnique({
+        where: {
+          id: currentSeasonRecord.seasonid
+        }
+      });
+
+      if (!currentSeason) {
+        res.json({
+          success: true,
+          data: {
+            teams: []
+          }
+        });
+        return;
       }
 
       // Get recent seasons
@@ -1958,6 +1972,325 @@ router.post('/:accountId/roster',
       });
     } catch (error) {
       console.error('Error creating roster entry:', error);
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/:accountId/user-teams
+ * Get teams that the current user is a member of for this account
+ */
+router.get('/:accountId/user-teams',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated'
+        });
+        return;
+      }
+
+      // Get the user's contact record for this account
+      const userContact = await prisma.contacts.findFirst({
+        where: {
+          userid: userId,
+          creatoraccountid: accountId
+        }
+      });
+
+      if (!userContact) {
+        // User doesn't have a contact record for this account, return empty teams
+        res.json({
+          success: true,
+          data: {
+            teams: []
+          }
+        });
+        return;
+      }
+
+      // Get current season for this account
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: {
+          accountid: accountId
+        }
+      });
+
+      if (!currentSeasonRecord) {
+        res.json({
+          success: true,
+          data: {
+            teams: []
+          }
+        });
+        return;
+      }
+
+      const currentSeason = await prisma.season.findUnique({
+        where: {
+          id: currentSeasonRecord.seasonid
+        }
+      });
+
+      if (!currentSeason) {
+        res.json({
+          success: true,
+          data: {
+            teams: []
+          }
+        });
+        return;
+      }
+
+      // Get teams where the user is a roster member
+      const userTeams = await prisma.rosterseason.findMany({
+        where: {
+          roster: {
+            contactid: userContact.id
+          },
+          teamsseason: {
+            leagueseason: {
+              seasonid: currentSeason.id
+            }
+          },
+          inactive: false
+        },
+        include: {
+          teamsseason: {
+            include: {
+              leagueseason: {
+                include: {
+                  league: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Get teams where the user is a manager
+      const managedTeams = await prisma.teamseasonmanager.findMany({
+        where: {
+          contactid: userContact.id,
+          teamsseason: {
+            leagueseason: {
+              seasonid: currentSeason.id
+            }
+          }
+        },
+        include: {
+          teamsseason: {
+            include: {
+              leagueseason: {
+                include: {
+                  league: {
+                    select: {
+                      name: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Combine and deduplicate teams
+      const allTeams = [...userTeams, ...managedTeams];
+      const uniqueTeams = new Map();
+
+      allTeams.forEach(team => {
+        const teamId = team.teamsseason.id.toString();
+        if (!uniqueTeams.has(teamId)) {
+          uniqueTeams.set(teamId, {
+            id: teamId,
+            name: team.teamsseason.name,
+            leagueName: team.teamsseason.leagueseason.league.name,
+            // TODO: Add more team data like record, standing, next game
+          });
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          teams: Array.from(uniqueTeams.values())
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching user teams:', error);
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/:accountId/leagues
+ * Get all leagues for this account
+ */
+router.get('/:accountId/leagues',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      // Get current season for this account
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: {
+          accountid: accountId
+        }
+      });
+
+      if (!currentSeasonRecord) {
+        res.json({
+          success: true,
+          data: {
+            leagues: []
+          }
+        });
+        return;
+      }
+
+      const currentSeason = await prisma.season.findUnique({
+        where: {
+          id: currentSeasonRecord.seasonid
+        }
+      });
+
+      if (!currentSeason) {
+        res.json({
+          success: true,
+          data: {
+            leagues: []
+          }
+        });
+        return;
+      }
+
+      // Get leagues with team counts
+      const leagues = await prisma.leagueseason.findMany({
+        where: {
+          seasonid: currentSeason.id,
+          league: {
+            accountid: accountId
+          }
+        },
+        include: {
+          league: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
+          _count: {
+            select: {
+              teamsseason: true
+            }
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          leagues: leagues.map(league => ({
+            id: league.league.id.toString(),
+            name: league.league.name,
+            teamCount: league._count.teamsseason
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching leagues:', error);
+      next(error);
+    }
+  }
+);
+
+/**
+ * GET /api/accounts/:accountId/recent-games
+ * Get recent games for this account
+ */
+router.get('/:accountId/recent-games',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      // Get current season for this account
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: {
+          accountid: accountId
+        }
+      });
+
+      if (!currentSeasonRecord) {
+        res.json({
+          success: true,
+          data: {
+            games: []
+          }
+        });
+        return;
+      }
+
+      const currentSeason = await prisma.season.findUnique({
+        where: {
+          id: currentSeasonRecord.seasonid
+        }
+      });
+
+      if (!currentSeason) {
+        res.json({
+          success: true,
+          data: {
+            games: []
+          }
+        });
+        return;
+      }
+
+      // Get recent games
+      const recentGames = await prisma.leagueschedule.findMany({
+        where: {
+          leagueseason: {
+            seasonid: currentSeason.id,
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'desc'
+        },
+        take: 10
+      });
+
+      res.json({
+        success: true,
+        data: {
+          games: recentGames.map(game => ({
+            id: game.id.toString(),
+            date: game.gamedate.toISOString(),
+            homeTeam: `Team ${game.hteamid}`,
+            awayTeam: `Team ${game.vteamid}`,
+            homeScore: game.hscore || 0,
+            awayScore: game.vscore || 0,
+            status: game.gamestatus === 1 ? 'completed' : game.gamestatus === 2 ? 'in_progress' : 'scheduled'
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching recent games:', error);
       next(error);
     }
   }
