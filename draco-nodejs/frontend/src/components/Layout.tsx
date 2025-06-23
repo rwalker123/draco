@@ -22,13 +22,14 @@ import {
   Group,
   Settings,
   CalendarMonth,
-  Home
+  Home,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminOnly, AccountAdminOnly } from './RoleBasedNavigation';
+import BaseballMenu from './BaseballMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,44 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [accountType, setAccountType] = React.useState<string | null>(null);
+
+  // Extract accountId from URL pathname
+  const getAccountIdFromPath = (pathname: string): string | null => {
+    const match = pathname.match(/\/account\/(\d+)/);
+    return match ? match[1] : null;
+  };
+
+  // Check if we're on a baseball account page
+  React.useEffect(() => {
+    const checkAccountType = async () => {
+      const accountId = getAccountIdFromPath(location.pathname);
+      if (accountId && location.pathname.includes(`/account/${accountId}`)) {
+        try {
+          const response = await fetch(`/api/accounts/${accountId}/public`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              setAccountType(data.data.account.accountType);
+              console.log('Account type detected:', data.data.account.accountType); // Debug log
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch account type:', err);
+        }
+      } else {
+        setAccountType(null);
+      }
+    };
+
+    checkAccountType();
+  }, [location.pathname]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -75,66 +114,96 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/');
   };
 
+  const accountId = getAccountIdFromPath(location.pathname);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
-        <Toolbar>
-          {user && (
+        <Toolbar sx={{ 
+          minHeight: '64px !important',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          {/* Left side - Main navigation */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center'
+          }}>
+            {user && (
+              <IconButton
+                size="large"
+                edge="start"
+                color="inherit"
+                aria-label="menu"
+                sx={{ mr: 2 }}
+                onClick={handleMenuOpen}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
             <IconButton
               size="large"
-              edge="start"
               color="inherit"
-              aria-label="menu"
-              sx={{ mr: 2 }}
-              onClick={handleMenuOpen}
-            >
-              <MenuIcon />
-            </IconButton>
-          )}
-          <IconButton
-            size="large"
-            color="inherit"
-            aria-label="home"
-            sx={{ mr: 1 }}
-            onClick={handleHomeClick}
-          >
-            <Home />
-          </IconButton>
-          <SportsSoccer sx={{ mr: 1 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            <Link 
+              aria-label="home"
+              sx={{ mr: 1 }}
               onClick={handleHomeClick}
-              sx={{ 
-                color: 'inherit', 
-                textDecoration: 'none',
-                cursor: 'pointer',
-                '&:hover': {
-                  textDecoration: 'underline'
-                }
-              }}
             >
-              Draco Sports Manager
-            </Link>
-          </Typography>
-          {user ? (
-            <>
-              <Typography variant="body1" sx={{ mr: 2 }}>
-                Hello, {user.username}
-              </Typography>
-              {currentAccount && (
-                <Typography variant="body2" sx={{ mr: 2 }}>
-                  Account: {currentAccount.name}
-                </Typography>
-              )}
-              <Button color="inherit" onClick={handleLogout}>
-                Logout
-              </Button>
-            </>
-          ) : (
-            <Button color="inherit" onClick={handleLogin}>
-              Sign In
-            </Button>
+              <Home />
+            </IconButton>
+            <SportsSoccer sx={{ mr: 1 }} />
+            <Typography variant="h6" component="div">
+              <Link 
+                onClick={handleHomeClick}
+                sx={{ 
+                  color: 'inherit', 
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    textDecoration: 'underline'
+                  }
+                }}
+              >
+                Draco Sports Manager
+              </Link>
+            </Typography>
+          </Box>
+
+          {/* Center - Baseball menu (only for baseball accounts) */}
+          {accountType === 'Baseball' && accountId && (
+            <Box sx={{ 
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <BaseballMenu accountId={accountId} />
+            </Box>
           )}
+
+          {/* Right side - User info and actions */}
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center'
+          }}>
+            {user ? (
+              <>
+                <Typography variant="body1" sx={{ mr: 2 }}>
+                  Hello, {user.username}
+                </Typography>
+                {currentAccount && (
+                  <Typography variant="body2" sx={{ mr: 2 }}>
+                    Account: {currentAccount.name}
+                  </Typography>
+                )}
+                <Button color="inherit" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <Button color="inherit" onClick={handleLogin}>
+                Sign In
+              </Button>
+            )}
+          </Box>
         </Toolbar>
       </AppBar>
 
