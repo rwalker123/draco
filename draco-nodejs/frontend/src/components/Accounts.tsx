@@ -14,8 +14,8 @@ import {
   InputAdornment,
   IconButton
 } from '@mui/material';
-import { Search as SearchIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Search as SearchIcon, Visibility as ViewIcon, Add as AddIcon } from '@mui/icons-material';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface Account {
@@ -36,6 +36,7 @@ const Accounts: React.FC = () => {
   const [showSignup, setShowSignup] = useState(false);
   const { user, token } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { accountId } = useParams();
 
   const loadUserAccounts = useCallback(async () => {
@@ -137,7 +138,7 @@ const Accounts: React.FC = () => {
   };
 
   const handleLogin = () => {
-    navigate('/login');
+    navigate('/login', { state: { from: location } });
   };
 
   return (

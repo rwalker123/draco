@@ -19,7 +19,7 @@ import {
   Edit as EditIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface Account {
@@ -48,6 +48,7 @@ const AccountHome: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { accountId } = useParams();
 
   useEffect(() => {
@@ -90,7 +91,7 @@ const AccountHome: React.FC = () => {
     if (user) {
       navigate(`/account/${accountId}/seasons`);
     } else {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
     }
   };
 
@@ -98,7 +99,7 @@ const AccountHome: React.FC = () => {
     if (user) {
       navigate(`/account/${accountId}/management`);
     } else {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
     }
   };
 
@@ -106,7 +107,7 @@ const AccountHome: React.FC = () => {
     if (user) {
       navigate(`/account/${accountId}/settings`);
     } else {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
     }
   };
 
@@ -196,7 +197,7 @@ const AccountHome: React.FC = () => {
         {!user && (
           <Button
             variant="outlined"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/login', { state: { from: location } })}
           >
             Sign In to Manage
           </Button>
