@@ -232,7 +232,7 @@ const BaseballAccountHome: React.FC = () => {
     return (
       <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
         <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
           Loading baseball league information...
         </Typography>
       </Container>
@@ -259,51 +259,65 @@ const BaseballAccountHome: React.FC = () => {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-      py: 4
+      background: '#f8f9fa',
+      py: 3
     }}>
       <Container maxWidth="lg">
         {/* Hero Section */}
         <Paper sx={{ 
           p: 4, 
           mb: 4, 
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-          borderRadius: 3,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+          background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+          color: 'white',
+          borderRadius: 2,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
         }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Avatar sx={{ 
               width: 80, 
               height: 80, 
-              bgcolor: 'primary.main',
-              mr: 3
+              bgcolor: 'rgba(255,255,255,0.2)',
+              mr: 3,
+              border: '2px solid rgba(255,255,255,0.3)'
             }}>
-              <BaseballIcon sx={{ fontSize: 40 }} />
+              <BaseballIcon sx={{ fontSize: 40, color: 'white' }} />
             </Avatar>
             <Box>
               <Typography variant="h3" component="h1" gutterBottom sx={{ 
                 fontWeight: 'bold',
-                color: 'primary.main'
+                color: 'white'
               }}>
                 {account.name}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
                 <Chip 
                   label={account.accountType} 
-                  color="primary" 
-                  variant="filled"
-                  icon={<BaseballIcon />}
-                  sx={{ fontWeight: 'bold' }}
+                  sx={{ 
+                    bgcolor: 'rgba(255,255,255,0.2)', 
+                    color: 'white',
+                    fontWeight: 'bold',
+                    border: '1px solid rgba(255,255,255,0.3)'
+                  }}
+                  icon={<BaseballIcon sx={{ color: 'white' }} />}
                 />
                 {account.affiliation && (
                   <Chip 
                     label={account.affiliation} 
-                    variant="outlined"
-                    icon={<Group />}
+                    sx={{ 
+                      bgcolor: 'rgba(255,255,255,0.1)', 
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.2)'
+                    }}
+                    icon={<Group sx={{ color: 'white' }} />}
                   />
                 )}
               </Box>
-              <Typography variant="body1" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body1" sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                color: 'rgba(255,255,255,0.9)'
+              }}>
                 <LocationIcon fontSize="small" />
                 {account.timezoneId} • Established {account.firstYear}
               </Typography>
@@ -314,12 +328,15 @@ const BaseballAccountHome: React.FC = () => {
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             <Button
               variant="contained"
-              color="primary"
               size="large"
               startIcon={<ScheduleIcon />}
               onClick={handleViewSchedule}
               sx={{ 
-                borderRadius: 2,
+                bgcolor: 'white',
+                color: '#1e3a8a',
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.9)'
+                },
                 px: 3,
                 py: 1.5,
                 fontWeight: 'bold'
@@ -328,13 +345,17 @@ const BaseballAccountHome: React.FC = () => {
               View Schedule
             </Button>
             <Button
-              variant="contained"
-              color="secondary"
+              variant="outlined"
               size="large"
               startIcon={<StatsIcon />}
               onClick={handleViewStats}
               sx={{ 
-                borderRadius: 2,
+                borderColor: 'rgba(255,255,255,0.5)',
+                color: 'white',
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: 'rgba(255,255,255,0.1)'
+                },
                 px: 3,
                 py: 1.5,
                 fontWeight: 'bold'
@@ -344,12 +365,16 @@ const BaseballAccountHome: React.FC = () => {
             </Button>
             <Button
               variant="outlined"
-              color="primary"
               size="large"
               startIcon={<TrophyIcon />}
               onClick={handleViewStandings}
               sx={{ 
-                borderRadius: 2,
+                borderColor: 'rgba(255,255,255,0.5)',
+                color: 'white',
+                '&:hover': {
+                  borderColor: 'white',
+                  bgcolor: 'rgba(255,255,255,0.1)'
+                },
                 px: 3,
                 py: 1.5,
                 fontWeight: 'bold'
@@ -363,7 +388,14 @@ const BaseballAccountHome: React.FC = () => {
                   variant="outlined"
                   startIcon={<EditIcon />}
                   onClick={handleManageAccount}
-                  sx={{ borderRadius: 2 }}
+                  sx={{ 
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
                 >
                   Manage League
                 </Button>
@@ -371,7 +403,14 @@ const BaseballAccountHome: React.FC = () => {
                   variant="outlined"
                   startIcon={<SettingsIcon />}
                   onClick={handleAccountSettings}
-                  sx={{ borderRadius: 2 }}
+                  sx={{ 
+                    borderColor: 'rgba(255,255,255,0.5)',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'white',
+                      bgcolor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
                 >
                   Settings
                 </Button>
@@ -380,9 +419,14 @@ const BaseballAccountHome: React.FC = () => {
             {!user && (
               <Button
                 variant="contained"
-                color="secondary"
                 onClick={() => navigate('/login', { state: { from: location } })}
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  bgcolor: 'white',
+                  color: '#1e3a8a',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.9)'
+                  }
+                }}
               >
                 Sign In to Manage
               </Button>
@@ -392,13 +436,14 @@ const BaseballAccountHome: React.FC = () => {
 
         {/* User Teams Section */}
         {user && userTeams.length > 0 && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <Typography variant="h5" gutterBottom sx={{ 
               fontWeight: 'bold',
-              color: 'primary.main',
+              color: '#1e3a8a',
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
+              mb: 3
             }}>
               <PersonIcon />
               My Teams
@@ -412,22 +457,26 @@ const BaseballAccountHome: React.FC = () => {
                 <Card key={team.id} sx={{ 
                   height: '100%',
                   borderRadius: 2,
-                  transition: 'transform 0.2s',
+                  border: '1px solid #e5e7eb',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+                    borderColor: '#1e3a8a'
                   }
                 }}>
-                  <CardContent>
+                  <CardContent sx={{ p: 3 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       <Avatar sx={{ 
-                        bgcolor: 'primary.main',
-                        mr: 2
+                        bgcolor: '#1e3a8a',
+                        mr: 2,
+                        width: 48,
+                        height: 48
                       }}>
                         <BaseballIcon />
                       </Avatar>
                       <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
                           {team.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -437,20 +486,26 @@ const BaseballAccountHome: React.FC = () => {
                     </Box>
                     
                     {team.record && (
-                      <Typography variant="body2" sx={{ mb: 1 }}>
+                      <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
                         <strong>Record:</strong> {team.record}
                       </Typography>
                     )}
                     
                     {team.standing && (
-                      <Typography variant="body2" sx={{ mb: 1 }}>
+                      <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
                         <strong>Standing:</strong> {team.standing}
                       </Typography>
                     )}
 
                     {team.nextGame && (
-                      <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      <Box sx={{ 
+                        mt: 2, 
+                        p: 2, 
+                        bgcolor: '#f9fafb', 
+                        borderRadius: 1,
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
                           Next Game
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -469,7 +524,15 @@ const BaseballAccountHome: React.FC = () => {
                       variant="outlined"
                       size="small"
                       onClick={() => handleViewTeam(team.id)}
-                      sx={{ mt: 2, borderRadius: 2 }}
+                      sx={{ 
+                        mt: 2, 
+                        borderColor: '#1e3a8a',
+                        color: '#1e3a8a',
+                        '&:hover': {
+                          bgcolor: '#1e3a8a',
+                          color: 'white'
+                        }
+                      }}
                     >
                       View Team
                     </Button>
@@ -482,18 +545,19 @@ const BaseballAccountHome: React.FC = () => {
 
         {/* Current Season Info */}
         {currentSeason && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <Typography variant="h5" gutterBottom sx={{ 
               fontWeight: 'bold',
-              color: 'primary.main',
+              color: '#1e3a8a',
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
+              mb: 2
             }}>
               <CalendarMonth />
               Current Season
             </Typography>
-            <Typography variant="h4" color="primary" gutterBottom sx={{ fontWeight: 'bold' }}>
+            <Typography variant="h4" color="#1e3a8a" gutterBottom sx={{ fontWeight: 'bold' }}>
               {currentSeason.name}
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -504,7 +568,10 @@ const BaseballAccountHome: React.FC = () => {
                 variant="contained"
                 startIcon={<ViewIcon />}
                 onClick={handleViewSeasons}
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  bgcolor: '#1e3a8a',
+                  '&:hover': { bgcolor: '#1e40af' }
+                }}
               >
                 Season Details
               </Button>
@@ -512,7 +579,14 @@ const BaseballAccountHome: React.FC = () => {
                 variant="outlined"
                 startIcon={<ScheduleIcon />}
                 onClick={handleViewSchedule}
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  borderColor: '#1e3a8a',
+                  color: '#1e3a8a',
+                  '&:hover': {
+                    bgcolor: '#1e3a8a',
+                    color: 'white'
+                  }
+                }}
               >
                 Full Schedule
               </Button>
@@ -528,61 +602,61 @@ const BaseballAccountHome: React.FC = () => {
           mb: 4 
         }}>
           <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white'
+            borderRadius: 2,
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            bgcolor: 'white'
           }}>
             <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
                 {leagues.length}
               </Typography>
-              <Typography variant="body1">
+              <Typography variant="body1" color="text.secondary">
                 Leagues
               </Typography>
             </CardContent>
           </Card>
           <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-            color: 'white'
+            borderRadius: 2,
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            bgcolor: 'white'
           }}>
             <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
                 {leagues.reduce((total, league) => total + league.teamCount, 0)}
               </Typography>
-              <Typography variant="body1">
+              <Typography variant="body1" color="text.secondary">
                 Teams
               </Typography>
             </CardContent>
           </Card>
           <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-            color: 'white'
+            borderRadius: 2,
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            bgcolor: 'white'
           }}>
             <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
                 {seasons.length}
               </Typography>
-              <Typography variant="body1">
+              <Typography variant="body1" color="text.secondary">
                 Seasons
               </Typography>
             </CardContent>
           </Card>
           <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-            color: 'white'
+            borderRadius: 2,
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            bgcolor: 'white'
           }}>
             <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
                 {new Date().getFullYear() - account.firstYear + 1}
               </Typography>
-              <Typography variant="body1">
+              <Typography variant="body1" color="text.secondary">
                 Years Active
               </Typography>
             </CardContent>
@@ -591,13 +665,14 @@ const BaseballAccountHome: React.FC = () => {
 
         {/* Recent Games */}
         {recentGames.length > 0 && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <Typography variant="h5" gutterBottom sx={{ 
               fontWeight: 'bold',
-              color: 'primary.main',
+              color: '#1e3a8a',
               display: 'flex',
               alignItems: 'center',
-              gap: 1
+              gap: 1,
+              mb: 3
             }}>
               <ScheduleIcon />
               Recent Games
@@ -610,10 +685,11 @@ const BaseballAccountHome: React.FC = () => {
               {recentGames.slice(0, 6).map((game) => (
                 <Card key={game.id} sx={{ 
                   borderRadius: 2,
-                  border: game.status === 'completed' ? '2px solid #4caf50' : 
-                          game.status === 'in_progress' ? '2px solid #ff9800' : '2px solid #e0e0e0'
+                  border: game.status === 'completed' ? '2px solid #10b981' : 
+                          game.status === 'in_progress' ? '2px solid #f59e0b' : '2px solid #e5e7eb',
+                  bgcolor: 'white'
                 }}>
-                  <CardContent>
+                  <CardContent sx={{ p: 2 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" color="text.secondary">
                         {new Date(game.date).toLocaleDateString()}
@@ -621,12 +697,16 @@ const BaseballAccountHome: React.FC = () => {
                       <Chip 
                         label={game.status.replace('_', ' ')} 
                         size="small"
-                        color={game.status === 'completed' ? 'success' : 
-                               game.status === 'in_progress' ? 'warning' : 'default'}
+                        sx={{
+                          bgcolor: game.status === 'completed' ? '#10b981' : 
+                                   game.status === 'in_progress' ? '#f59e0b' : '#6b7280',
+                          color: 'white',
+                          fontSize: '0.75rem'
+                        }}
                       />
                     </Box>
                     <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
                         {game.homeTeam} {game.homeScore} - {game.awayScore} {game.awayTeam}
                       </Typography>
                     </Box>
@@ -638,8 +718,8 @@ const BaseballAccountHome: React.FC = () => {
         )}
 
         {/* Contact & Links */}
-        <Paper sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+        <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
             Connect With Us
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -649,7 +729,10 @@ const BaseballAccountHome: React.FC = () => {
                 href={account.urls[0].url}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  bgcolor: '#1e3a8a',
+                  '&:hover': { bgcolor: '#1e40af' }
+                }}
               >
                 Visit Website
               </Button>
@@ -660,7 +743,14 @@ const BaseballAccountHome: React.FC = () => {
                 href={`https://twitter.com/${account.twitterAccountName.replace('@', '')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  borderColor: '#1e3a8a',
+                  color: '#1e3a8a',
+                  '&:hover': {
+                    bgcolor: '#1e3a8a',
+                    color: 'white'
+                  }
+                }}
               >
                 Twitter
               </Button>
@@ -671,7 +761,14 @@ const BaseballAccountHome: React.FC = () => {
                 href={account.facebookFanPage}
                 target="_blank"
                 rel="noopener noreferrer"
-                sx={{ borderRadius: 2 }}
+                sx={{ 
+                  borderColor: '#1e3a8a',
+                  color: '#1e3a8a',
+                  '&:hover': {
+                    bgcolor: '#1e3a8a',
+                    color: 'white'
+                  }
+                }}
               >
                 Facebook
               </Button>
