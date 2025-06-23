@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
@@ -57,17 +57,6 @@ const ROLE_NAME_TO_ID: Record<string, string> = {
   'PhotoAdmin': '05BEC889-3499-4DE1-B44F-4EED41412B3D'
 };
 
-// Role ID to name mapping
-const ROLE_ID_TO_NAME: Record<string, string> = {
-  '93DAC465-4C64-4422-B444-3CE79C549329': 'Administrator',
-  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': 'AccountAdmin',
-  'a87ea9a3-47e2-49d1-9e1e-c35358d1a677': 'AccountPhotoAdmin',
-  '672DDF06-21AC-4D7C-B025-9319CC69281A': 'LeagueAdmin',
-  '777D771B-1CBA-4126-B8F3-DD7F3478D40E': 'TeamAdmin',
-  '55FD3262-343F-4000-9561-6BB7F658DEB7': 'TeamPhotoAdmin',
-  '05BEC889-3499-4DE1-B44F-4EED41412B3D': 'PhotoAdmin'
-};
-
 // Role permissions mapping
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   '93DAC465-4C64-4422-B444-3CE79C549329': ['*'], // Administrator - all permissions
@@ -86,15 +75,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user && token) {
-      fetchUserRoles();
-    } else {
-      clearRoles();
-    }
-  }, [user, token]);
-
-  const fetchUserRoles = async (accountId?: string) => {
+  const fetchUserRoles = useCallback(async (accountId?: string) => {
     if (!token) return;
 
     setLoading(true);
@@ -122,7 +103,15 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (user && token) {
+      fetchUserRoles();
+    } else {
+      clearRoles();
+    }
+  }, [user, token, fetchUserRoles]);
 
   const clearRoles = () => {
     setUserRoles(null);

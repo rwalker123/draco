@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, 
   Typography, 
@@ -10,7 +10,6 @@ import {
   CardActions,
   Alert,
   CircularProgress,
-  Divider,
   Container,
   InputAdornment,
   IconButton
@@ -39,26 +38,10 @@ const Accounts: React.FC = () => {
   const navigate = useNavigate();
   const { accountId } = useParams();
 
-  // If accountId is provided, redirect to that account's home page
-  useEffect(() => {
-    if (accountId) {
-      navigate(`/account/${accountId}/home`);
-    }
-  }, [accountId, navigate]);
-
-  // Load user's accounts when logged in
-  useEffect(() => {
-    if (user && !accountId) {
-      loadUserAccounts();
-    }
-  }, [user, accountId]);
-
-  const loadUserAccounts = async () => {
+  const loadUserAccounts = useCallback(async () => {
     if (!user) return;
-    
     setLoading(true);
     setError(null);
-    
     try {
       const response = await fetch('/api/accounts/my-accounts', {
         method: 'GET',
@@ -83,7 +66,20 @@ const Accounts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, token]);
+
+  useEffect(() => {
+    if (user && !accountId) {
+      loadUserAccounts();
+    }
+  }, [user, accountId, loadUserAccounts]);
+
+  // If accountId is provided, redirect to that account's home page
+  useEffect(() => {
+    if (accountId) {
+      navigate(`/account/${accountId}/home`);
+    }
+  }, [accountId, navigate]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;

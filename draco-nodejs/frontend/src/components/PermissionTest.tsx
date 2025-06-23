@@ -1,12 +1,10 @@
 import React from 'react';
 import { Box, Typography, Paper, Button, Alert } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
 import { RequirePermission } from './ProtectedRoute';
+import { useRole } from '../context/RoleContext';
 
 const PermissionTest: React.FC = () => {
-  const { user } = useAuth();
-  const { hasPermission, hasRole } = useRole();
+  const { hasPermission } = useRole();
 
   return (
     <Box sx={{ p: 3 }}>
