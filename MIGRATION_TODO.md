@@ -759,7 +759,39 @@
 - [x] **Account Management API** - Complete RESTful API for account CRUD operations
 - [x] **Account Types & Affiliations** - Endpoints for managing account types and affiliations
 - [x] **Twitter Settings Management** - API for updating Twitter OAuth settings
-- [x] **URL Management** - Add/remove URLs for accounts
+- [x] **URL Management** - Comprehensive URL management system for accounts
+  - [x] **Backend API Implementation**
+    - [x] GET `/api/accounts/:accountId/urls` - Retrieve URLs for account
+    - [x] POST `/api/accounts/:accountId/urls` - Add URL to account with validation
+    - [x] PUT `/api/accounts/:accountId/urls/:urlId` - Update URL for account
+    - [x] DELETE `/api/accounts/:accountId/urls/:urlId` - Remove URL from account
+    - [x] GET `/api/accounts/by-domain` - Public endpoint for domain lookup
+    - [x] URL validation using validator.js library with TLD checking
+    - [x] Duplicate URL prevention and proper error handling
+  - [x] **Domain Routing System**
+    - [x] Backend middleware for domain-based routing
+    - [x] Frontend DomainRedirect component for automatic redirects
+    - [x] Support for custom domain mapping to accounts
+    - [x] Fallback to default accounts page for unmapped domains
+  - [x] **Frontend URL Management UI**
+    - [x] UrlManagement React component with Material-UI design
+    - [x] Add/Edit/Delete URL dialogs with proper validation
+    - [x] Protocol selection (HTTP/HTTPS) with dropdown
+    - [x] Domain-only input with real-time validation
+    - [x] Dialog-specific error handling and user feedback
+    - [x] Integration with AccountSettings page
+  - [x] **URL Validation & Security**
+    - [x] Domain validation using validator.js isFQDN
+    - [x] TLD validation against common domain extensions
+    - [x] Protocol validation and normalization
+    - [x] User-friendly error messages for validation failures
+    - [x] Proper URL normalization and storage
+  - [x] **Integration & UX**
+    - [x] Settings button in AccountHome for easy access
+    - [x] Tab-based settings interface with URL management tab
+    - [x] Loading states and error handling throughout
+    - [x] Responsive design for mobile and desktop
+    - [x] Proper state management and infinite loop prevention
 - [x] **User Role Assignment** - Assign roles to users within accounts
 - [x] **Account Boundary Enforcement** - Ensure users can only access their authorized accounts
 - [x] **Frontend Account Management** - React component with full CRUD functionality
