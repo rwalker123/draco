@@ -928,3 +928,36 @@
 - [ ] **Caching Strategy** - Implement caching for frequently accessed data
 - [ ] **Database Optimization** - Optimize database queries and indexes
 - [ ] **Frontend Optimization** - Optimize frontend performance and bundle size 
+
+### URL Management Testing
+- [ ] **Test Domain Routing with /etc/hosts**
+  - [ ] Add test domain entry to /etc/hosts (e.g., `127.0.0.1 test.example.com`)
+  - [ ] Add URL to account via URL management interface (e.g., `http://test.example.com`)
+  - [ ] Navigate to the custom domain in browser
+  - [ ] Verify automatic redirect to correct account home page
+  - [ ] Test with different protocols (HTTP/HTTPS)
+  - [ ] Test fallback behavior for unmapped domains
+  - [ ] Document testing process and results 
+
+## ✅ **Added URL Management Testing Task**
+
+### **Testing Steps:**
+1. **Configure /etc/hosts** - Add test domain mapping
+2. **Add URL via UI** - Use the URL management interface
+3. **Test Navigation** - Visit the custom domain
+4. **Verify Redirect** - Ensure proper account routing
+5. **Protocol Testing** - Test both HTTP and HTTPS
+6. **Fallback Testing** - Verify unmapped domain behavior
+7. **Documentation** - Record testing results
+
+### **Example Test Setup:**
+```bash
+# Add to /etc/hosts
+127.0.0.1 test.example.com
+127.0.0.1 demo.detroitmsbl.com
+
+# Then in the UI:
+# 1. Go to Account Settings > URL Management
+# 2. Add URL: http://test.example.com
+# 3. Navigate to http://test.example.com in browser
+# 4. Should redirect to the account home page 
