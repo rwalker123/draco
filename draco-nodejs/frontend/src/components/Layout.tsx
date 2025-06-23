@@ -66,7 +66,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogin = () => {
-    // Navigate to login while preserving the current location
+    // Navigate to sign in while preserving the current location
     navigate('/login', { state: { from: location } });
   };
 
@@ -108,7 +108,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </>
           ) : (
             <Button color="inherit" onClick={handleLogin}>
-              Login
+              Sign In
             </Button>
           )}
         </Toolbar>
