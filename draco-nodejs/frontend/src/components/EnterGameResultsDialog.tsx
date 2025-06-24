@@ -111,6 +111,18 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   const handleSave = async () => {
     if (!game) return;
 
+    // Validate forfeit scores
+    if (formData.gameStatus === 4) { // Forfeit
+      if (formData.homeScore === 0 && formData.awayScore === 0) {
+        setError('For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.');
+        return;
+      }
+      if (formData.homeScore > 0 && formData.awayScore > 0) {
+        setError('For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
 
