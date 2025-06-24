@@ -819,7 +819,6 @@ const BaseballAccountHome: React.FC = () => {
           }}>
             <BaseballScoreboard 
               accountId={accountId!} 
-              teamId={userTeams.length === 1 ? userTeams[0].id : undefined}
             />
           </Box>
         </Box>
