@@ -256,9 +256,9 @@ router.get('/scoreboard/public',
       // Helper function to get game status text
       const getGameStatusText = (status: number): string => {
         switch (status) {
-          case 0: return 'Scheduled';
+          case 0: return 'Incomplete';
           case 1: return 'Final';
-          case 2: return 'In Progress';
+          case 2: return 'Rainout';
           case 3: return 'Postponed';
           case 4: return 'Forfeit';
           case 5: return 'Did Not Report';
@@ -544,7 +544,7 @@ router.get('/scoreboard',
       // Helper function to get game status text
       const getGameStatusText = (status: number): string => {
         switch (status) {
-          case 0: return 'Scheduled';
+          case 0: return 'Incomplete';
           case 1: return 'Final';
           case 2: return 'In Progress';
           case 3: return 'Postponed';
@@ -881,7 +881,7 @@ router.put('/:gameId/results',
 // Helper function to get game status text
 const getGameStatusText = (status: number): string => {
   switch (status) {
-    case 0: return 'Scheduled';
+    case 0: return 'Incomplete';
     case 1: return 'Final';
     case 2: return 'In Progress';
     case 3: return 'Postponed';
