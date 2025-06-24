@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BaseballScoreboard from './BaseballScoreboard';
 
 interface Account {
   id: string;
@@ -230,26 +231,47 @@ const BaseballAccountHome: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '100vh' 
+      }}>
         <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
-          Loading baseball league information...
-        </Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/accounts')}
+          startIcon={<BaseballIcon />}
+        >
+          Back to Accounts
+        </Button>
       </Container>
     );
   }
 
-  if (error || !account) {
+  if (!account) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">
-          {error || 'Account not found'}
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Account not found
         </Alert>
-        <Box sx={{ mt: 2 }}>
-          <Button variant="contained" onClick={() => navigate('/accounts')}>
-            Back to Accounts
-          </Button>
-        </Box>
+        <Button
+          variant="outlined"
+          onClick={() => navigate('/accounts')}
+          startIcon={<BaseballIcon />}
+        >
+          Back to Accounts
+        </Button>
       </Container>
     );
   }
@@ -262,8 +284,8 @@ const BaseballAccountHome: React.FC = () => {
       background: '#f8f9fa',
       py: 3
     }}>
-      <Container maxWidth="lg">
-        {/* Hero Section */}
+      <Container maxWidth="xl">
+        {/* Hero Section - Full Width */}
         <Paper sx={{ 
           p: 4, 
           mb: 4, 
@@ -434,347 +456,373 @@ const BaseballAccountHome: React.FC = () => {
           </Box>
         </Paper>
 
-        {/* User Teams Section */}
-        {user && userTeams.length > 0 && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Typography variant="h5" gutterBottom sx={{ 
-              fontWeight: 'bold',
-              color: '#1e3a8a',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mb: 3
-            }}>
-              <PersonIcon />
-              My Teams
-            </Typography>
-            <Box sx={{ 
-              display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' },
-              gap: 3 
-            }}>
-              {userTeams.map((team) => (
-                <Card key={team.id} sx={{ 
-                  height: '100%',
-                  borderRadius: 2,
-                  border: '1px solid #e5e7eb',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                    borderColor: '#1e3a8a'
-                  }
-                }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                      <Avatar sx={{ 
-                        bgcolor: '#1e3a8a',
-                        mr: 2,
-                        width: 48,
-                        height: 48
-                      }}>
-                        <BaseballIcon />
-                      </Avatar>
-                      <Box>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
-                          {team.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {team.leagueName}
-                        </Typography>
-                      </Box>
-                    </Box>
-                    
-                    {team.record && (
-                      <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
-                        <strong>Record:</strong> {team.record}
-                      </Typography>
-                    )}
-                    
-                    {team.standing && (
-                      <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
-                        <strong>Standing:</strong> {team.standing}
-                      </Typography>
-                    )}
-
-                    {team.nextGame && (
-                      <Box sx={{ 
-                        mt: 2, 
-                        p: 2, 
-                        bgcolor: '#f9fafb', 
-                        borderRadius: 1,
-                        border: '1px solid #e5e7eb'
-                      }}>
-                        <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
-                          Next Game
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          vs {team.nextGame.opponent}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {new Date(team.nextGame.date).toLocaleDateString()}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {team.nextGame.location}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={() => handleViewTeam(team.id)}
-                      sx={{ 
-                        mt: 2, 
-                        borderColor: '#1e3a8a',
-                        color: '#1e3a8a',
-                        '&:hover': {
-                          bgcolor: '#1e3a8a',
-                          color: 'white'
-                        }
-                      }}
-                    >
-                      View Team
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-          </Paper>
-        )}
-
-        {/* Current Season Info */}
-        {currentSeason && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Typography variant="h5" gutterBottom sx={{ 
-              fontWeight: 'bold',
-              color: '#1e3a8a',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mb: 2
-            }}>
-              <CalendarMonth />
-              Current Season
-            </Typography>
-            <Typography variant="h4" color="#1e3a8a" gutterBottom sx={{ fontWeight: 'bold' }}>
-              {currentSeason.name}
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              The {currentSeason.name} season is in full swing! Check out the latest schedules, standings, and statistics.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button
-                variant="contained"
-                startIcon={<ViewIcon />}
-                onClick={handleViewSeasons}
-                sx={{ 
-                  bgcolor: '#1e3a8a',
-                  '&:hover': { bgcolor: '#1e40af' }
-                }}
-              >
-                Season Details
-              </Button>
-              <Button
-                variant="outlined"
-                startIcon={<ScheduleIcon />}
-                onClick={handleViewSchedule}
-                sx={{ 
-                  borderColor: '#1e3a8a',
-                  color: '#1e3a8a',
-                  '&:hover': {
-                    bgcolor: '#1e3a8a',
-                    color: 'white'
-                  }
-                }}
-              >
-                Full Schedule
-              </Button>
-            </Box>
-          </Paper>
-        )}
-
-        {/* Quick Stats */}
+        {/* Main Content Grid - Progressive Layout */}
         <Box sx={{ 
           display: 'grid', 
-          gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
-          gap: 3,
-          mb: 4 
+          gridTemplateColumns: { 
+            xs: '1fr', 
+            lg: '1fr 400px' 
+          },
+          gap: 4,
+          alignItems: 'start'
         }}>
-          <Card sx={{ 
-            borderRadius: 2,
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            bgcolor: 'white'
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
-                {leagues.length}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Leagues
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card sx={{ 
-            borderRadius: 2,
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            bgcolor: 'white'
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
-                {leagues.reduce((total, league) => total + league.teamCount, 0)}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Teams
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card sx={{ 
-            borderRadius: 2,
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            bgcolor: 'white'
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
-                {seasons.length}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Seasons
-              </Typography>
-            </CardContent>
-          </Card>
-          <Card sx={{ 
-            borderRadius: 2,
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-            bgcolor: 'white'
-          }}>
-            <CardContent sx={{ textAlign: 'center', py: 3 }}>
-              <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
-                {new Date().getFullYear() - account.firstYear + 1}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Years Active
-              </Typography>
-            </CardContent>
-          </Card>
-        </Box>
+          {/* Left Column - Main Content */}
+          <Box>
+            {/* User Teams Section */}
+            {user && userTeams.length > 0 && (
+              <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <Typography variant="h5" gutterBottom sx={{ 
+                  fontWeight: 'bold',
+                  color: '#1e3a8a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 3
+                }}>
+                  <PersonIcon />
+                  My Teams
+                </Typography>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+                  gap: 3 
+                }}>
+                  {userTeams.map((team) => (
+                    <Card key={team.id} sx={{ 
+                      height: '100%',
+                      borderRadius: 2,
+                      border: '1px solid #e5e7eb',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+                        borderColor: '#1e3a8a'
+                      }
+                    }}>
+                      <CardContent sx={{ p: 3 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                          <Avatar sx={{ 
+                            bgcolor: '#1e3a8a',
+                            mr: 2,
+                            width: 48,
+                            height: 48
+                          }}>
+                            <BaseballIcon />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                              {team.name}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {team.leagueName}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        
+                        {team.record && (
+                          <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
+                            <strong>Record:</strong> {team.record}
+                          </Typography>
+                        )}
+                        
+                        {team.standing && (
+                          <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
+                            <strong>Standing:</strong> {team.standing}
+                          </Typography>
+                        )}
 
-        {/* Recent Games */}
-        {recentGames.length > 0 && (
-          <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Typography variant="h5" gutterBottom sx={{ 
-              fontWeight: 'bold',
-              color: '#1e3a8a',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              mb: 3
-            }}>
-              <ScheduleIcon />
-              Recent Games
-            </Typography>
+                        {team.nextGame && (
+                          <Box sx={{ 
+                            mt: 2, 
+                            p: 2, 
+                            bgcolor: '#f9fafb', 
+                            borderRadius: 1,
+                            border: '1px solid #e5e7eb'
+                          }}>
+                            <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                              Next Game
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              vs {team.nextGame.opponent}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {new Date(team.nextGame.date).toLocaleDateString()}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {team.nextGame.location}
+                            </Typography>
+                          </Box>
+                        )}
+
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleViewTeam(team.id)}
+                          sx={{ 
+                            mt: 2, 
+                            borderColor: '#1e3a8a',
+                            color: '#1e3a8a',
+                            '&:hover': {
+                              bgcolor: '#1e3a8a',
+                              color: 'white'
+                            }
+                          }}
+                        >
+                          View Team
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              </Paper>
+            )}
+
+            {/* Current Season Info */}
+            {currentSeason && (
+              <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <Typography variant="h5" gutterBottom sx={{ 
+                  fontWeight: 'bold',
+                  color: '#1e3a8a',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 2
+                }}>
+                  <CalendarMonth />
+                  Current Season
+                </Typography>
+                <Typography variant="h4" color="#1e3a8a" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  {currentSeason.name}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                  The {currentSeason.name} season is in full swing! Check out the latest schedules, standings, and statistics.
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<ViewIcon />}
+                    onClick={handleViewSeasons}
+                    sx={{ 
+                      bgcolor: '#1e3a8a',
+                      '&:hover': { bgcolor: '#1e40af' }
+                    }}
+                  >
+                    Season Details
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ScheduleIcon />}
+                    onClick={handleViewSchedule}
+                    sx={{ 
+                      borderColor: '#1e3a8a',
+                      color: '#1e3a8a',
+                      '&:hover': {
+                        bgcolor: '#1e3a8a',
+                        color: 'white'
+                      }
+                    }}
+                  >
+                    Full Schedule
+                  </Button>
+                </Box>
+              </Paper>
+            )}
+
+            {/* Quick Stats */}
             <Box sx={{ 
               display: 'grid', 
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-              gap: 2 
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 3,
+              mb: 4 
             }}>
-              {recentGames.slice(0, 6).map((game) => (
-                <Card key={game.id} sx={{ 
-                  borderRadius: 2,
-                  border: game.status === 'completed' ? '2px solid #10b981' : 
-                          game.status === 'in_progress' ? '2px solid #f59e0b' : '2px solid #e5e7eb',
-                  bgcolor: 'white'
-                }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {new Date(game.date).toLocaleDateString()}
-                      </Typography>
-                      <Chip 
-                        label={game.status.replace('_', ' ')} 
-                        size="small"
-                        sx={{
-                          bgcolor: game.status === 'completed' ? '#10b981' : 
-                                   game.status === 'in_progress' ? '#f59e0b' : '#6b7280',
-                          color: 'white',
-                          fontSize: '0.75rem'
-                        }}
-                      />
-                    </Box>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
-                        {game.homeTeam} {game.homeScore} - {game.awayScore} {game.awayTeam}
-                      </Typography>
-                    </Box>
-                  </CardContent>
-                </Card>
-              ))}
+              <Card sx={{ 
+                borderRadius: 2,
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                bgcolor: 'white'
+              }}>
+                <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                    {leagues.length}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Leagues
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card sx={{ 
+                borderRadius: 2,
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                bgcolor: 'white'
+              }}>
+                <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                    {leagues.reduce((total, league) => total + league.teamCount, 0)}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Teams
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card sx={{ 
+                borderRadius: 2,
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                bgcolor: 'white'
+              }}>
+                <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                    {seasons.length}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Seasons
+                  </Typography>
+                </CardContent>
+              </Card>
+              <Card sx={{ 
+                borderRadius: 2,
+                border: '1px solid #e5e7eb',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                bgcolor: 'white'
+              }}>
+                <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                    {new Date().getFullYear() - account.firstYear + 1}
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    Years Active
+                  </Typography>
+                </CardContent>
+              </Card>
             </Box>
-          </Paper>
-        )}
 
-        {/* Contact & Links */}
-        <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
-            Connect With Us
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {account.urls.length > 0 && (
-              <Button
-                variant="contained"
-                href={account.urls[0].url}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ 
-                  bgcolor: '#1e3a8a',
-                  '&:hover': { bgcolor: '#1e40af' }
-                }}
-              >
-                Visit Website
-              </Button>
-            )}
-            {account.twitterAccountName && (
-              <Button
-                variant="outlined"
-                href={`https://twitter.com/${account.twitterAccountName.replace('@', '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ 
-                  borderColor: '#1e3a8a',
+            {/* Recent Games */}
+            {recentGames.length > 0 && (
+              <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                <Typography variant="h5" gutterBottom sx={{ 
+                  fontWeight: 'bold',
                   color: '#1e3a8a',
-                  '&:hover': {
-                    bgcolor: '#1e3a8a',
-                    color: 'white'
-                  }
-                }}
-              >
-                Twitter
-              </Button>
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  mb: 3
+                }}>
+                  <ScheduleIcon />
+                  Recent Games
+                </Typography>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                  gap: 2 
+                }}>
+                  {recentGames.slice(0, 6).map((game) => (
+                    <Card key={game.id} sx={{ 
+                      borderRadius: 2,
+                      border: game.status === 'completed' ? '2px solid #10b981' : 
+                              game.status === 'in_progress' ? '2px solid #f59e0b' : '2px solid #e5e7eb',
+                      bgcolor: 'white'
+                    }}>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {new Date(game.date).toLocaleDateString()}
+                          </Typography>
+                          <Chip 
+                            label={game.status?.replace('_', ' ') || game.status || 'Unknown'} 
+                            size="small"
+                            sx={{
+                              bgcolor: game.status === 'completed' ? '#10b981' : 
+                                       game.status === 'in_progress' ? '#f59e0b' : '#6b7280',
+                              color: 'white',
+                              fontSize: '0.75rem'
+                            }}
+                          />
+                        </Box>
+                        <Box sx={{ textAlign: 'center' }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                            {game.homeTeam} {game.homeScore} - {game.awayScore} {game.awayTeam}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              </Paper>
             )}
-            {account.facebookFanPage && (
-              <Button
-                variant="outlined"
-                href={account.facebookFanPage}
-                target="_blank"
-                rel="noopener noreferrer"
-                sx={{ 
-                  borderColor: '#1e3a8a',
-                  color: '#1e3a8a',
-                  '&:hover': {
-                    bgcolor: '#1e3a8a',
-                    color: 'white'
-                  }
-                }}
-              >
-                Facebook
-              </Button>
-            )}
+
+            {/* Contact & Links */}
+            <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                Connect With Us
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                {account.urls.length > 0 && (
+                  <Button
+                    variant="contained"
+                    href={account.urls[0].url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      bgcolor: '#1e3a8a',
+                      '&:hover': { bgcolor: '#1e40af' }
+                    }}
+                  >
+                    Visit Website
+                  </Button>
+                )}
+                {account.twitterAccountName && (
+                  <Button
+                    variant="outlined"
+                    href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      borderColor: '#1e3a8a',
+                      color: '#1e3a8a',
+                      '&:hover': {
+                        bgcolor: '#1e3a8a',
+                        color: 'white'
+                      }
+                    }}
+                  >
+                    Twitter
+                  </Button>
+                )}
+                {account.facebookFanPage && (
+                  <Button
+                    variant="outlined"
+                    href={account.facebookFanPage}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ 
+                      borderColor: '#1e3a8a',
+                      color: '#1e3a8a',
+                      '&:hover': {
+                        bgcolor: '#1e3a8a',
+                        color: 'white'
+                      }
+                    }}
+                  >
+                    Facebook
+                  </Button>
+                )}
+              </Box>
+            </Paper>
           </Box>
-        </Paper>
+
+          {/* Right Column - Scoreboard */}
+          <Box sx={{ 
+            position: { lg: 'sticky' },
+            top: { lg: 24 },
+            height: 'fit-content'
+          }}>
+            <BaseballScoreboard 
+              accountId={accountId!} 
+              teamId={userTeams.length === 1 ? userTeams[0].id : undefined}
+            />
+          </Box>
+        </Box>
       </Container>
     </Box>
   );

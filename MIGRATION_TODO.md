@@ -972,3 +972,66 @@
 # 2. Add URL: http://test.example.com
 # 3. Navigate to http://test.example.com in browser
 # 4. Should redirect to the account home page 
+```
+
+- [x] Implement modern, grouped scoreboard API endpoints for baseball (scoreboard, recent-games) in Node.js backend
+
+# Migration TODO
+
+## Completed
+- [x] Basic Node.js backend setup
+- [x] React frontend setup
+- [x] Authentication system
+- [x] Account management
+- [x] Baseball scoreboard component
+- [x] Baseball menu integration
+- [x] Responsive design for baseball menu
+
+## TODO
+
+### High Priority
+- [ ] **Fix timezone handling in games database**
+  - **Problem**: Database currently stores game times in local time instead of UTC
+  - **Current workaround**: Frontend removes "Z" from ISO string to treat as local time
+  - **Proper solution**: 
+    1. Create database migration to convert existing game times from local to UTC
+    2. Update backend to store new games in UTC
+    3. Update frontend to use proper timezone conversion with account timezoneId
+    4. Test with different timezones to ensure accuracy
+  - **Files affected**: 
+    - Database: `leagueschedule` table
+    - Backend: `games.ts` routes
+    - Frontend: `BaseballScoreboard.tsx`
+  - **Priority**: High (affects data integrity and user experience)
+
+- [ ] **Test game score and recap functionality**
+  - **Purpose**: Verify that the scoreboard correctly displays game scores and recaps
+  - **Testing needed**:
+    1. Enter game scores through the admin interface
+    2. Add game recaps through the admin interface
+    3. Verify scores appear correctly on scoreboard
+    4. Verify recaps appear in "Recent Recaps" section
+    5. Test recap modal functionality
+  - **Priority**: High (core functionality validation)
+
+- [ ] **Implement schedule management features**
+  - **Purpose**: Allow admins to create, edit, and manage game schedules
+  - **Features needed**:
+    1. Create new games with date, time, teams, field
+    2. Edit existing games
+    3. Delete/cancel games
+    4. Bulk schedule operations
+    5. Schedule import/export
+    6. Field availability management
+  - **Priority**: High (essential for league operations)
+
+### Medium Priority
+- [ ] Add more baseball-specific features
+- [ ] Implement golf scoreboard
+- [ ] Add user role management
+- [ ] Implement team management features
+
+### Low Priority
+- [ ] Performance optimizations
+- [ ] Additional UI improvements
+- [ ] Enhanced error handling
