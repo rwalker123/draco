@@ -120,6 +120,20 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [targetDivisionSeason, setTargetDivisionSeason] = useState<DivisionSeason | null>(null);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
+  // Delete league state
+  const [deleteLeagueDialogOpen, setDeleteLeagueDialogOpen] = useState(false);
+  const [leagueToDelete, setLeagueToDelete] = useState<LeagueSeason | null>(null);
+
+  // Delete team state
+  const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<TeamSeason | null>(null);
+  const [teamToDeleteLeagueSeason, setTeamToDeleteLeagueSeason] = useState<LeagueSeason | null>(null);
+
+  // Create team state
+  const [createTeamDialogOpen, setCreateTeamDialogOpen] = useState(false);
+  const [teamToCreateLeagueSeason, setTeamToCreateLeagueSeason] = useState<LeagueSeason | null>(null);
+  const [newTeamName, setNewTeamName] = useState('');
+
   // Get available divisions (excluding those already assigned to the selected league)
   const availableDivisions = useMemo(() => {
     if (!selectedLeagueSeason) return divisions;
@@ -313,26 +327,33 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   };
 
-  // Handler to open assign team dialog
-  const openAssignTeamDialog = (teamSeason: TeamSeason, leagueSeason: LeagueSeason) => {
-    if (!teamSeason || !leagueSeason) {
-      console.error('Invalid parameters for openAssignTeamDialog:', { teamSeason, leagueSeason });
-      return;
+  // Direct assignment function for single division scenario
+  const handleAssignTeamToDivisionDirectly = async (teamSeason: TeamSeason, leagueSeason: LeagueSeason, divisionSeason: DivisionSeason) => {
+    if (!accountId || !token) return;
+
+    setFormLoading(true);
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/assign-division`,
+        {
+          divisionSeasonId: divisionSeason.id
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(`Team "${teamSeason.name}" automatically assigned to division "${divisionSeason.divisionName}"`);
+        fetchLeagueSeasons(); // Refresh data
+      }
+    } catch (error: any) {
+      console.error('Error assigning team to division:', error);
+      setError(error.response?.data?.message || 'Failed to assign team to division');
+    } finally {
+      setFormLoading(false);
     }
-    setSelectedTeamSeason(teamSeason);
-    setSelectedTeamLeagueSeason(leagueSeason);
-    setTargetDivisionSeason(null);
-    setError(null);
-    
-    // Ensure the accordion for this league is expanded
-    if (!expandedAccordions.has(leagueSeason.id)) {
-      setExpandedAccordions(prev => new Set([...Array.from(prev), leagueSeason.id]));
-    }
-    
-    setAssignTeamDialogOpen(true);
   };
 
-  // Handler to assign team to division
+  // Handler to assign team to division (used by dialog)
   const handleAssignTeamToDivision = async () => {
     if (!accountId || !token || !selectedTeamSeason || !targetDivisionSeason || !selectedTeamLeagueSeason) return;
 
@@ -357,6 +378,34 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     } finally {
       setFormLoading(false);
     }
+  };
+
+  // Handler to open assign team dialog
+  const openAssignTeamDialog = (teamSeason: TeamSeason, leagueSeason: LeagueSeason) => {
+    if (!teamSeason || !leagueSeason) {
+      console.error('Invalid parameters for openAssignTeamDialog:', { teamSeason, leagueSeason });
+      return;
+    }
+
+    // Check if there's only one division - if so, assign automatically
+    if (leagueSeason.divisions.length === 1) {
+      const singleDivision = leagueSeason.divisions[0];
+      handleAssignTeamToDivisionDirectly(teamSeason, leagueSeason, singleDivision);
+      return;
+    }
+
+    // If multiple divisions, show the dialog as before
+    setSelectedTeamSeason(teamSeason);
+    setSelectedTeamLeagueSeason(leagueSeason);
+    setTargetDivisionSeason(null);
+    setError(null);
+    
+    // Ensure the accordion for this league is expanded
+    if (!expandedAccordions.has(leagueSeason.id)) {
+      setExpandedAccordions(prev => new Set([...Array.from(prev), leagueSeason.id]));
+    }
+    
+    setAssignTeamDialogOpen(true);
   };
 
   // Handler for accordion expansion
@@ -396,6 +445,161 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   // Handler to navigate to team roster management
   const handleManageRoster = (teamSeason: TeamSeason) => {
     navigate(`/account/${accountId}/seasons/${season.id}/teams/${teamSeason.id}/roster`);
+  };
+
+  // Handler to open delete league dialog
+  const openDeleteLeagueDialog = (leagueSeason: LeagueSeason) => {
+    setLeagueToDelete(leagueSeason);
+    setError(null);
+    setDeleteLeagueDialogOpen(true);
+  };
+
+  // Handler to delete league
+  const handleDeleteLeague = async () => {
+    if (!accountId || !token || !leagueToDelete) return;
+
+    setFormLoading(true);
+    try {
+      // First, remove the league from this season (delete leagueseason record)
+      const removeFromSeasonResponse = await axios.delete(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueToDelete.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (removeFromSeasonResponse.data.success) {
+        // Now try to delete the league definition (may fail if used in other seasons)
+        try {
+          const deleteLeagueResponse = await axios.delete(
+            `${API_BASE_URL}/api/accounts/${accountId}/leagues/${leagueToDelete.leagueId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (deleteLeagueResponse.data.success) {
+            setSuccessMessage(`League "${leagueToDelete.leagueName}" has been completely deleted from the system.`);
+          } else {
+            setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. The league definition was kept because it's used in other seasons.`);
+          }
+        } catch (leagueDeleteError: any) {
+          // If league deletion fails because it's used in other seasons, that's expected
+          if (leagueDeleteError.response?.status === 400 && 
+              leagueDeleteError.response?.data?.message?.includes('associated with seasons')) {
+            setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. The league definition was kept because it's used in other seasons.`);
+          } else {
+            // For other errors, show a warning but still consider it a success since the main goal was achieved
+            setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. There was an issue deleting the league definition, but it may still be removed later.`);
+            console.warn('League definition deletion failed:', leagueDeleteError);
+          }
+        }
+
+        setDeleteLeagueDialogOpen(false);
+        setLeagueToDelete(null);
+        fetchLeagueSeasons(); // Refresh data
+      } else {
+        setError(removeFromSeasonResponse.data.message || 'Failed to remove league from season');
+      }
+    } catch (error: any) {
+      console.error('Error removing league from season:', error);
+      setError(error.response?.data?.message || 'Failed to remove league from season');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handler to open delete team dialog
+  const openDeleteTeamDialog = (teamSeason: TeamSeason, leagueSeason: LeagueSeason) => {
+    setTeamToDelete(teamSeason);
+    setTeamToDeleteLeagueSeason(leagueSeason);
+    setError(null);
+    setDeleteTeamDialogOpen(true);
+  };
+
+  // Handler to delete team
+  const handleDeleteTeam = async () => {
+    if (!accountId || !token || !teamToDelete || !teamToDeleteLeagueSeason) return;
+
+    setFormLoading(true);
+    try {
+      // First, remove the team from this season (delete teamsseason record)
+      const removeFromSeasonResponse = await axios.delete(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/teams/${teamToDelete.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (removeFromSeasonResponse.data.success) {
+        // Now try to delete the team definition (may fail if used in other seasons)
+        try {
+          const deleteTeamResponse = await axios.delete(
+            `${API_BASE_URL}/api/accounts/${accountId}/teams/${teamToDelete.teamId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          if (deleteTeamResponse.data.success) {
+            setSuccessMessage(`Team "${teamToDelete.name}" has been completely deleted from the system.`);
+          } else {
+            setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. The team definition was kept because it's used in other seasons.`);
+          }
+        } catch (teamDeleteError: any) {
+          // If team deletion fails because it's used in other seasons, that's expected
+          if (teamDeleteError.response?.status === 400 && 
+              teamDeleteError.response?.data?.message?.includes('related data')) {
+            setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. The team definition was kept because it's used in other seasons.`);
+          } else {
+            // For other errors, show a warning but still consider it a success since the main goal was achieved
+            setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. There was an issue deleting the team definition, but it may still be removed later.`);
+            console.warn('Team definition deletion failed:', teamDeleteError);
+          }
+        }
+
+        setDeleteTeamDialogOpen(false);
+        setTeamToDelete(null);
+        setTeamToDeleteLeagueSeason(null);
+        fetchLeagueSeasons(); // Refresh data
+      } else {
+        setError(removeFromSeasonResponse.data.message || 'Failed to remove team from season');
+      }
+    } catch (error: any) {
+      console.error('Error removing team from season:', error);
+      setError(error.response?.data?.message || 'Failed to remove team from season');
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Handler to open create team dialog
+  const openCreateTeamDialog = (leagueSeason: LeagueSeason) => {
+    setTeamToCreateLeagueSeason(leagueSeason);
+    setNewTeamName('');
+    setError(null);
+    setCreateTeamDialogOpen(true);
+  };
+
+  // Handler to create team
+  const handleCreateTeam = async () => {
+    if (!accountId || !token || !teamToCreateLeagueSeason || !newTeamName.trim()) return;
+
+    setFormLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${teamToCreateLeagueSeason.id}/teams`,
+        { name: newTeamName.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(response.data.data.message);
+        setCreateTeamDialogOpen(false);
+        setTeamToCreateLeagueSeason(null);
+        setNewTeamName('');
+        fetchLeagueSeasons(); // Refresh data
+      } else {
+        setError(response.data.message || 'Failed to create team');
+      }
+    } catch (error: any) {
+      console.error('Error creating team:', error);
+      setError(error.response?.data?.message || 'Failed to create team');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   if (loading) {
@@ -494,6 +698,29 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                   >
                     Add Division
                   </Button>
+                  <Button
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openCreateTeamDialog(leagueSeason);
+                    }}
+                  >
+                    Create Team
+                  </Button>
+                  <Tooltip title="Remove League from Season">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openDeleteLeagueDialog(leagueSeason);
+                      }}
+                      disabled={formLoading}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
               </Box>
             </AccordionSummary>
@@ -563,6 +790,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                       <DeleteIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
+                                  <Tooltip title="Remove Team from Season">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => openDeleteTeamDialog(team, leagueSeason)}
+                                      disabled={formLoading}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
                                 </Box>
                               ))}
                             </Box>
@@ -620,6 +857,16 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                                   disabled={formLoading}
                                 >
                                   <GroupIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Remove Team from Season">
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => openDeleteTeamDialog(team, leagueSeason)}
+                                  disabled={formLoading}
+                                >
+                                  <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </Box>
@@ -860,6 +1107,127 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             disabled={formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions.length}
           >
             {formLoading ? <CircularProgress size={20} /> : 'Assign Team'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete League Confirmation Dialog */}
+      <Dialog open={deleteLeagueDialogOpen} onClose={() => setDeleteLeagueDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Remove League from Season</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to remove the league <strong>"{leagueToDelete?.leagueName}"</strong> from this season?
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action will remove the league from this season and all its associated data (divisions, teams, etc.). The system will also attempt to delete the league definition if it's not used in other seasons.
+          </Alert>
+          {leagueToDelete && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                This league currently has:
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                • {leagueToDelete.divisions.length} divisions
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                • {leagueToDelete.unassignedTeams.length} unassigned teams
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteLeagueDialogOpen(false)} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteLeague} 
+            variant="contained" 
+            color="error"
+            disabled={formLoading}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Remove League'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Team Dialog */}
+      <Dialog open={createTeamDialogOpen} onClose={() => setCreateTeamDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Create New Team</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Creating team for league: <strong>{teamToCreateLeagueSeason?.leagueName}</strong>
+          </Typography>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Team Name"
+            fullWidth
+            variant="outlined"
+            value={newTeamName}
+            onChange={(e) => setNewTeamName(e.target.value)}
+            disabled={formLoading}
+            sx={{ mb: 2 }}
+            helperText="Enter a unique name for the new team"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateTeamDialogOpen(false)} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleCreateTeam} 
+            variant="contained" 
+            disabled={formLoading || !newTeamName.trim()}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Create Team'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Team Confirmation Dialog */}
+      <Dialog open={deleteTeamDialogOpen} onClose={() => setDeleteTeamDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Remove Team from Season</DialogTitle>
+        <DialogContent>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+              {error}
+            </Alert>
+          )}
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Are you sure you want to remove the team <strong>"{teamToDelete?.name}"</strong> from this season?
+          </Typography>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action will remove the team from this season and all its associated data (divisions, etc.). The system will also attempt to delete the team definition if it's not used in other seasons.
+          </Alert>
+          {teamToDelete && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                This team will be removed from the current season.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTeamDialogOpen(false)} disabled={formLoading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteTeam} 
+            variant="contained" 
+            color="error"
+            disabled={formLoading}
+          >
+            {formLoading ? <CircularProgress size={20} /> : 'Remove Team'}
           </Button>
         </DialogActions>
       </Dialog>
