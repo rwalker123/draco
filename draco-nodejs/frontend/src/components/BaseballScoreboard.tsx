@@ -317,7 +317,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 size="small"
                 title={game.awayTeamName}
               >
-                {game.awayTeamName.length > 10 ? `${game.awayTeamName.substring(0, 10)}...` : game.awayTeamName}
+                {game.awayTeamName}
               </Button>
               <Button
                 href={`/baseball/team/${game.homeTeamId}`}
@@ -338,7 +338,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 size="small"
                 title={game.homeTeamName}
               >
-                {game.homeTeamName.length > 10 ? `${game.homeTeamName.substring(0, 10)}...` : game.homeTeamName}
+                {game.homeTeamName}
               </Button>
             </Box>
             {game.gameStatusText !== 'Incomplete' && (
