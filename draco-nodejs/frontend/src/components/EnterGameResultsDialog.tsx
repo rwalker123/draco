@@ -266,6 +266,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 type="number"
                 value={formData.awayScore}
                 onChange={(e) => handleInputChange('awayScore', parseInt(e.target.value) || 0)}
+                inputProps={{ min: 0 }}
                 size="small"
                 sx={{
                   width: '80px',
@@ -297,6 +298,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 type="number"
                 value={formData.homeScore}
                 onChange={(e) => handleInputChange('homeScore', parseInt(e.target.value) || 0)}
+                inputProps={{ min: 0 }}
                 size="small"
                 sx={{
                   width: '80px',
