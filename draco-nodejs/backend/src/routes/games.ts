@@ -752,6 +752,132 @@ router.get('/:gameId',
   }
 );
 
+/**
+ * PUT /api/accounts/:accountId/games/:gameId/results
+ * Update game results (scores, status, notifications)
+ */
+router.put('/:gameId/results',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const gameId = BigInt(req.params.gameId);
+      const { homeScore, awayScore, gameStatus, emailPlayers, postToTwitter, postToBluesky, postToFacebook } = req.body;
+
+      // Validate input
+      if (typeof homeScore !== 'number' || typeof awayScore !== 'number' || typeof gameStatus !== 'number') {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid input: homeScore, awayScore, and gameStatus must be numbers'
+        });
+        return;
+      }
+
+      if (homeScore < 0 || awayScore < 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Scores cannot be negative'
+        });
+        return;
+      }
+
+      if (gameStatus < 0 || gameStatus > 5) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid game status'
+        });
+        return;
+      }
+
+      // Check if game exists and belongs to this account
+      const game = await prisma.leagueschedule.findFirst({
+        where: {
+          id: gameId,
+          leagueseason: {
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          },
+          availablefields: {
+            select: {
+              name: true,
+              shortname: true
+            }
+          }
+        }
+      });
+
+      if (!game) {
+        res.status(404).json({
+          success: false,
+          message: 'Game not found'
+        });
+        return;
+      }
+
+      // Update game results
+      await prisma.leagueschedule.update({
+        where: { id: gameId },
+        data: {
+          hscore: homeScore,
+          vscore: awayScore,
+          gamestatus: gameStatus
+        }
+      });
+
+      // Handle notifications and social media posts
+      const notifications = [];
+      
+      if (emailPlayers) {
+        notifications.push('Email players about game results');
+        // TODO: Implement email functionality
+      }
+      
+      if (postToTwitter) {
+        notifications.push('Post to Twitter');
+        // TODO: Implement Twitter posting
+      }
+      
+      if (postToBluesky) {
+        notifications.push('Post to Bluesky');
+        // TODO: Implement Bluesky posting
+      }
+      
+      if (postToFacebook) {
+        notifications.push('Post to Facebook');
+        // TODO: Implement Facebook posting
+      }
+
+      res.json({
+        success: true,
+        message: 'Game results updated successfully',
+        data: {
+          gameId: gameId.toString(),
+          homeScore,
+          awayScore,
+          gameStatus,
+          notifications
+        }
+      });
+    } catch (error) {
+      console.error('Error updating game results:', error);
+      next(error);
+    }
+  }
+);
+
 // Helper function to get game status text
 const getGameStatusText = (status: number): string => {
   switch (status) {
