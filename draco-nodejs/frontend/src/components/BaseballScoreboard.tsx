@@ -7,9 +7,12 @@ import {
   Button,
   Modal,
   CircularProgress,
-  Chip
+  Chip,
+  IconButton,
+  Tooltip
 } from '@mui/material';
-import { SportsBaseball as SportsBaseballIcon } from '@mui/icons-material';
+import { SportsBaseball as SportsBaseballIcon, Edit as EditIcon } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 
 interface GameRecap {
   teamId: string;
@@ -30,6 +33,7 @@ interface Game {
   leagueName: string;
   fieldId: string | null;
   fieldName: string | null;
+  fieldShortName: string | null;
   hasGameRecap: boolean;
   gameRecaps: GameRecap[];
 }
@@ -53,10 +57,11 @@ const groupLabels: Record<keyof ScoreboardData, string> = {
 
 const statusColor = (status: number) => {
   switch (status) {
-    case 1: return 'primary'; // Final
+    case 0: return 'default'; // Scheduled
+    case 1: return 'success'; // Final
     case 2: return 'warning'; // In Progress
-    case 3: return 'info'; // Postponed
-    case 4: return 'secondary'; // Forfeit
+    case 3: return 'error'; // Postponed
+    case 4: return 'error'; // Forfeit
     case 5: return 'default'; // Did Not Report
     default: return 'default';
   }
@@ -67,6 +72,70 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recapModal, setRecapModal] = useState<null | { game: Game; recap: GameRecap }>(null);
+  const [userPermissions, setUserPermissions] = useState<{ isAccountAdmin: boolean; isGlobalAdmin: boolean }>({ 
+    isAccountAdmin: false, 
+    isGlobalAdmin: false 
+  });
+  const { user, token } = useAuth();
+
+  // Check user permissions
+  useEffect(() => {
+    const checkPermissions = async () => {
+      if (!user || !token) {
+        setUserPermissions({ isAccountAdmin: false, isGlobalAdmin: false });
+        return;
+      }
+
+      try {
+        // Check if user is global administrator
+        const globalAdminResponse = await fetch(`/api/auth/check-role/Administrator`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (globalAdminResponse.ok) {
+          const globalAdminData = await globalAdminResponse.json();
+          if (globalAdminData.hasRole) {
+            setUserPermissions({ isAccountAdmin: true, isGlobalAdmin: true });
+            return;
+          }
+        }
+
+        // Check if user is account administrator for this account
+        const accountAdminResponse = await fetch(`/api/auth/check-role/AccountAdmin?accountId=${accountId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (accountAdminResponse.ok) {
+          const accountAdminData = await accountAdminResponse.json();
+          setUserPermissions({ 
+            isAccountAdmin: accountAdminData.hasRole, 
+            isGlobalAdmin: false 
+          });
+        }
+      } catch (error) {
+        console.error('Error checking permissions:', error);
+        setUserPermissions({ isAccountAdmin: false, isGlobalAdmin: false });
+      }
+    };
+
+    checkPermissions();
+  }, [user, token, accountId]);
+
+  const canEditGames = userPermissions.isAccountAdmin || userPermissions.isGlobalAdmin;
+
+  const handleEditGame = (game: Game) => {
+    // TODO: Implement game editing functionality
+    console.log('Edit game:', game);
+    // This will be implemented when we add the game editing interface
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -125,6 +194,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       console.error('Error formatting time:', error);
       localTime = 'TBD';
     }
+    
     return (
       <Card
         key={game.id}
@@ -140,16 +210,37 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
         }}
       >
         <CardContent sx={{ p: 2 }}>
-          <Typography variant="subtitle2" color="#b0c4de" fontWeight={500} gutterBottom noWrap>
-            {game.leagueName}
-          </Typography>
           <Box sx={{ 
             display: 'grid', 
-            gridTemplateColumns: game.gameStatusText !== 'Scheduled' ? '1fr auto auto' : '1fr auto',
-            gap: 2,
-            alignItems: 'center'
+            gridTemplateColumns: game.gameStatusText !== 'Scheduled' ? 'auto 1fr auto auto' : 'auto 1fr auto',
+            gap: 1.5,
+            alignItems: 'start'
           }}>
-            <Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+              <Typography variant="subtitle2" color="#b0c4de" fontWeight={500} sx={{ pt: 0.5 }}>
+                {game.leagueName}
+              </Typography>
+              {canEditGames && (
+                <Tooltip title="Enter Game Results">
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEditGame(game)}
+                    sx={{
+                      color: '#b0c4de',
+                      '&:hover': {
+                        color: 'white',
+                        bgcolor: 'rgba(255,255,255,0.1)'
+                      },
+                      alignSelf: 'flex-end',
+                      mt: 1
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
               <Button
                 href={`/baseball/team/${game.awayTeamId}`}
                 sx={{ 
@@ -161,11 +252,16 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                   minWidth: 'auto',
                   textAlign: 'left',
                   display: 'block',
-                  mb: 0.5
+                  mb: 0.5,
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
                 size="small"
+                title={game.awayTeamName}
               >
-                {game.awayTeamName}
+                {game.awayTeamName.length > 10 ? `${game.awayTeamName.substring(0, 10)}...` : game.awayTeamName}
               </Button>
               <Button
                 href={`/baseball/team/${game.homeTeamId}`}
@@ -177,15 +273,20 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                   p: 0,
                   minWidth: 'auto',
                   textAlign: 'left',
-                  display: 'block'
+                  display: 'block',
+                  maxWidth: '100%',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
                 }}
                 size="small"
+                title={game.homeTeamName}
               >
-                {game.homeTeamName}
+                {game.homeTeamName.length > 10 ? `${game.homeTeamName.substring(0, 10)}...` : game.homeTeamName}
               </Button>
             </Box>
             {game.gameStatusText !== 'Scheduled' && (
-              <Box textAlign="center">
+              <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                 <Typography variant="h6" fontWeight={700} color={game.awayScore > game.homeScore ? 'success.main' : 'white'} sx={{ mb: 0.5 }}>
                   {game.awayScore}
                 </Typography>
@@ -194,31 +295,46 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 </Typography>
               </Box>
             )}
-            <Box textAlign="center" minWidth={120}>
-              <Chip
-                label={game.gameStatusText}
-                color={statusColor(game.gameStatus)}
-                size="small"
-                sx={{ mb: 1, fontWeight: 700, bgcolor: '#1e3a5c', color: 'white' }}
-              />
-              <Typography variant="body2" color="#b0c4de">
-                {localTime}
-              </Typography>
-              {game.fieldName && (
-                <Typography variant="caption" color="#b0c4de">
-                  {game.fieldName}
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minWidth: 'auto', width: 'auto' }}>
+              <Box>
+                {game.gameStatusText !== 'Scheduled' && (
+                  <Chip
+                    label={game.gameStatusText}
+                    color={statusColor(game.gameStatus)}
+                    size="small"
+                    sx={{ mb: 1, fontWeight: 700, bgcolor: '#1e3a5c', color: 'white' }}
+                  />
+                )}
+                <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Scheduled' ? 0.5 : 0 }}>
+                  {localTime}
                 </Typography>
-              )}
-              {game.hasGameRecap && (
-                <Button
-                  variant="outlined"
-                  size="small"
-                  sx={{ mt: 1, color: 'white', borderColor: '#b0c4de' }}
-                  onClick={() => setRecapModal({ game, recap: game.gameRecaps[0] })}
-                >
-                  Recap
-                </Button>
-              )}
+              </Box>
+              <Box>
+                {(game.fieldName || game.fieldShortName) && (
+                  <Tooltip title={game.fieldName || game.fieldShortName || ''}>
+                    <Typography variant="caption" color="#b0c4de" sx={{ pb: 0.5 }}>
+                      {(() => {
+                        const displayName = game.fieldName && game.fieldName.length > 5 && game.fieldShortName 
+                          ? game.fieldShortName 
+                          : game.fieldName;
+                        return displayName && displayName.length > 5 
+                          ? `${displayName.substring(0, 5)}...` 
+                          : displayName;
+                      })()}
+                    </Typography>
+                  </Tooltip>
+                )}
+                {game.hasGameRecap && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    sx={{ mt: 1, color: 'white', borderColor: '#b0c4de' }}
+                    onClick={() => setRecapModal({ game, recap: game.gameRecaps[0] })}
+                  >
+                    Recap
+                  </Button>
+                )}
+              </Box>
             </Box>
           </Box>
         </CardContent>

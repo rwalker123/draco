@@ -106,7 +106,8 @@ router.get('/scoreboard/public',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -143,7 +144,8 @@ router.get('/scoreboard/public',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -189,7 +191,8 @@ router.get('/scoreboard/public',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -242,6 +245,7 @@ router.get('/scoreboard/public',
         leagueName: game.leagueseason.league.name,
         fieldId: game.fieldid?.toString() || null,
         fieldName: game.availablefields?.name || null,
+        fieldShortName: game.availablefields?.shortname || null,
         hasGameRecap: game.gamerecap.length > 0,
         gameRecaps: game.gamerecap.map((recap: any) => ({
           teamId: recap.teamid.toString(),
@@ -390,7 +394,8 @@ router.get('/scoreboard',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -427,7 +432,8 @@ router.get('/scoreboard',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -473,7 +479,8 @@ router.get('/scoreboard',
           availablefields: {
             select: {
               id: true,
-              name: true
+              name: true,
+              shortname: true
             }
           },
           gamerecap: {
@@ -526,6 +533,7 @@ router.get('/scoreboard',
         leagueName: game.leagueseason.league.name,
         fieldId: game.fieldid?.toString() || null,
         fieldName: game.availablefields?.name || null,
+        fieldShortName: game.availablefields?.shortname || null,
         hasGameRecap: game.gamerecap.length > 0,
         gameRecaps: game.gamerecap.map((recap: any) => ({
           teamId: recap.teamid.toString(),

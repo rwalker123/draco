@@ -1,9 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials, RegisterData } from '../services/authService';
 import { authenticateToken } from '../middleware/authMiddleware';
+import { RoleService } from '../services/roleService';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
 const authService = new AuthService();
+const prisma = new PrismaClient();
+const roleService = new RoleService(prisma);
 
 /**
  * POST /api/auth/login
@@ -239,6 +243,46 @@ router.post('/refresh', authenticateToken, async (req: Request, res: Response, n
     }
   } catch (error) {
     console.error('Token refresh error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+/**
+ * GET /api/auth/check-role/:roleId
+ * Check if current user has a specific role
+ */
+router.get('/check-role/:roleId', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+      return;
+    }
+
+    const { roleId } = req.params;
+    const { accountId, teamId, leagueId } = req.query;
+
+    const context = {
+      accountId: accountId ? BigInt(accountId as string) : undefined,
+      teamId: teamId ? BigInt(teamId as string) : undefined,
+      leagueId: leagueId ? BigInt(leagueId as string) : undefined
+    };
+
+    const roleCheck = await roleService.hasRole(req.user.id, roleId, context);
+
+    res.status(200).json({
+      success: true,
+      hasRole: roleCheck.hasRole,
+      roleLevel: roleCheck.roleLevel,
+      context: roleCheck.context
+    });
+  } catch (error) {
+    console.error('Role check error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
