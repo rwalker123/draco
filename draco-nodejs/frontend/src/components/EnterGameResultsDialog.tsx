@@ -57,7 +57,7 @@ interface GameResultData {
 }
 
 const gameStatusOptions = [
-  { value: 0, label: 'Scheduled' },
+  { value: 0, label: 'Incomplete' },
   { value: 1, label: 'Final' },
   { value: 2, label: 'In Progress' },
   { value: 3, label: 'Postponed' },
@@ -285,6 +285,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   '& .MuiInputLabel-root': {
                     color: '#b0c4de',
                   },
+                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                    '-webkit-appearance': 'none',
+                    margin: 0,
+                  },
+                  '& input[type=number]': {
+                    '-moz-appearance': 'textfield',
+                  },
                 }}
               />
             </Box>
@@ -316,6 +323,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   },
                   '& .MuiInputLabel-root': {
                     color: '#b0c4de',
+                  },
+                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
+                    '-webkit-appearance': 'none',
+                    margin: 0,
+                  },
+                  '& input[type=number]': {
+                    '-moz-appearance': 'textfield',
                   },
                 }}
               />

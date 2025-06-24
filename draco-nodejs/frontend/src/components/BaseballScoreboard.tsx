@@ -58,13 +58,25 @@ const groupLabels: Record<keyof ScoreboardData, string> = {
 
 const statusColor = (status: number) => {
   switch (status) {
-    case 0: return 'default'; // Scheduled
+    case 0: return 'default'; // Incomplete
     case 1: return 'success'; // Final
-    case 2: return 'warning'; // In Progress
-    case 3: return 'error'; // Postponed
+    case 2: return 'warning'; // Rainout
+    case 3: return 'warning'; // Postponed
     case 4: return 'error'; // Forfeit
-    case 5: return 'default'; // Did Not Report
+    case 5: return 'error'; // Did Not Report
     default: return 'default';
+  }
+};
+
+const getStatusAbbreviation = (statusText: string): string => {
+  switch (statusText) {
+    case 'Incomplete': return 'I';
+    case 'Final': return 'F';
+    case 'Rainout': return 'R';
+    case 'Postponed': return 'PPD';
+    case 'Forfeit': return 'F';
+    case 'Did Not Report': return 'DNR';
+    default: return statusText;
   }
 };
 
@@ -256,7 +268,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
         <CardContent sx={{ p: 2 }}>
           <Box sx={{ 
             display: 'grid', 
-            gridTemplateColumns: game.gameStatusText !== 'Scheduled' ? 'auto 1fr auto auto' : 'auto 1fr auto',
+            gridTemplateColumns: game.gameStatusText !== 'Incomplete' ? 'auto 1fr auto auto' : 'auto 1fr auto',
             gap: 1.5,
             alignItems: 'start'
           }}>
@@ -329,7 +341,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 {game.homeTeamName.length > 10 ? `${game.homeTeamName.substring(0, 10)}...` : game.homeTeamName}
               </Button>
             </Box>
-            {game.gameStatusText !== 'Scheduled' && (
+            {game.gameStatusText !== 'Incomplete' && (
               <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                 <Typography variant="h6" fontWeight={700} color={game.awayScore > game.homeScore ? 'success.main' : 'white'} sx={{ mb: 0.5 }}>
                   {game.awayScore}
@@ -341,16 +353,16 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
             )}
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minWidth: 'auto', width: 'auto' }}>
               <Box>
-                {game.gameStatusText !== 'Scheduled' && (
+                {game.gameStatusText !== 'Incomplete' && (
                   <Chip
-                    label={game.gameStatusText}
+                    label={getStatusAbbreviation(game.gameStatusText)}
                     color={statusColor(game.gameStatus)}
                     size="small"
                     sx={{ mb: 1, fontWeight: 700, bgcolor: '#1e3a5c', color: 'white' }}
                   />
                 )}
                 {game.gameStatus === 0 && (
-                  <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Scheduled' ? 0.5 : 0 }}>
+                  <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Incomplete' ? 0.5 : 0 }}>
                     {localTime}
                   </Typography>
                 )}
@@ -358,7 +370,20 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
               <Box>
                 {game.gameStatus === 0 && (game.fieldName || game.fieldShortName) && (
                   <Tooltip title={game.fieldName || game.fieldShortName || ''}>
-                    <Typography variant="caption" color="#b0c4de" sx={{ pb: 0.5 }}>
+                    <Button
+                      href={`/baseball/field/${game.fieldId}`}
+                      sx={{ 
+                        color: '#b0c4de', 
+                        textTransform: 'none',
+                        p: 0,
+                        minWidth: 'auto',
+                        fontSize: '0.75rem',
+                        '&:hover': {
+                          color: 'white',
+                        }
+                      }}
+                      size="small"
+                    >
                       {(() => {
                         const displayName = game.fieldName && game.fieldName.length > 5 && game.fieldShortName 
                           ? game.fieldShortName 
@@ -367,7 +392,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                           ? `${displayName.substring(0, 5)}...` 
                           : displayName;
                       })()}
-                    </Typography>
+                    </Button>
                   </Tooltip>
                 )}
                 {game.hasGameRecap && (

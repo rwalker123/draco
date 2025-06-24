@@ -2322,7 +2322,7 @@ router.get('/:accountId/recent-games',
       // Helper function to get game status text
       const getGameStatusText = (status: number): string => {
         switch (status) {
-          case 0: return 'Scheduled';
+          case 0: return 'Incomplete';
           case 1: return 'Final';
           case 2: return 'In Progress';
           case 3: return 'Postponed';
