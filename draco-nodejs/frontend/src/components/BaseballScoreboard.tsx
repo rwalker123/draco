@@ -341,7 +341,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 {game.homeTeamName}
               </Button>
             </Box>
-            {game.gameStatusText !== 'Incomplete' && (
+            {game.gameStatusText !== 'Incomplete' && game.gameStatus !== 2 && (
               <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                 <Typography variant="h6" fontWeight={700} color={game.awayScore > game.homeScore ? 'success.main' : 'white'} sx={{ mb: 0.5 }}>
                   {game.awayScore}

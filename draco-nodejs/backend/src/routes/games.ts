@@ -782,6 +782,24 @@ router.put('/:gameId/results',
         return;
       }
 
+      // Validate forfeit scores
+      if (gameStatus === 4) { // Forfeit
+        if (homeScore === 0 && awayScore === 0) {
+          res.status(400).json({
+            success: false,
+            message: 'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.'
+          });
+          return;
+        }
+        if (homeScore > 0 && awayScore > 0) {
+          res.status(400).json({
+            success: false,
+            message: 'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.'
+          });
+          return;
+        }
+      }
+
       if (gameStatus < 0 || gameStatus > 5) {
         res.status(400).json({
           success: false,
