@@ -998,10 +998,10 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       }
 
       // Check if the team is currently assigned to a division
-      if (!teamSeason.divisionseasonid) {
+      if (teamSeason.divisionseasonid) {
         res.status(400).json({ 
           success: false, 
-          message: 'Team is not currently assigned to any division' 
+          message: 'Team is already assigned to a division. Remove from current division first.' 
         });
         return;
       }

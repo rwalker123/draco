@@ -296,14 +296,24 @@
     - [x] Accordion state persistence to keep panels open after operations
     - [x] Immediate UI updates when teams are moved between divisions and unassigned sections
     - [x] Proper error handling for team assignment and removal operations
+    - [x] Team removal from season with confirmation dialog
+    - [x] Proper handling of team deletion when used in multiple seasons
+    - [x] Clear user feedback about team removal vs. complete deletion
+    - [x] Delete buttons for both division teams and unassigned teams
+    - [x] Backend API endpoints for team season and team definition deletion
+    - [x] Team creation for league seasons with simple dialog
+    - [x] Backend API endpoints for team creation and league season assignment
+    - [x] Create Team button in league accordion summary
+    - [x] Proper validation and error handling for team creation
+    - [x] Integration with existing league season management workflow
+    - [x] **Bug Fix**: Fixed team assignment logic to allow unassigned teams to be assigned to divisions
+    - [x] **UX Optimization**: Auto-assign teams to divisions when only one division exists (no dialog needed)
+  - [x] **League Management Features**
+    - [x] League removal from season with confirmation dialog
+    - [x] Proper handling of league deletion when used in multiple seasons
+    - [x] Clear user feedback about league removal vs. complete deletion
+    - [x] Integration with existing league season management workflow
   - [ ] **Division Management Enhancements**
-    - [ ] Add division name editing functionality in LeagueSeason Management page
-    - [ ] Implement inline editing or edit dialog for division names
-    - [ ] Add edit button/icon next to division names in division cards
-    - [ ] Integrate with existing division update API endpoint
-    - [ ] Add validation for division name changes (duplicate prevention)
-    - [ ] Implement immediate UI updates after division name changes
-    - [ ] Add proper error handling for division name editing operations
 
 **LeagueSeason Management Implementation Notes:**
 - Successfully implemented comprehensive league season management API with proper RESTful URL structure

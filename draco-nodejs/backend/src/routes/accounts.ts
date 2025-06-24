@@ -2369,4 +2369,482 @@ router.get('/:accountId/recent-games',
   }
 );
 
+/**
+ * POST /api/accounts/:accountId/teams
+ * Create a new team definition
+ */
+router.post('/:accountId/teams',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { name, webAddress, youtubeUserId, defaultVideo, autoPlayVideo } = req.body;
+
+      if (!name) {
+        res.status(400).json({
+          success: false,
+          message: 'Team name is required'
+        });
+        return;
+      }
+
+      // Check if team with this name already exists for this account
+      const existingTeam = await prisma.teams.findFirst({
+        where: {
+          accountid: accountId
+        },
+        include: {
+          teamsseason: {
+            where: {
+              name: name
+            }
+          }
+        }
+      });
+
+      if (existingTeam && existingTeam.teamsseason.length > 0) {
+        res.status(409).json({
+          success: false,
+          message: 'A team with this name already exists for this account'
+        });
+        return;
+      }
+
+      const newTeam = await prisma.teams.create({
+        data: {
+          accountid: accountId,
+          webaddress: webAddress || '',
+          youtubeuserid: youtubeUserId || null,
+          defaultvideo: defaultVideo || '',
+          autoplayvideo: autoPlayVideo || false
+        },
+        select: {
+          id: true,
+          accountid: true,
+          webaddress: true,
+          youtubeuserid: true,
+          defaultvideo: true,
+          autoplayvideo: true
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          team: {
+            id: newTeam.id.toString(),
+            accountId: newTeam.accountid.toString(),
+            webAddress: newTeam.webaddress,
+            youtubeUserId: newTeam.youtubeuserid,
+            defaultVideo: newTeam.defaultvideo,
+            autoPlayVideo: newTeam.autoplayvideo
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error creating team:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams
+ * Add a team to a league season (create teamsseason record)
+ */
+router.post('/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const seasonId = BigInt(req.params.seasonId);
+      const leagueSeasonId = BigInt(req.params.leagueSeasonId);
+      const { teamId, name } = req.body;
+
+      if (!teamId && !name) {
+        res.status(400).json({
+          success: false,
+          message: 'Either teamId or name is required'
+        });
+        return;
+      }
+
+      // Verify the season belongs to this account
+      const season = await prisma.season.findFirst({
+        where: {
+          id: seasonId,
+          accountid: accountId
+        }
+      });
+
+      if (!season) {
+        res.status(404).json({
+          success: false,
+          message: 'Season not found'
+        });
+        return;
+      }
+
+      // Verify the league season exists and belongs to this account
+      const leagueSeason = await prisma.leagueseason.findFirst({
+        where: {
+          id: leagueSeasonId,
+          seasonid: seasonId,
+          league: {
+            accountid: accountId
+          }
+        }
+      });
+
+      if (!leagueSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'League season not found'
+        });
+        return;
+      }
+
+      let teamToAdd;
+      let teamName;
+
+      if (teamId) {
+        // Use existing team
+        const existingTeam = await prisma.teams.findFirst({
+          where: {
+            id: BigInt(teamId),
+            accountid: accountId
+          }
+        });
+
+        if (!existingTeam) {
+          res.status(404).json({
+            success: false,
+            message: 'Team not found'
+          });
+          return;
+        }
+
+        teamToAdd = existingTeam;
+        teamName = name || `Team ${existingTeam.id}`;
+      } else {
+        // Create new team
+        const newTeam = await prisma.teams.create({
+          data: {
+            accountid: accountId,
+            webaddress: '',
+            youtubeuserid: null,
+            defaultvideo: '',
+            autoplayvideo: false
+          }
+        });
+
+        teamToAdd = newTeam;
+        teamName = name;
+      }
+
+      // Check if team is already in this league season
+      const existingTeamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          teamid: teamToAdd.id,
+          leagueseasonid: leagueSeasonId
+        }
+      });
+
+      if (existingTeamSeason) {
+        res.status(409).json({
+          success: false,
+          message: 'Team is already in this league season'
+        });
+        return;
+      }
+
+      // Create team season record
+      const newTeamSeason = await prisma.teamsseason.create({
+        data: {
+          teamid: teamToAdd.id,
+          leagueseasonid: leagueSeasonId,
+          name: teamName,
+          divisionseasonid: null
+        },
+        include: {
+          teams: {
+            select: {
+              id: true,
+              accountid: true,
+              webaddress: true,
+              youtubeuserid: true,
+              defaultvideo: true,
+              autoplayvideo: true
+            }
+          }
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          teamSeason: {
+            id: newTeamSeason.id.toString(),
+            teamId: newTeamSeason.teamid.toString(),
+            name: newTeamSeason.name,
+            webAddress: newTeamSeason.teams.webaddress,
+            youtubeUserId: newTeamSeason.teams.youtubeuserid,
+            defaultVideo: newTeamSeason.teams.defaultvideo,
+            autoPlayVideo: newTeamSeason.teams.autoplayvideo
+          },
+          message: `Team "${teamName}" has been added to the league season`
+        }
+      });
+    } catch (error) {
+      console.error('Error adding team to league season:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId
+ * Remove a team from a season (delete teamsseason record)
+ */
+router.delete('/:accountId/seasons/:seasonId/teams/:teamSeasonId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const seasonId = BigInt(req.params.seasonId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the season belongs to this account
+      const season = await prisma.season.findFirst({
+        where: {
+          id: seasonId,
+          accountid: accountId
+        }
+      });
+
+      if (!season) {
+        res.status(404).json({
+          success: false,
+          message: 'Season not found'
+        });
+        return;
+      }
+
+      // Get the team season with team details
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        include: {
+          teams: {
+            select: {
+              id: true,
+              accountid: true
+            }
+          }
+        }
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Team season not found'
+        });
+        return;
+      }
+
+      // Verify the team belongs to this account
+      if (teamSeason.teams.accountid !== accountId) {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        });
+        return;
+      }
+
+      // Check if there are any related records that would prevent deletion
+      const hasRelatedData = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId
+        },
+        include: {
+          _count: {
+            select: {
+              rosterseason: true,
+              teamseasonmanager: true,
+              gamerecap: true,
+              batstatsum: true,
+              pitchstatsum: true
+            }
+          }
+        }
+      });
+
+      if (hasRelatedData && (
+        hasRelatedData._count.rosterseason > 0 ||
+        hasRelatedData._count.teamseasonmanager > 0 ||
+        hasRelatedData._count.gamerecap > 0 ||
+        hasRelatedData._count.batstatsum > 0 ||
+        hasRelatedData._count.pitchstatsum > 0
+      )) {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot remove team from season because it has related data (roster, managers, statistics, etc.). Remove related data first.'
+        });
+        return;
+      }
+
+      // Remove the team from the season
+      await prisma.teamsseason.delete({
+        where: {
+          id: teamSeasonId
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Team "${teamSeason.name}" has been removed from season "${season.name}"`
+        }
+      });
+    } catch (error: any) {
+      console.error('Error removing team from season:', error);
+      
+      // Check if it's a foreign key constraint error
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot remove team from season because it has related data. Remove related data first.'
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/accounts/:accountId/teams/:teamId
+ * Delete a team definition (may fail if used in other seasons)
+ */
+router.delete('/:accountId/teams/:teamId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const teamId = BigInt(req.params.teamId);
+
+      // Check if team exists and belongs to this account
+      const team = await prisma.teams.findFirst({
+        where: {
+          id: teamId,
+          accountid: accountId
+        }
+      });
+
+      if (!team) {
+        res.status(404).json({
+          success: false,
+          message: 'Team not found'
+        });
+        return;
+      }
+
+      // Get a teamsseason record to get the team name
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          teamid: teamId
+        },
+        select: {
+          name: true
+        }
+      });
+
+      const teamName = teamSeason?.name || `Team ${teamId}`;
+
+      // Check if there are any related records that would prevent deletion
+      const hasRelatedData = await prisma.teams.findFirst({
+        where: {
+          id: teamId
+        },
+        include: {
+          _count: {
+            select: {
+              teamsseason: true,
+              sponsors: true,
+              accountwelcome: true,
+              teamhandouts: true,
+              teamnews: true
+            }
+          }
+        }
+      });
+
+      if (hasRelatedData && (
+        hasRelatedData._count.teamsseason > 0 ||
+        hasRelatedData._count.sponsors > 0 ||
+        hasRelatedData._count.accountwelcome > 0 ||
+        hasRelatedData._count.teamhandouts > 0 ||
+        hasRelatedData._count.teamnews > 0
+      )) {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot delete team because it has related data (seasons, sponsors, etc.). Remove related data first.'
+        });
+        return;
+      }
+
+      // Delete the team
+      await prisma.teams.delete({
+        where: {
+          id: teamId
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Team "${teamName}" has been deleted`
+        }
+      });
+    } catch (error: any) {
+      console.error('Error deleting team:', error);
+      
+      // Check if it's a foreign key constraint error
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot delete team because it has related data. Remove related data first.'
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
 export default router; 
