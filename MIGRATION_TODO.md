@@ -308,6 +308,8 @@
     - [x] Integration with existing league season management workflow
     - [x] **Bug Fix**: Fixed team assignment logic to allow unassigned teams to be assigned to divisions
     - [x] **UX Optimization**: Auto-assign teams to divisions when only one division exists (no dialog needed)
+    - [x] **Performance Optimization**: Implement targeted state updates instead of full component refreshes for smoother UX
+    - [x] **Dialog UX Fix**: Add dialog-specific message display for Manage Leagues dialog in Season Management
   - [x] **League Management Features**
     - [x] League removal from season with confirmation dialog
     - [x] Proper handling of league deletion when used in multiple seasons

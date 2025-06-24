@@ -186,6 +186,100 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   }, [accountId, token]);
 
+  // Targeted update functions for better UX
+  const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
+    setLeagueSeasons(prev => prev.filter(ls => ls.id !== leagueSeasonId));
+  }, []);
+
+  const addTeamToDivisionInState = useCallback((leagueSeasonId: string, divisionSeasonId: string, teamSeason: TeamSeason) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      return {
+        ...ls,
+        divisions: ls.divisions.map(div => {
+          if (div.id !== divisionSeasonId) return div;
+          return {
+            ...div,
+            teams: [...div.teams, teamSeason]
+          };
+        }),
+        unassignedTeams: ls.unassignedTeams.filter(team => team.id !== teamSeason.id)
+      };
+    }));
+  }, []);
+
+  const removeTeamFromDivisionInState = useCallback((leagueSeasonId: string, divisionSeasonId: string, teamSeason: TeamSeason) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      return {
+        ...ls,
+        divisions: ls.divisions.map(div => {
+          if (div.id !== divisionSeasonId) return div;
+          return {
+            ...div,
+            teams: div.teams.filter(team => team.id !== teamSeason.id)
+          };
+        }),
+        unassignedTeams: [...ls.unassignedTeams, teamSeason]
+      };
+    }));
+  }, []);
+
+  const addTeamToLeagueSeasonInState = useCallback((leagueSeasonId: string, teamSeason: TeamSeason) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      return {
+        ...ls,
+        unassignedTeams: [...ls.unassignedTeams, teamSeason]
+      };
+    }));
+  }, []);
+
+  const removeTeamFromLeagueSeasonInState = useCallback((leagueSeasonId: string, teamSeasonId: string) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      return {
+        ...ls,
+        divisions: ls.divisions.map(div => ({
+          ...div,
+          teams: div.teams.filter(team => team.id !== teamSeasonId)
+        })),
+        unassignedTeams: ls.unassignedTeams.filter(team => team.id !== teamSeasonId)
+      };
+    }));
+  }, []);
+
+  const addDivisionToLeagueSeasonInState = useCallback((leagueSeasonId: string, divisionSeason: DivisionSeason) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      return {
+        ...ls,
+        divisions: [...ls.divisions, divisionSeason]
+      };
+    }));
+  }, []);
+
+  const removeDivisionFromLeagueSeasonInState = useCallback((leagueSeasonId: string, divisionSeasonId: string) => {
+    setLeagueSeasons(prev => prev.map(ls => {
+      if (ls.id !== leagueSeasonId) return ls;
+      
+      // Move all teams from the deleted division to unassigned
+      const divisionToRemove = ls.divisions.find(div => div.id === divisionSeasonId);
+      const teamsToMove = divisionToRemove ? divisionToRemove.teams : [];
+      
+      return {
+        ...ls,
+        divisions: ls.divisions.filter(div => div.id !== divisionSeasonId),
+        unassignedTeams: [...ls.unassignedTeams, ...teamsToMove]
+      };
+    }));
+  }, []);
+
   useEffect(() => {
     fetchLeagueSeasons();
     fetchDivisions();
@@ -218,7 +312,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (response.data.success) {
         setSuccessMessage(response.data.data.message);
         setAddDivisionDialogOpen(false);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        const newDivisionSeason = response.data.data.divisionSeason;
+        addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
       }
     } catch (error: any) {
       console.error('Error adding division:', error);
@@ -241,7 +337,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
       if (response.data.success) {
         setSuccessMessage(response.data.data.message);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        removeDivisionFromLeagueSeasonInState(leagueSeason.id, divisionSeason.id);
       }
     } catch (error: any) {
       console.error('Error removing division:', error);
@@ -306,6 +403,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
           if (addResponse.data.success) {
             setSuccessMessage(`Division "${newDivision.name}" created and added to league "${selectedLeagueSeason.leagueName}"`);
+            // Use targeted update instead of full refresh
+            const newDivisionSeason = addResponse.data.data.divisionSeason;
+            addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
           } else {
             setSuccessMessage(`Division "${newDivision.name}" created successfully, but failed to add to league`);
           }
@@ -315,8 +415,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
         setCreateDivisionInAddDialog(false);
         setNewDivisionNameInAddDialog('');
-        fetchDivisions();
-        fetchLeagueSeasons();
+        fetchDivisions(); // Still need to refresh divisions list for dropdown
+        // fetchLeagueSeasons(); // Removed - using targeted update above
       } else {
         setError(createResponse.data.message || 'Failed to create division');
       }
@@ -343,7 +443,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
       if (response.data.success) {
         setSuccessMessage(`Team "${teamSeason.name}" automatically assigned to division "${divisionSeason.divisionName}"`);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        addTeamToDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
       }
     } catch (error: any) {
       console.error('Error assigning team to division:', error);
@@ -370,7 +471,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (response.data.success) {
         setSuccessMessage(`Team "${selectedTeamSeason.name}" assigned to division "${targetDivisionSeason.divisionName}"`);
         setAssignTeamDialogOpen(false);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        addTeamToDivisionInState(selectedTeamLeagueSeason.id, targetDivisionSeason.id, selectedTeamSeason);
       }
     } catch (error: any) {
       console.error('Error assigning team to division:', error);
@@ -432,7 +534,14 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
       if (response.data.success) {
         setSuccessMessage(response.data.data.message);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        // Find which division the team was in
+        const divisionSeason = leagueSeason.divisions.find(div => 
+          div.teams.some(team => team.id === teamSeason.id)
+        );
+        if (divisionSeason) {
+          removeTeamFromDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
+        }
       }
     } catch (error: any) {
       console.error('Error removing team from division:', error);
@@ -493,7 +602,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
         setDeleteLeagueDialogOpen(false);
         setLeagueToDelete(null);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        removeLeagueSeasonFromState(leagueToDelete.id);
       } else {
         setError(removeFromSeasonResponse.data.message || 'Failed to remove league from season');
       }
@@ -553,7 +663,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setDeleteTeamDialogOpen(false);
         setTeamToDelete(null);
         setTeamToDeleteLeagueSeason(null);
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        removeTeamFromLeagueSeasonInState(teamToDeleteLeagueSeason.id, teamToDelete.id);
       } else {
         setError(removeFromSeasonResponse.data.message || 'Failed to remove team from season');
       }
@@ -590,7 +701,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setCreateTeamDialogOpen(false);
         setTeamToCreateLeagueSeason(null);
         setNewTeamName('');
-        fetchLeagueSeasons(); // Refresh data
+        // Use targeted update instead of full refresh
+        const newTeam = response.data.data.teamSeason;
+        addTeamToLeagueSeasonInState(teamToCreateLeagueSeason.id, newTeam);
       } else {
         setError(response.data.message || 'Failed to create team');
       }
