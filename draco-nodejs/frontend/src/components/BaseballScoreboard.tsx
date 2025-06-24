@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { SportsBaseball as SportsBaseballIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import EnterGameResultsDialog from './EnterGameResultsDialog';
 
 interface GameRecap {
   teamId: string;
@@ -72,6 +73,10 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recapModal, setRecapModal] = useState<null | { game: Game; recap: GameRecap }>(null);
+  const [editGameDialog, setEditGameDialog] = useState<{ open: boolean; game: Game | null }>({
+    open: false,
+    game: null
+  });
   const [userPermissions, setUserPermissions] = useState<{ isAccountAdmin: boolean; isGlobalAdmin: boolean }>({ 
     isAccountAdmin: false, 
     isGlobalAdmin: false 
@@ -132,9 +137,48 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
   const canEditGames = userPermissions.isAccountAdmin || userPermissions.isGlobalAdmin;
 
   const handleEditGame = (game: Game) => {
-    // TODO: Implement game editing functionality
-    console.log('Edit game:', game);
-    // This will be implemented when we add the game editing interface
+    setEditGameDialog({ open: true, game });
+  };
+
+  const handleSaveGameResults = async (gameData: any) => {
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`/api/accounts/${accountId}/games/${gameData.gameId}/results`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        homeScore: gameData.homeScore,
+        awayScore: gameData.awayScore,
+        gameStatus: gameData.gameStatus,
+        emailPlayers: gameData.emailPlayers,
+        postToTwitter: gameData.postToTwitter,
+        postToBluesky: gameData.postToBluesky,
+        postToFacebook: gameData.postToFacebook
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to save game results');
+    }
+
+    // Refresh the scoreboard data
+    const scoreboardResponse = await fetch(`/api/accounts/${accountId}/games/scoreboard/public${teamId ? `?teamId=${teamId}` : ''}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (scoreboardResponse.ok) {
+      const json = await scoreboardResponse.json();
+      setData(json.data);
+    }
   };
 
   useEffect(() => {
@@ -305,12 +349,14 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                     sx={{ mb: 1, fontWeight: 700, bgcolor: '#1e3a5c', color: 'white' }}
                   />
                 )}
-                <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Scheduled' ? 0.5 : 0 }}>
-                  {localTime}
-                </Typography>
+                {game.gameStatus === 0 && (
+                  <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Scheduled' ? 0.5 : 0 }}>
+                    {localTime}
+                  </Typography>
+                )}
               </Box>
               <Box>
-                {(game.fieldName || game.fieldShortName) && (
+                {game.gameStatus === 0 && (game.fieldName || game.fieldShortName) && (
                   <Tooltip title={game.fieldName || game.fieldShortName || ''}>
                     <Typography variant="caption" color="#b0c4de" sx={{ pb: 0.5 }}>
                       {(() => {
@@ -408,6 +454,12 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
           </Box>
         </Box>
       </Modal>
+      <EnterGameResultsDialog
+        open={editGameDialog.open}
+        onClose={() => setEditGameDialog({ open: false, game: null })}
+        game={editGameDialog.game}
+        onSave={handleSaveGameResults}
+      />
     </Box>
   );
 };
