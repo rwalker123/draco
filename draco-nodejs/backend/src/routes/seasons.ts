@@ -13,8 +13,85 @@ const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
- * GET /api/accounts/:accountId/seasons
- * Get all seasons for an account (requires account access)
+ * @swagger
+ * /api/accounts/{accountId}/seasons:
+ *   get:
+ *     summary: Get all seasons for an account
+ *     description: Retrieve all seasons for a specific account (requires account access)
+ *     tags: [Seasons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *     responses:
+ *       200:
+ *         description: Seasons retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     seasons:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "456"
+ *                           name:
+ *                             type: string
+ *                             example: "2024 Season"
+ *                           accountId:
+ *                             type: string
+ *                             example: "123"
+ *                           isCurrent:
+ *                             type: boolean
+ *                             example: true
+ *                           leagues:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   example: "789"
+ *                                 leagueId:
+ *                                   type: string
+ *                                   example: "101"
+ *                                 leagueName:
+ *                                   type: string
+ *                                   example: "Major League"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - no access to account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', 
   authenticateToken,
@@ -86,8 +163,75 @@ router.get('/',
 );
 
 /**
- * GET /api/accounts/:accountId/seasons/current
- * Get the current season for an account
+ * @swagger
+ * /api/accounts/{accountId}/seasons/current:
+ *   get:
+ *     summary: Get current season for an account
+ *     description: Retrieve the current season for a specific account
+ *     tags: [Seasons]
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *     responses:
+ *       200:
+ *         description: Current season retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     season:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "456"
+ *                         name:
+ *                           type: string
+ *                           example: "2024 Season"
+ *                         accountId:
+ *                           type: string
+ *                           example: "123"
+ *                         isCurrent:
+ *                           type: boolean
+ *                           example: true
+ *                         leagues:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "789"
+ *                               leagueId:
+ *                                 type: string
+ *                                 example: "101"
+ *                               leagueName:
+ *                                 type: string
+ *                                 example: "Major League"
+ *       404:
+ *         description: No current season found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/current',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -170,8 +314,93 @@ router.get('/current',
 );
 
 /**
- * GET /api/accounts/:accountId/seasons/:seasonId
- * Get specific season details (requires account access)
+ * @swagger
+ * /api/accounts/{accountId}/seasons/{seasonId}:
+ *   get:
+ *     summary: Get specific season details
+ *     description: Retrieve details for a specific season (requires account access)
+ *     tags: [Seasons]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *       - in: path
+ *         name: seasonId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Season ID
+ *         example: "456"
+ *     responses:
+ *       200:
+ *         description: Season details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     season:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "456"
+ *                         name:
+ *                           type: string
+ *                           example: "2024 Season"
+ *                         accountId:
+ *                           type: string
+ *                           example: "123"
+ *                         leagues:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "789"
+ *                               leagueId:
+ *                                 type: string
+ *                                 example: "101"
+ *                               leagueName:
+ *                                 type: string
+ *                                 example: "Major League"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - no access to account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Season not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/:seasonId',
   authenticateToken,
