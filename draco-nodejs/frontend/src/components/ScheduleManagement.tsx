@@ -40,6 +40,12 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { format } from 'date-fns';
+import { parseISO } from 'date-fns/parseISO';
+import { startOfWeek } from 'date-fns/startOfWeek';
+import { endOfWeek } from 'date-fns/endOfWeek';
+import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
+import { isSameDay } from 'date-fns/isSameDay';
 
 interface Game {
   id: string;
@@ -111,33 +117,6 @@ interface ScheduleManagementProps {
 }
 
 const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) => {
-  // Temporary workaround - use basic JavaScript Date methods
-  const format = (date: Date, formatStr: string) => date.toLocaleDateString();
-  const parseISO = (dateStr: string) => new Date(dateStr);
-  const startOfWeek = (date: Date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day;
-    return new Date(d.setDate(diff));
-  };
-  const endOfWeek = (date: Date) => {
-    const d = new Date(date);
-    const day = d.getDay();
-    const diff = d.getDate() - day + 6;
-    return new Date(d.setDate(diff));
-  };
-  const eachDayOfInterval = ({ start, end }: { start: Date; end: Date }) => {
-    const days = [];
-    const current = new Date(start);
-    while (current <= end) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-    return days;
-  };
-  const isSameDay = (date1: Date, date2: Date) => 
-    date1.toDateString() === date2.toDateString();
-
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
