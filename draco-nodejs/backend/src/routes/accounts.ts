@@ -2847,4 +2847,277 @@ router.delete('/:accountId/teams/:teamId',
   }
 );
 
+/**
+ * GET /api/accounts/:accountId/fields
+ * Get all fields for an account (public endpoint)
+ */
+router.get('/:accountId/fields',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      const fields = await prisma.availablefields.findMany({
+        where: {
+          accountid: accountId
+        },
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          fields: fields.map(field => ({
+            id: field.id.toString(),
+            name: field.name,
+            address: field.address,
+            accountId: field.accountid.toString()
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/accounts/:accountId/fields
+ * Create a new field for an account
+ */
+router.post('/:accountId/fields',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { name, address } = req.body;
+
+      if (!name || typeof name !== 'string') {
+        res.status(400).json({
+          success: false,
+          message: 'Field name is required'
+        });
+        return;
+      }
+
+      // Check if field with same name already exists for this account
+      const existingField = await prisma.availablefields.findFirst({
+        where: {
+          accountid: accountId,
+          name: name.trim()
+        }
+      });
+
+      if (existingField) {
+        res.status(400).json({
+          success: false,
+          message: 'A field with this name already exists for this account'
+        });
+        return;
+      }
+
+      const newField = await prisma.availablefields.create({
+        data: {
+          name: name.trim(),
+          shortname: name.trim().substring(0, 5), // Use first 5 chars of name
+          comment: '', // Empty string for comment
+          address: address?.trim() || '',
+          city: '', // Empty string for city
+          state: '', // Empty string for state
+          zipcode: '', // Empty string for zipcode
+          directions: '', // Empty string for directions
+          rainoutnumber: '', // Empty string for rainout number
+          latitude: '', // Empty string for latitude
+          longitude: '', // Empty string for longitude
+          accountid: accountId
+        }
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          field: {
+            id: newField.id.toString(),
+            name: newField.name,
+            address: newField.address,
+            accountId: newField.accountid.toString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error creating field:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * PUT /api/accounts/:accountId/fields/:fieldId
+ * Update a field
+ */
+router.put('/:accountId/fields/:fieldId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const fieldId = BigInt(req.params.fieldId);
+      const { name, address } = req.body;
+
+      if (!name || typeof name !== 'string') {
+        res.status(400).json({
+          success: false,
+          message: 'Field name is required'
+        });
+        return;
+      }
+
+      // Check if field exists and belongs to this account
+      const existingField = await prisma.availablefields.findFirst({
+        where: {
+          id: fieldId,
+          accountid: accountId
+        }
+      });
+
+      if (!existingField) {
+        res.status(404).json({
+          success: false,
+          message: 'Field not found'
+        });
+        return;
+      }
+
+      // Check if another field with the same name already exists for this account
+      const duplicateField = await prisma.availablefields.findFirst({
+        where: {
+          accountid: accountId,
+          name: name.trim(),
+          id: { not: fieldId }
+        }
+      });
+
+      if (duplicateField) {
+        res.status(400).json({
+          success: false,
+          message: 'A field with this name already exists for this account'
+        });
+        return;
+      }
+
+      const updatedField = await prisma.availablefields.update({
+        where: {
+          id: fieldId
+        },
+        data: {
+          name: name.trim(),
+          address: address?.trim() || null
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          field: {
+            id: updatedField.id.toString(),
+            name: updatedField.name,
+            address: updatedField.address,
+            accountId: updatedField.accountid.toString()
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error updating field:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/accounts/:accountId/fields/:fieldId
+ * Delete a field
+ */
+router.delete('/:accountId/fields/:fieldId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const fieldId = BigInt(req.params.fieldId);
+
+      // Check if field exists and belongs to this account
+      const field = await prisma.availablefields.findFirst({
+        where: {
+          id: fieldId,
+          accountid: accountId
+        }
+      });
+
+      if (!field) {
+        res.status(404).json({
+          success: false,
+          message: 'Field not found'
+        });
+        return;
+      }
+
+      // Check if field is being used in any games
+      const gamesUsingField = await prisma.leagueschedule.findFirst({
+        where: {
+          fieldid: fieldId
+        }
+      });
+
+      if (gamesUsingField) {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot delete field because it is being used in scheduled games'
+        });
+        return;
+      }
+
+      await prisma.availablefields.delete({
+        where: {
+          id: fieldId
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          message: `Field "${field.name}" has been deleted`
+        }
+      });
+    } catch (error: any) {
+      console.error('Error deleting field:', error);
+      
+      // Check if it's a foreign key constraint error
+      if (error.code === 'P2003') {
+        res.status(400).json({
+          success: false,
+          message: 'Cannot delete field because it is being used in scheduled games'
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+);
+
 export default router; 
