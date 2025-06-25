@@ -493,6 +493,43 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     }
   };
 
+  const getGameStatusAbbreviation = (status: number): string => {
+    switch (status) {
+      case 0: return 'INC';
+      case 1: return 'FIN';
+      case 2: return 'R';
+      case 3: return 'PPD';
+      case 4: return 'Forfeit';
+      case 5: return 'DNR';
+      default: return 'UNK';
+    }
+  };
+
+  const getStatusDisplayInfo = (game: Game): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
+    if (game.gameStatus === 0 || game.gameStatus === 1) {
+      // Incomplete or Final - no status display
+      return { showOnVisitor: false, showOnHome: false, statusText: '' };
+    }
+    
+    if (game.gameStatus === 4) {
+      // Forfeit - show "Forfeit" next to the team with lower score
+      const visitorScore = game.visitorScore || 0;
+      const homeScore = game.homeScore || 0;
+      
+      if (visitorScore < homeScore) {
+        return { showOnVisitor: true, showOnHome: false, statusText: 'Forfeit' };
+      } else if (homeScore < visitorScore) {
+        return { showOnVisitor: false, showOnHome: true, statusText: 'Forfeit' };
+      } else {
+        // Equal scores (shouldn't happen for forfeit, but just in case)
+        return { showOnVisitor: true, showOnHome: false, statusText: 'Forfeit' };
+      }
+    }
+    
+    // All other statuses (Rainout, Postponed, Did Not Report) - show on visitor team only
+    return { showOnVisitor: true, showOnHome: false, statusText: getGameStatusAbbreviation(game.gameStatus) };
+  };
+
   const getGameStatusColor = (status: number): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
     switch (status) {
       case 0: return 'default';
@@ -517,6 +554,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     if (!fieldId) return 'TBD';
     const field = fields.find(f => f.id === fieldId);
     return field ? field.name : 'Unknown Field';
+  };
+
+  const getFieldShortName = (fieldId?: string): string => {
+    if (!fieldId) return 'TBD';
+    const field = fields.find(f => f.id === fieldId);
+    return field ? field.shortName : 'Unknown';
+  };
+
+  const shouldShowStatusChip = (gameStatus: number): boolean => {
+    return gameStatus !== 0; // Don't show chip for incomplete games (status 0)
   };
 
   const renderCalendarView = () => {
@@ -549,19 +596,54 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     <Box sx={{ mt: 2 }}>
                       {dayGames.map((game) => (
                         <Box key={game.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                          <Typography variant="body2" fontWeight="bold">
-                            {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
-                          </Typography>
-                          <Box sx={{ mt: 1 }}>
-                            <Chip 
-                              label={getGameStatusText(game.gameStatus)} 
-                              color={getGameStatusColor(game.gameStatus)}
-                              size="small"
-                            />
-                          </Box>
+                          {game.gameStatus === 1 ? (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                  {getTeamName(game.visitorTeamId)}
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                  {game.visitorScore}
+                                </Typography>
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                  {getTeamName(game.homeTeamId)}
+                                </Typography>
+                                <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                  {game.homeScore}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          ) : (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                  {getTeamName(game.visitorTeamId)}
+                                </Typography>
+                                {getStatusDisplayInfo(game).showOnVisitor && (
+                                  <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                    {getStatusDisplayInfo(game).statusText}
+                                  </Typography>
+                                )}
+                              </Box>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                  {getTeamName(game.homeTeamId)}
+                                </Typography>
+                                {getStatusDisplayInfo(game).showOnHome && (
+                                  <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                    {getStatusDisplayInfo(game).statusText}
+                                  </Typography>
+                                )}
+                              </Box>
+                              {game.gameStatus === 0 && (
+                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
+                                  {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
                         </Box>
                       ))}
                     </Box>
@@ -813,18 +895,54 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                         }}
                         onClick={() => openEditDialog(game)}
                       >
-                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
-                          {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: 'block' }}>
-                          {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'}
-                        </Typography>
-                        <Chip
-                          label={getGameStatusText(game.gameStatus)}
-                          color={getGameStatusColor(game.gameStatus)}
-                          size="small"
-                          sx={{ height: 16, fontSize: '0.6rem', mt: 0.5 }}
-                        />
+                        {game.gameStatus === 1 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                {game.visitorScore}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                {game.homeScore}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnVisitor && (
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnHome && (
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            {game.gameStatus === 0 && (
+                              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
+                                {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
                       </Box>
                     ))}
                   </Box>
@@ -846,7 +964,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               primary={
                 <Box>
                   <Typography variant="h6">
-                    {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
+                    {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     {game.gameDate ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
@@ -1289,7 +1407,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             {selectedGame && (
               <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
                 <Typography variant="body2">
-                  {getTeamName(selectedGame.homeTeamId)} vs {getTeamName(selectedGame.visitorTeamId)}
+                  {getTeamName(selectedGame.visitorTeamId)} vs {getTeamName(selectedGame.homeTeamId)}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   {selectedGame.gameDate ? format(parseISO(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}

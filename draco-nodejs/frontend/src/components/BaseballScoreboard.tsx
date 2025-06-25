@@ -71,10 +71,10 @@ const statusColor = (status: number) => {
 const getStatusAbbreviation = (statusText: string): string => {
   switch (statusText) {
     case 'Incomplete': return 'I';
-    case 'Final': return 'F';
+    case 'Final': return 'FIN';
     case 'Rainout': return 'R';
     case 'Postponed': return 'PPD';
-    case 'Forfeit': return 'F';
+    case 'Forfeit': return 'Forfeit'; // Don't abbreviate Forfeit
     case 'Did Not Report': return 'DNR';
     default: return statusText;
   }
@@ -90,6 +90,31 @@ const getGameStatusText = (status: number): string => {
     case 5: return 'Did Not Report';
     default: return 'Unknown';
   }
+};
+
+const getStatusDisplayInfo = (game: any): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
+  if (game.gameStatus === 0 || game.gameStatus === 1) {
+    // Incomplete or Final - no status display
+    return { showOnVisitor: false, showOnHome: false, statusText: '' };
+  }
+  
+  if (game.gameStatus === 4) {
+    // Forfeit - show "Forfeit" next to the team with lower score
+    const visitorScore = game.awayScore || 0;
+    const homeScore = game.homeScore || 0;
+    
+    if (visitorScore < homeScore) {
+      return { showOnVisitor: true, showOnHome: false, statusText: 'Forfeit' };
+    } else if (homeScore < visitorScore) {
+      return { showOnVisitor: false, showOnHome: true, statusText: 'Forfeit' };
+    } else {
+      // Equal scores (shouldn't happen for forfeit, but just in case)
+      return { showOnVisitor: true, showOnHome: false, statusText: 'Forfeit' };
+    }
+  }
+  
+  // All other statuses (Rainout, Postponed, Did Not Report) - show on visitor team only
+  return { showOnVisitor: true, showOnHome: false, statusText: getStatusAbbreviation(getGameStatusText(game.gameStatus)) };
 };
 
 const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, teamId }) => {
@@ -393,6 +418,23 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 title={game.awayTeamName}
               >
                 {game.awayTeamName}
+                {getStatusDisplayInfo(game).showOnVisitor && (
+                  <Typography 
+                    component="span" 
+                    variant="caption" 
+                    sx={{ 
+                      ml: 1, 
+                      color: 'white',
+                      backgroundColor: statusColor(game.gameStatus) === 'error' ? 'error.main' : statusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main',
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 0.5,
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {getStatusDisplayInfo(game).statusText}
+                  </Typography>
+                )}
               </Button>
               <Button
                 href={`/baseball/team/${game.homeTeamId}`}
@@ -414,6 +456,23 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 title={game.homeTeamName}
               >
                 {game.homeTeamName}
+                {getStatusDisplayInfo(game).showOnHome && (
+                  <Typography 
+                    component="span" 
+                    variant="caption" 
+                    sx={{ 
+                      ml: 1, 
+                      color: 'white',
+                      backgroundColor: statusColor(game.gameStatus) === 'error' ? 'error.main' : statusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main',
+                      px: 1,
+                      py: 0.25,
+                      borderRadius: 0.5,
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {getStatusDisplayInfo(game).statusText}
+                  </Typography>
+                )}
               </Button>
             </Box>
             {game.gameStatusText !== 'Incomplete' && game.gameStatus !== 2 && (
@@ -428,16 +487,8 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
             )}
             <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', minWidth: 'auto', width: 'auto' }}>
               <Box>
-                {game.gameStatusText !== 'Incomplete' && (
-                  <Chip
-                    label={getStatusAbbreviation(game.gameStatusText)}
-                    color={statusColor(game.gameStatus)}
-                    size="small"
-                    sx={{ mb: 1, fontWeight: 700, bgcolor: '#1e3a5c', color: 'white' }}
-                  />
-                )}
                 {game.gameStatus === 0 && (
-                  <Typography variant="body2" color="#b0c4de" sx={{ pt: game.gameStatusText === 'Incomplete' ? 0.5 : 0 }}>
+                  <Typography variant="body2" color="#b0c4de" sx={{ pt: 0.5 }}>
                     {localTime}
                   </Typography>
                 )}
