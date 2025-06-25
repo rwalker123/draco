@@ -909,4 +909,503 @@ const getGameStatusText = (status: number): string => {
   }
 };
 
+/**
+ * SCHEDULE MANAGEMENT ENDPOINTS
+ */
+
+// Get all games for a league season
+router.get('/leagues/:leagueSeasonId/schedule',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { leagueSeasonId } = req.params;
+      const { startDate, endDate, teamId } = req.query;
+
+      // Build where clause
+      const where: any = {
+        leagueid: BigInt(leagueSeasonId)
+      };
+
+      if (startDate && endDate) {
+        where.gamedate = {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string)
+        };
+      }
+
+      if (teamId) {
+        where.OR = [
+          { hteamid: BigInt(teamId as string) },
+          { vteamid: BigInt(teamId as string) }
+        ];
+      }
+
+      const games = await prisma.leagueschedule.findMany({
+        where,
+        include: {
+          availablefields: true,
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          games: games.map(game => ({
+            id: game.id.toString(),
+            gameDate: game.gamedate,
+            homeTeamId: game.hteamid.toString(),
+            visitorTeamId: game.vteamid.toString(),
+            homeScore: game.hscore,
+            visitorScore: game.vscore,
+            comment: game.comment,
+            fieldId: game.fieldid?.toString(),
+            field: game.availablefields ? {
+              id: game.availablefields.id.toString(),
+              name: game.availablefields.name,
+              shortName: game.availablefields.shortname,
+              address: game.availablefields.address,
+              city: game.availablefields.city,
+              state: game.availablefields.state
+            } : null,
+            gameStatus: game.gamestatus,
+            gameType: game.gametype,
+            umpire1: game.umpire1?.toString(),
+            umpire2: game.umpire2?.toString(),
+            umpire3: game.umpire3?.toString(),
+            umpire4: game.umpire4?.toString(),
+            league: {
+              id: game.leagueseason.league.id.toString(),
+              name: game.leagueseason.league.name
+            },
+            season: {
+              id: game.leagueseason.season.id.toString(),
+              name: game.leagueseason.season.name
+            }
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching schedule:', error);
+      next(error);
+    }
+  }
+);
+
+// Get games by date range for an account
+router.get('/schedule',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const { startDate, endDate, leagueId } = req.query;
+
+      if (!startDate || !endDate) {
+        res.status(400).json({
+          success: false,
+          message: 'Start date and end date are required'
+        });
+        return;
+      }
+
+      // Build where clause
+      const where: any = {
+        leagueseason: {
+          league: {
+            accountid: accountId
+          }
+        },
+        gamedate: {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string)
+        }
+      };
+
+      if (leagueId) {
+        where.leagueseason = {
+          ...where.leagueseason,
+          leagueid: BigInt(leagueId as string)
+        };
+      }
+
+      const games = await prisma.leagueschedule.findMany({
+        where,
+        include: {
+          availablefields: true,
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          games: games.map(game => ({
+            id: game.id.toString(),
+            gameDate: game.gamedate,
+            homeTeamId: game.hteamid.toString(),
+            visitorTeamId: game.vteamid.toString(),
+            homeScore: game.hscore,
+            visitorScore: game.vscore,
+            comment: game.comment,
+            fieldId: game.fieldid?.toString(),
+            field: game.availablefields ? {
+              id: game.availablefields.id.toString(),
+              name: game.availablefields.name,
+              shortName: game.availablefields.shortname,
+              address: game.availablefields.address,
+              city: game.availablefields.city,
+              state: game.availablefields.state
+            } : null,
+            gameStatus: game.gamestatus,
+            gameType: game.gametype,
+            umpire1: game.umpire1?.toString(),
+            umpire2: game.umpire2?.toString(),
+            umpire3: game.umpire3?.toString(),
+            umpire4: game.umpire4?.toString(),
+            league: {
+              id: game.leagueseason.league.id.toString(),
+              name: game.leagueseason.league.name
+            },
+            season: {
+              id: game.leagueseason.season.id.toString(),
+              name: game.leagueseason.season.name
+            }
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching schedule:', error);
+      next(error);
+    }
+  }
+);
+
+// Create a new game
+router.post('/leagues/:leagueSeasonId/schedule',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireRole('AccountAdmin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { leagueSeasonId } = req.params;
+      const {
+        gameDate,
+        homeTeamId,
+        visitorTeamId,
+        fieldId,
+        comment,
+        gameType = 1,
+        umpire1,
+        umpire2,
+        umpire3,
+        umpire4
+      } = req.body;
+
+      // Validate required fields
+      if (!gameDate || !homeTeamId || !visitorTeamId) {
+        res.status(400).json({
+          success: false,
+          message: 'Game date, home team, and visitor team are required'
+        });
+        return;
+      }
+
+      // Check if teams exist in the league season
+      const teamsInLeague = await prisma.teamsseason.findMany({
+        where: {
+          leagueseasonid: BigInt(leagueSeasonId),
+          id: {
+            in: [BigInt(homeTeamId), BigInt(visitorTeamId)]
+          }
+        }
+      });
+
+      if (teamsInLeague.length !== 2) {
+        res.status(400).json({
+          success: false,
+          message: 'Both teams must be in the specified league season'
+        });
+        return;
+      }
+
+      // Check field availability if field is specified
+      if (fieldId) {
+        const existingGame = await prisma.leagueschedule.findFirst({
+          where: {
+            fieldid: BigInt(fieldId),
+            gamedate: new Date(gameDate),
+            leagueid: BigInt(leagueSeasonId)
+          }
+        });
+
+        if (existingGame) {
+          res.status(400).json({
+            success: false,
+            message: 'Field is already booked for this date and time'
+          });
+          return;
+        }
+      }
+
+      const game = await prisma.leagueschedule.create({
+        data: {
+          gamedate: new Date(gameDate),
+          hteamid: BigInt(homeTeamId),
+          vteamid: BigInt(visitorTeamId),
+          hscore: 0,
+          vscore: 0,
+          comment: comment || '',
+          fieldid: fieldId ? BigInt(fieldId) : null,
+          leagueid: BigInt(leagueSeasonId),
+          gamestatus: 0, // Scheduled
+          gametype: gameType,
+          umpire1: umpire1 ? BigInt(umpire1) : null,
+          umpire2: umpire2 ? BigInt(umpire2) : null,
+          umpire3: umpire3 ? BigInt(umpire3) : null,
+          umpire4: umpire4 ? BigInt(umpire4) : null
+        },
+        include: {
+          availablefields: true,
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          game: {
+            id: game.id.toString(),
+            gameDate: game.gamedate,
+            homeTeamId: game.hteamid.toString(),
+            visitorTeamId: game.vteamid.toString(),
+            homeScore: game.hscore,
+            visitorScore: game.vscore,
+            comment: game.comment,
+            fieldId: game.fieldid?.toString(),
+            field: game.availablefields ? {
+              id: game.availablefields.id.toString(),
+              name: game.availablefields.name,
+              shortName: game.availablefields.shortname,
+              address: game.availablefields.address,
+              city: game.availablefields.city,
+              state: game.availablefields.state
+            } : null,
+            gameStatus: game.gamestatus,
+            gameType: game.gametype,
+            umpire1: game.umpire1?.toString(),
+            umpire2: game.umpire2?.toString(),
+            umpire3: game.umpire3?.toString(),
+            umpire4: game.umpire4?.toString(),
+            league: {
+              id: game.leagueseason.league.id.toString(),
+              name: game.leagueseason.league.name
+            },
+            season: {
+              id: game.leagueseason.season.id.toString(),
+              name: game.leagueseason.season.name
+            }
+          }
+        },
+        message: 'Game created successfully'
+      });
+    } catch (error) {
+      console.error('Error creating game:', error);
+      next(error);
+    }
+  }
+);
+
+// Update a game
+router.put('/schedule/:gameId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireRole('AccountAdmin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { gameId } = req.params;
+      const {
+        gameDate,
+        homeTeamId,
+        visitorTeamId,
+        fieldId,
+        comment,
+        gameStatus,
+        gameType,
+        umpire1,
+        umpire2,
+        umpire3,
+        umpire4
+      } = req.body;
+
+      // Check if game exists
+      const existingGame = await prisma.leagueschedule.findUnique({
+        where: { id: BigInt(gameId) },
+        include: {
+          leagueseason: {
+            include: {
+              league: true
+            }
+          }
+        }
+      });
+
+      if (!existingGame) {
+        res.status(404).json({
+          success: false,
+          message: 'Game not found'
+        });
+        return;
+      }
+
+      // Check field availability if field is being changed
+      if (fieldId && fieldId !== existingGame.fieldid?.toString()) {
+        const conflictingGame = await prisma.leagueschedule.findFirst({
+          where: {
+            fieldid: BigInt(fieldId),
+            gamedate: gameDate ? new Date(gameDate) : existingGame.gamedate,
+            leagueid: existingGame.leagueid,
+            id: { not: BigInt(gameId) }
+          }
+        });
+
+        if (conflictingGame) {
+          res.status(400).json({
+            success: false,
+            message: 'Field is already booked for this date and time'
+          });
+          return;
+        }
+      }
+
+      const updatedGame = await prisma.leagueschedule.update({
+        where: { id: BigInt(gameId) },
+        data: {
+          gamedate: gameDate ? new Date(gameDate) : undefined,
+          hteamid: homeTeamId ? BigInt(homeTeamId) : undefined,
+          vteamid: visitorTeamId ? BigInt(visitorTeamId) : undefined,
+          comment: comment !== undefined ? comment : undefined,
+          fieldid: fieldId ? BigInt(fieldId) : fieldId === null ? null : undefined,
+          gamestatus: gameStatus !== undefined ? gameStatus : undefined,
+          gametype: gameType !== undefined ? gameType : undefined,
+          umpire1: umpire1 ? BigInt(umpire1) : umpire1 === null ? null : undefined,
+          umpire2: umpire2 ? BigInt(umpire2) : umpire2 === null ? null : undefined,
+          umpire3: umpire3 ? BigInt(umpire3) : umpire3 === null ? null : undefined,
+          umpire4: umpire4 ? BigInt(umpire4) : umpire4 === null ? null : undefined
+        },
+        include: {
+          availablefields: true,
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
+        }
+      });
+
+      res.json({
+        success: true,
+        data: {
+          game: {
+            id: updatedGame.id.toString(),
+            gameDate: updatedGame.gamedate,
+            homeTeamId: updatedGame.hteamid.toString(),
+            visitorTeamId: updatedGame.vteamid.toString(),
+            homeScore: updatedGame.hscore,
+            visitorScore: updatedGame.vscore,
+            comment: updatedGame.comment,
+            fieldId: updatedGame.fieldid?.toString(),
+            field: updatedGame.availablefields ? {
+              id: updatedGame.availablefields.id.toString(),
+              name: updatedGame.availablefields.name,
+              shortName: updatedGame.availablefields.shortname,
+              address: updatedGame.availablefields.address,
+              city: updatedGame.availablefields.city,
+              state: updatedGame.availablefields.state
+            } : null,
+            gameStatus: updatedGame.gamestatus,
+            gameType: updatedGame.gametype,
+            umpire1: updatedGame.umpire1?.toString(),
+            umpire2: updatedGame.umpire2?.toString(),
+            umpire3: updatedGame.umpire3?.toString(),
+            umpire4: updatedGame.umpire4?.toString(),
+            league: {
+              id: updatedGame.leagueseason.league.id.toString(),
+              name: updatedGame.leagueseason.league.name
+            },
+            season: {
+              id: updatedGame.leagueseason.season.id.toString(),
+              name: updatedGame.leagueseason.season.name
+            }
+          }
+        },
+        message: 'Game updated successfully'
+      });
+    } catch (error) {
+      console.error('Error updating game:', error);
+      next(error);
+    }
+  }
+);
+
+// Delete a game
+router.delete('/schedule/:gameId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireRole('AccountAdmin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { gameId } = req.params;
+
+      // Check if game exists
+      const existingGame = await prisma.leagueschedule.findUnique({
+        where: { id: BigInt(gameId) }
+      });
+
+      if (!existingGame) {
+        res.status(404).json({
+          success: false,
+          message: 'Game not found'
+        });
+        return;
+      }
+
+      await prisma.leagueschedule.delete({
+        where: { id: BigInt(gameId) }
+      });
+
+      res.json({
+        success: true,
+        message: 'Game deleted successfully'
+      });
+    } catch (error) {
+      console.error('Error deleting game:', error);
+      next(error);
+    }
+  }
+);
+
 export default router; 

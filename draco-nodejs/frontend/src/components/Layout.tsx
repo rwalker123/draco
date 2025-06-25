@@ -282,6 +282,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText>Season Management</ListItemText>
             </MenuItem>
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/schedule`)}>
+              <ListItemIcon>
+                <CalendarMonth fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Schedule Management</ListItemText>
+            </MenuItem>
           </AccountAdminOnly>
 
           {hasRole('672DDF06-21AC-4D7C-B025-9319CC69281A') && (
