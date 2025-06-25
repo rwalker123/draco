@@ -163,13 +163,23 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     <Dialog 
       open={open} 
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          margin: '32px',
+          maxHeight: 'calc(100% - 64px)',
+        },
+        zIndex: 1400
+      }}
       PaperProps={{
         sx: {
           background: 'linear-gradient(180deg, #0a2342 0%, #1e3a5c 100%)',
           color: 'white',
-          borderRadius: 2
+          borderRadius: 2,
+          minHeight: '600px',
+          maxHeight: '85vh',
+          overflow: 'auto'
         }
       }}
     >
@@ -191,7 +201,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         </Button>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 3 }}>
+      <DialogContent sx={{ pt: 4, pb: 2, px: 3 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -199,30 +209,30 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         )}
 
         {/* Game Information Display */}
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1 }}>
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, mt: 1 }}>
           <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
             Game Information
           </Typography>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ flex: '1 1 200px' }}>
-              <Typography variant="body2" color="white">
-                <strong>Date/Time:</strong>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+            <Box>
+              <Typography variant="body2" color="white" fontWeight={600}>
+                Date/Time:
               </Typography>
               <Typography variant="body2" color="#b0c4de">
                 {formatGameTime(game.date)}
               </Typography>
             </Box>
-            <Box sx={{ flex: '1 1 200px' }}>
-              <Typography variant="body2" color="white">
-                <strong>Field:</strong>
+            <Box>
+              <Typography variant="body2" color="white" fontWeight={600}>
+                Field:
               </Typography>
               <Typography variant="body2" color="#b0c4de">
                 {getDisplayFieldName(game) || 'TBD'}
               </Typography>
             </Box>
-            <Box sx={{ flex: '1 1 100%' }}>
-              <Typography variant="body2" color="white">
-                <strong>League:</strong>
+            <Box>
+              <Typography variant="body2" color="white" fontWeight={600}>
+                League:
               </Typography>
               <Typography variant="body2" color="#b0c4de">
                 {game.leagueName}
@@ -233,13 +243,16 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
 
         {/* Game Status and Teams */}
         <Box sx={{ mb: 3 }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 1, alignItems: 'center', justifyContent: 'start' }}>
-            <Box>
-              <Typography variant="subtitle2" color="#b0c4de">
+          <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
+            Game Results
+          </Typography>
+          
+          {/* Game Status */}
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Typography variant="body2" color="#b0c4de" sx={{ minWidth: '100px' }}>
                 Game Status:
               </Typography>
-            </Box>
-            <Box>
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <Select
                   value={formData.gameStatus}
@@ -268,24 +281,30 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 </Select>
               </FormControl>
             </Box>
-            <Box>
-              <Typography variant="body2" color="white" fontWeight={600}>
+          </Box>
+
+          {/* Team Scores */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 3, alignItems: 'center' }}>
+            {/* Away Team */}
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="h6" color="white" fontWeight={600} gutterBottom>
                 {game.awayTeamName}
               </Typography>
-            </Box>
-            <Box>
               <TextField
                 type="number"
                 value={formData.awayScore}
                 onChange={(e) => handleInputChange('awayScore', parseInt(e.target.value) || 0)}
                 inputProps={{ min: 0 }}
-                size="small"
+                size="medium"
                 sx={{
-                  width: '80px',
+                  width: '100px',
                   '& .MuiOutlinedInput-root': {
                     color: 'white',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
                     '& fieldset': {
                       borderColor: '#b0c4de',
+                      borderWidth: '2px',
                     },
                     '&:hover fieldset': {
                       borderColor: 'white',
@@ -303,28 +322,39 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   },
                   '& input[type=number]': {
                     '-moz-appearance': 'textfield',
+                    textAlign: 'center',
                   },
                 }}
               />
             </Box>
-            <Box>
-              <Typography variant="body2" color="white" fontWeight={600}>
-                {game.homeTeamName}
+
+            {/* VS Separator */}
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="h4" color="#b0c4de" fontWeight={300}>
+                VS
               </Typography>
             </Box>
-            <Box>
+
+            {/* Home Team */}
+            <Box sx={{ textAlign: 'left' }}>
+              <Typography variant="h6" color="white" fontWeight={600} gutterBottom>
+                {game.homeTeamName}
+              </Typography>
               <TextField
                 type="number"
                 value={formData.homeScore}
                 onChange={(e) => handleInputChange('homeScore', parseInt(e.target.value) || 0)}
                 inputProps={{ min: 0 }}
-                size="small"
+                size="medium"
                 sx={{
-                  width: '80px',
+                  width: '100px',
                   '& .MuiOutlinedInput-root': {
                     color: 'white',
+                    fontSize: '1.2rem',
+                    fontWeight: 'bold',
                     '& fieldset': {
                       borderColor: '#b0c4de',
+                      borderWidth: '2px',
                     },
                     '&:hover fieldset': {
                       borderColor: 'white',
@@ -342,6 +372,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   },
                   '& input[type=number]': {
                     '-moz-appearance': 'textfield',
+                    textAlign: 'center',
                   },
                 }}
               />
@@ -354,103 +385,102 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
             Notifications & Social Media
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.emailPlayers}
-                    onChange={(e) => handleInputChange('emailPlayers', e.target.checked)}
-                    sx={{
-                      color: '#b0c4de',
-                      '&.Mui-checked': {
-                        color: 'white',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <EmailIcon fontSize="small" />
-                    <Typography variant="body2" color="white">
-                      Email game results to players
-                    </Typography>
-                  </Box>
-                }
-              />
-            </Box>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.postToTwitter}
-                    onChange={(e) => handleInputChange('postToTwitter', e.target.checked)}
-                    sx={{
-                      color: '#b0c4de',
-                      '&.Mui-checked': {
-                        color: 'white',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <TwitterIcon fontSize="small" />
-                    <Typography variant="body2" color="white">
-                      Post to Twitter
-                    </Typography>
-                  </Box>
-                }
-              />
-            </Box>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.postToBluesky}
-                    onChange={(e) => handleInputChange('postToBluesky', e.target.checked)}
-                    sx={{
-                      color: '#b0c4de',
-                      '&.Mui-checked': {
-                        color: 'white',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip label="BS" size="small" sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }} />
-                    <Typography variant="body2" color="white">
-                      Post to Bluesky
-                    </Typography>
-                  </Box>
-                }
-              />
-            </Box>
-            <Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.postToFacebook}
-                    onChange={(e) => handleInputChange('postToFacebook', e.target.checked)}
-                    sx={{
-                      color: '#b0c4de',
-                      '&.Mui-checked': {
-                        color: 'white',
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Chip label="FB" size="small" sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }} />
-                    <Typography variant="body2" color="white">
-                      Post to Facebook
-                    </Typography>
-                  </Box>
-                }
-              />
-            </Box>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+            gap: 2,
+            p: 2,
+            bgcolor: 'rgba(255,255,255,0.03)',
+            borderRadius: 1
+          }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.emailPlayers}
+                  onChange={(e) => handleInputChange('emailPlayers', e.target.checked)}
+                  sx={{
+                    color: '#b0c4de',
+                    '&.Mui-checked': {
+                      color: 'white',
+                    },
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <EmailIcon fontSize="small" />
+                  <Typography variant="body2" color="white">
+                    Email game results to players
+                  </Typography>
+                </Box>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.postToTwitter}
+                  onChange={(e) => handleInputChange('postToTwitter', e.target.checked)}
+                  sx={{
+                    color: '#b0c4de',
+                    '&.Mui-checked': {
+                      color: 'white',
+                    },
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <TwitterIcon fontSize="small" />
+                  <Typography variant="body2" color="white">
+                    Post to Twitter
+                  </Typography>
+                </Box>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.postToBluesky}
+                  onChange={(e) => handleInputChange('postToBluesky', e.target.checked)}
+                  sx={{
+                    color: '#b0c4de',
+                    '&.Mui-checked': {
+                      color: 'white',
+                    },
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip label="BS" size="small" sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }} />
+                  <Typography variant="body2" color="white">
+                    Post to Bluesky
+                  </Typography>
+                </Box>
+              }
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.postToFacebook}
+                  onChange={(e) => handleInputChange('postToFacebook', e.target.checked)}
+                  sx={{
+                    color: '#b0c4de',
+                    '&.Mui-checked': {
+                      color: 'white',
+                    },
+                  }}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Chip label="FB" size="small" sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }} />
+                  <Typography variant="body2" color="white">
+                    Post to Facebook
+                  </Typography>
+                </Box>
+              }
+            />
           </Box>
         </Box>
       </DialogContent>
