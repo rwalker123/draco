@@ -13,8 +13,68 @@ const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
- * GET /api/accounts/:accountId/leagues
- * Get all leagues for an account (requires account access)
+ * @swagger
+ * /api/accounts/{accountId}/leagues:
+ *   get:
+ *     summary: Get all leagues for an account
+ *     description: Retrieve all leagues for a specific account (requires account access)
+ *     tags: [Leagues]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *     responses:
+ *       200:
+ *         description: Leagues retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     leagues:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "101"
+ *                           name:
+ *                             type: string
+ *                             example: "Major League"
+ *                           accountId:
+ *                             type: string
+ *                             example: "123"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - no access to account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/', 
   authenticateToken,
@@ -58,8 +118,79 @@ router.get('/',
 );
 
 /**
- * GET /api/accounts/:accountId/leagues/:leagueId
- * Get specific league details (requires account access)
+ * @swagger
+ * /api/accounts/{accountId}/leagues/{leagueId}:
+ *   get:
+ *     summary: Get specific league details
+ *     description: Retrieve details for a specific league (requires account access)
+ *     tags: [Leagues]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *       - in: path
+ *         name: leagueId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: League ID
+ *         example: "101"
+ *     responses:
+ *       200:
+ *         description: League details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     league:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "101"
+ *                         name:
+ *                           type: string
+ *                           example: "Major League"
+ *                         accountId:
+ *                           type: string
+ *                           example: "123"
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - no access to account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: League not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/:leagueId',
   authenticateToken,
@@ -110,8 +241,91 @@ router.get('/:leagueId',
 );
 
 /**
- * POST /api/accounts/:accountId/leagues
- * Create a new league (requires AccountAdmin or Administrator)
+ * @swagger
+ * /api/accounts/{accountId}/leagues:
+ *   post:
+ *     summary: Create a new league
+ *     description: Create a new league for an account (requires AccountAdmin or Administrator)
+ *     tags: [Leagues]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *         example: "123"
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: League name
+ *                 example: "Minor League"
+ *     responses:
+ *       201:
+ *         description: League created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     league:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "102"
+ *                         name:
+ *                           type: string
+ *                           example: "Minor League"
+ *                         accountId:
+ *                           type: string
+ *                           example: "123"
+ *       400:
+ *         description: Missing league name
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Forbidden - requires AccountAdmin or Administrator
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: League with this name already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/',
   authenticateToken,

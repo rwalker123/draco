@@ -16,8 +16,77 @@ const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
- * GET /api/accounts/search
- * Public search for accounts (no authentication required)
+ * @swagger
+ * /api/accounts/search:
+ *   get:
+ *     summary: Search for accounts
+ *     description: Public search for accounts by name, type, or affiliation (no authentication required)
+ *     tags: [Accounts]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Search query for account name, type, or affiliation
+ *         example: "baseball"
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accounts:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: string
+ *                             example: "123"
+ *                           name:
+ *                             type: string
+ *                             example: "Local Baseball League"
+ *                           accountType:
+ *                             type: string
+ *                             example: "Baseball League"
+ *                           firstYear:
+ *                             type: integer
+ *                             example: 2020
+ *                           affiliation:
+ *                             type: string
+ *                             example: "National Baseball Association"
+ *                           urls:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 id:
+ *                                   type: string
+ *                                   example: "456"
+ *                                 url:
+ *                                   type: string
+ *                                   example: "www.localbaseball.com"
+ *       400:
+ *         description: Missing search query
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/search',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -125,9 +194,76 @@ router.get('/search',
 );
 
 /**
- * GET /api/accounts/by-domain
- * Get account by domain (no authentication required)
- * Used by domain routing middleware
+ * @swagger
+ * /api/accounts/by-domain:
+ *   get:
+ *     summary: Get account by domain
+ *     description: Get account information by domain (no authentication required, used by domain routing middleware)
+ *     tags: [Accounts]
+ *     responses:
+ *       200:
+ *         description: Account found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     account:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                           example: "123"
+ *                         name:
+ *                           type: string
+ *                           example: "Local Baseball League"
+ *                         accountType:
+ *                           type: string
+ *                           example: "Baseball League"
+ *                         accountTypeId:
+ *                           type: string
+ *                           example: "1"
+ *                         firstYear:
+ *                           type: integer
+ *                           example: 2020
+ *                         timezoneId:
+ *                           type: integer
+ *                           example: 1
+ *                         urls:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: string
+ *                                 example: "456"
+ *                               url:
+ *                                 type: string
+ *                                 example: "www.localbaseball.com"
+ *       400:
+ *         description: Missing host header
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: No account found for this domain
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/by-domain',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
