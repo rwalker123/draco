@@ -75,11 +75,11 @@ app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/roleTest', roleTestRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
-app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
-app.use('/api/accounts/:accountId/divisions', divisionsRouter);
-app.use('/api/accounts/:accountId/seasons/:seasonId/teams', rostersRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
-app.use('/api/accounts/:accountId/games', gamesRouter);
+app.use('/api/accounts/:accountId/divisions', divisionsRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', rostersRouter);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler

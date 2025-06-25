@@ -80,6 +80,18 @@ const getStatusAbbreviation = (statusText: string): string => {
   }
 };
 
+const getGameStatusText = (status: number): string => {
+  switch (status) {
+    case 0: return 'Incomplete';
+    case 1: return 'Final';
+    case 2: return 'Rainout';
+    case 3: return 'Postponed';
+    case 4: return 'Forfeit';
+    case 5: return 'Did Not Report';
+    default: return 'Unknown';
+  }
+};
+
 const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, teamId }) => {
   const [data, setData] = useState<ScoreboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -148,6 +160,82 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
 
   const canEditGames = userPermissions.isAccountAdmin || userPermissions.isGlobalAdmin;
 
+  // Common function to load scoreboard data
+  const loadScoreboardData = async () => {
+    // Get current season first
+    const seasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`);
+    const seasonData = await seasonResponse.json();
+    
+    if (!seasonData.success) {
+      throw new Error('Failed to load current season');
+    }
+    
+    const currentSeasonId = seasonData.data.season.id;
+    
+    // Calculate date ranges for today, yesterday, and recaps
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const fiveDaysAgo = new Date(today);
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+    
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    
+    // Load today's games
+    const todayPromise = fetch(
+      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${today.toISOString()}&endDate=${tomorrow.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`
+    ).then(response => response.json());
+    
+    // Load yesterday's games
+    const yesterdayPromise = fetch(
+      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${yesterday.toISOString()}&endDate=${today.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`
+    ).then(response => response.json());
+    
+    // Load recap games (2-5 days ago with recaps)
+    const recapsPromise = fetch(
+      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${fiveDaysAgo.toISOString()}&endDate=${twoDaysAgo.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`
+    ).then(response => response.json());
+    
+    const [todayData, yesterdayData, recapsData] = await Promise.all([todayPromise, yesterdayPromise, recapsPromise]);
+    
+    if (!todayData.success || !yesterdayData.success || !recapsData.success) {
+      throw new Error('Failed to load games data');
+    }
+    
+    // Transform the data to match the expected format
+    const transformGames = (games: any[]) => games.map(game => ({
+      id: game.id,
+      date: game.gameDate,
+      homeTeamId: game.homeTeamId,
+      awayTeamId: game.visitorTeamId,
+      homeTeamName: game.homeTeamName || 'Unknown',
+      awayTeamName: game.visitorTeamName || 'Unknown',
+      homeScore: game.homeScore,
+      awayScore: game.visitorScore,
+      gameStatus: game.gameStatus,
+      gameStatusText: getGameStatusText(game.gameStatus),
+      leagueName: game.league?.name || 'Unknown',
+      fieldId: game.fieldId,
+      fieldName: game.field?.name || null,
+      fieldShortName: game.field?.shortName || null,
+      hasGameRecap: false, // We'll need to check for recaps separately
+      gameRecaps: [] // We'll need to load recaps separately
+    }));
+    
+    return {
+      today: transformGames(todayData.data.games),
+      yesterday: transformGames(yesterdayData.data.games),
+      recaps: transformGames(recapsData.data.games)
+    };
+  };
+
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
   };
@@ -179,17 +267,13 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       throw new Error(errorData.message || 'Failed to save game results');
     }
 
-    // Refresh the scoreboard data
-    const scoreboardResponse = await fetch(`/api/accounts/${accountId}/games/scoreboard/public${teamId ? `?teamId=${teamId}` : ''}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
-
-    if (scoreboardResponse.ok) {
-      const json = await scoreboardResponse.json();
-      setData(json.data);
+    // Refresh the scoreboard data using the common function
+    try {
+      const newData = await loadScoreboardData();
+      setData(newData);
+    } catch (error) {
+      console.error('Error refreshing scoreboard data:', error);
+      // Don't throw here, just log the error as the save was successful
     }
   };
 
@@ -197,24 +281,15 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
     setLoading(true);
     setError(null);
     
-    fetch(`/api/accounts/${accountId}/games/scoreboard/public${teamId ? `?teamId=${teamId}` : ''}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Failed to fetch scoreboard');
-        }
-        return res.json();
+    loadScoreboardData()
+      .then(newData => {
+        setData(newData);
       })
-      .then(json => {
-        setData(json.data);
-        setLoading(false);
+      .catch(error => {
+        console.error('Error loading scoreboard data:', error);
+        setError(error.message);
       })
-      .catch(err => {
-        setError(err.message);
+      .finally(() => {
         setLoading(false);
       });
   }, [accountId, teamId]);

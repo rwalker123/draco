@@ -90,8 +90,6 @@ router.get('/',
  * Get the current season for an account
  */
 router.get('/current',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);

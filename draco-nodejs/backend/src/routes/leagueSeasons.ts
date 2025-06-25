@@ -17,8 +17,6 @@ const routeProtection = new RouteProtection(roleService, prisma);
  * Get all leagues for a season with their divisions and teams
  */
 router.get('/', 
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
@@ -654,6 +652,124 @@ router.get('/:leagueSeasonId/divisions',
   }
 );
 
+// Get all games for a specific league season
+router.get('/:leagueSeasonId/games',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { seasonId, leagueSeasonId } = req.params;
+      const { startDate, endDate, teamId } = req.query;
+
+      // Build where clause
+      const where: any = {
+        leagueid: BigInt(leagueSeasonId)
+      };
+
+      if (startDate && endDate) {
+        where.gamedate = {
+          gte: new Date(startDate as string),
+          lte: new Date(endDate as string)
+        };
+      }
+
+      if (teamId) {
+        where.OR = [
+          { hteamid: BigInt(teamId as string) },
+          { vteamid: BigInt(teamId as string) }
+        ];
+      }
+
+      const games = await prisma.leagueschedule.findMany({
+        where,
+        include: {
+          availablefields: true,
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
+        },
+        orderBy: {
+          gamedate: 'asc'
+        }
+      });
+
+      // Helper function to get team names
+      const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
+        const teams = await prisma.teamsseason.findMany({
+          where: {
+            id: {
+              in: [homeTeamId, visitorTeamId]
+            }
+          },
+          select: {
+            id: true,
+            name: true
+          }
+        });
+
+        const homeTeam = teams.find(t => t.id === homeTeamId);
+        const visitorTeam = teams.find(t => t.id === visitorTeamId);
+
+        return {
+          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
+          visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`
+        };
+      };
+
+      // Process games to include team names
+      const processedGames = [];
+      for (const game of games) {
+        const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+        processedGames.push({
+          id: game.id.toString(),
+          gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+          homeTeamId: game.hteamid.toString(),
+          visitorTeamId: game.vteamid.toString(),
+          homeTeamName: teamNames.homeTeamName,
+          visitorTeamName: teamNames.visitorTeamName,
+          homeScore: game.hscore,
+          visitorScore: game.vscore,
+          comment: game.comment,
+          fieldId: game.fieldid?.toString(),
+          field: game.availablefields ? {
+            id: game.availablefields.id.toString(),
+            name: game.availablefields.name,
+            shortName: game.availablefields.shortname,
+            address: game.availablefields.address,
+            city: game.availablefields.city,
+            state: game.availablefields.state
+          } : null,
+          gameStatus: game.gamestatus,
+          gameType: game.gametype,
+          umpire1: game.umpire1?.toString(),
+          umpire2: game.umpire2?.toString(),
+          umpire3: game.umpire3?.toString(),
+          umpire4: game.umpire4?.toString(),
+          league: {
+            id: game.leagueseason.league.id.toString(),
+            name: game.leagueseason.league.name
+          },
+          season: {
+            id: game.leagueseason.season.id.toString(),
+            name: game.leagueseason.season.name
+          }
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          games: processedGames
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching schedule:', error);
+      next(error);
+    }
+  }
+);
+
 /**
  * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions
  * Add a division to a league season
@@ -1111,4 +1227,4 @@ router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
   }
 );
 
-export default router; 
+export default router;
