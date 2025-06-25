@@ -4,7 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { dracoTheme } from './theme';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useParams } from 'react-router-dom';
 import PasswordReset from './components/PasswordReset';
 import Login from './components/Login';
 import Signup from './components/Signup';
@@ -14,6 +14,7 @@ import ProtectedAccountManagement from './components/ProtectedAccountManagement'
 import ProtectedSeasonManagement from './components/ProtectedSeasonManagement';
 import ProtectedLeagueSeasonManagement from './components/ProtectedLeagueSeasonManagement';
 import ProtectedTeamRosterManagement from './components/ProtectedTeamRosterManagement';
+import ScheduleManagement from './components/ScheduleManagement';
 import PermissionTest from './components/PermissionTest';
 import RoleDebug from './components/RoleDebug';
 import Accounts from './components/Accounts';
@@ -21,6 +22,13 @@ import AccountHome from './components/AccountHome';
 import AccountSettings from './components/AccountSettings';
 import DomainRedirect from './components/DomainRedirect';
 import { RequireAuth } from './components/ProtectedRoute';
+
+// Wrapper component to handle URL parameters
+const ScheduleManagementWrapper = () => {
+  const { accountId } = useParams<{ accountId: string }>();
+  if (!accountId) return <div>Account ID not found</div>;
+  return <ScheduleManagement accountId={accountId} />;
+};
 
 function App() {
   return (
@@ -55,6 +63,11 @@ function App() {
           <Route path="/account/:accountId/seasons" element={<ProtectedSeasonManagement />} />
           <Route path="/account/:accountId/seasons/:seasonId/league-seasons" element={<ProtectedLeagueSeasonManagement />} />
           <Route path="/account/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster" element={<ProtectedTeamRosterManagement />} />
+          <Route path="/account/:accountId/schedule" element={
+            <RequireAuth>
+              <ScheduleManagementWrapper />
+            </RequireAuth>
+          } />
           <Route path="/permission-test" element={<PermissionTest />} />
           <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>
