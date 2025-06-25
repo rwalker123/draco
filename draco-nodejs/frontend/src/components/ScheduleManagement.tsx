@@ -211,6 +211,21 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const gamesData = await gamesResponse.json();
       setGames(gamesData.data.games);
 
+      // Load teams for the current season
+      const teamsResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/teams`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json();
+        setTeams(teamsData.data.teams || []);
+      }
+
       // Load fields
       const fieldsResponse = await fetch(
         `/api/accounts/${accountId}/fields`,
@@ -240,15 +255,32 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         return;
       }
 
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error('Failed to load current season');
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
       // Combine date and time
       const combinedDateTime = new Date(gameDate);
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
-      // Extract season and league season IDs from selectedLeagueSeason
-      const [seasonId, leagueSeasonId] = selectedLeagueSeason.split('-');
+      // Use the selected league season ID directly
+      const leagueSeasonId = selectedLeagueSeason;
 
       const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues/${leagueSeasonId}/games`,
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}/games`,
         {
           method: 'POST',
           headers: {
@@ -382,9 +414,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const getGameStatusText = (status: number): string => {
     switch (status) {
-      case 0: return 'Scheduled';
+      case 0: return 'Incomplete';
       case 1: return 'Final';
-      case 2: return 'In Progress';
+      case 2: return 'Rainout';
       case 3: return 'Postponed';
       case 4: return 'Forfeit';
       case 5: return 'Did Not Report';
@@ -405,8 +437,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   };
 
   const getTeamName = (teamId: string): string => {
+    if (!teams || teams.length === 0) {
+      return `Team ${teamId}`;
+    }
     const team = teams.find(t => t.id === teamId);
-    return team ? team.name : 'Unknown Team';
+    return team ? team.name : `Team ${teamId}`;
   };
 
   const getFieldName = (fieldId?: string): string => {
@@ -421,7 +456,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return (
       <Box>
         {weekDays.map((day) => {
-          const dayGames = games.filter(game => isSameDay(parseISO(game.gameDate), day));
+          const dayGames = games.filter(game => game?.gameDate && isSameDay(parseISO(game.gameDate), day));
           
           return (
             <Box 
@@ -450,7 +485,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                             {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
                           </Typography>
                           <Typography variant="caption" color="textSecondary">
-                            {format(parseISO(game.gameDate), 'h:mm a')} • {getFieldName(game.fieldId)}
+                            {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
                           </Typography>
                           <Box sx={{ mt: 1 }}>
                             <Chip 
@@ -488,7 +523,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    {format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a')}
+                    {game.gameDate ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     {getFieldName(game.fieldId)}
@@ -606,7 +641,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     >
                       {leagueSeasons.map((ls) => (
                         <MenuItem key={ls.id} value={ls.id}>
-                          {ls.league.name} - {ls.season.name}
+                          {ls.league?.name || 'Unknown League'} - {ls.season?.name || 'Unknown Season'}
                         </MenuItem>
                       ))}
                     </Select>
@@ -619,12 +654,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={homeTeamId}
                       onChange={(e) => setHomeTeamId(e.target.value)}
                       label="Home Team"
+                      disabled={teams.length === 0}
                     >
-                      {teams.map((team) => (
-                        <MenuItem key={team.id} value={team.id}>
-                          {team.name}
-                        </MenuItem>
-                      ))}
+                      {teams.length === 0 ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : (
+                        teams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
                   </FormControl>
                 </Box>
@@ -638,12 +678,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={visitorTeamId}
                       onChange={(e) => setVisitorTeamId(e.target.value)}
                       label="Visitor Team"
+                      disabled={teams.length === 0}
                     >
-                      {teams.map((team) => (
-                        <MenuItem key={team.id} value={team.id}>
-                          {team.name}
-                        </MenuItem>
-                      ))}
+                      {teams.length === 0 ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : (
+                        teams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
                   </FormControl>
                 </Box>
@@ -718,12 +763,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={homeTeamId}
                       onChange={(e) => setHomeTeamId(e.target.value)}
                       label="Home Team"
+                      disabled={teams.length === 0}
                     >
-                      {teams.map((team) => (
-                        <MenuItem key={team.id} value={team.id}>
-                          {team.name}
-                        </MenuItem>
-                      ))}
+                      {teams.length === 0 ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : (
+                        teams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
                   </FormControl>
                 </Box>
@@ -734,12 +784,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={visitorTeamId}
                       onChange={(e) => setVisitorTeamId(e.target.value)}
                       label="Visitor Team"
+                      disabled={teams.length === 0}
                     >
-                      {teams.map((team) => (
-                        <MenuItem key={team.id} value={team.id}>
-                          {team.name}
-                        </MenuItem>
-                      ))}
+                      {teams.length === 0 ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : (
+                        teams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
                   </FormControl>
                 </Box>
@@ -808,7 +863,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   {getTeamName(selectedGame.homeTeamId)} vs {getTeamName(selectedGame.visitorTeamId)}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  {format(parseISO(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a')}
+                  {selectedGame.gameDate ? format(parseISO(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
                 </Typography>
               </Box>
             )}
