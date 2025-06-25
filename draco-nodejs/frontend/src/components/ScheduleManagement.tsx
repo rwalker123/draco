@@ -454,7 +454,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
     
     return (
-      <Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
         {weekDays.map((day) => {
           const dayGames = games.filter(game => game?.gameDate && isSameDay(parseISO(game.gameDate), day));
           
@@ -463,9 +463,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               key={day.toISOString()} 
               sx={{ 
                 flex: '1 1 auto', 
-                minWidth: { xs: '100%', sm: '50%', md: '33.333%', lg: '25%' },
-                maxWidth: { xs: '100%', sm: '50%', md: '33.333%', lg: '25%' },
-                p: 1
+                minWidth: { xs: '100%', sm: '200px', md: '180px', lg: '160px' },
+                maxWidth: { xs: '100%', sm: '250px', md: '220px', lg: '200px' }
               }}
             >
               <Card>
