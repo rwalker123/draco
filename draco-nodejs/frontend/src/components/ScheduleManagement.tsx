@@ -46,6 +46,11 @@ import { startOfWeek } from 'date-fns/startOfWeek';
 import { endOfWeek } from 'date-fns/endOfWeek';
 import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
 import { isSameDay } from 'date-fns/isSameDay';
+import { startOfMonth } from 'date-fns/startOfMonth';
+import { endOfMonth } from 'date-fns/endOfMonth';
+import { startOfYear } from 'date-fns/startOfYear';
+import { endOfYear } from 'date-fns/endOfYear';
+import { addDays } from 'date-fns/addDays';
 
 interface Game {
   id: string;
@@ -147,10 +152,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date()));
   const [endDate, setEndDate] = useState<Date>(endOfWeek(new Date()));
 
+  // Filter states
+  const [filterType, setFilterType] = useState<'day' | 'week' | 'month' | 'year'>('month');
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
+
   // Load data
   useEffect(() => {
     loadData();
-  }, [accountId, startDate, endDate]);
+  }, [accountId, filterType, filterDate]);
 
   const loadData = async () => {
     try {
@@ -189,10 +198,37 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
       }
 
-      // Calculate date range (current month)
-      const now = new Date();
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      // Calculate date range based on filter type
+      let startDate: Date;
+      let endDate: Date;
+
+      switch (filterType) {
+        case 'day':
+          startDate = new Date(filterDate);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(filterDate);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case 'week':
+          startDate = startOfWeek(filterDate);
+          endDate = endOfWeek(filterDate);
+          break;
+        case 'month':
+          startDate = startOfMonth(filterDate);
+          endDate = endOfMonth(filterDate);
+          break;
+        case 'year':
+          startDate = startOfYear(filterDate);
+          endDate = endOfYear(filterDate);
+          break;
+        default:
+          startDate = startOfMonth(filterDate);
+          endDate = endOfMonth(filterDate);
+      }
+
+      // Update view dates for calendar view
+      setStartDate(startDate);
+      setEndDate(endDate);
 
       // Load games for the current season (across all leagues)
       const gamesResponse = await fetch(
@@ -597,6 +633,71 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             <Tab label="Calendar View" value="calendar" />
             <Tab label="List View" value="list" />
           </Tabs>
+        </Paper>
+
+        {/* Filter Controls */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            <Typography variant="subtitle1" sx={{ minWidth: 'fit-content' }}>
+              Time Period:
+            </Typography>
+            
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel>Time Period</InputLabel>
+              <Select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as 'day' | 'week' | 'month' | 'year')}
+                label="Time Period"
+              >
+                <MenuItem value="day">Day</MenuItem>
+                <MenuItem value="week">Week</MenuItem>
+                <MenuItem value="month">Month</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
+              </Select>
+            </FormControl>
+
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              {filterType === 'day' && (
+                <DatePicker
+                  label="Select Date"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === 'week' && (
+                <DatePicker
+                  label="Select Week"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === 'month' && (
+                <DatePicker
+                  label="Select Month"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === 'year' && (
+                <DatePicker
+                  label="Select Year"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+            </LocalizationProvider>
+
+            <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
+              {filterType === 'day' && `Showing games for ${format(filterDate, 'MMMM d, yyyy')}`}
+              {filterType === 'week' && `Showing games for week of ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`}
+              {filterType === 'month' && `Showing games for ${format(filterDate, 'MMMM yyyy')}`}
+              {filterType === 'year' && `Showing games for ${format(filterDate, 'yyyy')}`}
+            </Typography>
+          </Box>
         </Paper>
 
         {viewMode === 'calendar' ? renderCalendarView() : renderListView()}
