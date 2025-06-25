@@ -44,10 +44,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { isEmail } from 'validator';
-
-// Temporary workaround - use basic JavaScript Date methods
-const format = (date: Date, formatStr: string) => date.toLocaleDateString();
-const parseISO = (dateStr: string) => new Date(dateStr);
+import { format } from 'date-fns';
+import { parseISO } from 'date-fns/parseISO';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
