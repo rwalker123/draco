@@ -10,6 +10,78 @@ const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams
+ * Get all teams for a season
+ */
+router.get('/',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+
+      // Get all teams for this season across all leagues
+      const teams = await prisma.teamsseason.findMany({
+        where: {
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId
+            }
+          }
+        },
+        include: {
+          teams: {
+            select: {
+              id: true,
+              webaddress: true,
+              youtubeuserid: true,
+              defaultvideo: true,
+              autoplayvideo: true
+            }
+          },
+          leagueseason: {
+            include: {
+              league: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: [
+          { leagueseason: { league: { name: 'asc' } } },
+          { name: 'asc' }
+        ]
+      });
+
+      res.json({
+        success: true,
+        data: {
+          teams: teams.map(team => ({
+            id: team.id.toString(),
+            name: team.name,
+            teamId: team.teamid.toString(),
+            league: {
+              id: team.leagueseason.league.id.toString(),
+              name: team.leagueseason.league.name
+            },
+            webAddress: team.teams.webaddress,
+            youtubeUserId: team.teams.youtubeuserid,
+            defaultVideo: team.teams.defaultvideo,
+            autoPlayVideo: team.teams.autoplayvideo
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Teams route error:', error);
+      next(error);
+    }
+  }
+);
+
+/**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
  * Get all roster members for a team season
  */

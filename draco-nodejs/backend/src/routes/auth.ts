@@ -10,8 +10,56 @@ const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 
 /**
- * POST /api/auth/login
- * Login with username and password
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login with username and password
+ *     description: Authenticate a user and return a JWT token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginCredentials'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 token:
+ *                   type: string
+ *                   description: JWT token for authentication
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Missing required fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -43,8 +91,46 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 });
 
 /**
- * POST /api/auth/register
- * Register a new user
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     description: Create a new user account with the provided information
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterData'
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: User registered successfully
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error or user already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -95,8 +181,19 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
 });
 
 /**
- * POST /api/auth/logout
- * Logout user (client-side token removal)
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     description: Logout endpoint (JWT tokens are stateless, so logout is handled client-side)
+ *     tags: [Authentication]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
  */
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
   // JWT tokens are stateless, so logout is handled client-side
@@ -108,8 +205,42 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
- * GET /api/auth/me
- * Get current user information
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user information
+ *     description: Retrieve information about the currently authenticated user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: User information retrieved
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.get('/me', authenticateToken, (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -139,8 +270,59 @@ router.get('/me', authenticateToken, (req: Request, res: Response, next: NextFun
 });
 
 /**
- * POST /api/auth/verify
- * Verify JWT token
+ * @swagger
+ * /api/auth/verify:
+ *   post:
+ *     summary: Verify JWT token
+ *     description: Verify if a JWT token is valid and return user information
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: JWT token to verify
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Token is valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Token is valid
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Token is required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token is invalid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/verify', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -171,8 +353,57 @@ router.post('/verify', async (req: Request, res: Response, next: NextFunction) =
 });
 
 /**
- * POST /api/auth/change-password
- * Change user password (requires authentication)
+ * @swagger
+ * /api/auth/change-password:
+ *   post:
+ *     summary: Change user password
+ *     description: Change the password for the currently authenticated user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: Current password
+ *                 example: oldpassword123
+ *               newPassword:
+ *                 type: string
+ *                 description: New password (minimum 6 characters)
+ *                 example: newpassword123
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: User not authenticated or current password incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/change-password', authenticateToken, async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -209,7 +440,7 @@ router.post('/change-password', authenticateToken, async (req: Request, res: Res
     if (result.success) {
       res.status(200).json(result);
     } else {
-      res.status(400).json(result);
+      res.status(401).json(result);
     }
   } catch (error) {
     console.error('Change password error:', error);

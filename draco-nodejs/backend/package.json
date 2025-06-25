@@ -4,12 +4,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "nodemon --exec npm start",
     "build": "tsc",
     "clean": "rm -rf dist",
     "migrate-passwords": "ts-node scripts/migrate-passwords.ts",
-    "test-passwords": "ts-node scripts/test-password-verification.ts"
+    "test-passwords": "ts-node scripts/test-password-verification.ts",
+    "docs:generate": "ts-node scripts/generate-docs.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,8 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^7.0.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "typescript": "^5.8.3",
     "validator": "^13.15.15"
   },
@@ -36,6 +39,8 @@
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.6",
     "nodemon": "^3.1.10",
     "prisma": "^6.10.1",
     "ts-node": "^10.9.2"

@@ -65,6 +65,13 @@ app.get('/health', (req: any, res: any) => {
   });
 });
 
+// Swagger API Documentation
+const swaggerUi = require('swagger-ui-express');
+const { specs } = require('./config/swagger');
+
+app.use('/apidocs', swaggerUi.serve);
+app.get('/apidocs', swaggerUi.setup(specs));
+
 // API routes (will be added later)
 // app.use('/api/auth', authRouter);
 // app.use('/api/accounts', accountsRouter);
