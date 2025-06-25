@@ -159,14 +159,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [filterType, setFilterType] = useState<'day' | 'week' | 'month' | 'year'>('month');
   const [filterDate, setFilterDate] = useState<Date>(new Date());
 
+  // Loading states
+  const [loadingGames, setLoadingGames] = useState(false);
+  const [loadingStaticData, setLoadingStaticData] = useState(true);
+
   // Load data
   useEffect(() => {
-    loadData();
+    loadStaticData();
+  }, [accountId]);
+
+  useEffect(() => {
+    if (filterType && filterDate) {
+      loadGamesData();
+    }
   }, [accountId, filterType, filterDate]);
 
-  const loadData = async () => {
+  const loadStaticData = async () => {
     try {
-      setLoading(true);
+      setLoadingStaticData(true);
       setError('');
 
       // Get current season first
@@ -186,9 +196,52 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const currentSeasonData = await currentSeasonResponse.json();
       const currentSeasonId = currentSeasonData.data.season.id;
 
-      // Get league seasons for the dropdown
-      const leagueSeasonsResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`,
+      // Load static data in parallel
+      const [leagueSeasonsResponse, teamsResponse, fieldsResponse] = await Promise.all([
+        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`, {
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/teams`, {
+          headers: { 'Content-Type': 'application/json' }
+        }),
+        fetch(`/api/accounts/${accountId}/fields`, {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      ]);
+
+      // Process league seasons
+      if (leagueSeasonsResponse.ok) {
+        const leagueSeasonsData = await leagueSeasonsResponse.json();
+        setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
+      }
+
+      // Process teams
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json();
+        setTeams(teamsData.data.teams || []);
+      }
+
+      // Process fields
+      if (fieldsResponse.ok) {
+        const fieldsData = await fieldsResponse.json();
+        setFields(fieldsData.data.fields);
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load static data');
+    } finally {
+      setLoadingStaticData(false);
+    }
+  };
+
+  const loadGamesData = async () => {
+    try {
+      setLoadingGames(true);
+      setError('');
+
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
         {
           headers: {
             'Content-Type': 'application/json'
@@ -196,10 +249,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         }
       );
 
-      if (leagueSeasonsResponse.ok) {
-        const leagueSeasonsData = await leagueSeasonsResponse.json();
-        setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
+      if (!currentSeasonResponse.ok) {
+        throw new Error('Failed to load current season');
       }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
 
       // Calculate date range based on filter type
       let startDate: Date;
@@ -250,41 +305,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const gamesData = await gamesResponse.json();
       setGames(gamesData.data.games);
 
-      // Load teams for the current season
-      const teamsResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/teams`,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (teamsResponse.ok) {
-        const teamsData = await teamsResponse.json();
-        setTeams(teamsData.data.teams || []);
-      }
-
-      // Load fields
-      const fieldsResponse = await fetch(
-        `/api/accounts/${accountId}/fields`,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (fieldsResponse.ok) {
-        const fieldsData = await fieldsResponse.json();
-        setFields(fieldsData.data.fields);
-      }
-
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
+      setError(err instanceof Error ? err.message : 'Failed to load games');
     } finally {
-      setLoading(false);
+      setLoadingGames(false);
     }
+  };
+
+  const loadData = async () => {
+    await loadStaticData();
+    await loadGamesData();
   };
 
   const handleCreateGame = async () => {
@@ -345,7 +375,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setSuccess('Game created successfully');
       setCreateDialogOpen(false);
       resetForm();
-      loadData();
+      loadGamesData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create game');
     }
@@ -389,7 +419,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setSuccess('Game updated successfully');
       setEditDialogOpen(false);
       resetForm();
-      loadData();
+      loadGamesData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update game');
     }
@@ -417,7 +447,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setSuccess('Game deleted successfully');
       setDeleteDialogOpen(false);
       setSelectedGame(null);
-      loadData();
+      loadGamesData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete game');
     }
@@ -631,17 +661,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             variant="h6" 
             sx={{ 
               fontWeight: 'bold', 
-              color: '#1976d2',
-              cursor: 'pointer',
-              '&:hover': {
-                textDecoration: 'underline'
-              }
+              color: '#1976d2'
             }}
-            onClick={() => {
-              setFilterType('month');
-              setFilterDate(filterDate);
-            }}
-            title={`View all games for ${format(filterDate, 'MMMM yyyy')}`}
           >
             {format(filterDate, 'MMMM yyyy')}
           </Typography>
@@ -864,7 +885,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     );
   };
 
-  if (loading) {
+  if (loadingStaticData) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
@@ -971,8 +992,44 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         </Paper>
 
         {viewMode === 'calendar' ? 
-          (filterType === 'month' ? renderMonthCalendarView() : renderCalendarView()) 
-          : renderListView()}
+          (filterType === 'month' ? (
+            <Box>
+              {loadingGames && (
+                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderMonthCalendarView()}
+            </Box>
+          ) : (
+            <Box>
+              {loadingGames && (
+                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderCalendarView()}
+            </Box>
+          )) 
+          : (
+            <Box>
+              {loadingGames && (
+                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderListView()}
+            </Box>
+          )}
 
         {/* Create Game Dialog */}
         <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="md" fullWidth>
