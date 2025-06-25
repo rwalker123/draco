@@ -34,7 +34,10 @@ import {
   Delete as DeleteIcon,
   CalendarToday as CalendarIcon,
   LocationOn as LocationIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  ZoomIn as ZoomInIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
@@ -546,6 +549,273 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     );
   };
 
+  const renderMonthCalendarView = () => {
+    // Get the first day of the month and the last day
+    const firstDayOfMonth = startOfMonth(filterDate);
+    const lastDayOfMonth = endOfMonth(filterDate);
+    
+    // Get the first day of the week that contains the first day of the month
+    const firstDayOfWeek = startOfWeek(firstDayOfMonth);
+    // Get the last day of the week that contains the last day of the month
+    const lastDayOfWeek = endOfWeek(lastDayOfMonth);
+    
+    // Generate all days for the calendar grid
+    const allDays = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
+    
+    // Group days into weeks
+    const weeks = [];
+    for (let i = 0; i < allDays.length; i += 7) {
+      weeks.push(allDays.slice(i, i + 7));
+    }
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    return (
+      <Box sx={{ 
+        border: '3px solid #1976d2', 
+        borderRadius: 2, 
+        overflow: 'hidden',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Year Header */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 2,
+            backgroundColor: '#1976d2',
+            color: 'white',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: '#1565c0'
+            }
+          }}
+          onClick={() => {
+            setFilterType('year');
+            setFilterDate(filterDate);
+          }}
+          title={`View all games for ${format(filterDate, 'yyyy')}`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+            {format(filterDate, 'yyyy')}
+          </Typography>
+        </Box>
+
+        {/* Month Header with Navigation */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            py: 1.5,
+            px: 2,
+            backgroundColor: '#f5f5f5',
+            borderBottom: '2px solid #1976d2'
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => {
+              const prevMonth = new Date(filterDate);
+              prevMonth.setMonth(prevMonth.getMonth() - 1);
+              setFilterDate(prevMonth);
+            }}
+            sx={{ color: '#1976d2' }}
+            title="Previous month"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+          
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 'bold', 
+              color: '#1976d2',
+              cursor: 'pointer',
+              '&:hover': {
+                textDecoration: 'underline'
+              }
+            }}
+            onClick={() => {
+              setFilterType('month');
+              setFilterDate(filterDate);
+            }}
+            title={`View all games for ${format(filterDate, 'MMMM yyyy')}`}
+          >
+            {format(filterDate, 'MMMM yyyy')}
+          </Typography>
+          
+          <IconButton
+            size="small"
+            onClick={() => {
+              const nextMonth = new Date(filterDate);
+              nextMonth.setMonth(nextMonth.getMonth() + 1);
+              setFilterDate(nextMonth);
+            }}
+            sx={{ color: '#1976d2' }}
+            title="Next month"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Calendar Header */}
+        <Box sx={{ 
+          display: 'flex', 
+          borderBottom: '3px solid #1976d2',
+          backgroundColor: '#f5f5f5'
+        }}>
+          {/* Week Zoom Header */}
+          <Box
+            sx={{
+              width: 50,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRight: '2px solid #1976d2',
+              backgroundColor: '#e3f2fd'
+            }}
+          >
+            <Typography variant="caption" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+              Week
+            </Typography>
+          </Box>
+          
+          {dayNames.map((dayName, index) => (
+            <Box
+              key={dayName}
+              sx={{
+                flex: 1,
+                textAlign: 'center',
+                py: 1.5,
+                fontWeight: 'bold',
+                backgroundColor: '#e3f2fd',
+                borderRight: index < 6 ? '2px solid #1976d2' : 'none'
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ color: '#1976d2' }}>{dayName}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Calendar Grid */}
+        {weeks.map((week, weekIndex) => (
+          <Box key={weekIndex} sx={{ 
+            display: 'flex', 
+            minHeight: 120, 
+            borderBottom: weekIndex < weeks.length - 1 ? '2px solid #1976d2' : 'none'
+          }}>
+            {/* Week Zoom Button */}
+            <Box
+              sx={{
+                width: 50,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRight: '2px solid #1976d2',
+                backgroundColor: '#f8f9fa',
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: '#e3f2fd'
+                }
+              }}
+              onClick={() => {
+                setFilterType('week');
+                setFilterDate(week[0]); // Use the first day of the week
+              }}
+              title={`View week of ${format(week[0], 'MMM d')} - ${format(week[6], 'MMM d')}`}
+            >
+              <IconButton size="small" sx={{ color: '#1976d2' }}>
+                <ZoomInIcon />
+              </IconButton>
+            </Box>
+            
+            {week.map((day, dayIndex) => {
+              const isCurrentMonth = day.getMonth() === filterDate.getMonth();
+              const dayGames = games.filter(game => 
+                game?.gameDate && isSameDay(parseISO(game.gameDate), day)
+              );
+              
+              return (
+                <Box
+                  key={day.toISOString()}
+                  sx={{
+                    flex: 1,
+                    borderRight: dayIndex < 6 ? '2px solid #1976d2' : 'none',
+                    p: 1,
+                    backgroundColor: isCurrentMonth ? 'white' : '#fafafa',
+                    minHeight: 120,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    '&:hover': {
+                      backgroundColor: isCurrentMonth ? '#f0f8ff' : '#f5f5f5',
+                      boxShadow: 'inset 0 0 0 2px #1976d2'
+                    }
+                  }}
+                  onClick={() => {
+                    setFilterType('day');
+                    setFilterDate(day);
+                  }}
+                >
+                  {/* Date Header */}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: isCurrentMonth ? 'bold' : 'normal',
+                      color: isCurrentMonth ? 'text.primary' : 'text.secondary',
+                      mb: 1,
+                      textAlign: 'center'
+                    }}
+                  >
+                    {format(day, 'd')}
+                  </Typography>
+
+                  {/* Games for this day */}
+                  <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                    {dayGames.map((game) => (
+                      <Box
+                        key={game.id}
+                        sx={{
+                          mb: 0.5,
+                          p: 0.5,
+                          backgroundColor: 'primary.light',
+                          borderRadius: 0.5,
+                          fontSize: '0.75rem',
+                          lineHeight: 1.2,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'primary.main',
+                            color: 'white'
+                          }
+                        }}
+                        onClick={() => openEditDialog(game)}
+                      >
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block' }}>
+                          {getTeamName(game.homeTeamId)} vs {getTeamName(game.visitorTeamId)}
+                        </Typography>
+                        <Typography variant="caption" sx={{ display: 'block' }}>
+                          {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'}
+                        </Typography>
+                        <Chip
+                          label={getGameStatusText(game.gameStatus)}
+                          color={getGameStatusColor(game.gameStatus)}
+                          size="small"
+                          sx={{ height: 16, fontSize: '0.6rem', mt: 0.5 }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
   const renderListView = () => {
     return (
       <List>
@@ -700,7 +970,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           </Box>
         </Paper>
 
-        {viewMode === 'calendar' ? renderCalendarView() : renderListView()}
+        {viewMode === 'calendar' ? 
+          (filterType === 'month' ? renderMonthCalendarView() : renderCalendarView()) 
+          : renderListView()}
 
         {/* Create Game Dialog */}
         <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="md" fullWidth>
