@@ -9,751 +9,9 @@ const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
-/**
- * GET /api/accounts/:accountId/games/scoreboard/public
- * Get games for scoreboard display (today, yesterday, previous, recaps) - PUBLIC ENDPOINT
- */
-router.get('/scoreboard/public',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const teamId = req.query.teamId ? BigInt(req.query.teamId as string) : null;
-
-      // Get current season for this account
-      const currentSeasonRecord = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId
-        }
-      });
-
-      if (!currentSeasonRecord) {
-        res.json({
-          success: true,
-          data: {
-            today: [],
-            yesterday: [],
-            previous: [],
-            recaps: []
-          }
-        });
-        return;
-      }
-
-      const currentSeason = await prisma.season.findUnique({
-        where: {
-          id: currentSeasonRecord.seasonid
-        }
-      });
-
-      if (!currentSeason) {
-        res.json({
-          success: true,
-          data: {
-            today: [],
-            yesterday: [],
-            previous: [],
-            recaps: []
-          }
-        });
-        return;
-      }
-
-      // Calculate date ranges
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      // Base where clause
-      const baseWhere = {
-        leagueseason: {
-          seasonid: currentSeason.id,
-          league: {
-            accountid: accountId
-          }
-        },
-        ...(teamId && {
-          OR: [
-            { hteamid: teamId },
-            { vteamid: teamId }
-          ]
-        })
-      };
-
-      // Get today's games
-      const todayGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: today,
-            lt: tomorrow
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
-
-      // Get games from yesterday
-      const yesterdayGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: yesterday,
-            lt: today
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
-
-      // Get games with recaps (2-5 days ago)
-      const fiveDaysAgo = new Date(today);
-      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-      
-      const twoDaysAgo = new Date(today);
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      
-      const recapGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: fiveDaysAgo,
-            lt: twoDaysAgo
-          },
-          gamerecap: {
-            some: {}
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'desc'
-        }
-      });
-
-      // Helper function to get team names
-      const getTeamNames = async (homeTeamId: bigint, awayTeamId: bigint) => {
-        const teams = await prisma.teamsseason.findMany({
-          where: {
-            id: {
-              in: [homeTeamId, awayTeamId]
-            }
-          },
-          select: {
-            id: true,
-            name: true
-          }
-        });
-
-        const homeTeam = teams.find(t => t.id === homeTeamId);
-        const awayTeam = teams.find(t => t.id === awayTeamId);
-
-        return {
-          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
-          awayTeamName: awayTeam?.name || `Team ${awayTeamId}`
-        };
-      };
-
-      // Helper function to format game data
-      const formatGameData = (game: any, teamNames: any) => ({
-        id: game.id.toString(),
-        date: game.gamedate.toISOString(),
-        homeTeamId: game.hteamid.toString(),
-        awayTeamId: game.vteamid.toString(),
-        homeTeamName: teamNames.homeTeamName,
-        awayTeamName: teamNames.awayTeamName,
-        homeScore: game.hscore,
-        awayScore: game.vscore,
-        gameStatus: game.gamestatus,
-        gameStatusText: getGameStatusText(game.gamestatus),
-        leagueName: game.leagueseason.league.name,
-        fieldId: game.fieldid?.toString() || null,
-        fieldName: game.availablefields?.name || null,
-        fieldShortName: game.availablefields?.shortname || null,
-        hasGameRecap: game.gamerecap.length > 0,
-        gameRecaps: game.gamerecap.map((recap: any) => ({
-          teamId: recap.teamid.toString(),
-          recap: recap.recap
-        }))
-      });
-
-      // Helper function to get game status text
-      const getGameStatusText = (status: number): string => {
-        switch (status) {
-          case 0: return 'Incomplete';
-          case 1: return 'Final';
-          case 2: return 'Rainout';
-          case 3: return 'Postponed';
-          case 4: return 'Forfeit';
-          case 5: return 'Did Not Report';
-          default: return 'Unknown';
-        }
-      };
-
-      // Process all games and get team names
-      const processGames = async (games: any[]) => {
-        const processedGames = [];
-        for (const game of games) {
-          const teamNames = await getTeamNames(game.hteamid, game.vteamid);
-          processedGames.push(formatGameData(game, teamNames));
-        }
-        return processedGames;
-      };
-
-      const [todayProcessed, yesterdayProcessed, recapsProcessed] = await Promise.all([
-        processGames(todayGames),
-        processGames(yesterdayGames),
-        processGames(recapGames)
-      ]);
-
-      res.json({
-        success: true,
-        data: {
-          today: todayProcessed,
-          yesterday: yesterdayProcessed,
-          recaps: recapsProcessed
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching public scoreboard games:', error);
-      next(error);
-    }
-  }
-);
 
 /**
- * GET /api/accounts/:accountId/games/scoreboard
- * Get games for scoreboard display (today, yesterday, previous, recaps)
- */
-router.get('/scoreboard',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const teamId = req.query.teamId ? BigInt(req.query.teamId as string) : null;
-
-      // Get current season for this account
-      const currentSeasonRecord = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId
-        }
-      });
-
-      if (!currentSeasonRecord) {
-        res.json({
-          success: true,
-          data: {
-            today: [],
-            yesterday: [],
-            recaps: []
-          }
-        });
-        return;
-      }
-
-      const currentSeason = await prisma.season.findUnique({
-        where: {
-          id: currentSeasonRecord.seasonid
-        }
-      });
-
-      if (!currentSeason) {
-        res.json({
-          success: true,
-          data: {
-            today: [],
-            yesterday: [],
-            recaps: []
-          }
-        });
-        return;
-      }
-
-      // Calculate date ranges
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      // Base where clause
-      const baseWhere = {
-        leagueseason: {
-          seasonid: currentSeason.id,
-          league: {
-            accountid: accountId
-          }
-        },
-        ...(teamId && {
-          OR: [
-            { hteamid: teamId },
-            { vteamid: teamId }
-          ]
-        })
-      };
-
-      // Get today's games
-      const todayGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: today,
-            lt: tomorrow
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
-
-      // Get yesterday's games
-      const yesterdayGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: yesterday,
-            lt: today
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
-
-      // Get games with recaps (2-5 days ago)
-      const fiveDaysAgo = new Date(today);
-      fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-      
-      const twoDaysAgo = new Date(today);
-      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-      
-      const recapGames = await prisma.leagueschedule.findMany({
-        where: {
-          ...baseWhere,
-          gamedate: {
-            gte: fiveDaysAgo,
-            lt: twoDaysAgo
-          },
-          gamerecap: {
-            some: {}
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              shortname: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'desc'
-        }
-      });
-
-      // Helper function to get team names
-      const getTeamNames = async (homeTeamId: bigint, awayTeamId: bigint) => {
-        const teams = await prisma.teamsseason.findMany({
-          where: {
-            id: {
-              in: [homeTeamId, awayTeamId]
-            }
-          },
-          select: {
-            id: true,
-            name: true
-          }
-        });
-
-        const homeTeam = teams.find(t => t.id === homeTeamId);
-        const awayTeam = teams.find(t => t.id === awayTeamId);
-
-        return {
-          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
-          awayTeamName: awayTeam?.name || `Team ${awayTeamId}`
-        };
-      };
-
-      // Helper function to format game data
-      const formatGameData = (game: any, teamNames: any) => ({
-        id: game.id.toString(),
-        date: game.gamedate.toISOString(),
-        homeTeamId: game.hteamid.toString(),
-        awayTeamId: game.vteamid.toString(),
-        homeTeamName: teamNames.homeTeamName,
-        awayTeamName: teamNames.awayTeamName,
-        homeScore: game.hscore,
-        awayScore: game.vscore,
-        gameStatus: game.gamestatus,
-        gameStatusText: getGameStatusText(game.gamestatus),
-        leagueName: game.leagueseason.league.name,
-        fieldId: game.fieldid?.toString() || null,
-        fieldName: game.availablefields?.name || null,
-        fieldShortName: game.availablefields?.shortname || null,
-        hasGameRecap: game.gamerecap.length > 0,
-        gameRecaps: game.gamerecap.map((recap: any) => ({
-          teamId: recap.teamid.toString(),
-          recap: recap.recap
-        }))
-      });
-
-      // Helper function to get game status text
-      const getGameStatusText = (status: number): string => {
-        switch (status) {
-          case 0: return 'Incomplete';
-          case 1: return 'Final';
-          case 2: return 'In Progress';
-          case 3: return 'Postponed';
-          case 4: return 'Forfeit';
-          case 5: return 'Did Not Report';
-          default: return 'Unknown';
-        }
-      };
-
-      // Process all games and get team names
-      const processGames = async (games: any[]) => {
-        const processedGames = [];
-        for (const game of games) {
-          const teamNames = await getTeamNames(game.hteamid, game.vteamid);
-          processedGames.push(formatGameData(game, teamNames));
-        }
-        return processedGames;
-      };
-
-      const [todayProcessed, yesterdayProcessed, recapsProcessed] = await Promise.all([
-        processGames(todayGames),
-        processGames(yesterdayGames),
-        processGames(recapGames)
-      ]);
-
-      res.json({
-        success: true,
-        data: {
-          today: todayProcessed,
-          yesterday: yesterdayProcessed,
-          recaps: recapsProcessed
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching scoreboard games:', error);
-      next(error);
-    }
-  }
-);
-
-/**
- * GET /api/accounts/:accountId/games/:gameId
- * Get specific game details
- */
-router.get('/:gameId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const gameId = BigInt(req.params.gameId);
-
-      const game = await prisma.leagueschedule.findFirst({
-        where: {
-          id: gameId,
-          leagueseason: {
-            league: {
-              accountid: accountId
-            }
-          }
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              id: true,
-              name: true,
-              address: true
-            }
-          },
-          gamerecap: {
-            select: {
-              teamid: true,
-              recap: true
-            }
-          },
-          batstatsum: {
-            include: {
-              rosterseason: {
-                include: {
-                  roster: {
-                    include: {
-                      contacts: {
-                        select: {
-                          firstname: true,
-                          lastname: true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          pitchstatsum: {
-            include: {
-              rosterseason: {
-                include: {
-                  roster: {
-                    include: {
-                      contacts: {
-                        select: {
-                          firstname: true,
-                          lastname: true
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      });
-
-      if (!game) {
-        res.status(404).json({
-          success: false,
-          message: 'Game not found'
-        });
-        return;
-      }
-
-      // Get team names
-      const teams = await prisma.teamsseason.findMany({
-        where: {
-          id: {
-            in: [game.hteamid, game.vteamid]
-          }
-        },
-        select: {
-          id: true,
-          name: true
-        }
-      });
-
-      const homeTeam = teams.find(t => t.id === game.hteamid);
-      const awayTeam = teams.find(t => t.id === game.vteamid);
-
-      res.json({
-        success: true,
-        data: {
-          id: game.id.toString(),
-          date: game.gamedate.toISOString(),
-          homeTeamId: game.hteamid.toString(),
-          awayTeamId: game.vteamid.toString(),
-          homeTeamName: homeTeam?.name || `Team ${game.hteamid}`,
-          awayTeamName: awayTeam?.name || `Team ${game.vteamid}`,
-          homeScore: game.hscore,
-          awayScore: game.vscore,
-          gameStatus: game.gamestatus,
-          gameStatusText: getGameStatusText(game.gamestatus),
-          leagueName: game.leagueseason.league.name,
-          field: game.availablefields ? {
-            id: game.availablefields.id.toString(),
-            name: game.availablefields.name,
-            address: game.availablefields.address
-          } : null,
-          comment: game.comment,
-          gameRecaps: game.gamerecap.map((recap: any) => ({
-            teamId: recap.teamid.toString(),
-            recap: recap.recap
-          })),
-          battingStats: game.batstatsum.map((stat: any) => ({
-            playerId: stat.playerid.toString(),
-            teamId: stat.teamid.toString(),
-            playerName: `${stat.rosterseason.roster.contacts.firstname} ${stat.rosterseason.roster.contacts.lastname}`,
-            ab: stat.ab,
-            h: stat.h,
-            r: stat.r,
-            rbi: stat.rbi,
-            hr: stat.hr,
-            bb: stat.bb,
-            so: stat.so
-          })),
-          pitchingStats: game.pitchstatsum.map((stat: any) => ({
-            playerId: stat.playerid.toString(),
-            teamId: stat.teamid.toString(),
-            playerName: `${stat.rosterseason.roster.contacts.firstname} ${stat.rosterseason.roster.contacts.lastname}`,
-            ip: stat.ip,
-            ip2: stat.ip2,
-            h: stat.h,
-            r: stat.r,
-            er: stat.er,
-            bb: stat.bb,
-            so: stat.so,
-            w: stat.w,
-            l: stat.l,
-            s: stat.s
-          }))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching game details:', error);
-      next(error);
-    }
-  }
-);
-
-/**
- * PUT /api/accounts/:accountId/games/:gameId/results
+ * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/results
  * Update game results (scores, status, notifications)
  */
 router.put('/:gameId/results',
@@ -913,18 +171,21 @@ const getGameStatusText = (status: number): string => {
  * SCHEDULE MANAGEMENT ENDPOINTS
  */
 
-// Get all games for a league season
-router.get('/leagues/:leagueSeasonId/schedule',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/games
+ * Get all games for a season (acrossß all leagues)
+ */
+router.get('/',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { leagueSeasonId } = req.params;
+      const { seasonId } = req.params;
       const { startDate, endDate, teamId } = req.query;
 
       // Build where clause
       const where: any = {
-        leagueid: BigInt(leagueSeasonId)
+        leagueseason: {
+          seasonid: BigInt(seasonId)
+        }
       };
 
       if (startDate && endDate) {
@@ -957,155 +218,90 @@ router.get('/leagues/:leagueSeasonId/schedule',
         }
       });
 
-      res.json({
-        success: true,
-        data: {
-          games: games.map(game => ({
-            id: game.id.toString(),
-            gameDate: game.gamedate,
-            homeTeamId: game.hteamid.toString(),
-            visitorTeamId: game.vteamid.toString(),
-            homeScore: game.hscore,
-            visitorScore: game.vscore,
-            comment: game.comment,
-            fieldId: game.fieldid?.toString(),
-            field: game.availablefields ? {
-              id: game.availablefields.id.toString(),
-              name: game.availablefields.name,
-              shortName: game.availablefields.shortname,
-              address: game.availablefields.address,
-              city: game.availablefields.city,
-              state: game.availablefields.state
-            } : null,
-            gameStatus: game.gamestatus,
-            gameType: game.gametype,
-            umpire1: game.umpire1?.toString(),
-            umpire2: game.umpire2?.toString(),
-            umpire3: game.umpire3?.toString(),
-            umpire4: game.umpire4?.toString(),
-            league: {
-              id: game.leagueseason.league.id.toString(),
-              name: game.leagueseason.league.name
-            },
-            season: {
-              id: game.leagueseason.season.id.toString(),
-              name: game.leagueseason.season.name
+      // Helper function to get team names
+      const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
+        const teams = await prisma.teamsseason.findMany({
+          where: {
+            id: {
+              in: [homeTeamId, visitorTeamId]
             }
-          }))
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching schedule:', error);
-      next(error);
-    }
-  }
-);
-
-// Get games by date range for an account
-router.get('/schedule',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const { startDate, endDate, leagueId } = req.query;
-
-      if (!startDate || !endDate) {
-        res.status(400).json({
-          success: false,
-          message: 'Start date and end date are required'
-        });
-        return;
-      }
-
-      // Build where clause
-      const where: any = {
-        leagueseason: {
-          league: {
-            accountid: accountId
+          },
+          select: {
+            id: true,
+            name: true
           }
-        },
-        gamedate: {
-          gte: new Date(startDate as string),
-          lte: new Date(endDate as string)
-        }
+        });
+
+        const homeTeam = teams.find(t => t.id === homeTeamId);
+        const visitorTeam = teams.find(t => t.id === visitorTeamId);
+
+        return {
+          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
+          visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`
+        };
       };
 
-      if (leagueId) {
-        where.leagueseason = {
-          ...where.leagueseason,
-          leagueid: BigInt(leagueId as string)
-        };
-      }
-
-      const games = await prisma.leagueschedule.findMany({
-        where,
-        include: {
-          availablefields: true,
-          leagueseason: {
-            include: {
-              league: true,
-              season: true
-            }
+      // Process games to include team names
+      const processedGames = [];
+      for (const game of games) {
+        const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+        processedGames.push({
+          id: game.id.toString(),
+          gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+          homeTeamId: game.hteamid.toString(),
+          visitorTeamId: game.vteamid.toString(),
+          homeTeamName: teamNames.homeTeamName,
+          visitorTeamName: teamNames.visitorTeamName,
+          homeScore: game.hscore,
+          visitorScore: game.vscore,
+          comment: game.comment,
+          fieldId: game.fieldid?.toString(),
+          field: game.availablefields ? {
+            id: game.availablefields.id.toString(),
+            name: game.availablefields.name,
+            shortName: game.availablefields.shortname,
+            address: game.availablefields.address,
+            city: game.availablefields.city,
+            state: game.availablefields.state
+          } : null,
+          gameStatus: game.gamestatus,
+          gameType: game.gametype,
+          umpire1: game.umpire1?.toString(),
+          umpire2: game.umpire2?.toString(),
+          umpire3: game.umpire3?.toString(),
+          umpire4: game.umpire4?.toString(),
+          league: {
+            id: game.leagueseason.league.id.toString(),
+            name: game.leagueseason.league.name
+          },
+          season: {
+            id: game.leagueseason.season.id.toString(),
+            name: game.leagueseason.season.name
           }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
+        });
+      }
 
       res.json({
         success: true,
         data: {
-          games: games.map(game => ({
-            id: game.id.toString(),
-            gameDate: game.gamedate,
-            homeTeamId: game.hteamid.toString(),
-            visitorTeamId: game.vteamid.toString(),
-            homeScore: game.hscore,
-            visitorScore: game.vscore,
-            comment: game.comment,
-            fieldId: game.fieldid?.toString(),
-            field: game.availablefields ? {
-              id: game.availablefields.id.toString(),
-              name: game.availablefields.name,
-              shortName: game.availablefields.shortname,
-              address: game.availablefields.address,
-              city: game.availablefields.city,
-              state: game.availablefields.state
-            } : null,
-            gameStatus: game.gamestatus,
-            gameType: game.gametype,
-            umpire1: game.umpire1?.toString(),
-            umpire2: game.umpire2?.toString(),
-            umpire3: game.umpire3?.toString(),
-            umpire4: game.umpire4?.toString(),
-            league: {
-              id: game.leagueseason.league.id.toString(),
-              name: game.leagueseason.league.name
-            },
-            season: {
-              id: game.leagueseason.season.id.toString(),
-              name: game.leagueseason.season.name
-            }
-          }))
+          games: processedGames
         }
       });
     } catch (error) {
-      console.error('Error fetching schedule:', error);
+      console.error('Error fetching season games:', error);
       next(error);
     }
   }
 );
 
 // Create a new game
-router.post('/leagues/:leagueSeasonId/schedule',
+router.post('/',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { leagueSeasonId } = req.params;
+      const { seasonId, leagueSeasonId } = req.params;
       const {
         gameDate,
         homeTeamId,
@@ -1198,7 +394,7 @@ router.post('/leagues/:leagueSeasonId/schedule',
         data: {
           game: {
             id: game.id.toString(),
-            gameDate: game.gamedate,
+            gameDate: game.gamedate ? game.gamedate.toISOString() : null,
             homeTeamId: game.hteamid.toString(),
             visitorTeamId: game.vteamid.toString(),
             homeScore: game.hscore,
@@ -1228,8 +424,7 @@ router.post('/leagues/:leagueSeasonId/schedule',
               name: game.leagueseason.season.name
             }
           }
-        },
-        message: 'Game created successfully'
+        }
       });
     } catch (error) {
       console.error('Error creating game:', error);
@@ -1239,7 +434,7 @@ router.post('/leagues/:leagueSeasonId/schedule',
 );
 
 // Update a game
-router.put('/schedule/:gameId',
+router.put('/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),
@@ -1331,7 +526,7 @@ router.put('/schedule/:gameId',
         data: {
           game: {
             id: updatedGame.id.toString(),
-            gameDate: updatedGame.gamedate,
+            gameDate: updatedGame.gamedate ? updatedGame.gamedate.toISOString() : null,
             homeTeamId: updatedGame.hteamid.toString(),
             visitorTeamId: updatedGame.vteamid.toString(),
             homeScore: updatedGame.hscore,
@@ -1372,7 +567,7 @@ router.put('/schedule/:gameId',
 );
 
 // Delete a game
-router.delete('/schedule/:gameId',
+router.delete('/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),

@@ -155,14 +155,51 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const loadData = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError('');
 
-      // Load games for the date range
-      const gamesResponse = await fetch(
-        `/api/accounts/${accountId}/games/schedule?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error('Failed to load current season');
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      // Get league seasons for the dropdown
+      const leagueSeasonsResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (leagueSeasonsResponse.ok) {
+        const leagueSeasonsData = await leagueSeasonsResponse.json();
+        setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
+      }
+
+      // Calculate date range (current month)
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+      // Load games for the current season (across all leagues)
+      const gamesResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
           }
         }
       );
@@ -189,13 +226,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         setFields(fieldsData.data.fields);
       }
 
-      // Load league seasons (you'll need to implement this endpoint)
-      // const leagueSeasonsResponse = await fetch(`/api/accounts/${accountId}/league-seasons`);
-      // if (leagueSeasonsResponse.ok) {
-      //   const leagueSeasonsData = await leagueSeasonsResponse.json();
-      //   setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
-      // }
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
@@ -214,8 +244,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const combinedDateTime = new Date(gameDate);
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
+      // Extract season and league season IDs from selectedLeagueSeason
+      const [seasonId, leagueSeasonId] = selectedLeagueSeason.split('-');
+
       const response = await fetch(
-        `/api/accounts/${accountId}/games/leagues/${selectedLeagueSeason}/schedule`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues/${leagueSeasonId}/games`,
         {
           method: 'POST',
           headers: {
@@ -259,7 +292,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
       const response = await fetch(
-        `/api/accounts/${accountId}/games/schedule/${selectedGame.id}`,
+        `/api/accounts/${accountId}/games/${selectedGame.id}`,
         {
           method: 'PUT',
           headers: {
@@ -296,7 +329,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       if (!selectedGame) return;
 
       const response = await fetch(
-        `/api/accounts/${accountId}/games/schedule/${selectedGame.id}`,
+        `/api/accounts/${accountId}/games/${selectedGame.id}`,
         {
           method: 'DELETE',
           headers: {

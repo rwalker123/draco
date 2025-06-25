@@ -34,4 +34,36 @@ testDatabaseRouter.get('/users', async (req, res, next) => {
   }
 });
 
+testDatabaseRouter.get('/leagueschedule', async (req, res, next) => {
+  try {
+    const games = await prisma.leagueschedule.findMany({
+      select: {
+        id: true,
+        gamedate: true,
+        hteamid: true,
+        vteamid: true,
+        hscore: true,
+        vscore: true,
+        gamestatus: true
+      },
+      take: 5
+    });
+    
+    res.json({ 
+      success: true, 
+      data: games.map(game => ({
+        id: game.id.toString(),
+        gamedate: game.gamedate ? game.gamedate.toISOString() : null,
+        hteamid: game.hteamid.toString(),
+        vteamid: game.vteamid.toString(),
+        hscore: game.hscore,
+        vscore: game.vscore,
+        gamestatus: game.gamestatus
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default testDatabaseRouter; 
