@@ -133,6 +133,30 @@
 - [x] Set up TypeScript configuration ✅
 - [x] Create basic error handling middleware ✅
 - [ ] Set up logging with Winston
+- [ ] **API Key Authentication for External Clients**
+  - [ ] **Priority**: High - External clients can currently access public endpoints without rate limiting
+  - [ ] **Current Issue**: Several endpoints are publicly accessible without any API key authentication:
+    - `/api/accounts/:accountId/seasons/current` - Current season info
+    - `/api/accounts/:accountId/seasons/:seasonId/games` - Season games data
+    - `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueId/games` - League games data
+    - `/api/accounts/:accountId/seasons/:seasonId/teams` - Teams data
+    - `/api/accounts/:accountId/public` - Public account info
+    - `/api/accounts/search` - Account search
+  - [ ] **Implementation Plan**:
+    - [ ] Create API key model in database (api_keys table)
+    - [ ] Implement API key middleware for rate limiting and authentication
+    - [ ] Add API key validation to public endpoints
+    - [ ] Create API key management endpoints for account admins
+    - [ ] Implement rate limiting per API key (requests per minute/hour)
+    - [ ] Add usage tracking and analytics
+    - [ ] Create API key generation and revocation functionality
+    - [ ] Add API key scopes for different access levels
+  - [ ] **Benefits**:
+    - Rate limiting to prevent abuse
+    - Usage tracking and analytics
+    - Future monetization possibilities
+    - Better security for external API access
+    - Ability to revoke access for problematic clients
 
 ### Phase 2: Core API Development (Weeks 5-12)
 
