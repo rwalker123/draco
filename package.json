@@ -5,19 +5,48 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "backend:dev": "cd draco-nodejs/backend && npm run dev",
-    "frontend:dev": "cd draco-nodejs/frontend && npm start",
+    
+    "backend:start": "cd draco-nodejs/backend && npm start",
     "backend:build": "cd draco-nodejs/backend && npm run build",
-    "frontend:build": "cd draco-nodejs/frontend && npm run build",
+    "backend:dev": "cd draco-nodejs/backend && npm run dev",
     "backend:test": "cd draco-nodejs/backend && npm test",
-    "frontend:test": "cd draco-nodejs/frontend && npm test",
+    "backend:install": "cd draco-nodejs/backend && npm install",
+    "backend:prisma-generate": "cd draco-nodejs/backend && npx prisma generate",
+    "backend:migrate-passwords": "cd draco-nodejs/backend && npm run migrate-passwords",
+    "backend:test-passwords": "cd draco-nodejs/backend && npm run test-passwords",
     "backend:lint": "cd draco-nodejs/backend && npm run lint",
+    "backend:lint:fix": "cd draco-nodejs/backend && npm run lint:fix",
+    "backend:format": "cd draco-nodejs/backend && npm run format",
+    "backend:type-check": "cd draco-nodejs/backend && npm run type-check",
+    "backend:clean": "cd draco-nodejs/backend && npm run clean",
+    "backend:docs:generate": "cd draco-nodejs/backend && npm run docs:generate",
+    
+    "frontend:start": "cd draco-nodejs/frontend && npm start",
+    "frontend:build": "cd draco-nodejs/frontend && npm run build",
+    "frontend:test": "cd draco-nodejs/frontend && npm test",
+    "frontend:install": "cd draco-nodejs/frontend && npm install",
+    "frontend:eject": "cd draco-nodejs/frontend && npm run eject",
     "frontend:lint": "cd draco-nodejs/frontend && npm run lint",
+    "frontend:lint:fix": "cd draco-nodejs/frontend && npm run lint:fix",
+    "frontend:format": "cd draco-nodejs/frontend && npm run format",
+    "frontend:type-check": "cd draco-nodejs/frontend && npm run type-check",
+    
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:start\"",
+    "build": "npm run backend:build && npm run frontend:build",
+    "install:all": "npm install && npm run backend:install && npm run frontend:install",
     "lint:all": "npm run backend:lint && npm run frontend:lint",
-    "format:all": "cd draco-nodejs/backend && npm run format && cd ../frontend && npm run format"
+    "lint:fix:all": "npm run backend:lint:fix && npm run frontend:lint:fix",
+    "format:all": "npm run backend:format && npm run frontend:format",
+    "type-check:all": "npm run backend:type-check && npm run frontend:type-check",
+    "test:all": "npm run backend:test && npm run frontend:test",
+    
+    "start": "npm run backend:start",
+    "start:frontend": "npm run frontend:start",
+    "start:backend": "npm run backend:start"
   },
   "devDependencies": {
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "concurrently": "^9.1.0"
   },
   "workspaces": [
     "draco-nodejs/backend",
