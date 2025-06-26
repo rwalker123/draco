@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks for backend..."
+npx lint-staged
+echo "✅ Backend pre-commit checks completed"
