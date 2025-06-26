@@ -59,7 +59,7 @@ interface GameResultData {
 const gameStatusOptions = [
   { value: 0, label: 'Incomplete' },
   { value: 1, label: 'Final' },
-  { value: 2, label: 'In Progress' },
+  { value: 2, label: 'Rainout' },
   { value: 3, label: 'Postponed' },
   { value: 4, label: 'Forfeit' },
   { value: 5, label: 'Did Not Report' }
@@ -163,12 +163,14 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     <Dialog 
       open={open} 
       onClose={onClose}
-      maxWidth="md"
-      fullWidth
+      maxWidth={false}
+      fullWidth={false}
       sx={{
         '& .MuiDialog-paper': {
           margin: '32px',
           maxHeight: 'calc(100% - 64px)',
+          width: '70%',
+          maxWidth: '600px',
         },
         zIndex: 1400
       }}
@@ -243,10 +245,6 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
 
         {/* Game Status and Teams */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
-            Game Results
-          </Typography>
-          
           {/* Game Status */}
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -257,6 +255,31 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 <Select
                   value={formData.gameStatus}
                   onChange={(e) => handleInputChange('gameStatus', e.target.value)}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        bgcolor: '#1e3a5c',
+                        color: 'white',
+                        zIndex: 1500,
+                        '& .MuiMenuItem-root': {
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.1)',
+                          },
+                          '&.Mui-selected': {
+                            bgcolor: 'rgba(255,255,255,0.2)',
+                            '&:hover': {
+                              bgcolor: 'rgba(255,255,255,0.3)',
+                            },
+                          },
+                        },
+                      },
+                    },
+                    sx: {
+                      zIndex: 1500,
+                    },
+                    container: document.body
+                  }}
                   sx={{
                     color: 'white',
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -274,7 +297,22 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   }}
                 >
                   {gameStatusOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
+                    <MenuItem 
+                      key={option.value} 
+                      value={option.value}
+                      sx={{
+                        color: 'white',
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.1)',
+                        },
+                        '&.Mui-selected': {
+                          bgcolor: 'rgba(255,255,255,0.2)',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.3)',
+                          },
+                        },
+                      }}
+                    >
                       {option.label}
                     </MenuItem>
                   ))}
@@ -284,10 +322,10 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           </Box>
 
           {/* Team Scores */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 3, alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
             {/* Away Team */}
-            <Box sx={{ textAlign: 'right' }}>
-              <Typography variant="h6" color="white" fontWeight={600} gutterBottom>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: '300px' }}>
+              <Typography variant="h6" color="white" fontWeight={600} sx={{ minWidth: '150px' }}>
                 {game.awayTeamName}
               </Typography>
               <TextField
@@ -328,16 +366,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               />
             </Box>
 
-            {/* VS Separator */}
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h4" color="#b0c4de" fontWeight={300}>
-                VS
-              </Typography>
-            </Box>
-
             {/* Home Team */}
-            <Box sx={{ textAlign: 'left' }}>
-              <Typography variant="h6" color="white" fontWeight={600} gutterBottom>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: '300px' }}>
+              <Typography variant="h6" color="white" fontWeight={600} sx={{ minWidth: '150px' }}>
                 {game.homeTeamName}
               </Typography>
               <TextField
