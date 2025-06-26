@@ -38,7 +38,8 @@
     "test:all": "npm run backend:test && npm run frontend:test",
     "start": "npm run backend:start",
     "start:frontend": "npm run frontend:start",
-    "start:backend": "npm run backend:start"
+    "start:backend": "npm run backend:start",
+    "secrets:update-baseline": "node scripts/update-baseline.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
