@@ -1,11 +1,11 @@
 echo "🔍 Running pre-commit checks for Draco Sports Manager..."
 
-# Run detect-secrets on staged files
-STAGED_FILES=$(git diff --cached --name-only | tr '\n' ' ')
+# Run detect-secrets on staged files (without baseline to avoid updates)
+STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | tr '\n' ' ')
 if [ -n "$STAGED_FILES" ]; then
   echo "🔒 Running detect-secrets pre-commit scan on staged files..."
-  # Use wrapper script to prevent baseline updates
-  node scripts/detect-secrets-check.js $STAGED_FILES
+  # Scan staged files without baseline to avoid modification
+  ~/Library/Python/3.9/bin/detect-secrets-hook $STAGED_FILES
   if [ $? -ne 0 ]; then
     echo "❌ detect-secrets found a potential secret in staged files. Commit blocked."
     echo ""
