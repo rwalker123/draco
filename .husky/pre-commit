@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks for Draco Sports Manager..."
+
+# Run backend checks
+echo "📦 Checking backend..."
+cd draco-nodejs/backend
+npx lint-staged
+BACKEND_EXIT_CODE=$?
+
+# Run frontend checks
+echo "🎨 Checking frontend..."
+cd ../frontend
+npx lint-staged
+FRONTEND_EXIT_CODE=$?
+
+# Return to root directory
+cd ../..
+
+# Check if either failed
+if [ $BACKEND_EXIT_CODE -ne 0 ] || [ $FRONTEND_EXIT_CODE -ne 0 ]; then
+    echo "❌ Pre-commit checks failed"
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed" 

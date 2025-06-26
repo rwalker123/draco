@@ -10,7 +10,12 @@
     "clean": "rm -rf dist",
     "migrate-passwords": "ts-node scripts/migrate-passwords.ts",
     "test-passwords": "ts-node scripts/test-password-verification.ts",
-    "docs:generate": "ts-node scripts/generate-docs.ts"
+    "docs:generate": "ts-node scripts/generate-docs.ts",
+    "prepare": "husky",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -41,8 +46,18 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "nodemon": "^3.1.10",
+    "prettier": "^3.6.1",
     "prisma": "^6.10.1",
     "ts-node": "^10.9.2"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "prettier --write",
+      "eslint --fix",
+      "git add"
+    ]
   }
 }

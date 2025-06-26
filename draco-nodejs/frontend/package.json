@@ -35,7 +35,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepare": "husky",
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
+    "format": "prettier --write src/**/*.{ts,tsx}",
+    "type-check": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [
@@ -56,6 +61,16 @@
     ]
   },
   "devDependencies": {
-    "@types/date-fns": "^2.5.3"
+    "@types/date-fns": "^2.5.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "prettier": "^3.6.1"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix",
+      "git add"
+    ]
   }
 }

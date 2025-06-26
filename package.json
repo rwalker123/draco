@@ -1,0 +1,26 @@
+{
+  "name": "draco-sports-manager",
+  "version": "1.0.0",
+  "description": "Draco Sports Manager - Node.js Migration",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "backend:dev": "cd draco-nodejs/backend && npm run dev",
+    "frontend:dev": "cd draco-nodejs/frontend && npm start",
+    "backend:build": "cd draco-nodejs/backend && npm run build",
+    "frontend:build": "cd draco-nodejs/frontend && npm run build",
+    "backend:test": "cd draco-nodejs/backend && npm test",
+    "frontend:test": "cd draco-nodejs/frontend && npm test",
+    "backend:lint": "cd draco-nodejs/backend && npm run lint",
+    "frontend:lint": "cd draco-nodejs/frontend && npm run lint",
+    "lint:all": "npm run backend:lint && npm run frontend:lint",
+    "format:all": "cd draco-nodejs/backend && npm run format && cd ../frontend && npm run format"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  },
+  "workspaces": [
+    "draco-nodejs/backend",
+    "draco-nodejs/frontend"
+  ]
+} 

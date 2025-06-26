@@ -18,6 +18,13 @@
   - [x] Fix import issues with dotenv and Express
   - [x] Resolve path-to-regexp routing errors
   - [x] Server successfully running on port 5000 with health endpoint
+- [x] **Git Hooks & Code Quality Setup** - Pre-commit hooks with Husky and lint-staged
+  - [x] Install Husky, lint-staged, and Prettier for both backend and frontend
+  - [x] Configure lint-staged for TypeScript files in both projects
+  - [x] Set up root-level package.json with workspace configuration
+  - [x] Create root-level pre-commit hook that runs both backend and frontend checks
+  - [x] Add lint, format, and type-check scripts to both projects
+  - [x] Configure automatic code formatting and linting on commit
 
 ### Phase 2: Core API Development
 - [x] **Authentication System**
@@ -161,30 +168,47 @@
 - [x] Set up TypeScript configuration ✅
 - [x] Create basic error handling middleware ✅
 - [ ] Set up logging with Winston
+- [ ] **Code Quality & Development Tools**
+  - [x] **Git Hooks Setup** - Pre-commit hooks with Husky and lint-staged
+    - [x] Install Husky, lint-staged, and Prettier for both backend and frontend
+    - [x] Configure lint-staged for TypeScript files in both projects
+    - [x] Set up root-level package.json with workspace configuration
+    - [x] Create root-level pre-commit hook that runs both backend and frontend checks
+    - [x] Add lint, format, and type-check scripts to both projects
+    - [x] Configure automatic code formatting and linting on commit
+  - [ ] **ESLint Configuration**
+    - [ ] Install and configure ESLint for backend TypeScript
+    - [ ] Install and configure ESLint for frontend React/TypeScript
+    - [ ] Set up consistent linting rules across both projects
+    - [ ] Add TypeScript-specific linting rules
+    - [ ] Configure import/export rules for better code organization
+  - [ ] **Prettier Configuration**
+    - [ ] Create `.prettierrc` configuration files for both projects
+    - [ ] Set up consistent formatting rules (indent, quotes, semicolons)
+    - [ ] Configure Prettier to work with ESLint
+    - [ ] Add Prettier ignore files for generated code
+  - [ ] **TypeScript Strict Mode**
+    - [ ] Enable strict TypeScript configuration for both projects
+    - [ ] Fix existing type errors and add proper type annotations
+    - [ ] Configure path mapping for cleaner imports
+    - [ ] Set up proper module resolution
+  - [ ] **Testing Infrastructure**
+    - [ ] Set up Jest configuration for backend unit tests
+    - [ ] Configure React Testing Library for frontend tests
+    - [ ] Add test coverage reporting
+    - [ ] Set up integration test framework
+    - [ ] Add pre-commit test running (optional - may slow down commits)
+  - [ ] **CI/CD Pipeline Setup**
+    - [ ] Set up GitHub Actions workflow
+    - [ ] Configure automated testing on pull requests
+    - [ ] Add code quality checks (linting, formatting, type checking)
+    - [ ] Set up automated deployment pipeline
+  - [ ] **Documentation**
+    - [ ] Add JSDoc comments to all functions and classes
+    - [ ] Create API documentation with Swagger/OpenAPI
+    - [ ] Add inline code documentation
+    - [ ] Create development setup documentation
 - [ ] **API Key Authentication for External Clients**
-  - [ ] **Priority**: High - External clients can currently access public endpoints without rate limiting
-  - [ ] **Current Issue**: Several endpoints are publicly accessible without any API key authentication:
-    - `/api/accounts/:accountId/seasons/current` - Current season info
-    - `/api/accounts/:accountId/seasons/:seasonId/games` - Season games data
-    - `/api/accounts/:accountId/seasons/:seasonId/leagues/:leagueId/games` - League games data
-    - `/api/accounts/:accountId/seasons/:seasonId/teams` - Teams data
-    - `/api/accounts/:accountId/public` - Public account info
-    - `/api/accounts/search` - Account search
-  - [ ] **Implementation Plan**:
-    - [ ] Create API key model in database (api_keys table)
-    - [ ] Implement API key middleware for rate limiting and authentication
-    - [ ] Add API key validation to public endpoints
-    - [ ] Create API key management endpoints for account admins
-    - [ ] Implement rate limiting per API key (requests per minute/hour)
-    - [ ] Add usage tracking and analytics
-    - [ ] Create API key generation and revocation functionality
-    - [ ] Add API key scopes for different access levels
-  - [ ] **Benefits**:
-    - Rate limiting to prevent abuse
-    - Usage tracking and analytics
-    - Future monetization possibilities
-    - Better security for external API access
-    - Ability to revoke access for problematic clients
 
 ### Phase 2: Core API Development (Weeks 5-12)
 
