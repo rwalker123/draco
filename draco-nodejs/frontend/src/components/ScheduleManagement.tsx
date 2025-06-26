@@ -108,18 +108,6 @@ interface Field {
   longitude: string;
 }
 
-interface LeagueSeason {
-  id: string;
-  league: {
-    id: string;
-    name: string;
-  };
-  season: {
-    id: string;
-    name: string;
-  };
-}
-
 interface ScheduleManagementProps {
   accountId: string;
 }
@@ -128,7 +116,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
-  const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeason[]>([]);
+  const [leagues, setLeagues] = useState<{id: string, name: string}[]>([]);
+  const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -140,6 +129,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [selectedLeagueSeason, setSelectedLeagueSeason] = useState<string>('');
   
+  // Dialog error states
+  const [editDialogError, setEditDialogError] = useState<string | null>(null);
+  const [createDialogError, setCreateDialogError] = useState<string | null>(null);
+  
   // Form states
   const [gameDate, setGameDate] = useState<Date | null>(new Date());
   const [gameTime, setGameTime] = useState<Date | null>(new Date());
@@ -147,7 +140,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [visitorTeamId, setVisitorTeamId] = useState<string>('');
   const [fieldId, setFieldId] = useState<string>('');
   const [comment, setComment] = useState<string>('');
-  const [gameType, setGameType] = useState<number>(1);
+  const [gameType, setGameType] = useState<number>(0);
   
   // View states
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -162,6 +155,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Loading states
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
+  const [loadingLeagueTeams, setLoadingLeagueTeams] = useState(false);
 
   // Add a debounced navigation function to prevent excessive re-renders
   const [isNavigating, setIsNavigating] = useState(false);
@@ -224,7 +218,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const currentSeasonId = currentSeasonData.data.season.id;
 
       // Load static data in parallel
-      const [leagueSeasonsResponse, teamsResponse, fieldsResponse] = await Promise.all([
+      const [leaguesResponse, teamsResponse, fieldsResponse] = await Promise.all([
         fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`, {
           headers: { 'Content-Type': 'application/json' }
         }),
@@ -236,10 +230,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         })
       ]);
 
-      // Process league seasons
-      if (leagueSeasonsResponse.ok) {
-        const leagueSeasonsData = await leagueSeasonsResponse.json();
-        setLeagueSeasons(leagueSeasonsData.data.leagueSeasons);
+      // Process leagues for current season
+      if (leaguesResponse.ok) {
+        const leaguesData = await leaguesResponse.json();
+        setLeagues(leaguesData.data?.leagueSeasons?.map((ls: any) => ({
+          id: ls.id,
+          name: ls.leagueName
+        })) || []);
       }
 
       // Process teams
@@ -348,10 +345,95 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     await loadGamesData();
   };
 
+  const loadLeagueTeams = async (leagueSeasonId: string) => {
+    try {
+      setLoadingLeagueTeams(true);
+      
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error('Failed to load current season');
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        throw new Error('Authentication token not found');
+      }
+
+      const response = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to load league teams');
+      }
+
+      const data = await response.json();
+      
+      const allTeams: Team[] = [];
+      
+      // Add teams from divisions
+      data.data.leagueSeason.divisions.forEach((division: any) => {
+        division.teams.forEach((team: any) => {
+          allTeams.push({
+            id: team.id,
+            name: team.name
+          });
+        });
+      });
+      
+      // Add unassigned teams
+      data.data.leagueSeason.unassignedTeams.forEach((team: any) => {
+        allTeams.push({
+          id: team.id,
+          name: team.name
+        });
+      });
+
+      setLeagueTeams(allTeams);
+    } catch (err) {
+      console.error('Error loading league teams:', err);
+      setLeagueTeams([]);
+    } finally {
+      setLoadingLeagueTeams(false);
+    }
+  };
+
+  const handleLeagueChange = (leagueSeasonId: string) => {
+    setSelectedLeagueSeason(leagueSeasonId);
+    setHomeTeamId('');
+    setVisitorTeamId('');
+    
+    if (leagueSeasonId) {
+      loadLeagueTeams(leagueSeasonId);
+    } else {
+      setLeagueTeams([]);
+    }
+  };
+
   const handleCreateGame = async () => {
     try {
+      setCreateDialogError(null); // Clear any previous errors
+      
       if (!gameDate || !gameTime || !homeTeamId || !visitorTeamId || !selectedLeagueSeason) {
-        setError('Please fill in all required fields');
+        setCreateDialogError('Please fill in all required fields');
         return;
       }
 
@@ -376,31 +458,31 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const combinedDateTime = new Date(gameDate);
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
-      // Use the selected league season ID directly
-      const leagueSeasonId = selectedLeagueSeason;
+      const requestData = {
+        leagueSeasonId: selectedLeagueSeason,
+        gameDate: combinedDateTime.toISOString(),
+        homeTeamId,
+        visitorTeamId,
+        fieldId: fieldId || null,
+        comment,
+        gameType
+      };
 
       const response = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}/games`,
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
           },
-          body: JSON.stringify({
-            gameDate: combinedDateTime.toISOString(),
-            homeTeamId,
-            visitorTeamId,
-            fieldId: fieldId || null,
-            comment,
-            gameType
-          })
+          body: JSON.stringify(requestData)
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create game');
+        throw new Error(errorData.message || `Failed to create game (${response.status})`);
       }
 
       setSuccess('Game created successfully');
@@ -408,14 +490,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       resetForm();
       loadGamesData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create game');
+      setCreateDialogError(err instanceof Error ? err.message : 'Failed to create game');
     }
   };
 
   const handleUpdateGame = async () => {
     try {
+      setEditDialogError(null); // Clear any previous errors
+      
       if (!selectedGame || !gameDate || !gameTime || !homeTeamId || !visitorTeamId) {
-        setError('Please fill in all required fields');
+        setEditDialogError('Please fill in all required fields');
         return;
       }
 
@@ -424,7 +508,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
       const response = await fetch(
-        `/api/accounts/${accountId}/games/${selectedGame.id}`,
+        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
         {
           method: 'PUT',
           headers: {
@@ -452,7 +536,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       resetForm();
       loadGamesData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update game');
+      setEditDialogError(err instanceof Error ? err.message : 'Failed to update game');
     }
   };
 
@@ -505,8 +589,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setVisitorTeamId('');
     setFieldId('');
     setComment('');
-    setGameType(1);
+    setGameType(0);
     setSelectedGame(null);
+    setSelectedLeagueSeason('');
+    setLeagueTeams([]);
   };
 
   const openEditDialog = (game: Game) => {
@@ -517,7 +603,27 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setVisitorTeamId(game.visitorTeamId);
     setFieldId(game.fieldId || '');
     setComment(game.comment);
-    setGameType(game.gameType);
+    setGameType(game.gameType || 0);
+    setEditDialogError(null); // Clear any previous errors
+    
+    // Load teams for the specific league of this game
+    if (game.league?.id) {
+      // Find the league season ID for this league
+      // The game.league.id is the actual league ID, we need to find the league season ID
+      const leagueSeason = leagues.find(l => l.id === game.league.id);
+      if (leagueSeason) {
+        setSelectedLeagueSeason(leagueSeason.id);
+        loadLeagueTeams(leagueSeason.id);
+      } else {
+        // Try to find by league name as fallback
+        const leagueByName = leagues.find(l => l.name === game.league.name);
+        if (leagueByName) {
+          setSelectedLeagueSeason(leagueByName.id);
+          loadLeagueTeams(leagueByName.id);
+        }
+      }
+    }
+    
     setEditDialogOpen(true);
   };
 
@@ -1628,7 +1734,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setCreateDialogOpen(true)}
+            onClick={() => {
+              setCreateDialogError(null); // Clear any previous errors
+              setCreateDialogOpen(true);
+            }}
           >
             Add Game
           </Button>
@@ -1783,10 +1892,25 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           )}
 
         {/* Create Game Dialog */}
-        <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="md" fullWidth>
+        <Dialog open={createDialogOpen} onClose={() => {
+          setCreateDialogOpen(false);
+          resetForm();
+        }} maxWidth="md" fullWidth>
           <DialogTitle>Create New Game</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {createDialogError && (
+                <Alert severity="error" onClose={() => setCreateDialogError(null)}>
+                  {createDialogError}
+                </Alert>
+              )}
+              
+              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {filterDate.getFullYear()} Season
+                </Typography>
+              </Box>
+              
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -1813,15 +1937,15 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <FormControl fullWidth>
-                    <InputLabel>League Season</InputLabel>
+                    <InputLabel>League</InputLabel>
                     <Select
                       value={selectedLeagueSeason}
-                      onChange={(e) => setSelectedLeagueSeason(e.target.value)}
-                      label="League Season"
+                      onChange={(e) => handleLeagueChange(e.target.value)}
+                      label="League"
                     >
-                      {leagueSeasons.map((ls) => (
-                        <MenuItem key={ls.id} value={ls.id}>
-                          {ls.league?.name || 'Unknown League'} - {ls.season?.name || 'Unknown Season'}
+                      {leagues.map((league) => (
+                        <MenuItem key={league.id} value={league.id}>
+                          {league.name || 'Unknown League'}
                         </MenuItem>
                       ))}
                     </Select>
@@ -1834,12 +1958,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={homeTeamId}
                       onChange={(e) => setHomeTeamId(e.target.value)}
                       label="Home Team"
-                      disabled={teams.length === 0}
+                      disabled={loadingLeagueTeams}
                     >
-                      {teams.length === 0 ? (
+                      {loadingLeagueTeams ? (
                         <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
                       ) : (
-                        teams.map((team) => (
+                        leagueTeams.map((team) => (
                           <MenuItem key={team.id} value={team.id}>
                             {team.name}
                           </MenuItem>
@@ -1858,12 +1984,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={visitorTeamId}
                       onChange={(e) => setVisitorTeamId(e.target.value)}
                       label="Visitor Team"
-                      disabled={teams.length === 0}
+                      disabled={loadingLeagueTeams}
                     >
-                      {teams.length === 0 ? (
+                      {loadingLeagueTeams ? (
                         <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
                       ) : (
-                        teams.map((team) => (
+                        leagueTeams.map((team) => (
                           <MenuItem key={team.id} value={team.id}>
                             {team.name}
                           </MenuItem>
@@ -1902,16 +2030,39 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setCreateDialogOpen(false);
+              resetForm();
+            }}>Cancel</Button>
             <Button onClick={handleCreateGame} variant="contained">Create Game</Button>
           </DialogActions>
         </Dialog>
 
         {/* Edit Game Dialog */}
-        <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="md" fullWidth>
+        <Dialog open={editDialogOpen} onClose={() => {
+          setEditDialogOpen(false);
+          resetForm();
+        }} maxWidth="md" fullWidth>
           <DialogTitle>Edit Game</DialogTitle>
           <DialogContent>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {editDialogError && (
+                <Alert severity="error" onClose={() => setEditDialogError(null)}>
+                  {editDialogError}
+                </Alert>
+              )}
+              
+              {selectedGame && (
+                <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                    {selectedGame.league?.name || 'Unknown League'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {selectedGame.season?.name || 'Unknown Season'}
+                  </Typography>
+                </Box>
+              )}
+              
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -1943,12 +2094,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={homeTeamId}
                       onChange={(e) => setHomeTeamId(e.target.value)}
                       label="Home Team"
-                      disabled={teams.length === 0}
+                      disabled={loadingLeagueTeams}
                     >
-                      {teams.length === 0 ? (
+                      {loadingLeagueTeams ? (
                         <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
                       ) : (
-                        teams.map((team) => (
+                        leagueTeams.map((team) => (
                           <MenuItem key={team.id} value={team.id}>
                             {team.name}
                           </MenuItem>
@@ -1964,12 +2117,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={visitorTeamId}
                       onChange={(e) => setVisitorTeamId(e.target.value)}
                       label="Visitor Team"
-                      disabled={teams.length === 0}
+                      disabled={loadingLeagueTeams}
                     >
-                      {teams.length === 0 ? (
+                      {loadingLeagueTeams ? (
                         <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
                       ) : (
-                        teams.map((team) => (
+                        leagueTeams.map((team) => (
                           <MenuItem key={team.id} value={team.id}>
                             {team.name}
                           </MenuItem>
@@ -2006,9 +2161,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       onChange={(e) => setGameType(e.target.value as number)}
                       label="Game Type"
                     >
-                      <MenuItem value={1}>Regular Season</MenuItem>
-                      <MenuItem value={2}>Playoff</MenuItem>
-                      <MenuItem value={3}>Exhibition</MenuItem>
+                      <MenuItem value={0}>Regular Season</MenuItem>
+                      <MenuItem value={1}>Playoff</MenuItem>
+                      <MenuItem value={2}>Exhibition</MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -2025,7 +2180,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setEditDialogOpen(false);
+              resetForm();
+            }}>Cancel</Button>
             <Button 
               onClick={() => {
                 setEditDialogOpen(false);

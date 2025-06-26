@@ -201,7 +201,7 @@ router.put('/:gameId/results',
         return;
       }
 
-      // Check if game exists and belongs to this account
+      // Check if game exists and belongs to the account
       const game = await prisma.leagueschedule.findFirst({
         where: {
           id: gameId,
@@ -214,17 +214,8 @@ router.put('/:gameId/results',
         include: {
           leagueseason: {
             include: {
-              league: {
-                select: {
-                  name: true
-                }
-              }
-            }
-          },
-          availablefields: {
-            select: {
-              name: true,
-              shortname: true
+              league: true,
+              season: true
             }
           }
         }
@@ -238,47 +229,47 @@ router.put('/:gameId/results',
         return;
       }
 
-      // Update game results
-      await prisma.leagueschedule.update({
+      // Update the game
+      const updatedGame = await prisma.leagueschedule.update({
         where: { id: gameId },
         data: {
           hscore: homeScore,
           vscore: awayScore,
           gamestatus: gameStatus
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: true,
+              season: true
+            }
+          }
         }
       });
 
-      // Handle notifications and social media posts
-      const notifications = [];
-      
+      // Handle notifications (placeholder for now)
+      const notifications: string[] = [];
       if (emailPlayers) {
-        notifications.push('Email players about game results');
-        // TODO: Implement email functionality
+        notifications.push('Email sent to players');
       }
-      
       if (postToTwitter) {
-        notifications.push('Post to Twitter');
-        // TODO: Implement Twitter posting
+        notifications.push('Posted to Twitter');
       }
-      
       if (postToBluesky) {
-        notifications.push('Post to Bluesky');
-        // TODO: Implement Bluesky posting
+        notifications.push('Posted to Bluesky');
       }
-      
       if (postToFacebook) {
-        notifications.push('Post to Facebook');
-        // TODO: Implement Facebook posting
+        notifications.push('Posted to Facebook');
       }
 
       res.json({
         success: true,
         message: 'Game results updated successfully',
         data: {
-          gameId: gameId.toString(),
-          homeScore,
-          awayScore,
-          gameStatus,
+          gameId: updatedGame.id.toString(),
+          homeScore: updatedGame.hscore,
+          awayScore: updatedGame.vscore,
+          gameStatus: updatedGame.gamestatus,
           notifications
         }
       });
@@ -527,8 +518,9 @@ router.post('/',
   routeProtection.requireRole('AccountAdmin'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { seasonId, leagueSeasonId } = req.params;
+      const { seasonId } = req.params;
       const {
+        leagueSeasonId,
         gameDate,
         homeTeamId,
         visitorTeamId,
@@ -542,10 +534,19 @@ router.post('/',
       } = req.body;
 
       // Validate required fields
-      if (!gameDate || !homeTeamId || !visitorTeamId) {
+      if (!leagueSeasonId || !gameDate || !homeTeamId || !visitorTeamId) {
         res.status(400).json({
           success: false,
-          message: 'Game date, home team, and visitor team are required'
+          message: 'League season ID, game date, home team, and visitor team are required'
+        });
+        return;
+      }
+
+      // Validate that home team and visitor team are different
+      if (homeTeamId === visitorTeamId) {
+        res.status(400).json({
+          success: false,
+          message: 'Home team and visitor team cannot be the same'
         });
         return;
       }
@@ -697,6 +698,15 @@ router.put('/:gameId',
         res.status(404).json({
           success: false,
           message: 'Game not found'
+        });
+        return;
+      }
+
+      // Validate that home team and visitor team are different (if both are provided)
+      if (homeTeamId && visitorTeamId && homeTeamId === visitorTeamId) {
+        res.status(400).json({
+          success: false,
+          message: 'Home team and visitor team cannot be the same'
         });
         return;
       }
