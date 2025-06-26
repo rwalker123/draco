@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Run detect-secrets on the full repo before push
+echo "🔒 Running detect-secrets pre-push scan on full repo..."
+~/Library/Python/3.9/bin/detect-secrets scan --baseline .secrets.baseline
+if [ $? -ne 0 ]; then
+  echo "❌ detect-secrets found a potential secret in the repo. Push blocked."
+  exit 1
+fi
+
+echo "✅ Pre-push secret scan passed. Proceeding with push." 
