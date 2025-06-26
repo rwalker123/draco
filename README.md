@@ -123,17 +123,16 @@ Create a `.env` file in the `backend` directory:
 
 ```env
 # Database
-DATABASE_URL="postgresql://username:password@localhost:5432/draco"
+DATABASE_URL="postgresql://username:password@localhost:5432/draco"  # pragma: allowlist secret
 
 # JWT
-JWT_SECRET="your-jwt-secret-key"
-JWT_EXPIRES_IN="24h"
+JWT_SECRET="your-jwt-secret-key"  # pragma: allowlist secret
 
 # Email (for password reset)
 EMAIL_HOST="smtp.gmail.com"
 EMAIL_PORT=587
 EMAIL_USER="your-email@gmail.com"
-EMAIL_PASS="your-app-password"
+EMAIL_PASS="your-app-password"  # pragma: allowlist secret
 
 # Server
 PORT=5000
@@ -270,11 +269,11 @@ npm test
 
 ```env
 NODE_ENV=production
-DATABASE_URL="your-production-database-url"
-JWT_SECRET="your-production-jwt-secret"
+DATABASE_URL="your-production-database-url"  # pragma: allowlist secret
+JWT_SECRET="your-production-jwt-secret"  # pragma: allowlist secret
 EMAIL_HOST="your-smtp-host"
 EMAIL_USER="your-email"
-EMAIL_PASS="your-password"
+EMAIL_PASS="your-password"  # pragma: allowlist secret
 ```
 
 ## 🤝 Contributing
@@ -437,3 +436,76 @@ The following npm commands replace the shell script functionality:
 - ✅ Works with npm workspaces
 - ✅ Can be used in CI/CD pipelines
 - ✅ Better error handling and output formatting
+
+## 🔒 Security & Secret Detection
+
+### **Secret Detection System**
+
+This project uses **detect-secrets** to prevent accidental commits of sensitive data like API keys, passwords, and tokens.
+
+#### **How It Works:**
+- **Pre-commit Hook:** Scans staged files for potential secrets before each commit
+- **Baseline File:** Tracks known/approved secrets to prevent re-flagging
+- **Manual Updates:** Baseline is only updated when new secrets are approved
+
+#### **Available Commands:**
+```bash
+# Update baseline when new secrets are approved
+npm run secrets:update-baseline
+
+# Check for secrets in the entire repo
+~/Library/Python/3.9/bin/detect-secrets scan
+
+# Audit baseline file (interactive)
+~/Library/Python/3.9/bin/detect-secrets audit .secrets.baseline
+```
+
+#### **Workflow for New Secrets:**
+
+**When detect-secrets blocks a commit:**
+```bash
+# 1. Review the detected secret
+# 2. If it's a false positive or approved secret, update the baseline:
+npm run secrets:update-baseline
+
+# 3. Commit the updated baseline:
+git add .secrets.baseline
+git commit -m "Update baseline with approved secret"
+
+# 4. Retry your original commit:
+git add .
+git commit -m "Your changes"
+```
+
+**When adding legitimate secrets:**
+```bash
+# 1. Add the secret to your .env file (not tracked in git)
+# 2. Use environment variables in your code:
+const apiKey = process.env.API_KEY;
+
+# 3. If you need to add a test/example secret to the baseline:
+npm run secrets:update-baseline
+git add .secrets.baseline
+git commit -m "Add test secret to baseline"
+```
+
+#### **What Gets Detected:**
+- API Keys (AWS, Azure, GCP, etc.)
+- Database passwords and connection strings
+- JWT secrets and tokens
+- Private keys and certificates
+- Hardcoded credentials
+- High-entropy strings that look like secrets
+
+#### **Files Excluded from Scanning:**
+- `.secrets.baseline` (the baseline file itself)
+- `.env*` files (environment files)
+- `node_modules/`, `dist/`, `build/` (generated files)
+- Lock files (`package-lock.json`, `yarn.lock`)
+
+#### **Best Practices:**
+1. **Never commit real secrets** - Use environment variables
+2. **Use placeholder values** for examples and tests
+3. **Review baseline updates** before committing
+4. **Keep baseline file in git** for team consistency
+5. **Run manual scans** periodically: `npm run secrets:update-baseline`
