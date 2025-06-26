@@ -1,5 +1,21 @@
 echo "🔍 Running pre-commit checks for Draco Sports Manager..."
 
+# Prevent commits to main branch
+CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+if [ "$CURRENT_BRANCH" = "main" ]; then
+    echo "❌ Direct commits to main branch are not allowed!"
+    echo ""
+    echo "💡 Please create a feature branch and use pull requests:"
+    echo "   git checkout -b feature/your-feature-name"
+    echo "   git add ."
+    echo "   git commit -m 'Your commit message'"
+    echo "   git push origin feature/your-feature-name"
+    echo "   # Then create a pull request on GitHub"
+    echo ""
+    echo "🔒 This protects the main branch and ensures code review."
+    exit 1
+fi
+
 # Run detect-secrets on staged files (without baseline to avoid updates)
 STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | tr '\n' ' ')
 if [ -n "$STAGED_FILES" ]; then
