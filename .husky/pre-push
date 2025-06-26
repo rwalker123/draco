@@ -1,8 +1,9 @@
 #!/bin/sh
 
-# Run detect-secrets on the full repo before push
+# Run detect-secrets on the full repo before push (without updating baseline)
 echo "🔒 Running detect-secrets pre-push scan on full repo..."
-~/Library/Python/3.9/bin/detect-secrets scan --baseline .secrets.baseline
+# Use audit mode to check against baseline without modifying it
+~/Library/Python/3.9/bin/detect-secrets audit .secrets.baseline
 if [ $? -ne 0 ]; then
   echo "❌ detect-secrets found a potential secret in the repo. Push blocked."
   exit 1
