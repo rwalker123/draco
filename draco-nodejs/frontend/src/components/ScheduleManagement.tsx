@@ -385,7 +385,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
           },
           body: JSON.stringify({
             gameDate: combinedDateTime.toISOString(),
@@ -429,7 +429,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
           },
           body: JSON.stringify({
             gameDate: combinedDateTime.toISOString(),
@@ -460,17 +460,30 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     try {
       if (!selectedGame) return;
 
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setError('Authentication token not found. Please log in again.');
+        setDeleteDialogOpen(false);
+        return;
+      }
+
       const response = await fetch(
-        `/api/accounts/${accountId}/games/${selectedGame.id}`,
+        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setError('Authentication failed. Please log in again.');
+          setDeleteDialogOpen(false);
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to delete game');
       }
@@ -481,6 +494,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       loadGamesData();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete game');
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -864,12 +878,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return (
       <List>
         {games.map((game) => (
-          <ListItem key={game.id} divider>
+          <ListItem key={game.id} divider sx={{ cursor: 'pointer' }} onClick={() => openEditDialog(game)}>
             <ListItemText
               primary={
                 <Box>
                   <Typography variant="h6">
-                    {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
+                    {getTeamName(game.visitorTeamId)} @ {getTeamName(game.homeTeamId)}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
                     {game.gameDate ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
@@ -881,11 +895,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }
               secondary={
                 <Box sx={{ mt: 1 }}>
-                  <Chip
-                    label={getGameStatusText(game.gameStatus)}
-                    color={getGameStatusColor(game.gameStatus)}
-                    size="small"
-                  />
+                  {shouldShowStatusChip(game.gameStatus) && (
+                    <Chip
+                      label={getGameStatusText(game.gameStatus)}
+                      color={getGameStatusColor(game.gameStatus)}
+                      size="small"
+                    />
+                  )}
                   {game.comment && (
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       {game.comment}
@@ -894,14 +910,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 </Box>
               }
             />
-            <ListItemSecondaryAction>
-              <IconButton onClick={() => openEditDialog(game)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton onClick={() => openDeleteDialog(game)}>
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
           </ListItem>
         ))}
       </List>
@@ -1379,13 +1387,15 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
+                      {getTeamName(game.visitorTeamId)} @ {getTeamName(game.homeTeamId)}
                     </Typography>
-                    <Chip
-                      label={getGameStatusText(game.gameStatus)}
-                      color={getGameStatusColor(game.gameStatus)}
-                      size="small"
-                    />
+                    {shouldShowStatusChip(game.gameStatus) && (
+                      <Chip
+                        label={getGameStatusText(game.gameStatus)}
+                        color={getGameStatusColor(game.gameStatus)}
+                        size="small"
+                      />
+                    )}
                   </Box>
                   
                   <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
@@ -2016,6 +2026,15 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                setEditDialogOpen(false);
+                openDeleteDialog(selectedGame!);
+              }} 
+              color="error"
+            >
+              Delete Game
+            </Button>
             <Button onClick={handleUpdateGame} variant="contained">Update Game</Button>
           </DialogActions>
         </Dialog>
@@ -2030,7 +2049,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             {selectedGame && (
               <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
                 <Typography variant="body2">
-                  {getTeamName(selectedGame.visitorTeamId)} vs {getTeamName(selectedGame.homeTeamId)}
+                  {getTeamName(selectedGame.visitorTeamId)} @ {getTeamName(selectedGame.homeTeamId)}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   {selectedGame.gameDate ? format(parseISO(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
