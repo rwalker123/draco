@@ -113,14 +113,16 @@ const getStatusDisplayInfo = (game: any): { showOnVisitor: boolean; showOnHome: 
     }
   }
   
-  // All other statuses (Rainout, Postponed, Did Not Report) - show on visitor team only
-  return { showOnVisitor: true, showOnHome: false, statusText: getStatusAbbreviation(getGameStatusText(game.gameStatus)) };
+  // For Rainout (status 2), Postponed (status 3), and Did Not Report (status 5) - don't show next to team names
+  // These will be shown in the score column instead
+  return { showOnVisitor: false, showOnHome: false, statusText: getStatusAbbreviation(getGameStatusText(game.gameStatus)) };
 };
 
 const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, teamId }) => {
   const [data, setData] = useState<ScoreboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentSeasonId, setCurrentSeasonId] = useState<string | null>(null);
   const [recapModal, setRecapModal] = useState<null | { game: Game; recap: GameRecap }>(null);
   const [editGameDialog, setEditGameDialog] = useState<{ open: boolean; game: Game | null }>({
     open: false,
@@ -196,6 +198,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
     }
     
     const currentSeasonId = seasonData.data.season.id;
+    setCurrentSeasonId(currentSeasonId); // Store the season ID in state
     
     // Calculate date ranges for today, yesterday, and recaps
     const today = new Date();
@@ -270,7 +273,20 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`/api/accounts/${accountId}/games/${gameData.gameId}/results`, {
+    // Get current season ID if not available in state
+    let seasonId = currentSeasonId;
+    if (!seasonId) {
+      const seasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`);
+      const seasonData = await seasonResponse.json();
+      
+      if (!seasonData.success) {
+        throw new Error('Failed to get current season');
+      }
+      
+      seasonId = seasonData.data.season.id;
+    }
+
+    const response = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/games/${gameData.gameId}/results`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -475,13 +491,67 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
                 )}
               </Button>
             </Box>
-            {game.gameStatusText !== 'Incomplete' && game.gameStatus !== 2 && (
+            {game.gameStatusText !== 'Incomplete' && game.gameStatus !== 2 && game.gameStatus !== 3 && game.gameStatus !== 5 && (
               <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                 <Typography variant="h6" fontWeight={700} color={game.awayScore > game.homeScore ? 'success.main' : 'white'} sx={{ mb: 0.5 }}>
                   {game.awayScore}
                 </Typography>
                 <Typography variant="h6" fontWeight={700} color={game.homeScore > game.awayScore ? 'success.main' : 'white'}>
                   {game.homeScore}
+                </Typography>
+              </Box>
+            )}
+            {game.gameStatus === 2 && (
+              <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={700} 
+                  sx={{ 
+                    color: 'white',
+                    backgroundColor: statusColor(game.gameStatus) === 'error' ? 'error.main' : statusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 0.5,
+                    display: 'inline-block'
+                  }}
+                >
+                  {getStatusAbbreviation(getGameStatusText(game.gameStatus))}
+                </Typography>
+              </Box>
+            )}
+            {game.gameStatus === 3 && (
+              <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={700} 
+                  sx={{ 
+                    color: 'white',
+                    backgroundColor: statusColor(game.gameStatus) === 'error' ? 'error.main' : statusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 0.5,
+                    display: 'inline-block'
+                  }}
+                >
+                  {getStatusAbbreviation(getGameStatusText(game.gameStatus))}
+                </Typography>
+              </Box>
+            )}
+            {game.gameStatus === 5 && (
+              <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight={700} 
+                  sx={{ 
+                    color: 'white',
+                    backgroundColor: statusColor(game.gameStatus) === 'error' ? 'error.main' : statusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 0.5,
+                    display: 'inline-block'
+                  }}
+                >
+                  {getStatusAbbreviation(getGameStatusText(game.gameStatus))}
                 </Typography>
               </Box>
             )}
