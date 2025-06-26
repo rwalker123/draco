@@ -58,6 +58,34 @@
     - [x] Account-specific URL routing (`/account/:accountId/home`)
     - [x] Signup page integration for new user registration
     - [x] Proper navigation flow between accounts, login, and signup
+  - [x] **Schedule Management System** ✅
+    - [x] **Backend API Implementation**
+      - [x] Complete CRUD operations for games (`/api/accounts/:accountId/seasons/:seasonId/games`)
+      - [x] Game creation with league season validation
+      - [x] Game updates with field availability checking
+      - [x] Game deletion with proper authorization
+      - [x] Team validation (home team ≠ visitor team)
+      - [x] League-dependent team loading API
+      - [x] Proper error handling and validation
+    - [x] **Frontend Implementation**
+      - [x] Schedule Management component with multiple view modes (day, week, month, year, list)
+      - [x] Add Game dialog with league-dependent team selection
+      - [x] Edit Game dialog with automatic team loading
+      - [x] Delete Game confirmation dialog
+      - [x] Navigation between time periods with Today button
+      - [x] Game status management and display
+      - [x] Field assignment and management
+      - [x] Game type selection (Regular Season, Playoff, Exhibition)
+      - [x] Responsive design with Material-UI components
+      - [x] Proper loading states and error handling
+    - [x] **Key Features Completed**
+      - [x] League-dependent team selection (teams filtered by selected league)
+      - [x] Multiple calendar view modes with navigation
+      - [x] Game status management (Incomplete, Final, Rainout, Postponed, Forfeit, Did Not Report)
+      - [x] Field assignment and availability checking
+      - [x] Team validation to prevent self-matches
+      - [x] Authentication token handling for protected endpoints
+      - [x] Modern UI with responsive design
 
 **Accounts Page Implementation Notes:**
 - Successfully implemented comprehensive accounts page supporting both anonymous and authenticated users
@@ -1050,16 +1078,63 @@
     5. Test recap modal functionality
   - **Priority**: High (core functionality validation)
 
-- [ ] **Implement schedule management features**
+- [x] **Implement schedule management features** ✅
   - **Purpose**: Allow admins to create, edit, and manage game schedules
+  - **Completed Features**:
+    1. ✅ Create new games with date, time, teams, field
+    2. ✅ Edit existing games
+    3. ✅ Delete/cancel games
+    4. ✅ League-dependent team selection (teams filtered by selected league)
+    5. ✅ Multiple view modes: day, week, month, year, list
+    6. ✅ Navigation between different time periods
+    7. ✅ Game status management (Incomplete, Final, Rainout, Postponed, Forfeit, Did Not Report)
+    8. ✅ Field assignment and management
+    9. ✅ Game type selection (Regular Season, Playoff, Exhibition)
+    10. ✅ Team validation (home team ≠ visitor team)
+    11. ✅ Proper error handling and user feedback
+  - **Backend API**: Complete with full CRUD operations and validation
+  - **Frontend Components**: Complete with responsive design and modern UI
+  - **Priority**: High (essential for league operations) ✅ COMPLETED
+
+- [ ] **Add Umpire Support to Game Management**
+  - **Purpose**: Allow assignment and management of umpires for games
   - **Features needed**:
-    1. Create new games with date, time, teams, field
-    2. Edit existing games
-    3. Delete/cancel games
-    4. Bulk schedule operations
-    5. Schedule import/export
-    6. Field availability management
-  - **Priority**: High (essential for league operations)
+    1. Add umpire fields (Umpire1, Umpire2, Umpire3, Umpire4) to add game dialog
+    2. Add umpire fields to edit game dialog
+    3. Display umpire assignments in game listings and views
+    4. Umpire availability management
+    5. Umpire scheduling conflicts detection
+    6. Umpire assignment validation
+  - **Backend**: Update games API to handle umpire assignments
+  - **Frontend**: Add umpire selection dropdowns to dialogs
+  - **Priority**: Medium (improves game management workflow)
+
+- [ ] **Add Schedule Summary Information and Analytics**
+  - **Purpose**: Provide insights into field usage, umpire assignments, and schedule statistics
+  - **Features needed**:
+    1. **Field Usage Summary**:
+       - Games per field over time period
+       - Field utilization percentages
+       - Field availability calendar
+       - Field booking conflicts
+    2. **Umpire Assignment Summary**:
+       - Games assigned per umpire
+       - Umpire workload distribution
+       - Umpire availability tracking
+       - Umpire assignment conflicts
+    3. **General Schedule Analytics**:
+       - Total games scheduled per time period
+       - Games by status (scheduled, completed, cancelled)
+       - Team game frequency
+       - League game distribution
+    4. **Dashboard Components**:
+       - Summary cards with key metrics
+       - Charts and graphs for visualization
+       - Export functionality for reports
+       - Filtering by date ranges and leagues
+  - **Backend**: New analytics API endpoints for summary data
+  - **Frontend**: New dashboard components and summary views
+  - **Priority**: Medium (provides valuable insights for league management)
 
 ### Medium Priority
 - [ ] Add more baseball-specific features
