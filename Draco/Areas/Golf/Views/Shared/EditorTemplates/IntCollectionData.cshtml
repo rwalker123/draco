@@ -1,8 +1,0 @@
-﻿@model IEnumerable<int>
-
-<table><tr>
-@foreach (int i in Model)
-{ 
-    <td><input type='text' id='@ViewContext.ViewData.TemplateInfo.HtmlFieldPrefix' name='@ViewContext.ViewData.TemplateInfo.HtmlFieldPrefix' value='@i' style="width:20px" /></td>
-}
-</tr></table>
