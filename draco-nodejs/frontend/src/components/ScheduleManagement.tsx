@@ -163,6 +163,33 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
 
+  // Add a debounced navigation function to prevent excessive re-renders
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const navigateToWeek = React.useCallback((direction: 'prev' | 'next') => {
+    if (isNavigating) return; // Prevent multiple rapid clicks
+    
+    setIsNavigating(true);
+    
+    const newStartDate = new Date(startDate);
+    if (direction === 'prev') {
+      newStartDate.setDate(newStartDate.getDate() - 7);
+    } else {
+      newStartDate.setDate(newStartDate.getDate() + 7);
+    }
+    
+    const newStart = startOfWeek(newStartDate);
+    const newEnd = endOfWeek(newStartDate);
+    
+    // Batch state updates to reduce re-renders
+    setStartDate(newStart);
+    setEndDate(newEnd);
+    setFilterDate(newStartDate);
+    
+    // Reset navigation flag after a short delay
+    setTimeout(() => setIsNavigating(false), 100);
+  }, [startDate, isNavigating]);
+
   // Load data
   useEffect(() => {
     loadStaticData();
@@ -236,7 +263,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const loadGamesData = async () => {
     try {
-      setLoadingGames(true);
+      // Only show loading state for initial load or when switching between different filter types
+      // Don't show loading for week navigation within the same filter type
+      if (filterType !== 'week' || !games.length) {
+        setLoadingGames(true);
+      }
       setError('');
 
       // Get current season first
@@ -566,98 +597,314 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return gameStatus !== 0; // Don't show chip for incomplete games (status 0)
   };
 
-  const renderCalendarView = () => {
+  const renderWeekView = React.useCallback(() => {
     const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
     return (
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-        {weekDays.map((day) => {
-          const dayGames = games.filter(game => game?.gameDate && isSameDay(parseISO(game.gameDate), day));
+      <Box sx={{ 
+        border: '3px solid #1976d2', 
+        borderRadius: 2, 
+        overflow: 'hidden',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Month Header - Clickable to go to month view */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 2,
+            backgroundColor: '#1976d2',
+            color: 'white',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: '#1565c0'
+            }
+          }}
+          onClick={() => {
+            setFilterType('month');
+            setFilterDate(filterDate);
+          }}
+          title={`View ${format(filterDate, 'MMMM yyyy')} in month view`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+            {format(filterDate, 'MMMM yyyy')}
+          </Typography>
+        </Box>
+
+        {/* Week Navigation Header */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            py: 1.5,
+            px: 2,
+            backgroundColor: '#f5f5f5',
+            borderBottom: '2px solid #1976d2'
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => navigateToWeek('prev')}
+            disabled={isNavigating}
+            sx={{ color: '#1976d2' }}
+            title="Previous week"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
           
-          return (
-            <Box 
-              key={day.toISOString()} 
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography 
+              variant="h6" 
               sx={{ 
-                flex: '1 1 auto', 
-                minWidth: { xs: '100%', sm: '200px', md: '180px', lg: '160px' },
-                maxWidth: { xs: '100%', sm: '250px', md: '220px', lg: '200px' }
+                fontWeight: 'bold', 
+                color: '#1976d2'
               }}
             >
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {format(day, 'MMM dd')}
+              {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
+            </Typography>
+            
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                const todayStart = startOfWeek(today);
+                const todayEnd = endOfWeek(today);
+                setStartDate(todayStart);
+                setEndDate(todayEnd);
+                setFilterDate(today);
+              }}
+              sx={{ 
+                ml: 1,
+                color: '#1976d2',
+                borderColor: '#1976d2',
+                '&:hover': {
+                  backgroundColor: '#e3f2fd',
+                  borderColor: '#1565c0'
+                }
+              }}
+              title="Go to today's week"
+            >
+              Today
+            </Button>
+          </Box>
+          
+          <IconButton
+            size="small"
+            onClick={() => navigateToWeek('next')}
+            disabled={isNavigating}
+            sx={{ color: '#1976d2' }}
+            title="Next week"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Week Header */}
+        <Box sx={{ 
+          display: 'flex', 
+          borderBottom: '2px solid #1976d2',
+          backgroundColor: '#e3f2fd'
+        }}>
+          {dayNames.map((dayName, index) => (
+            <Box
+              key={dayName}
+              sx={{
+                flex: 1,
+                textAlign: 'center',
+                py: 1.5,
+                fontWeight: 'bold',
+                backgroundColor: '#e3f2fd',
+                borderRight: index < 6 ? '2px solid #1976d2' : 'none'
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ color: '#1976d2' }}>{dayName}</Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Week Content */}
+        <Box sx={{ 
+          display: 'flex',
+          opacity: isNavigating ? 0.7 : 1,
+          transition: 'opacity 0.2s ease-in-out'
+        }}>
+          {weekDays.map((day, index) => {
+            const dayGames = games.filter(game => game?.gameDate && isSameDay(parseISO(game.gameDate), day));
+            
+            return (
+              <Box
+                key={day.toISOString()}
+                sx={{
+                  flex: 1,
+                  minHeight: '300px',
+                  borderRight: index < 6 ? '2px solid #1976d2' : 'none',
+                  backgroundColor: 'white',
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5'
+                  }
+                }}
+                onClick={() => {
+                  setFilterType('day');
+                  setFilterDate(day);
+                }}
+                title={`View ${format(day, 'EEEE, MMMM d, yyyy')} in day view`}
+              >
+                {/* Day Header */}
+                <Box
+                  sx={{
+                    py: 1,
+                    px: 1,
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '1px solid #e0e0e0',
+                    textAlign: 'center'
+                  }}
+                >
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                    {format(day, 'd')}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {format(day, 'EEEE')}
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {format(day, 'MMM')}
                   </Typography>
-                  
+                </Box>
+
+                {/* Games for this day */}
+                <Box sx={{ p: 1, height: 'calc(100% - 60px)', overflow: 'auto' }}>
                   {dayGames.length > 0 ? (
-                    <Box sx={{ mt: 2 }}>
-                      {dayGames.map((game) => (
-                        <Box key={game.id} sx={{ mb: 1, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                          {game.gameStatus === 1 ? (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                  {getTeamName(game.visitorTeamId)}
-                                </Typography>
-                                <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
-                                  {game.visitorScore}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                  {getTeamName(game.homeTeamId)}
-                                </Typography>
-                                <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
-                                  {game.homeScore}
-                                </Typography>
-                              </Box>
+                    dayGames.map((game) => (
+                      <Box
+                        key={game.id}
+                        sx={{
+                          mb: 1,
+                          p: 1,
+                          backgroundColor: 'primary.light',
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          lineHeight: 1.2,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: 'primary.main',
+                            color: 'white'
+                          }
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering day view
+                          openEditDialog(game);
+                        }}
+                      >
+                        {game.gameStatus === 1 ? (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                {game.visitorScore}
+                              </Typography>
                             </Box>
-                          ) : (
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                  {getTeamName(game.visitorTeamId)}
-                                </Typography>
-                                {getStatusDisplayInfo(game).showOnVisitor && (
-                                  <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
-                                    {getStatusDisplayInfo(game).statusText}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                  {getTeamName(game.homeTeamId)}
-                                </Typography>
-                                {getStatusDisplayInfo(game).showOnHome && (
-                                  <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
-                                    {getStatusDisplayInfo(game).statusText}
-                                  </Typography>
-                                )}
-                              </Box>
-                              {game.gameStatus === 0 && (
-                                <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
-                                  {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              <Typography variant="body2" fontWeight="bold" sx={{ minWidth: 'fit-content', ml: 1 }}>
+                                {game.homeScore}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnVisitor && (
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                  {getStatusDisplayInfo(game).statusText}
                                 </Typography>
                               )}
                             </Box>
-                          )}
-                        </Box>
-                      ))}
-                    </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnHome && (
+                                <Typography variant="caption" sx={{ fontWeight: 'bold', minWidth: 'fit-content', ml: 1, color: 'white', backgroundColor: getGameStatusColor(game.gameStatus) === 'error' ? 'error.main' : getGameStatusColor(game.gameStatus) === 'warning' ? 'warning.main' : 'primary.main', px: 1, py: 0.25, borderRadius: 0.5 }}>
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            {game.gameStatus === 0 && (
+                              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 'medium' }}>
+                                {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    ))
                   ) : (
-                    <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
-                      No games scheduled
+                    <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+                      No games
                     </Typography>
                   )}
-                </CardContent>
-              </Card>
-            </Box>
-          );
-        })}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
       </Box>
+    );
+  }, [startDate, endDate, filterDate, isNavigating, navigateToWeek, games, openEditDialog, getTeamName, getStatusDisplayInfo, getGameStatusColor, getFieldName]);
+
+  const renderListView = () => {
+    return (
+      <List>
+        {games.map((game) => (
+          <ListItem key={game.id} divider>
+            <ListItemText
+              primary={
+                <Box>
+                  <Typography variant="h6">
+                    {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {game.gameDate ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {getFieldName(game.fieldId)}
+                  </Typography>
+                </Box>
+              }
+              secondary={
+                <Box sx={{ mt: 1 }}>
+                  <Chip
+                    label={getGameStatusText(game.gameStatus)}
+                    color={getGameStatusColor(game.gameStatus)}
+                    size="small"
+                  />
+                  {game.comment && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {game.comment}
+                    </Typography>
+                  )}
+                </Box>
+              }
+            />
+            <ListItemSecondaryAction>
+              <IconButton onClick={() => openEditDialog(game)}>
+                <EditIcon />
+              </IconButton>
+              <IconButton onClick={() => openDeleteDialog(game)}>
+                <DeleteIcon />
+              </IconButton>
+            </ListItemSecondaryAction>
+          </ListItem>
+        ))}
+      </List>
     );
   };
 
@@ -739,15 +986,38 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             <ChevronLeftIcon />
           </IconButton>
           
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              fontWeight: 'bold', 
-              color: '#1976d2'
-            }}
-          >
-            {format(filterDate, 'MMMM yyyy')}
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#1976d2'
+              }}
+            >
+              {format(filterDate, 'MMMM yyyy')}
+            </Typography>
+            
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                setFilterDate(today);
+              }}
+              sx={{ 
+                ml: 1,
+                color: '#1976d2',
+                borderColor: '#1976d2',
+                '&:hover': {
+                  backgroundColor: '#e3f2fd',
+                  borderColor: '#1565c0'
+                }
+              }}
+              title="Go to today's month"
+            >
+              Today
+            </Button>
+          </Box>
           
           <IconButton
             size="small"
@@ -825,7 +1095,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }}
               onClick={() => {
                 setFilterType('week');
-                setFilterDate(week[0]); // Use the first day of the week
+                setStartDate(startOfWeek(week[0]));
+                setEndDate(endOfWeek(week[0]));
+                setFilterDate(week[0]);
               }}
               title={`View week of ${format(week[0], 'MMM d')} - ${format(week[6], 'MMM d')}`}
             >
@@ -861,6 +1133,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     setFilterType('day');
                     setFilterDate(day);
                   }}
+                  title={`View ${format(day, 'EEEE, MMMM d, yyyy')} in day view`}
                 >
                   {/* Date Header */}
                   <Typography
@@ -893,7 +1166,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                             color: 'white'
                           }
                         }}
-                        onClick={() => openEditDialog(game)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(game);
+                        }}
                       >
                         {game.gameStatus === 1 ? (
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -955,51 +1231,374 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     );
   };
 
-  const renderListView = () => {
+  const renderDayView = () => {
+    const dayGames = games.filter(game => game?.gameDate && isSameDay(parseISO(game.gameDate), filterDate));
+    
     return (
-      <List>
-        {games.map((game) => (
-          <ListItem key={game.id} divider>
-            <ListItemText
-              primary={
-                <Box>
-                  <Typography variant="h6">
-                    {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
+      <Box sx={{ 
+        border: '3px solid #1976d2', 
+        borderRadius: 2, 
+        overflow: 'hidden',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+      }}>
+        {/* Month Header - Clickable to go to month view */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 2,
+            backgroundColor: '#1976d2',
+            color: 'white',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: '#1565c0'
+            }
+          }}
+          onClick={() => {
+            setFilterType('month');
+            setFilterDate(filterDate);
+          }}
+          title={`View ${format(filterDate, 'MMMM yyyy')} in month view`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'white' }}>
+            {format(filterDate, 'MMMM yyyy')}
+          </Typography>
+        </Box>
+
+        {/* Week Header - Clickable to go to week view */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            py: 1.5,
+            px: 2,
+            backgroundColor: '#f5f5f5',
+            borderBottom: '2px solid #1976d2',
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: '#e3f2fd'
+            }
+          }}
+          onClick={() => {
+            setFilterType('week');
+            setStartDate(startOfWeek(filterDate));
+            setEndDate(endOfWeek(filterDate));
+          }}
+          title={`View week of ${format(startOfWeek(filterDate), 'MMM d')} - ${format(endOfWeek(filterDate), 'MMM d')}`}
+        >
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              fontWeight: 'bold', 
+              color: '#1976d2'
+            }}
+          >
+            {format(startOfWeek(filterDate), 'MMM dd')} - {format(endOfWeek(filterDate), 'MMM dd, yyyy')}
+          </Typography>
+        </Box>
+
+        {/* Day Header with Navigation */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            py: 1.5,
+            px: 2,
+            backgroundColor: '#e3f2fd',
+            borderBottom: '2px solid #1976d2'
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => {
+              const prevDay = new Date(filterDate);
+              prevDay.setDate(prevDay.getDate() - 1);
+              setFilterDate(prevDay);
+            }}
+            sx={{ color: '#1976d2' }}
+            title="Previous day"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#1976d2'
+              }}
+            >
+              {format(filterDate, 'EEEE, MMMM d, yyyy')}
+            </Typography>
+            
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                setFilterDate(today);
+              }}
+              sx={{ 
+                ml: 1,
+                color: '#1976d2',
+                borderColor: '#1976d2',
+                '&:hover': {
+                  backgroundColor: '#e3f2fd',
+                  borderColor: '#1565c0'
+                }
+              }}
+              title="Go to today"
+            >
+              Today
+            </Button>
+          </Box>
+          
+          <IconButton
+            size="small"
+            onClick={() => {
+              const nextDay = new Date(filterDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              setFilterDate(nextDay);
+            }}
+            sx={{ color: '#1976d2' }}
+            title="Next day"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Day Content */}
+        <Box sx={{ p: 2, backgroundColor: 'white', minHeight: '300px' }}>
+          {dayGames.length > 0 ? (
+            dayGames.map((game) => (
+              <Card key={game.id} sx={{ mb: 2, cursor: 'pointer' }} onClick={() => openEditDialog(game)}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      {getTeamName(game.visitorTeamId)} vs {getTeamName(game.homeTeamId)}
+                    </Typography>
+                    <Chip
+                      label={getGameStatusText(game.gameStatus)}
+                      color={getGameStatusColor(game.gameStatus)}
+                      size="small"
+                    />
+                  </Box>
+                  
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                    {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} • {getFieldName(game.fieldId)}
                   </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {game.gameDate ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a') : 'TBD'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {getFieldName(game.fieldId)}
-                  </Typography>
-                </Box>
-              }
-              secondary={
-                <Box sx={{ mt: 1 }}>
-                  <Chip
-                    label={getGameStatusText(game.gameStatus)}
-                    color={getGameStatusColor(game.gameStatus)}
-                    size="small"
-                  />
+                  
+                  {game.gameStatus === 1 && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                        {game.visitorScore} - {game.homeScore}
+                      </Typography>
+                    </Box>
+                  )}
+                  
                   {game.comment && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
+                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
                       {game.comment}
                     </Typography>
                   )}
-                </Box>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="textSecondary">
+                No games scheduled for this day
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderYearView = () => {
+    const year = filterDate.getFullYear();
+    const months = [];
+    
+    for (let month = 0; month < 12; month++) {
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
+      const monthName = format(monthStart, 'MMMM');
+      
+      // Get games for this month
+      const monthGames = games.filter(game => {
+        if (!game.gameDate) return false;
+        const gameDate = parseISO(game.gameDate);
+        return gameDate >= monthStart && gameDate <= monthEnd;
+      });
+      
+      // Group games by day
+      const gamesByDay = new Map<number, Game[]>();
+      monthGames.forEach(game => {
+        if (game.gameDate) {
+          const gameDate = parseISO(game.gameDate);
+          const day = gameDate.getDate();
+          if (!gamesByDay.has(day)) {
+            gamesByDay.set(day, []);
+          }
+          gamesByDay.get(day)!.push(game);
+        }
+      });
+      
+      // Create calendar days for this month
+      const days: React.ReactElement[] = [];
+      const firstDayOfMonth = new Date(year, month, 1);
+      const lastDayOfMonth = new Date(year, month + 1, 0);
+      const startDate = startOfWeek(firstDayOfMonth);
+      const endDate = endOfWeek(lastDayOfMonth);
+      
+      const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
+      
+      calendarDays.forEach((day, index) => {
+        const isCurrentMonth = day.getMonth() === month;
+        const dayNumber = day.getDate();
+        const dayGames = isCurrentMonth ? (gamesByDay.get(dayNumber) || []) : [];
+        const gameCount = dayGames.length;
+        
+        days.push(
+          <Box
+            key={index}
+            sx={{
+              width: '14.28%',
+              height: '60px',
+              border: '1px solid #e0e0e0',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: isCurrentMonth ? 'white' : '#f5f5f5',
+              position: 'relative',
+              cursor: gameCount > 0 ? 'pointer' : 'default',
+              '&:hover': gameCount > 0 ? {
+                bgcolor: '#f0f8ff',
+                '& .game-count': {
+                  transform: 'scale(1.1)',
+                }
+              } : {}
+            }}
+            onClick={() => {
+              if (gameCount > 0) {
+                setFilterType('day');
+                setFilterDate(day);
               }
-            />
-            <ListItemSecondaryAction>
-              <IconButton onClick={() => openEditDialog(game)}>
-                <EditIcon />
-              </IconButton>
-              <IconButton onClick={() => openDeleteDialog(game)}>
-                <DeleteIcon />
-              </IconButton>
-            </ListItemSecondaryAction>
-          </ListItem>
-        ))}
-      </List>
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: isCurrentMonth ? 'text.primary' : 'text.disabled',
+                fontWeight: isSameDay(day, new Date()) ? 'bold' : 'normal',
+                fontSize: '0.75rem'
+              }}
+            >
+              {dayNumber}
+            </Typography>
+            {gameCount > 0 && (
+              <Box
+                className="game-count"
+                sx={{
+                  position: 'absolute',
+                  bottom: '2px',
+                  right: '2px',
+                  width: '20px',
+                  height: '20px',
+                  borderRadius: '50%',
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.7rem',
+                  fontWeight: 'bold',
+                  transition: 'transform 0.2s ease-in-out'
+                }}
+              >
+                {gameCount}
+              </Box>
+            )}
+          </Box>
+        );
+      });
+      
+      months.push(
+        <Box key={month} sx={{ mb: 4 }}>
+          <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
+            {monthName}
+          </Typography>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+            {/* Day headers */}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
+              <Box
+                key={index}
+                sx={{
+                  width: '14.28%',
+                  height: '30px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 'bold',
+                  fontSize: '0.8rem',
+                  color: 'text.secondary',
+                  borderBottom: '1px solid #e0e0e0'
+                }}
+              >
+                {day}
+              </Box>
+            ))}
+            {/* Calendar days */}
+            {days}
+          </Box>
+        </Box>
+      );
+    }
+    
+    return (
+      <Box sx={{ p: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" fontWeight="bold">
+            {year}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const newYear = year - 1;
+                setFilterDate(new Date(newYear, 0, 1));
+              }}
+            >
+              {year - 1}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => setFilterDate(new Date())}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const newYear = year + 1;
+                setFilterDate(new Date(newYear, 0, 1));
+              }}
+            >
+              {year + 1}
+            </Button>
+          </Box>
+        </Box>
+        
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 3 }}>
+          {months}
+        </Box>
+      </Box>
     );
   };
 
@@ -1122,6 +1721,30 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               )}
               {renderMonthCalendarView()}
             </Box>
+          ) : filterType === 'week' ? (
+            <Box>
+              {loadingGames && (
+                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderWeekView()}
+            </Box>
+          ) : filterType === 'day' ? (
+            <Box>
+              {loadingGames && (
+                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderDayView()}
+            </Box>
           ) : (
             <Box>
               {loadingGames && (
@@ -1132,7 +1755,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   </Typography>
                 </Box>
               )}
-              {renderCalendarView()}
+              {renderYearView()}
             </Box>
           )) 
           : (
