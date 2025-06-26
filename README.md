@@ -315,4 +315,125 @@ This project is a migration from an ASP.NET Framework application. See [MIGRATIO
 
 ---
 
-**Draco Sports Manager** - Modern sports management for the digital age. 
+**Draco Sports Manager** - Modern sports management for the digital age.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm
+- PostgreSQL database
+- Environment variables configured
+
+### Installation
+```bash
+# Install all dependencies (root, backend, and frontend)
+npm run install:all
+
+# Or install individually
+npm install                    # Root dependencies
+npm run backend:install        # Backend dependencies  
+npm run frontend:install       # Frontend dependencies
+```
+
+### Development
+```bash
+# Start both backend and frontend in development mode
+npm run dev
+
+# Or start individually
+npm run backend:dev           # Backend with nodemon (port 5000)
+npm run frontend:start        # Frontend dev server (port 3000)
+```
+
+### Production
+```bash
+# Build both projects
+npm run build
+
+# Start production backend
+npm start                     # or npm run backend:start
+```
+
+## 📋 Available NPM Scripts
+
+### 🎯 **Root Level Commands** (Replace shell scripts)
+All commands can be run from the root directory using npm scripts instead of the shell scripts:
+
+#### **Development**
+```bash
+npm run dev                   # Start both backend and frontend (replaces both shell scripts)
+npm run backend:dev          # Backend development with nodemon
+npm run frontend:start       # Frontend development server
+```
+
+#### **Building**
+```bash
+npm run build                # Build both backend and frontend
+npm run backend:build        # Build backend TypeScript
+npm run frontend:build       # Build frontend for production
+```
+
+#### **Testing**
+```bash
+npm run test:all             # Run tests for both projects
+npm run backend:test         # Backend tests
+npm run frontend:test        # Frontend tests
+```
+
+#### **Code Quality**
+```bash
+npm run lint:all             # Lint both projects
+npm run lint:fix:all         # Fix linting issues in both projects
+npm run format:all           # Format code in both projects
+npm run type-check:all       # TypeScript type checking for both projects
+```
+
+#### **Backend Specific**
+```bash
+npm run backend:start        # Start production backend server
+npm run backend:install      # Install backend dependencies
+npm run backend:prisma-generate    # Generate Prisma client
+npm run backend:migrate-passwords  # Run password migration script
+npm run backend:test-passwords     # Test password verification
+npm run backend:clean        # Clean build artifacts
+npm run backend:docs:generate      # Generate API documentation
+```
+
+#### **Frontend Specific**
+```bash
+npm run frontend:install     # Install frontend dependencies
+npm run frontend:eject       # Eject from Create React App (with confirmation)
+```
+
+#### **Installation**
+```bash
+npm run install:all          # Install all dependencies (root + backend + frontend)
+```
+
+### 🔄 **Migration from Shell Scripts**
+
+The following npm commands replace the shell script functionality:
+
+| Shell Script Command | NPM Script Equivalent |
+|---------------------|----------------------|
+| `./run-backend.sh start` | `npm run backend:start` |
+| `./run-backend.sh build` | `npm run backend:build` |
+| `./run-backend.sh dev` | `npm run backend:dev` |
+| `./run-backend.sh test` | `npm run backend:test` |
+| `./run-backend.sh install` | `npm run backend:install` |
+| `./run-backend.sh prisma-generate` | `npm run backend:prisma-generate` |
+| `./run-backend.sh migrate-passwords` | `npm run backend:migrate-passwords` |
+| `./run-backend.sh test-passwords` | `npm run backend:test-passwords` |
+| `./run-frontend.sh start` | `npm run frontend:start` |
+| `./run-frontend.sh build` | `npm run frontend:build` |
+| `./run-frontend.sh test` | `npm run frontend:test` |
+| `./run-frontend.sh install` | `npm run frontend:install` |
+| `./run-frontend.sh eject` | `npm run frontend:eject` |
+
+**Benefits of npm scripts:**
+- ✅ Cross-platform compatibility (no shell script dependencies)
+- ✅ Better integration with npm ecosystem
+- ✅ Easier to maintain and extend
+- ✅ Works with npm workspaces
+- ✅ Can be used in CI/CD pipelines
+- ✅ Better error handling and output formatting
