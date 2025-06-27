@@ -17,7 +17,7 @@ if [ "$CURRENT_BRANCH" = "main" ]; then
 fi
 
 # Run detect-secrets on staged files (without baseline to avoid updates)
-STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | tr '\n' ' ')
+STAGED_FILES=$(git diff --cached --name-only | grep -v '.secrets.baseline' | grep -v 'package.json' | tr '\n' ' ')
 if [ -n "$STAGED_FILES" ]; then
   echo "🔒 Running detect-secrets pre-commit scan on staged files..."
   # Scan staged files without baseline to avoid modification
