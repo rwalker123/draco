@@ -1,0 +1,20 @@
+# AWS Configuration
+aws_region = "us-east-1"
+environment = "dev"
+
+# Domain Configuration (optional)
+domain_name = ""
+
+# Database Configuration
+db_instance_class = "db.t3.micro"
+db_username       = "draco"
+
+# Sensitive data should be set via environment variables:
+# export TF_VAR_db_password="your-secure-password" # pragma: allowlist secret
+# export TF_VAR_jwt_secret="your-jwt-secret" # pragma: allowlist secret
+# export TF_VAR_email_user="your-email@example.com"
+# export TF_VAR_email_pass="your-email-password"
+#
+# Optional email configuration (defaults shown):
+# export TF_VAR_email_host="smtp.gmail.com"
+# export TF_VAR_email_port="587" 
