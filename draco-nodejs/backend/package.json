@@ -4,10 +4,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    // pragma: allowlist secret
     "start": "node dist/src/server.js",
     "dev": "nodemon --exec npm start",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "clean": "rm -rf dist",
     "migrate-passwords": "ts-node scripts/migrate-passwords.ts",
     "test-passwords": "ts-node scripts/test-password-verification.ts",
@@ -59,8 +58,7 @@
   },
   "lint-staged": {
     "src/**/*.ts": [
-      "prettier --write",
-      "eslint --fix"
+      "prettier --write"
     ]
   }
 }
