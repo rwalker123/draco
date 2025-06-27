@@ -291,7 +291,7 @@
     - [ ] Deploy application: `./deploy.sh lambda && ./deploy.sh frontend`
   - [ ] **Option C: Use Migration Scripts**
     - [ ] Deploy infrastructure: `./deploy.sh infrastructure`
-    - [ ] Set database URL: `export DATABASE_URL="postgresql://draco:PASSWORD@ENDPOINT/draco"`
+    - [ ] Set database URL: `export DATABASE_URL="postgresql://draco:PASSWORD@ENDPOINT/draco"` # pragma: allowlist secret
     - [ ] Run migrations: `npm run migrate-passwords && npm run test-passwords`
     - [ ] Deploy application: `./deploy.sh lambda && ./deploy.sh frontend`
 

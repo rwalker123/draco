@@ -75,7 +75,7 @@ psql -h YOUR_RDS_ENDPOINT -U draco -d draco -f your_existing_dump.sql
 ./deploy.sh infrastructure
 
 # 2. Set database URL
-export DATABASE_URL="postgresql://draco:YOUR_PASSWORD@YOUR_RDS_ENDPOINT/draco"
+export DATABASE_URL="postgresql://draco:YOUR_PASSWORD@YOUR_RDS_ENDPOINT/draco" # pragma: allowlist secret
 
 # 3. Run migrations
 cd draco-nodejs/backend
