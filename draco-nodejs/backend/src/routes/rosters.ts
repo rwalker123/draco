@@ -1193,4 +1193,43 @@ router.get(
   },
 );
 
+/**
+ * GET /api/accounts/:accountId/teams/:teamId/logo
+ * Get team logo from S3 or local storage
+ */
+router.get(
+  "/:teamId/logo",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = req.params.accountId;
+      const teamId = req.params.teamId;
+
+      // Get the logo from storage service
+      const logoBuffer = await storageService.getLogo(accountId, teamId);
+
+      if (!logoBuffer) {
+        res.status(404).json({
+          success: false,
+          message: "Logo not found",
+        });
+        return;
+      }
+
+      // Set appropriate headers
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+      res.setHeader("Content-Length", logoBuffer.length.toString());
+
+      // Send the image buffer
+      res.send(logoBuffer);
+    } catch (error) {
+      console.error("Error serving team logo:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to serve logo",
+      });
+    }
+  },
+);
+
 export default router;
