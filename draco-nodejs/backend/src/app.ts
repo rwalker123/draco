@@ -111,7 +111,7 @@ app.use((err: any, req: any, res: any, next: any) => {
 });
 
 // 404 handler
-app.use("*", (req: any, res: any) => {
+app.use("/{*splat}", (req: any, res: any) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
