@@ -21,20 +21,12 @@ import {
   CircularProgress,
   Tabs,
   Tab,
-  Divider,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction,
 } from "@mui/material";
-import Grid from "@mui/material/Grid";
 import {
   Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  CalendarToday as CalendarIcon,
-  LocationOn as LocationIcon,
-  Schedule as ScheduleIcon,
   ZoomIn as ZoomInIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -53,7 +45,6 @@ import { startOfMonth } from "date-fns/startOfMonth";
 import { endOfMonth } from "date-fns/endOfMonth";
 import { startOfYear } from "date-fns/startOfYear";
 import { endOfYear } from "date-fns/endOfYear";
-import { addDays } from "date-fns/addDays";
 import { useRole } from "../context/RoleContext";
 import { useAuth } from "../context/AuthContext";
 
@@ -134,7 +125,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
   const [fields, setFields] = useState<Field[]>([]);
   const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([]);
   const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -162,7 +152,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
 
   // View states
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date()));
   const [endDate, setEndDate] = useState<Date>(endOfWeek(new Date()));
 
@@ -379,11 +368,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     } finally {
       setLoadingGames(false);
     }
-  };
-
-  const loadData = async () => {
-    await loadStaticData();
-    await loadGamesData();
   };
 
   const loadLeagueTeams = async (leagueSeasonId: string) => {
@@ -819,12 +803,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     if (!fieldId) return "TBD";
     const field = fields.find((f) => f.id === fieldId);
     return field ? field.name : "Unknown Field";
-  };
-
-  const getFieldShortName = (fieldId?: string): string => {
-    if (!fieldId) return "TBD";
-    const field = fields.find((f) => f.id === fieldId);
-    return field ? field.shortName : "Unknown";
   };
 
   const getGameTypeText = (gameType: number | string): string => {
