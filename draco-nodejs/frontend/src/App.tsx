@@ -15,6 +15,7 @@ import ProtectedSeasonManagement from "./components/ProtectedSeasonManagement";
 import ProtectedLeagueSeasonManagement from "./components/ProtectedLeagueSeasonManagement";
 import ProtectedTeamRosterManagement from "./components/ProtectedTeamRosterManagement";
 import ScheduleManagement from "./components/ScheduleManagement";
+import Teams from "./components/Teams";
 import PermissionTest from "./components/PermissionTest";
 import RoleDebug from "./components/RoleDebug";
 import Accounts from "./components/Accounts";
@@ -28,6 +29,13 @@ const ScheduleManagementWrapper = () => {
   const { accountId } = useParams<{ accountId: string }>();
   if (!accountId) return <div>Account ID not found</div>;
   return <ScheduleManagement accountId={accountId} />;
+};
+
+// Wrapper component to handle URL parameters for Teams
+const TeamsWrapper = () => {
+  const { accountId } = useParams<{ accountId: string }>();
+  if (!accountId) return <div>Account ID not found</div>;
+  return <Teams accountId={accountId} />;
 };
 
 function App() {
@@ -88,6 +96,7 @@ function App() {
             path="/account/:accountId/schedule"
             element={<ScheduleManagementWrapper />}
           />
+          <Route path="/account/:accountId/teams" element={<TeamsWrapper />} />
           <Route path="/permission-test" element={<PermissionTest />} />
           <Route path="/role-debug" element={<RoleDebug />} />
         </Routes>
