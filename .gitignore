@@ -61,3 +61,18 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Ignore build output
+/dist/
+*.zip
+
+# Ignore uploaded files
+/uploads/
+
+# Ignore LocalStack data
+/localstack-data/
+
+# Keep environment variables out of version control - ignore .env files from ANY directory
+**/.env
+
+/src/generated/prisma
