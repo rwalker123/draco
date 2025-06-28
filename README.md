@@ -200,29 +200,88 @@ npx prisma generate
 # Push schema changes to database
 npx prisma db push
 
-# Create a new migration
-npx prisma migrate dev --name migration_name
+# Run database migrations
+npx prisma migrate dev
 
-# Reset database (development only)
-npx prisma migrate reset
-
-# Open Prisma Studio (database GUI)
+# Open Prisma Studio
 npx prisma studio
 ```
 
-### Code Quality
+## 🐳 LocalStack Setup (S3 Testing)
 
-The project uses TypeScript for type safety and ESLint for code quality:
+For local S3 testing and development, you can use LocalStack to emulate AWS S3 without needing a real AWS account.
+
+### Prerequisites
+
+- **Docker** and **Docker Compose** installed
+- **AWS CLI** (optional, for bucket management)
+
+### Quick Start with LocalStack
+
+1. **Start LocalStack**
+   ```bash
+   # From the backend directory
+   docker-compose up -d localstack
+   ```
+
+2. **Create S3 bucket**
+   ```bash
+   # Create the bucket for team logos
+   aws --endpoint-url=http://localhost:4566 s3 mb s3://draco-team-logos
+   ```
+
+3. **Configure environment**
+   ```bash
+   # Copy the LocalStack environment template
+   cp env.localstack.example .env.localstack
+   
+   # Or add these variables to your existing .env file:
+   STORAGE_PROVIDER=s3
+   S3_ENDPOINT=http://localhost:4566
+   S3_REGION=us-east-1
+   S3_ACCESS_KEY_ID=test
+   S3_SECRET_ACCESS_KEY=test
+   S3_BUCKET=draco-team-logos
+   S3_FORCE_PATH_STYLE=true
+   ```
+
+4. **Test S3 connectivity**
+   ```bash
+   # List buckets
+   aws --endpoint-url=http://localhost:4566 s3 ls
+   
+   # List objects in your bucket
+   aws --endpoint-url=http://localhost:4566 s3 ls s3://draco-team-logos
+   ```
+
+### LocalStack Management
 
 ```bash
-# Backend linting
-cd backend
-npm run lint
+# Start LocalStack
+docker-compose up -d localstack
 
-# Frontend linting
-cd frontend
-npm run lint
+# Stop LocalStack
+docker-compose down
+
+# View logs
+docker-compose logs localstack
+
+# Check health
+curl http://localhost:4566/_localstack/health
 ```
+
+### Switching Between Storage Providers
+
+- **Local Storage**: Set `STORAGE_PROVIDER=local` (default)
+- **LocalStack S3**: Set `STORAGE_PROVIDER=s3` with LocalStack config
+- **Real AWS S3**: Set `STORAGE_PROVIDER=s3` with real AWS credentials
+
+### Notes
+
+- LocalStack uses dummy credentials (`test`/`test`) that work for local development
+- The S3 bucket `draco-team-logos` is created automatically if it doesn't exist
+- All S3 operations work exactly like real AWS S3
+- Data persists in the `./localstack-data` directory
 
 ## 🔐 Security
 

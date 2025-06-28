@@ -37,7 +37,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, validateLogoFile } from "../config/teams";
+import { getLogoSize, validateLogoFile, getLogoUrl } from "../config/teams";
 import { useNavigate } from "react-router-dom";
 
 interface Team {
@@ -124,17 +124,13 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
 
-  // Helper function to generate logo URL
-  const getLogoUrl = (teamId: string): string => {
-    // Add cache-busting parameter to ensure new logos are displayed
-    const timestamp = logoUpdateTracker[teamId] || Date.now();
-    return `/uploads/${accountId}/team-logos/${teamId}-logo.png?t=${timestamp}`;
-  };
-
   // Helper function to check if logo exists
   const checkLogoExists = async (teamId: string): Promise<boolean> => {
     try {
-      const response = await fetch(getLogoUrl(teamId), { method: "HEAD" });
+      const timestamp = logoUpdateTracker[teamId] || Date.now();
+      const seasonId = teamsData?.season.id;
+      if (!seasonId) return false;
+      const response = await fetch(getLogoUrl(accountId, teamId, seasonId, teamId, timestamp), { method: "HEAD" });
       return response.ok;
     } catch {
       return false;
@@ -380,7 +376,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
     setSelectedTeam(team);
     setEditingTeamName(team.name);
     setEditingLogoFile(null);
-    setLogoPreview(getLogoUrl(team.teamId));
+    const timestamp = logoUpdateTracker[team.teamId] || Date.now();
+    const seasonId = teamsData?.season.id;
+    if (seasonId) {
+      setLogoPreview(getLogoUrl(accountId, team.teamId, seasonId, team.id, timestamp));
+    }
     setEditDialogError(null);
     setEditDialogOpen(true);
   };
@@ -573,7 +573,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
       }}
     >
       <Avatar
-        src={getLogoUrl(team.teamId)}
+        src={teamsData?.season.id ? getLogoUrl(accountId, team.teamId, teamsData.season.id, team.id, logoUpdateTracker[team.teamId]) : undefined}
         sx={{
           width: LOGO_SIZE,
           height: LOGO_SIZE,
