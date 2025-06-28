@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as sharp from "sharp";
+import * as AWS from "aws-sdk";
 
 export interface StorageService {
   saveLogo(
@@ -86,34 +87,113 @@ export class LocalStorageService implements StorageService {
 }
 
 export class S3StorageService implements StorageService {
-  // TODO: Implement S3 storage service for production
-  // This would use AWS SDK to upload/download files from S3
+  private s3: AWS.S3;
+  private bucketName: string;
+
+  constructor() {
+    this.bucketName = process.env.S3_BUCKET || "draco-team-logos";
+    
+    // Configure S3 client for LocalStack
+    this.s3 = new AWS.S3({
+      endpoint: process.env.S3_ENDPOINT || "http://localhost:4566",
+      region: process.env.S3_REGION || "us-east-1",
+      accessKeyId: process.env.S3_ACCESS_KEY_ID || "test",
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "test",
+      s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+    });
+
+    // Enable debug logging if S3_DEBUG is set
+    if (process.env.S3_DEBUG === "true") {
+      AWS.config.logger = console;
+    }
+  }
+
+  private getS3Key(accountId: string, teamId: string): string {
+    return `${accountId}/team-logos/${teamId}-logo.png`;
+  }
 
   async saveLogo(
     accountId: string,
     teamId: string,
     imageBuffer: Buffer,
   ): Promise<string> {
-    // TODO: Implement S3 upload
-    throw new Error("S3 storage not implemented yet");
+    const s3Key = this.getS3Key(accountId, teamId);
+
+    // Resize the image using sharp
+    const resizedBuffer = await sharp(imageBuffer)
+      .resize(60, 60, {
+        fit: "cover",
+        position: "center",
+      })
+      .png({ quality: 85 })
+      .toBuffer();
+
+    // Upload to S3
+    const uploadParams: AWS.S3.PutObjectRequest = {
+      Bucket: this.bucketName,
+      Key: s3Key,
+      Body: resizedBuffer,
+      ContentType: "image/png",
+      ACL: "public-read",
+    };
+
+    try {
+      await this.s3.putObject(uploadParams).promise();
+      console.log(`Logo uploaded to S3: s3://${this.bucketName}/${s3Key}`);
+      return s3Key;
+    } catch (error) {
+      console.error("Error uploading logo to S3:", error);
+      throw new Error(`Failed to upload logo to S3: ${error}`);
+    }
   }
 
   async getLogo(accountId: string, teamId: string): Promise<Buffer | null> {
-    // TODO: Implement S3 download
-    throw new Error("S3 storage not implemented yet");
+    const s3Key = this.getS3Key(accountId, teamId);
+
+    try {
+      const getParams: AWS.S3.GetObjectRequest = {
+        Bucket: this.bucketName,
+        Key: s3Key,
+      };
+
+      const result = await this.s3.getObject(getParams).promise();
+      return result.Body as Buffer;
+    } catch (error) {
+      if ((error as any).code === "NoSuchKey") {
+        console.log(`Logo not found in S3: s3://${this.bucketName}/${s3Key}`);
+        return null;
+      }
+      console.error("Error downloading logo from S3:", error);
+      return null;
+    }
   }
 
   async deleteLogo(accountId: string, teamId: string): Promise<boolean> {
-    // TODO: Implement S3 delete
-    throw new Error("S3 storage not implemented yet");
+    const s3Key = this.getS3Key(accountId, teamId);
+
+    try {
+      const deleteParams: AWS.S3.DeleteObjectRequest = {
+        Bucket: this.bucketName,
+        Key: s3Key,
+      };
+
+      await this.s3.deleteObject(deleteParams).promise();
+      console.log(`Logo deleted from S3: s3://${this.bucketName}/${s3Key}`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting logo from S3:", error);
+      return false;
+    }
   }
 }
 
 // Factory function to create the appropriate storage service
 export function createStorageService(): StorageService {
-  const storageType = process.env.STORAGE_TYPE || "local";
+  const storageProvider = process.env.STORAGE_PROVIDER || "local";
 
-  switch (storageType.toLowerCase()) {
+  console.log(`Creating storage service with provider: ${storageProvider}`);
+
+  switch (storageProvider.toLowerCase()) {
     case "s3":
       return new S3StorageService();
     case "local":
