@@ -26,14 +26,21 @@ export const getLogoSize = (): number => {
 };
 
 // Helper function to generate logo URL based on storage provider
-export const getLogoUrl = (accountId: string, teamId: string, seasonId: string, teamSeasonId: string, timestamp?: number): string => {
+export const getLogoUrl = (
+  accountId: string,
+  teamId: string,
+  seasonId: string,
+  teamSeasonId: string,
+  timestamp?: number,
+): string => {
   const cacheBuster = timestamp || Date.now();
-  
+
   if (TEAM_CONFIG.STORAGE_PROVIDER === "s3") {
     // For S3, we'll use a backend proxy endpoint to serve the images
+    // The backend will query the teamId from the teamSeasonId
     return `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/logo?t=${cacheBuster}`;
   } else {
-    // For local storage, use the direct uploads path
+    // For local storage, use the direct uploads path with teamId
     return `/uploads/${accountId}/team-logos/${teamId}-logo.png?t=${cacheBuster}`;
   }
 };

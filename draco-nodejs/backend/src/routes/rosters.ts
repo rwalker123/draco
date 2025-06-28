@@ -1134,26 +1134,29 @@ router.put(
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/logo
- * Get team logo
+ * Get team logo from S3 or local storage
  */
 router.get(
   "/:teamSeasonId/logo",
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const accountId = req.params.accountId;
+      const seasonId = req.params.seasonId;
+      const teamSeasonId = req.params.teamSeasonId;
 
-      // Verify the team season exists and belongs to this account and season
+      // First, get the team season to find the teamId
       const teamSeason = await prisma.teamsseason.findFirst({
         where: {
-          id: teamSeasonId,
+          id: BigInt(teamSeasonId),
           leagueseason: {
-            seasonid: seasonId,
+            seasonid: BigInt(seasonId),
             league: {
-              accountid: accountId,
+              accountid: BigInt(accountId),
             },
           },
+        },
+        include: {
+          teams: true,
         },
       });
 
@@ -1165,11 +1168,10 @@ router.get(
         return;
       }
 
-      // Get the logo from storage
-      const logoBuffer = await storageService.getLogo(
-        accountId.toString(),
-        teamSeason.teamid.toString(),
-      );
+      const teamId = teamSeason.teamid.toString();
+
+      // Get the logo from storage service using teamId
+      const logoBuffer = await storageService.getLogo(accountId, teamId);
 
       if (!logoBuffer) {
         res.status(404).json({
@@ -1179,15 +1181,18 @@ router.get(
         return;
       }
 
-      // Set appropriate headers and send the image
+      // Set appropriate headers
       res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+      res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
+      res.setHeader("Content-Length", logoBuffer.length.toString());
+
+      // Send the image buffer
       res.send(logoBuffer);
     } catch (error) {
-      console.error("Error getting team logo:", error);
+      console.error("Error serving team logo:", error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: "Failed to serve logo",
       });
     }
   },
