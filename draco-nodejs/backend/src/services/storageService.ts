@@ -1,189 +1,232 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as sharp from "sharp";
-import * as AWS from "aws-sdk";
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export interface StorageService {
-  saveLogo(
+  saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void>;
+  getLogo(accountId: string, teamId: string): Promise<Buffer | null>;
+  deleteLogo(accountId: string, teamId: string): Promise<void>;
+  getSignedUrl?(
     accountId: string,
     teamId: string,
-    imageBuffer: Buffer,
+    expiresIn?: number,
   ): Promise<string>;
-  getLogo(accountId: string, teamId: string): Promise<Buffer | null>;
-  deleteLogo(accountId: string, teamId: string): Promise<boolean>;
 }
 
 export class LocalStorageService implements StorageService {
-  private basePath: string;
+  private uploadsDir: string;
 
-  constructor(basePath: string = "uploads") {
-    this.basePath = basePath;
+  constructor() {
+    this.uploadsDir = path.join(process.cwd(), "uploads");
+    this.ensureUploadsDir();
   }
 
-  private getLogoPath(accountId: string, teamId: string): string {
-    return path.join(
-      this.basePath,
-      accountId,
-      "team-logos",
-      `${teamId}-logo.png`,
-    );
-  }
-
-  private ensureDirectoryExists(filePath: string): void {
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+  private ensureUploadsDir(): void {
+    if (!fs.existsSync(this.uploadsDir)) {
+      fs.mkdirSync(this.uploadsDir, { recursive: true });
     }
   }
 
   async saveLogo(
     accountId: string,
     teamId: string,
-    imageBuffer: Buffer,
-  ): Promise<string> {
-    const logoPath = this.getLogoPath(accountId, teamId);
-    this.ensureDirectoryExists(logoPath);
+    buffer: Buffer,
+  ): Promise<void> {
+    try {
+      const accountDir = path.join(this.uploadsDir, accountId, "team-logos");
+      if (!fs.existsSync(accountDir)) {
+        fs.mkdirSync(accountDir, { recursive: true });
+      }
 
-    // Resize and save the image
-    await sharp(imageBuffer)
-      .resize(60, 60, {
-        fit: "cover",
-        position: "center",
-      })
-      .png({ quality: 85 })
-      .toFile(logoPath);
+      // Resize and optimize the image
+      const resizedBuffer = await sharp(buffer)
+        .resize(60, 60, {
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        })
+        .png({ quality: 90 })
+        .toBuffer();
 
-    return logoPath;
+      const filePath = path.join(accountDir, `${teamId}-logo.png`);
+      fs.writeFileSync(filePath, resizedBuffer);
+      console.log(`Logo saved to local storage: ${filePath}`);
+    } catch (error) {
+      console.error("Error saving logo to local storage:", error);
+      throw new Error("Failed to save logo to local storage");
+    }
   }
 
   async getLogo(accountId: string, teamId: string): Promise<Buffer | null> {
-    const logoPath = this.getLogoPath(accountId, teamId);
-
     try {
-      if (fs.existsSync(logoPath)) {
-        return fs.readFileSync(logoPath);
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        "team-logos",
+        `${teamId}-logo.png`,
+      );
+
+      if (!fs.existsSync(filePath)) {
+        return null;
       }
-      return null;
+
+      return fs.readFileSync(filePath);
     } catch (error) {
-      console.error("Error reading logo file:", error);
+      console.error("Error reading logo from local storage:", error);
       return null;
     }
   }
 
-  async deleteLogo(accountId: string, teamId: string): Promise<boolean> {
-    const logoPath = this.getLogoPath(accountId, teamId);
-
+  async deleteLogo(accountId: string, teamId: string): Promise<void> {
     try {
-      if (fs.existsSync(logoPath)) {
-        fs.unlinkSync(logoPath);
-        return true;
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        "team-logos",
+        `${teamId}-logo.png`,
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Logo deleted from local storage: ${filePath}`);
       }
-      return false;
     } catch (error) {
-      console.error("Error deleting logo file:", error);
-      return false;
+      console.error("Error deleting logo from local storage:", error);
+      throw new Error("Failed to delete logo from local storage");
     }
   }
 }
 
 export class S3StorageService implements StorageService {
-  private s3: AWS.S3;
+  private s3Client: S3Client;
   private bucketName: string;
 
   constructor() {
     this.bucketName = process.env.S3_BUCKET || "draco-team-logos";
-    
-    // Configure S3 client for LocalStack
-    this.s3 = new AWS.S3({
-      endpoint: process.env.S3_ENDPOINT || "http://localhost:4566",
+
+    this.s3Client = new S3Client({
       region: process.env.S3_REGION || "us-east-1",
-      accessKeyId: process.env.S3_ACCESS_KEY_ID || "test",
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "test",
-      s3ForcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+      endpoint: process.env.S3_ENDPOINT, // For LocalStack
+      credentials: {
+        accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+        secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+      },
+      forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true", // Required for LocalStack
     });
-
-    // Enable debug logging if S3_DEBUG is set
-    if (process.env.S3_DEBUG === "true") {
-      AWS.config.logger = console;
-    }
-  }
-
-  private getS3Key(accountId: string, teamId: string): string {
-    return `${accountId}/team-logos/${teamId}-logo.png`;
   }
 
   async saveLogo(
     accountId: string,
     teamId: string,
-    imageBuffer: Buffer,
-  ): Promise<string> {
-    const s3Key = this.getS3Key(accountId, teamId);
-
-    // Resize the image using sharp
-    const resizedBuffer = await sharp(imageBuffer)
-      .resize(60, 60, {
-        fit: "cover",
-        position: "center",
-      })
-      .png({ quality: 85 })
-      .toBuffer();
-
-    // Upload to S3
-    const uploadParams: AWS.S3.PutObjectRequest = {
-      Bucket: this.bucketName,
-      Key: s3Key,
-      Body: resizedBuffer,
-      ContentType: "image/png",
-      ACL: "public-read",
-    };
-
+    buffer: Buffer,
+  ): Promise<void> {
     try {
-      await this.s3.putObject(uploadParams).promise();
-      console.log(`Logo uploaded to S3: s3://${this.bucketName}/${s3Key}`);
-      return s3Key;
+      // Resize and optimize the image
+      const resizedBuffer = await sharp(buffer)
+        .resize(60, 60, {
+          fit: "contain",
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+        })
+        .png({ quality: 90 })
+        .toBuffer();
+
+      const key = this.getS3Key(accountId, teamId);
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: resizedBuffer,
+        ContentType: "image/png",
+        CacheControl: "public, max-age=3600",
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Logo saved to S3: ${key}`);
     } catch (error) {
-      console.error("Error uploading logo to S3:", error);
-      throw new Error(`Failed to upload logo to S3: ${error}`);
+      console.error("Error saving logo to S3:", error);
+      throw new Error("Failed to save logo to S3");
     }
   }
 
   async getLogo(accountId: string, teamId: string): Promise<Buffer | null> {
-    const s3Key = this.getS3Key(accountId, teamId);
-
     try {
-      const getParams: AWS.S3.GetObjectRequest = {
-        Bucket: this.bucketName,
-        Key: s3Key,
-      };
+      const key = this.getS3Key(accountId, teamId);
 
-      const result = await this.s3.getObject(getParams).promise();
-      return result.Body as Buffer;
-    } catch (error) {
-      if ((error as any).code === "NoSuchKey") {
-        console.log(`Logo not found in S3: s3://${this.bucketName}/${s3Key}`);
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const response = await this.s3Client.send(command);
+
+      if (!response.Body) {
         return null;
       }
-      console.error("Error downloading logo from S3:", error);
-      return null;
+
+      // Convert the readable stream to buffer
+      const chunks: Buffer[] = [];
+      for await (const chunk of response.Body as any) {
+        chunks.push(Buffer.from(chunk));
+      }
+
+      return Buffer.concat(chunks);
+    } catch (error: any) {
+      if (
+        error.name === "NoSuchKey" ||
+        error.$metadata?.httpStatusCode === 404
+      ) {
+        return null;
+      }
+      console.error("Error getting logo from S3:", error);
+      throw new Error("Failed to get logo from S3");
     }
   }
 
-  async deleteLogo(accountId: string, teamId: string): Promise<boolean> {
-    const s3Key = this.getS3Key(accountId, teamId);
-
+  async deleteLogo(accountId: string, teamId: string): Promise<void> {
     try {
-      const deleteParams: AWS.S3.DeleteObjectRequest = {
-        Bucket: this.bucketName,
-        Key: s3Key,
-      };
+      const key = this.getS3Key(accountId, teamId);
 
-      await this.s3.deleteObject(deleteParams).promise();
-      console.log(`Logo deleted from S3: s3://${this.bucketName}/${s3Key}`);
-      return true;
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Logo deleted from S3: ${key}`);
     } catch (error) {
       console.error("Error deleting logo from S3:", error);
-      return false;
+      throw new Error("Failed to delete logo from S3");
     }
+  }
+
+  async getSignedUrl(
+    accountId: string,
+    teamId: string,
+    expiresIn: number = 3600,
+  ): Promise<string> {
+    try {
+      const key = this.getS3Key(accountId, teamId);
+
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      return await getSignedUrl(this.s3Client, command, { expiresIn });
+    } catch (error) {
+      console.error("Error generating signed URL:", error);
+      throw new Error("Failed to generate signed URL");
+    }
+  }
+
+  private getS3Key(accountId: string, teamId: string): string {
+    return `${accountId}/team-logos/${teamId}-logo.png`;
   }
 }
 
