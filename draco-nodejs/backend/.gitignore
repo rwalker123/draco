@@ -7,3 +7,6 @@ node_modules
 # Ignore build output
 /dist/
 *.zip
+
+# Ignore uploaded files
+/uploads/

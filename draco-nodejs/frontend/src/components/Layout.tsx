@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   AppBar,
   Toolbar,
@@ -12,24 +12,24 @@ import {
   ListItemIcon,
   ListItemText,
   Link,
-} from '@mui/material';
-import { 
-  SportsSoccer, 
-  Menu as MenuIcon, 
-  Dashboard, 
-  AdminPanelSettings, 
+} from "@mui/material";
+import {
+  SportsSoccer,
+  Menu as MenuIcon,
+  Dashboard,
+  AdminPanelSettings,
   Business,
   Group,
   Settings,
   CalendarMonth,
   Home,
-} from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { useAccount } from '../context/AccountContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AdminOnly, AccountAdminOnly } from './RoleBasedNavigation';
-import BaseballMenu from './BaseballMenu';
+} from "@mui/icons-material";
+import { useAuth } from "../context/AuthContext";
+import { useRole } from "../context/RoleContext";
+import { useAccount } from "../context/AccountContext";
+import { useNavigate, useLocation } from "react-router-dom";
+import { AdminOnly, AccountAdminOnly } from "./RoleBasedNavigation";
+import BaseballMenu from "./BaseballMenu";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -57,9 +57,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       if (accountId && location.pathname.includes(`/account/${accountId}`)) {
         try {
           const response = await fetch(`/api/accounts/${accountId}/public`, {
-            method: 'GET',
+            method: "GET",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
           });
 
@@ -67,11 +67,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             const data = await response.json();
             if (data.success) {
               setAccountType(data.data.account.accountType);
-              console.log('Account type detected:', data.data.account.accountType); // Debug log
+              console.log(
+                "Account type detected:",
+                data.data.account.accountType,
+              ); // Debug log
             }
           }
         } catch (err) {
-          console.warn('Failed to fetch account type:', err);
+          console.warn("Failed to fetch account type:", err);
         }
       } else {
         setAccountType(null);
@@ -94,7 +97,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     clearAllContexts();
     clearRoles();
     clearAccounts();
-    
+
     // Logout with page refresh to update all components and access controls
     logout(true);
     handleMenuClose();
@@ -107,29 +110,33 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const handleLogin = () => {
     // Navigate to sign in while preserving the current location
-    navigate('/login', { state: { from: location } });
+    navigate("/login", { state: { from: location } });
   };
 
   const handleHomeClick = () => {
-    navigate('/');
+    navigate("/");
   };
 
   const accountId = getAccountIdFromPath(location.pathname);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <AppBar position="static">
-        <Toolbar sx={{ 
-          minHeight: '64px !important',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+        <Toolbar
+          sx={{
+            minHeight: "64px !important",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           {/* Left side - Main navigation */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center'
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             {user && (
               <IconButton
                 size="large"
@@ -153,15 +160,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </IconButton>
             <SportsSoccer sx={{ mr: 1 }} />
             <Typography variant="h6" component="div">
-              <Link 
+              <Link
                 onClick={handleHomeClick}
-                sx={{ 
-                  color: 'inherit', 
-                  textDecoration: 'none',
-                  cursor: 'pointer',
-                  '&:hover': {
-                    textDecoration: 'underline'
-                  }
+                sx={{
+                  color: "inherit",
+                  textDecoration: "none",
+                  cursor: "pointer",
+                  "&:hover": {
+                    textDecoration: "underline",
+                  },
                 }}
               >
                 Draco Sports Manager
@@ -170,20 +177,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </Box>
 
           {/* Center - Baseball menu (only for baseball accounts) */}
-          {accountType === 'Baseball' && accountId && (
-            <Box sx={{ 
-              display: 'flex',
-              alignItems: 'center'
-            }}>
+          {accountType === "Baseball" && accountId && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               <BaseballMenu accountId={accountId} />
             </Box>
           )}
 
           {/* Right side - User info and actions */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center'
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             {user ? (
               <>
                 <Typography variant="body1" sx={{ mr: 2 }}>
@@ -214,22 +225,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
           anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
+            vertical: "bottom",
+            horizontal: "left",
           }}
           transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
+            vertical: "top",
+            horizontal: "left",
           }}
         >
-          <MenuItem onClick={() => handleNavigation('/')}>
+          <MenuItem onClick={() => handleNavigation("/")}>
             <ListItemIcon>
               <Home fontSize="small" />
             </ListItemIcon>
             <ListItemText>Home</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={() => handleNavigation('/dashboard')}>
+          <MenuItem onClick={() => handleNavigation("/dashboard")}>
             <ListItemIcon>
               <Dashboard fontSize="small" />
             </ListItemIcon>
@@ -237,19 +248,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </MenuItem>
 
           <AdminOnly>
-            <MenuItem onClick={() => handleNavigation('/admin')}>
+            <MenuItem onClick={() => handleNavigation("/admin")}>
               <ListItemIcon>
                 <AdminPanelSettings fontSize="small" />
               </ListItemIcon>
               <ListItemText>Admin Dashboard</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation('/account-management')}>
+            <MenuItem onClick={() => handleNavigation("/account-management")}>
               <ListItemIcon>
                 <Business fontSize="small" />
               </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(
+                  `/account/${currentAccount?.id || "1"}/seasons`,
+                )
+              }
+            >
               <ListItemIcon>
                 <CalendarMonth fontSize="small" />
               </ListItemIcon>
@@ -258,40 +275,74 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </AdminOnly>
 
           <AccountAdminOnly>
-            <MenuItem onClick={() => handleNavigation('/account-management')}>
+            <MenuItem onClick={() => handleNavigation("/account-management")}>
               <ListItemIcon>
                 <Business fontSize="small" />
               </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(
+                  `/account/${currentAccount?.id || "1"}/management`,
+                )
+              }
+            >
               <ListItemIcon>
                 <Business fontSize="small" />
               </ListItemIcon>
               <ListItemText>Current Account</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(
+                  `/account/${currentAccount?.id || "1"}/settings`,
+                )
+              }
+            >
               <ListItemIcon>
                 <Settings fontSize="small" />
               </ListItemIcon>
               <ListItemText>Account Settings</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(
+                  `/account/${currentAccount?.id || "1"}/seasons`,
+                )
+              }
+            >
               <ListItemIcon>
                 <CalendarMonth fontSize="small" />
               </ListItemIcon>
               <ListItemText>Season Management</ListItemText>
             </MenuItem>
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/schedule`)}>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(
+                  `/account/${currentAccount?.id || "1"}/schedule`,
+                )
+              }
+            >
               <ListItemIcon>
                 <CalendarMonth fontSize="small" />
               </ListItemIcon>
               <ListItemText>Schedule Management</ListItemText>
             </MenuItem>
+            <MenuItem
+              onClick={() =>
+                handleNavigation(`/account/${currentAccount?.id || "1"}/teams`)
+              }
+            >
+              <ListItemIcon>
+                <Group fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Teams</ListItemText>
+            </MenuItem>
           </AccountAdminOnly>
 
-          {hasRole('672DDF06-21AC-4D7C-B025-9319CC69281A') && (
-            <MenuItem onClick={() => handleNavigation('/league-management')}>
+          {hasRole("672DDF06-21AC-4D7C-B025-9319CC69281A") && (
+            <MenuItem onClick={() => handleNavigation("/league-management")}>
               <ListItemIcon>
                 <Group fontSize="small" />
               </ListItemIcon>
@@ -299,8 +350,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </MenuItem>
           )}
 
-          {hasRole('777D771B-1CBA-4126-B8F3-DD7F3478D40E') && (
-            <MenuItem onClick={() => handleNavigation('/team-management')}>
+          {hasRole("777D771B-1CBA-4126-B8F3-DD7F3478D40E") && (
+            <MenuItem onClick={() => handleNavigation("/team-management")}>
               <ListItemIcon>
                 <Group fontSize="small" />
               </ListItemIcon>
@@ -308,21 +359,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </MenuItem>
           )}
 
-          <MenuItem onClick={() => handleNavigation('/settings')}>
+          <MenuItem onClick={() => handleNavigation("/settings")}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
             <ListItemText>Settings</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={() => handleNavigation('/permission-test')}>
+          <MenuItem onClick={() => handleNavigation("/permission-test")}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
             <ListItemText>Permission Test</ListItemText>
           </MenuItem>
 
-          <MenuItem onClick={() => handleNavigation('/role-debug')}>
+          <MenuItem onClick={() => handleNavigation("/role-debug")}>
             <ListItemIcon>
               <Settings fontSize="small" />
             </ListItemIcon>
@@ -330,19 +381,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </MenuItem>
         </Menu>
       )}
-      
+
       <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
         {children}
       </Container>
-      
+
       <Box
         component="footer"
         sx={{
           py: 3,
           px: 2,
-          mt: 'auto',
+          mt: "auto",
           backgroundColor: (theme) =>
-            theme.palette.mode === 'light'
+            theme.palette.mode === "light"
               ? theme.palette.grey[200]
               : theme.palette.grey[800],
         }}
@@ -355,4 +406,4 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Box>
     </Box>
   );
-}; 
+};
