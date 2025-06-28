@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
   Button,
   Dialog,
   DialogTitle,
@@ -13,16 +11,8 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  Grid,
   Avatar,
   IconButton,
-  Chip,
-  Divider,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
   Link,
   Menu,
   MenuItem,
@@ -31,13 +21,12 @@ import {
   Edit as EditIcon,
   PhotoCamera as PhotoCameraIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon,
   Download as DownloadIcon,
   ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, validateLogoFile, getLogoUrl } from "../config/teams";
+import { getLogoSize, getLogoUrl, validateLogoFile } from "../config/teams";
 import { useNavigate } from "react-router-dom";
 
 interface Team {
@@ -123,30 +112,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
-
-  // Helper function to check if logo exists
-  const checkLogoExists = async (teamId: string): Promise<boolean> => {
-    try {
-      const timestamp = logoUpdateTracker[teamId] || Date.now();
-      const seasonId = teamsData?.season.id;
-      if (!seasonId) return false;
-
-      // Find the team season ID for this team
-      const teamSeason = teamsData?.leagueSeasons
-        .flatMap((ls) => ls.divisions.flatMap((d) => d.teams))
-        .find((team) => team.teamId === teamId);
-
-      if (!teamSeason) return false;
-
-      const response = await fetch(
-        getLogoUrl(accountId, teamId, seasonId, teamSeason.id, timestamp),
-        { method: "HEAD" },
-      );
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
 
   // Export roster to CSV function (placeholder)
   const handleExportRoster = async (leagueSeason: LeagueSeason) => {
@@ -331,11 +296,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
   };
 
   // Load teams data
-  useEffect(() => {
-    loadTeamsData();
-  }, [accountId]);
-
-  const loadTeamsData = async () => {
+  const loadTeamsData = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -381,7 +342,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [accountId]);
+
+  useEffect(() => {
+    loadTeamsData();
+  }, [loadTeamsData]);
 
   const openEditDialog = (team: Team) => {
     setSelectedTeam(team);
