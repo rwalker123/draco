@@ -97,7 +97,7 @@ const Signup: React.FC = () => {
         const data = await response.json();
         setError(data.message || 'Failed to create account');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to create account. Please try again.');
     } finally {
       setLoading(false);

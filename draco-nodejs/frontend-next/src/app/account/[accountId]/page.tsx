@@ -1,1 +1,6 @@
-export default function Page() { return <div>account/[accountId] page</div>; }
+"use client";
+import Accounts from "../../../components/Accounts";
+
+export default function Page() {
+  return <Accounts />;
+}

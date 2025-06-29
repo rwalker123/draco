@@ -44,8 +44,8 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
         } else {
           setError('Failed to fetch season data');
         }
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch season data');
+      } catch (error: unknown) {
+        setError(error instanceof Error ? error.message : 'Failed to fetch season data');
       } finally {
         setLoading(false);
       }
@@ -88,8 +88,7 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
     return (
       <Box p={3}>
         <Alert severity="error">
-          You don't have permission to access league season management. 
-          This feature requires AccountAdmin or Administrator role.
+          You&apos;re not authorized to access this league season management.
         </Alert>
       </Box>
     );

@@ -54,8 +54,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           <Typography variant="h6" gutterBottom>
             Access Denied
           </Typography>
-          <Typography>
-            You don't have the required role to access this page.
+          <Typography variant="body2" color="text.secondary">
+            You&apos;re not authorized to view this page.
           </Typography>
         </Alert>
       </Box>
@@ -70,8 +70,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
           <Typography variant="h6" gutterBottom>
             Access Denied
           </Typography>
-          <Typography>
-            You don't have the required permission to access this page.
+          <Typography variant="body2" color="text.secondary">
+            You&apos;re not authorized to view this page.
           </Typography>
         </Alert>
       </Box>

@@ -535,7 +535,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
     setSaving(false);
   };
 
-  const renderTeamCard = (team: Team, divisionName?: string) => (
+  const renderTeamCard = (team: Team) => (
     <Box
       key={team.id}
       sx={{
@@ -632,7 +632,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
       <Box sx={{ pl: 1 }}>
         {division.teams
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((team) => renderTeamCard(team, division.divisionName))}
+          .map((team) => renderTeamCard(team))}
       </Box>
     </Box>
   );

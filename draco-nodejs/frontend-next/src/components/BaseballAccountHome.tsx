@@ -179,8 +179,8 @@ const BaseballAccountHome: React.FC = () => {
           console.warn('Failed to fetch recent games:', err);
         }
 
-      } catch (err) {
-        setError('Failed to load account information');
+      } catch {
+        setError('Account not found or not publicly accessible');
       } finally {
         setLoading(false);
       }

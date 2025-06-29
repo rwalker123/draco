@@ -113,7 +113,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
         const errorData = await response.json().catch(() => ({}));
         setError(errorData.message || 'Failed to load URLs');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load URLs');
     } finally {
       setLoading(false);
@@ -164,7 +164,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
       } else {
         setAddDialogError(data.message || 'Failed to add URL');
       }
-    } catch (err) {
+    } catch {
       setAddDialogError('Failed to add URL');
     }
   };
@@ -205,7 +205,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
       } else {
         setEditDialogError(data.message || 'Failed to update URL');
       }
-    } catch (err) {
+    } catch {
       setEditDialogError('Failed to update URL');
     }
   };
@@ -233,7 +233,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
       } else {
         setError(data.message || 'Failed to delete URL');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to delete URL');
     }
   };
@@ -488,7 +488,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
         <DialogTitle>Delete URL</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the URL "{selectedUrl?.url}"? This action cannot be undone.
+            Are you sure you want to delete the URL &quot;{selectedUrl?.url}&quot;? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -498,6 +498,10 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Typography variant="body2" color="text.secondary">
+        You can use &quot;URL Management&quot; to update your URLs.
+      </Typography>
     </Box>
   );
 };

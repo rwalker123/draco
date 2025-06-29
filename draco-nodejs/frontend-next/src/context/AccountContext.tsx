@@ -21,6 +21,16 @@ interface AccountContextType {
 
 const AccountContext = createContext<AccountContextType | undefined>(undefined);
 
+// Type guard for AxiosError
+export function isAxiosError(error: unknown): error is { response: { data: { message: string } } } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+  );
+}
+
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
   const { token } = useAuth();
   const { userRoles } = useRole();
@@ -60,8 +70,12 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
       if (!currentAccount && accounts.length > 0) {
         setCurrentAccount(accounts[0]);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch user accounts');
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response.data.message);
+      } else {
+        setError('Failed to fetch user accounts');
+      }
     } finally {
       setLoading(false);
     }

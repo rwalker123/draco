@@ -19,6 +19,11 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon, Save as SaveIcon, Email as EmailIcon, Twitter as TwitterIcon } from '@mui/icons-material';
 
+interface GameRecap {
+  teamId: string;
+  recap: string;
+}
+
 interface Game {
   id: string;
   date: string;
@@ -35,7 +40,7 @@ interface Game {
   fieldName: string | null;
   fieldShortName: string | null;
   hasGameRecap: boolean;
-  gameRecaps: any[];
+  gameRecaps: GameRecap[];
 }
 
 interface EnterGameResultsDialogProps {
@@ -45,7 +50,7 @@ interface EnterGameResultsDialogProps {
   onSave: (gameData: GameResultData) => Promise<void>;
 }
 
-interface GameResultData {
+export interface GameResultData {
   gameId: string;
   homeScore: number;
   awayScore: number;
@@ -101,7 +106,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     }
   }, [game]);
 
-  const handleInputChange = (field: keyof GameResultData, value: any) => {
+  const handleInputChange = (field: keyof GameResultData, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -129,8 +134,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     try {
       await onSave(formData);
       onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save game results');
+    } catch (error: unknown) {
+      setError(error instanceof Error ? error.message : 'Failed to save game results');
     } finally {
       setLoading(false);
     }
@@ -148,7 +153,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         minute: '2-digit',
         hour12: true
       });
-    } catch (error) {
+    } catch {
       return 'TBD';
     }
   };

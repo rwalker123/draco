@@ -1,1 +1,6 @@
-export default function Page() { return <div>Home (DomainRedirect)</div>; }
+"use client";
+import Accounts from "../components/Accounts";
+
+export default function Page() {
+  return <Accounts />;
+}

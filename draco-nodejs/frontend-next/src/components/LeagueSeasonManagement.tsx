@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { isAxiosError } from '../context/AccountContext';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
 
@@ -159,9 +160,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (response.data.success) {
         setLeagueSeasons(response.data.data.leagueSeasons);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching league seasons:', error);
-      setError(error.response?.data?.message || 'Failed to fetch league seasons');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch league seasons');
+      }
     } finally {
       setLoading(false);
     }
@@ -180,9 +187,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       if (response.data.success) {
         setDivisions(response.data.data.divisions);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching divisions:', error);
-      setError(error.response?.data?.message || 'Failed to fetch divisions');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch divisions');
+      }
     }
   }, [accountId, token]);
 
@@ -316,9 +329,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         const newDivisionSeason = response.data.data.divisionSeason;
         addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding division:', error);
-      setError(error.response?.data?.message || 'Failed to add division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to add division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -340,9 +359,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Use targeted update instead of full refresh
         removeDivisionFromLeagueSeasonInState(leagueSeason.id, divisionSeason.id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing division:', error);
-      setError(error.response?.data?.message || 'Failed to remove division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to remove division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -366,9 +391,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setNewDivisionName('');
         fetchDivisions(); // Refresh divisions list
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating division:', error);
-      setError(error.response?.data?.message || 'Failed to create division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to create division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -420,8 +451,14 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       } else {
         setError(createResponse.data.message || 'Failed to create division');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create division');
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        setError(err.response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to create division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -446,9 +483,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Use targeted update instead of full refresh
         addTeamToDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error assigning team to division:', error);
-      setError(error.response?.data?.message || 'Failed to assign team to division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to assign team to division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -474,9 +517,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Use targeted update instead of full refresh
         addTeamToDivisionInState(selectedTeamLeagueSeason.id, targetDivisionSeason.id, selectedTeamSeason);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error assigning team to division:', error);
-      setError(error.response?.data?.message || 'Failed to assign team to division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to assign team to division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -543,9 +592,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           removeTeamFromDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing team from division:', error);
-      setError(error.response?.data?.message || 'Failed to remove team from division');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to remove team from division');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -588,13 +643,41 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           } else {
             setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. The league definition was kept because it's used in other seasons.`);
           }
-        } catch (leagueDeleteError: any) {
+        } catch (leagueDeleteError: unknown) {
           // If league deletion fails because it's used in other seasons, that's expected
-          if (leagueDeleteError.response?.status === 400 && 
-              leagueDeleteError.response?.data?.message?.includes('associated with seasons')) {
+          let status: number | undefined = undefined;
+          let message: string | undefined = undefined;
+          if (
+            typeof leagueDeleteError === 'object' &&
+            leagueDeleteError !== null &&
+            'response' in leagueDeleteError &&
+            typeof (leagueDeleteError as { response?: unknown }).response === 'object' &&
+            (leagueDeleteError as { response?: unknown }).response !== null
+          ) {
+            const resp = (leagueDeleteError as { response: unknown }).response;
+            if (
+              typeof resp === 'object' &&
+              resp !== null
+            ) {
+              const respObj = resp as Record<string, unknown>;
+              if ('status' in respObj && typeof respObj.status === 'number') {
+                status = respObj.status;
+              }
+              if ('data' in respObj && typeof respObj.data === 'object' && respObj.data !== null) {
+                const dataObj = respObj.data as Record<string, unknown>;
+                if ('message' in dataObj && typeof dataObj.message === 'string') {
+                  message = dataObj.message;
+                }
+              }
+            }
+          }
+          if (
+            status === 400 &&
+            typeof message === 'string' &&
+            message.includes('associated with seasons')
+          ) {
             setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. The league definition was kept because it's used in other seasons.`);
           } else {
-            // For other errors, show a warning but still consider it a success since the main goal was achieved
             setSuccessMessage(`League "${leagueToDelete.leagueName}" has been removed from this season. There was an issue deleting the league definition, but it may still be removed later.`);
             console.warn('League definition deletion failed:', leagueDeleteError);
           }
@@ -607,9 +690,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       } else {
         setError(removeFromSeasonResponse.data.message || 'Failed to remove league from season');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing league from season:', error);
-      setError(error.response?.data?.message || 'Failed to remove league from season');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to remove league from season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -648,13 +737,41 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           } else {
             setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. The team definition was kept because it's used in other seasons.`);
           }
-        } catch (teamDeleteError: any) {
+        } catch (teamDeleteError: unknown) {
           // If team deletion fails because it's used in other seasons, that's expected
-          if (teamDeleteError.response?.status === 400 && 
-              teamDeleteError.response?.data?.message?.includes('related data')) {
+          let tStatus: number | undefined = undefined;
+          let tMessage: string | undefined = undefined;
+          if (
+            typeof teamDeleteError === 'object' &&
+            teamDeleteError !== null &&
+            'response' in teamDeleteError &&
+            typeof (teamDeleteError as { response?: unknown }).response === 'object' &&
+            (teamDeleteError as { response?: unknown }).response !== null
+          ) {
+            const tResp = (teamDeleteError as { response: unknown }).response;
+            if (
+              typeof tResp === 'object' &&
+              tResp !== null
+            ) {
+              const tRespObj = tResp as Record<string, unknown>;
+              if ('status' in tRespObj && typeof tRespObj.status === 'number') {
+                tStatus = tRespObj.status;
+              }
+              if ('data' in tRespObj && typeof tRespObj.data === 'object' && tRespObj.data !== null) {
+                const tDataObj = tRespObj.data as Record<string, unknown>;
+                if ('message' in tDataObj && typeof tDataObj.message === 'string') {
+                  tMessage = tDataObj.message;
+                }
+              }
+            }
+          }
+          if (
+            tStatus === 400 &&
+            typeof tMessage === 'string' &&
+            tMessage.includes('related data')
+          ) {
             setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. The team definition was kept because it's used in other seasons.`);
           } else {
-            // For other errors, show a warning but still consider it a success since the main goal was achieved
             setSuccessMessage(`Team "${teamToDelete.name}" has been removed from this season. There was an issue deleting the team definition, but it may still be removed later.`);
             console.warn('Team definition deletion failed:', teamDeleteError);
           }
@@ -668,9 +785,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       } else {
         setError(removeFromSeasonResponse.data.message || 'Failed to remove team from season');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error removing team from season:', error);
-      setError(error.response?.data?.message || 'Failed to remove team from season');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to remove team from season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -707,9 +830,15 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       } else {
         setError(response.data.message || 'Failed to create team');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating team:', error);
-      setError(error.response?.data?.message || 'Failed to create team');
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to create team');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -1004,6 +1133,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
               {error}
             </Alert>
           )}
+          <Typography variant="body2" color="text.secondary">
+            The league name must be unique. If you&apos;re trying to add a league that already exists, you&apos;ll need to use a different name.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            You can use &quot;League Management&quot; to update your leagues.
+          </Typography>
           <TextField
             autoFocus
             margin="dense"
@@ -1234,10 +1369,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             </Alert>
           )}
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to remove the league <strong>"{leagueToDelete?.leagueName}"</strong> from this season?
+            Are you sure you want to remove the league <strong>&quot;{leagueToDelete?.leagueName}&quot;</strong> from this season?
           </Typography>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            This action will remove the league from this season and all its associated data (divisions, teams, etc.). The system will also attempt to delete the league definition if it's not used in other seasons.
+            This action will remove the league from this season and all its associated data (divisions, teams, etc.). The system will also attempt to delete the league definition if it&apos;s not used in other seasons.
           </Alert>
           {leagueToDelete && (
             <Box sx={{ mb: 2 }}>
@@ -1317,10 +1452,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             </Alert>
           )}
           <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to remove the team <strong>"{teamToDelete?.name}"</strong> from this season?
+            Are you sure you want to remove the team <strong>&quot;{teamToDelete?.name}&quot;</strong> from this season?
           </Typography>
           <Alert severity="warning" sx={{ mb: 2 }}>
-            This action will remove the team from this season and all its associated data (divisions, etc.). The system will also attempt to delete the team definition if it's not used in other seasons.
+            This action will remove the team from this season and all its associated data (divisions, etc.). The system will also attempt to delete the team definition if it&apos;s not used in other seasons.
           </Alert>
           {teamToDelete && (
             <Box sx={{ mb: 2 }}>

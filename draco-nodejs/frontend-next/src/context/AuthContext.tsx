@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return false;
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Sign in failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Sign in failed');
       setLoading(false);
       return false;
     }
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('jwtToken');
   };
 
-  const fetchUser = async (overrideToken?: string) => {
+  const fetchUser = async (overrideToken?: string): Promise<void> => {
     const authToken = overrideToken || token;
     if (!authToken) {
       setUser(null);
@@ -93,7 +93,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUser(null);
       }
-    } catch (err) {
+    } catch {
       setUser(null);
     }
   };

@@ -78,7 +78,7 @@ const AccountHome: React.FC = () => {
         } else {
           setError('Account not found or not publicly accessible');
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load account information');
       } finally {
         setLoading(false);

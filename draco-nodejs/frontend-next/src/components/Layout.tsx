@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   AppBar,
@@ -9,26 +10,15 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Link,
+  Link as MuiLink,
 } from "@mui/material";
 import {
   SportsSoccer,
   Menu as MenuIcon,
-  Dashboard,
-  AdminPanelSettings,
-  Business,
-  Group,
-  Settings,
-  CalendarMonth,
   Home,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import { useRole } from "../context/RoleContext";
-import { useAccount } from "../context/AccountContext";
-import { useNavigate, useLocation } from "react-router-dom";
-import { AdminOnly, AccountAdminOnly } from "./RoleBasedNavigation";
+import { useRouter, usePathname } from "next/navigation";
 import BaseballMenu from "./BaseballMenu";
 
 interface LayoutProps {
@@ -37,10 +27,8 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, logout, clearAllContexts } = useAuth();
-  const { hasRole, clearRoles } = useRole();
-  const { currentAccount, clearAccounts } = useAccount();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
 
@@ -53,8 +41,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Check if we're on a baseball account page
   React.useEffect(() => {
     const checkAccountType = async () => {
-      const accountId = getAccountIdFromPath(location.pathname);
-      if (accountId && location.pathname.includes(`/account/${accountId}`)) {
+      const accountId = getAccountIdFromPath(pathname);
+      if (accountId && pathname.includes(`/account/${accountId}`)) {
         try {
           const response = await fetch(`/api/accounts/${accountId}/public`, {
             method: "GET",
@@ -67,10 +55,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             const data = await response.json();
             if (data.success) {
               setAccountType(data.data.account.accountType);
-              console.log(
-                "Account type detected:",
-                data.data.account.accountType,
-              ); // Debug log
+              // console.log("Account type detected:", data.data.account.accountType);
             }
           }
         } catch (err) {
@@ -82,7 +67,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
 
     checkAccountType();
-  }, [location.pathname]);
+  }, [pathname]);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -93,31 +78,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogout = () => {
-    // Clear all contexts first
     clearAllContexts();
-    clearRoles();
-    clearAccounts();
-
-    // Logout with page refresh to update all components and access controls
     logout(true);
     handleMenuClose();
   };
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    router.push(path);
     handleMenuClose();
   };
 
   const handleLogin = () => {
-    // Navigate to sign in while preserving the current location
-    navigate("/login", { state: { from: location } });
+    router.push("/login");
   };
 
   const handleHomeClick = () => {
-    navigate("/");
+    router.push("/");
   };
 
-  const accountId = getAccountIdFromPath(location.pathname);
+  const accountId = getAccountIdFromPath(pathname);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -131,12 +110,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         >
           {/* Left side - Main navigation */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             {user && (
               <IconButton
                 size="large"
@@ -160,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </IconButton>
             <SportsSoccer sx={{ mr: 1 }} />
             <Typography variant="h6" component="div">
-              <Link
+              <MuiLink
                 onClick={handleHomeClick}
                 sx={{
                   color: "inherit",
@@ -172,238 +146,50 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 }}
               >
                 Draco Sports Manager
-              </Link>
+              </MuiLink>
             </Typography>
           </Box>
 
           {/* Center - Baseball menu (only for baseball accounts) */}
           {accountType === "Baseball" && accountId && (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
+            <Box sx={{ display: "flex", alignItems: "center" }}>
               <BaseballMenu accountId={accountId} />
             </Box>
           )}
 
           {/* Right side - User info and actions */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             {user ? (
               <>
                 <Typography variant="body1" sx={{ mr: 2 }}>
-                  Hello, {user.username}
+                  {user.email}
                 </Typography>
-                {currentAccount && (
-                  <Typography variant="body2" sx={{ mr: 2 }}>
-                    Account: {currentAccount.name}
-                  </Typography>
-                )}
                 <Button color="inherit" onClick={handleLogout}>
                   Logout
                 </Button>
               </>
             ) : (
               <Button color="inherit" onClick={handleLogin}>
-                Sign In
+                Login
               </Button>
             )}
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* Navigation Menu */}
-      {user && (
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "left",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "left",
-          }}
-        >
-          <MenuItem onClick={() => handleNavigation("/")}>
-            <ListItemIcon>
-              <Home fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Home</ListItemText>
-          </MenuItem>
-
-          <MenuItem onClick={() => handleNavigation("/dashboard")}>
-            <ListItemIcon>
-              <Dashboard fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Dashboard</ListItemText>
-          </MenuItem>
-
-          <AdminOnly>
-            <MenuItem onClick={() => handleNavigation("/admin")}>
-              <ListItemIcon>
-                <AdminPanelSettings fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Admin Dashboard</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => handleNavigation("/account-management")}>
-              <ListItemIcon>
-                <Business fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Management</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(
-                  `/account/${currentAccount?.id || "1"}/seasons`,
-                )
-              }
-            >
-              <ListItemIcon>
-                <CalendarMonth fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Season Management</ListItemText>
-            </MenuItem>
-          </AdminOnly>
-
-          <AccountAdminOnly>
-            <MenuItem onClick={() => handleNavigation("/account-management")}>
-              <ListItemIcon>
-                <Business fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Management</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(
-                  `/account/${currentAccount?.id || "1"}/management`,
-                )
-              }
-            >
-              <ListItemIcon>
-                <Business fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Current Account</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(
-                  `/account/${currentAccount?.id || "1"}/settings`,
-                )
-              }
-            >
-              <ListItemIcon>
-                <Settings fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Settings</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(
-                  `/account/${currentAccount?.id || "1"}/seasons`,
-                )
-              }
-            >
-              <ListItemIcon>
-                <CalendarMonth fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Season Management</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(
-                  `/account/${currentAccount?.id || "1"}/schedule`,
-                )
-              }
-            >
-              <ListItemIcon>
-                <CalendarMonth fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Schedule Management</ListItemText>
-            </MenuItem>
-            <MenuItem
-              onClick={() =>
-                handleNavigation(`/account/${currentAccount?.id || "1"}/teams`)
-              }
-            >
-              <ListItemIcon>
-                <Group fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Teams</ListItemText>
-            </MenuItem>
-          </AccountAdminOnly>
-
-          {hasRole("672DDF06-21AC-4D7C-B025-9319CC69281A") && (
-            <MenuItem onClick={() => handleNavigation("/league-management")}>
-              <ListItemIcon>
-                <Group fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>League Management</ListItemText>
-            </MenuItem>
-          )}
-
-          {hasRole("777D771B-1CBA-4126-B8F3-DD7F3478D40E") && (
-            <MenuItem onClick={() => handleNavigation("/team-management")}>
-              <ListItemIcon>
-                <Group fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Team Management</ListItemText>
-            </MenuItem>
-          )}
-
-          <MenuItem onClick={() => handleNavigation("/settings")}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Settings</ListItemText>
-          </MenuItem>
-
-          <MenuItem onClick={() => handleNavigation("/permission-test")}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Permission Test</ListItemText>
-          </MenuItem>
-
-          <MenuItem onClick={() => handleNavigation("/role-debug")}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Role Debug</ListItemText>
-          </MenuItem>
-        </Menu>
-      )}
-
-      <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
+      {/* Hamburger menu */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={() => handleNavigation("/dashboard")}>Dashboard</MenuItem>
+        <MenuItem onClick={() => handleNavigation("/accounts")}>Accounts</MenuItem>
+        <MenuItem onClick={() => handleNavigation("/admin")}>Admin</MenuItem>
+        {/* Add more menu items as needed */}
+      </Menu>
+      <Container maxWidth="lg" sx={{ flex: 1, py: 3 }}>
         {children}
       </Container>
-
-      <Box
-        component="footer"
-        sx={{
-          py: 3,
-          px: 2,
-          mt: "auto",
-          backgroundColor: (theme) =>
-            theme.palette.mode === "light"
-              ? theme.palette.grey[200]
-              : theme.palette.grey[800],
-        }}
-      >
-        <Container maxWidth="sm">
-          <Typography variant="body2" color="text.secondary" align="center">
-            © 2024 Draco Sports Manager. All rights reserved.
-          </Typography>
-        </Container>
-      </Box>
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -196,18 +196,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     [startDate, isNavigating],
   );
 
-  // Load data
-  useEffect(() => {
-    loadStaticData();
-  }, [accountId]);
-
-  useEffect(() => {
-    if (filterType && filterDate) {
-      loadGamesData();
-    }
-  }, [accountId, filterType, filterDate]);
-
-  const loadStaticData = async () => {
+  // Move loadStaticData and loadGamesData here, before the useEffect hooks that call them
+  const loadStaticData = useCallback(async () => {
     try {
       setLoadingStaticData(true);
       setError("");
@@ -250,7 +240,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
       if (leaguesResponse.ok) {
         const leaguesData = await leaguesResponse.json();
         setLeagues(
-          leaguesData.data?.leagueSeasons?.map((ls: any) => ({
+          leaguesData.data?.leagueSeasons?.map((ls: { id: string; leagueName: string }) => ({
             id: ls.id,
             name: ls.leagueName,
           })) || [],
@@ -280,19 +270,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
         const fieldsData = await fieldsResponse.json();
         setFields(fieldsData.data.fields);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "Failed to load static data",
       );
     } finally {
       setLoadingStaticData(false);
     }
-  };
+  }, [accountId]);
 
-  const loadGamesData = async () => {
+  const loadGamesData = useCallback(async () => {
     try {
-      // Only show loading state for initial load or when switching between different filter types
-      // Don't show loading for week navigation within the same filter type
       if (filterType !== "week" || !games.length) {
         setLoadingGames(true);
       }
@@ -363,14 +351,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
 
       const gamesData = await gamesResponse.json();
       setGames(gamesData.data.games);
-    } catch (err) {
+    } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load games");
     } finally {
       setLoadingGames(false);
     }
-  };
+  }, [accountId, filterType, filterDate, games.length]);
 
-  const loadLeagueTeams = async (leagueSeasonId: string) => {
+  useEffect(() => {
+    loadStaticData();
+  }, [accountId, loadStaticData]);
+
+  useEffect(() => {
+    if (filterType && filterDate) {
+      loadGamesData();
+    }
+  }, [accountId, filterType, filterDate, loadGamesData]);
+
+  const loadLeagueTeams = useCallback(async (leagueSeasonId: string) => {
     try {
       setLoadingLeagueTeams(true);
 
@@ -415,8 +413,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
       const allTeams: Team[] = [];
 
       // Add teams from divisions
-      data.data.leagueSeason.divisions.forEach((division: any) => {
-        division.teams.forEach((team: any) => {
+      data.data.leagueSeason.divisions.forEach((division: { teams: Team[] }) => {
+        division.teams.forEach((team: Team) => {
           allTeams.push({
             id: team.id,
             name: team.name,
@@ -425,7 +423,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
       });
 
       // Add unassigned teams
-      data.data.leagueSeason.unassignedTeams.forEach((team: any) => {
+      data.data.leagueSeason.unassignedTeams.forEach((team: Team) => {
         allTeams.push({
           id: team.id,
           name: team.name,
@@ -439,7 +437,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     } finally {
       setLoadingLeagueTeams(false);
     }
-  };
+  }, [accountId]);
 
   const handleLeagueChange = (leagueSeasonId: string) => {
     setSelectedLeagueSeason(leagueSeasonId);
@@ -638,7 +636,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     setLeagueTeams([]);
   };
 
-  const openEditDialog = (game: Game) => {
+  const openEditDialog = useCallback((game: Game) => {
     console.log(
       "openEditDialog - game.gameType:",
       game.gameType,
@@ -675,7 +673,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     }
 
     setEditDialogOpen(true);
-  };
+  }, [leagues, loadLeagueTeams]);
 
   const openDeleteDialog = (game: Game) => {
     setSelectedGame(game);
@@ -720,9 +718,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
     }
   };
 
-  const getStatusDisplayInfo = (
-    game: Game,
-  ): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
+  const getStatusDisplayInfo = useCallback((game: Game): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
     if (game.gameStatus === 0 || game.gameStatus === 1) {
       // Incomplete or Final - no status display
       return { showOnVisitor: false, showOnHome: false, statusText: "" };
@@ -761,18 +757,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
       showOnHome: false,
       statusText: getGameStatusAbbreviation(game.gameStatus),
     };
-  };
+  }, []);
 
-  const getGameStatusColor = (
-    status: number,
-  ):
-    | "default"
-    | "primary"
-    | "secondary"
-    | "error"
-    | "info"
-    | "success"
-    | "warning" => {
+  const getGameStatusColor = useCallback((status: number): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
     switch (status) {
       case 0:
         return "default";
@@ -789,21 +776,21 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
       default:
         return "default";
     }
-  };
+  }, []);
 
-  const getTeamName = (teamId: string): string => {
+  const getTeamName = useCallback((teamId: string): string => {
     if (!teams || teams.length === 0) {
       return `Team ${teamId}`;
     }
     const team = teams.find((t) => t.id === teamId);
     return team ? team.name : `Team ${teamId}`;
-  };
+  }, [teams]);
 
-  const getFieldName = (fieldId?: string): string => {
+  const getFieldName = useCallback((fieldId?: string): string => {
     if (!fieldId) return "TBD";
     const field = fields.find((f) => f.id === fieldId);
     return field ? field.name : "Unknown Field";
-  };
+  }, [fields]);
 
   const getGameTypeText = (gameType: number | string): string => {
     console.log("getGameTypeText called with:", gameType, typeof gameType);
