@@ -25,7 +25,7 @@ import {
   Person as PersonIcon,
   LocationOn as LocationIcon
 } from '@mui/icons-material';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
 
@@ -87,12 +87,12 @@ const BaseballAccountHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, token } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const { accountId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
 
   useEffect(() => {
-    if (!accountId) return;
+    if (!accountIdStr) return;
 
     const fetchAccountData = async () => {
       setLoading(true);
@@ -100,7 +100,7 @@ const BaseballAccountHome: React.FC = () => {
 
       try {
         // Fetch account data
-        const accountResponse = await fetch(`/api/accounts/${accountId}/public`, {
+        const accountResponse = await fetch(`/api/accounts/${accountIdStr}/public`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ const BaseballAccountHome: React.FC = () => {
         // Fetch user teams if logged in
         if (user) {
           try {
-            const teamsResponse = await fetch(`/api/accounts/${accountId}/user-teams`, {
+            const teamsResponse = await fetch(`/api/accounts/${accountIdStr}/user-teams`, {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ const BaseballAccountHome: React.FC = () => {
 
         // Fetch leagues
         try {
-          const leaguesResponse = await fetch(`/api/accounts/${accountId}/leagues`, {
+          const leaguesResponse = await fetch(`/api/accounts/${accountIdStr}/leagues`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ const BaseballAccountHome: React.FC = () => {
 
         // Fetch recent games
         try {
-          const gamesResponse = await fetch(`/api/accounts/${accountId}/recent-games`, {
+          const gamesResponse = await fetch(`/api/accounts/${accountIdStr}/recent-games`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -187,47 +187,50 @@ const BaseballAccountHome: React.FC = () => {
     };
 
     fetchAccountData();
-  }, [accountId, user, token]);
+  }, [accountIdStr, user, token]);
 
   const handleViewSeasons = () => {
     if (user) {
-      navigate(`/account/${accountId}/seasons`);
+      router.push(`/account/${accountIdStr}/seasons`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push('/login?from=' + encodeURIComponent(getCurrentPath()));
     }
   };
 
   const handleManageAccount = () => {
     if (user) {
-      navigate(`/account/${accountId}/management`);
+      router.push(`/account/${accountIdStr}/management`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push('/login?from=' + encodeURIComponent(getCurrentPath()));
     }
   };
 
   const handleAccountSettings = () => {
     if (user) {
-      navigate(`/account/${accountId}/settings`);
+      router.push(`/account/${accountIdStr}/settings`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push('/login?from=' + encodeURIComponent(getCurrentPath()));
     }
   };
 
   const handleViewTeam = (teamId: string) => {
-    navigate(`/account/${accountId}/team/${teamId}`);
+    router.push(`/account/${accountIdStr}/team/${teamId}`);
   };
 
   const handleViewStandings = () => {
-    navigate(`/account/${accountId}/standings`);
+    router.push(`/account/${accountIdStr}/standings`);
   };
 
   const handleViewSchedule = () => {
-    navigate(`/account/${accountId}/schedule`);
+    router.push(`/account/${accountIdStr}/schedule`);
   };
 
   const handleViewStats = () => {
-    navigate(`/account/${accountId}/statistics`);
+    router.push(`/account/${accountIdStr}/statistics`);
   };
+
+  // Helper to get current path safely
+  const getCurrentPath = () => (typeof window !== 'undefined' ? window.location.pathname : '/');
 
   if (loading) {
     return (
@@ -250,7 +253,7 @@ const BaseballAccountHome: React.FC = () => {
         </Alert>
         <Button
           variant="outlined"
-          onClick={() => navigate('/accounts')}
+          onClick={() => router.push('/accounts')}
           startIcon={<BaseballIcon />}
         >
           Back to Accounts
@@ -267,7 +270,7 @@ const BaseballAccountHome: React.FC = () => {
         </Alert>
         <Button
           variant="outlined"
-          onClick={() => navigate('/accounts')}
+          onClick={() => router.push('/accounts')}
           startIcon={<BaseballIcon />}
         >
           Back to Accounts
@@ -441,7 +444,7 @@ const BaseballAccountHome: React.FC = () => {
             {!user && (
               <Button
                 variant="contained"
-                onClick={() => navigate('/login', { state: { from: location } })}
+                onClick={() => router.push('/login?from=' + encodeURIComponent(getCurrentPath()))}
                 sx={{ 
                   bgcolor: 'white',
                   color: '#1e3a8a',
@@ -818,7 +821,7 @@ const BaseballAccountHome: React.FC = () => {
             height: 'fit-content'
           }}>
             <BaseballScoreboard 
-              accountId={accountId!} 
+              accountId={accountIdStr!} 
             />
           </Box>
         </Box>

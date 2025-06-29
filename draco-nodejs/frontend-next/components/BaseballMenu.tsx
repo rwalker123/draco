@@ -21,14 +21,14 @@ import {
   Group as TeamsIcon,
   Menu as HamburgerIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 interface BaseballMenuProps {
   accountId: string;
 }
 
 const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const theme = useTheme();
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
   const isMediumScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -68,7 +68,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   ];
 
   const handleNavigation = (path: string) => {
-    navigate(path);
+    router.push(path);
     setAnchorEl(null);
   };
 

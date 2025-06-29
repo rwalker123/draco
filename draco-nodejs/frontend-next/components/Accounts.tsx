@@ -15,7 +15,7 @@ import {
   IconButton
 } from '@mui/material';
 import { Search as SearchIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
 interface Account {
@@ -35,9 +35,9 @@ const Accounts: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showSignup, setShowSignup] = useState(false);
   const { user, token } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { accountId } = useParams();
+  const router = useRouter();
+  const params = useParams();
+  const accountId = params?.accountId as string | undefined;
 
   const loadUserAccounts = useCallback(async () => {
     if (!user) return;
@@ -78,9 +78,9 @@ const Accounts: React.FC = () => {
   // If accountId is provided, redirect to that account's home page
   useEffect(() => {
     if (accountId) {
-      navigate(`/account/${accountId}/home`);
+      router.push(`/account/${accountId}/home`);
     }
-  }, [accountId, navigate]);
+  }, [accountId, router]);
 
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
@@ -122,23 +122,23 @@ const Accounts: React.FC = () => {
   };
 
   const handleViewAccount = (accountId: string) => {
-    navigate(`/account/${accountId}/home`);
+    router.push(`/account/${accountId}/home`);
   };
 
   const handleCreateAccount = () => {
     if (user) {
-      navigate('/account-management');
+      router.push('/account-management');
     } else {
       setShowSignup(true);
     }
   };
 
   const handleSignup = () => {
-    navigate('/signup');
+    router.push('/signup');
   };
 
   const handleLogin = () => {
-    navigate('/login', { state: { from: location } });
+    router.push('/login');
   };
 
   return (

@@ -37,7 +37,7 @@ import {
   Remove as RemoveIcon,
   Sports as SportsIcon
 } from '@mui/icons-material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import axios from 'axios';
@@ -67,8 +67,9 @@ interface SeasonFormData {
 }
 
 const SeasonManagement: React.FC = () => {
-  const { accountId } = useParams<{ accountId: string }>();
-  const navigate = useNavigate();
+  const { accountId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
+  const router = useRouter();
   const { token } = useAuth();
   const { hasRole, hasPermission } = useRole();
 
@@ -396,7 +397,7 @@ const SeasonManagement: React.FC = () => {
   };
 
   const navigateToLeagueSeasonManagement = (season: Season) => {
-    navigate(`/account/${accountId}/seasons/${season.id}/league-seasons`);
+    router.push(`/account/${accountId}/seasons/${season.id}/league-seasons`);
   };
 
   const handleAddLeagueToSeason = async () => {
@@ -909,7 +910,7 @@ const SeasonManagement: React.FC = () => {
                         <Tooltip title="Edit league">
                           <IconButton
                             edge="end"
-                            onClick={() => openEditLeagueDialog({ id: league.leagueId, name: league.leagueName, accountId: accountId! })}
+                            onClick={() => openEditLeagueDialog({ id: league.leagueId, name: league.leagueName, accountId: accountIdStr || '' })}
                             disabled={formLoading}
                           >
                             <EditIcon />

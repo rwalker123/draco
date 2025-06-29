@@ -33,7 +33,7 @@ import {
   Sports as SportsIcon,
   People as PeopleIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { isAxiosError } from '../context/AccountContext';
 
@@ -97,7 +97,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Division management state
   const [addDivisionDialogOpen, setAddDivisionDialogOpen] = useState(false);
@@ -608,7 +608,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   // Handler to navigate to team roster management
   const handleManageRoster = (teamSeason: TeamSeason) => {
-    navigate(`/account/${accountId}/seasons/${season.id}/teams/${teamSeason.id}/roster`);
+    router.push(`/account/${accountId}/seasons/${season.id}/teams/${teamSeason.id}/roster`);
   };
 
   // Handler to open delete league dialog

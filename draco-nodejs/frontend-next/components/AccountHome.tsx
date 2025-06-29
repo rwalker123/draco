@@ -19,7 +19,7 @@ import {
   Edit as EditIcon,
   Settings as SettingsIcon
 } from '@mui/icons-material';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import BaseballAccountHome from './BaseballAccountHome';
 
@@ -48,8 +48,7 @@ const AccountHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
   const { accountId } = useParams();
 
   useEffect(() => {
@@ -90,27 +89,30 @@ const AccountHome: React.FC = () => {
 
   const handleViewSeasons = () => {
     if (user) {
-      navigate(`/account/${accountId}/seasons`);
+      router.push(`/account/${accountId}/seasons`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
   };
 
   const handleManageAccount = () => {
     if (user) {
-      navigate(`/account/${accountId}/management`);
+      router.push(`/account/${accountId}/management`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
   };
 
   const handleAccountSettings = () => {
     if (user) {
-      navigate(`/account/${accountId}/settings`);
+      router.push(`/account/${accountId}/settings`);
     } else {
-      navigate('/login', { state: { from: location } });
+      router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`);
     }
   };
+
+  // Helper to get current path safely
+  const getCurrentPath = () => (typeof window !== 'undefined' ? window.location.pathname : '/');
 
   if (loading) {
     return (
@@ -130,7 +132,7 @@ const AccountHome: React.FC = () => {
           {error || 'Account not found'}
         </Alert>
         <Box sx={{ mt: 2 }}>
-          <Button variant="contained" onClick={() => navigate('/accounts')}>
+          <Button variant="contained" onClick={() => router.push('/accounts')}>
             Back to Accounts
           </Button>
         </Box>
@@ -203,7 +205,7 @@ const AccountHome: React.FC = () => {
         {!user && (
           <Button
             variant="outlined"
-            onClick={() => navigate('/login', { state: { from: location } })}
+            onClick={() => router.push(`/login?from=${encodeURIComponent(getCurrentPath())}`)}
           >
             Sign In to Manage
           </Button>

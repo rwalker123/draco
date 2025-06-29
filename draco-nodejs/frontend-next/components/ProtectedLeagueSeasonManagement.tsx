@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import LeagueSeasonManagement from './LeagueSeasonManagement';
@@ -16,10 +16,11 @@ interface Season {
 }
 
 const ProtectedLeagueSeasonManagement: React.FC = () => {
-  const { accountId, seasonId } = useParams<{ accountId: string; seasonId: string }>();
+  const { accountId, seasonId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const { token } = useAuth();
   const { hasRole, hasPermission } = useRole();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
@@ -124,7 +125,7 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate(`/account/${accountId}/seasons`);
+            router.push(`/account/${accountId}/seasons`);
           }}
           sx={{ cursor: 'pointer' }}
         >
@@ -135,7 +136,7 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate(`/account/${accountId}/seasons`);
+            router.push(`/account/${accountId}/seasons`);
           }}
           sx={{ cursor: 'pointer' }}
         >
@@ -146,10 +147,10 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
 
       {/* League Season Management Component */}
       <LeagueSeasonManagement
-        accountId={accountId}
+        accountId={accountIdStr || ''}
         season={season}
         token={token}
-        onClose={() => navigate(`/account/${accountId}/seasons`)}
+        onClose={() => router.push(`/account/${accountId}/seasons`)}
       />
     </Box>
   );
