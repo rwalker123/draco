@@ -7,7 +7,7 @@ import { Box, Typography, Alert, Breadcrumbs, Link } from '@mui/material';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 interface Season {
   id: string;
@@ -36,7 +36,7 @@ const ProtectedLeagueSeasonManagement: React.FC = () => {
 
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}`,
+          `/api/accounts/${accountId}/seasons/${seasonId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 

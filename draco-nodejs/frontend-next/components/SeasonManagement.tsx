@@ -42,7 +42,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 interface Season {
   id: string;
@@ -109,7 +109,7 @@ const SeasonManagement: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/accounts/${accountId}/seasons`, {
+      const response = await axios.get(`/api/accounts/${accountId}/seasons`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -135,7 +135,7 @@ const SeasonManagement: React.FC = () => {
     if (!accountId || !token) return;
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/accounts/${accountId}/leagues`, {
+      const response = await axios.get(`/api/accounts/${accountId}/leagues`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -218,7 +218,7 @@ const SeasonManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons`,
+        `/api/accounts/${accountId}/seasons`,
         { name: formData.name.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -250,7 +250,7 @@ const SeasonManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
+        `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
         { name: formData.name.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -283,7 +283,7 @@ const SeasonManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
+        `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -314,7 +314,7 @@ const SeasonManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/copy`,
+        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/copy`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -345,7 +345,7 @@ const SeasonManagement: React.FC = () => {
 
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/set-current`,
+        `/api/accounts/${accountId}/seasons/${season.id}/set-current`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -408,7 +408,7 @@ const SeasonManagement: React.FC = () => {
     setDialogErrorMessage(null);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
+        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
         { leagueId: selectedLeague.id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -446,7 +446,7 @@ const SeasonManagement: React.FC = () => {
     setDialogErrorMessage(null);
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues/${leagueSeasonId}`,
+        `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues/${leagueSeasonId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -531,7 +531,7 @@ const SeasonManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/leagues/${leagueToEdit.id}`,
+        `/api/accounts/${accountId}/leagues/${leagueToEdit.id}`,
         { name: editLeagueName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -563,7 +563,7 @@ const SeasonManagement: React.FC = () => {
     try {
       // Create the league
       const createResponse = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/leagues`,
+        `/api/accounts/${accountId}/leagues`,
         { name: newLeagueName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -574,7 +574,7 @@ const SeasonManagement: React.FC = () => {
         // If checkbox is checked, add the league to the season
         if (addToSeasonAfterCreate && selectedSeason) {
           const addResponse = await axios.post(
-            `${API_BASE_URL}/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
+            `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
             { leagueId: newLeague.id },
             { headers: { Authorization: `Bearer ${token}` } }
           );

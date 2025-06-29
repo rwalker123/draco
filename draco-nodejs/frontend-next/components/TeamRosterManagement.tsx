@@ -47,7 +47,7 @@ import { isEmail } from 'validator';
 import { format } from 'date-fns';
 import { parseISO } from 'date-fns/parseISO';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 // US States and Territories for dropdown
 const US_STATES = [
@@ -232,7 +232,7 @@ const TeamRosterManagement: React.FC = () => {
     setError(null);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -259,7 +259,7 @@ const TeamRosterManagement: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/available-players`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/available-players`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -283,7 +283,7 @@ const TeamRosterManagement: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}`,
+        `/api/accounts/${accountId}/seasons/${seasonId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -307,7 +307,7 @@ const TeamRosterManagement: React.FC = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -348,7 +348,7 @@ const TeamRosterManagement: React.FC = () => {
     setError(null);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         {
           playerId: selectedPlayer.id,
           playerNumber: rosterFormData.playerNumber,
@@ -387,7 +387,7 @@ const TeamRosterManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/release`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/release`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -416,7 +416,7 @@ const TeamRosterManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/activate`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/activate`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -445,7 +445,7 @@ const TeamRosterManagement: React.FC = () => {
     setFormLoading(true);
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${playerToDelete.id}`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${playerToDelete.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -497,7 +497,7 @@ const TeamRosterManagement: React.FC = () => {
     setError(null);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/contacts/${playerToEdit.player.contactId}`,
+        `/api/accounts/${accountId}/contacts/${playerToEdit.player.contactId}`,
         {
           firstname: editFormData.firstname,
           lastname: editFormData.lastname,
@@ -681,7 +681,7 @@ const TeamRosterManagement: React.FC = () => {
     setError(null);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/update`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/update`,
         {
           playerNumber: rosterFormData.playerNumber,
           submittedWaiver: rosterFormData.submittedWaiver,
@@ -740,7 +740,7 @@ const TeamRosterManagement: React.FC = () => {
     try {
       // Create the new player
       const createResponse = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/contacts`,
+        `/api/accounts/${accountId}/contacts`,
         {
           firstname: editFormData.firstname,
           lastname: editFormData.lastname,
@@ -763,7 +763,7 @@ const TeamRosterManagement: React.FC = () => {
         
         // Create the roster entry for the new player
         const rosterResponse = await axios.post(
-          `${API_BASE_URL}/api/accounts/${accountId}/roster`,
+          `/api/accounts/${accountId}/roster`,
           {
             contactId: newContact.id,
             submittedDriversLicense: false,
@@ -778,7 +778,7 @@ const TeamRosterManagement: React.FC = () => {
           // If auto-sign is enabled, add to team roster
           if (autoSignToRoster && seasonId && teamSeasonId) {
             const signResponse = await axios.post(
-              `${API_BASE_URL}/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+              `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
               {
                 playerId: newPlayer.id,
                 playerNumber: 0,

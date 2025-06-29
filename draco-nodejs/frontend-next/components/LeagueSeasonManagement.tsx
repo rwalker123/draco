@@ -37,8 +37,6 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { isAxiosError } from '../context/AccountContext';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-
 interface LeagueSeason {
   id: string;
   leagueId: string;
@@ -153,7 +151,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -180,7 +178,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/accounts/${accountId}/divisions`,
+        `/api/accounts/${accountId}/divisions`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -314,7 +312,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
         {
           divisionId: selectedDivision.id,
           priority: divisionPriority
@@ -350,7 +348,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/divisions/${divisionSeason.id}`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/divisions/${divisionSeason.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -380,7 +378,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/divisions`,
+        `/api/accounts/${accountId}/divisions`,
         { name: newDivisionName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -413,7 +411,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     try {
       // Create the division
       const createResponse = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/divisions`,
+        `/api/accounts/${accountId}/divisions`,
         { name: newDivisionNameInAddDialog.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -424,7 +422,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // If checkbox is checked, add the division to the league season
         if (addToLeagueAfterCreate && selectedLeagueSeason) {
           const addResponse = await axios.post(
-            `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
+            `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
             {
               divisionId: newDivision.id,
               priority: divisionPriority
@@ -471,7 +469,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/assign-division`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/assign-division`,
         {
           divisionSeasonId: divisionSeason.id
         },
@@ -504,7 +502,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.put(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedTeamLeagueSeason.id}/teams/${selectedTeamSeason.id}/assign-division`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedTeamLeagueSeason.id}/teams/${selectedTeamSeason.id}/assign-division`,
         {
           divisionSeasonId: targetDivisionSeason.id
         },
@@ -577,7 +575,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/remove-from-division`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeason.id}/teams/${teamSeason.id}/remove-from-division`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -626,7 +624,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     try {
       // First, remove the league from this season (delete leagueseason record)
       const removeFromSeasonResponse = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueToDelete.id}`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueToDelete.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -634,7 +632,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Now try to delete the league definition (may fail if used in other seasons)
         try {
           const deleteLeagueResponse = await axios.delete(
-            `${API_BASE_URL}/api/accounts/${accountId}/leagues/${leagueToDelete.leagueId}`,
+            `/api/accounts/${accountId}/leagues/${leagueToDelete.leagueId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -720,7 +718,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     try {
       // First, remove the team from this season (delete teamsseason record)
       const removeFromSeasonResponse = await axios.delete(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/teams/${teamToDelete.id}`,
+        `/api/accounts/${accountId}/seasons/${season.id}/teams/${teamToDelete.id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -728,7 +726,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         // Now try to delete the team definition (may fail if used in other seasons)
         try {
           const deleteTeamResponse = await axios.delete(
-            `${API_BASE_URL}/api/accounts/${accountId}/teams/${teamToDelete.teamId}`,
+            `/api/accounts/${accountId}/teams/${teamToDelete.teamId}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
 
@@ -814,7 +812,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     setFormLoading(true);
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/accounts/${accountId}/seasons/${season.id}/leagues/${teamToCreateLeagueSeason.id}/teams`,
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${teamToCreateLeagueSeason.id}/teams`,
         { name: newTeamName.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
