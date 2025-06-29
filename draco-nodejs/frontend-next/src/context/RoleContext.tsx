@@ -97,8 +97,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setError(response.data.message || 'Failed to fetch user roles');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch user roles');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
       setUserRoles(null);
     } finally {
       setLoading(false);

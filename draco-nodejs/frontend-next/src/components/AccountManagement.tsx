@@ -327,6 +327,10 @@ const AccountManagement: React.FC = () => {
         </Alert>
       )}
 
+      <Typography variant="body2" color="text.secondary">
+        You can use &quot;Account Management&quot; to update your organization details.
+      </Typography>
+
       <Paper sx={{ width: '100%', overflow: 'hidden' }}>
         <TableContainer>
           <Table stickyHeader>
@@ -568,7 +572,7 @@ const AccountManagement: React.FC = () => {
         <DialogTitle>Delete Account</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the account "{selectedAccount?.name}"? 
+            Are you sure you want to delete the account @quote;{selectedAccount?.name}@quote;? 
             This action cannot be undone.
           </Typography>
         </DialogContent>

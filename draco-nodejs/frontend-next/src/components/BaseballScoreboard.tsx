@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -15,7 +15,7 @@ import {
   Edit as EditIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
-import EnterGameResultsDialog from "./EnterGameResultsDialog";
+import EnterGameResultsDialog, { GameResultData } from "./EnterGameResultsDialog";
 
 interface GameRecap {
   teamId: string;
@@ -116,7 +116,7 @@ const getGameStatusText = (status: number): string => {
 };
 
 const getStatusDisplayInfo = (
-  game: any,
+  game: Game,
 ): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
   if (game.gameStatus === 0 || game.gameStatus === 1) {
     // Incomplete or Final - no status display
@@ -236,7 +236,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({
     userPermissions.isAccountAdmin || userPermissions.isGlobalAdmin;
 
   // Common function to load scoreboard data
-  const loadScoreboardData = async () => {
+  const loadScoreboardData = useCallback(async () => {
     // Get current season first
     const seasonResponse = await fetch(
       `/api/accounts/${accountId}/seasons/current`,
@@ -292,38 +292,56 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({
     }
 
     // Transform the data to match the expected format
-    const transformGames = (games: any[]) =>
-      games.map((game) => ({
-        id: game.id,
-        date: game.gameDate,
-        homeTeamId: game.homeTeamId,
-        awayTeamId: game.visitorTeamId,
-        homeTeamName: game.homeTeamName || "Unknown",
-        awayTeamName: game.visitorTeamName || "Unknown",
-        homeScore: game.homeScore,
-        awayScore: game.visitorScore,
-        gameStatus: game.gameStatus,
-        gameStatusText: getGameStatusText(game.gameStatus),
-        leagueName: game.league?.name || "Unknown",
-        fieldId: game.fieldId,
-        fieldName: game.field?.name || null,
-        fieldShortName: game.field?.shortName || null,
-        hasGameRecap: false, // We'll need to check for recaps separately
-        gameRecaps: [], // We'll need to load recaps separately
-      }));
+    const transformGames = (games: unknown[]): Game[] =>
+      games
+        .filter((game): game is Record<string, unknown> => typeof game === 'object' && game !== null)
+        .map((game) => {
+          let leagueName = 'Unknown';
+          if (typeof game.league === 'object' && game.league && 'name' in game.league && typeof (game.league as { name?: unknown }).name === 'string') {
+            leagueName = (game.league as { name: string }).name;
+          }
+          let fieldName: string | null = null;
+          let fieldShortName: string | null = null;
+          if (typeof game.field === 'object' && game.field) {
+            if ('name' in game.field && typeof (game.field as { name?: unknown }).name === 'string') {
+              fieldName = (game.field as { name: string }).name;
+            }
+            if ('shortName' in game.field && typeof (game.field as { shortName?: unknown }).shortName === 'string') {
+              fieldShortName = (game.field as { shortName: string }).shortName;
+            }
+          }
+          return {
+            id: String(game.id ?? ''),
+            date: String(game.gameDate ?? ''),
+            homeTeamId: String(game.homeTeamId ?? ''),
+            awayTeamId: String(game.visitorTeamId ?? ''),
+            homeTeamName: typeof game.homeTeamName === 'string' ? game.homeTeamName : 'Unknown',
+            awayTeamName: typeof game.visitorTeamName === 'string' ? game.visitorTeamName : 'Unknown',
+            homeScore: typeof game.homeScore === 'number' ? game.homeScore : 0,
+            awayScore: typeof game.visitorScore === 'number' ? game.visitorScore : 0,
+            gameStatus: typeof game.gameStatus === 'number' ? game.gameStatus : 0,
+            gameStatusText: getGameStatusText(typeof game.gameStatus === 'number' ? game.gameStatus : 0),
+            leagueName,
+            fieldId: 'fieldId' in game ? (game.fieldId === null ? null : String(game.fieldId)) : null,
+            fieldName,
+            fieldShortName,
+            hasGameRecap: false, // We'll need to check for recaps separately
+            gameRecaps: [], // We'll need to load recaps separately
+          };
+        });
 
     return {
       today: transformGames(todayData.data.games),
       yesterday: transformGames(yesterdayData.data.games),
       recaps: transformGames(recapsData.data.games),
     };
-  };
+  }, [accountId, teamId]);
 
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
   };
 
-  const handleSaveGameResults = async (gameData: any) => {
+  const handleSaveGameResults = async (gameData: GameResultData) => {
     if (!token) {
       throw new Error("Authentication required");
     }
@@ -386,14 +404,14 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({
       .then((newData) => {
         setData(newData);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Error loading scoreboard data:", error);
-        setError(error.message);
+        setError(error instanceof Error ? error.message : String(error));
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [accountId, teamId]);
+  }, [accountId, teamId, loadScoreboardData]);
 
   if (loading) {
     return (
@@ -435,7 +453,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({
       } else {
         localTime = "TBD";
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error formatting time:", error);
       localTime = "TBD";
     }

@@ -117,8 +117,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to fetch seasons');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to fetch seasons');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to load season data');
+      }
     } finally {
       setLoading(false);
     }
@@ -135,8 +141,14 @@ const SeasonManagement: React.FC = () => {
       if (response.data.success) {
         setAvailableLeagues(response.data.data.leagues);
       }
-    } catch (err: any) {
-      console.error('Failed to fetch available leagues:', err);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to fetch available leagues');
+      }
     }
   }, [accountId, token]);
 
@@ -218,8 +230,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to create season');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to create season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to create season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -245,8 +263,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to update season');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to update season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -270,8 +294,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to delete season');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to delete season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -296,8 +326,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to copy season');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to copy season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to copy season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -319,8 +355,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to set current season');
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to set current season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to set current season');
+      }
     }
   };
 
@@ -382,8 +424,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setDialogErrorMessage(response.data.message || 'Failed to add league to season');
       }
-    } catch (err: any) {
-      setDialogErrorMessage(err.response?.data?.message || 'Failed to add league to season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setDialogErrorMessage(err.message);
+      } else {
+        setDialogErrorMessage('Failed to add league to season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -412,8 +460,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setDialogErrorMessage(response.data.message || 'Failed to remove league from season');
       }
-    } catch (err: any) {
-      setDialogErrorMessage(err.response?.data?.message || 'Failed to remove league from season');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setDialogErrorMessage(err.message);
+      } else {
+        setDialogErrorMessage('Failed to remove league from season');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -488,8 +542,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setDialogErrorMessage(response.data.message || 'Failed to update league');
       }
-    } catch (err: any) {
-      setDialogErrorMessage(err.response?.data?.message || 'Failed to update league');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setDialogErrorMessage(err.message);
+      } else {
+        setDialogErrorMessage('Failed to update league');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -543,8 +603,14 @@ const SeasonManagement: React.FC = () => {
       } else {
         setDialogErrorMessage(createResponse.data.message || 'Failed to create league');
       }
-    } catch (err: any) {
-      setDialogErrorMessage(err.response?.data?.message || 'Failed to create league');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      } else if (err instanceof Error) {
+        setDialogErrorMessage(err.message);
+      } else {
+        setDialogErrorMessage('Failed to create league');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -940,7 +1006,7 @@ const SeasonManagement: React.FC = () => {
         <DialogTitle>Delete Season</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the season "{selectedSeason?.name}"?
+            Are you sure you want to delete the season &quot;{selectedSeason?.name}&quot;?
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
             This action cannot be undone. All data associated with this season will be permanently deleted.
@@ -966,10 +1032,10 @@ const SeasonManagement: React.FC = () => {
         <DialogTitle>Copy Season</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to copy the season "{selectedSeason?.name}"?
+            Are you sure you want to copy the season &quot;{selectedSeason?.name}&quot;?
           </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            This will create a new season with the name "{selectedSeason?.name} Copy" and copy all associated leagues.
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            This will create a new season with the name &quot;{selectedSeason?.name} Copy&quot; and copy all associated leagues.
           </Typography>
         </DialogContent>
         <DialogActions>

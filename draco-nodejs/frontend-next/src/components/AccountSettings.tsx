@@ -47,13 +47,27 @@ function a11yProps(index: number) {
   };
 }
 
+interface Account {
+  id: string;
+  name: string;
+  accountType?: string;
+  firstYear?: number;
+  affiliation?: string;
+  timezoneId?: string;
+  twitterAccountName?: string;
+  facebookFanPage?: string;
+  youtubeUserId?: string;
+  urls?: Array<{ id: string; url: string }>;
+  ownerName?: string;
+}
+
 const AccountSettings: React.FC = () => {
   const { accountId } = useParams();
   const { token } = useAuth();
   const { hasRole } = useRole();
   
   const [tabValue, setTabValue] = useState(0);
-  const [account, setAccount] = useState<any>(null);
+  const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,7 +94,7 @@ const AccountSettings: React.FC = () => {
       } else {
         setError('Failed to load account data');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load account data');
     } finally {
       setLoading(false);
@@ -122,7 +136,7 @@ const AccountSettings: React.FC = () => {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Alert severity="warning">
-          You don't have permission to manage this account's settings.
+          You don&apos;t have permission to manage this account@apos;s settings.
         </Alert>
       </Container>
     );
@@ -139,7 +153,7 @@ const AccountSettings: React.FC = () => {
           {account.name}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage your organization's configuration and settings
+          Manage your organization@apos;s configuration and settings
         </Typography>
       </Box>
 

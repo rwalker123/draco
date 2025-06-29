@@ -31,8 +31,8 @@ const ProtectedTeamRosterManagement: React.FC = () => {
         <Typography variant="h5" color="error" gutterBottom>
           Access Denied
         </Typography>
-        <Typography variant="body1" sx={{ mb: 2 }}>
-          You don't have permission to access team roster management.
+        <Typography variant="body2" color="text.secondary">
+          You&apos;re not authorized to view this roster.
         </Typography>
         <Button variant="contained" onClick={() => window.history.back()}>
           Go Back

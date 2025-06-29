@@ -77,7 +77,7 @@ const AdminDashboard: React.FC = () => {
                     secondary={`${userRoles.contactRoles.length} role(s)`} 
                   />
                 </ListItem>
-                {userRoles.contactRoles.map((role, index) => (
+                {userRoles.contactRoles.map((role) => (
                   <ListItem key={role.id}>
                     <ListItemText 
                       primary={`Role: ${role.roleName || role.roleId}`}

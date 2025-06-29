@@ -58,8 +58,14 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
       } else {
         setError(response.data.message || 'Failed to request password reset');
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'An error occurred');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -83,8 +89,14 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
       } else {
         setError(response.data.message || 'Invalid token');
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'An error occurred');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -123,8 +135,14 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
       } else {
         setError(response.data.message || 'Failed to reset password');
       }
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'An error occurred');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -139,7 +157,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
               Request Password Reset
             </Typography>
             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-              Enter your email address and we'll send you a password reset link.
+              Enter your email address and we&apos;ll send you a password reset link.
             </Typography>
             <TextField
               fullWidth
@@ -170,6 +188,9 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
             </Typography>
             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
               Check your email for the reset token and enter it below.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              If you don&apos;t see the email, check your spam folder.
             </Typography>
             <TextField
               fullWidth

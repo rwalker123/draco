@@ -244,10 +244,14 @@ const TeamRosterManagement: React.FC = () => {
       if (response.data.success) {
         setRosterData(response.data.data);
       }
-    } catch (error: any) {
-      console.error('Error fetching roster data:', error);
-      console.error('Error response:', error.response?.data);
-      setError(error.response?.data?.message || 'Failed to fetch roster data');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch roster data');
+      }
     } finally {
       setLoading(false);
     }
@@ -266,9 +270,14 @@ const TeamRosterManagement: React.FC = () => {
       if (response.data.success) {
         setAvailablePlayers(response.data.data.availablePlayers);
       }
-    } catch (error: any) {
-      console.error('Error fetching available players:', error);
-      setError(error.response?.data?.message || 'Failed to fetch available players');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch available players');
+      }
     }
   }, [accountId, seasonId, teamSeasonId, token]);
 
@@ -285,8 +294,14 @@ const TeamRosterManagement: React.FC = () => {
       if (response.data.success) {
         setSeason(response.data.data);
       }
-    } catch (error: any) {
-      console.error('Error fetching season data:', error);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch season data');
+      }
     }
   }, [accountId, seasonId, token]);
 
@@ -303,8 +318,14 @@ const TeamRosterManagement: React.FC = () => {
       if (response.data.success) {
         setLeague(response.data.data);
       }
-    } catch (error: any) {
-      console.error('Error fetching league data:', error);
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to fetch league data');
+      }
     }
   }, [accountId, seasonId, teamSeasonId, token]);
 
@@ -350,9 +371,14 @@ const TeamRosterManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to sign player');
       }
-    } catch (error: any) {
-      console.error('Error signing player:', error);
-      setError(error.response?.data?.message || 'Failed to sign player');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to sign player');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -374,9 +400,14 @@ const TeamRosterManagement: React.FC = () => {
         setSuccessMessage(response.data.data.message);
         fetchRosterData();
       }
-    } catch (error: any) {
-      console.error('Error releasing player:', error);
-      setError(error.response?.data?.message || 'Failed to release player');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to release player');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -398,9 +429,14 @@ const TeamRosterManagement: React.FC = () => {
         setSuccessMessage(response.data.data.message);
         fetchRosterData();
       }
-    } catch (error: any) {
-      console.error('Error activating player:', error);
-      setError(error.response?.data?.message || 'Failed to activate player');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to activate player');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -423,9 +459,14 @@ const TeamRosterManagement: React.FC = () => {
         setPlayerToDelete(null);
         fetchRosterData();
       }
-    } catch (error: any) {
-      console.error('Error deleting player:', error);
-      setError(error.response?.data?.message || 'Failed to delete player');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to delete player');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -486,9 +527,14 @@ const TeamRosterManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to update player information');
       }
-    } catch (error: any) {
-      console.error('Error updating player:', error);
-      setError(error.response?.data?.message || 'Failed to update player information');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to update player information');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -656,9 +702,14 @@ const TeamRosterManagement: React.FC = () => {
       } else {
         setError(response.data.message || 'Failed to update roster information');
       }
-    } catch (error: any) {
-      console.error('Error updating roster information:', error);
-      setError(error.response?.data?.message || 'Failed to update roster information');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to update roster information');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -760,9 +811,14 @@ const TeamRosterManagement: React.FC = () => {
       } else {
         setError(createResponse.data.message || 'Failed to create player');
       }
-    } catch (error: any) {
-      console.error('Error creating player:', error);
-      setError(error.response?.data?.message || 'Failed to create player');
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+        setError((error as { response: { data: { message: string } } }).response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to create player');
+      }
     } finally {
       setFormLoading(false);
     }
@@ -997,7 +1053,7 @@ const TeamRosterManagement: React.FC = () => {
             Age: {adjustedAge} ({birthMonthYear})
           </div>
         );
-      } catch (error) {
+      } catch {
         console.warn('Invalid date of birth format:', member.player.contact.dateofbirth);
       }
     }
@@ -1010,7 +1066,7 @@ const TeamRosterManagement: React.FC = () => {
             Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
           </div>
         );
-      } catch (error) {
+      } catch {
         console.warn('Invalid date added format:', member.dateAdded);
       }
     }
@@ -1025,7 +1081,7 @@ const TeamRosterManagement: React.FC = () => {
     // Submitted Driver's License
     info.push(
       <div key="license">
-        Submitted Driver's License: {member.player.submittedDriversLicense ? 'Yes' : 'No'}
+        Submitted Driver&apos;s License: {member.player.submittedDriversLicense ? 'Yes' : 'No'}
       </div>
     );
     
@@ -1417,7 +1473,7 @@ const TeamRosterManagement: React.FC = () => {
             {/* Info Alert for signing new players */}
             {isSigningNewPlayer && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                When you select a player, their existing roster information (first year, driver's license status) will be pre-filled. You can modify these values as needed.
+                When you select a player, their existing roster information (first year, driver&apos;s license status) will be pre-filled. You can modify these values as needed.
               </Alert>
             )}
             
@@ -1518,7 +1574,7 @@ const TeamRosterManagement: React.FC = () => {
                 }
                 label={
                   <Box>
-                    <Typography>Submitted Driver's License</Typography>
+                    <Typography>Submitted Driver&apos;s License</Typography>
                     {isSigningNewPlayer && selectedPlayer && selectedPlayer.submittedDriversLicense && (
                       <Typography variant="caption" color="text.secondary">
                         Pre-filled with existing data

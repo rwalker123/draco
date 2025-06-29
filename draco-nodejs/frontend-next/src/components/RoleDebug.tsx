@@ -32,7 +32,7 @@ const RoleDebug: React.FC = () => {
           <>
             <Typography><strong>Global Roles:</strong> {userRoles.globalRoles.join(', ') || 'None'}</Typography>
             <Typography><strong>Contact Roles:</strong> {userRoles.contactRoles.length} role(s)</Typography>
-            {userRoles.contactRoles.map((role, index) => (
+            {userRoles.contactRoles.map((role) => (
               <Typography key={role.id} sx={{ ml: 2 }}>
                 - {role.roleName || role.roleId} (Account: {role.accountId})
               </Typography>

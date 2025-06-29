@@ -11,7 +11,10 @@ const Login: React.FC = () => {
   const { login, loading, error } = useAuth();
 
   // Get the page the user was trying to access before being redirected to sign in
-  const from = (location.state as any)?.from?.pathname || '/dashboard';
+  let from = '/dashboard';
+  if (location.state && typeof location.state === 'object' && 'from' in location.state && location.state.from && typeof (location.state as { from?: { pathname?: string } }).from?.pathname === 'string') {
+    from = (location.state as { from: { pathname: string } }).from.pathname;
+  }
 
   const handleLogin = async () => {
     const success = await login(email, password);

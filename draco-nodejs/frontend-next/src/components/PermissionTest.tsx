@@ -84,10 +84,14 @@ const PermissionTest: React.FC = () => {
        !hasPermission('team.manage') && (
         <Alert severity="info" sx={{ mt: 2 }}>
           <Typography variant="body1">
-            You don't have any management permissions. Contact your administrator to request access.
+            You don&apos;t have any management permissions. Contact your administrator to request access.
           </Typography>
         </Alert>
       )}
+
+      <Typography variant="body2" color="text.secondary">
+        You&apos;re not authorized to view this page.
+      </Typography>
     </Box>
   );
 };

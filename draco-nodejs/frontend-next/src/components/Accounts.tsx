@@ -62,7 +62,7 @@ const Accounts: React.FC = () => {
       } else {
         setError('Failed to load your organizations. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to load your organizations. Please try again.');
     } finally {
       setLoading(false);
@@ -106,7 +106,7 @@ const Accounts: React.FC = () => {
       } else {
         setError('Failed to search accounts. Please try again.');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to search accounts. Please try again.');
     } finally {
       setLoading(false);
@@ -341,7 +341,7 @@ const Accounts: React.FC = () => {
             Create Your Account
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            To create and manage your own sports organization, you'll need to create an account first.
+            To create and manage your own sports organization, you&apos;ll need to create an account first.
           </Typography>
           <Box sx={{ mt: 2 }}>
             <Button
@@ -360,6 +360,13 @@ const Accounts: React.FC = () => {
             </Button>
           </Box>
         </Paper>
+      )}
+
+      {/* No Organizations Message */}
+      {accounts.length === 0 && !loading && !error && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, textAlign: 'center' }}>
+          You&apos;re not a member of any organizations yet.
+        </Typography>
       )}
     </Container>
   );
