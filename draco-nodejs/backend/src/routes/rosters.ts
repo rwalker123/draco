@@ -109,12 +109,6 @@ router.get(
       const accountId = BigInt(req.params.accountId);
       const teamSeasonId = BigInt(req.params.teamSeasonId);
 
-      console.log("Roster route params:", {
-        seasonId: seasonId.toString(),
-        accountId: accountId.toString(),
-        teamSeasonId: teamSeasonId.toString(),
-      });
-
       // Verify the team season exists and belongs to this account and season
       const teamSeason = await prisma.teamsseason.findFirst({
         where: {
@@ -951,6 +945,61 @@ router.delete(
         success: true,
         data: {
           message: `Player "${rosterMember.roster.contacts.firstname} ${rosterMember.roster.contacts.lastname}" has been permanently removed from the roster`,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId
+ * Get a single team season's info
+ */
+router.get(
+  "/:teamSeasonId",
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Find the team season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+        include: {
+          teams: true,
+        },
+      });
+
+      if (!teamSeason) {
+        res
+          .status(404)
+          .json({ success: false, message: "Team season not found" });
+        return;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          teamSeason: {
+            id: teamSeason.id.toString(),
+            name: teamSeason.name,
+            webAddress: teamSeason.teams.webaddress,
+            youtubeUserId: teamSeason.teams.youtubeuserid,
+            defaultVideo: teamSeason.teams.defaultvideo,
+            autoPlayVideo: teamSeason.teams.autoplayvideo,
+            // Add more fields as needed
+          },
         },
       });
     } catch (error) {
