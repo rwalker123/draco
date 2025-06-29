@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 interface PasswordResetProps {
   onResetSuccess?: () => void;
@@ -41,7 +41,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/passwordReset/request`, {
+      const response = await axios.post(`/api/passwordReset/request`, {
         email,
         testMode: true
       });
@@ -81,7 +81,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/passwordReset/verify/${token}`);
+      const response = await axios.get(`/api/passwordReset/verify/${token}`);
 
       if (response.data.success) {
         setSuccess('Token verified successfully');
@@ -122,7 +122,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     setError('');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/passwordReset/reset`, {
+      const response = await axios.post(`/api/passwordReset/reset`, {
         token,
         newPassword
       });

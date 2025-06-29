@@ -3,8 +3,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import axios from 'axios';
 import { useAuth } from './AuthContext';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
 interface ContactRole {
   id: string;
   contactId: string;
@@ -83,8 +81,8 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     setError(null);
     try {
       const url = accountId 
-        ? `${API_BASE_URL}/api/roleTest/user-roles?accountId=${accountId}`
-        : `${API_BASE_URL}/api/roleTest/user-roles`;
+        ? `/api/roleTest/user-roles?accountId=${accountId}`
+        : `/api/roleTest/user-roles`;
       
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }

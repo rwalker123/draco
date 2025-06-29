@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_BASE_URL = '';
 
 interface User {
   id: string;
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, { username, password });
+      const response = await axios.post('/api/auth/login', { username, password });
       if (response.data.success && response.data.token) {
         setToken(response.data.token);
         localStorage.setItem('jwtToken', response.data.token);
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/auth/me`, {
+      const response = await axios.get('/api/auth/me', {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       if (response.data.success && response.data.user) {
