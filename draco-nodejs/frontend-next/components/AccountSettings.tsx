@@ -9,7 +9,7 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import UrlManagement from './UrlManagement';
@@ -63,6 +63,7 @@ interface Account {
 
 const AccountSettings: React.FC = () => {
   const { accountId } = useParams();
+  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const { token } = useAuth();
   const { hasRole } = useRole();
   
@@ -78,7 +79,7 @@ const AccountSettings: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountId}/public`, {
+      const response = await fetch(`/api/accounts/${accountIdStr}/public`, {
         headers: {
           'Content-Type': 'application/json',
         },
@@ -99,7 +100,7 @@ const AccountSettings: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountIdStr]);
 
   useEffect(() => {
     if (accountId && token) {
@@ -177,7 +178,7 @@ const AccountSettings: React.FC = () => {
         {/* URL Management Tab */}
         <TabPanel value={tabValue} index={0}>
           <UrlManagement 
-            accountId={accountId!} 
+            accountId={accountIdStr || ''} 
             accountName={account.name}
             onUrlsChange={(urls) => {
               setAccount({ ...account, urls });

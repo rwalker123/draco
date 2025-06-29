@@ -27,7 +27,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
 import { getLogoSize, getLogoUrl, validateLogoFile } from "../config/teams";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 
 interface Team {
   id: string;
@@ -72,7 +72,7 @@ interface TeamsProps {
 const Teams: React.FC<TeamsProps> = ({ accountId }) => {
   const { user } = useAuth();
   const { hasRole, hasPermission } = useRole();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   // Check if user has edit permissions for teams
   const canEditTeams =
@@ -578,7 +578,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
         <Link
           component="button"
           variant="body2"
-          onClick={() => navigate(`/account/${accountId}/teams/${team.id}`)}
+          onClick={() => router.push(`/account/${accountId}/teams/${team.id}`)}
           sx={{
             fontWeight: "bold",
             textDecoration: "none",

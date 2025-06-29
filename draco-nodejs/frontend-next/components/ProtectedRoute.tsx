@@ -1,8 +1,9 @@
-import React, { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+"use client";
+import React, { ReactNode, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
-import { CircularProgress, Box, Typography, Alert } from '@mui/material';
+import { CircularProgress, Box, Alert } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -19,68 +20,62 @@ interface ProtectedRouteProps {
   showLoading?: boolean;
 }
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAuth = true,
   requiredRole,
   requiredPermission,
   context,
   fallbackPath = '/login',
-  showLoading = true
+  showLoading = true,
 }) => {
   const { user, token, loading: authLoading } = useAuth();
   const { hasRole, hasPermission, loading: roleLoading } = useRole();
-  const location = useLocation();
+  const router = useRouter();
+
+  const shouldRedirect = requireAuth && (!token || !user);
+
+  useEffect(() => {
+    if (shouldRedirect) {
+      router.replace(fallbackPath);
+    }
+  }, [shouldRedirect, router, fallbackPath]);
 
   // Show loading spinner while checking authentication and roles
-  if (showLoading && (authLoading || roleLoading)) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+  if (authLoading || roleLoading) {
+    return showLoading ? (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
         <CircularProgress />
       </Box>
-    );
+    ) : null;
   }
 
-  // Check if authentication is required and user is not authenticated
-  if (requireAuth && (!token || !user)) {
-    return <Navigate to={fallbackPath} state={{ from: location }} replace />;
+  if (shouldRedirect) {
+    return null;
   }
 
-  // Check if specific role is required
+  // Check for required role
   if (requiredRole && !hasRole(requiredRole, context)) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <Alert severity="error" sx={{ maxWidth: 400 }}>
-          <Typography variant="h6" gutterBottom>
-            Access Denied
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            You&apos;re not authorized to view this page.
-          </Typography>
-        </Alert>
-      </Box>
+      <Alert severity="error" sx={{ mt: 2 }}>
+        You do not have the required role to access this page.
+      </Alert>
     );
   }
 
-  // Check if specific permission is required
+  // Check for required permission
   if (requiredPermission && !hasPermission(requiredPermission, context)) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <Alert severity="error" sx={{ maxWidth: 400 }}>
-          <Typography variant="h6" gutterBottom>
-            Access Denied
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            You&apos;re not authorized to view this page.
-          </Typography>
-        </Alert>
-      </Box>
+      <Alert severity="error" sx={{ mt: 2 }}>
+        You do not have the required permission to access this page.
+      </Alert>
     );
   }
 
-  // User has access, render the protected content
   return <>{children}</>;
 };
+
+export default ProtectedRoute;
 
 // Convenience components for common protection patterns
 export const RequireAuth: React.FC<{ children: ReactNode; fallbackPath?: string }> = ({ 

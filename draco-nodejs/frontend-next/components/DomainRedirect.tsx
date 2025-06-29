@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { 
   Typography, 
   CircularProgress,
@@ -8,7 +8,7 @@ import {
 
 const DomainRedirect: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const checkDomain = async () => {
@@ -35,25 +35,25 @@ const DomainRedirect: React.FC = () => {
           if (data.success) {
             console.log('DomainRedirect: Found account, redirecting to:', `/account/${data.data.account.id}/home`);
             // Redirect to the account home page
-            navigate(`/account/${data.data.account.id}/home`, { replace: true });
+            router.push(`/account/${data.data.account.id}/home`);
             return;
           }
         }
         
         console.log('DomainRedirect: No account found or API failed, redirecting to /accounts');
         // If not found or not success, redirect to /accounts
-        navigate('/accounts', { replace: true });
+        router.push('/accounts');
       } catch (err) {
         console.error('DomainRedirect: Error checking domain:', err);
         // On error, redirect to /accounts
-        navigate('/accounts', { replace: true });
+        router.push('/accounts');
       } finally {
         setLoading(false);
       }
     };
 
     checkDomain();
-  }, [navigate]);
+  }, [router]);
 
   if (loading) {
     return (

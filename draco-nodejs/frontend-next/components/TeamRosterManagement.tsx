@@ -40,7 +40,7 @@ import {
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { isEmail } from 'validator';
@@ -167,13 +167,9 @@ interface TeamRosterData {
 }
 
 const TeamRosterManagement: React.FC = () => {
-  const { accountId, seasonId, teamSeasonId } = useParams<{
-    accountId: string;
-    seasonId: string;
-    teamSeasonId: string;
-  }>();
+  const { accountId, seasonId, teamSeasonId } = useParams();
   
-  const navigate = useNavigate();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1139,7 +1135,7 @@ const TeamRosterManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate('/seasons');
+            router.push('/seasons');
           }}
         >
           Seasons
@@ -1149,7 +1145,7 @@ const TeamRosterManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            navigate(`/seasons/${seasonId}/league-management`);
+            router.push(`/seasons/${seasonId}/league-management`);
           }}
         >
           {season?.name || 'Season'}
@@ -1162,7 +1158,7 @@ const TeamRosterManagement: React.FC = () => {
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+          <IconButton onClick={() => router.back()} sx={{ mr: 2 }}>
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
