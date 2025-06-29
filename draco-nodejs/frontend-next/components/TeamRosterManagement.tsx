@@ -47,8 +47,6 @@ import { isEmail } from 'validator';
 import { format } from 'date-fns';
 import { parseISO } from 'date-fns/parseISO';
 
-const API_BASE_URL = '';
-
 // US States and Territories for dropdown
 const US_STATES = [
   { value: 'AL', label: 'Alabama' },
