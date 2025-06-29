@@ -13,8 +13,6 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-const API_BASE_URL = '';
-
 interface PasswordResetProps {
   onResetSuccess?: () => void;
 }

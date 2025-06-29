@@ -7,8 +7,6 @@ import { Box, Typography, Alert, Breadcrumbs, Link } from '@mui/material';
 import { NavigateNext as NavigateNextIcon } from '@mui/icons-material';
 import axios from 'axios';
 
-const API_BASE_URL = '';
-
 interface Season {
   id: string;
   name: string;

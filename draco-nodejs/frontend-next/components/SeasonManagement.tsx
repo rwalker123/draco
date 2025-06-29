@@ -42,8 +42,6 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import axios from 'axios';
 
-const API_BASE_URL = '';
-
 interface Season {
   id: string;
   name: string;
