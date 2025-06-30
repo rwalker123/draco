@@ -1,3 +1,0 @@
-echo "🔍 Running pre-commit checks for frontend..."
-npx lint-staged
-echo "✅ Frontend pre-commit checks completed"

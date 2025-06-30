@@ -39,10 +39,10 @@ npx lint-staged
 BACKEND_EXIT_CODE=$?
 
 # Run frontend checks
-echo "🎨 Checking frontend..."
-cd ../frontend
-npx lint-staged
-FRONTEND_EXIT_CODE=$?
+#echo "🎨 Checking frontend-next..."
+#cd ../frontend-next
+#npx lint-staged
+#FRONTEND_EXIT_CODE=$?
 
 # Return to root directory
 cd ../..

@@ -41,13 +41,12 @@ npm init -y
 npm install express typescript @types/node @types/express
 npm install --save-dev ts-node nodemon
 
-# Initialize frontend
+# Initialize frontend-next
 cd ..
-npx create-react-app frontend --template typescript
-cd frontend
+npx create-next-app frontend-next --typescript
+cd frontend-next
 npm install @mui/material @emotion/react @emotion/styled
-npm install @reduxjs/toolkit react-redux
-npm install axios react-router-dom
+npm install axios
 ```
 
 #### 1.2 Database Migration
@@ -498,7 +497,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://user:pass@db:5432/draco
+      - DATABASE_URL=postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE>
     depends_on:
       - db
 
@@ -666,3 +665,12 @@ The new architecture will provide:
 - **Easier maintenance** and future enhancements
 
 This migration represents a significant investment in the application's future, positioning it for long-term success in a modern, cloud-native environment. 
+
+3. **Set up the frontend**
+   ```bash
+   cd ../frontend-next
+   npm install
+   
+   # Start development server
+   npm run dev
+   ``` 
