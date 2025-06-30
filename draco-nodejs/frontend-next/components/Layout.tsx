@@ -12,10 +12,8 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-  Link as MuiLink,
 } from "@mui/material";
 import {
-  SportsSoccer,
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
@@ -131,29 +129,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <MenuIcon />
               </IconButton>
             )}
-            <IconButton
-              size="large"
-              color="inherit"
-              aria-label="home"
-              sx={{ mr: 1 }}
+            <Box
               onClick={handleHomeClick}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                cursor: "pointer",
+                color: "inherit",
+                textDecoration: "none",
+                mr: 2,
+                '&:hover .account-name': { textDecoration: 'underline' },
+              }}
             >
-              <HomeIcon />
-            </IconButton>
-            <SportsSoccer sx={{ mr: 1 }} />
-            <Typography variant="h6" component="div">
-              <MuiLink
-                onClick={handleHomeClick}
-                sx={{
-                  color: "inherit",
-                  textDecoration: "none",
-                  cursor: "pointer",
-                  "&:hover": { textDecoration: "underline" },
-                }}
+              <HomeIcon sx={{ mr: 1 }} />
+              <Typography
+                variant="h6"
+                component="span"
+                className="account-name"
+                sx={{ fontWeight: 700, color: 'inherit' }}
               >
-                Draco Sports Manager
-              </MuiLink>
-            </Typography>
+                {currentAccount && typeof currentAccount.name === 'string'
+                  ? currentAccount.name
+                  : "No Account"}
+              </Typography>
+            </Box>
           </Box>
 
           {/* Center - Baseball menu (only for baseball accounts) */}
@@ -170,11 +169,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <Typography variant="body1" sx={{ mr: 2 }}>
                   Hello, {user.username || user.email}
                 </Typography>
-                {currentAccount && (
-                  <Typography variant="body2" sx={{ mr: 2 }}>
-                    Account: {typeof currentAccount.name === 'string' ? currentAccount.name : ''}
-                  </Typography>
-                )}
                 <Button color="inherit" onClick={handleLogout}>
                   Logout
                 </Button>
