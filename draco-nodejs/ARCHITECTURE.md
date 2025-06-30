@@ -102,7 +102,7 @@ draco-nodejs/
 │   ├── dist/               # Compiled JavaScript output
 │   ├── package.json        # Backend dependencies
 │   └── tsconfig.json       # TypeScript configuration
-├── frontend/                # Frontend application
+├── frontend-next/           # Frontend application
 │   ├── src/                # Source code
 │   │   ├── components/     # React components
 │   │   ├── pages/         # Page components
@@ -372,17 +372,17 @@ draco-nodejs/
 #### Environment Variables
 ```bash
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/draco
+DATABASE_URL=postgresql://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE>
 
 # JWT
-JWT_SECRET=your-jwt-secret
+JWT_SECRET=<REDACTED>
 JWT_EXPIRES_IN=24h
 
 # Email
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
+SMTP_USER=<REDACTED>
+SMTP_PASS=<REDACTED>
 
 # Application
 NODE_ENV=production
