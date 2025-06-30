@@ -1,1 +1,5 @@
-export default function Page() { return <div>account/[accountId]/seasons/[seasonId]/league-seasons page</div>; }
+import ProtectedLeagueSeasonManagement from '../../../../../../components/ProtectedLeagueSeasonManagement';
+
+export default function Page() {
+  return <ProtectedLeagueSeasonManagement />;
+}
