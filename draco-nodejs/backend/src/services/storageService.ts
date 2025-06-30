@@ -48,8 +48,7 @@ export class LocalStorageService implements StorageService {
       // Resize and optimize the image
       const resizedBuffer = await sharp(buffer)
         .resize(60, 60, {
-          fit: "contain",
-          background: { r: 255, g: 255, b: 255, alpha: 0 },
+          fit: "cover",
         })
         .png({ quality: 90 })
         .toBuffer();
@@ -130,8 +129,7 @@ export class S3StorageService implements StorageService {
       // Resize and optimize the image
       const resizedBuffer = await sharp(buffer)
         .resize(60, 60, {
-          fit: "contain",
-          background: { r: 255, g: 255, b: 255, alpha: 0 },
+          fit: "cover",
         })
         .png({ quality: 90 })
         .toBuffer();
