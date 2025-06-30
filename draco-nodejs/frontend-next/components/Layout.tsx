@@ -228,34 +228,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </MenuItem>
           )}
           {/* Account Admin Only */}
-          {hasRole("5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A") && (
-            <>
-              <MenuItem onClick={() => handleNavigation("/account-management")}> 
-                <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Account Management</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/management`)}>
-                <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Current Account</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/settings`)}>
-                <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Account Settings</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/seasons`)}>
-                <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Season Management</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/schedule`)}>
-                <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Schedule Management</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/teams`)}>
-                <ListItemIcon><GroupIcon fontSize="small" /></ListItemIcon>
-                <ListItemText>Teams</ListItemText>
-              </MenuItem>
-            </>
-          )}
+          {hasRole("5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A") && [
+            <MenuItem onClick={() => handleNavigation("/account-management")} key="account-management"> 
+              <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Account Management</ListItemText>
+            </MenuItem>,
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/management`)} key="current-account">
+              <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Current Account</ListItemText>
+            </MenuItem>,
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/settings`)} key="account-settings">
+              <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Account Settings</ListItemText>
+            </MenuItem>,
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/seasons`)} key="season-management">
+              <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Season Management</ListItemText>
+            </MenuItem>,
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/schedule`)} key="schedule-management">
+              <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Schedule Management</ListItemText>
+            </MenuItem>,
+            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/teams`)} key="teams">
+              <ListItemIcon><GroupIcon fontSize="small" /></ListItemIcon>
+              <ListItemText>Teams</ListItemText>
+            </MenuItem>,
+          ]}
           {/* League Admin Only */}
           {hasRole("672DDF06-21AC-4D7C-B025-9319CC69281A") && (
             <MenuItem onClick={() => handleNavigation("/league-management")}> 
