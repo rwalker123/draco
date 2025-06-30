@@ -219,9 +219,9 @@ resource "aws_lambda_permission" "apigw" {
   source_arn    = "${aws_api_gateway_rest_api.draco.execution_arn}/*/*"
 }
 
-# S3 Bucket for Frontend
-resource "aws_s3_bucket" "frontend" {
-  bucket = "draco-frontend-${var.environment}-${random_string.bucket_suffix.result}"
+# S3 Bucket for Frontend-Next
+resource "aws_s3_bucket" "frontend_next" {
+  bucket = "draco-frontend-next-${var.environment}-${random_string.bucket_suffix.result}"
 }
 
 resource "random_string" "bucket_suffix" {
@@ -230,8 +230,8 @@ resource "random_string" "bucket_suffix" {
   upper   = false
 }
 
-resource "aws_s3_bucket_public_access_block" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+resource "aws_s3_bucket_public_access_block" "frontend_next" {
+  bucket = aws_s3_bucket.frontend_next.id
   
   block_public_acls       = true
   block_public_policy     = true
@@ -239,8 +239,8 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_policy" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
+resource "aws_s3_bucket_policy" "frontend_next" {
+  bucket = aws_s3_bucket.frontend_next.id
   
   policy = jsonencode({
     Version = "2012-10-17"
@@ -250,7 +250,7 @@ resource "aws_s3_bucket_policy" "frontend" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.frontend.arn}/*"
+        Resource  = "${aws_s3_bucket.frontend_next.arn}/*"
         Condition = {
           StringEquals = {
             "aws:PrincipalOrgID" = data.aws_organizations_organization.current.id
@@ -262,13 +262,13 @@ resource "aws_s3_bucket_policy" "frontend" {
 }
 
 # CloudFront Distribution
-resource "aws_cloudfront_distribution" "frontend" {
+resource "aws_cloudfront_distribution" "frontend_next" {
   origin {
-    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.frontend.bucket}"
+    domain_name = aws_s3_bucket.frontend_next.bucket_regional_domain_name
+    origin_id   = "S3-${aws_s3_bucket.frontend_next.bucket}"
     
     s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.frontend.cloudfront_access_identity_path
+      origin_access_identity = aws_cloudfront_origin_access_identity.frontend_next.cloudfront_access_identity_path
     }
   }
   
@@ -281,7 +281,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.bucket}"
+    target_origin_id = "S3-${aws_s3_bucket.frontend_next.bucket}"
     
     forwarded_values {
       query_string = false
@@ -301,7 +301,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     path_pattern     = "/static/*"
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend.bucket}"
+    target_origin_id = "S3-${aws_s3_bucket.frontend_next.bucket}"
     
     forwarded_values {
       query_string = false
@@ -366,7 +366,7 @@ resource "aws_cloudfront_distribution" "frontend" {
   }
 }
 
-resource "aws_cloudfront_origin_access_identity" "frontend" {
+resource "aws_cloudfront_origin_access_identity" "frontend_next" {
   comment = "OAI for Draco frontend"
 }
 
@@ -424,8 +424,8 @@ resource "aws_route53_record" "draco" {
   type    = "A"
   
   alias {
-    name                   = aws_cloudfront_distribution.frontend.domain_name
-    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    name                   = aws_cloudfront_distribution.frontend_next.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend_next.hosted_zone_id
     evaluate_target_health = false
   }
 }
@@ -443,12 +443,12 @@ output "api_gateway_url" {
 
 output "cloudfront_url" {
   description = "The URL of the CloudFront distribution"
-  value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+  value       = "https://${aws_cloudfront_distribution.frontend_next.domain_name}"
 }
 
 output "s3_bucket_name" {
   description = "The name of the S3 bucket for frontend"
-  value       = aws_s3_bucket.frontend.bucket
+  value       = aws_s3_bucket.frontend_next.bucket
 }
 
 output "database_endpoint" {
