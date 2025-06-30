@@ -1,1 +1,5 @@
-export default function Page() { return <div>account-management page</div>; }
+import AccountManagement from '../../components/AccountManagement';
+
+export default function Page() {
+  return <AccountManagement />;
+}
