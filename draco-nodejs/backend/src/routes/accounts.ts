@@ -9,11 +9,33 @@ import { PrismaClient } from "@prisma/client";
 import { isEmail } from "validator";
 import validator from "validator";
 import { isValidAccountUrl, normalizeUrl } from "../utils/validation";
+import { generateLogoPath } from "../config/logo";
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
+
+// Helper to generate logo URL for a team
+function getLogoUrl(
+  accountId: string | number,
+  teamId: string | number,
+): string {
+  if (process.env.STORAGE_PROVIDER === "s3") {
+    // S3 public URL (adjust as needed for your S3 setup)
+    const bucket = process.env.S3_BUCKET || "draco-team-logos";
+    const region = process.env.S3_REGION || "us-east-1";
+    return `https://${bucket}.s3.${region}.amazonaws.com/team-logos/${teamId}-logo.png`;
+  } else {
+    // Local storage
+    console.log("Generating logo URL for account:", accountId, "team:", teamId);
+    console.log(
+      "generateLogoPath:",
+      generateLogoPath(accountId.toString(), teamId.toString()),
+    );
+    return `/${generateLogoPath(accountId.toString(), teamId.toString())}`;
+  }
+}
 
 /**
  * @swagger
@@ -2371,6 +2393,10 @@ router.get(
             id: teamId,
             name: team.teamsseason.name,
             leagueName: team.teamsseason.leagueseason.league.name,
+            logoUrl: getLogoUrl(
+              accountId.toString(),
+              team.teamsseason.teamid.toString(),
+            ),
             // TODO: Add more team data like record, standing, next game
           });
         }
@@ -2704,6 +2730,10 @@ router.post(
             youtubeUserId: newTeam.youtubeuserid,
             defaultVideo: newTeam.defaultvideo,
             autoPlayVideo: newTeam.autoplayvideo,
+            logoUrl: getLogoUrl(
+              newTeam.accountid.toString(),
+              newTeam.id.toString(),
+            ),
           },
         },
       });
@@ -2862,6 +2892,10 @@ router.post(
             youtubeUserId: newTeamSeason.teams.youtubeuserid,
             defaultVideo: newTeamSeason.teams.defaultvideo,
             autoPlayVideo: newTeamSeason.teams.autoplayvideo,
+            logoUrl: getLogoUrl(
+              accountId.toString(),
+              newTeamSeason.teamid.toString(),
+            ),
           },
           message: `Team "${teamName}" has been added to the league season`,
         },

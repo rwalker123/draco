@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: 'http://localhost:3001/api/:path*', // Proxy to backend
       },
+      {
+        source: '/uploads/:path*',
+        destination: 'http://localhost:3001/uploads/:path*', // Proxy to backend
+      },
     ];
   },
 };

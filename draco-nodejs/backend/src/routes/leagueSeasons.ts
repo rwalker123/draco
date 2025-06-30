@@ -1,11 +1,12 @@
 // LeagueSeason Management Routes for Draco Sports Manager
 // Handles league-season relationships, divisions, and teams within leagues
 
-import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import { PrismaClient } from '@prisma/client';
+import { Router, Request, Response, NextFunction } from "express";
+import { authenticateToken } from "../middleware/authMiddleware";
+import { RouteProtection } from "../middleware/routeProtection";
+import { RoleService } from "../services/roleService";
+import { PrismaClient } from "@prisma/client";
+import { getLogoUrl } from "../config/logo";
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -16,7 +17,8 @@ const routeProtection = new RouteProtection(roleService, prisma);
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
  * Get all leagues for a season with their divisions and teams
  */
-router.get('/', 
+router.get(
+  "/",
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
@@ -26,37 +28,37 @@ router.get('/',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
 
       const leagueSeasons = await prisma.leagueseason.findMany({
         where: {
-          seasonid: seasonId
+          seasonid: seasonId,
         },
         include: {
           league: {
             select: {
               id: true,
               name: true,
-              accountid: true
-            }
+              accountid: true,
+            },
           },
           divisionseason: {
             include: {
               divisiondefs: {
                 select: {
                   id: true,
-                  name: true
-                }
+                  name: true,
+                },
               },
               teamsseason: {
                 include: {
@@ -66,19 +68,19 @@ router.get('/',
                       webaddress: true,
                       youtubeuserid: true,
                       defaultvideo: true,
-                      autoplayvideo: true
-                    }
-                  }
-                }
-              }
+                      autoplayvideo: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
-              priority: 'asc'
-            }
+              priority: "asc",
+            },
           },
           teamsseason: {
             where: {
-              divisionseasonid: null // Teams not assigned to any division
+              divisionseasonid: null, // Teams not assigned to any division
             },
             include: {
               teams: {
@@ -87,17 +89,17 @@ router.get('/',
                   webaddress: true,
                   youtubeuserid: true,
                   defaultvideo: true,
-                  autoplayvideo: true
-                }
-              }
-            }
-          }
+                  autoplayvideo: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
           league: {
-            name: 'asc'
-          }
-        }
+            name: "asc",
+          },
+        },
       });
 
       res.json({
@@ -106,7 +108,7 @@ router.get('/',
           season: {
             id: season.id.toString(),
             name: season.name,
-            accountId: season.accountid.toString()
+            accountId: season.accountid.toString(),
           },
           leagueSeasons: leagueSeasons.map((ls: any) => ({
             id: ls.id.toString(),
@@ -125,8 +127,12 @@ router.get('/',
                 webAddress: ts.teams.webaddress,
                 youtubeUserId: ts.teams.youtubeuserid,
                 defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo
-              }))
+                autoPlayVideo: ts.teams.autoplayvideo,
+                logoUrl: getLogoUrl(
+                  season.accountid.toString(),
+                  ts.teamid.toString(),
+                ),
+              })),
             })),
             unassignedTeams: ls.teamsseason.map((ts: any) => ({
               id: ts.id.toString(),
@@ -135,26 +141,31 @@ router.get('/',
               webAddress: ts.teams.webaddress,
               youtubeUserId: ts.teams.youtubeuserid,
               defaultVideo: ts.teams.defaultvideo,
-              autoPlayVideo: ts.teams.autoplayvideo
-            }))
-          }))
-        }
+              autoPlayVideo: ts.teams.autoplayvideo,
+              logoUrl: getLogoUrl(
+                season.accountid.toString(),
+                ts.teamid.toString(),
+              ),
+            })),
+          })),
+        },
       });
     } catch (error) {
-      console.error('Error getting league seasons:', error);
+      console.error("Error getting league seasons:", error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId
  * Get specific league season with its divisions and teams
  */
-router.get('/:leagueSeasonId',
+router.get(
+  "/:leagueSeasonId",
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -167,14 +178,14 @@ router.get('/:leagueSeasonId',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -182,23 +193,23 @@ router.get('/:leagueSeasonId',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
+          seasonid: seasonId,
         },
         include: {
           league: {
             select: {
               id: true,
               name: true,
-              accountid: true
-            }
+              accountid: true,
+            },
           },
           divisionseason: {
             include: {
               divisiondefs: {
                 select: {
                   id: true,
-                  name: true
-                }
+                  name: true,
+                },
               },
               teamsseason: {
                 include: {
@@ -208,19 +219,19 @@ router.get('/:leagueSeasonId',
                       webaddress: true,
                       youtubeuserid: true,
                       defaultvideo: true,
-                      autoplayvideo: true
-                    }
-                  }
-                }
-              }
+                      autoplayvideo: true,
+                    },
+                  },
+                },
+              },
             },
             orderBy: {
-              priority: 'asc'
-            }
+              priority: "asc",
+            },
           },
           teamsseason: {
             where: {
-              divisionseasonid: null // Teams not assigned to any division
+              divisionseasonid: null, // Teams not assigned to any division
             },
             include: {
               teams: {
@@ -229,18 +240,18 @@ router.get('/:leagueSeasonId',
                   webaddress: true,
                   youtubeuserid: true,
                   defaultvideo: true,
-                  autoplayvideo: true
-                }
-              }
-            }
-          }
-        }
+                  autoplayvideo: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: 'League season not found'
+          message: "League season not found",
         });
         return;
       }
@@ -265,8 +276,12 @@ router.get('/:leagueSeasonId',
                 webAddress: ts.teams.webaddress,
                 youtubeUserId: ts.teams.youtubeuserid,
                 defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo
-              }))
+                autoPlayVideo: ts.teams.autoplayvideo,
+                logoUrl: getLogoUrl(
+                  season.accountid.toString(),
+                  ts.teamid.toString(),
+                ),
+              })),
             })),
             unassignedTeams: leagueSeason.teamsseason.map((ts: any) => ({
               id: ts.id.toString(),
@@ -275,26 +290,31 @@ router.get('/:leagueSeasonId',
               webAddress: ts.teams.webaddress,
               youtubeUserId: ts.teams.youtubeuserid,
               defaultVideo: ts.teams.defaultvideo,
-              autoPlayVideo: ts.teams.autoplayvideo
-            }))
-          }
-        }
+              autoPlayVideo: ts.teams.autoplayvideo,
+              logoUrl: getLogoUrl(
+                season.accountid.toString(),
+                ts.teamid.toString(),
+              ),
+            })),
+          },
+        },
       });
     } catch (error) {
-      console.error('Error getting league season:', error);
+      console.error("Error getting league season:", error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 /**
  * POST /api/accounts/:accountId/seasons/:seasonId/leagues
  * Add a league to a season
  */
-router.post('/',
+router.post(
+  "/",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -306,7 +326,7 @@ router.post('/',
       if (!leagueId) {
         res.status(400).json({
           success: false,
-          message: 'League ID is required'
+          message: "League ID is required",
         });
         return;
       }
@@ -315,14 +335,14 @@ router.post('/',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -331,14 +351,14 @@ router.post('/',
       const league = await prisma.league.findFirst({
         where: {
           id: BigInt(leagueId),
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!league) {
         res.status(404).json({
           success: false,
-          message: 'League not found'
+          message: "League not found",
         });
         return;
       }
@@ -347,14 +367,14 @@ router.post('/',
       const existingLeagueSeason = await prisma.leagueseason.findFirst({
         where: {
           seasonid: seasonId,
-          leagueid: BigInt(leagueId)
-        }
+          leagueid: BigInt(leagueId),
+        },
       });
 
       if (existingLeagueSeason) {
         res.status(409).json({
           success: false,
-          message: 'This league is already added to this season'
+          message: "This league is already added to this season",
         });
         return;
       }
@@ -363,20 +383,20 @@ router.post('/',
       const newLeagueSeason = await prisma.leagueseason.create({
         data: {
           seasonid: seasonId,
-          leagueid: BigInt(leagueId)
-        }
+          leagueid: BigInt(leagueId),
+        },
       });
 
       // Get the league details separately
       const leagueDetails = await prisma.league.findUnique({
         where: {
-          id: BigInt(leagueId)
+          id: BigInt(leagueId),
         },
         select: {
           id: true,
           name: true,
-          accountid: true
-        }
+          accountid: true,
+        },
       });
 
       res.status(201).json({
@@ -388,36 +408,37 @@ router.post('/',
             seasonName: season.name,
             leagueId: newLeagueSeason.leagueid.toString(),
             leagueName: leagueDetails!.name,
-            accountId: leagueDetails!.accountid.toString()
+            accountId: leagueDetails!.accountid.toString(),
           },
-          message: `League "${leagueDetails!.name}" has been added to season "${season.name}"`
-        }
+          message: `League "${leagueDetails!.name}" has been added to season "${season.name}"`,
+        },
       });
     } catch (error: any) {
-      console.error('Error adding league to season:', error);
-      
+      console.error("Error adding league to season:", error);
+
       // Check if it's a unique constraint violation
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         res.status(409).json({
           success: false,
-          message: 'This league is already added to this season'
+          message: "This league is already added to this season",
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 /**
  * DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId
  * Remove a league from a season
  */
-router.delete('/:leagueSeasonId',
+router.delete(
+  "/:leagueSeasonId",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -430,14 +451,14 @@ router.delete('/:leagueSeasonId',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -446,23 +467,23 @@ router.delete('/:leagueSeasonId',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
+          seasonid: seasonId,
         },
         include: {
           league: {
             select: {
               id: true,
               name: true,
-              accountid: true
-            }
-          }
-        }
+              accountid: true,
+            },
+          },
+        },
       });
 
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: 'League season not found'
+          message: "League season not found",
         });
         return;
       }
@@ -471,7 +492,7 @@ router.delete('/:leagueSeasonId',
       if (leagueSeason.league.accountid !== accountId) {
         res.status(403).json({
           success: false,
-          message: 'Access denied'
+          message: "Access denied",
         });
         return;
       }
@@ -479,7 +500,7 @@ router.delete('/:leagueSeasonId',
       // Check if there are any related records that would prevent deletion
       const hasRelatedData = await prisma.leagueseason.findFirst({
         where: {
-          id: leagueSeasonId
+          id: leagueSeasonId,
         },
         include: {
           _count: {
@@ -490,24 +511,26 @@ router.delete('/:leagueSeasonId',
               leagueevents: true,
               leagueschedule: true,
               playoffsetup: true,
-              teamsseason: true
-            }
-          }
-        }
+              teamsseason: true,
+            },
+          },
+        },
       });
 
-      if (hasRelatedData && (
-        hasRelatedData._count.divisionseason > 0 ||
-        hasRelatedData._count.gameejections > 0 ||
-        hasRelatedData._count.golfmatch > 0 ||
-        hasRelatedData._count.leagueevents > 0 ||
-        hasRelatedData._count.leagueschedule > 0 ||
-        hasRelatedData._count.playoffsetup > 0 ||
-        hasRelatedData._count.teamsseason > 0
-      )) {
+      if (
+        hasRelatedData &&
+        (hasRelatedData._count.divisionseason > 0 ||
+          hasRelatedData._count.gameejections > 0 ||
+          hasRelatedData._count.golfmatch > 0 ||
+          hasRelatedData._count.leagueevents > 0 ||
+          hasRelatedData._count.leagueschedule > 0 ||
+          hasRelatedData._count.playoffsetup > 0 ||
+          hasRelatedData._count.teamsseason > 0)
+      ) {
         res.status(400).json({
           success: false,
-          message: 'Cannot remove league from season because it has related data (divisions, games, teams, etc.). Remove related data first.'
+          message:
+            "Cannot remove league from season because it has related data (divisions, games, teams, etc.). Remove related data first.",
         });
         return;
       }
@@ -515,34 +538,35 @@ router.delete('/:leagueSeasonId',
       // Remove the league from the season
       await prisma.leagueseason.delete({
         where: {
-          id: leagueSeasonId
-        }
+          id: leagueSeasonId,
+        },
       });
 
       res.json({
         success: true,
         data: {
-          message: `League "${leagueSeason.league.name}" has been removed from season "${season.name}"`
-        }
+          message: `League "${leagueSeason.league.name}" has been removed from season "${season.name}"`,
+        },
       });
     } catch (error: any) {
-      console.error('Error removing league from season:', error);
-      
+      console.error("Error removing league from season:", error);
+
       // Check if it's a foreign key constraint error
-      if (error.code === 'P2003') {
+      if (error.code === "P2003") {
         res.status(400).json({
           success: false,
-          message: 'Cannot remove league from season because it has related data. Remove related data first.'
+          message:
+            "Cannot remove league from season because it has related data. Remove related data first.",
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 // Division Management Routes
@@ -551,7 +575,8 @@ router.delete('/:leagueSeasonId',
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions
  * Get all divisions for a league season
  */
-router.get('/:leagueSeasonId/divisions',
+router.get(
+  "/:leagueSeasonId/divisions",
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -564,14 +589,14 @@ router.get('/:leagueSeasonId/divisions',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -580,28 +605,28 @@ router.get('/:leagueSeasonId/divisions',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
-        }
+          seasonid: seasonId,
+        },
       });
 
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: 'League season not found'
+          message: "League season not found",
         });
         return;
       }
 
       const divisions = await prisma.divisionseason.findMany({
         where: {
-          leagueseasonid: leagueSeasonId
+          leagueseasonid: leagueSeasonId,
         },
         include: {
           divisiondefs: {
             select: {
               id: true,
-              name: true
-            }
+              name: true,
+            },
           },
           teamsseason: {
             include: {
@@ -611,15 +636,15 @@ router.get('/:leagueSeasonId/divisions',
                   webaddress: true,
                   youtubeuserid: true,
                   defaultvideo: true,
-                  autoplayvideo: true
-                }
-              }
-            }
-          }
+                  autoplayvideo: true,
+                },
+              },
+            },
+          },
         },
         orderBy: {
-          priority: 'asc'
-        }
+          priority: "asc",
+        },
       });
 
       res.json({
@@ -637,23 +662,24 @@ router.get('/:leagueSeasonId/divisions',
               webAddress: ts.teams.webaddress,
               youtubeUserId: ts.teams.youtubeuserid,
               defaultVideo: ts.teams.defaultvideo,
-              autoPlayVideo: ts.teams.autoplayvideo
-            }))
-          }))
-        }
+              autoPlayVideo: ts.teams.autoplayvideo,
+            })),
+          })),
+        },
       });
     } catch (error) {
-      console.error('Error getting divisions:', error);
+      console.error("Error getting divisions:", error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 // Get all games for a specific league season
-router.get('/:leagueSeasonId/games',
+router.get(
+  "/:leagueSeasonId/games",
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { seasonId, leagueSeasonId } = req.params;
@@ -661,20 +687,20 @@ router.get('/:leagueSeasonId/games',
 
       // Build where clause
       const where: any = {
-        leagueid: BigInt(leagueSeasonId)
+        leagueid: BigInt(leagueSeasonId),
       };
 
       if (startDate && endDate) {
         where.gamedate = {
           gte: new Date(startDate as string),
-          lte: new Date(endDate as string)
+          lte: new Date(endDate as string),
         };
       }
 
       if (teamId) {
         where.OR = [
           { hteamid: BigInt(teamId as string) },
-          { vteamid: BigInt(teamId as string) }
+          { vteamid: BigInt(teamId as string) },
         ];
       }
 
@@ -685,35 +711,38 @@ router.get('/:leagueSeasonId/games',
           leagueseason: {
             include: {
               league: true,
-              season: true
-            }
-          }
+              season: true,
+            },
+          },
         },
         orderBy: {
-          gamedate: 'asc'
-        }
+          gamedate: "asc",
+        },
       });
 
       // Helper function to get team names
-      const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
+      const getTeamNames = async (
+        homeTeamId: bigint,
+        visitorTeamId: bigint,
+      ) => {
         const teams = await prisma.teamsseason.findMany({
           where: {
             id: {
-              in: [homeTeamId, visitorTeamId]
-            }
+              in: [homeTeamId, visitorTeamId],
+            },
           },
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         });
 
-        const homeTeam = teams.find(t => t.id === homeTeamId);
-        const visitorTeam = teams.find(t => t.id === visitorTeamId);
+        const homeTeam = teams.find((t) => t.id === homeTeamId);
+        const visitorTeam = teams.find((t) => t.id === visitorTeamId);
 
         return {
           homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
-          visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`
+          visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`,
         };
       };
 
@@ -732,14 +761,16 @@ router.get('/:leagueSeasonId/games',
           visitorScore: game.vscore,
           comment: game.comment,
           fieldId: game.fieldid?.toString(),
-          field: game.availablefields ? {
-            id: game.availablefields.id.toString(),
-            name: game.availablefields.name,
-            shortName: game.availablefields.shortname,
-            address: game.availablefields.address,
-            city: game.availablefields.city,
-            state: game.availablefields.state
-          } : null,
+          field: game.availablefields
+            ? {
+                id: game.availablefields.id.toString(),
+                name: game.availablefields.name,
+                shortName: game.availablefields.shortname,
+                address: game.availablefields.address,
+                city: game.availablefields.city,
+                state: game.availablefields.state,
+              }
+            : null,
           gameStatus: game.gamestatus,
           gameType: game.gametype,
           umpire1: game.umpire1?.toString(),
@@ -748,33 +779,34 @@ router.get('/:leagueSeasonId/games',
           umpire4: game.umpire4?.toString(),
           league: {
             id: game.leagueseason.league.id.toString(),
-            name: game.leagueseason.league.name
+            name: game.leagueseason.league.name,
           },
           season: {
             id: game.leagueseason.season.id.toString(),
-            name: game.leagueseason.season.name
-          }
+            name: game.leagueseason.season.name,
+          },
         });
       }
 
       res.json({
         success: true,
         data: {
-          games: processedGames
-        }
+          games: processedGames,
+        },
       });
     } catch (error) {
-      console.error('Error fetching schedule:', error);
+      console.error("Error fetching schedule:", error);
       next(error);
     }
-  }
+  },
 );
 
 /**
  * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions
  * Add a division to a league season
  */
-router.post('/:leagueSeasonId/divisions',
+router.post(
+  "/:leagueSeasonId/divisions",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -787,7 +819,7 @@ router.post('/:leagueSeasonId/divisions',
       if (!divisionId) {
         res.status(400).json({
           success: false,
-          message: 'Division ID is required'
+          message: "Division ID is required",
         });
         return;
       }
@@ -796,14 +828,14 @@ router.post('/:leagueSeasonId/divisions',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -812,14 +844,14 @@ router.post('/:leagueSeasonId/divisions',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
-        }
+          seasonid: seasonId,
+        },
       });
 
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: 'League season not found'
+          message: "League season not found",
         });
         return;
       }
@@ -828,14 +860,14 @@ router.post('/:leagueSeasonId/divisions',
       const divisionDef = await prisma.divisiondefs.findFirst({
         where: {
           id: BigInt(divisionId),
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!divisionDef) {
         res.status(404).json({
           success: false,
-          message: 'Division not found'
+          message: "Division not found",
         });
         return;
       }
@@ -844,14 +876,14 @@ router.post('/:leagueSeasonId/divisions',
       const existingDivision = await prisma.divisionseason.findFirst({
         where: {
           leagueseasonid: leagueSeasonId,
-          divisionid: BigInt(divisionId)
-        }
+          divisionid: BigInt(divisionId),
+        },
       });
 
       if (existingDivision) {
         res.status(409).json({
           success: false,
-          message: 'This division is already added to this league season'
+          message: "This division is already added to this league season",
         });
         return;
       }
@@ -861,16 +893,16 @@ router.post('/:leagueSeasonId/divisions',
         data: {
           leagueseasonid: leagueSeasonId,
           divisionid: BigInt(divisionId),
-          priority: priority || 0
+          priority: priority || 0,
         },
         include: {
           divisiondefs: {
             select: {
               id: true,
-              name: true
-            }
-          }
-        }
+              name: true,
+            },
+          },
+        },
       });
 
       res.status(201).json({
@@ -881,36 +913,37 @@ router.post('/:leagueSeasonId/divisions',
             divisionId: newDivisionSeason.divisionid.toString(),
             divisionName: newDivisionSeason.divisiondefs.name,
             priority: newDivisionSeason.priority,
-            teams: []
+            teams: [],
           },
-          message: `Division "${newDivisionSeason.divisiondefs.name}" has been added to the league season`
-        }
+          message: `Division "${newDivisionSeason.divisiondefs.name}" has been added to the league season`,
+        },
       });
     } catch (error: any) {
-      console.error('Error adding division to league season:', error);
-      
+      console.error("Error adding division to league season:", error);
+
       // Check if it's a unique constraint violation
-      if (error.code === 'P2002') {
+      if (error.code === "P2002") {
         res.status(409).json({
           success: false,
-          message: 'This division is already added to this league season'
+          message: "This division is already added to this league season",
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 /**
  * DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions/:divisionSeasonId
  * Remove a division from a league season
  */
-router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
+router.delete(
+  "/:leagueSeasonId/divisions/:divisionSeasonId",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -924,14 +957,14 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!season) {
         res.status(404).json({
           success: false,
-          message: 'Season not found'
+          message: "Season not found",
         });
         return;
       }
@@ -940,14 +973,14 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
-        }
+          seasonid: seasonId,
+        },
       });
 
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: 'League season not found'
+          message: "League season not found",
         });
         return;
       }
@@ -956,23 +989,23 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       const divisionSeason = await prisma.divisionseason.findFirst({
         where: {
           id: divisionSeasonId,
-          leagueseasonid: leagueSeasonId
+          leagueseasonid: leagueSeasonId,
         },
         include: {
           divisiondefs: {
             select: {
               id: true,
               name: true,
-              accountid: true
-            }
-          }
-        }
+              accountid: true,
+            },
+          },
+        },
       });
 
       if (!divisionSeason) {
         res.status(404).json({
           success: false,
-          message: 'Division season not found'
+          message: "Division season not found",
         });
         return;
       }
@@ -981,7 +1014,7 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       if (divisionSeason.divisiondefs.accountid !== accountId) {
         res.status(403).json({
           success: false,
-          message: 'Access denied'
+          message: "Access denied",
         });
         return;
       }
@@ -989,14 +1022,15 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       // Check if there are any teams in this division
       const hasTeams = await prisma.teamsseason.findFirst({
         where: {
-          divisionseasonid: divisionSeasonId
-        }
+          divisionseasonid: divisionSeasonId,
+        },
       });
 
       if (hasTeams) {
         res.status(400).json({
           success: false,
-          message: 'Cannot remove division because it contains teams. Remove teams from division first.'
+          message:
+            "Cannot remove division because it contains teams. Remove teams from division first.",
         });
         return;
       }
@@ -1004,41 +1038,43 @@ router.delete('/:leagueSeasonId/divisions/:divisionSeasonId',
       // Remove the division from the league season
       await prisma.divisionseason.delete({
         where: {
-          id: divisionSeasonId
-        }
+          id: divisionSeasonId,
+        },
       });
 
       res.json({
         success: true,
         data: {
-          message: `Division "${divisionSeason.divisiondefs.name}" has been removed from the league season`
-        }
+          message: `Division "${divisionSeason.divisiondefs.name}" has been removed from the league season`,
+        },
       });
     } catch (error: any) {
-      console.error('Error removing division from league season:', error);
-      
+      console.error("Error removing division from league season:", error);
+
       // Check if it's a foreign key constraint error
-      if (error.code === 'P2003') {
+      if (error.code === "P2003") {
         res.status(400).json({
           success: false,
-          message: 'Cannot remove division because it has related data. Remove related data first.'
+          message:
+            "Cannot remove division because it has related data. Remove related data first.",
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: "Internal server error",
       });
     }
-  }
+  },
 );
 
 /**
  * PUT /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams/:teamSeasonId/assign-division
  * Assign a team to a division within a league season
  */
-router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
+router.put(
+  "/:leagueSeasonId/teams/:teamSeasonId/assign-division",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -1052,7 +1088,7 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       if (!divisionSeasonId) {
         res.status(400).json({
           success: false,
-          message: 'DivisionSeasonId is required'
+          message: "DivisionSeasonId is required",
         });
         return;
       }
@@ -1061,11 +1097,11 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
       if (!season) {
-        res.status(404).json({ success: false, message: 'Season not found' });
+        res.status(404).json({ success: false, message: "Season not found" });
         return;
       }
 
@@ -1073,11 +1109,13 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
-        }
+          seasonid: seasonId,
+        },
       });
       if (!leagueSeason) {
-        res.status(404).json({ success: false, message: 'League season not found' });
+        res
+          .status(404)
+          .json({ success: false, message: "League season not found" });
         return;
       }
 
@@ -1085,11 +1123,13 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       const divisionSeason = await prisma.divisionseason.findFirst({
         where: {
           id: BigInt(divisionSeasonId),
-          leagueseasonid: leagueSeasonId
-        }
+          leagueseasonid: leagueSeasonId,
+        },
       });
       if (!divisionSeason) {
-        res.status(404).json({ success: false, message: 'Division season not found' });
+        res
+          .status(404)
+          .json({ success: false, message: "Division season not found" });
         return;
       }
 
@@ -1097,27 +1137,30 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       const teamSeason = await prisma.teamsseason.findFirst({
         where: {
           id: teamSeasonId,
-          leagueseasonid: leagueSeasonId
+          leagueseasonid: leagueSeasonId,
         },
         include: {
           teams: true,
           divisionseason: {
             include: {
-              divisiondefs: true
-            }
-          }
-        }
+              divisiondefs: true,
+            },
+          },
+        },
       });
       if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
+        res
+          .status(404)
+          .json({ success: false, message: "Team season not found" });
         return;
       }
 
       // Check if the team is currently assigned to a division
       if (teamSeason.divisionseasonid) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Team is already assigned to a division. Remove from current division first.' 
+        res.status(400).json({
+          success: false,
+          message:
+            "Team is already assigned to a division. Remove from current division first.",
         });
         return;
       }
@@ -1125,27 +1168,30 @@ router.put('/:leagueSeasonId/teams/:teamSeasonId/assign-division',
       // Update the team season to assign it to the division
       await prisma.teamsseason.update({
         where: { id: teamSeasonId },
-        data: { divisionseasonid: BigInt(divisionSeasonId) }
+        data: { divisionseasonid: BigInt(divisionSeasonId) },
       });
 
       res.json({
         success: true,
         data: {
-          message: 'Team assigned to division successfully'
-        }
+          message: "Team assigned to division successfully",
+        },
       });
     } catch (error) {
-      console.error('Error assigning team to division:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
+      console.error("Error assigning team to division:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
     }
-  }
+  },
 );
 
 /**
  * DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/teams/:teamSeasonId/remove-from-division
  * Remove a team from its current division (make it unassigned)
  */
-router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
+router.delete(
+  "/:leagueSeasonId/teams/:teamSeasonId/remove-from-division",
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -1159,11 +1205,11 @@ router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
       const season = await prisma.season.findFirst({
         where: {
           id: seasonId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
       if (!season) {
-        res.status(404).json({ success: false, message: 'Season not found' });
+        res.status(404).json({ success: false, message: "Season not found" });
         return;
       }
 
@@ -1171,11 +1217,13 @@ router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
       const leagueSeason = await prisma.leagueseason.findFirst({
         where: {
           id: leagueSeasonId,
-          seasonid: seasonId
-        }
+          seasonid: seasonId,
+        },
       });
       if (!leagueSeason) {
-        res.status(404).json({ success: false, message: 'League season not found' });
+        res
+          .status(404)
+          .json({ success: false, message: "League season not found" });
         return;
       }
 
@@ -1183,27 +1231,29 @@ router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
       const teamSeason = await prisma.teamsseason.findFirst({
         where: {
           id: teamSeasonId,
-          leagueseasonid: leagueSeasonId
+          leagueseasonid: leagueSeasonId,
         },
         include: {
           teams: true,
           divisionseason: {
             include: {
-              divisiondefs: true
-            }
-          }
-        }
+              divisiondefs: true,
+            },
+          },
+        },
       });
       if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
+        res
+          .status(404)
+          .json({ success: false, message: "Team season not found" });
         return;
       }
 
       // Check if the team is currently assigned to a division
       if (!teamSeason.divisionseasonid) {
-        res.status(400).json({ 
-          success: false, 
-          message: 'Team is not currently assigned to any division' 
+        res.status(400).json({
+          success: false,
+          message: "Team is not currently assigned to any division",
         });
         return;
       }
@@ -1211,20 +1261,22 @@ router.delete('/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
       // Update the team season to remove it from the division
       await prisma.teamsseason.update({
         where: { id: teamSeasonId },
-        data: { divisionseasonid: null }
+        data: { divisionseasonid: null },
       });
 
       res.json({
         success: true,
         data: {
-          message: `Team "${teamSeason.name}" has been removed from division "${teamSeason.divisionseason?.divisiondefs.name || 'Unknown Division'}"`
-        }
+          message: `Team "${teamSeason.name}" has been removed from division "${teamSeason.divisionseason?.divisiondefs.name || "Unknown Division"}"`,
+        },
       });
     } catch (error) {
-      console.error('Error removing team from division:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
+      console.error("Error removing team from division:", error);
+      res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
     }
-  }
+  },
 );
 
 export default router;
