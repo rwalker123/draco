@@ -1,1 +1,5 @@
-export default function Page() { return <div>account/[accountId]/seasons page</div>; }
+import SeasonManagement from '../../../../components/SeasonManagement';
+
+export default function Page() {
+  return <SeasonManagement />;
+}
