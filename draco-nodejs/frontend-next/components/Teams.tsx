@@ -11,7 +11,6 @@ import {
   TextField,
   Alert,
   CircularProgress,
-  Avatar,
   IconButton,
   Link,
   Menu,
@@ -26,8 +25,9 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, validateLogoFile } from "../config/teams";
+import { getLogoSize, validateLogoFile, getLogoUrl } from "../config/teams";
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import Image from "next/image";
 
 interface Team {
   id: string;
@@ -109,6 +109,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
+
+  // Track image load errors for team cards
+  const [logoLoadError, setLogoLoadError] = useState<{ [teamId: string]: boolean }>({});
+  // Track image load error for edit dialog preview
+  const [logoPreviewError, setLogoPreviewError] = useState(false);
 
   // Export roster to CSV function (placeholder)
   const handleExportRoster = async (leagueSeason: LeagueSeason) => {
@@ -413,7 +418,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       // Update local state directly instead of reloading all data
       if (teamsData) {
-        const cacheBuster = `?t=${Date.now()}`;
+        const cacheBuster = Date.now();
         setTeamsData((prevData) => {
           if (!prevData) return prevData;
 
@@ -427,7 +432,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                     ? {
                         ...team,
                         name: editingTeamName.trim(),
-                        logoUrl: team.logoUrl ? team.logoUrl.split('?')[0] + cacheBuster : undefined,
+                        logoUrl: getLogoUrl(accountId, team.teamId, seasonId, team.id, cacheBuster),
                       }
                     : team,
                 ),
@@ -437,7 +442,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                   ? {
                       ...team,
                       name: editingTeamName.trim(),
-                      logoUrl: team.logoUrl ? team.logoUrl.split('?')[0] + cacheBuster : undefined,
+                      logoUrl: getLogoUrl(accountId, team.teamId, seasonId, team.id, cacheBuster),
                     }
                   : team,
               ),
@@ -448,6 +453,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             ...prevData,
             leagueSeasons: updatedLeagueSeasons,
           };
+        });
+        // Reset logo load error for this team so the new image is shown
+        setLogoLoadError((prev) => {
+          const updated = { ...prev };
+          if (selectedTeam) delete updated[selectedTeam.id];
+          return updated;
         });
       }
 
@@ -492,19 +503,35 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         },
       }}
     >
-      <Avatar
-        src={team.logoUrl}
+      <Box
         sx={{
           width: LOGO_SIZE,
           height: LOGO_SIZE,
           bgcolor: "grey.300",
           flexShrink: 0,
+          borderRadius: 1,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
         }}
       >
-        <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
-          {team.name.charAt(0).toUpperCase()}
-        </Typography>
-      </Avatar>
+        {team.logoUrl && !logoLoadError[team.id] ? (
+          <Image
+            src={team.logoUrl}
+            alt={team.name + " logo"}
+            fill
+            style={{ objectFit: "cover" }}
+            unoptimized
+            onError={() => setLogoLoadError((prev) => ({ ...prev, [team.id]: true }))}
+          />
+        ) : (
+          <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
+            {team.name.charAt(0).toUpperCase()}
+          </Typography>
+        )}
+      </Box>
 
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Link
@@ -623,6 +650,11 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       </Paper>
     </Box>
   );
+
+  // Reset logoPreviewError when logoPreview changes
+  useEffect(() => {
+    setLogoPreviewError(false);
+  }, [logoPreview]);
 
   if (loading) {
     return (
@@ -757,20 +789,34 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
               >
-                <Avatar
-                  src={logoPreview || undefined}
+                <Box
                   sx={{
                     width: LOGO_SIZE,
                     height: LOGO_SIZE,
                     bgcolor: "grey.300",
+                    borderRadius: 1,
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
                   }}
                 >
-                  {!logoPreview && (
+                  {logoPreview && !logoPreviewError ? (
+                    <Image
+                      src={logoPreview}
+                      alt={editingTeamName + " logo preview"}
+                      fill
+                      style={{ objectFit: "cover" }}
+                      unoptimized
+                      onError={() => setLogoPreviewError(true)}
+                    />
+                  ) : (
                     <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
                       {editingTeamName.charAt(0).toUpperCase()}
                     </Typography>
                   )}
-                </Avatar>
+                </Box>
 
                 <Button
                   variant="outlined"
