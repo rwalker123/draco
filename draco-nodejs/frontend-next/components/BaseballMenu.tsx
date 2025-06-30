@@ -63,7 +63,22 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     {
       label: 'Teams',
       icon: <TeamsIcon />,
-      path: `/account/${accountId}/teams`,
+      onClick: async () => {
+        // Fetch current season for the account
+        try {
+          const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
+          if (response.ok) {
+            const data = await response.json();
+            const seasonId = data.data.season.id;
+            router.push(`/account/${accountId}/seasons/${seasonId}/teams`);
+          } else {
+            // fallback: go to account page or show error
+            router.push(`/account/${accountId}`);
+          }
+        } catch {
+          router.push(`/account/${accountId}`);
+        }
+      }
     },
   ];
 
@@ -93,7 +108,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
             <Button
               variant="text"
               startIcon={item.icon}
-              onClick={() => handleNavigation(item.path)}
+              onClick={item.onClick || (() => handleNavigation(item.path))}
               sx={{
                 color: 'white',
                 textTransform: 'none',
@@ -152,7 +167,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
             <Button
               variant="text"
               startIcon={item.icon}
-              onClick={() => handleNavigation(item.path)}
+              onClick={item.onClick || (() => handleNavigation(item.path))}
               sx={{
                 color: 'white',
                 textTransform: 'none',
@@ -228,7 +243,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           }}
         >
           {hiddenItems.map((item) => (
-            <MenuItem key={item.label} onClick={() => handleNavigation(item.path)}>
+            <MenuItem key={item.label} onClick={item.onClick || (() => handleNavigation(item.path))}>
               <ListItemIcon>
                 {item.icon}
               </ListItemIcon>
@@ -273,7 +288,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
         }}
       >
         {menuItems.map((item) => (
-          <MenuItem key={item.label} onClick={() => handleNavigation(item.path)}>
+          <MenuItem key={item.label} onClick={item.onClick || (() => handleNavigation(item.path))}>
             <ListItemIcon>
               {item.icon}
             </ListItemIcon>

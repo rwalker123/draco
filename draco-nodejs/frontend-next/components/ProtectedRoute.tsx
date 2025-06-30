@@ -3,7 +3,7 @@ import React, { ReactNode, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { CircularProgress, Box, Alert } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -26,20 +26,25 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   requiredPermission,
   context,
-  fallbackPath = '/login',
+  fallbackPath = '/accounts',
   showLoading = true,
 }) => {
   const { user, token, loading: authLoading } = useAuth();
   const { hasRole, hasPermission, loading: roleLoading } = useRole();
   const router = useRouter();
+  const pathname = usePathname();
 
   const shouldRedirect = requireAuth && (!token || !user);
 
   useEffect(() => {
     if (shouldRedirect) {
-      router.replace(fallbackPath);
+      if (fallbackPath === '/login') {
+        router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+      } else {
+        router.replace(fallbackPath);
+      }
     }
-  }, [shouldRedirect, router, fallbackPath]);
+  }, [shouldRedirect, router, fallbackPath, pathname]);
 
   // Show loading spinner while checking authentication and roles
   if (authLoading || roleLoading) {

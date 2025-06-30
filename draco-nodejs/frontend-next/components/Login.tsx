@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Paper, Alert, CircularProgress, Link } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
 const Login: React.FC = () => {
@@ -10,14 +10,14 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const router = useRouter();
   const { login, loading, error } = useAuth();
-
-  const from = '/dashboard';
+  const searchParams = useSearchParams();
+  const next = searchParams.get('next') || '/accounts';
 
   const handleLogin = async () => {
     const success = await login(email, password);
     if (success) {
       // Navigate back to the page they were trying to access, or dashboard as fallback
-      router.replace(from);
+      router.replace(next);
     }
     // error is handled by context
   };

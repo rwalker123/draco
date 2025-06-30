@@ -27,7 +27,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
 import { getLogoSize, getLogoUrl, validateLogoFile } from "../config/teams";
-import { useRouter } from 'next/navigation';
+import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 interface Team {
   id: string;
@@ -67,12 +67,13 @@ interface TeamsData {
 
 interface TeamsProps {
   accountId: string;
+  seasonId: string;
+  router?: AppRouterInstance;
 }
 
-const Teams: React.FC<TeamsProps> = ({ accountId }) => {
+const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const { user } = useAuth();
   const { hasRole, hasPermission } = useRole();
-  const router = useRouter();
 
   // Check if user has edit permissions for teams
   const canEditTeams =
@@ -301,27 +302,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
       setLoading(true);
       setError("");
 
-      // Get current season first
-      const currentSeasonResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/current`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-          },
-        },
-      );
-
-      if (!currentSeasonResponse.ok) {
-        throw new Error("Failed to load current season");
-      }
-
-      const currentSeasonData = await currentSeasonResponse.json();
-      const currentSeasonId = currentSeasonData.data.season.id;
-
-      // Load league seasons with divisions and teams
+      // Load league seasons with divisions and teams for the given season
       const leagueSeasonsResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -342,7 +325,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
     } finally {
       setLoading(false);
     }
-  }, [accountId]);
+  }, [accountId, seasonId]);
 
   useEffect(() => {
     loadTeamsData();
@@ -405,36 +388,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
         return;
       }
 
-      console.log("Token exists:", !!token);
-      console.log("Token length:", token.length);
-
-      // Get current season first
-      const currentSeasonResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/current`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      console.log(
-        "Current season response status:",
-        currentSeasonResponse.status,
-      );
-
-      if (!currentSeasonResponse.ok) {
-        if (currentSeasonResponse.status === 401) {
-          throw new Error("Authentication failed. Please log in again.");
-        }
-        const errorData = await currentSeasonResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to load current season");
-      }
-
-      const currentSeasonData = await currentSeasonResponse.json();
-      const currentSeasonId = currentSeasonData.data.season.id;
-
       // Prepare form data for file upload
       const formData = new FormData();
       formData.append("name", editingTeamName.trim());
@@ -445,7 +398,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
 
       // Update team information
       const updateResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${currentSeasonId}/teams/${selectedTeam.id}`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
         {
           method: "PUT",
           body: formData,
@@ -455,8 +408,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
           },
         },
       );
-
-      console.log("Update team response status:", updateResponse.status);
 
       if (!updateResponse.ok) {
         if (updateResponse.status === 401) {
@@ -578,7 +529,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId }) => {
         <Link
           component="button"
           variant="body2"
-          onClick={() => router.push(`/account/${accountId}/teams/${team.id}`)}
+          onClick={() => router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)}
           sx={{
             fontWeight: "bold",
             textDecoration: "none",

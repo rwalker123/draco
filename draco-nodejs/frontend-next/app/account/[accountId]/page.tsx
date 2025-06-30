@@ -1,5 +1,5 @@
 "use client";
-import Accounts from "../../components/Accounts";
+import Accounts from "../../../components/Accounts";
 
 export default function Page() {
   return <Accounts />;
