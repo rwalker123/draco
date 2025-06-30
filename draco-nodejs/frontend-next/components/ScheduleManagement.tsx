@@ -1,0 +1,2879 @@
+"use client";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  Typography,
+  Paper,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+  Chip,
+  Alert,
+  CircularProgress,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+} from "@mui/material";
+import {
+  Add as AddIcon,
+  ZoomIn as ZoomInIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+} from "@mui/icons-material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { format } from "date-fns";
+import { parseISO } from "date-fns/parseISO";
+import { startOfWeek } from "date-fns/startOfWeek";
+import { endOfWeek } from "date-fns/endOfWeek";
+import { eachDayOfInterval } from "date-fns/eachDayOfInterval";
+import { isSameDay } from "date-fns/isSameDay";
+import { startOfMonth } from "date-fns/startOfMonth";
+import { endOfMonth } from "date-fns/endOfMonth";
+import { startOfYear } from "date-fns/startOfYear";
+import { endOfYear } from "date-fns/endOfYear";
+import { useRole } from "../context/RoleContext";
+import { useAuth } from "../context/AuthContext";
+
+interface Game {
+  id: string;
+  gameDate: string;
+  homeTeamId: string;
+  visitorTeamId: string;
+  homeScore: number;
+  visitorScore: number;
+  comment: string;
+  fieldId?: string;
+  field?: {
+    id: string;
+    name: string;
+    shortName: string;
+    address: string;
+    city: string;
+    state: string;
+  };
+  gameStatus: number;
+  gameType: number;
+  umpire1?: string;
+  umpire2?: string;
+  umpire3?: string;
+  umpire4?: string;
+  league: {
+    id: string;
+    name: string;
+  };
+  season: {
+    id: string;
+    name: string;
+  };
+}
+
+interface Team {
+  id: string;
+  name: string;
+}
+
+interface Field {
+  id: string;
+  name: string;
+  shortName: string;
+  comment: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  directions: string;
+  rainoutNumber: string;
+  latitude: string;
+  longitude: string;
+}
+
+interface ScheduleManagementProps {
+  accountId: string;
+}
+
+const ScheduleManagement: React.FC<ScheduleManagementProps> = ({
+  accountId,
+}) => {
+  const { hasRole, hasPermission } = useRole();
+  const { user } = useAuth();
+
+  // Check if user has edit permissions for schedule management
+  // Only authenticated users can have edit permissions
+  const canEditSchedule =
+    user &&
+    (hasRole("Administrator") ||
+      hasRole("AccountAdmin", { accountId }) ||
+      hasRole("LeagueAdmin", { accountId }) ||
+      hasPermission("league.schedule.manage", { accountId }));
+
+  const [games, setGames] = useState<Game[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [fields, setFields] = useState<Field[]>([]);
+  const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([]);
+  const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // Dialog states
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedLeagueSeason, setSelectedLeagueSeason] = useState<string>("");
+
+  // Dialog error states
+  const [editDialogError, setEditDialogError] = useState<string | null>(null);
+  const [createDialogError, setCreateDialogError] = useState<string | null>(
+    null,
+  );
+
+  // Form states
+  const [gameDate, setGameDate] = useState<Date | null>(new Date());
+  const [gameTime, setGameTime] = useState<Date | null>(new Date());
+  const [homeTeamId, setHomeTeamId] = useState<string>("");
+  const [visitorTeamId, setVisitorTeamId] = useState<string>("");
+  const [fieldId, setFieldId] = useState<string>("");
+  const [comment, setComment] = useState<string>("");
+  const [gameType, setGameType] = useState<number>(0);
+
+  // View states
+  const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date()));
+  const [endDate, setEndDate] = useState<Date>(endOfWeek(new Date()));
+
+  // Filter states
+  const [filterType, setFilterType] = useState<
+    "day" | "week" | "month" | "year"
+  >("month");
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
+
+  // Loading states
+  const [loadingGames, setLoadingGames] = useState(false);
+  const [loadingStaticData, setLoadingStaticData] = useState(true);
+  const [loadingLeagueTeams, setLoadingLeagueTeams] = useState(false);
+
+  // Add a debounced navigation function to prevent excessive re-renders
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const navigateToWeek = React.useCallback(
+    (direction: "prev" | "next") => {
+      if (isNavigating) return; // Prevent multiple rapid clicks
+
+      setIsNavigating(true);
+
+      const newStartDate = new Date(startDate);
+      if (direction === "prev") {
+        newStartDate.setDate(newStartDate.getDate() - 7);
+      } else {
+        newStartDate.setDate(newStartDate.getDate() + 7);
+      }
+
+      const newStart = startOfWeek(newStartDate);
+      const newEnd = endOfWeek(newStartDate);
+
+      // Batch state updates to reduce re-renders
+      setStartDate(newStart);
+      setEndDate(newEnd);
+      setFilterDate(newStartDate);
+
+      // Reset navigation flag after a short delay
+      setTimeout(() => setIsNavigating(false), 100);
+    },
+    [startDate, isNavigating],
+  );
+
+  // Move loadStaticData and loadGamesData here, before the useEffect hooks that call them
+  const loadStaticData = useCallback(async () => {
+    try {
+      setLoadingStaticData(true);
+      setError("");
+
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error("Failed to load current season");
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      // Load static data in parallel
+      const [leaguesResponse, teamsResponse, fieldsResponse] =
+        await Promise.all([
+          fetch(
+            `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`,
+            {
+              headers: { "Content-Type": "application/json" },
+            },
+          ),
+          fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/teams`, {
+            headers: { "Content-Type": "application/json" },
+          }),
+          fetch(`/api/accounts/${accountId}/fields`, {
+            headers: { "Content-Type": "application/json" },
+          }),
+        ]);
+
+      // Process leagues for current season (may fail for unauthenticated users)
+      if (leaguesResponse.ok) {
+        const leaguesData = await leaguesResponse.json();
+        setLeagues(
+          leaguesData.data?.leagueSeasons?.map((ls: { id: string; leagueName: string }) => ({
+            id: ls.id,
+            name: ls.leagueName,
+          })) || [],
+        );
+      } else if (leaguesResponse.status === 401) {
+        // For unauthenticated users, set empty leagues array
+        setLeagues([]);
+      } else {
+        console.warn("Failed to load leagues:", leaguesResponse.status);
+        setLeagues([]);
+      }
+
+      // Process teams (may fail for unauthenticated users)
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json();
+        setTeams(teamsData.data.teams || []);
+      } else if (teamsResponse.status === 401) {
+        // For unauthenticated users, set empty teams array
+        setTeams([]);
+      } else {
+        console.warn("Failed to load teams:", teamsResponse.status);
+        setTeams([]);
+      }
+
+      // Process fields (should work for all users)
+      if (fieldsResponse.ok) {
+        const fieldsData = await fieldsResponse.json();
+        setFields(fieldsData.data.fields);
+      }
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load static data",
+      );
+    } finally {
+      setLoadingStaticData(false);
+    }
+  }, [accountId]);
+
+  const loadGamesData = useCallback(async () => {
+    try {
+      if (filterType !== "week" || !games.length) {
+        setLoadingGames(true);
+      }
+      setError("");
+
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error("Failed to load current season");
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      // Calculate date range based on filter type
+      let startDate: Date;
+      let endDate: Date;
+
+      switch (filterType) {
+        case "day":
+          startDate = new Date(filterDate);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(filterDate);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "week":
+          startDate = startOfWeek(filterDate);
+          endDate = endOfWeek(filterDate);
+          break;
+        case "month":
+          startDate = startOfMonth(filterDate);
+          endDate = endOfMonth(filterDate);
+          break;
+        case "year":
+          startDate = startOfYear(filterDate);
+          endDate = endOfYear(filterDate);
+          break;
+        default:
+          startDate = startOfMonth(filterDate);
+          endDate = endOfMonth(filterDate);
+      }
+
+      // Update view dates for calendar view
+      setStartDate(startDate);
+      setEndDate(endDate);
+
+      // Load games for the current season (across all leagues)
+      const gamesResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!gamesResponse.ok) {
+        throw new Error("Failed to load games");
+      }
+
+      const gamesData = await gamesResponse.json();
+      setGames(gamesData.data.games);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load games");
+    } finally {
+      setLoadingGames(false);
+    }
+  }, [accountId, filterType, filterDate, games.length]);
+
+  useEffect(() => {
+    loadStaticData();
+  }, [accountId, loadStaticData]);
+
+  useEffect(() => {
+    if (filterType && filterDate) {
+      loadGamesData();
+    }
+  }, [accountId, filterType, filterDate, loadGamesData]);
+
+  const loadLeagueTeams = useCallback(async (leagueSeasonId: string) => {
+    try {
+      setLoadingLeagueTeams(true);
+
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error("Failed to load current season");
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      const response = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load league teams");
+      }
+
+      const data = await response.json();
+
+      const allTeams: Team[] = [];
+
+      // Add teams from divisions
+      data.data.leagueSeason.divisions.forEach((division: { teams: Team[] }) => {
+        division.teams.forEach((team: Team) => {
+          allTeams.push({
+            id: team.id,
+            name: team.name,
+          });
+        });
+      });
+
+      // Add unassigned teams
+      data.data.leagueSeason.unassignedTeams.forEach((team: Team) => {
+        allTeams.push({
+          id: team.id,
+          name: team.name,
+        });
+      });
+
+      setLeagueTeams(allTeams);
+    } catch (err) {
+      console.error("Error loading league teams:", err);
+      setLeagueTeams([]);
+    } finally {
+      setLoadingLeagueTeams(false);
+    }
+  }, [accountId]);
+
+  const handleLeagueChange = (leagueSeasonId: string) => {
+    setSelectedLeagueSeason(leagueSeasonId);
+    setHomeTeamId("");
+    setVisitorTeamId("");
+
+    if (leagueSeasonId) {
+      loadLeagueTeams(leagueSeasonId);
+    } else {
+      setLeagueTeams([]);
+    }
+  };
+
+  const handleCreateGame = async () => {
+    try {
+      setCreateDialogError(null); // Clear any previous errors
+
+      if (
+        !gameDate ||
+        !gameTime ||
+        !homeTeamId ||
+        !visitorTeamId ||
+        !selectedLeagueSeason
+      ) {
+        setCreateDialogError("Please fill in all required fields");
+        return;
+      }
+
+      // Get current season first
+      const currentSeasonResponse = await fetch(
+        `/api/accounts/${accountId}/seasons/current`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!currentSeasonResponse.ok) {
+        throw new Error("Failed to load current season");
+      }
+
+      const currentSeasonData = await currentSeasonResponse.json();
+      const currentSeasonId = currentSeasonData.data.season.id;
+
+      // Combine date and time
+      const combinedDateTime = new Date(gameDate);
+      combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
+
+      const requestData = {
+        leagueSeasonId: selectedLeagueSeason,
+        gameDate: combinedDateTime.toISOString(),
+        homeTeamId,
+        visitorTeamId,
+        fieldId: fieldId || null,
+        comment,
+        gameType,
+      };
+
+      const response = await fetch(
+        `/api/accounts/${accountId}/seasons/${currentSeasonId}/games`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+          body: JSON.stringify(requestData),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Failed to create game (${response.status})`,
+        );
+      }
+
+      setSuccess("Game created successfully");
+      setCreateDialogOpen(false);
+      resetForm();
+      loadGamesData();
+    } catch (err) {
+      setCreateDialogError(
+        err instanceof Error ? err.message : "Failed to create game",
+      );
+    }
+  };
+
+  const handleUpdateGame = async () => {
+    try {
+      setEditDialogError(null); // Clear any previous errors
+
+      if (
+        !selectedGame ||
+        !gameDate ||
+        !gameTime ||
+        !homeTeamId ||
+        !visitorTeamId
+      ) {
+        setEditDialogError("Please fill in all required fields");
+        return;
+      }
+
+      // Combine date and time
+      const combinedDateTime = new Date(gameDate);
+      combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
+
+      const response = await fetch(
+        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+          body: JSON.stringify({
+            gameDate: combinedDateTime.toISOString(),
+            homeTeamId,
+            visitorTeamId,
+            fieldId: fieldId || null,
+            comment,
+            gameType,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update game");
+      }
+
+      setSuccess("Game updated successfully");
+      setEditDialogOpen(false);
+      resetForm();
+      loadGamesData();
+    } catch (err) {
+      setEditDialogError(
+        err instanceof Error ? err.message : "Failed to update game",
+      );
+    }
+  };
+
+  const handleDeleteGame = async () => {
+    try {
+      if (!selectedGame) return;
+
+      const token = localStorage.getItem("jwtToken");
+      if (!token) {
+        setError("Authentication token not found. Please log in again.");
+        setDeleteDialogOpen(false);
+        return;
+      }
+
+      const response = await fetch(
+        `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          setError("Authentication failed. Please log in again.");
+          setDeleteDialogOpen(false);
+          return;
+        }
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete game");
+      }
+
+      setSuccess("Game deleted successfully");
+      setDeleteDialogOpen(false);
+      setSelectedGame(null);
+      loadGamesData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete game");
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  const resetForm = () => {
+    setGameDate(new Date());
+    setGameTime(new Date());
+    setHomeTeamId("");
+    setVisitorTeamId("");
+    setFieldId("");
+    setComment("");
+    setGameType(0);
+    setSelectedGame(null);
+    setSelectedLeagueSeason("");
+    setLeagueTeams([]);
+  };
+
+  const openEditDialog = useCallback((game: Game) => {
+    console.log(
+      "openEditDialog - game.gameType:",
+      game.gameType,
+      typeof game.gameType,
+    );
+    setSelectedGame(game);
+    setGameDate(parseISO(game.gameDate));
+    setGameTime(parseISO(game.gameDate));
+    setHomeTeamId(game.homeTeamId);
+    setVisitorTeamId(game.visitorTeamId);
+    setFieldId(game.fieldId || "");
+    setComment(game.comment);
+    const gameTypeValue = game.gameType || 0;
+    console.log("Setting gameType to:", gameTypeValue);
+    setGameType(gameTypeValue);
+    setEditDialogError(null); // Clear any previous errors
+
+    // Load teams for the specific league of this game
+    if (game.league?.id) {
+      // Find the league season ID for this league
+      // The game.league.id is the actual league ID, we need to find the league season ID
+      const leagueSeason = leagues.find((l) => l.id === game.league.id);
+      if (leagueSeason) {
+        setSelectedLeagueSeason(leagueSeason.id);
+        loadLeagueTeams(leagueSeason.id);
+      } else {
+        // Try to find by league name as fallback
+        const leagueByName = leagues.find((l) => l.name === game.league.name);
+        if (leagueByName) {
+          setSelectedLeagueSeason(leagueByName.id);
+          loadLeagueTeams(leagueByName.id);
+        }
+      }
+    }
+
+    setEditDialogOpen(true);
+  }, [leagues, loadLeagueTeams]);
+
+  const openDeleteDialog = (game: Game) => {
+    setSelectedGame(game);
+    setDeleteDialogOpen(true);
+  };
+
+  const getGameStatusText = (status: number): string => {
+    switch (status) {
+      case 0:
+        return "Incomplete";
+      case 1:
+        return "Final";
+      case 2:
+        return "Rainout";
+      case 3:
+        return "Postponed";
+      case 4:
+        return "Forfeit";
+      case 5:
+        return "Did Not Report";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getGameStatusAbbreviation = (status: number): string => {
+    switch (status) {
+      case 0:
+        return "INC";
+      case 1:
+        return "FIN";
+      case 2:
+        return "R";
+      case 3:
+        return "PPD";
+      case 4:
+        return "Forfeit";
+      case 5:
+        return "DNR";
+      default:
+        return "UNK";
+    }
+  };
+
+  const getStatusDisplayInfo = useCallback((game: Game): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
+    if (game.gameStatus === 0 || game.gameStatus === 1) {
+      // Incomplete or Final - no status display
+      return { showOnVisitor: false, showOnHome: false, statusText: "" };
+    }
+
+    if (game.gameStatus === 4) {
+      // Forfeit - show "Forfeit" next to the team with lower score
+      const visitorScore = game.visitorScore || 0;
+      const homeScore = game.homeScore || 0;
+
+      if (visitorScore < homeScore) {
+        return {
+          showOnVisitor: true,
+          showOnHome: false,
+          statusText: "Forfeit",
+        };
+      } else if (homeScore < visitorScore) {
+        return {
+          showOnVisitor: false,
+          showOnHome: true,
+          statusText: "Forfeit",
+        };
+      } else {
+        // Equal scores (shouldn't happen for forfeit, but just in case)
+        return {
+          showOnVisitor: true,
+          showOnHome: false,
+          statusText: "Forfeit",
+        };
+      }
+    }
+
+    // All other statuses (Rainout, Postponed, Did Not Report) - show on visitor team only
+    return {
+      showOnVisitor: true,
+      showOnHome: false,
+      statusText: getGameStatusAbbreviation(game.gameStatus),
+    };
+  }, []);
+
+  const getGameStatusColor = useCallback((status: number): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+    switch (status) {
+      case 0:
+        return "default";
+      case 1:
+        return "success";
+      case 2:
+        return "primary";
+      case 3:
+        return "warning";
+      case 4:
+        return "error";
+      case 5:
+        return "error";
+      default:
+        return "default";
+    }
+  }, []);
+
+  const getTeamName = useCallback((teamId: string): string => {
+    if (!teams || teams.length === 0) {
+      return `Team ${teamId}`;
+    }
+    const team = teams.find((t) => t.id === teamId);
+    return team ? team.name : `Team ${teamId}`;
+  }, [teams]);
+
+  const getFieldName = useCallback((fieldId?: string): string => {
+    if (!fieldId) return "TBD";
+    const field = fields.find((f) => f.id === fieldId);
+    return field ? field.name : "Unknown Field";
+  }, [fields]);
+
+  const getGameTypeText = (gameType: number | string): string => {
+    console.log("getGameTypeText called with:", gameType, typeof gameType);
+    const gameTypeNum = Number(gameType);
+    console.log("Converted to number:", gameTypeNum);
+    switch (gameTypeNum) {
+      case 0:
+        return "Regular Season";
+      case 1:
+        return "Playoff";
+      case 2:
+        return "Exhibition";
+      default:
+        return `Unknown (${gameType})`;
+    }
+  };
+
+  const shouldShowStatusChip = (gameStatus: number): boolean => {
+    return gameStatus !== 0; // Don't show chip for incomplete games (status 0)
+  };
+
+  const renderWeekView = React.useCallback(() => {
+    const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return (
+      <Box
+        sx={{
+          border: "3px solid #1976d2",
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Month Header - Clickable to go to month view */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 2,
+            backgroundColor: "#1976d2",
+            color: "white",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#1565c0",
+            },
+          }}
+          onClick={() => {
+            setFilterType("month");
+            setFilterDate(filterDate);
+          }}
+          title={`View ${format(filterDate, "MMMM yyyy")} in month view`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+            {format(filterDate, "MMMM yyyy")}
+          </Typography>
+        </Box>
+
+        {/* Week Navigation Header */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            py: 1.5,
+            px: 2,
+            backgroundColor: "#f5f5f5",
+            borderBottom: "2px solid #1976d2",
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => navigateToWeek("prev")}
+            disabled={isNavigating}
+            sx={{ color: "#1976d2" }}
+            title="Previous week"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "#1976d2",
+              }}
+            >
+              {format(startDate, "MMM dd")} - {format(endDate, "MMM dd, yyyy")}
+            </Typography>
+
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                const todayStart = startOfWeek(today);
+                const todayEnd = endOfWeek(today);
+                setStartDate(todayStart);
+                setEndDate(todayEnd);
+                setFilterDate(today);
+              }}
+              sx={{
+                ml: 1,
+                color: "#1976d2",
+                borderColor: "#1976d2",
+                "&:hover": {
+                  backgroundColor: "#e3f2fd",
+                  borderColor: "#1565c0",
+                },
+              }}
+              title="Go to today's week"
+            >
+              Today
+            </Button>
+          </Box>
+
+          <IconButton
+            size="small"
+            onClick={() => navigateToWeek("next")}
+            disabled={isNavigating}
+            sx={{ color: "#1976d2" }}
+            title="Next week"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Week Header */}
+        <Box
+          sx={{
+            display: "flex",
+            borderBottom: "2px solid #1976d2",
+            backgroundColor: "#e3f2fd",
+          }}
+        >
+          {dayNames.map((dayName, index) => (
+            <Box
+              key={dayName}
+              sx={{
+                flex: 1,
+                textAlign: "center",
+                py: 1.5,
+                fontWeight: "bold",
+                backgroundColor: "#e3f2fd",
+                borderRight: index < 6 ? "2px solid #1976d2" : "none",
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ color: "#1976d2" }}>
+                {dayName}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Week Content */}
+        <Box
+          sx={{
+            display: "flex",
+            opacity: isNavigating ? 0.7 : 1,
+            transition: "opacity 0.2s ease-in-out",
+          }}
+        >
+          {weekDays.map((day, index) => {
+            const dayGames = games.filter(
+              (game) =>
+                game?.gameDate && isSameDay(parseISO(game.gameDate), day),
+            );
+
+            return (
+              <Box
+                key={day.toISOString()}
+                sx={{
+                  flex: 1,
+                  minHeight: "300px",
+                  borderRight: index < 6 ? "2px solid #1976d2" : "none",
+                  backgroundColor: "white",
+                  cursor: "pointer",
+                  "&:hover": {
+                    backgroundColor: "#f5f5f5",
+                  },
+                }}
+                onClick={() => {
+                  setFilterType("day");
+                  setFilterDate(day);
+                }}
+                title={`View ${format(day, "EEEE, MMMM d, yyyy")} in day view`}
+              >
+                {/* Day Header */}
+                <Box
+                  sx={{
+                    py: 1,
+                    px: 1,
+                    backgroundColor: "#f8f9fa",
+                    borderBottom: "1px solid #e0e0e0",
+                    textAlign: "center",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: "bold", color: "#1976d2" }}
+                  >
+                    {format(day, "d")}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "text.secondary" }}
+                  >
+                    {format(day, "MMM")}
+                  </Typography>
+                </Box>
+
+                {/* Games for this day */}
+                <Box
+                  sx={{ p: 1, height: "calc(100% - 60px)", overflow: "auto" }}
+                >
+                  {dayGames.length > 0 ? (
+                    dayGames.map((game) => (
+                      <Box
+                        key={game.id}
+                        sx={{
+                          mb: 1,
+                          p: 1,
+                          backgroundColor: "primary.light",
+                          borderRadius: 1,
+                          fontSize: "0.75rem",
+                          lineHeight: 1.2,
+                          cursor: "pointer",
+                          "&:hover": {
+                            backgroundColor: "primary.main",
+                            color: "white",
+                          },
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation(); // Prevent triggering day view
+                          openEditDialog(game);
+                        }}
+                      >
+                        {game.gameStatus === 1 ? (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ flex: 1 }}
+                              >
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ minWidth: "fit-content", ml: 1 }}
+                              >
+                                {game.visitorScore}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ flex: 1 }}
+                              >
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ minWidth: "fit-content", ml: 1 }}
+                              >
+                                {game.homeScore}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ fontWeight: "bold", flex: 1 }}
+                              >
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnVisitor && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    minWidth: "fit-content",
+                                    ml: 1,
+                                    color: "white",
+                                    backgroundColor:
+                                      getGameStatusColor(game.gameStatus) ===
+                                      "error"
+                                        ? "error.main"
+                                        : getGameStatusColor(
+                                              game.gameStatus,
+                                            ) === "warning"
+                                          ? "warning.main"
+                                          : "primary.main",
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: 0.5,
+                                  }}
+                                >
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ fontWeight: "bold", flex: 1 }}
+                              >
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnHome && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    minWidth: "fit-content",
+                                    ml: 1,
+                                    color: "white",
+                                    backgroundColor:
+                                      getGameStatusColor(game.gameStatus) ===
+                                      "error"
+                                        ? "error.main"
+                                        : getGameStatusColor(
+                                              game.gameStatus,
+                                            ) === "warning"
+                                          ? "warning.main"
+                                          : "primary.main",
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: 0.5,
+                                  }}
+                                >
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            {game.gameStatus === 0 && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "text.primary",
+                                  fontWeight: "medium",
+                                }}
+                              >
+                                {game.gameDate
+                                  ? format(parseISO(game.gameDate), "h:mm a")
+                                  : "TBD"}{" "}
+                                • {getFieldName(game.fieldId)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{ textAlign: "center", mt: 2 }}
+                    >
+                      No games
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+        </Box>
+      </Box>
+    );
+  }, [
+    startDate,
+    endDate,
+    filterDate,
+    isNavigating,
+    navigateToWeek,
+    games,
+    openEditDialog,
+    getTeamName,
+    getStatusDisplayInfo,
+    getGameStatusColor,
+    getFieldName,
+  ]);
+
+  const renderListView = () => {
+    return (
+      <List>
+        {games.map((game) => (
+          <ListItem
+            key={game.id}
+            divider
+            sx={{
+              cursor: canEditSchedule ? "pointer" : "default",
+              "&:hover": canEditSchedule
+                ? { backgroundColor: "action.hover" }
+                : {},
+            }}
+            onClick={canEditSchedule ? () => openEditDialog(game) : undefined}
+          >
+            <ListItemText
+              primary={
+                <Box>
+                  <Typography variant="h6">
+                    {getTeamName(game.visitorTeamId)} @{" "}
+                    {getTeamName(game.homeTeamId)}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {game.gameDate
+                      ? format(
+                          parseISO(game.gameDate),
+                          "EEEE, MMMM d, yyyy h:mm a",
+                        )
+                      : "TBD"}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {getFieldName(game.fieldId)}
+                  </Typography>
+                </Box>
+              }
+              secondary={
+                <Box sx={{ mt: 1 }}>
+                  {shouldShowStatusChip(game.gameStatus) && (
+                    <Chip
+                      label={getGameStatusText(game.gameStatus)}
+                      color={getGameStatusColor(game.gameStatus)}
+                      size="small"
+                    />
+                  )}
+                  {game.comment && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      {game.comment}
+                    </Typography>
+                  )}
+                </Box>
+              }
+            />
+          </ListItem>
+        ))}
+      </List>
+    );
+  };
+
+  const renderMonthCalendarView = () => {
+    // Get the first day of the month and the last day
+    const firstDayOfMonth = startOfMonth(filterDate);
+    const lastDayOfMonth = endOfMonth(filterDate);
+
+    // Get the first day of the week that contains the first day of the month
+    const firstDayOfWeek = startOfWeek(firstDayOfMonth);
+    // Get the last day of the week that contains the last day of the month
+    const lastDayOfWeek = endOfWeek(lastDayOfMonth);
+
+    // Generate all days for the calendar grid
+    const allDays = eachDayOfInterval({
+      start: firstDayOfWeek,
+      end: lastDayOfWeek,
+    });
+
+    // Group days into weeks
+    const weeks = [];
+    for (let i = 0; i < allDays.length; i += 7) {
+      weeks.push(allDays.slice(i, i + 7));
+    }
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    return (
+      <Box
+        sx={{
+          border: "3px solid #1976d2",
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Year Header */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 2,
+            backgroundColor: "#1976d2",
+            color: "white",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#1565c0",
+            },
+          }}
+          onClick={() => {
+            setFilterType("year");
+            setFilterDate(filterDate);
+          }}
+          title={`View all games for ${format(filterDate, "yyyy")}`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+            {format(filterDate, "yyyy")}
+          </Typography>
+        </Box>
+
+        {/* Month Header with Navigation */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            py: 1.5,
+            px: 2,
+            backgroundColor: "#f5f5f5",
+            borderBottom: "2px solid #1976d2",
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => {
+              const prevMonth = new Date(filterDate);
+              prevMonth.setMonth(prevMonth.getMonth() - 1);
+              setFilterDate(prevMonth);
+            }}
+            sx={{ color: "#1976d2" }}
+            title="Previous month"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "#1976d2",
+              }}
+            >
+              {format(filterDate, "MMMM yyyy")}
+            </Typography>
+
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                setFilterDate(today);
+              }}
+              sx={{
+                ml: 1,
+                color: "#1976d2",
+                borderColor: "#1976d2",
+                "&:hover": {
+                  backgroundColor: "#e3f2fd",
+                  borderColor: "#1565c0",
+                },
+              }}
+              title="Go to today's month"
+            >
+              Today
+            </Button>
+          </Box>
+
+          <IconButton
+            size="small"
+            onClick={() => {
+              const nextMonth = new Date(filterDate);
+              nextMonth.setMonth(nextMonth.getMonth() + 1);
+              setFilterDate(nextMonth);
+            }}
+            sx={{ color: "#1976d2" }}
+            title="Next month"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Calendar Header */}
+        <Box
+          sx={{
+            display: "flex",
+            borderBottom: "3px solid #1976d2",
+            backgroundColor: "#f5f5f5",
+          }}
+        >
+          {/* Week Zoom Header */}
+          <Box
+            sx={{
+              width: 50,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRight: "2px solid #1976d2",
+              backgroundColor: "#e3f2fd",
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{ color: "#1976d2", fontWeight: "bold" }}
+            >
+              Week
+            </Typography>
+          </Box>
+
+          {dayNames.map((dayName, index) => (
+            <Box
+              key={dayName}
+              sx={{
+                flex: 1,
+                textAlign: "center",
+                py: 1.5,
+                fontWeight: "bold",
+                backgroundColor: "#e3f2fd",
+                borderRight: index < 6 ? "2px solid #1976d2" : "none",
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ color: "#1976d2" }}>
+                {dayName}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Calendar Grid */}
+        {weeks.map((week, weekIndex) => (
+          <Box
+            key={weekIndex}
+            sx={{
+              display: "flex",
+              minHeight: 120,
+              borderBottom:
+                weekIndex < weeks.length - 1 ? "2px solid #1976d2" : "none",
+            }}
+          >
+            {/* Week Zoom Button */}
+            <Box
+              sx={{
+                width: 50,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRight: "2px solid #1976d2",
+                backgroundColor: "#f8f9fa",
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "#e3f2fd",
+                },
+              }}
+              onClick={() => {
+                setFilterType("week");
+                setStartDate(startOfWeek(week[0]));
+                setEndDate(endOfWeek(week[0]));
+                setFilterDate(week[0]);
+              }}
+              title={`View week of ${format(week[0], "MMM d")} - ${format(week[6], "MMM d")}`}
+            >
+              <IconButton size="small" sx={{ color: "#1976d2" }}>
+                <ZoomInIcon />
+              </IconButton>
+            </Box>
+
+            {week.map((day, dayIndex) => {
+              const isCurrentMonth = day.getMonth() === filterDate.getMonth();
+              const dayGames = games.filter(
+                (game) =>
+                  game?.gameDate && isSameDay(parseISO(game.gameDate), day),
+              );
+
+              return (
+                <Box
+                  key={day.toISOString()}
+                  sx={{
+                    flex: 1,
+                    borderRight: dayIndex < 6 ? "2px solid #1976d2" : "none",
+                    p: 1,
+                    backgroundColor: isCurrentMonth ? "white" : "#fafafa",
+                    minHeight: 120,
+                    display: "flex",
+                    flexDirection: "column",
+                    cursor: "pointer",
+                    "&:hover": {
+                      backgroundColor: isCurrentMonth ? "#f0f8ff" : "#f5f5f5",
+                      boxShadow: "inset 0 0 0 2px #1976d2",
+                    },
+                  }}
+                  onClick={() => {
+                    setFilterType("day");
+                    setFilterDate(day);
+                  }}
+                  title={`View ${format(day, "EEEE, MMMM d, yyyy")} in day view`}
+                >
+                  {/* Date Header */}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: isCurrentMonth ? "bold" : "normal",
+                      color: isCurrentMonth ? "text.primary" : "text.secondary",
+                      mb: 1,
+                      textAlign: "center",
+                    }}
+                  >
+                    {format(day, "d")}
+                  </Typography>
+
+                  {/* Games for this day */}
+                  <Box sx={{ flex: 1, overflow: "hidden" }}>
+                    {dayGames.map((game) => (
+                      <Box
+                        key={game.id}
+                        sx={{
+                          mb: 0.5,
+                          p: 0.5,
+                          backgroundColor: "primary.light",
+                          borderRadius: 0.5,
+                          fontSize: "0.75rem",
+                          lineHeight: 1.2,
+                          cursor: "pointer",
+                          "&:hover": {
+                            backgroundColor: "primary.main",
+                            color: "white",
+                          },
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditDialog(game);
+                        }}
+                      >
+                        {game.gameStatus === 1 ? (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ flex: 1 }}
+                              >
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ minWidth: "fit-content", ml: 1 }}
+                              >
+                                {game.visitorScore}
+                              </Typography>
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ flex: 1 }}
+                              >
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                fontWeight="bold"
+                                sx={{ minWidth: "fit-content", ml: 1 }}
+                              >
+                                {game.homeScore}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ fontWeight: "bold", flex: 1 }}
+                              >
+                                {getTeamName(game.visitorTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnVisitor && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    minWidth: "fit-content",
+                                    ml: 1,
+                                    color: "white",
+                                    backgroundColor:
+                                      getGameStatusColor(game.gameStatus) ===
+                                      "error"
+                                        ? "error.main"
+                                        : getGameStatusColor(
+                                              game.gameStatus,
+                                            ) === "warning"
+                                          ? "warning.main"
+                                          : "primary.main",
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: 0.5,
+                                  }}
+                                >
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Typography
+                                variant="caption"
+                                sx={{ fontWeight: "bold", flex: 1 }}
+                              >
+                                {getTeamName(game.homeTeamId)}
+                              </Typography>
+                              {getStatusDisplayInfo(game).showOnHome && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: "bold",
+                                    minWidth: "fit-content",
+                                    ml: 1,
+                                    color: "white",
+                                    backgroundColor:
+                                      getGameStatusColor(game.gameStatus) ===
+                                      "error"
+                                        ? "error.main"
+                                        : getGameStatusColor(
+                                              game.gameStatus,
+                                            ) === "warning"
+                                          ? "warning.main"
+                                          : "primary.main",
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: 0.5,
+                                  }}
+                                >
+                                  {getStatusDisplayInfo(game).statusText}
+                                </Typography>
+                              )}
+                            </Box>
+                            {game.gameStatus === 0 && (
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: "text.primary",
+                                  fontWeight: "medium",
+                                }}
+                              >
+                                {game.gameDate
+                                  ? format(parseISO(game.gameDate), "h:mm a")
+                                  : "TBD"}{" "}
+                                • {getFieldName(game.fieldId)}
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        ))}
+      </Box>
+    );
+  };
+
+  const renderDayView = () => {
+    const dayGames = games.filter(
+      (game) =>
+        game?.gameDate && isSameDay(parseISO(game.gameDate), filterDate),
+    );
+
+    return (
+      <Box
+        sx={{
+          border: "3px solid #1976d2",
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Month Header - Clickable to go to month view */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 2,
+            backgroundColor: "#1976d2",
+            color: "white",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#1565c0",
+            },
+          }}
+          onClick={() => {
+            setFilterType("month");
+            setFilterDate(filterDate);
+          }}
+          title={`View ${format(filterDate, "MMMM yyyy")} in month view`}
+        >
+          <Typography variant="h6" sx={{ fontWeight: "bold", color: "white" }}>
+            {format(filterDate, "MMMM yyyy")}
+          </Typography>
+        </Box>
+
+        {/* Week Header - Clickable to go to week view */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 1.5,
+            px: 2,
+            backgroundColor: "#f5f5f5",
+            borderBottom: "2px solid #1976d2",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: "#e3f2fd",
+            },
+          }}
+          onClick={() => {
+            setFilterType("week");
+            setStartDate(startOfWeek(filterDate));
+            setEndDate(endOfWeek(filterDate));
+          }}
+          title={`View week of ${format(startOfWeek(filterDate), "MMM d")} - ${format(endOfWeek(filterDate), "MMM d")}`}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: "bold",
+              color: "#1976d2",
+            }}
+          >
+            {format(startOfWeek(filterDate), "MMM dd")} -{" "}
+            {format(endOfWeek(filterDate), "MMM dd, yyyy")}
+          </Typography>
+        </Box>
+
+        {/* Day Header with Navigation */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            py: 1.5,
+            px: 2,
+            backgroundColor: "#e3f2fd",
+            borderBottom: "2px solid #1976d2",
+          }}
+        >
+          <IconButton
+            size="small"
+            onClick={() => {
+              const prevDay = new Date(filterDate);
+              prevDay.setDate(prevDay.getDate() - 1);
+              setFilterDate(prevDay);
+            }}
+            sx={{ color: "#1976d2" }}
+            title="Previous day"
+          >
+            <ChevronLeftIcon />
+          </IconButton>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "#1976d2",
+              }}
+            >
+              {format(filterDate, "EEEE, MMMM d, yyyy")}
+            </Typography>
+
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const today = new Date();
+                setFilterDate(today);
+              }}
+              sx={{
+                ml: 1,
+                color: "#1976d2",
+                borderColor: "#1976d2",
+                "&:hover": {
+                  backgroundColor: "#e3f2fd",
+                  borderColor: "#1565c0",
+                },
+              }}
+              title="Go to today"
+            >
+              Today
+            </Button>
+          </Box>
+
+          <IconButton
+            size="small"
+            onClick={() => {
+              const nextDay = new Date(filterDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              setFilterDate(nextDay);
+            }}
+            sx={{ color: "#1976d2" }}
+            title="Next day"
+          >
+            <ChevronRightIcon />
+          </IconButton>
+        </Box>
+
+        {/* Day Content */}
+        <Box sx={{ p: 2, backgroundColor: "white", minHeight: "300px" }}>
+          {dayGames.length > 0 ? (
+            dayGames.map((game) => (
+              <Card
+                key={game.id}
+                sx={{
+                  mb: 2,
+                  cursor: canEditSchedule ? "pointer" : "default",
+                  "&:hover": canEditSchedule
+                    ? { backgroundColor: "action.hover" }
+                    : {},
+                }}
+                onClick={
+                  canEditSchedule ? () => openEditDialog(game) : undefined
+                }
+              >
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                      {getTeamName(game.visitorTeamId)} @{" "}
+                      {getTeamName(game.homeTeamId)}
+                    </Typography>
+                    {shouldShowStatusChip(game.gameStatus) && (
+                      <Chip
+                        label={getGameStatusText(game.gameStatus)}
+                        color={getGameStatusColor(game.gameStatus)}
+                        size="small"
+                      />
+                    )}
+                  </Box>
+
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    sx={{ mb: 1 }}
+                  >
+                    {game.gameDate
+                      ? format(parseISO(game.gameDate), "h:mm a")
+                      : "TBD"}{" "}
+                    • {getFieldName(game.fieldId)}
+                  </Typography>
+
+                  {game.gameStatus === 1 && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                        {game.visitorScore} - {game.homeScore}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {game.comment && (
+                    <Typography
+                      variant="body2"
+                      sx={{ mt: 1, fontStyle: "italic" }}
+                    >
+                      {game.comment}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <Box sx={{ textAlign: "center", py: 4 }}>
+              <Typography variant="h6" color="textSecondary">
+                No games scheduled for this day
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderYearView = () => {
+    const year = filterDate.getFullYear();
+    const months = [];
+
+    for (let month = 0; month < 12; month++) {
+      const monthStart = new Date(year, month, 1);
+      const monthEnd = new Date(year, month + 1, 0);
+      const monthName = format(monthStart, "MMMM");
+
+      // Get games for this month
+      const monthGames = games.filter((game) => {
+        if (!game.gameDate) return false;
+        const gameDate = parseISO(game.gameDate);
+        return gameDate >= monthStart && gameDate <= monthEnd;
+      });
+
+      // Group games by day
+      const gamesByDay = new Map<number, Game[]>();
+      monthGames.forEach((game) => {
+        if (game.gameDate) {
+          const gameDate = parseISO(game.gameDate);
+          const day = gameDate.getDate();
+          if (!gamesByDay.has(day)) {
+            gamesByDay.set(day, []);
+          }
+          gamesByDay.get(day)!.push(game);
+        }
+      });
+
+      // Create calendar days for this month
+      const days: React.ReactElement[] = [];
+      const firstDayOfMonth = new Date(year, month, 1);
+      const lastDayOfMonth = new Date(year, month + 1, 0);
+      const startDate = startOfWeek(firstDayOfMonth);
+      const endDate = endOfWeek(lastDayOfMonth);
+
+      const calendarDays = eachDayOfInterval({
+        start: startDate,
+        end: endDate,
+      });
+
+      calendarDays.forEach((day, index) => {
+        const isCurrentMonth = day.getMonth() === month;
+        const dayNumber = day.getDate();
+        const dayGames = isCurrentMonth ? gamesByDay.get(dayNumber) || [] : [];
+        const gameCount = dayGames.length;
+
+        days.push(
+          <Box
+            key={index}
+            sx={{
+              width: "14.28%",
+              height: "60px",
+              border: "1px solid #e0e0e0",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: isCurrentMonth ? "white" : "#f5f5f5",
+              position: "relative",
+              cursor: gameCount > 0 ? "pointer" : "default",
+              "&:hover":
+                gameCount > 0
+                  ? {
+                      bgcolor: "#f0f8ff",
+                      "& .game-count": {
+                        transform: "scale(1.1)",
+                      },
+                    }
+                  : {},
+            }}
+            onClick={() => {
+              if (gameCount > 0) {
+                setFilterType("day");
+                setFilterDate(day);
+              }
+            }}
+          >
+            <Typography
+              variant="body2"
+              sx={{
+                color: isCurrentMonth ? "text.primary" : "text.disabled",
+                fontWeight: isSameDay(day, new Date()) ? "bold" : "normal",
+                fontSize: "0.75rem",
+              }}
+            >
+              {dayNumber}
+            </Typography>
+            {gameCount > 0 && (
+              <Box
+                className="game-count"
+                sx={{
+                  position: "absolute",
+                  bottom: "2px",
+                  right: "2px",
+                  width: "20px",
+                  height: "20px",
+                  borderRadius: "50%",
+                  bgcolor: "primary.main",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.7rem",
+                  fontWeight: "bold",
+                  transition: "transform 0.2s ease-in-out",
+                }}
+              >
+                {gameCount}
+              </Box>
+            )}
+          </Box>,
+        );
+      });
+
+      months.push(
+        <Box key={month} sx={{ mb: 4 }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 2, textAlign: "center", fontWeight: "bold" }}
+          >
+            {monthName}
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+            {/* Day headers */}
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+              (day, index) => (
+                <Box
+                  key={index}
+                  sx={{
+                    width: "14.28%",
+                    height: "30px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontWeight: "bold",
+                    fontSize: "0.8rem",
+                    color: "text.secondary",
+                    borderBottom: "1px solid #e0e0e0",
+                  }}
+                >
+                  {day}
+                </Box>
+              ),
+            )}
+            {/* Calendar days */}
+            {days}
+          </Box>
+        </Box>,
+      );
+    }
+
+    return (
+      <Box sx={{ p: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 3,
+          }}
+        >
+          <Typography variant="h4" fontWeight="bold">
+            {year}
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const newYear = year - 1;
+                setFilterDate(new Date(newYear, 0, 1));
+              }}
+            >
+              {year - 1}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => setFilterDate(new Date())}
+            >
+              Today
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => {
+                const newYear = year + 1;
+                setFilterDate(new Date(newYear, 0, 1));
+              }}
+            >
+              {year + 1}
+            </Button>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 3,
+          }}
+        >
+          {months}
+        </Box>
+      </Box>
+    );
+  };
+
+  if (loadingStaticData) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <Box>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={3}
+        >
+          <Box>
+            <Typography variant="h4">Schedule Management</Typography>
+            {!user && (
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                sx={{ mt: 0.5 }}
+              >
+                Public view - Sign in to edit schedules
+              </Typography>
+            )}
+            {user && !canEditSchedule && (
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                sx={{ mt: 0.5 }}
+              >
+                Read-only mode - Contact an administrator for editing
+                permissions
+              </Typography>
+            )}
+          </Box>
+          {canEditSchedule && (
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setCreateDialogError(null); // Clear any previous errors
+                setCreateDialogOpen(true);
+              }}
+            >
+              Add Game
+            </Button>
+          )}
+        </Box>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {success && (
+          <Alert
+            severity="success"
+            sx={{ mb: 2 }}
+            onClose={() => setSuccess(null)}
+          >
+            {success}
+          </Alert>
+        )}
+
+        <Paper sx={{ mb: 3 }}>
+          <Tabs
+            value={viewMode}
+            onChange={(_, newValue) => setViewMode(newValue)}
+          >
+            <Tab label="Calendar View" value="calendar" />
+            <Tab label="List View" value="list" />
+          </Tabs>
+        </Paper>
+
+        {/* Filter Controls */}
+        <Paper sx={{ mb: 3, p: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Typography variant="subtitle1" sx={{ minWidth: "fit-content" }}>
+              Time Period:
+            </Typography>
+
+            <FormControl sx={{ minWidth: 120 }}>
+              <InputLabel>Time Period</InputLabel>
+              <Select
+                value={filterType}
+                onChange={(e) =>
+                  setFilterType(
+                    e.target.value as "day" | "week" | "month" | "year",
+                  )
+                }
+                label="Time Period"
+              >
+                <MenuItem value="day">Day</MenuItem>
+                <MenuItem value="week">Week</MenuItem>
+                <MenuItem value="month">Month</MenuItem>
+                <MenuItem value="year">Year</MenuItem>
+              </Select>
+            </FormControl>
+
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              {filterType === "day" && (
+                <DatePicker
+                  label="Select Date"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === "week" && (
+                <DatePicker
+                  label="Select Week"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === "month" && (
+                <DatePicker
+                  label="Select Month"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+              {filterType === "year" && (
+                <DatePicker
+                  label="Select Year"
+                  value={filterDate}
+                  onChange={(newValue) => setFilterDate(newValue || new Date())}
+                  slotProps={{ textField: { sx: { minWidth: 150 } } }}
+                />
+              )}
+            </LocalizationProvider>
+
+            <Typography
+              variant="body2"
+              color="textSecondary"
+              sx={{ ml: "auto" }}
+            >
+              {filterType === "day" &&
+                `Showing games for ${format(filterDate, "MMMM d, yyyy")}`}
+              {filterType === "week" &&
+                `Showing games for week of ${format(startDate, "MMM d")} - ${format(endDate, "MMM d, yyyy")}`}
+              {filterType === "month" &&
+                `Showing games for ${format(filterDate, "MMMM yyyy")}`}
+              {filterType === "year" &&
+                `Showing games for ${format(filterDate, "yyyy")}`}
+            </Typography>
+          </Box>
+        </Paper>
+
+        {viewMode === "calendar" ? (
+          filterType === "month" ? (
+            <Box>
+              {loadingGames && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  py={2}
+                >
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderMonthCalendarView()}
+            </Box>
+          ) : filterType === "week" ? (
+            <Box>
+              {loadingGames && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  py={2}
+                >
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderWeekView()}
+            </Box>
+          ) : filterType === "day" ? (
+            <Box>
+              {loadingGames && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  py={2}
+                >
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderDayView()}
+            </Box>
+          ) : (
+            <Box>
+              {loadingGames && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  py={2}
+                >
+                  <CircularProgress size={24} />
+                  <Typography variant="body2" sx={{ ml: 1 }}>
+                    Loading games...
+                  </Typography>
+                </Box>
+              )}
+              {renderYearView()}
+            </Box>
+          )
+        ) : (
+          <Box>
+            {loadingGames && (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                py={2}
+              >
+                <CircularProgress size={24} />
+                <Typography variant="body2" sx={{ ml: 1 }}>
+                  Loading games...
+                </Typography>
+              </Box>
+            )}
+            {renderListView()}
+          </Box>
+        )}
+
+        {/* Create Game Dialog */}
+        <Dialog
+          open={createDialogOpen}
+          onClose={() => {
+            setCreateDialogOpen(false);
+            resetForm();
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>Create New Game</DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {createDialogError && (
+                <Alert
+                  severity="error"
+                  onClose={() => setCreateDialogError(null)}
+                >
+                  {createDialogError}
+                </Alert>
+              )}
+
+              <Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: 1, mb: 2 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "primary.main" }}
+                >
+                  {filterDate.getFullYear()} Season
+                </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      label="Game Date"
+                      value={gameDate}
+                      onChange={(newValue) => setGameDate(newValue)}
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
+                  </LocalizationProvider>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <TimePicker
+                      label="Game Time"
+                      value={gameTime}
+                      onChange={(newValue) => setGameTime(newValue)}
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
+                  </LocalizationProvider>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>League</InputLabel>
+                    <Select
+                      value={selectedLeagueSeason}
+                      onChange={(e) => handleLeagueChange(e.target.value)}
+                      label="League"
+                    >
+                      {leagues.map((league) => (
+                        <MenuItem key={league.id} value={league.id}>
+                          {league.name || "Unknown League"}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Home Team</InputLabel>
+                    <Select
+                      value={homeTeamId}
+                      onChange={(e) => setHomeTeamId(e.target.value)}
+                      label="Home Team"
+                      disabled={loadingLeagueTeams || !canEditSchedule}
+                    >
+                      {loadingLeagueTeams ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
+                      ) : (
+                        leagueTeams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Visitor Team</InputLabel>
+                    <Select
+                      value={visitorTeamId}
+                      onChange={(e) => setVisitorTeamId(e.target.value)}
+                      label="Visitor Team"
+                      disabled={loadingLeagueTeams || !canEditSchedule}
+                    >
+                      {loadingLeagueTeams ? (
+                        <MenuItem disabled>Loading teams...</MenuItem>
+                      ) : leagueTeams.length === 0 ? (
+                        <MenuItem disabled>No teams available</MenuItem>
+                      ) : (
+                        leagueTeams.map((team) => (
+                          <MenuItem key={team.id} value={team.id}>
+                            {team.name}
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>Field</InputLabel>
+                    <Select
+                      value={fieldId}
+                      onChange={(e) => setFieldId(e.target.value)}
+                      label="Field"
+                      disabled={!canEditSchedule}
+                    >
+                      <MenuItem value="">No field assigned</MenuItem>
+                      {fields.map((field) => (
+                        <MenuItem key={field.id} value={field.id}>
+                          {field.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              </Box>
+
+              <TextField
+                fullWidth
+                label="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                multiline
+                rows={3}
+                disabled={!canEditSchedule}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setCreateDialogOpen(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleCreateGame} variant="contained">
+              Create Game
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Game Dialog */}
+        <Dialog
+          open={editDialogOpen}
+          onClose={() => {
+            setEditDialogOpen(false);
+            resetForm();
+          }}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            {canEditSchedule ? "Edit Game" : "View Game"}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {editDialogError && (
+                <Alert
+                  severity="error"
+                  onClose={() => setEditDialogError(null)}
+                >
+                  {editDialogError}
+                </Alert>
+              )}
+
+              {selectedGame && (
+                <Box sx={{ p: 2, bgcolor: "grey.100", borderRadius: 1, mb: 2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: "bold", color: "primary.main" }}
+                  >
+                    {selectedGame.league?.name || "Unknown League"}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {selectedGame.season?.name || "Unknown Season"}
+                  </Typography>
+                </Box>
+              )}
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Game Date"
+                        value={gameDate}
+                        onChange={(newValue) => setGameDate(newValue)}
+                        slotProps={{ textField: { fullWidth: true } }}
+                      />
+                    </LocalizationProvider>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Game Date"
+                      value={
+                        selectedGame && gameDate
+                          ? format(gameDate, "EEEE, MMMM d, yyyy")
+                          : ""
+                      }
+                      disabled
+                    />
+                  )}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <TimePicker
+                        label="Game Time"
+                        value={gameTime}
+                        onChange={(newValue) => setGameTime(newValue)}
+                        slotProps={{ textField: { fullWidth: true } }}
+                      />
+                    </LocalizationProvider>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Game Time"
+                      value={
+                        selectedGame && gameTime
+                          ? format(gameTime, "h:mm a")
+                          : ""
+                      }
+                      disabled
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <FormControl fullWidth>
+                      <InputLabel>Home Team</InputLabel>
+                      <Select
+                        value={homeTeamId}
+                        onChange={(e) => setHomeTeamId(e.target.value)}
+                        label="Home Team"
+                        disabled={loadingLeagueTeams}
+                      >
+                        {loadingLeagueTeams ? (
+                          <MenuItem disabled>Loading teams...</MenuItem>
+                        ) : leagueTeams.length === 0 ? (
+                          <MenuItem disabled>No teams available</MenuItem>
+                        ) : (
+                          leagueTeams.map((team) => (
+                            <MenuItem key={team.id} value={team.id}>
+                              {team.name}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Home Team"
+                      value={
+                        selectedGame ? getTeamName(selectedGame.homeTeamId) : ""
+                      }
+                      disabled
+                    />
+                  )}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <FormControl fullWidth>
+                      <InputLabel>Visitor Team</InputLabel>
+                      <Select
+                        value={visitorTeamId}
+                        onChange={(e) => setVisitorTeamId(e.target.value)}
+                        label="Visitor Team"
+                        disabled={loadingLeagueTeams}
+                      >
+                        {loadingLeagueTeams ? (
+                          <MenuItem disabled>Loading teams...</MenuItem>
+                        ) : leagueTeams.length === 0 ? (
+                          <MenuItem disabled>No teams available</MenuItem>
+                        ) : (
+                          leagueTeams.map((team) => (
+                            <MenuItem key={team.id} value={team.id}>
+                              {team.name}
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Visitor Team"
+                      value={
+                        selectedGame
+                          ? getTeamName(selectedGame.visitorTeamId)
+                          : ""
+                      }
+                      disabled
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <FormControl fullWidth>
+                      <InputLabel>Field</InputLabel>
+                      <Select
+                        value={fieldId}
+                        onChange={(e) => setFieldId(e.target.value)}
+                        label="Field"
+                      >
+                        <MenuItem value="">No field assigned</MenuItem>
+                        {fields.map((field) => (
+                          <MenuItem key={field.id} value={field.id}>
+                            {field.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Field"
+                      value={
+                        selectedGame ? getFieldName(selectedGame.fieldId) : ""
+                      }
+                      disabled
+                    />
+                  )}
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  {canEditSchedule ? (
+                    <FormControl fullWidth>
+                      <InputLabel>Game Type</InputLabel>
+                      <Select
+                        value={gameType}
+                        onChange={(e) => setGameType(e.target.value as number)}
+                        label="Game Type"
+                      >
+                        <MenuItem value={0}>Regular Season</MenuItem>
+                        <MenuItem value={1}>Playoff</MenuItem>
+                        <MenuItem value={2}>Exhibition</MenuItem>
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Game Type"
+                      value={getGameTypeText(gameType)}
+                      disabled
+                    />
+                  )}
+                </Box>
+              </Box>
+
+              <TextField
+                fullWidth
+                label="Comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                multiline
+                rows={3}
+                disabled={!canEditSchedule}
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setEditDialogOpen(false);
+                resetForm();
+              }}
+            >
+              Cancel
+            </Button>
+            {canEditSchedule && (
+              <Button
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  openDeleteDialog(selectedGame!);
+                }}
+                color="error"
+              >
+                Delete Game
+              </Button>
+            )}
+            {canEditSchedule && (
+              <Button onClick={handleUpdateGame} variant="contained">
+                Update Game
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+        >
+          <DialogTitle>Delete Game</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to delete this game? This action cannot be
+              undone.
+            </Typography>
+            {selectedGame && (
+              <Box sx={{ mt: 2, p: 2, bgcolor: "grey.100", borderRadius: 1 }}>
+                <Typography variant="body2">
+                  {getTeamName(selectedGame.visitorTeamId)} @{" "}
+                  {getTeamName(selectedGame.homeTeamId)}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  {selectedGame.gameDate
+                    ? format(
+                        parseISO(selectedGame.gameDate),
+                        "EEEE, MMMM d, yyyy h:mm a",
+                      )
+                    : "TBD"}
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleDeleteGame}
+              variant="contained"
+              color="error"
+            >
+              Delete Game
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    </LocalizationProvider>
+  );
+};
+
+export default ScheduleManagement;
