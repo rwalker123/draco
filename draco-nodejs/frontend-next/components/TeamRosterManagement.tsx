@@ -286,7 +286,7 @@ const TeamRosterManagement: React.FC = () => {
       );
 
       if (response.data.success) {
-        setSeason(response.data.data);
+        setSeason(response.data.data.season);
       }
     } catch (error: unknown) {
       if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
@@ -1133,7 +1133,7 @@ const TeamRosterManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            router.push('/seasons');
+            router.push(`/account/${accountId}/seasons`);
           }}
         >
           Seasons
@@ -1143,7 +1143,7 @@ const TeamRosterManagement: React.FC = () => {
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            router.push(`/seasons/${seasonId}/league-management`);
+            router.push(`/account/${accountId}/seasons/${seasonId}/league-seasons`);
           }}
         >
           {season?.name || 'Season'}
