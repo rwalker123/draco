@@ -1,1 +1,6 @@
-export default function Page() { return <div>account/[accountId]/management page</div>; }
+"use client";
+import ProtectedAccountManagement from '../../../../components/ProtectedAccountManagement';
+
+export default function Page() {
+  return <ProtectedAccountManagement />;
+}
