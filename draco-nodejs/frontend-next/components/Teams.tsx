@@ -26,7 +26,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, getLogoUrl, validateLogoFile } from "../config/teams";
+import { getLogoSize, validateLogoFile } from "../config/teams";
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
 interface Team {
@@ -37,6 +37,7 @@ interface Team {
   youtubeUserId?: string;
   defaultVideo?: string;
   autoPlayVideo?: boolean;
+  logoUrl?: string;
 }
 
 interface Division {
@@ -105,11 +106,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     useState<LeagueSeason | null>(null);
   const [seasonExportMenuAnchor, setSeasonExportMenuAnchor] =
     useState<null | HTMLElement>(null);
-
-  // Logo update tracker for cache busting
-  const [logoUpdateTracker, setLogoUpdateTracker] = useState<
-    Record<string, number>
-  >({});
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
@@ -335,13 +331,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     setSelectedTeam(team);
     setEditingTeamName(team.name);
     setEditingLogoFile(null);
-    const timestamp = logoUpdateTracker[team.teamId] || Date.now();
-    const seasonId = teamsData?.season.id;
-    if (seasonId) {
-      setLogoPreview(
-        getLogoUrl(accountId, team.teamId, seasonId, team.id, timestamp),
-      );
-    }
+    setLogoPreview(team.logoUrl || null);
     setEditDialogError(null);
     setEditDialogOpen(true);
   };
@@ -423,6 +413,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       // Update local state directly instead of reloading all data
       if (teamsData) {
+        const cacheBuster = `?t=${Date.now()}`;
         setTeamsData((prevData) => {
           if (!prevData) return prevData;
 
@@ -433,13 +424,21 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 ...division,
                 teams: division.teams.map((team) =>
                   team.id === selectedTeam.id
-                    ? { ...team, name: editingTeamName.trim() }
+                    ? {
+                        ...team,
+                        name: editingTeamName.trim(),
+                        logoUrl: team.logoUrl ? team.logoUrl.split('?')[0] + cacheBuster : undefined,
+                      }
                     : team,
                 ),
               })),
               unassignedTeams: leagueSeason.unassignedTeams.map((team) =>
                 team.id === selectedTeam.id
-                  ? { ...team, name: editingTeamName.trim() }
+                  ? {
+                      ...team,
+                      name: editingTeamName.trim(),
+                      logoUrl: team.logoUrl ? team.logoUrl.split('?')[0] + cacheBuster : undefined,
+                    }
                   : team,
               ),
             }),
@@ -450,14 +449,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             leagueSeasons: updatedLeagueSeasons,
           };
         });
-      }
-
-      // Update logo cache tracker if a new logo was uploaded
-      if (editingLogoFile) {
-        setLogoUpdateTracker((prev) => ({
-          ...prev,
-          [selectedTeam.teamId]: Date.now(),
-        }));
       }
 
       // Clear form state
@@ -502,17 +493,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       }}
     >
       <Avatar
-        src={
-          teamsData?.season.id
-            ? getLogoUrl(
-                accountId,
-                team.teamId,
-                teamsData.season.id,
-                team.id,
-                logoUpdateTracker[team.teamId],
-              )
-            : undefined
-        }
+        src={team.logoUrl}
         sx={{
           width: LOGO_SIZE,
           height: LOGO_SIZE,

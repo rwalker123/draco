@@ -36,3 +36,26 @@ export const validateLogoFile = (file: Express.Multer.File): string | null => {
 export const generateLogoPath = (accountId: string, teamId: string): string => {
   return `${LOGO_CONFIG.STORAGE_PATH}/${accountId}/team-logos/${teamId}-logo.${LOGO_CONFIG.OUTPUT_FORMAT}`;
 };
+
+export const getLogoUrl = (
+  accountId: string | number,
+  teamId: string | number,
+): string => {
+  if (process.env.STORAGE_PROVIDER === "s3") {
+    const bucket = process.env.S3_BUCKET || "draco-team-logos";
+    const region = process.env.S3_REGION || "us-east-1";
+    const s3Endpoint = process.env.S3_ENDPOINT || "";
+
+    if (s3Endpoint.includes("localhost")) {
+      // LocalStack style URL
+      const endpoint = s3Endpoint.replace(/^https?:\/\//, "");
+      return `http://${endpoint}/${bucket}/${accountId}/team-logos/${teamId}-logo.png`;
+    } else {
+      // AWS S3 style URL
+      return `https://${bucket}.s3.${region}.amazonaws.com/${accountId}/team-logos/${teamId}-logo.png`;
+    }
+  } else {
+    // Local storage
+    return `/${generateLogoPath(accountId.toString(), teamId.toString())}`;
+  }
+};
