@@ -38,11 +38,14 @@
     "start": "npm run backend:start",
     "start:frontend": "npm run frontend-next:start",
     "start:backend": "npm run backend:start",
-    "secrets:update-baseline": "node scripts/update-baseline.js"
+    "secrets:update-baseline": "node scripts/update-baseline.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "prettier": "^3.6.2"
   },
   "workspaces": [
     "draco-nodejs/backend",

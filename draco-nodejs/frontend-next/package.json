@@ -6,7 +6,8 @@
     "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev",
     "build": "next build",
     "start": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -30,10 +31,12 @@
     "eslint-config-next": "^15.3.4",
     "lint-staged": "^16.1.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "prettier": "^3.6.1"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
+      "prettier --write",
       "eslint --fix"
     ]
   }
