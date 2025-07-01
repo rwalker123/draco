@@ -110,44 +110,53 @@ router.get(
             name: season.name,
             accountId: season.accountid.toString(),
           },
-          leagueSeasons: leagueSeasons.map((ls: any) => ({
-            id: ls.id.toString(),
-            leagueId: ls.leagueid.toString(),
-            leagueName: ls.league.name,
-            accountId: ls.league.accountid.toString(),
-            divisions: ls.divisionseason.map((ds: any) => ({
-              id: ds.id.toString(),
-              divisionId: ds.divisionid.toString(),
-              divisionName: ds.divisiondefs.name,
-              priority: ds.priority,
-              teams: ds.teamsseason.map((ts: any) => ({
-                id: ts.id.toString(),
-                teamId: ts.teamid.toString(),
-                name: ts.name,
-                webAddress: ts.teams.webaddress,
-                youtubeUserId: ts.teams.youtubeuserid,
-                defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(
-                  season.accountid.toString(),
-                  ts.teamid.toString(),
-                ),
+          leagueSeasons: leagueSeasons.map((ls: any) => {
+            const base = {
+              id: ls.id.toString(),
+              leagueId: ls.leagueid.toString(),
+              leagueName: ls.league.name,
+              accountId: ls.league.accountid.toString(),
+              divisions: ls.divisionseason.map((ds: any) => ({
+                id: ds.id.toString(),
+                divisionId: ds.divisionid.toString(),
+                divisionName: ds.divisiondefs.name,
+                priority: ds.priority,
+                teams: ds.teamsseason.map((ts: any) => ({
+                  id: ts.id.toString(),
+                  teamId: ts.teamid.toString(),
+                  name: ts.name,
+                  webAddress: ts.teams.webaddress,
+                  youtubeUserId: ts.teams.youtubeuserid,
+                  defaultVideo: ts.teams.defaultvideo,
+                  autoPlayVideo: ts.teams.autoplayvideo,
+                  logoUrl: getLogoUrl(
+                    season.accountid.toString(),
+                    ts.teamid.toString(),
+                  ),
+                })),
               })),
-            })),
-            unassignedTeams: ls.teamsseason.map((ts: any) => ({
-              id: ts.id.toString(),
-              teamId: ts.teamid.toString(),
-              name: ts.name,
-              webAddress: ts.teams.webaddress,
-              youtubeUserId: ts.teams.youtubeuserid,
-              defaultVideo: ts.teams.defaultvideo,
-              autoPlayVideo: ts.teams.autoplayvideo,
-              logoUrl: getLogoUrl(
-                season.accountid.toString(),
-                ts.teamid.toString(),
-              ),
-            })),
-          })),
+            };
+            if (req.query.unassignedTeams === "false") {
+              return base;
+            } else {
+              return {
+                ...base,
+                unassignedTeams: ls.teamsseason.map((ts: any) => ({
+                  id: ts.id.toString(),
+                  teamId: ts.teamid.toString(),
+                  name: ts.name,
+                  webAddress: ts.teams.webaddress,
+                  youtubeUserId: ts.teams.youtubeuserid,
+                  defaultVideo: ts.teams.defaultvideo,
+                  autoPlayVideo: ts.teams.autoplayvideo,
+                  logoUrl: getLogoUrl(
+                    season.accountid.toString(),
+                    ts.teamid.toString(),
+                  ),
+                })),
+              };
+            }
+          }),
         },
       });
     } catch (error) {
