@@ -168,47 +168,6 @@ build_lambda_package() {
     print_status "Lambda package created successfully."
 }
 
-# Build and deploy frontend
-build_and_deploy_frontend() {
-    print_status "Building and deploying frontend..."
-    
-    cd draco-nodejs/frontend
-    
-    # Install dependencies
-    print_status "Installing frontend dependencies..."
-    npm ci
-    
-    # Build React app
-    print_status "Building React app..."
-    npm run build
-    
-    # Get S3 bucket name from Terraform output
-    cd ../../aws-deployment/serverless
-    S3_BUCKET=$(terraform output -raw s3_bucket_name 2>/dev/null || echo "")
-    
-    if [ -z "$S3_BUCKET" ]; then
-        print_error "S3 bucket name not found. Please deploy infrastructure first."
-        exit 1
-    fi
-    
-    # Sync to S3
-    print_status "Syncing to S3 bucket: $S3_BUCKET"
-    aws s3 sync ../../draco-nodejs/frontend/build/ s3://$S3_BUCKET/ --delete
-    
-    # Invalidate CloudFront cache
-    print_status "Invalidating CloudFront cache..."
-    CLOUDFRONT_DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Origins.Items[0].DomainName, '$S3_BUCKET')].Id" --output text)
-    
-    if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
-        aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
-        print_status "CloudFront cache invalidation initiated."
-    fi
-    
-    cd ../..
-    
-    print_status "Frontend deployed successfully."
-}
-
 # Deploy infrastructure with Terraform
 deploy_infrastructure() {
     print_status "Deploying infrastructure with Terraform..."
@@ -280,10 +239,9 @@ main() {
     build_lambda_package
     deploy_infrastructure
     update_lambda
-    build_and_deploy_frontend
     
     print_status "Deployment completed successfully!"
-    print_status "Your application should be available at the CloudFront URL."
+    print_status "Your backend API should be available at the API Gateway URL."
 }
 
 # Parse command line arguments
@@ -299,10 +257,6 @@ case "${1:-}" in
         check_environment_variables
         deploy_infrastructure
         ;;
-    "frontend")
-        check_prerequisites
-        build_and_deploy_frontend
-        ;;
     "lambda")
         check_prerequisites
         update_lambda
@@ -311,12 +265,11 @@ case "${1:-}" in
         main
         ;;
     *)
-        echo "Usage: $0 {build|infrastructure|frontend|lambda|full}"
+        echo "Usage: $0 {build|infrastructure|lambda|full}"
         echo "  build         - Build Lambda package only"
         echo "  infrastructure - Deploy infrastructure only"
-        echo "  frontend      - Build and deploy frontend only"
         echo "  lambda        - Update Lambda function only"
-        echo "  full          - Complete deployment (default)"
+        echo "  full          - Complete backend deployment (default)"
         echo
         echo "Environment variables are loaded from aws-deployment/serverless/.env"
         echo "Required variables:"

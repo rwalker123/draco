@@ -219,157 +219,6 @@ resource "aws_lambda_permission" "apigw" {
   source_arn    = "${aws_api_gateway_rest_api.draco.execution_arn}/*/*"
 }
 
-# S3 Bucket for Frontend-Next
-resource "aws_s3_bucket" "frontend_next" {
-  bucket = "draco-frontend-next-${var.environment}-${random_string.bucket_suffix.result}"
-}
-
-resource "random_string" "bucket_suffix" {
-  length  = 8
-  special = false
-  upper   = false
-}
-
-resource "aws_s3_bucket_public_access_block" "frontend_next" {
-  bucket = aws_s3_bucket.frontend_next.id
-  
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket_policy" "frontend_next" {
-  bucket = aws_s3_bucket.frontend_next.id
-  
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadGetObject"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.frontend_next.arn}/*"
-        Condition = {
-          StringEquals = {
-            "aws:PrincipalOrgID" = data.aws_organizations_organization.current.id
-          }
-        }
-      }
-    ]
-  })
-}
-
-# CloudFront Distribution
-resource "aws_cloudfront_distribution" "frontend_next" {
-  origin {
-    domain_name = aws_s3_bucket.frontend_next.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.frontend_next.bucket}"
-    
-    s3_origin_config {
-      origin_access_identity = aws_cloudfront_origin_access_identity.frontend_next.cloudfront_access_identity_path
-    }
-  }
-  
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-  
-  aliases = var.domain_name != "" ? [var.domain_name] : []
-  
-  default_cache_behavior {
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend_next.bucket}"
-    
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-    
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 3600
-    max_ttl                = 86400
-  }
-  
-  # Handle React Router
-  ordered_cache_behavior {
-    path_pattern     = "/static/*"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.frontend_next.bucket}"
-    
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
-    }
-    
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 31536000
-    max_ttl                = 31536000
-  }
-  
-  # Handle API routes
-  ordered_cache_behavior {
-    path_pattern     = "/api/*"
-    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "api-gateway"
-    
-    forwarded_values {
-      query_string = true
-      headers      = ["Authorization", "Content-Type"]
-      cookies {
-        forward = "all"
-      }
-    }
-    
-    viewer_protocol_policy = "redirect-to-https"
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
-  }
-  
-  # API Gateway origin
-  origin {
-    domain_name = replace(aws_api_gateway_deployment.draco.invoke_url, "https://", "")
-    origin_id   = "api-gateway"
-    
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "https-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
-  }
-  
-  price_class = "PriceClass_100"
-  
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-  
-  viewer_certificate {
-    cloudfront_default_certificate = var.domain_name == ""
-    acm_certificate_arn           = var.domain_name != "" ? aws_acm_certificate.draco.arn : null
-    ssl_support_method            = var.domain_name != "" ? "sni-only" : null
-    minimum_protocol_version      = "TLSv1.2_2021"
-  }
-}
-
-resource "aws_cloudfront_origin_access_identity" "frontend_next" {
-  comment = "OAI for Draco frontend"
-}
-
 # IAM Roles
 resource "aws_iam_role" "lambda_execution_role" {
   name = "draco-serverless-lambda-execution-role"
@@ -399,59 +248,70 @@ resource "aws_cloudwatch_log_group" "lambda" {
   retention_in_days = 30
 }
 
-# ACM Certificate (if domain provided)
-resource "aws_acm_certificate" "draco" {
-  count           = var.domain_name != "" ? 1 : 0
-  domain_name     = var.domain_name
-  validation_method = "DNS"
-  
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Route53 (if domain provided)
-resource "aws_route53_zone" "draco" {
-  count = var.domain_name != "" ? 1 : 0
-  name  = var.domain_name
-}
-
-resource "aws_route53_record" "draco" {
-  count = var.domain_name != "" ? 1 : 0
-  
-  zone_id = aws_route53_zone.draco[0].zone_id
-  name    = var.domain_name
-  type    = "A"
-  
-  alias {
-    name                   = aws_cloudfront_distribution.frontend_next.domain_name
-    zone_id                = aws_cloudfront_distribution.frontend_next.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
-# Data sources
-data "aws_organizations_organization" "current" {
-  count = var.domain_name != "" ? 1 : 0
-}
-
 # Outputs
 output "api_gateway_url" {
   description = "The URL of the API Gateway"
   value       = aws_api_gateway_deployment.draco.invoke_url
 }
 
-output "cloudfront_url" {
-  description = "The URL of the CloudFront distribution"
-  value       = "https://${aws_cloudfront_distribution.frontend_next.domain_name}"
-}
-
-output "s3_bucket_name" {
-  description = "The name of the S3 bucket for frontend"
-  value       = aws_s3_bucket.frontend_next.bucket
-}
-
 output "database_endpoint" {
   description = "The endpoint of the RDS instance"
   value       = aws_db_instance.draco.endpoint
+}
+
+# S3 Bucket for Account Resources (images, documents, etc)
+resource "aws_s3_bucket" "account_resources" {
+  bucket = "draco-account-resources-${var.environment}"
+
+  force_destroy = true
+
+  tags = {
+    Name        = "Draco Account Resources"
+    Environment = var.environment
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "account_resources" {
+  bucket = aws_s3_bucket.account_resources.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+output "account_resources_bucket_name" {
+  description = "The name of the S3 bucket for account resources (images, documents, etc)"
+  value       = aws_s3_bucket.account_resources.bucket
+}
+
+# IAM Policy for Lambda to access Account Resources S3 Bucket
+resource "aws_iam_policy" "lambda_s3_account_resources" {
+  name        = "draco-lambda-s3-account-resources-${var.environment}"
+  description = "Allow Lambda to read/write/delete/list objects in the account resources S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          aws_s3_bucket.account_resources.arn,
+          "${aws_s3_bucket.account_resources.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy_attachment" "lambda_s3_account_resources" {
+  name       = "lambda-s3-account-resources-attach-${var.environment}"
+  roles      = [aws_iam_role.lambda_execution_role.name]
+  policy_arn = aws_iam_policy.lambda_s3_account_resources.arn
 } 

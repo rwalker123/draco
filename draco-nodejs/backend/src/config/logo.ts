@@ -42,7 +42,12 @@ export const getLogoUrl = (
   teamId: string | number,
 ): string => {
   if (process.env.STORAGE_PROVIDER === "s3") {
-    const bucket = process.env.S3_BUCKET || "draco-team-logos";
+    if (!process.env.S3_BUCKET) {
+      throw new Error(
+        "S3_BUCKET environment variable must be set for S3 storage",
+      );
+    }
+    const bucket = process.env.S3_BUCKET;
     const region = process.env.S3_REGION || "us-east-1";
     const s3Endpoint = process.env.S3_ENDPOINT || "";
 

@@ -22,8 +22,12 @@ function getLogoUrl(
   teamId: string | number,
 ): string {
   if (process.env.STORAGE_PROVIDER === "s3") {
-    // S3 public URL (adjust as needed for your S3 setup)
-    const bucket = process.env.S3_BUCKET || "draco-team-logos";
+    if (!process.env.S3_BUCKET) {
+      throw new Error(
+        "S3_BUCKET environment variable must be set for S3 storage",
+      );
+    }
+    const bucket = process.env.S3_BUCKET;
     const region = process.env.S3_REGION || "us-east-1";
     return `https://${bucket}.s3.${region}.amazonaws.com/team-logos/${teamId}-logo.png`;
   } else {
