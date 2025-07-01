@@ -240,8 +240,14 @@
     - [x] Fix existing type errors and add proper type annotations (ongoing as needed)
     - [x] Configure path mapping for cleaner imports
     - [x] Set up proper module resolution
-  - [ ] **Testing Infrastructure**
-    - [ ] Set up Jest configuration for backend unit tests
+  - [x] **Testing Infrastructure**
+    - [x] Set up Jest configuration for backend unit tests
+    - [ ] Write backend tests for:
+      - [ ] Core services (e.g., authService, roleService, emailService, storageService)
+      - [ ] Middleware (e.g., authMiddleware, routeProtection, roleMiddleware)
+      - [ ] Route handlers (e.g., accounts, auth, teams, rosters, leagues)
+      - [ ] Utility functions (e.g., validation, logo helpers)
+      - [ ] Error handling and edge cases
     - [ ] Configure React Testing Library for frontend tests
     - [ ] Add test coverage reporting
     - [ ] Set up integration test framework
