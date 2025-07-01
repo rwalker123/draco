@@ -4,11 +4,6 @@ import {
   Typography,
   Paper,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Alert,
   CircularProgress,
   IconButton,
@@ -18,16 +13,14 @@ import {
 } from "@mui/material";
 import {
   Edit as EditIcon,
-  PhotoCamera as PhotoCameraIcon,
-  Save as SaveIcon,
-  Download as DownloadIcon,
   ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, validateLogoFile, getLogoUrl } from "../config/teams";
+import { getLogoSize, getLogoUrl } from "../config/teams";
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from "next/image";
+import EditTeamDialog from "./EditTeamDialog";
 
 interface Team {
   id: string;
@@ -54,7 +47,6 @@ interface LeagueSeason {
   leagueName: string;
   accountId: string;
   divisions: Division[];
-  unassignedTeams: Team[];
 }
 
 interface TeamsData {
@@ -89,15 +81,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Edit dialog states
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [editingTeamName, setEditingTeamName] = useState<string>("");
-  const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [editDialogError, setEditDialogError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-
   // Export menu states
   const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(
     null,
@@ -112,8 +95,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   // Track image load errors for team cards
   const [logoLoadError, setLogoLoadError] = useState<{ [teamId: string]: boolean }>({});
-  // Track image load error for edit dialog preview
-  const [logoPreviewError, setLogoPreviewError] = useState(false);
+
+  // Edit dialog states
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
   // Export roster to CSV function (placeholder)
   const handleExportRoster = async (leagueSeason: LeagueSeason) => {
@@ -332,160 +317,82 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     loadTeamsData();
   }, [loadTeamsData]);
 
-  const openEditDialog = (team: Team) => {
+  const handleEditTeam = (team: Team) => {
     setSelectedTeam(team);
-    setEditingTeamName(team.name);
-    setEditingLogoFile(null);
-    setLogoPreview(team.logoUrl || null);
-    setEditDialogError(null);
     setEditDialogOpen(true);
   };
 
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Validate file using the config function
-      const validationError = validateLogoFile(file);
-      if (validationError) {
-        setEditDialogError(validationError);
-        return;
-      }
-
-      setEditingLogoFile(file);
-      setEditDialogError(null);
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setSelectedTeam(null);
   };
 
-  const handleSaveTeam = async () => {
+  const handleSaveTeam = async (updatedName: string, logoFile: File | null) => {
     if (!selectedTeam) return;
-
-    try {
-      setSaving(true);
-      setEditDialogError(null);
-
-      // Validate team name
-      if (!editingTeamName.trim()) {
-        setEditDialogError("Team name is required");
-        return;
-      }
-
-      // Check if user is authenticated
-      const token = localStorage.getItem("jwtToken");
-      if (!token) {
-        setEditDialogError("Authentication required. Please log in again.");
-        return;
-      }
-
-      // Prepare form data for file upload
-      const formData = new FormData();
-      formData.append("name", editingTeamName.trim());
-
-      if (editingLogoFile) {
-        formData.append("logo", editingLogoFile);
-      }
-
-      // Update team information
-      const updateResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
-        {
-          method: "PUT",
-          body: formData,
-          headers: {
-            // Don't set Content-Type for FormData, let the browser set it with boundary
-            Authorization: `Bearer ${token}`,
-          },
+    // Validate team name (already done in dialog, but double-check)
+    if (!updatedName.trim()) throw new Error("Team name is required");
+    // Check if user is authenticated
+    const token = localStorage.getItem("jwtToken");
+    if (!token) throw new Error("Authentication required. Please log in again.");
+    // Prepare form data for file upload
+    const formData = new FormData();
+    formData.append("name", updatedName.trim());
+    if (logoFile) {
+      formData.append("logo", logoFile);
+    }
+    // Update team information
+    const updateResponse = await fetch(
+      `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
+      {
+        method: "PUT",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
-
-      if (!updateResponse.ok) {
-        if (updateResponse.status === 401) {
-          throw new Error("Authentication failed. Please log in again.");
-        }
-        const errorData = await updateResponse.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to update team");
+      },
+    );
+    if (!updateResponse.ok) {
+      if (updateResponse.status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
       }
-
-      const updateData = await updateResponse.json();
-      setSuccess(updateData.message || "Team updated successfully");
-      setEditDialogOpen(false);
-
-      // Update local state directly instead of reloading all data
-      if (teamsData) {
-        const cacheBuster = Date.now();
-        setTeamsData((prevData) => {
-          if (!prevData) return prevData;
-
-          const updatedLeagueSeasons = prevData.leagueSeasons.map(
-            (leagueSeason) => ({
-              ...leagueSeason,
-              divisions: leagueSeason.divisions.map((division) => ({
-                ...division,
-                teams: division.teams.map((team) =>
-                  team.id === selectedTeam.id
-                    ? {
-                        ...team,
-                        name: editingTeamName.trim(),
-                        logoUrl: getLogoUrl(accountId, team.teamId, seasonId, team.id, cacheBuster),
-                      }
-                    : team,
-                ),
-              })),
-              unassignedTeams: leagueSeason.unassignedTeams.map((team) =>
+      const errorData = await updateResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to update team");
+    }
+    const updateData = await updateResponse.json();
+    setSuccess(updateData.message || "Team updated successfully");
+    // Update local state directly instead of reloading all data
+    if (teamsData) {
+      const cacheBuster = Date.now();
+      setTeamsData((prevData) => {
+        if (!prevData) return prevData;
+        const updatedLeagueSeasons = prevData.leagueSeasons.map(
+          (leagueSeason) => ({
+            ...leagueSeason,
+            divisions: leagueSeason.divisions.map((division) => ({
+              ...division,
+              teams: division.teams.map((team) =>
                 team.id === selectedTeam.id
                   ? {
                       ...team,
-                      name: editingTeamName.trim(),
+                      name: updatedName.trim(),
                       logoUrl: getLogoUrl(accountId, team.teamId, seasonId, team.id, cacheBuster),
                     }
                   : team,
               ),
-            }),
-          );
-
-          return {
-            ...prevData,
-            leagueSeasons: updatedLeagueSeasons,
-          };
-        });
-        // Reset logo load error for this team so the new image is shown
-        setLogoLoadError((prev) => {
-          const updated = { ...prev };
-          if (selectedTeam) delete updated[selectedTeam.id];
-          return updated;
-        });
-      }
-
-      // Clear form state
-      setSelectedTeam(null);
-      setEditingTeamName("");
-      setEditingLogoFile(null);
-      setLogoPreview(null);
-      setEditDialogError(null);
-    } catch (err) {
-      console.error("Error in handleSaveTeam:", err);
-      setEditDialogError(
-        err instanceof Error ? err.message : "Failed to update team",
-      );
-    } finally {
-      setSaving(false);
+            })),
+          }),
+        );
+        return {
+          ...prevData,
+          leagueSeasons: updatedLeagueSeasons,
+        };
+      });
+      setLogoLoadError((prev) => {
+        const updated = { ...prev };
+        if (selectedTeam) delete updated[selectedTeam.id];
+        return updated;
+      });
     }
-  };
-
-  const handleCancelEdit = () => {
-    setEditDialogOpen(false);
-    setSelectedTeam(null);
-    setEditingTeamName("");
-    setEditingLogoFile(null);
-    setLogoPreview(null);
-    setEditDialogError(null);
-    setSaving(false);
   };
 
   const renderTeamCard = (team: Team) => (
@@ -562,7 +469,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       {canEditTeams && (
         <IconButton
-          onClick={() => openEditDialog(team)}
+          onClick={() => handleEditTeam(team)}
           color="primary"
           size="small"
           title="Edit team"
@@ -632,13 +539,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<DownloadIcon />}
+              startIcon={<ExpandMoreIcon />}
               onClick={(event) => handleExportMenuOpen(event, leagueSeason)}
               sx={{
                 minWidth: "auto",
-                px: 1,
-                py: 0.5,
-                fontSize: "0.75rem",
+                px: 2,
+                py: 1,
               }}
             >
               Export
@@ -650,11 +556,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       </Paper>
     </Box>
   );
-
-  // Reset logoPreviewError when logoPreview changes
-  useEffect(() => {
-    setLogoPreviewError(false);
-  }, [logoPreview]);
 
   if (loading) {
     return (
@@ -731,8 +632,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             <Button
               variant="outlined"
               size="small"
-              startIcon={<DownloadIcon />}
-              endIcon={<ExpandMoreIcon />}
+              startIcon={<ExpandMoreIcon />}
               onClick={handleSeasonExportMenuOpen}
               sx={{
                 minWidth: "auto",
@@ -757,104 +657,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         </Box>
       </Paper>
 
-      {/* Edit Team Dialog */}
-      <Dialog
+      <EditTeamDialog
         open={editDialogOpen}
-        onClose={handleCancelEdit}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Edit Team</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
-            {editDialogError && (
-              <Alert severity="error" onClose={() => setEditDialogError(null)}>
-                {editDialogError}
-              </Alert>
-            )}
-
-            <TextField
-              fullWidth
-              label="Team Name"
-              value={editingTeamName}
-              onChange={(e) => setEditingTeamName(e.target.value)}
-              disabled={saving}
-            />
-
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                Team Logo
-              </Typography>
-
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
-              >
-                <Box
-                  sx={{
-                    width: LOGO_SIZE,
-                    height: LOGO_SIZE,
-                    bgcolor: "grey.300",
-                    borderRadius: 1,
-                    overflow: "hidden",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                  }}
-                >
-                  {logoPreview && !logoPreviewError ? (
-                    <Image
-                      src={logoPreview}
-                      alt={editingTeamName + " logo preview"}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      unoptimized
-                      onError={() => setLogoPreviewError(true)}
-                    />
-                  ) : (
-                    <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
-                      {editingTeamName.charAt(0).toUpperCase()}
-                    </Typography>
-                  )}
-                </Box>
-
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={<PhotoCameraIcon />}
-                  disabled={saving}
-                >
-                  Upload Logo
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={handleLogoChange}
-                  />
-                </Button>
-              </Box>
-
-              <Typography variant="caption" color="textSecondary">
-                Recommended size: {LOGO_SIZE}x{LOGO_SIZE} pixels. Max file size:
-                10MB.
-              </Typography>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCancelEdit} disabled={saving}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSaveTeam}
-            variant="contained"
-            startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        team={selectedTeam}
+        onClose={handleCloseEditDialog}
+        onSave={handleSaveTeam}
+      />
 
       {/* Export Menu */}
       <Menu
