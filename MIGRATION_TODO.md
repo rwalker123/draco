@@ -178,18 +178,18 @@
 - [x] Set up environment variables for database connection ✅
 - [x] Create global BigInt serialization middleware ✅
 - [x] Test database connectivity with API endpoint ✅
-- [ ] **Database Maintenance - Fix Auto-Increment Sequences**
-  - [ ] Fix auto-increment sequences for tables causing unique constraint violations:
-    - [ ] `batstatsum` table - ID sequence out of sync
-    - [ ] `pitchstatsum` table - ID sequence out of sync  
-    - [ ] `golfleaguesetup` table - ID sequence out of sync
-  - [ ] Run PostgreSQL sequence reset commands:
+- [x] **Database Maintenance - Fix Auto-Increment Sequences**
+  - [x] Fix auto-increment sequences for tables causing unique constraint violations:
+    - [x] `batstatsum` table - ID sequence out of sync
+    - [x] `pitchstatsum` table - ID sequence out of sync  
+    - [x] `golfleaguesetup` table - ID sequence out of sync
+  - [x] Run PostgreSQL sequence reset commands:
     ```sql
     SELECT setval(pg_get_serial_sequence('batstatsum', 'id'), (SELECT MAX(id) FROM batstatsum));
     SELECT setval(pg_get_serial_sequence('pitchstatsum', 'id'), (SELECT MAX(id) FROM pitchstatsum));
     SELECT setval(pg_get_serial_sequence('golfleaguesetup', 'id'), (SELECT MAX(id) FROM golfleaguesetup));
     ```
-  - [ ] Test sequence fixes with data insertion operations
+  - [x] Test sequence fixes with data insertion operations
 
 - [ ] **Database Schema - DivisionDefs Naming Uniqueness**
   - [ ] **Decision Required**: Determine approach for division name uniqueness
@@ -230,19 +230,32 @@
     - [ ] Set up consistent linting rules across both projects
     - [ ] Add TypeScript-specific linting rules
     - [ ] Configure import/export rules for better code organization
-  - [ ] **Prettier Configuration**
-    - [ ] Create `.prettierrc` configuration files for both projects
-    - [ ] Set up consistent formatting rules (indent, quotes, semicolons)
-    - [ ] Configure Prettier to work with ESLint
-    - [ ] Add Prettier ignore files for generated code
+  - [x] **Prettier Configuration**
+    - [x] Create root `.prettierrc` configuration file for the monorepo
+    - [x] Set up consistent formatting rules (indent, quotes, semicolons)
+    - [x] Configure Prettier to work with ESLint and lint-staged in both frontend and backend
+    - [x] Add `.prettierignore` file for generated code and build artifacts
   - [ ] **TypeScript Strict Mode**
-    - [ ] Enable strict TypeScript configuration for both projects
-    - [ ] Fix existing type errors and add proper type annotations
-    - [ ] Configure path mapping for cleaner imports
-    - [ ] Set up proper module resolution
-  - [ ] **Testing Infrastructure**
-    - [ ] Set up Jest configuration for backend unit tests
-    - [ ] Configure React Testing Library for frontend tests
+    - [x] Enable strict TypeScript configuration for both projects
+    - [x] Fix existing type errors and add proper type annotations (ongoing as needed)
+    - [x] Configure path mapping for cleaner imports
+    - [x] Set up proper module resolution
+  - [x] **Testing Infrastructure**
+    - [x] Set up Jest configuration for backend unit tests
+    - [ ] Write backend tests for:
+      - [ ] Core services (e.g., authService, roleService, emailService, storageService)
+      - [ ] Middleware (e.g., authMiddleware, routeProtection, roleMiddleware)
+      - [ ] Route handlers (e.g., accounts, auth, teams, rosters, leagues)
+      - [ ] Utility functions (e.g., validation, logo helpers)
+      - [ ] Error handling and edge cases
+    - [x] Configure React Testing Library for frontend tests
+    - [ ] Write frontend tests for:
+      - [ ] Context providers (e.g., AuthContext, AccountContext, RoleContext)
+      - [ ] Custom hooks (if any)
+      - [ ] Major components (e.g., Teams, EditTeamDialog, AccountHome, Login, Signup, etc.)
+      - [ ] Page components (e.g., dashboard, account-management, role-debug, etc.)
+      - [ ] Utility functions (e.g., validation, timezones)
+      - [ ] Error boundaries and edge cases
     - [ ] Add test coverage reporting
     - [ ] Set up integration test framework
     - [ ] Add pre-commit test running (optional - may slow down commits)
