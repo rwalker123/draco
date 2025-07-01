@@ -4,7 +4,7 @@ import { authenticateToken } from "../middleware/authMiddleware";
 import { RouteProtection } from "../middleware/routeProtection";
 import { RoleService } from "../services/roleService";
 import { createStorageService } from "../services/storageService";
-import { validateLogoFile, generateLogoPath } from "../config/logo";
+import { validateLogoFile, generateLogoPath, getLogoUrl } from "../config/logo";
 import * as multer from "multer";
 
 const router = Router({ mergeParams: true });
@@ -1105,8 +1105,8 @@ router.put(
             req.file.buffer,
           );
 
-          // Generate the logo URL for the response
-          logoUrl = generateLogoPath(
+          // Generate the public logo URL for the response
+          logoUrl = getLogoUrl(
             accountId.toString(),
             teamSeason.teamid.toString(),
           );
