@@ -243,7 +243,7 @@
   - [x] **Testing Infrastructure**
     - [x] Set up Jest configuration for backend unit tests
     - [ ] Write backend tests for:
-      - [ ] Core services (e.g., authService, roleService, emailService, storageService)
+      - [x] Core services (e.g., authService, roleService, emailService, storageService)
       - [ ] Middleware (e.g., authMiddleware, routeProtection, roleMiddleware)
       - [ ] Route handlers (e.g., accounts, auth, teams, rosters, leagues)
       - [ ] Utility functions (e.g., validation, logo helpers)
