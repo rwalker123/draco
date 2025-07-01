@@ -107,7 +107,12 @@ export class S3StorageService implements StorageService {
   private bucketName: string;
 
   constructor() {
-    this.bucketName = process.env.S3_BUCKET || "draco-team-logos";
+    if (!process.env.S3_BUCKET) {
+      throw new Error(
+        "S3_BUCKET environment variable must be set for S3 storage",
+      );
+    }
+    this.bucketName = process.env.S3_BUCKET;
 
     this.s3Client = new S3Client({
       region: process.env.S3_REGION || "us-east-1",
