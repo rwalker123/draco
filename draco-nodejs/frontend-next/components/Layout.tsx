@@ -166,9 +166,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {user ? (
               <>
-                <Typography variant="body1" sx={{ mr: 2 }}>
-                  Hello, {user.username || user.email}
-                </Typography>
+                {user.firstname && (
+                  <Typography variant="body1" sx={{ mr: 2 }}>
+                    Hello, {user.firstname}
+                  </Typography>
+                )}
                 <Button color="inherit" onClick={handleLogout}>
                   Logout
                 </Button>
