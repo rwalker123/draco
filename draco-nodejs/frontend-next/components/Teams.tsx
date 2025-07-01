@@ -17,7 +17,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import { useRole } from "../context/RoleContext";
-import { getLogoSize, getLogoUrl } from "../config/teams";
+import { getLogoSize, addCacheBuster } from "../config/teams";
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import Image from "next/image";
 import EditTeamDialog from "./EditTeamDialog";
@@ -359,203 +359,213 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       throw new Error(errorData.message || "Failed to update team");
     }
     const updateData = await updateResponse.json();
+    const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl);
+    setTeamsData((prevData) => {
+      if (!prevData) return prevData;
+      return {
+        ...prevData,
+        leagueSeasons: prevData.leagueSeasons.map((leagueSeason) => ({
+          ...leagueSeason,
+          divisions: leagueSeason.divisions.map((division) => ({
+            ...division,
+            teams: division.teams.map((team) =>
+              team.id === selectedTeam.id
+                ? {
+                    ...team,
+                    name: updatedName.trim(),
+                    logoUrl: newLogoUrl,
+                  }
+                : team
+            ),
+          })),
+        })),
+      };
+    });
+    setLogoLoadError((prev) => {
+      const updated = { ...prev };
+      if (selectedTeam) delete updated[selectedTeam.id];
+      return updated;
+    });
     setSuccess(updateData.message || "Team updated successfully");
-    // Update local state directly instead of reloading all data
-    if (teamsData) {
-      const cacheBuster = Date.now();
-      setTeamsData((prevData) => {
-        if (!prevData) return prevData;
-        const updatedLeagueSeasons = prevData.leagueSeasons.map(
-          (leagueSeason) => ({
-            ...leagueSeason,
-            divisions: leagueSeason.divisions.map((division) => ({
-              ...division,
-              teams: division.teams.map((team) =>
-                team.id === selectedTeam.id
-                  ? {
-                      ...team,
-                      name: updatedName.trim(),
-                      logoUrl: getLogoUrl(accountId, team.teamId, seasonId, team.id, cacheBuster),
-                    }
-                  : team,
-              ),
-            })),
-          }),
-        );
-        return {
-          ...prevData,
-          leagueSeasons: updatedLeagueSeasons,
-        };
-      });
-      setLogoLoadError((prev) => {
-        const updated = { ...prev };
-        if (selectedTeam) delete updated[selectedTeam.id];
-        return updated;
-      });
-    }
   };
 
-  const renderTeamCard = (team: Team) => (
-    <Box
-      key={team.id}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1,
-        mb: 1,
-        p: 1,
-        borderRadius: 1,
-        "&:hover": {
-          backgroundColor: "action.hover",
-        },
-      }}
-    >
+  const renderTeamCard = (team: Team) => {
+    return (
       <Box
+        key={team.id}
         sx={{
-          width: LOGO_SIZE,
-          height: LOGO_SIZE,
-          bgcolor: "grey.300",
-          flexShrink: 0,
-          borderRadius: 1,
-          overflow: "hidden",
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        {team.logoUrl && !logoLoadError[team.id] ? (
-          <Image
-            src={team.logoUrl}
-            alt={team.name + " logo"}
-            fill
-            style={{ objectFit: "cover" }}
-            unoptimized
-            onError={() => setLogoLoadError((prev) => ({ ...prev, [team.id]: true }))}
-          />
-        ) : (
-          <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
-            {team.name.charAt(0).toUpperCase()}
-          </Typography>
-        )}
-      </Box>
-
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Link
-          component="button"
-          variant="body2"
-          onClick={() => router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)}
-          sx={{
-            fontWeight: "bold",
-            textDecoration: "none",
-            color: "primary.main",
-            "&:hover": {
-              textDecoration: "underline",
-              color: "primary.dark",
-            },
-            textAlign: "left",
-            border: "none",
-            background: "none",
-            cursor: "pointer",
-            p: 0,
-            m: 0,
-            fontFamily: "inherit",
-            fontSize: "inherit",
-          }}
-        >
-          {team.name}
-        </Link>
-      </Box>
-
-      {canEditTeams && (
-        <IconButton
-          onClick={() => handleEditTeam(team)}
-          color="primary"
-          size="small"
-          title="Edit team"
-          sx={{ flexShrink: 0 }}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-      )}
-    </Box>
-  );
-
-  const renderDivision = (division: Division) => (
-    <Box key={division.id} sx={{ mb: 2 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{
-          fontWeight: "bold",
-          color: "primary.main",
+          gap: 1,
           mb: 1,
-          textTransform: "uppercase",
-          fontSize: "0.8rem",
+          p: 1,
+          borderRadius: 1,
+          "&:hover": {
+            backgroundColor: "action.hover",
+          },
         }}
       >
-        {division.divisionName}
-      </Typography>
-      <Box sx={{ pl: 1 }}>
-        {division.teams
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .map((team) => renderTeamCard(team))}
-      </Box>
-    </Box>
-  );
-
-  const renderLeagueSeason = (leagueSeason: LeagueSeason) => (
-    <Box
-      key={leagueSeason.id}
-      sx={{
-        mb: 3,
-        minWidth: 300,
-        maxWidth: 400,
-        flex: "1 1 auto",
-      }}
-    >
-      <Paper sx={{ p: 2, height: "100%" }}>
         <Box
           sx={{
+            width: LOGO_SIZE,
+            height: LOGO_SIZE,
+            bgcolor: "grey.300",
+            flexShrink: 0,
+            borderRadius: 1,
+            overflow: "hidden",
             display: "flex",
-            justifyContent: "space-between",
             alignItems: "center",
-            mb: 2,
-            borderBottom: "2px solid",
-            borderColor: "secondary.main",
-            pb: 1,
+            justifyContent: "center",
+            position: "relative",
           }}
         >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: "bold",
-              color: "secondary.main",
-            }}
-          >
-            {leagueSeason.leagueName}
-          </Typography>
-
-          {canEditTeams && (
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ExpandMoreIcon />}
-              onClick={(event) => handleExportMenuOpen(event, leagueSeason)}
-              sx={{
-                minWidth: "auto",
-                px: 2,
-                py: 1,
-              }}
-            >
-              Export
-            </Button>
+          {team.logoUrl && !logoLoadError[team.id] ? (
+            <Image
+              src={team.logoUrl}
+              alt={team.name + " logo"}
+              fill
+              style={{ objectFit: "cover" }}
+              unoptimized
+              onError={() => setLogoLoadError((prev) => ({ ...prev, [team.id]: true }))}
+            />
+          ) : (
+            <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
+              {team.name.charAt(0).toUpperCase()}
+            </Typography>
           )}
         </Box>
 
-        {leagueSeason.divisions.map(renderDivision)}
-      </Paper>
-    </Box>
-  );
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Link
+            component="button"
+            variant="body2"
+            onClick={() => router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)}
+            sx={{
+              fontWeight: "bold",
+              textDecoration: "none",
+              color: "primary.main",
+              "&:hover": {
+                textDecoration: "underline",
+                color: "primary.dark",
+              },
+              textAlign: "left",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              p: 0,
+              m: 0,
+              fontFamily: "inherit",
+              fontSize: "inherit",
+            }}
+          >
+            {team.name}
+          </Link>
+        </Box>
+
+        {canEditTeams && (
+          <IconButton
+            onClick={() => handleEditTeam(team)}
+            color="primary"
+            size="small"
+            title="Edit team"
+            sx={{ flexShrink: 0 }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        )}
+      </Box>
+    );
+  };
+
+  const renderDivision = (division: Division) => {
+    console.log('Render Division:', {
+      divisionId: division.id,
+      divisionName: division.divisionName,
+      teamCount: division.teams.length,
+    });
+    return (
+      <Box key={division.id} sx={{ mb: 2 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: "bold",
+            color: "primary.main",
+            mb: 1,
+            textTransform: "uppercase",
+            fontSize: "0.8rem",
+          }}
+        >
+          {division.divisionName}
+        </Typography>
+        <Box sx={{ pl: 1 }}>
+          {division.teams
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((team) => renderTeamCard(team))}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderLeagueSeason = (leagueSeason: LeagueSeason) => {
+    console.log('Render LeagueSeason:', {
+      leagueId: leagueSeason.id,
+      leagueName: leagueSeason.leagueName,
+      divisionCount: leagueSeason.divisions.length,
+    });
+    return (
+      <Box
+        key={leagueSeason.id}
+        sx={{
+          mb: 3,
+          minWidth: 300,
+          maxWidth: 400,
+          flex: "1 1 auto",
+        }}
+      >
+        <Paper sx={{ p: 2, height: "100%" }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+              borderBottom: "2px solid",
+              borderColor: "secondary.main",
+              pb: 1,
+            }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                color: "secondary.main",
+              }}
+            >
+              {leagueSeason.leagueName}
+            </Typography>
+
+            {canEditTeams && (
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<ExpandMoreIcon />}
+                onClick={(event) => handleExportMenuOpen(event, leagueSeason)}
+                sx={{
+                  minWidth: "auto",
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                Export
+              </Button>
+            )}
+          </Box>
+
+          {leagueSeason.divisions.map(renderDivision)}
+        </Paper>
+      </Box>
+    );
+  };
 
   if (loading) {
     return (
