@@ -1,0 +1,12 @@
+node_modules
+build
+dist
+coverage
+.next
+out
+*.lock
+*.log
+.env*
+.DS_Store
+uploads
+localstack-data 
