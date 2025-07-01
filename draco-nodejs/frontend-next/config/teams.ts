@@ -5,11 +5,6 @@ export const TEAM_CONFIG = {
   LOGO_MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB in bytes
   LOGO_ACCEPTED_TYPES: ["image/jpeg", "image/png", "image/gif", "image/webp"],
 
-  // Storage configuration
-  STORAGE_PROVIDER: process.env.REACT_APP_STORAGE_PROVIDER || "local", // "local" or "s3"
-  S3_ENDPOINT: process.env.REACT_APP_S3_ENDPOINT || "http://localhost:4566", // LocalStack endpoint
-  S3_BUCKET: process.env.REACT_APP_S3_BUCKET || "draco-team-logos",
-
   // Display configuration
   TEAMS_PER_ROW: {
     xs: 1, // Extra small screens
@@ -25,24 +20,11 @@ export const getLogoSize = (): number => {
   return TEAM_CONFIG.LOGO_SIZE;
 };
 
-// Helper function to generate logo URL based on storage provider
-export const getLogoUrl = (
-  accountId: string,
-  teamId: string,
-  seasonId: string,
-  teamSeasonId: string,
-  timestamp?: number,
-): string => {
+// Helper function to add cache-buster to a URL
+export const addCacheBuster = (url: string, timestamp?: number): string => {
   const cacheBuster = timestamp || Date.now();
-
-  if (TEAM_CONFIG.STORAGE_PROVIDER === "s3") {
-    // For S3, we'll use a backend proxy endpoint to serve the images
-    // The backend will query the teamId from the teamSeasonId
-    return `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/logo?t=${cacheBuster}`;
-  } else {
-    // For local storage, use the direct uploads path with teamId
-    return `/uploads/${accountId}/team-logos/${teamId}-logo.png?t=${cacheBuster}`;
-  }
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}t=${cacheBuster}`;
 };
 
 // Helper function to validate logo file
