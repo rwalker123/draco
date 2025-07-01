@@ -248,7 +248,14 @@
       - [ ] Route handlers (e.g., accounts, auth, teams, rosters, leagues)
       - [ ] Utility functions (e.g., validation, logo helpers)
       - [ ] Error handling and edge cases
-    - [ ] Configure React Testing Library for frontend tests
+    - [x] Configure React Testing Library for frontend tests
+    - [ ] Write frontend tests for:
+      - [ ] Context providers (e.g., AuthContext, AccountContext, RoleContext)
+      - [ ] Custom hooks (if any)
+      - [ ] Major components (e.g., Teams, EditTeamDialog, AccountHome, Login, Signup, etc.)
+      - [ ] Page components (e.g., dashboard, account-management, role-debug, etc.)
+      - [ ] Utility functions (e.g., validation, timezones)
+      - [ ] Error boundaries and edge cases
     - [ ] Add test coverage reporting
     - [ ] Set up integration test framework
     - [ ] Add pre-commit test running (optional - may slow down commits)
