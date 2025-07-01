@@ -25,11 +25,11 @@ For a low-traffic sports management application, serverless provides significant
 
 ## Architecture
 
-The serverless deployment uses:
-- **AWS Lambda** + **API Gateway** for the backend API
-- **S3** + **CloudFront** for frontend hosting
-- **RDS PostgreSQL** for the database
-- **Secrets Manager** for secure configuration
+The deployment now uses:
+- **Frontend**: Deployed via Vercel (Next.js)
+- **Backend**: AWS Lambda + API Gateway for the backend API, RDS PostgreSQL for the database
+
+> **Note:** The previous S3/CloudFront static hosting for the frontend is no longer used. All frontend deployment is handled by Vercel. The backend API is deployed to AWS as described below.
 
 ## Cost Comparison
 

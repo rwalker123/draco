@@ -4,16 +4,12 @@ This guide provides instructions for deploying the Draco Sports Manager applicat
 
 ## Architecture Overview
 
-The serverless deployment uses the following AWS services:
+The deployment now uses:
 
-- **AWS Lambda**: Serverless backend API (pay per request)
-- **API Gateway**: HTTP API management and routing
-- **RDS PostgreSQL**: Managed database service
-- **S3**: Static file hosting for frontend
-- **CloudFront**: Global CDN for frontend and API caching
-- **CloudWatch**: Logging and monitoring
-- **Route53**: DNS management (optional)
-- **ACM**: SSL certificate management
+- **Frontend**: Deployed via Vercel (Next.js)
+- **Backend**: AWS Lambda (API), API Gateway, RDS PostgreSQL
+
+> **Note:** The previous S3/CloudFront static hosting for the frontend is no longer used. All frontend deployment is handled by Vercel. The backend API is deployed to AWS as described below.
 
 ## Cost Comparison
 
@@ -64,6 +60,10 @@ TF_VAR_email_pass=your-actual-email-password
 # Optional Email Server Configuration
 TF_VAR_email_host=smtp.gmail.com
 TF_VAR_email_port=587
+
+# S3 Bucket for Account Resources
+S3_BUCKET=draco-account-resources-dev
+S3_REGION=us-east-1
 ```
 
 ### 2. Configure Terraform Variables
@@ -97,7 +97,8 @@ The script will automatically:
 - Build and package the Lambda function
 - Deploy infrastructure with Terraform
 - Update the Lambda function
-- Build and deploy the frontend to S3/CloudFront
+
+> **Frontend deployment is now handled by Vercel.**
 
 ## Deployment Options
 
@@ -168,12 +169,6 @@ aws-deployment/serverless/.env
 - Encryption at rest enabled
 - Minimal instance class for cost optimization
 
-### Frontend Hosting
-- S3 bucket for static files
-- CloudFront distribution for global CDN
-- Automatic cache invalidation on deployment
-- HTTPS enforcement
-
 ## Environment Variables
 
 ### Lambda Environment Variables
@@ -184,9 +179,11 @@ aws-deployment/serverless/.env
 - `EMAIL_PORT`: SMTP port (from TF_VAR_email_port)
 - `EMAIL_USER`: SMTP username (from TF_VAR_email_user)
 - `EMAIL_PASS`: SMTP password (from TF_VAR_email_pass)
+- `S3_BUCKET`: S3 bucket for account resources (from .env)
+- `S3_REGION`: S3 region (from .env)
 
 ### Frontend Environment Variables
-- `REACT_APP_API_URL`: API Gateway URL (automatically set)
+- `NEXT_PUBLIC_API_URL`: Set this in your Vercel project to point to the API Gateway URL output by this deployment.
 
 ## Monitoring and Logging
 
@@ -362,3 +359,18 @@ For issues or questions:
 3. Verify AWS service limits and quotas
 4. Consult AWS documentation for specific services
 5. Monitor costs in AWS Cost Explorer 
+
+## S3 Bucket for Account Resources
+
+A single S3 bucket is provisioned for all uploaded files (images, documents, etc) for all accounts:
+
+- **Bucket name:** `draco-account-resources-{environment}`
+- **Purpose:** Store team logos, player photos, league galleries, documents, and any other uploaded files.
+- **Organization:** Files are organized by account and resource type using S3 prefixes (folders), e.g.:
+  - `/accountId/team-logos/`
+  - `/accountId/player-photos/`
+  - `/accountId/league-gallery/`
+  - `/accountId/documents/`
+- **Access:** No public access. All access is managed via backend API and IAM policies.
+
+The bucket name is output as `account_resources_bucket_name` after deployment. 
