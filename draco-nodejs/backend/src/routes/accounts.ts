@@ -14,7 +14,7 @@ import { ContactRole } from '../types/roles';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
-const roleService = new RoleService(prisma);
+export const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
 // Helper to generate logo URL for a team
