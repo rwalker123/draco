@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { PrismaClient } from '@prisma/client';
 import accountsRouter from '../accounts';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
+import * as accountsModule from '../accounts';
 
 jest.mock('../../middleware/authMiddleware', () => ({
   authenticateToken: (req: Request, res: Response, next: NextFunction) => next(),
@@ -50,6 +51,7 @@ jest.mock('@prisma/client', () => {
     contacts: {
       findFirst: jest.fn(),
       update: jest.fn(),
+      findMany: jest.fn(),
     },
     availablefields: {
       findFirst: jest.fn(),
@@ -78,6 +80,21 @@ const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst;
 function createTestApp() {
   const app = express();
   app.use(express.json());
+  app.use('/api/accounts', accountsRouter);
+  app.use(globalErrorHandler as express.ErrorRequestHandler);
+  return app;
+}
+
+function createTestAppWithUser(
+  user: { id: string; username: string } = { id: '1', username: 'testuser' },
+) {
+  const app = express();
+  app.use(express.json());
+  // Middleware to inject mock user
+  app.use((req, res, next) => {
+    req.user = user;
+    next();
+  });
   app.use('/api/accounts', accountsRouter);
   app.use(globalErrorHandler as express.ErrorRequestHandler);
   return app;
@@ -439,7 +456,45 @@ describe('DELETE /accounts/:accountId', () => {
 });
 
 describe('DELETE /accounts/:accountId/urls/:urlId', () => {
-  // Scaffold: test 400 (no url), 400 (invalid url), 409 (duplicate), 404 (not found), 200 (success), 500 (error)
+  let app: express.Express;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    app = createTestApp();
+  });
+
+  it('returns 404 if URL not found or does not belong to this account', async () => {
+    mockPrisma.accountsurl.findFirst.mockResolvedValue(null);
+    const res = await request(app).delete('/api/accounts/123/urls/456');
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/URL not found or does not belong to this account/);
+  });
+
+  it('returns 200 on success', async () => {
+    mockPrisma.accountsurl.findFirst.mockResolvedValue({
+      id: 456,
+      accountid: 123,
+      url: 'test.com',
+    });
+    mockPrisma.accountsurl.delete.mockResolvedValue({});
+    const res = await request(app).delete('/api/accounts/123/urls/456');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toMatch(/URL removed successfully/);
+  });
+
+  it('returns 500 on error', async () => {
+    mockPrisma.accountsurl.findFirst.mockResolvedValue({
+      id: 456,
+      accountid: 123,
+      url: 'test.com',
+    });
+    mockPrisma.accountsurl.delete.mockRejectedValue(new Error('fail'));
+    const res = await request(app).delete('/api/accounts/123/urls/456');
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/Internal server error/);
+  });
 });
 
 describe('DELETE /accounts/:accountId/users/:contactId/roles/:roleId', () => {
@@ -456,4 +511,181 @@ describe('DELETE /accounts/:accountId/teams/:teamId', () => {
 
 describe('PUT /accounts/:accountId/fields/:fieldId', () => {
   // Scaffold: test 400 (missing name), 400 (duplicate), 404 (not found), 200 (success), 500 (error)
+});
+
+describe('GET /accounts (admin only)', () => {
+  let app: express.Express;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    app = createTestApp();
+  });
+
+  it('returns 200 with accounts', async () => {
+    mockFindManyAccounts.mockResolvedValue([
+      {
+        id: 1,
+        name: 'Test Account',
+        accounttypeid: 1,
+        owneruserid: 1,
+        firstyear: 2020,
+        affiliationid: 2,
+        timezoneid: 1,
+        twitteraccountname: '',
+        youtubeuserid: '',
+        facebookfanpage: '',
+        defaultvideo: '',
+        autoplayvideo: false,
+        accounttypes: { id: 1, name: 'League' },
+      },
+    ]);
+    mockFindManyAffiliations.mockResolvedValue([
+      { id: 2, name: 'Test Affiliation', url: 'affil.com' },
+    ]);
+    mockPrisma.contacts.findMany.mockResolvedValue([
+      { userid: 1, firstname: 'Owner', lastname: 'User', email: 'owner@example.com' },
+    ]);
+    const res = await request(app).get('/api/accounts');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accounts.length).toBe(1);
+    expect(res.body.data.accounts[0].name).toBe('Test Account');
+  });
+
+  it('returns 200 with empty accounts', async () => {
+    mockFindManyAccounts.mockResolvedValue([]);
+    mockFindManyAffiliations.mockResolvedValue([]);
+    mockPrisma.contacts.findMany.mockResolvedValue([]);
+    const res = await request(app).get('/api/accounts');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accounts).toEqual([]);
+  });
+
+  it('returns 500 on error', async () => {
+    mockFindManyAccounts.mockRejectedValue(new Error('fail'));
+    const res = await request(app).get('/api/accounts');
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/Internal server error/);
+  });
+});
+
+describe('GET /accounts/my-accounts', () => {
+  let app: express.Express;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    app = createTestAppWithUser();
+  });
+
+  it('returns 200 with all accounts for admin', async () => {
+    jest
+      .spyOn(accountsModule.roleService, 'hasRole')
+      .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
+    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+      globalRoles: [],
+      contactRoles: [
+        { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
+      ],
+    });
+    mockFindManyAccounts.mockResolvedValue([
+      {
+        id: 1,
+        name: 'Test Account',
+        accounttypeid: 1,
+        owneruserid: 1,
+        firstyear: 2020,
+        affiliationid: 2,
+        timezoneid: 1,
+        twitteraccountname: '',
+        youtubeuserid: '',
+        facebookfanpage: '',
+        defaultvideo: '',
+        autoplayvideo: false,
+        accounttypes: { id: 1, name: 'League' },
+      },
+    ]);
+    mockFindManyAffiliations.mockResolvedValue([
+      { id: 2, name: 'Test Affiliation', url: 'affil.com' },
+    ]);
+    mockPrisma.contacts.findMany.mockResolvedValue([
+      { userid: 1, firstname: 'Owner', lastname: 'User', email: 'owner@example.com' },
+    ]);
+    const res = await request(app).get('/api/accounts/my-accounts');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accounts.length).toBe(1);
+    expect(res.body.data.accounts[0].name).toBe('Test Account');
+  });
+
+  it('returns 200 with accounts for account admin', async () => {
+    jest
+      .spyOn(accountsModule.roleService, 'hasRole')
+      .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
+    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+      globalRoles: [],
+      contactRoles: [
+        { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
+      ],
+    });
+    mockFindManyAccounts.mockResolvedValue([
+      {
+        id: 1,
+        name: 'Test Account',
+        accounttypeid: 1,
+        owneruserid: 1,
+        firstyear: 2020,
+        affiliationid: 2,
+        timezoneid: 1,
+        twitteraccountname: '',
+        youtubeuserid: '',
+        facebookfanpage: '',
+        defaultvideo: '',
+        autoplayvideo: false,
+        accounttypes: { id: 1, name: 'League' },
+      },
+    ]);
+    mockFindManyAffiliations.mockResolvedValue([
+      { id: 2, name: 'Test Affiliation', url: 'affil.com' },
+    ]);
+    mockPrisma.contacts.findMany.mockResolvedValue([
+      { userid: 1, firstname: 'Owner', lastname: 'User', email: 'owner@example.com' },
+    ]);
+    const res = await request(app).get('/api/accounts/my-accounts');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accounts.length).toBe(1);
+    expect(res.body.data.accounts[0].name).toBe('Test Account');
+  });
+
+  it('returns 200 with empty accounts if no access', async () => {
+    jest
+      .spyOn(accountsModule.roleService, 'hasRole')
+      .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
+    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+      globalRoles: [],
+      contactRoles: [],
+    });
+    mockFindManyAccounts.mockResolvedValue([]);
+    mockFindManyAffiliations.mockResolvedValue([]);
+    mockPrisma.contacts.findMany.mockResolvedValue([]);
+    const res = await request(app).get('/api/accounts/my-accounts');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.accounts).toEqual([]);
+  });
+
+  it('returns 500 on error', async () => {
+    jest
+      .spyOn(accountsModule.roleService, 'hasRole')
+      .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
+    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+      globalRoles: [],
+      contactRoles: [],
+    });
+    mockFindManyAccounts.mockRejectedValue(new Error('fail'));
+    const res = await request(app).get('/api/accounts/my-accounts');
+    expect(res.status).toBe(500);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/Internal server error/);
+  });
 });
