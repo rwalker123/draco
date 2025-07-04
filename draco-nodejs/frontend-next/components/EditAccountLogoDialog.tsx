@@ -60,7 +60,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     if (open) {
       console.log('[EditAccountLogoDialog] accountLogoUrl:', accountLogoUrl);
       setLogoFile(null);
-      setLogoPreview(accountLogoUrl || null);
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
       setError(null);
       setLogoPreviewError(false);
     }
@@ -69,6 +69,15 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
   useEffect(() => {
     console.log('[EditAccountLogoDialog] logoPreview:', logoPreview);
   }, [logoPreview]);
+
+  function addCacheBuster(url: string, buster: number) {
+    const u = new URL(
+      url,
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost',
+    );
+    u.searchParams.set('k', String(buster));
+    return u.toString();
+  }
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -108,6 +117,8 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to upload logo');
       }
+      const newBuster = Date.now();
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, newBuster) : null);
       onLogoUpdated();
       onClose();
     } catch (err) {
@@ -130,6 +141,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || 'Failed to delete logo');
       }
+      setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
       onLogoUpdated();
       onClose();
     } catch (err) {
@@ -193,7 +205,6 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
                 startIcon={<CloudUploadIcon />}
                 disabled={saving || deleting}
               >
-                {/* Only show icon, no text */}
                 <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
               </Button>
               {accountLogoUrl && (
@@ -203,9 +214,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
                   startIcon={deleting ? <CircularProgress size={20} /> : <DeleteIcon />}
                   onClick={() => setConfirmDeleteOpen(true)}
                   disabled={saving || deleting}
-                >
-                  {/* Only show icon, no text */}
-                </Button>
+                ></Button>
               )}
             </Box>
             <Typography variant="caption" color="textSecondary">
@@ -227,7 +236,6 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
           {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
-      {/* Confirm Delete Dialog */}
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
         <DialogTitle>Delete Logo</DialogTitle>
         <DialogContent>
