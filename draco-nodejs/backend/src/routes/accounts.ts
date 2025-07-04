@@ -613,6 +613,7 @@ router.get(
         facebookFanPage: string | null;
         defaultVideo: string;
         autoPlayVideo: boolean;
+        accountLogoUrl: string;
       }
 
       // Administrator can see all accounts
@@ -684,6 +685,7 @@ router.get(
               facebookFanPage: account.facebookfanpage ?? null,
               defaultVideo: account.defaultvideo ?? '',
               autoPlayVideo: account.autoplayvideo,
+              accountLogoUrl: getAccountLogoUrl(account.id.toString()),
             };
           }),
         },
@@ -827,6 +829,7 @@ router.get(
               facebookFanPage: account.facebookfanpage,
               defaultVideo: account.defaultvideo,
               autoPlayVideo: account.autoplayvideo,
+              accountLogoUrl: getAccountLogoUrl(account.id.toString()),
             };
           }),
         },

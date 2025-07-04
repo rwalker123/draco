@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -26,20 +26,22 @@ import {
   Stack,
   Alert,
   CircularProgress,
-  Tooltip
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Visibility as ViewIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
 import ContactAutocomplete from './ContactAutocomplete';
 import { US_TIMEZONES, getTimezoneLabel } from '../utils/timezones';
+import EditAccountLogoDialog from './EditAccountLogoDialog';
 
 interface Account {
   id: string;
@@ -58,6 +60,7 @@ interface Account {
   facebookFanPage: string;
   defaultVideo: string;
   autoPlayVideo: boolean;
+  accountLogoUrl?: string;
 }
 
 interface AccountType {
@@ -76,19 +79,19 @@ const AccountManagement: React.FC = () => {
   const { token } = useAuth();
   const { hasRole } = useRole();
   const { setCurrentAccount } = useAccount();
-  
+
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     name: '',
@@ -96,8 +99,13 @@ const AccountManagement: React.FC = () => {
     ownerUserId: '',
     affiliationId: '1',
     timezoneId: 'Eastern Standard Time',
-    firstYear: new Date().getFullYear()
+    firstYear: new Date().getFullYear(),
   });
+
+  // Add state for logo dialog
+  const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+  const [logoDialogAccount, setLogoDialogAccount] = useState<Account | null>(null);
+  const [logoRefreshKey, setLogoRefreshKey] = useState(0);
 
   const isGlobalAdmin = hasRole('Administrator');
 
@@ -109,9 +117,9 @@ const AccountManagement: React.FC = () => {
       // Load accounts (my-accounts endpoint handles role-based access)
       const accountsResponse = await fetch('/api/accounts/my-accounts', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!accountsResponse.ok) {
@@ -124,9 +132,9 @@ const AccountManagement: React.FC = () => {
       // Load account types
       const typesResponse = await fetch('/api/accounts/types', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (typesResponse.ok) {
@@ -137,9 +145,9 @@ const AccountManagement: React.FC = () => {
       // Load affiliations
       const affiliationsResponse = await fetch('/api/accounts/affiliations', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (affiliationsResponse.ok) {
@@ -159,15 +167,19 @@ const AccountManagement: React.FC = () => {
     }
   }, [token, loadData]);
 
+  useEffect(() => {
+    console.log('[AccountManagement] accounts:', accounts);
+  }, [accounts]);
+
   const handleCreateAccount = async () => {
     try {
       const response = await fetch('/api/accounts', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -181,7 +193,7 @@ const AccountManagement: React.FC = () => {
         ownerUserId: '',
         affiliationId: '1',
         timezoneId: 'Eastern Standard Time',
-        firstYear: new Date().getFullYear()
+        firstYear: new Date().getFullYear(),
       });
       loadData();
     } catch (err) {
@@ -196,10 +208,10 @@ const AccountManagement: React.FC = () => {
       const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -214,7 +226,7 @@ const AccountManagement: React.FC = () => {
         ownerUserId: '',
         affiliationId: '1',
         timezoneId: 'Eastern Standard Time',
-        firstYear: new Date().getFullYear()
+        firstYear: new Date().getFullYear(),
       });
       loadData();
     } catch (err) {
@@ -229,9 +241,9 @@ const AccountManagement: React.FC = () => {
       const response = await fetch(`/api/accounts/${selectedAccount.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -254,7 +266,7 @@ const AccountManagement: React.FC = () => {
       ownerUserId: account.ownerUserId,
       affiliationId: account.affiliationId,
       timezoneId: account.timezoneId,
-      firstYear: account.firstYear
+      firstYear: account.firstYear,
     });
     setEditDialogOpen(true);
   };
@@ -268,7 +280,7 @@ const AccountManagement: React.FC = () => {
     setCurrentAccount({
       id: account.id,
       name: account.name,
-      accountType: account.accountType || undefined
+      accountType: account.accountType || undefined,
     });
     // Navigate to account details or dashboard
     window.location.href = `/account/${account.id}`;
@@ -281,7 +293,7 @@ const AccountManagement: React.FC = () => {
       ownerUserId: '',
       affiliationId: '1',
       timezoneId: 'Eastern Standard Time',
-      firstYear: new Date().getFullYear()
+      firstYear: new Date().getFullYear(),
     });
     setCreateDialogOpen(true);
   };
@@ -294,8 +306,14 @@ const AccountManagement: React.FC = () => {
       ownerUserId: '',
       affiliationId: '1',
       timezoneId: 'Eastern Standard Time',
-      firstYear: new Date().getFullYear()
+      firstYear: new Date().getFullYear(),
     });
+  };
+
+  // Helper to get logo URL (with refresh key to force reload)
+  const getAccountLogoUrl = (account: Account | null) => {
+    if (!account) return null;
+    return account.accountLogoUrl ? `${account.accountLogoUrl}?k=${logoRefreshKey}` : null;
   };
 
   if (loading) {
@@ -313,11 +331,7 @@ const AccountManagement: React.FC = () => {
           Account Management
         </Typography>
         {isGlobalAdmin && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateClick}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreateClick}>
             Create Account
           </Button>
         )}
@@ -356,10 +370,10 @@ const AccountManagement: React.FC = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip 
-                      label={account.accountType} 
-                      size="small" 
-                      color="primary" 
+                    <Chip
+                      label={account.accountType}
+                      size="small"
+                      color="primary"
                       variant="outlined"
                     />
                   </TableCell>
@@ -370,25 +384,30 @@ const AccountManagement: React.FC = () => {
                   <TableCell>
                     <Stack direction="row" spacing={1}>
                       <Tooltip title="View Account">
-                        <IconButton
-                          size="small"
-                          onClick={() => handleViewAccount(account)}
-                        >
+                        <IconButton size="small" onClick={() => handleViewAccount(account)}>
                           <ViewIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Edit Account">
+                        <IconButton size="small" onClick={() => openEditDialog(account)}>
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit Account Logo">
                         <IconButton
                           size="small"
-                          onClick={() => openEditDialog(account)}
+                          onClick={() => {
+                            setLogoDialogAccount(account);
+                            setLogoDialogOpen(true);
+                          }}
                         >
-                          <EditIcon />
+                          <PhotoCameraIcon />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Account Settings">
                         <IconButton
                           size="small"
-                          onClick={() => window.location.href = `/account/${account.id}/settings`}
+                          onClick={() => (window.location.href = `/account/${account.id}/settings`)}
                         >
                           <SettingsIcon />
                         </IconButton>
@@ -492,7 +511,12 @@ const AccountManagement: React.FC = () => {
       </Dialog>
 
       {/* Edit Account Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit Account</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -569,13 +593,26 @@ const AccountManagement: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* EditAccountLogoDialog integration */}
+      <EditAccountLogoDialog
+        open={logoDialogOpen}
+        accountId={logoDialogAccount?.id || ''}
+        accountLogoUrl={getAccountLogoUrl(logoDialogAccount)}
+        onClose={() => setLogoDialogOpen(false)}
+        onLogoUpdated={() => {
+          setLogoDialogOpen(false);
+          setLogoRefreshKey((k) => k + 1);
+          loadData();
+        }}
+      />
+
       {/* Delete Account Dialog */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
         <DialogTitle>Delete Account</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the account @quote;{selectedAccount?.name}@quote;? 
-            This action cannot be undone.
+            Are you sure you want to delete the account @quote;{selectedAccount?.name}@quote;? This
+            action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -589,4 +626,4 @@ const AccountManagement: React.FC = () => {
   );
 };
 
-export default AccountManagement; 
+export default AccountManagement;
