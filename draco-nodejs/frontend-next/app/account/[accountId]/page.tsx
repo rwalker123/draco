@@ -1,6 +1,6 @@
-"use client";
-import Accounts from "../../../components/Accounts";
+'use client';
+import Accounts from '../../../components/Accounts';
 
-export default function Page() {
+export default function AccountPage() {
   return <Accounts />;
 }
