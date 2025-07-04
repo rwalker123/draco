@@ -1,7 +1,7 @@
 // Protected Accounts Routes for Draco Sports Manager
 // Demonstrates route protection with role-based access control
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
@@ -11,11 +11,19 @@ import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
 import { generateLogoPath } from '../config/logo';
 import { logAndRethrow } from '../utils/logAndRethrow';
 import { ContactRole } from '../types/roles';
+import * as multer from 'multer';
+import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
+import { createStorageService } from '../services/storageService';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
 export const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
+const storageService = createStorageService();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 // Helper to generate logo URL for a team
 function getLogoUrl(accountId: string | number, teamId: string | number): string {
@@ -3162,6 +3170,78 @@ router.delete(
       });
     } catch (error) {
       logAndRethrow('deleting field', error);
+    }
+  },
+);
+
+// Account logo upload endpoint
+router.post(
+  '/:accountId/logo',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single('logo')(req, res, (err: unknown) => {
+      if (err) {
+        res.status(400).json({ success: false, message: (err as Error).message });
+        return;
+      }
+      next();
+    });
+  },
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const accountId = req.params.accountId;
+      if (!req.file) {
+        res.status(400).json({ success: false, message: 'No file uploaded' });
+        return;
+      }
+      const validationError = validateLogoFile(req.file);
+      if (validationError) {
+        res.status(400).json({ success: false, message: validationError });
+        return;
+      }
+      await storageService.saveAccountLogo(accountId, req.file.buffer);
+      const accountLogoUrl = getAccountLogoUrl(accountId);
+      res.json({ success: true, accountLogoUrl });
+    } catch (error) {
+      console.error('Error uploading account logo:', error);
+      res.status(500).json({ success: false, message: 'Failed to upload account logo' });
+    }
+  },
+);
+
+// Account logo get endpoint
+router.get('/:accountId/logo', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const accountId = req.params.accountId;
+    const logoBuffer = await storageService.getAccountLogo(accountId);
+    if (!logoBuffer) {
+      res.status(404).json({ success: false, message: 'Account logo not found' });
+      return;
+    }
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Content-Length', logoBuffer.length.toString());
+    res.send(logoBuffer);
+  } catch (error) {
+    console.error('Error serving account logo:', error);
+    res.status(500).json({ success: false, message: 'Failed to serve account logo' });
+  }
+});
+
+// Account logo delete endpoint
+router.delete(
+  '/:accountId/logo',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const accountId = req.params.accountId;
+      await storageService.deleteAccountLogo(accountId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting account logo:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete account logo' });
     }
   },
 );
