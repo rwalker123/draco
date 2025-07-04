@@ -433,6 +433,7 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
       twitterAccountName: string;
       facebookFanPage: string;
       urls: { id: string; url: string }[];
+      accountLogoUrl: string;
     }
     interface PublicSeasonResponse {
       id: string;
@@ -536,6 +537,7 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
             id: url.id.toString(),
             url: url.url,
           })),
+          accountLogoUrl: getAccountLogoUrl(account.id.toString()),
         } satisfies PublicAccountResponse,
         currentSeason: currentSeason
           ? {
