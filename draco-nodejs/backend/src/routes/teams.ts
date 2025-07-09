@@ -1,11 +1,11 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { PrismaClient } from "@prisma/client";
-import { authenticateToken } from "../middleware/authMiddleware";
-import { RouteProtection } from "../middleware/routeProtection";
-import { RoleService } from "../services/roleService";
-import { createStorageService } from "../services/storageService";
-import { validateLogoFile, generateLogoPath, getLogoUrl } from "../config/logo";
-import * as multer from "multer";
+import { Router, Request, Response, NextFunction } from 'express';
+import { PrismaClient } from '@prisma/client';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { RouteProtection } from '../middleware/routeProtection';
+import { RoleService } from '../services/roleService';
+import { createStorageService } from '../services/storageService';
+import { validateLogoFile, getLogoUrl } from '../config/logo';
+import * as multer from 'multer';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -25,81 +25,75 @@ const upload = multer({
  * GET /api/accounts/:accountId/seasons/:seasonId/teams
  * Get all teams for a season
  */
-router.get(
-  "/",
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const seasonId = BigInt(req.params.seasonId);
+    const accountId = BigInt(req.params.accountId);
 
-      // Get all teams for this season across all leagues
-      const teams = await prisma.teamsseason.findMany({
-        where: {
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
+    // Get all teams for this season across all leagues
+    const teams = await prisma.teamsseason.findMany({
+      where: {
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
           },
         },
-        include: {
-          teams: {
-            select: {
-              id: true,
-              webaddress: true,
-              youtubeuserid: true,
-              defaultvideo: true,
-              autoplayvideo: true,
-            },
+      },
+      include: {
+        teams: {
+          select: {
+            id: true,
+            webaddress: true,
+            youtubeuserid: true,
+            defaultvideo: true,
+            autoplayvideo: true,
           },
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+        },
+        leagueseason: {
+          include: {
+            league: {
+              select: {
+                id: true,
+                name: true,
               },
             },
           },
         },
-        orderBy: [
-          { leagueseason: { league: { name: "asc" } } },
-          { name: "asc" },
-        ],
-      });
+      },
+      orderBy: [{ leagueseason: { league: { name: 'asc' } } }, { name: 'asc' }],
+    });
 
-      res.json({
-        success: true,
-        data: {
-          teams: teams.map((team) => ({
-            id: team.id.toString(),
-            name: team.name,
-            teamId: team.teamid.toString(),
-            league: {
-              id: team.leagueseason.league.id.toString(),
-              name: team.leagueseason.league.name,
-            },
-            webAddress: team.teams.webaddress,
-            youtubeUserId: team.teams.youtubeuserid,
-            defaultVideo: team.teams.defaultvideo,
-            autoPlayVideo: team.teams.autoplayvideo,
-          })),
-        },
-      });
-    } catch (error) {
-      console.error("Teams route error:", error);
-      next(error);
-    }
-  },
-);
+    res.json({
+      success: true,
+      data: {
+        teams: teams.map((team) => ({
+          id: team.id.toString(),
+          name: team.name,
+          teamId: team.teamid.toString(),
+          league: {
+            id: team.leagueseason.league.id.toString(),
+            name: team.leagueseason.league.name,
+          },
+          webAddress: team.teams.webaddress,
+          youtubeUserId: team.teams.youtubeuserid,
+          defaultVideo: team.teams.defaultvideo,
+          autoPlayVideo: team.teams.autoplayvideo,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('Teams route error:', error);
+    next(error);
+  }
+});
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
  * Get all roster members for a team season
  */
 router.get(
-  "/:teamSeasonId/roster",
+  '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -123,9 +117,7 @@ router.get(
       });
 
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -157,7 +149,7 @@ router.get(
             },
           },
         },
-        orderBy: [{ inactive: "asc" }, { playernumber: "asc" }],
+        orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
       });
 
       res.json({
@@ -185,13 +177,13 @@ router.get(
                   : null,
                 phones: [
                   ...(member.roster.contacts.phone1
-                    ? [{ type: "home", number: member.roster.contacts.phone1 }]
+                    ? [{ type: 'home', number: member.roster.contacts.phone1 }]
                     : []),
                   ...(member.roster.contacts.phone2
-                    ? [{ type: "work", number: member.roster.contacts.phone2 }]
+                    ? [{ type: 'work', number: member.roster.contacts.phone2 }]
                     : []),
                   ...(member.roster.contacts.phone3
-                    ? [{ type: "cell", number: member.roster.contacts.phone3 }]
+                    ? [{ type: 'cell', number: member.roster.contacts.phone3 }]
                     : []),
                 ],
               },
@@ -200,7 +192,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Roster route error:", error);
+      console.error('Roster route error:', error);
       next(error);
     }
   },
@@ -211,7 +203,7 @@ router.get(
  * Get league information for a team season
  */
 router.get(
-  "/:teamSeasonId/league",
+  '/:teamSeasonId/league',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -246,9 +238,7 @@ router.get(
       });
 
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -260,7 +250,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("League route error:", error);
+      console.error('League route error:', error);
       next(error);
     }
   },
@@ -271,7 +261,7 @@ router.get(
  * Get all available players (not on any team in this season) for adding to roster
  */
 router.get(
-  "/:teamSeasonId/available-players",
+  '/:teamSeasonId/available-players',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -294,9 +284,7 @@ router.get(
       });
 
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -364,13 +352,13 @@ router.get(
                 : null,
               phones: [
                 ...(player.contacts.phone1
-                  ? [{ type: "home", number: player.contacts.phone1 }]
+                  ? [{ type: 'home', number: player.contacts.phone1 }]
                   : []),
                 ...(player.contacts.phone2
-                  ? [{ type: "work", number: player.contacts.phone2 }]
+                  ? [{ type: 'work', number: player.contacts.phone2 }]
                   : []),
                 ...(player.contacts.phone3
-                  ? [{ type: "cell", number: player.contacts.phone3 }]
+                  ? [{ type: 'cell', number: player.contacts.phone3 }]
                   : []),
               ],
             },
@@ -388,7 +376,7 @@ router.get(
  * Add a player to the team roster
  */
 router.post(
-  "/:teamSeasonId/roster",
+  '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -396,18 +384,13 @@ router.post(
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
       const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const {
-        playerId,
-        playerNumber,
-        submittedWaiver,
-        submittedDriversLicense,
-        firstYear,
-      } = req.body;
+      const { playerId, playerNumber, submittedWaiver, submittedDriversLicense, firstYear } =
+        req.body;
 
       if (!playerId) {
         res.status(400).json({
           success: false,
-          message: "PlayerId is required",
+          message: 'PlayerId is required',
         });
         return;
       }
@@ -416,7 +399,7 @@ router.post(
       if (playerNumber !== undefined && playerNumber < 0) {
         res.status(400).json({
           success: false,
-          message: "Player number must be 0 or greater",
+          message: 'Player number must be 0 or greater',
         });
         return;
       }
@@ -435,9 +418,7 @@ router.post(
       });
 
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -460,7 +441,7 @@ router.post(
       });
 
       if (!player) {
-        res.status(404).json({ success: false, message: "Player not found" });
+        res.status(404).json({ success: false, message: 'Player not found' });
         return;
       }
 
@@ -479,7 +460,7 @@ router.post(
       if (existingRosterMember) {
         res.status(400).json({
           success: false,
-          message: "Player is already on a team in this season",
+          message: 'Player is already on a team in this season',
         });
         return;
       }
@@ -531,9 +512,7 @@ router.post(
             playerNumber: newRosterMember.playernumber,
             inactive: newRosterMember.inactive,
             submittedWaiver: newRosterMember.submittedwaiver,
-            dateAdded: newRosterMember.dateadded
-              ? newRosterMember.dateadded.toISOString()
-              : null,
+            dateAdded: newRosterMember.dateadded ? newRosterMember.dateadded.toISOString() : null,
             player: {
               id: newRosterMember.roster.id,
               contactId: newRosterMember.roster.contactid,
@@ -553,7 +532,7 @@ router.post(
  * Update roster member information (player number, waiver status, driver's license, first year)
  */
 router.put(
-  "/:teamSeasonId/roster/:rosterMemberId/update",
+  '/:teamSeasonId/roster/:rosterMemberId/update',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -563,18 +542,13 @@ router.put(
       const teamSeasonId = BigInt(req.params.teamSeasonId);
       const rosterMemberId = BigInt(req.params.rosterMemberId);
 
-      const {
-        playerNumber,
-        submittedWaiver,
-        submittedDriversLicense,
-        firstYear,
-      } = req.body;
+      const { playerNumber, submittedWaiver, submittedDriversLicense, firstYear } = req.body;
 
       // Validate player number
       if (playerNumber !== undefined && playerNumber < 0) {
         res.status(400).json({
           success: false,
-          message: "Player number must be 0 or greater",
+          message: 'Player number must be 0 or greater',
         });
         return;
       }
@@ -608,9 +582,7 @@ router.put(
       });
 
       if (!rosterMember) {
-        res
-          .status(404)
-          .json({ success: false, message: "Roster member not found" });
+        res.status(404).json({ success: false, message: 'Roster member not found' });
         return;
       }
 
@@ -618,14 +590,9 @@ router.put(
       const updatedRosterMember = await prisma.rosterseason.update({
         where: { id: rosterMemberId },
         data: {
-          playernumber:
-            playerNumber !== undefined
-              ? playerNumber
-              : rosterMember.playernumber,
+          playernumber: playerNumber !== undefined ? playerNumber : rosterMember.playernumber,
           submittedwaiver:
-            submittedWaiver !== undefined
-              ? submittedWaiver
-              : rosterMember.submittedwaiver,
+            submittedWaiver !== undefined ? submittedWaiver : rosterMember.submittedwaiver,
         },
         include: {
           roster: {
@@ -649,8 +616,7 @@ router.put(
             submittedDriversLicense !== undefined
               ? submittedDriversLicense
               : rosterMember.roster.submitteddriverslicense,
-          firstyear:
-            firstYear !== undefined ? firstYear : rosterMember.roster.firstyear,
+          firstyear: firstYear !== undefined ? firstYear : rosterMember.roster.firstyear,
         },
       });
 
@@ -687,7 +653,7 @@ router.put(
  * Release a player from the team (set inactive = true)
  */
 router.put(
-  "/:teamSeasonId/roster/:rosterMemberId/release",
+  '/:teamSeasonId/roster/:rosterMemberId/release',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -726,16 +692,14 @@ router.put(
       });
 
       if (!rosterMember) {
-        res
-          .status(404)
-          .json({ success: false, message: "Roster member not found" });
+        res.status(404).json({ success: false, message: 'Roster member not found' });
         return;
       }
 
       if (rosterMember.inactive) {
         res.status(400).json({
           success: false,
-          message: "Player is already released",
+          message: 'Player is already released',
         });
         return;
       }
@@ -789,7 +753,7 @@ router.put(
  * Reactivate a released player (set inactive = false)
  */
 router.put(
-  "/:teamSeasonId/roster/:rosterMemberId/activate",
+  '/:teamSeasonId/roster/:rosterMemberId/activate',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -828,16 +792,14 @@ router.put(
       });
 
       if (!rosterMember) {
-        res
-          .status(404)
-          .json({ success: false, message: "Roster member not found" });
+        res.status(404).json({ success: false, message: 'Roster member not found' });
         return;
       }
 
       if (!rosterMember.inactive) {
         res.status(400).json({
           success: false,
-          message: "Player is already active",
+          message: 'Player is already active',
         });
         return;
       }
@@ -891,7 +853,7 @@ router.put(
  * Permanently delete a player from the roster (with warning)
  */
 router.delete(
-  "/:teamSeasonId/roster/:rosterMemberId",
+  '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -930,9 +892,7 @@ router.delete(
       });
 
       if (!rosterMember) {
-        res
-          .status(404)
-          .json({ success: false, message: "Roster member not found" });
+        res.status(404).json({ success: false, message: 'Roster member not found' });
         return;
       }
 
@@ -958,7 +918,7 @@ router.delete(
  * Get a single team season's info
  */
 router.get(
-  "/:teamSeasonId",
+  '/:teamSeasonId',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
@@ -982,9 +942,7 @@ router.get(
       });
 
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -998,6 +956,7 @@ router.get(
             youtubeUserId: teamSeason.teams.youtubeuserid,
             defaultVideo: teamSeason.teams.defaultvideo,
             autoPlayVideo: teamSeason.teams.autoplayvideo,
+            logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
             // Add more fields as needed
           },
         },
@@ -1013,21 +972,23 @@ router.get(
  * Update team information (name and logo)
  */
 router.put(
-  "/:teamSeasonId",
+  '/:teamSeasonId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  (req: any, res: any, next: any) => {
-    upload.single("logo")(req, res, (err: any) => {
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single('logo')(req, res, (err: unknown) => {
       if (err) {
-        return res.status(400).json({
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        res.status(400).json({
           success: false,
-          message: err.message,
+          message: message,
         });
+      } else {
+        next();
       }
-      next();
     });
   },
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -1038,7 +999,7 @@ router.put(
       if (!name || !name.trim()) {
         res.status(400).json({
           success: false,
-          message: "Team name is required",
+          message: 'Team name is required',
         });
         return;
       }
@@ -1062,7 +1023,7 @@ router.put(
       if (!teamSeason) {
         res.status(404).json({
           success: false,
-          message: "Team season not found",
+          message: 'Team season not found',
         });
         return;
       }
@@ -1079,7 +1040,7 @@ router.put(
       if (existingTeam) {
         res.status(409).json({
           success: false,
-          message: "A team with this name already exists in this league",
+          message: 'A team with this name already exists in this league',
         });
         return;
       }
@@ -1106,15 +1067,12 @@ router.put(
           );
 
           // Generate the public logo URL for the response
-          logoUrl = getLogoUrl(
-            accountId.toString(),
-            teamSeason.teamid.toString(),
-          );
+          logoUrl = getLogoUrl(accountId.toString(), teamSeason.teamid.toString());
         } catch (error) {
-          console.error("Error saving logo:", error);
+          console.error('Error saving logo:', error);
           res.status(500).json({
             success: false,
-            message: "Failed to save logo",
+            message: 'Failed to save logo',
           });
           return;
         }
@@ -1172,10 +1130,10 @@ router.put(
         message: `Team "${updatedTeamSeason.name}" has been updated successfully`,
       });
     } catch (error) {
-      console.error("Error updating team:", error);
+      console.error('Error updating team:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -1186,8 +1144,8 @@ router.put(
  * Get team logo from S3 or local storage
  */
 router.get(
-  "/:teamSeasonId/logo",
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  '/:teamSeasonId/logo',
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const accountId = req.params.accountId;
       const seasonId = req.params.seasonId;
@@ -1212,7 +1170,7 @@ router.get(
       if (!teamSeason) {
         res.status(404).json({
           success: false,
-          message: "Team season not found",
+          message: 'Team season not found',
         });
         return;
       }
@@ -1225,23 +1183,23 @@ router.get(
       if (!logoBuffer) {
         res.status(404).json({
           success: false,
-          message: "Logo not found",
+          message: 'Logo not found',
         });
         return;
       }
 
       // Set appropriate headers
-      res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
-      res.setHeader("Content-Length", logoBuffer.length.toString());
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.setHeader('Content-Length', logoBuffer.length.toString());
 
       // Send the image buffer
       res.send(logoBuffer);
     } catch (error) {
-      console.error("Error serving team logo:", error);
+      console.error('Error serving team logo:', error);
       res.status(500).json({
         success: false,
-        message: "Failed to serve logo",
+        message: 'Failed to serve logo',
       });
     }
   },
@@ -1252,8 +1210,8 @@ router.get(
  * Get team logo from S3 or local storage
  */
 router.get(
-  "/:teamId/logo",
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  '/:teamId/logo',
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const accountId = req.params.accountId;
       const teamId = req.params.teamId;
@@ -1264,24 +1222,87 @@ router.get(
       if (!logoBuffer) {
         res.status(404).json({
           success: false,
-          message: "Logo not found",
+          message: 'Logo not found',
         });
         return;
       }
 
       // Set appropriate headers
-      res.setHeader("Content-Type", "image/png");
-      res.setHeader("Cache-Control", "public, max-age=3600"); // Cache for 1 hour
-      res.setHeader("Content-Length", logoBuffer.length.toString());
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+      res.setHeader('Content-Length', logoBuffer.length.toString());
 
       // Send the image buffer
       res.send(logoBuffer);
     } catch (error) {
-      console.error("Error serving team logo:", error);
+      console.error('Error serving team logo:', error);
       res.status(500).json({
         success: false,
-        message: "Failed to serve logo",
+        message: 'Failed to serve logo',
       });
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/record
+ * Get win/loss/tie record for a team season
+ */
+router.get(
+  '/:teamSeasonId/record',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Fetch all games for this team in this league season where status is 1, 4, or 5
+      const games = await prisma.leagueschedule.findMany({
+        where: {
+          OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
+          gamestatus: { in: [1, 4, 5] },
+        },
+        select: {
+          hteamid: true,
+          vteamid: true,
+          hscore: true,
+          vscore: true,
+          gamestatus: true,
+        },
+      });
+
+      // Calculate record
+      let wins = 0,
+        losses = 0,
+        ties = 0;
+      for (const game of games) {
+        const isHome = game.hteamid === teamSeasonId;
+        const ourScore = isHome ? game.hscore : game.vscore;
+        const oppScore = isHome ? game.vscore : game.hscore;
+        const status = game.gamestatus;
+
+        if (status === 5) {
+          // Did not report
+          losses++;
+        } else if (ourScore > oppScore) {
+          wins++;
+        } else if (ourScore < oppScore) {
+          losses++;
+        } else if (status === 4) {
+          // Forfeit, if tie score, then both teams get a loss (double forfeit)
+          losses++;
+        } else {
+          ties++;
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          teamSeasonId: teamSeasonId.toString(),
+          record: { wins, losses, ties },
+        },
+      });
+    } catch (error) {
+      next(error);
     }
   },
 );
