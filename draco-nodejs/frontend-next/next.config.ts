@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
         destination: 'https://localhost:3001/uploads/:path*', // Proxy to backend
       },
     ];
+  },
+  images: {
+    domains: ['localhost'],
   },
 };
 
