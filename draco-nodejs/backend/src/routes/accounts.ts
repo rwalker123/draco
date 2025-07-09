@@ -387,6 +387,7 @@ router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
 router.get('/:accountId/public', async (req: Request, res: Response): Promise<void> => {
   try {
     const accountId = BigInt(req.params.accountId);
+    const { seasonId, currentSeasonOnly } = req.query;
 
     const accountSelectArgs = {
       where: { id: accountId },
@@ -498,27 +499,52 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Get recent seasons
-    const recentSeasons: PublicSeason[] = await prisma.season.findMany({
-      where: {
-        accountid: accountId,
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: {
-        name: Prisma.SortOrder.desc,
-      },
-      take: 5,
-    });
-
-    // Mark current season
-    const seasonsWithCurrentFlag: PublicSeasonResponse[] = recentSeasons.map((season) => ({
-      id: season.id.toString(),
-      name: season.name,
-      isCurrent: currentSeason ? season.id === currentSeason.id : false,
-    }));
+    let seasonsWithCurrentFlag: PublicSeasonResponse[] = [];
+    if (seasonId) {
+      // Only return the requested season
+      const season = await prisma.season.findUnique({
+        where: { id: BigInt(seasonId as string) },
+        select: { id: true, name: true },
+      });
+      if (season) {
+        seasonsWithCurrentFlag = [
+          {
+            id: season.id.toString(),
+            name: season.name,
+            isCurrent: currentSeason ? season.id === currentSeason.id : false,
+          },
+        ];
+      }
+    } else if (currentSeasonOnly === 'true') {
+      // Only return the current season
+      seasonsWithCurrentFlag = [
+        {
+          id: currentSeason.id.toString(),
+          name: currentSeason.name,
+          isCurrent: true,
+        },
+      ];
+    } else {
+      // Default: return recent seasons
+      const recentSeasons: PublicSeason[] = await prisma.season.findMany({
+        where: {
+          accountid: accountId,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: {
+          name: Prisma.SortOrder.desc,
+        },
+        take: 5,
+      });
+      seasonsWithCurrentFlag = recentSeasons.map((season) => ({
+        id: season.id.toString(),
+        name: season.name,
+        isCurrent: currentSeason ? season.id === currentSeason.id : false,
+      }));
+    }
 
     res.json({
       success: true,

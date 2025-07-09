@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -10,17 +10,14 @@ import {
   Link,
   Menu,
   MenuItem,
-} from "@mui/material";
-import {
-  Edit as EditIcon,
-  ExpandMore as ExpandMoreIcon,
-} from "@mui/icons-material";
-import { useAuth } from "../context/AuthContext";
-import { useRole } from "../context/RoleContext";
-import { getLogoSize, addCacheBuster } from "../config/teams";
+} from '@mui/material';
+import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
+import { getLogoSize, addCacheBuster } from '../config/teams';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import Image from "next/image";
-import EditTeamDialog from "./EditTeamDialog";
+import Image from 'next/image';
+import EditTeamDialog from './EditTeamDialog';
 
 interface Team {
   id: string;
@@ -71,10 +68,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   // Check if user has edit permissions for teams
   const canEditTeams =
     user &&
-    (hasRole("Administrator") ||
-      hasRole("AccountAdmin", { accountId }) ||
-      hasRole("LeagueAdmin", { accountId }) ||
-      hasPermission("team.manage", { accountId }));
+    (hasRole('Administrator') ||
+      hasRole('AccountAdmin', { accountId }) ||
+      hasRole('LeagueAdmin', { accountId }) ||
+      hasPermission('team.manage', { accountId }));
 
   const [teamsData, setTeamsData] = useState<TeamsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,13 +79,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Export menu states
-  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(
-    null,
-  );
-  const [selectedLeagueForExport, setSelectedLeagueForExport] =
-    useState<LeagueSeason | null>(null);
-  const [seasonExportMenuAnchor, setSeasonExportMenuAnchor] =
-    useState<null | HTMLElement>(null);
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedLeagueForExport, setSelectedLeagueForExport] = useState<LeagueSeason | null>(null);
+  const [seasonExportMenuAnchor, setSeasonExportMenuAnchor] = useState<null | HTMLElement>(null);
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
@@ -104,12 +97,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const handleExportRoster = async (leagueSeason: LeagueSeason) => {
     try {
       // TODO: Implement backend endpoint for CSV export
-      console.log("Exporting roster for league:", leagueSeason.leagueName);
 
       // Placeholder implementation
-      alert(
-        `Export roster for ${leagueSeason.leagueName} - Backend implementation pending`,
-      );
+      alert(`Export roster for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`, {
@@ -131,8 +121,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   document.body.removeChild(a);
       // }
     } catch (error) {
-      console.error("Error exporting roster:", error);
-      alert("Failed to export roster");
+      alert('Failed to export roster: ' + error);
     }
   };
 
@@ -140,12 +129,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const handleExportManagers = async (leagueSeason: LeagueSeason) => {
     try {
       // TODO: Implement backend endpoint for CSV export
-      console.log("Exporting managers for league:", leagueSeason.leagueName);
 
       // Placeholder implementation
-      alert(
-        `Export managers for ${leagueSeason.leagueName} - Backend implementation pending`,
-      );
+      alert(`Export managers for ${leagueSeason.leagueName} - Backend implementation pending`);
 
       // Future implementation would be:
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`, {
@@ -167,8 +153,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   document.body.removeChild(a);
       // }
     } catch (error) {
-      console.error("Error exporting managers:", error);
-      alert("Failed to export managers");
+      alert('Failed to export managers: ' + error);
     }
   };
 
@@ -186,9 +171,9 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     setSelectedLeagueForExport(null);
   };
 
-  const handleExportSelection = (type: "roster" | "managers") => {
+  const handleExportSelection = (type: 'roster' | 'managers') => {
     if (selectedLeagueForExport) {
-      if (type === "roster") {
+      if (type === 'roster') {
         handleExportRoster(selectedLeagueForExport);
       } else {
         handleExportManagers(selectedLeagueForExport);
@@ -201,7 +186,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const handleExportSeasonRoster = async () => {
     try {
       // TODO: Implement backend endpoint for season roster export
-      console.log("Exporting season roster");
 
       // Placeholder implementation
       alert(`Export season roster - Backend implementation pending`);
@@ -226,15 +210,13 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   document.body.removeChild(a);
       // }
     } catch (error) {
-      console.error("Error exporting season roster:", error);
-      alert("Failed to export season roster");
+      alert('Failed to export season roster: ' + error);
     }
   };
 
   const handleExportSeasonManagers = async () => {
     try {
       // TODO: Implement backend endpoint for season managers export
-      console.log("Exporting season managers");
 
       // Placeholder implementation
       alert(`Export season managers - Backend implementation pending`);
@@ -259,8 +241,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       //   document.body.removeChild(a);
       // }
     } catch (error) {
-      console.error("Error exporting season managers:", error);
-      alert("Failed to export season managers");
+      alert('Failed to export season managers: ' + error);
     }
   };
 
@@ -273,8 +254,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     setSeasonExportMenuAnchor(null);
   };
 
-  const handleSeasonExportSelection = (type: "roster" | "managers") => {
-    if (type === "roster") {
+  const handleSeasonExportSelection = (type: 'roster' | 'managers') => {
+    if (type === 'roster') {
       handleExportSeasonRoster();
     } else {
       handleExportSeasonManagers();
@@ -286,28 +267,26 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const loadTeamsData = useCallback(async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       // Load league seasons with divisions and teams for the given season
       const leagueSeasonsResponse = await fetch(
         `/api/accounts/${accountId}/seasons/${seasonId}/leagues?unassignedTeams=false`,
         {
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
         },
       );
 
       if (!leagueSeasonsResponse.ok) {
-        throw new Error("Failed to load teams data");
+        throw new Error('Failed to load teams data');
       }
 
       const leagueSeasonsData = await leagueSeasonsResponse.json();
       setTeamsData(leagueSeasonsData.data);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load teams data",
-      );
+      setError(err instanceof Error ? err.message : 'Failed to load teams data');
     } finally {
       setLoading(false);
     }
@@ -330,21 +309,21 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const handleSaveTeam = async (updatedName: string, logoFile: File | null) => {
     if (!selectedTeam) return;
     // Validate team name (already done in dialog, but double-check)
-    if (!updatedName.trim()) throw new Error("Team name is required");
+    if (!updatedName.trim()) throw new Error('Team name is required');
     // Check if user is authenticated
-    const token = localStorage.getItem("jwtToken");
-    if (!token) throw new Error("Authentication required. Please log in again.");
+    const token = localStorage.getItem('jwtToken');
+    if (!token) throw new Error('Authentication required. Please log in again.');
     // Prepare form data for file upload
     const formData = new FormData();
-    formData.append("name", updatedName.trim());
+    formData.append('name', updatedName.trim());
     if (logoFile) {
-      formData.append("logo", logoFile);
+      formData.append('logo', logoFile);
     }
     // Update team information
     const updateResponse = await fetch(
       `/api/accounts/${accountId}/seasons/${seasonId}/teams/${selectedTeam.id}`,
       {
-        method: "PUT",
+        method: 'PUT',
         body: formData,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -353,10 +332,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     );
     if (!updateResponse.ok) {
       if (updateResponse.status === 401) {
-        throw new Error("Authentication failed. Please log in again.");
+        throw new Error('Authentication failed. Please log in again.');
       }
       const errorData = await updateResponse.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to update team");
+      throw new Error(errorData.message || 'Failed to update team');
     }
     const updateData = await updateResponse.json();
     const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl);
@@ -375,7 +354,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                     name: updatedName.trim(),
                     logoUrl: newLogoUrl,
                   }
-                : team
+                : team,
             ),
           })),
         })),
@@ -386,7 +365,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       if (selectedTeam) delete updated[selectedTeam.id];
       return updated;
     });
-    setSuccess(updateData.message || "Team updated successfully");
+    setSuccess(updateData.message || 'Team updated successfully');
   };
 
   const renderTeamCard = (team: Team) => {
@@ -394,14 +373,14 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       <Box
         key={team.id}
         sx={{
-          display: "flex",
-          alignItems: "center",
+          display: 'flex',
+          alignItems: 'center',
           gap: 1,
           mb: 1,
           p: 1,
           borderRadius: 1,
-          "&:hover": {
-            backgroundColor: "action.hover",
+          '&:hover': {
+            backgroundColor: 'action.hover',
           },
         }}
       >
@@ -409,27 +388,27 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           sx={{
             width: LOGO_SIZE,
             height: LOGO_SIZE,
-            bgcolor: "grey.300",
+            bgcolor: 'grey.300',
             flexShrink: 0,
             borderRadius: 1,
-            overflow: "hidden",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
           }}
         >
           {team.logoUrl && !logoLoadError[team.id] ? (
             <Image
               src={team.logoUrl}
-              alt={team.name + " logo"}
+              alt={team.name + ' logo'}
               fill
-              style={{ objectFit: "cover" }}
+              style={{ objectFit: 'cover' }}
               unoptimized
               onError={() => setLogoLoadError((prev) => ({ ...prev, [team.id]: true }))}
             />
           ) : (
-            <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
+            <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
               {team.name.charAt(0).toUpperCase()}
             </Typography>
           )}
@@ -439,23 +418,25 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           <Link
             component="button"
             variant="body2"
-            onClick={() => router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)}
+            onClick={() =>
+              router?.push(`/account/${accountId}/seasons/${seasonId}/teams/${team.id}`)
+            }
             sx={{
-              fontWeight: "bold",
-              textDecoration: "none",
-              color: "primary.main",
-              "&:hover": {
-                textDecoration: "underline",
-                color: "primary.dark",
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              color: 'primary.main',
+              '&:hover': {
+                textDecoration: 'underline',
+                color: 'primary.dark',
               },
-              textAlign: "left",
-              border: "none",
-              background: "none",
-              cursor: "pointer",
+              textAlign: 'left',
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
               p: 0,
               m: 0,
-              fontFamily: "inherit",
-              fontSize: "inherit",
+              fontFamily: 'inherit',
+              fontSize: 'inherit',
             }}
           >
             {team.name}
@@ -478,21 +459,16 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   };
 
   const renderDivision = (division: Division) => {
-    console.log('Render Division:', {
-      divisionId: division.id,
-      divisionName: division.divisionName,
-      teamCount: division.teams.length,
-    });
     return (
       <Box key={division.id} sx={{ mb: 2 }}>
         <Typography
           variant="subtitle2"
           sx={{
-            fontWeight: "bold",
-            color: "primary.main",
+            fontWeight: 'bold',
+            color: 'primary.main',
             mb: 1,
-            textTransform: "uppercase",
-            fontSize: "0.8rem",
+            textTransform: 'uppercase',
+            fontSize: '0.8rem',
           }}
         >
           {division.divisionName}
@@ -507,11 +483,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   };
 
   const renderLeagueSeason = (leagueSeason: LeagueSeason) => {
-    console.log('Render LeagueSeason:', {
-      leagueId: leagueSeason.id,
-      leagueName: leagueSeason.leagueName,
-      divisionCount: leagueSeason.divisions.length,
-    });
     return (
       <Box
         key={leagueSeason.id}
@@ -519,26 +490,26 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           mb: 3,
           minWidth: 300,
           maxWidth: 400,
-          flex: "1 1 auto",
+          flex: '1 1 auto',
         }}
       >
-        <Paper sx={{ p: 2, height: "100%" }}>
+        <Paper sx={{ p: 2, height: '100%' }}>
           <Box
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
               mb: 2,
-              borderBottom: "2px solid",
-              borderColor: "secondary.main",
+              borderBottom: '2px solid',
+              borderColor: 'secondary.main',
               pb: 1,
             }}
           >
             <Typography
               variant="h6"
               sx={{
-                fontWeight: "bold",
-                color: "secondary.main",
+                fontWeight: 'bold',
+                color: 'secondary.main',
               }}
             >
               {leagueSeason.leagueName}
@@ -551,7 +522,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 startIcon={<ExpandMoreIcon />}
                 onClick={(event) => handleExportMenuOpen(event, leagueSeason)}
                 sx={{
-                  minWidth: "auto",
+                  minWidth: 'auto',
                   px: 2,
                   py: 1,
                 }}
@@ -569,12 +540,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
     );
@@ -594,12 +560,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   return (
     <Box>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Box>
           <Typography variant="h4">Teams</Typography>
           {!user && (
@@ -616,11 +577,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       </Box>
 
       {success && (
-        <Alert
-          severity="success"
-          sx={{ mb: 2 }}
-          onClose={() => setSuccess(null)}
-        >
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       )}
@@ -628,13 +585,13 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       <Paper sx={{ p: 3 }}>
         <Box
           sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
             mb: 3,
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
             {teamsData.season.name} Season
           </Typography>
 
@@ -645,7 +602,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               startIcon={<ExpandMoreIcon />}
               onClick={handleSeasonExportMenuOpen}
               sx={{
-                minWidth: "auto",
+                minWidth: 'auto',
                 px: 2,
                 py: 1,
               }}
@@ -657,10 +614,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
+            display: 'flex',
+            flexWrap: 'wrap',
             gap: 3,
-            justifyContent: "flex-start",
+            justifyContent: 'flex-start',
           }}
         >
           {teamsData.leagueSeasons.map(renderLeagueSeason)}
@@ -680,12 +637,8 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         open={Boolean(exportMenuAnchor)}
         onClose={handleExportMenuClose}
       >
-        <MenuItem onClick={() => handleExportSelection("roster")}>
-          Export Roster
-        </MenuItem>
-        <MenuItem onClick={() => handleExportSelection("managers")}>
-          Export Managers
-        </MenuItem>
+        <MenuItem onClick={() => handleExportSelection('roster')}>Export Roster</MenuItem>
+        <MenuItem onClick={() => handleExportSelection('managers')}>Export Managers</MenuItem>
       </Menu>
 
       {/* Season Export Menu */}
@@ -694,10 +647,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         open={Boolean(seasonExportMenuAnchor)}
         onClose={handleSeasonExportMenuClose}
       >
-        <MenuItem onClick={() => handleSeasonExportSelection("roster")}>
+        <MenuItem onClick={() => handleSeasonExportSelection('roster')}>
           Export All Rosters
         </MenuItem>
-        <MenuItem onClick={() => handleSeasonExportSelection("managers")}>
+        <MenuItem onClick={() => handleSeasonExportSelection('managers')}>
           Export All Managers
         </MenuItem>
       </Menu>
