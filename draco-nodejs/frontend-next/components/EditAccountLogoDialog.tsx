@@ -58,7 +58,6 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
 
   useEffect(() => {
     if (open) {
-      console.log('[EditAccountLogoDialog] accountLogoUrl:', accountLogoUrl);
       setLogoFile(null);
       setLogoPreview(accountLogoUrl ? addCacheBuster(accountLogoUrl, Date.now()) : null);
       setError(null);
@@ -66,9 +65,7 @@ const EditAccountLogoDialog: React.FC<EditAccountLogoDialogProps> = ({
     }
   }, [open, accountLogoUrl]);
 
-  useEffect(() => {
-    console.log('[EditAccountLogoDialog] logoPreview:', logoPreview);
-  }, [logoPreview]);
+  useEffect(() => {}, [logoPreview]);
 
   function addCacheBuster(url: string, buster: number) {
     const u = new URL(

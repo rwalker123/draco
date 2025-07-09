@@ -3,7 +3,7 @@
 ## ✅ COMPLETED TASKS
 
 ### Phase 1: Foundation & Infrastructure
-- [x] **Database Migration** - All tables migrated using pgloader from SQL Server to PostgreSQL
+- [x] **Database Migration** - All tables migrated using sqlpipe from SQL Server to PostgreSQL
 - [x] **Project Setup** - Node.js project structure created with backend and frontend directories
 - [x] **Backend Initialization** - Express.js with TypeScript setup completed
   - [x] `npm init -y` in backend directory
@@ -352,6 +352,26 @@
 - Secure configuration management using environment variables
 - Comprehensive documentation and deployment automation included
 - Ready for production deployment when needed
+
+### Alternative Deployment Investigations
+
+- [ ] **Investigate Prisma/Postgres DB Cloud Deployment**
+  - [ ] Research managed Postgres options (e.g., Railway, Supabase, Neon, AWS RDS)
+  - [ ] Evaluate Prisma Cloud or other managed Prisma solutions
+  - [ ] Document pros/cons, cost, and migration steps
+  - [ ] Test connection from backend API to managed Postgres
+  - [ ] Update environment/configuration for cloud DB
+
+- [ ] **Investigate Vercel Deployment for Frontend**
+  - [ ] Set up Vercel project for frontend-next
+  - [ ] Configure environment variables for Vercel
+  - [ ] Test frontend build and deployment on Vercel
+  - [ ] Validate API connectivity from Vercel frontend to backend API
+  - [ ] Document deployment steps and caveats
+
+- [ ] **Update AWS Deployment Plan**
+  - [ ] Adjust AWS deployment to only include backend API if DB and frontend are moved
+  - [ ] Document new architecture and update Terraform/scripts as needed
 
 ## 🎯 PRIORITY TASKS (Next Steps)
 
