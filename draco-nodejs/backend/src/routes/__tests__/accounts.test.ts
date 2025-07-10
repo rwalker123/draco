@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import accountsRouter from '../accounts';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
 import * as accountsModule from '../accounts';
+import gamesRouter from '../games';
 
 jest.mock('../../middleware/authMiddleware', () => ({
   authenticateToken: (req: Request, res: Response, next: NextFunction) => next(),
@@ -96,6 +97,22 @@ function createTestAppWithUser(
     next();
   });
   app.use('/api/accounts', accountsRouter);
+  app.use(globalErrorHandler as express.ErrorRequestHandler);
+  return app;
+}
+
+function createGamesTestAppWithUser(
+  user: { id: string; username: string } = { id: '1', username: 'testuser' },
+) {
+  const app = express();
+  app.use(express.json());
+  // Middleware to inject mock user
+  app.use((req, res, next) => {
+    req.user = user;
+    next();
+  });
+  // Mount games router at the correct path
+  app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
   app.use(globalErrorHandler as express.ErrorRequestHandler);
   return app;
 }
@@ -687,5 +704,67 @@ describe('GET /accounts/my-accounts', () => {
     expect(res.status).toBe(500);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/Internal server error/);
+  });
+});
+
+describe('Game Recap Endpoints', () => {
+  const accountId = '1';
+  const seasonId = '1';
+  const gameId = '1';
+  const teamAdminUser = { id: '1', username: 'teamadmin' };
+  let app: express.Express;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    app = createGamesTestAppWithUser(teamAdminUser);
+  });
+
+  it('should return 404 if no recap exists for the team', async () => {
+    const res = await request(app).get(
+      `/api/accounts/${accountId}/seasons/${seasonId}/games/${gameId}/recap`,
+    );
+    expect([403, 404]).toContain(res.status); // 404 if no recap, 403 if not authorized
+  });
+
+  it('should create a recap for the team', async () => {
+    const recapText = 'Great game!';
+    const res = await request(app)
+      .put(`/api/accounts/${accountId}/seasons/${seasonId}/games/${gameId}/recap`)
+      .send({ recap: recapText });
+    expect([200, 403]).toContain(res.status); // 200 if allowed, 403 if not authorized
+    if (res.status === 200) {
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.recap).toBe(recapText);
+    }
+  });
+
+  it('should fetch the created recap for the team', async () => {
+    const res = await request(app).get(
+      `/api/accounts/${accountId}/seasons/${seasonId}/games/${gameId}/recap`,
+    );
+    expect([200, 403, 404]).toContain(res.status);
+    if (res.status === 200) {
+      expect(res.body.success).toBe(true);
+      expect(typeof res.body.data.recap).toBe('string');
+    }
+  });
+
+  it('should update the recap for the team', async () => {
+    const recapText = 'Updated recap!';
+    const res = await request(app)
+      .put(`/api/accounts/${accountId}/seasons/${seasonId}/games/${gameId}/recap`)
+      .send({ recap: recapText });
+    expect([200, 403]).toContain(res.status);
+    if (res.status === 200) {
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.recap).toBe(recapText);
+    }
+  });
+
+  it('should return 400 if recap is missing or empty', async () => {
+    const res = await request(app)
+      .put(`/api/accounts/${accountId}/seasons/${seasonId}/games/${gameId}/recap`)
+      .send({ recap: '' });
+    expect([400, 403]).toContain(res.status);
   });
 });

@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
+import { ContactRole } from '../types/roles';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -843,6 +844,176 @@ router.delete(
     } catch (error) {
       console.error('Error deleting game:', error);
       next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap
+ * Get the recap for the current user's team for a specific game
+ * Only accessible to team admins/coaches for the home or away team
+ */
+router.get(
+  '/:gameId/recap',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const seasonId = BigInt(req.params.seasonId);
+      const gameId = BigInt(req.params.gameId);
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'User not authenticated' });
+        return;
+      }
+
+      // Fetch the game and validate it belongs to the account and season
+      const game = await prisma.leagueschedule.findUnique({
+        where: { id: gameId },
+        include: {
+          leagueseason: {
+            include: {
+              league: true,
+              season: true,
+            },
+          },
+        },
+      });
+      if (!game) {
+        res.status(404).json({ success: false, message: 'Game not found' });
+        return;
+      }
+      if (
+        game.leagueseason.seasonid !== seasonId ||
+        game.leagueseason.league.accountid !== accountId
+      ) {
+        res.status(404).json({ success: false, message: 'Game not found' });
+        return;
+      }
+
+      // Find which team (home or away) the user is an admin/coach for
+      const userRoles = await roleService.getUserRoles(userId, accountId);
+      const teamIds = [game.hteamid, game.vteamid];
+      const adminTeamId = userRoles.contactRoles.find(
+        (role: ContactRole) =>
+          (role.roleId === 'TeamAdmin' || role.roleId === 'TeamCoach') &&
+          teamIds.some((tid) => tid && tid.toString() === role.roleData.toString()),
+      )?.roleData;
+      if (!adminTeamId) {
+        res
+          .status(403)
+          .json({ success: false, message: 'Not authorized for either team in this game' });
+        return;
+      }
+
+      // Fetch the recap for this team/game
+      const recap = await prisma.gamerecap.findUnique({
+        where: {
+          gameid_teamid: {
+            gameid: gameId,
+            teamid: BigInt(adminTeamId),
+          },
+        },
+      });
+      if (!recap) {
+        res.status(404).json({ success: false, message: 'No recap found for your team' });
+        return;
+      }
+      res.json({ success: true, data: { recap: recap.recap } });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap
+ * Create or update the recap for the current user's team for a specific game
+ * Only accessible to team admins/coaches for the home or away team
+ * Body: { recap: string }
+ */
+router.put(
+  '/:gameId/recap',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const seasonId = BigInt(req.params.seasonId);
+      const gameId = BigInt(req.params.gameId);
+      const userId = req.user?.id;
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'User not authenticated' });
+        return;
+      }
+      const { recap } = req.body;
+      if (typeof recap !== 'string' || recap.trim() === '') {
+        res.status(400).json({ success: false, message: 'Recap is required' });
+        return;
+      }
+
+      // Fetch the game and validate it belongs to the account and season
+      const game = await prisma.leagueschedule.findUnique({
+        where: { id: gameId },
+        include: {
+          leagueseason: {
+            include: {
+              league: true,
+              season: true,
+            },
+          },
+        },
+      });
+      if (!game) {
+        res.status(404).json({ success: false, message: 'Game not found' });
+        return;
+      }
+      if (
+        game.leagueseason.seasonid !== seasonId ||
+        game.leagueseason.league.accountid !== accountId
+      ) {
+        res
+          .status(400)
+          .json({ success: false, message: 'Game does not belong to specified account/season' });
+        return;
+      }
+
+      // Find which team (home or away) the user is an admin/coach for
+      const userRoles = await roleService.getUserRoles(userId, accountId);
+      const teamIds = [game.hteamid, game.vteamid];
+      const adminTeamId = userRoles.contactRoles.find(
+        (role: ContactRole) =>
+          (role.roleId === 'TeamAdmin' || role.roleId === 'TeamCoach') &&
+          teamIds.some((tid) => tid && tid.toString() === role.roleData.toString()),
+      )?.roleData;
+      if (!adminTeamId) {
+        res
+          .status(403)
+          .json({ success: false, message: 'Not authorized for either team in this game' });
+        return;
+      }
+
+      // Upsert the recap for this team/game
+      const updatedRecap = await prisma.gamerecap.upsert({
+        where: {
+          gameid_teamid: {
+            gameid: gameId,
+            teamid: BigInt(adminTeamId),
+          },
+        },
+        update: {
+          recap,
+        },
+        create: {
+          gameid: gameId,
+          teamid: BigInt(adminTeamId),
+          recap,
+        },
+      });
+      res.json({ success: true, data: { recap: updatedRecap.recap } });
+    } catch (err) {
+      next(err);
     }
   },
 );

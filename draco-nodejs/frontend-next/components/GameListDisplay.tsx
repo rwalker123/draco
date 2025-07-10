@@ -37,6 +37,8 @@ export interface GameListDisplayProps {
   emptyMessage?: string;
   canEditGames?: boolean;
   onEditGame?: (game: Game) => void;
+  canEditRecap?: boolean;
+  onEditRecap?: (game: Game) => void;
 }
 
 // Utility to get short game status text
@@ -64,6 +66,8 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   emptyMessage = 'No games to display.',
   canEditGames = false,
   onEditGame,
+  canEditRecap,
+  onEditRecap,
 }) => {
   // Render a single game card
   const renderGame = (game: Game) => {
@@ -120,6 +124,27 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                     sx={{
                       color: '#b0c4de',
                       mt: 1,
+                      p: 0.5,
+                      '&:hover': {
+                        color: 'white',
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                      },
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {/* Recap button for completed games, only if canEditRecap is true */}
+              {game.gameStatusText !== 'Incomplete' && canEditRecap && onEditRecap && (
+                <Tooltip title={game.hasGameRecap ? 'Edit Summary' : 'Enter Summary'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => onEditRecap(game)}
+                    sx={{
+                      color: game.hasGameRecap ? '#ffd700' : '#b0c4de',
+                      mt: 1,
+                      ml: 1,
                       p: 0.5,
                       '&:hover': {
                         color: 'white',
