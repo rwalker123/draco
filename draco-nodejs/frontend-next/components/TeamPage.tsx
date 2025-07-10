@@ -4,7 +4,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import TeamInfoCard from '@/components/TeamInfoCard';
-import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
+import GameListDisplay, { Game } from './GameListDisplay';
 import React from 'react';
 
 interface TeamPageProps {
@@ -14,7 +14,8 @@ interface TeamPageProps {
 }
 
 const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }) => {
-  const [gameSections, setGameSections] = React.useState<GameListSection[]>([]);
+  const [upcomingGames, setUpcomingGames] = React.useState<Game[]>([]);
+  const [completedGames, setCompletedGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -27,14 +28,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       .then((res) => res.json())
       .then((data) => {
         if (!data.success) throw new Error(data.message || 'Failed to load games');
-        const sections: GameListSection[] = [];
-        if (data.data.upcoming) {
-          sections.push({ title: 'Upcoming Games', games: data.data.upcoming as Game[] });
-        }
-        if (data.data.recent) {
-          sections.push({ title: 'Completed Games', games: data.data.recent as Game[] });
-        }
-        setGameSections(sections);
+        setUpcomingGames(data.data.upcoming || []);
+        setCompletedGames(data.data.recent || []);
       })
       .catch((err) => setError(err.message || 'Error loading games'))
       .finally(() => setLoading(false));
@@ -45,13 +40,26 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       {/* Team Info Section */}
       <TeamInfoCard accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
 
-      {/* Upcoming & Recent Games */}
+      {/* Upcoming & Recent Games - Responsive Side by Side */}
       {loading ? (
         <div className="text-center text-muted-foreground py-8">Loading games...</div>
       ) : error ? (
         <div className="text-center text-red-600 py-8">{error}</div>
       ) : (
-        <GameListDisplay sections={gameSections} emptyMessage="No games to display." />
+        <div className="flex flex-col md:flex-row gap-6 mb-8">
+          <div className="flex-1 min-w-0">
+            <GameListDisplay
+              sections={[{ title: 'Upcoming Games', games: upcomingGames }]}
+              emptyMessage="No upcoming games."
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <GameListDisplay
+              sections={[{ title: 'Completed Games', games: completedGames }]}
+              emptyMessage="No completed games."
+            />
+          </div>
+        </div>
       )}
 
       {/* Stats Leaders & Sponsors */}
