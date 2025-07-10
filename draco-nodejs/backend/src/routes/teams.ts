@@ -6,6 +6,8 @@ import { RoleService } from '../services/roleService';
 import { createStorageService } from '../services/storageService';
 import { validateLogoFile, getLogoUrl } from '../config/logo';
 import * as multer from 'multer';
+import { leagueschedule, availablefields } from '@prisma/client';
+import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -1302,6 +1304,140 @@ router.get(
         },
       });
     } catch (error) {
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/games
+ * Get upcoming and/or recent games for a team season
+ */
+router.get(
+  '/:teamSeasonId/games',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { upcoming, recent, limit } = req.query;
+      const limitNum = Number(limit) > 0 ? Number(limit) : 5;
+      const includeUpcoming = upcoming === 'true' || (!upcoming && !recent);
+      const includeRecent = recent === 'true' || (!upcoming && !recent);
+
+      // Validate team/season/account relationship
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+        include: {
+          leagueseason: {
+            include: {
+              league: true,
+            },
+          },
+        },
+      });
+      if (!teamSeason) {
+        res.status(404).json({ success: false, message: 'Team season not found' });
+        return;
+      }
+
+      // Helper to map game to API shape
+      const getTeamNames = async (homeTeamId: bigint, awayTeamId: bigint) => {
+        const teams = await prisma.teamsseason.findMany({
+          where: {
+            id: { in: [homeTeamId, awayTeamId] },
+          },
+          select: { id: true, name: true },
+        });
+        const homeTeam = teams.find((t) => t.id === homeTeamId);
+        const awayTeam = teams.find((t) => t.id === awayTeamId);
+        return {
+          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
+          awayTeamName: awayTeam?.name || `Team ${awayTeamId}`,
+        };
+      };
+
+      const mapGame = async (
+        game: leagueschedule & { availablefields?: availablefields | null },
+      ) => {
+        const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+        return {
+          id: game.id.toString(),
+          date: game.gamedate ? game.gamedate.toISOString() : null,
+          homeTeamId: game.hteamid ? game.hteamid.toString() : null,
+          awayTeamId: game.vteamid ? game.vteamid.toString() : null,
+          homeTeamName: teamNames.homeTeamName,
+          awayTeamName: teamNames.awayTeamName,
+          homeScore: game.hscore,
+          awayScore: game.vscore,
+          gameStatus: game.gamestatus,
+          gameStatusText: getGameStatusText(game.gamestatus),
+          gameStatusShortText: getGameStatusShortText(game.gamestatus),
+          leagueName: teamSeason.leagueseason.league.name,
+          fieldId: game.fieldid ? game.fieldid.toString() : null,
+          fieldName: game.availablefields ? game.availablefields.name : null,
+          fieldShortName: game.availablefields ? game.availablefields.shortname : null,
+        };
+      };
+
+      const now = new Date();
+      let upcomingGames: (leagueschedule & { availablefields?: availablefields | null })[] = [];
+      let recentGames: (leagueschedule & { availablefields?: availablefields | null })[] = [];
+
+      if (includeUpcoming) {
+        // Upcoming: games in the future, order by soonest
+        upcomingGames = await prisma.leagueschedule.findMany({
+          where: {
+            gamedate: { gte: now },
+            leagueseason: {
+              seasonid: seasonId,
+            },
+            OR: [{ hteamid: teamSeason.id }, { vteamid: teamSeason.id }],
+          },
+          include: { availablefields: true },
+          orderBy: { gamedate: 'asc' },
+          take: limitNum,
+        });
+      }
+      if (includeRecent) {
+        // Recent: games in the past, order by most recent
+        recentGames = await prisma.leagueschedule.findMany({
+          where: {
+            gamedate: { lt: now },
+            leagueseason: {
+              seasonid: seasonId,
+            },
+            OR: [{ hteamid: teamSeason.id }, { vteamid: teamSeason.id }],
+          },
+          include: { availablefields: true },
+          orderBy: { gamedate: 'desc' },
+          take: limitNum,
+        });
+      }
+
+      // Map games with team names (async)
+      const mappedUpcoming = includeUpcoming
+        ? await Promise.all(upcomingGames.map(mapGame))
+        : undefined;
+      const mappedRecent = includeRecent ? await Promise.all(recentGames.map(mapGame)) : undefined;
+
+      res.json({
+        success: true,
+        data: {
+          ...(includeUpcoming ? { upcoming: mappedUpcoming } : {}),
+          ...(includeRecent ? { recent: mappedRecent } : {}),
+        },
+      });
+    } catch (error) {
+      console.error('Team games route error:', error);
       next(error);
     }
   },
