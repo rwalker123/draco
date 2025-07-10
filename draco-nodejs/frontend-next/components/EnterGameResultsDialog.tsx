@@ -15,9 +15,14 @@ import {
   Checkbox,
   Chip,
   Alert,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
-import { Close as CloseIcon, Save as SaveIcon, Email as EmailIcon, Twitter as TwitterIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  Save as SaveIcon,
+  Email as EmailIcon,
+  Twitter as TwitterIcon,
+} from '@mui/icons-material';
 
 interface GameRecap {
   teamId: string;
@@ -67,14 +72,14 @@ const gameStatusOptions = [
   { value: 2, label: 'Rainout' },
   { value: 3, label: 'Postponed' },
   { value: 4, label: 'Forfeit' },
-  { value: 5, label: 'Did Not Report' }
+  { value: 5, label: 'Did Not Report' },
 ];
 
 const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   open,
   onClose,
   game,
-  onSave
+  onSave,
 }) => {
   const [formData, setFormData] = useState<GameResultData>({
     gameId: '',
@@ -84,7 +89,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     emailPlayers: false,
     postToTwitter: false,
     postToBluesky: false,
-    postToFacebook: false
+    postToFacebook: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,16 +105,16 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         emailPlayers: false,
         postToTwitter: false,
         postToBluesky: false,
-        postToFacebook: false
+        postToFacebook: false,
       });
       setError(null);
     }
   }, [game]);
 
   const handleInputChange = (field: keyof GameResultData, value: string | number | boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -117,13 +122,18 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     if (!game) return;
 
     // Validate forfeit scores
-    if (formData.gameStatus === 4) { // Forfeit
+    if (formData.gameStatus === 4) {
+      // Forfeit
       if (formData.homeScore === 0 && formData.awayScore === 0) {
-        setError('For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.');
+        setError(
+          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
+        );
         return;
       }
       if (formData.homeScore > 0 && formData.awayScore > 0) {
-        setError('For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.');
+        setError(
+          'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
+        );
         return;
       }
     }
@@ -151,7 +161,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         day: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
-        hour12: true
+        hour12: true,
       });
     } catch {
       return 'TBD';
@@ -165,8 +175,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   if (!game) return null;
 
   return (
-    <Dialog 
-      open={open} 
+    <Dialog
+      open={open}
       onClose={onClose}
       maxWidth={false}
       fullWidth={false}
@@ -177,7 +187,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           width: '70%',
           maxWidth: '600px',
         },
-        zIndex: 1400
+        zIndex: 1400,
       }}
       PaperProps={{
         sx: {
@@ -186,24 +196,23 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           borderRadius: 2,
           minHeight: '600px',
           maxHeight: '85vh',
-          overflow: 'auto'
-        }
+          overflow: 'auto',
+        },
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        borderBottom: '1px solid rgba(255,255,255,0.1)',
-        pb: 2
-      }}>
+      <DialogTitle
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          pb: 2,
+        }}
+      >
         <Typography variant="h6" fontWeight={700}>
           Enter Game Results
         </Typography>
-        <Button
-          onClick={onClose}
-          sx={{ color: '#b0c4de', minWidth: 'auto', p: 0 }}
-        >
+        <Button onClick={onClose} sx={{ color: '#b0c4de', minWidth: 'auto', p: 0 }}>
           <CloseIcon />
         </Button>
       </DialogTitle>
@@ -220,7 +229,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
             Game Information
           </Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="body2" color="white" fontWeight={600}>
                 Date/Time:
@@ -283,7 +298,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                     sx: {
                       zIndex: 1500,
                     },
-                    container: document.body
+                    container: document.body,
                   }}
                   sx={{
                     color: 'white',
@@ -302,8 +317,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   }}
                 >
                   {gameStatusOptions.map((option) => (
-                    <MenuItem 
-                      key={option.value} 
+                    <MenuItem
+                      key={option.value}
                       value={option.value}
                       sx={{
                         color: 'white',
@@ -359,12 +374,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   '& .MuiInputLabel-root': {
                     color: '#b0c4de',
                   },
-                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
-                    '-webkit-appearance': 'none',
-                    margin: 0,
-                  },
+                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
+                    {
+                      WebkitAppearance: 'none',
+                      margin: 0,
+                    },
                   '& input[type=number]': {
-                    '-moz-appearance': 'textfield',
+                    MozAppearance: 'textfield',
                     textAlign: 'center',
                   },
                 }}
@@ -402,12 +418,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   '& .MuiInputLabel-root': {
                     color: '#b0c4de',
                   },
-                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button': {
-                    '-webkit-appearance': 'none',
-                    margin: 0,
-                  },
+                  '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
+                    {
+                      WebkitAppearance: 'none',
+                      margin: 0,
+                    },
                   '& input[type=number]': {
-                    '-moz-appearance': 'textfield',
+                    MozAppearance: 'textfield',
                     textAlign: 'center',
                   },
                 }}
@@ -421,14 +438,16 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
             Notifications & Social Media
           </Typography>
-          <Box sx={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-            gap: 2,
-            p: 2,
-            bgcolor: 'rgba(255,255,255,0.03)',
-            borderRadius: 1
-          }}>
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: 2,
+              p: 2,
+              bgcolor: 'rgba(255,255,255,0.03)',
+              borderRadius: 1,
+            }}
+          >
             <FormControlLabel
               control={
                 <Checkbox
@@ -488,7 +507,11 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               }
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip label="BS" size="small" sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }} />
+                  <Chip
+                    label="BS"
+                    size="small"
+                    sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }}
+                  />
                   <Typography variant="body2" color="white">
                     Post to Bluesky
                   </Typography>
@@ -510,7 +533,11 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               }
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Chip label="FB" size="small" sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }} />
+                  <Chip
+                    label="FB"
+                    size="small"
+                    sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }}
+                  />
                   <Typography variant="body2" color="white">
                     Post to Facebook
                   </Typography>
@@ -521,11 +548,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ 
-        p: 3, 
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        gap: 1
-      }}>
+      <DialogActions
+        sx={{
+          p: 3,
+          borderTop: '1px solid rgba(255,255,255,0.1)',
+          gap: 1,
+        }}
+      >
         <Button
           onClick={onClose}
           variant="outlined"
@@ -564,4 +593,4 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
   );
 };
 
-export default EnterGameResultsDialog; 
+export default EnterGameResultsDialog;
