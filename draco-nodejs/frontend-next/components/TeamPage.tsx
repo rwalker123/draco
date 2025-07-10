@@ -6,6 +6,7 @@ import Image from 'next/image';
 import TeamInfoCard from '@/components/TeamInfoCard';
 import GameListDisplay, { Game } from './GameListDisplay';
 import React from 'react';
+import EnterGameSummaryDialog from './EnterGameRecapDialog';
 
 interface TeamPageProps {
   accountId: string;
@@ -18,6 +19,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [completedGames, setCompletedGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [summaryDialogOpen, setSummaryDialogOpen] = React.useState(false);
+  const [selectedGame, setSelectedGame] = React.useState<Game | null>(null);
+  const [summaryDraft, setSummaryDraft] = React.useState('');
 
   React.useEffect(() => {
     setLoading(true);
@@ -34,6 +38,23 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       .catch((err) => setError(err.message || 'Error loading games'))
       .finally(() => setLoading(false));
   }, [accountId, seasonId, teamSeasonId]);
+
+  const handleEditSummary = (game: Game) => {
+    setSelectedGame(game);
+    setSummaryDraft(game.gameRecaps?.[0]?.recap || '');
+    setSummaryDialogOpen(true);
+  };
+
+  const handleCloseSummaryDialog = () => {
+    setSummaryDialogOpen(false);
+    setSelectedGame(null);
+  };
+
+  const handleSaveSummary = (_summary: string) => {
+    // For now, just close the dialog. API integration will be added later.
+    setSummaryDialogOpen(false);
+    setSelectedGame(null);
+  };
 
   return (
     <main className="max-w-5xl mx-auto py-10 px-4 min-h-screen bg-background">
@@ -57,6 +78,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             <GameListDisplay
               sections={[{ title: 'Completed Games', games: completedGames }]}
               emptyMessage="No completed games."
+              canEditRecap={true}
+              onEditRecap={handleEditSummary}
             />
           </div>
         </div>
@@ -234,6 +257,24 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
           </CardContent>
         </Card>
       </div>
+
+      {/* Game Recap Dialog */}
+      <EnterGameSummaryDialog
+        open={summaryDialogOpen}
+        onClose={handleCloseSummaryDialog}
+        onSave={handleSaveSummary}
+        initialSummary={summaryDraft}
+        teamName={
+          selectedGame?.homeTeamId === teamSeasonId
+            ? selectedGame?.homeTeamName
+            : selectedGame?.awayTeamName
+        }
+        gameDate={selectedGame?.date}
+        homeScore={selectedGame?.homeScore}
+        awayScore={selectedGame?.awayScore}
+        homeTeamName={selectedGame?.homeTeamName}
+        awayTeamName={selectedGame?.awayTeamName}
+      />
     </main>
   );
 };

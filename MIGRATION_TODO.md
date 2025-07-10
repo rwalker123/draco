@@ -789,3 +789,5 @@
 - [ ] Performance optimizations
 - [ ] Additional UI improvements
 - [ ] Enhanced error handling
+
+- [ ] TODO: Add a WYSIWYG editor (e.g., react-quill, TinyMCE, Slate) to the game summary/recap input in the frontend once React 19 support is available.
