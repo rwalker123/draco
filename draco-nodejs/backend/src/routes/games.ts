@@ -1,14 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
+import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
-
 
 /**
  * @swagger
@@ -149,20 +149,33 @@ const routeProtection = new RouteProtection(roleService, prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.put('/:gameId/results',
+router.put(
+  '/:gameId/results',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);
       const gameId = BigInt(req.params.gameId);
-      const { homeScore, awayScore, gameStatus, emailPlayers, postToTwitter, postToBluesky, postToFacebook } = req.body;
+      const {
+        homeScore,
+        awayScore,
+        gameStatus,
+        emailPlayers,
+        postToTwitter,
+        postToBluesky,
+        postToFacebook,
+      } = req.body;
 
       // Validate input
-      if (typeof homeScore !== 'number' || typeof awayScore !== 'number' || typeof gameStatus !== 'number') {
+      if (
+        typeof homeScore !== 'number' ||
+        typeof awayScore !== 'number' ||
+        typeof gameStatus !== 'number'
+      ) {
         res.status(400).json({
           success: false,
-          message: 'Invalid input: homeScore, awayScore, and gameStatus must be numbers'
+          message: 'Invalid input: homeScore, awayScore, and gameStatus must be numbers',
         });
         return;
       }
@@ -170,24 +183,27 @@ router.put('/:gameId/results',
       if (homeScore < 0 || awayScore < 0) {
         res.status(400).json({
           success: false,
-          message: 'Scores cannot be negative'
+          message: 'Scores cannot be negative',
         });
         return;
       }
 
       // Validate forfeit scores
-      if (gameStatus === 4) { // Forfeit
+      if (gameStatus === 4) {
+        // Forfeit
         if (homeScore === 0 && awayScore === 0) {
           res.status(400).json({
             success: false,
-            message: 'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.'
+            message:
+              'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
           });
           return;
         }
         if (homeScore > 0 && awayScore > 0) {
           res.status(400).json({
             success: false,
-            message: 'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.'
+            message:
+              'For forfeit games, one team must have a score of 0 and the other team must have a score greater than 0.',
           });
           return;
         }
@@ -196,7 +212,7 @@ router.put('/:gameId/results',
       if (gameStatus < 0 || gameStatus > 5) {
         res.status(400).json({
           success: false,
-          message: 'Invalid game status'
+          message: 'Invalid game status',
         });
         return;
       }
@@ -207,24 +223,24 @@ router.put('/:gameId/results',
           id: gameId,
           leagueseason: {
             league: {
-              accountid: accountId
-            }
-          }
+              accountid: accountId,
+            },
+          },
         },
         include: {
           leagueseason: {
             include: {
               league: true,
-              season: true
-            }
-          }
-        }
+              season: true,
+            },
+          },
+        },
       });
 
       if (!game) {
         res.status(404).json({
           success: false,
-          message: 'Game not found'
+          message: 'Game not found',
         });
         return;
       }
@@ -235,16 +251,16 @@ router.put('/:gameId/results',
         data: {
           hscore: homeScore,
           vscore: awayScore,
-          gamestatus: gameStatus
+          gamestatus: gameStatus,
         },
         include: {
           leagueseason: {
             include: {
               league: true,
-              season: true
-            }
-          }
-        }
+              season: true,
+            },
+          },
+        },
       });
 
       // Handle notifications (placeholder for now)
@@ -270,28 +286,15 @@ router.put('/:gameId/results',
           homeScore: updatedGame.hscore,
           awayScore: updatedGame.vscore,
           gameStatus: updatedGame.gamestatus,
-          notifications
-        }
+          notifications,
+        },
       });
     } catch (error) {
       console.error('Error updating game results:', error);
       next(error);
     }
-  }
+  },
 );
-
-// Helper function to get game status text
-const getGameStatusText = (status: number): string => {
-  switch (status) {
-    case 0: return 'Incomplete';
-    case 1: return 'Final';
-    case 2: return 'In Progress';
-    case 3: return 'Postponed';
-    case 4: return 'Forfeit';
-    case 5: return 'Did Not Report';
-    default: return 'Unknown';
-  }
-};
 
 /**
  * @swagger
@@ -392,133 +395,132 @@ const getGameStatusText = (status: number): string => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/',
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { seasonId } = req.params;
-      const { startDate, endDate, teamId } = req.query;
+router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { seasonId } = req.params;
+    const { startDate, endDate, teamId } = req.query;
 
-      // Build where clause
-      const where: any = {
-        leagueseason: {
-          seasonid: BigInt(seasonId)
-        }
+    // Build where clause
+    const where: Prisma.leaguescheduleWhereInput = {
+      leagueseason: {
+        seasonid: BigInt(seasonId),
+      },
+    };
+
+    if (startDate && endDate) {
+      where.gamedate = {
+        gte: new Date(startDate as string),
+        lte: new Date(endDate as string),
       };
-
-      if (startDate && endDate) {
-        where.gamedate = {
-          gte: new Date(startDate as string),
-          lte: new Date(endDate as string)
-        };
-      }
-
-      if (teamId) {
-        where.OR = [
-          { hteamid: BigInt(teamId as string) },
-          { vteamid: BigInt(teamId as string) }
-        ];
-      }
-
-      const games = await prisma.leagueschedule.findMany({
-        where,
-        include: {
-          availablefields: true,
-          leagueseason: {
-            include: {
-              league: true,
-              season: true
-            }
-          }
-        },
-        orderBy: {
-          gamedate: 'asc'
-        }
-      });
-
-      // Helper function to get team names
-      const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
-        const teams = await prisma.teamsseason.findMany({
-          where: {
-            id: {
-              in: [homeTeamId, visitorTeamId]
-            }
-          },
-          select: {
-            id: true,
-            name: true
-          }
-        });
-
-        const homeTeam = teams.find(t => t.id === homeTeamId);
-        const visitorTeam = teams.find(t => t.id === visitorTeamId);
-
-        return {
-          homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
-          visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`
-        };
-      };
-
-      // Process games to include team names
-      const processedGames = [];
-      for (const game of games) {
-        const teamNames = await getTeamNames(game.hteamid, game.vteamid);
-        processedGames.push({
-          id: game.id.toString(),
-          gameDate: game.gamedate ? game.gamedate.toISOString() : null,
-          homeTeamId: game.hteamid.toString(),
-          visitorTeamId: game.vteamid.toString(),
-          homeTeamName: teamNames.homeTeamName,
-          visitorTeamName: teamNames.visitorTeamName,
-          homeScore: game.hscore,
-          visitorScore: game.vscore,
-          comment: game.comment,
-          fieldId: game.fieldid?.toString(),
-          field: game.availablefields ? {
-            id: game.availablefields.id.toString(),
-            name: game.availablefields.name,
-            shortName: game.availablefields.shortname,
-            address: game.availablefields.address,
-            city: game.availablefields.city,
-            state: game.availablefields.state
-          } : null,
-          gameStatus: game.gamestatus,
-          gameType: game.gametype,
-          umpire1: game.umpire1?.toString(),
-          umpire2: game.umpire2?.toString(),
-          umpire3: game.umpire3?.toString(),
-          umpire4: game.umpire4?.toString(),
-          league: {
-            id: game.leagueseason.league.id.toString(),
-            name: game.leagueseason.league.name
-          },
-          season: {
-            id: game.leagueseason.season.id.toString(),
-            name: game.leagueseason.season.name
-          }
-        });
-      }
-
-      res.json({
-        success: true,
-        data: {
-          games: processedGames
-        }
-      });
-    } catch (error) {
-      console.error('Error fetching season games:', error);
-      next(error);
     }
+
+    if (teamId) {
+      where.OR = [{ hteamid: BigInt(teamId as string) }, { vteamid: BigInt(teamId as string) }];
+    }
+
+    const games = await prisma.leagueschedule.findMany({
+      where,
+      include: {
+        availablefields: true,
+        leagueseason: {
+          include: {
+            league: true,
+            season: true,
+          },
+        },
+      },
+      orderBy: {
+        gamedate: 'asc',
+      },
+    });
+
+    // Helper function to get team names
+    const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
+      const teams = await prisma.teamsseason.findMany({
+        where: {
+          id: {
+            in: [homeTeamId, visitorTeamId],
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      const homeTeam = teams.find((t) => t.id === homeTeamId);
+      const visitorTeam = teams.find((t) => t.id === visitorTeamId);
+
+      return {
+        homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
+        visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`,
+      };
+    };
+
+    // Process games to include team names
+    const processedGames = [];
+    for (const game of games) {
+      const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+      processedGames.push({
+        id: game.id.toString(),
+        gameDate: game.gamedate ? game.gamedate.toISOString() : null,
+        homeTeamId: game.hteamid.toString(),
+        visitorTeamId: game.vteamid.toString(),
+        homeTeamName: teamNames.homeTeamName,
+        visitorTeamName: teamNames.visitorTeamName,
+        homeScore: game.hscore,
+        visitorScore: game.vscore,
+        comment: game.comment,
+        fieldId: game.fieldid?.toString(),
+        field: game.availablefields
+          ? {
+              id: game.availablefields.id.toString(),
+              name: game.availablefields.name,
+              shortName: game.availablefields.shortname,
+              address: game.availablefields.address,
+              city: game.availablefields.city,
+              state: game.availablefields.state,
+            }
+          : null,
+        gameStatus: game.gamestatus,
+        gameStatusText: getGameStatusText(game.gamestatus),
+        gameStatusShortText: getGameStatusShortText(game.gamestatus),
+        gameType: game.gametype,
+        umpire1: game.umpire1?.toString(),
+        umpire2: game.umpire2?.toString(),
+        umpire3: game.umpire3?.toString(),
+        umpire4: game.umpire4?.toString(),
+        league: {
+          id: game.leagueseason.league.id.toString(),
+          name: game.leagueseason.league.name,
+        },
+        season: {
+          id: game.leagueseason.season.id.toString(),
+          name: game.leagueseason.season.name,
+        },
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        games: processedGames,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching season games:', error);
+    next(error);
   }
-);
+});
 
 // Create a new game
-router.post('/',
+router.post(
+  '/',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { seasonId } = req.params;
       const {
         leagueSeasonId,
         gameDate,
@@ -530,14 +532,14 @@ router.post('/',
         umpire1,
         umpire2,
         umpire3,
-        umpire4
+        umpire4,
       } = req.body;
 
       // Validate required fields
       if (!leagueSeasonId || !gameDate || !homeTeamId || !visitorTeamId) {
         res.status(400).json({
           success: false,
-          message: 'League season ID, game date, home team, and visitor team are required'
+          message: 'League season ID, game date, home team, and visitor team are required',
         });
         return;
       }
@@ -546,7 +548,7 @@ router.post('/',
       if (homeTeamId === visitorTeamId) {
         res.status(400).json({
           success: false,
-          message: 'Home team and visitor team cannot be the same'
+          message: 'Home team and visitor team cannot be the same',
         });
         return;
       }
@@ -556,15 +558,15 @@ router.post('/',
         where: {
           leagueseasonid: BigInt(leagueSeasonId),
           id: {
-            in: [BigInt(homeTeamId), BigInt(visitorTeamId)]
-          }
-        }
+            in: [BigInt(homeTeamId), BigInt(visitorTeamId)],
+          },
+        },
       });
 
       if (teamsInLeague.length !== 2) {
         res.status(400).json({
           success: false,
-          message: 'Both teams must be in the specified league season'
+          message: 'Both teams must be in the specified league season',
         });
         return;
       }
@@ -575,14 +577,14 @@ router.post('/',
           where: {
             fieldid: BigInt(fieldId),
             gamedate: new Date(gameDate),
-            leagueid: BigInt(leagueSeasonId)
-          }
+            leagueid: BigInt(leagueSeasonId),
+          },
         });
 
         if (existingGame) {
           res.status(400).json({
             success: false,
-            message: 'Field is already booked for this date and time'
+            message: 'Field is already booked for this date and time',
           });
           return;
         }
@@ -603,17 +605,17 @@ router.post('/',
           umpire1: umpire1 ? BigInt(umpire1) : null,
           umpire2: umpire2 ? BigInt(umpire2) : null,
           umpire3: umpire3 ? BigInt(umpire3) : null,
-          umpire4: umpire4 ? BigInt(umpire4) : null
+          umpire4: umpire4 ? BigInt(umpire4) : null,
         },
         include: {
           availablefields: true,
           leagueseason: {
             include: {
               league: true,
-              season: true
-            }
-          }
-        }
+              season: true,
+            },
+          },
+        },
       });
 
       res.json({
@@ -628,14 +630,16 @@ router.post('/',
             visitorScore: game.vscore,
             comment: game.comment,
             fieldId: game.fieldid?.toString(),
-            field: game.availablefields ? {
-              id: game.availablefields.id.toString(),
-              name: game.availablefields.name,
-              shortName: game.availablefields.shortname,
-              address: game.availablefields.address,
-              city: game.availablefields.city,
-              state: game.availablefields.state
-            } : null,
+            field: game.availablefields
+              ? {
+                  id: game.availablefields.id.toString(),
+                  name: game.availablefields.name,
+                  shortName: game.availablefields.shortname,
+                  address: game.availablefields.address,
+                  city: game.availablefields.city,
+                  state: game.availablefields.state,
+                }
+              : null,
             gameStatus: game.gamestatus,
             gameType: game.gametype,
             umpire1: game.umpire1?.toString(),
@@ -644,24 +648,25 @@ router.post('/',
             umpire4: game.umpire4?.toString(),
             league: {
               id: game.leagueseason.league.id.toString(),
-              name: game.leagueseason.league.name
+              name: game.leagueseason.league.name,
             },
             season: {
               id: game.leagueseason.season.id.toString(),
-              name: game.leagueseason.season.name
-            }
-          }
-        }
+              name: game.leagueseason.season.name,
+            },
+          },
+        },
       });
     } catch (error) {
       console.error('Error creating game:', error);
       next(error);
     }
-  }
+  },
 );
 
 // Update a game
-router.put('/:gameId',
+router.put(
+  '/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),
@@ -679,7 +684,7 @@ router.put('/:gameId',
         umpire1,
         umpire2,
         umpire3,
-        umpire4
+        umpire4,
       } = req.body;
 
       // Check if game exists
@@ -688,16 +693,16 @@ router.put('/:gameId',
         include: {
           leagueseason: {
             include: {
-              league: true
-            }
-          }
-        }
+              league: true,
+            },
+          },
+        },
       });
 
       if (!existingGame) {
         res.status(404).json({
           success: false,
-          message: 'Game not found'
+          message: 'Game not found',
         });
         return;
       }
@@ -706,7 +711,7 @@ router.put('/:gameId',
       if (homeTeamId && visitorTeamId && homeTeamId === visitorTeamId) {
         res.status(400).json({
           success: false,
-          message: 'Home team and visitor team cannot be the same'
+          message: 'Home team and visitor team cannot be the same',
         });
         return;
       }
@@ -718,14 +723,14 @@ router.put('/:gameId',
             fieldid: BigInt(fieldId),
             gamedate: gameDate ? new Date(gameDate) : existingGame.gamedate,
             leagueid: existingGame.leagueid,
-            id: { not: BigInt(gameId) }
-          }
+            id: { not: BigInt(gameId) },
+          },
         });
 
         if (conflictingGame) {
           res.status(400).json({
             success: false,
-            message: 'Field is already booked for this date and time'
+            message: 'Field is already booked for this date and time',
           });
           return;
         }
@@ -744,17 +749,17 @@ router.put('/:gameId',
           umpire1: umpire1 ? BigInt(umpire1) : umpire1 === null ? null : undefined,
           umpire2: umpire2 ? BigInt(umpire2) : umpire2 === null ? null : undefined,
           umpire3: umpire3 ? BigInt(umpire3) : umpire3 === null ? null : undefined,
-          umpire4: umpire4 ? BigInt(umpire4) : umpire4 === null ? null : undefined
+          umpire4: umpire4 ? BigInt(umpire4) : umpire4 === null ? null : undefined,
         },
         include: {
           availablefields: true,
           leagueseason: {
             include: {
               league: true,
-              season: true
-            }
-          }
-        }
+              season: true,
+            },
+          },
+        },
       });
 
       res.json({
@@ -769,14 +774,16 @@ router.put('/:gameId',
             visitorScore: updatedGame.vscore,
             comment: updatedGame.comment,
             fieldId: updatedGame.fieldid?.toString(),
-            field: updatedGame.availablefields ? {
-              id: updatedGame.availablefields.id.toString(),
-              name: updatedGame.availablefields.name,
-              shortName: updatedGame.availablefields.shortname,
-              address: updatedGame.availablefields.address,
-              city: updatedGame.availablefields.city,
-              state: updatedGame.availablefields.state
-            } : null,
+            field: updatedGame.availablefields
+              ? {
+                  id: updatedGame.availablefields.id.toString(),
+                  name: updatedGame.availablefields.name,
+                  shortName: updatedGame.availablefields.shortname,
+                  address: updatedGame.availablefields.address,
+                  city: updatedGame.availablefields.city,
+                  state: updatedGame.availablefields.state,
+                }
+              : null,
             gameStatus: updatedGame.gamestatus,
             gameType: updatedGame.gametype,
             umpire1: updatedGame.umpire1?.toString(),
@@ -785,25 +792,26 @@ router.put('/:gameId',
             umpire4: updatedGame.umpire4?.toString(),
             league: {
               id: updatedGame.leagueseason.league.id.toString(),
-              name: updatedGame.leagueseason.league.name
+              name: updatedGame.leagueseason.league.name,
             },
             season: {
               id: updatedGame.leagueseason.season.id.toString(),
-              name: updatedGame.leagueseason.season.name
-            }
-          }
+              name: updatedGame.leagueseason.season.name,
+            },
+          },
         },
-        message: 'Game updated successfully'
+        message: 'Game updated successfully',
       });
     } catch (error) {
       console.error('Error updating game:', error);
       next(error);
     }
-  }
+  },
 );
 
 // Delete a game
-router.delete('/:gameId',
+router.delete(
+  '/:gameId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requireRole('AccountAdmin'),
@@ -813,30 +821,30 @@ router.delete('/:gameId',
 
       // Check if game exists
       const existingGame = await prisma.leagueschedule.findUnique({
-        where: { id: BigInt(gameId) }
+        where: { id: BigInt(gameId) },
       });
 
       if (!existingGame) {
         res.status(404).json({
           success: false,
-          message: 'Game not found'
+          message: 'Game not found',
         });
         return;
       }
 
       await prisma.leagueschedule.delete({
-        where: { id: BigInt(gameId) }
+        where: { id: BigInt(gameId) },
       });
 
       res.json({
         success: true,
-        message: 'Game deleted successfully'
+        message: 'Game deleted successfully',
       });
     } catch (error) {
       console.error('Error deleting game:', error);
       next(error);
     }
-  }
+  },
 );
 
-export default router; 
+export default router;

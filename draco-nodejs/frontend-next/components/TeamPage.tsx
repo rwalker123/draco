@@ -1,18 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
-import {
-  MessageSquare,
-  Camera,
-  Play,
-  Star,
-  Calendar,
-  TrendingUp,
-  Award,
-  Target,
-} from 'lucide-react';
+import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import TeamInfoCard from '@/components/TeamInfoCard';
+import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
+import React from 'react';
 
 interface TeamPageProps {
   accountId: string;
@@ -21,10 +14,45 @@ interface TeamPageProps {
 }
 
 const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }) => {
+  const [gameSections, setGameSections] = React.useState<GameListSection[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setLoading(true);
+    setError(null);
+    fetch(
+      `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/games?upcoming=true&recent=true&limit=5`,
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) throw new Error(data.message || 'Failed to load games');
+        const sections: GameListSection[] = [];
+        if (data.data.upcoming) {
+          sections.push({ title: 'Upcoming Games', games: data.data.upcoming as Game[] });
+        }
+        if (data.data.recent) {
+          sections.push({ title: 'Completed Games', games: data.data.recent as Game[] });
+        }
+        setGameSections(sections);
+      })
+      .catch((err) => setError(err.message || 'Error loading games'))
+      .finally(() => setLoading(false));
+  }, [accountId, seasonId, teamSeasonId]);
+
   return (
     <main className="max-w-5xl mx-auto py-10 px-4 min-h-screen bg-background">
       {/* Team Info Section */}
       <TeamInfoCard accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+
+      {/* Upcoming & Recent Games */}
+      {loading ? (
+        <div className="text-center text-muted-foreground py-8">Loading games...</div>
+      ) : error ? (
+        <div className="text-center text-red-600 py-8">{error}</div>
+      ) : (
+        <GameListDisplay sections={gameSections} emptyMessage="No games to display." />
+      )}
 
       {/* Stats Leaders & Sponsors */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -90,50 +118,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
                 className="h-12 object-contain"
               />
             </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Upcoming & Recent Games */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Upcoming Games
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              <li className="flex justify-between items-center">
-                <span>vs River City Sluggers</span>
-                <span className="text-sm text-muted-foreground">Feb 15, 7:00 PM</span>
-              </li>
-              <li className="flex justify-between items-center">
-                <span>@ Mountain View Eagles</span>
-                <span className="text-sm text-muted-foreground">Feb 22, 6:30 PM</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Recent Results
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2">
-              <li className="flex justify-between items-center">
-                <span>vs Steel City Bombers</span>
-                <span className="text-sm text-green-600 font-bold">8-5 WIN</span>
-              </li>
-              <li className="flex justify-between items-center">
-                <span>@ Coastal Pirates</span>
-                <span className="text-sm text-yellow-600 font-bold">4-4 DRAW</span>
-              </li>
-            </ul>
           </CardContent>
         </Card>
       </div>
