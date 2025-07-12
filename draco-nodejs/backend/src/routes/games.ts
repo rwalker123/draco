@@ -399,12 +399,21 @@ router.put(
 router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { seasonId } = req.params;
-    const { startDate, endDate, teamId } = req.query;
+    const { startDate, endDate, teamId, hasRecap } = req.query;
+
+    // Only accept a real seasonId
+    let seasonIdToUse: bigint;
+    try {
+      seasonIdToUse = BigInt(seasonId);
+    } catch {
+      res.status(400).json({ success: false, message: 'Invalid seasonId' });
+      return;
+    }
 
     // Build where clause
     const where: Prisma.leaguescheduleWhereInput = {
       leagueseason: {
-        seasonid: BigInt(seasonId),
+        seasonid: seasonIdToUse,
       },
     };
 
@@ -419,7 +428,20 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
       where.OR = [{ hteamid: BigInt(teamId as string) }, { vteamid: BigInt(teamId as string) }];
     }
 
-    const games = await prisma.leagueschedule.findMany({
+    // If hasRecap is true, include recaps and filter games
+    type GameWithRecap = Prisma.leaguescheduleGetPayload<{
+      include: {
+        availablefields: true;
+        leagueseason: {
+          include: {
+            league: true;
+            season: true;
+          };
+        };
+        gamerecap: true;
+      };
+    }>;
+    let games = await prisma.leagueschedule.findMany({
       where,
       include: {
         availablefields: true,
@@ -429,6 +451,14 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
             season: true,
           },
         },
+        ...(hasRecap === 'true' && {
+          gamerecap: {
+            select: {
+              teamid: true,
+              recap: true,
+            },
+          },
+        }),
       },
       orderBy: {
         gamedate: 'asc',
@@ -458,11 +488,18 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
       };
     };
 
-    // Process games to include team names
+    // If hasRecap is true, filter games to only those with at least one recap
+    if (hasRecap === 'true') {
+      games = (games as GameWithRecap[]).filter(
+        (game) => game.gamerecap && game.gamerecap.length > 0,
+      );
+    }
+
+    // Process games to include team names and recaps if requested
     const processedGames = [];
     for (const game of games) {
       const teamNames = await getTeamNames(game.hteamid, game.vteamid);
-      processedGames.push({
+      const baseGame = {
         id: game.id.toString(),
         gameDate: game.gamedate ? game.gamedate.toISOString() : null,
         homeTeamId: game.hteamid.toString(),
@@ -499,7 +536,18 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
           id: game.leagueseason.season.id.toString(),
           name: game.leagueseason.season.name,
         },
-      });
+      };
+      if (hasRecap === 'true') {
+        processedGames.push({
+          ...baseGame,
+          recaps: (game as GameWithRecap).gamerecap.map((recap) => ({
+            teamId: recap.teamid.toString(),
+            recap: recap.recap,
+          })),
+        });
+      } else {
+        processedGames.push(baseGame);
+      }
     }
 
     res.json({

@@ -21,6 +21,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
+import GameRecapsWidget from './GameRecapsWidget';
 
 interface Account {
   id: string;
@@ -118,46 +119,6 @@ const BaseballAccountHome: React.FC = () => {
             console.warn('Failed to fetch user teams:', err);
           }
         }
-
-        // Fetch leagues
-        try {
-          const leaguesResponse = await fetch(`/api/accounts/${accountIdStr}/leagues`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (leaguesResponse.ok) {
-            const leaguesData = await leaguesResponse.json();
-            if (leaguesData.success) {
-              // setLeagues(leaguesData.data.leagues || []); // This line was removed
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to fetch leagues:', err);
-        }
-
-        // Fetch recent games
-        try {
-          const gamesResponse = await fetch(`/api/accounts/${accountIdStr}/recent-games`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (gamesResponse.ok) {
-            const gamesData = await gamesResponse.json();
-            if (gamesData.success) {
-              // setRecentGames(gamesData.data.games || []); // This line was removed
-            }
-          }
-        } catch (err) {
-          console.warn('Failed to fetch recent games:', err);
-        }
-      } catch {
-        setError('Account not found or not publicly accessible');
       } finally {
         setLoading(false);
       }
@@ -317,6 +278,10 @@ const BaseballAccountHome: React.FC = () => {
         >
           {/* Left Column - Main Content */}
           <Box>
+            {/* Game Recaps Widget - show as first content */}
+            {currentSeason && (
+              <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
+            )}
             {/* User Teams Section */}
             {user && userTeams.length > 0 && (
               <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
