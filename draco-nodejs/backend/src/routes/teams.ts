@@ -1387,6 +1387,10 @@ router.get(
         game: leagueschedule & { availablefields?: availablefields | null },
       ) => {
         const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+        // Check if any gamerecap exists for this game
+        const recapCount = await prisma.gamerecap.count({
+          where: { gameid: game.id },
+        });
         return {
           id: game.id.toString(),
           date: game.gamedate ? game.gamedate.toISOString() : null,
@@ -1403,6 +1407,7 @@ router.get(
           fieldId: game.fieldid ? game.fieldid.toString() : null,
           fieldName: game.availablefields ? game.availablefields.name : null,
           fieldShortName: game.availablefields ? game.availablefields.shortname : null,
+          hasGameRecap: recapCount > 0,
         };
       };
 

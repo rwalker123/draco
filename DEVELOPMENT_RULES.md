@@ -60,6 +60,8 @@ npm run frontend-next:lint     # Lint frontend code
 - Use the correct root-level npm script instead
 - This error means you're trying to run npm from the wrong directory or in a subdirectory
 
+### Rule 7: Always use RoleContext (useRole) in frontend checks to see if user has permissions
+
 ## 📁 Directory Map
 ```
 /Users/raywalker/source/Draco/
