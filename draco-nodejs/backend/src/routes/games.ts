@@ -890,19 +890,12 @@ async function userHasTeamAdminRights(
  */
 router.get(
   '/:gameId/recap/:teamSeasonId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);
       const seasonId = BigInt(req.params.seasonId);
       const gameId = BigInt(req.params.gameId);
       const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ success: false, message: 'User not authenticated' });
-        return;
-      }
 
       // Fetch the game and validate it belongs to the account and season
       const game = await prisma.leagueschedule.findUnique({
@@ -931,21 +924,6 @@ router.get(
       // Validate that teamSeasonId is one of the teams in the game
       if (!(teamSeasonId === game.hteamid || teamSeasonId === game.vteamid)) {
         res.status(400).json({ success: false, message: 'Invalid teamSeasonId for this game' });
-        return;
-      }
-
-      // Check admin rights for the provided teamSeasonId
-      const hasRights = await userHasTeamAdminRights(
-        String(userId),
-        String(accountId),
-        String(teamSeasonId),
-        roleService,
-        prisma,
-      );
-      if (!hasRights) {
-        res
-          .status(403)
-          .json({ success: false, message: 'Not authorized for this team in this game' });
         return;
       }
 

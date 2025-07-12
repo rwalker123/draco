@@ -2,20 +2,14 @@
 // Handles all role-related operations including contact roles and global roles
 
 import { PrismaClient } from '@prisma/client';
-import { 
-  ContactRole, 
-  UserRoles, 
-  RoleCheckResult, 
+import {
+  ContactRole,
+  UserRoles,
+  RoleCheckResult,
   RoleContext,
-  ROLE_HIERARCHY,
-  ROLE_PERMISSIONS 
+  ROLE_PERMISSIONS,
 } from '../types/roles';
-import { 
-  ROLE_IDS, 
-  validateRoleAssignment, 
-  getInheritedRoles, 
-  hasRoleOrHigher 
-} from '../config/roles';
+import { ROLE_IDS, validateRoleAssignment, hasRoleOrHigher } from '../config/roles';
 
 export class RoleService {
   private prisma: PrismaClient;
@@ -37,7 +31,7 @@ export class RoleService {
 
       return {
         globalRoles,
-        contactRoles
+        contactRoles,
       };
     } catch (error) {
       console.error('Error getting user roles:', error);
@@ -53,11 +47,11 @@ export class RoleService {
       const userRoles = await this.prisma.aspnetuserroles.findMany({
         where: { userid: userId },
         include: {
-          aspnetroles: true
-        }
+          aspnetroles: true,
+        },
       });
 
-      return userRoles.map((ur: any) => ur.aspnetroles.name);
+      return userRoles.map((ur: { aspnetroles: { name: string } }) => ur.aspnetroles.name);
     } catch (error) {
       console.error('Error getting global roles:', error);
       throw error;
@@ -73,9 +67,9 @@ export class RoleService {
       const contact = await this.prisma.contacts.findFirst({
         where: {
           userid: userId,
-          creatoraccountid: accountId
+          creatoraccountid: accountId,
         },
-        select: { id: true }
+        select: { id: true },
       });
 
       if (!contact) {
@@ -86,17 +80,63 @@ export class RoleService {
       const contactRoles = await this.prisma.contactroles.findMany({
         where: {
           contactid: contact.id,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
-      return contactRoles.map((cr: any) => ({
-        id: cr.id,
-        contactId: cr.contactid,
-        roleId: cr.roleid,
-        roleData: cr.roledata,
-        accountId: cr.accountid
-      }));
+      // Get current season for the account
+      const currentSeasonRecord = await this.prisma.currentseason.findUnique({
+        where: { accountid: accountId },
+      });
+      const currentSeasonId = currentSeasonRecord?.seasonid;
+
+      // After fetching contactRoles, also fetch teamseasonmanager for this contact, filtered to current season
+      let teamManagerEntries: { teamseasonid: bigint }[] = [];
+      if (currentSeasonId) {
+        teamManagerEntries = await this.prisma.teamseasonmanager.findMany({
+          where: {
+            contactid: contact.id,
+            teamsseason: {
+              leagueseason: {
+                seasonid: currentSeasonId,
+              },
+            },
+          },
+          select: { teamseasonid: true },
+        });
+      }
+
+      // TeamAdmin roleId constant (should match your config)
+      const TEAM_ADMIN_ROLE_ID = '777D771B-1CBA-4126-B8F3-DD7F3478D40E';
+
+      // Build a set of teamSeasonIds where the user already has TeamAdmin via contactRoles
+      const existingTeamAdminIds = new Set(
+        contactRoles
+          .filter((cr) => cr.roleid === TEAM_ADMIN_ROLE_ID)
+          .map((cr) => String(cr.roledata)),
+      );
+
+      // Add synthetic TeamAdmin roles for managed teams not already present
+      const syntheticManagerRoles: ContactRole[] = teamManagerEntries
+        .filter((entry) => !existingTeamAdminIds.has(String(entry.teamseasonid)))
+        .map((entry) => ({
+          id: BigInt(-1), // Use -1 or another convention for synthetic IDs
+          contactId: contact.id,
+          roleId: TEAM_ADMIN_ROLE_ID,
+          roleData: entry.teamseasonid,
+          accountId: accountId,
+        }));
+
+      return [
+        ...contactRoles.map((cr) => ({
+          id: cr.id,
+          contactId: cr.contactid,
+          roleId: cr.roleid,
+          roleData: cr.roledata,
+          accountId: cr.accountid,
+        })),
+        ...syntheticManagerRoles,
+      ];
     } catch (error) {
       console.error('Error getting contact roles:', error);
       throw error;
@@ -106,20 +146,16 @@ export class RoleService {
   /**
    * Check if a user has a specific role in a context
    */
-  async hasRole(
-    userId: string, 
-    roleId: string, 
-    context: RoleContext
-  ): Promise<RoleCheckResult> {
+  async hasRole(userId: string, roleId: string, context: RoleContext): Promise<RoleCheckResult> {
     try {
       const userRoles = await this.getUserRoles(userId, context.accountId);
-      
+
       // Check global roles first
       if (userRoles.globalRoles.includes(roleId)) {
         return {
           hasRole: true,
           roleLevel: 'global',
-          context
+          context,
         };
       }
 
@@ -131,7 +167,7 @@ export class RoleService {
             return {
               hasRole: true,
               roleLevel: this.getRoleLevel(roleId),
-              context
+              context,
             };
           }
         }
@@ -142,14 +178,14 @@ export class RoleService {
         return {
           hasRole: true,
           roleLevel: this.getRoleLevel(roleId),
-          context
+          context,
         };
       }
 
       return {
         hasRole: false,
         roleLevel: 'none',
-        context
+        context,
       };
     } catch (error) {
       console.error('Error checking role:', error);
@@ -161,13 +197,13 @@ export class RoleService {
    * Check if user has role or higher in hierarchy
    */
   async hasRoleOrHigher(
-    userId: string, 
-    requiredRole: string, 
-    context: RoleContext
+    userId: string,
+    requiredRole: string,
+    context: RoleContext,
   ): Promise<boolean> {
     try {
       const userRoles = await this.getUserRoles(userId, context.accountId);
-      
+
       // Check global roles
       for (const globalRole of userRoles.globalRoles) {
         if (hasRoleOrHigher([globalRole], requiredRole)) {
@@ -194,18 +230,17 @@ export class RoleService {
   /**
    * Check if user has permission
    */
-  async hasPermission(
-    userId: string, 
-    permission: string, 
-    context: RoleContext
-  ): Promise<boolean> {
+  async hasPermission(userId: string, permission: string, context: RoleContext): Promise<boolean> {
     try {
       const userRoles = await this.getUserRoles(userId, context.accountId);
-      
+
       // Check global roles first
       for (const globalRole of userRoles.globalRoles) {
         const rolePerms = ROLE_PERMISSIONS[globalRole];
-        if (rolePerms && (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))) {
+        if (
+          rolePerms &&
+          (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
+        ) {
           return true;
         }
       }
@@ -214,7 +249,10 @@ export class RoleService {
       for (const contactRole of userRoles.contactRoles) {
         if (this.validateRoleContext(contactRole, context)) {
           const rolePerms = ROLE_PERMISSIONS[contactRole.roleId];
-          if (rolePerms && (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))) {
+          if (
+            rolePerms &&
+            (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
+          ) {
             return true;
           }
         }
@@ -235,13 +273,16 @@ export class RoleService {
     contactId: bigint,
     roleId: string,
     roleData: bigint,
-    accountId: bigint
+    accountId: bigint,
   ): Promise<ContactRole> {
     try {
       // Validate that assigner has permission to assign this role
       const assignerRoles = await this.getUserRoles(assignerUserId, accountId);
-      const assignerRoleNames = [...assignerRoles.globalRoles, ...assignerRoles.contactRoles.map(cr => cr.roleId)];
-      
+      const assignerRoleNames = [
+        ...assignerRoles.globalRoles,
+        ...assignerRoles.contactRoles.map((cr) => cr.roleId),
+      ];
+
       if (!validateRoleAssignment(assignerRoleNames, roleId, { accountId })) {
         throw new Error('Insufficient permissions to assign this role');
       }
@@ -252,8 +293,8 @@ export class RoleService {
           contactid: contactId,
           roleid: roleId,
           roledata: roleData,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (existingRole) {
@@ -266,8 +307,8 @@ export class RoleService {
           contactid: contactId,
           roleid: roleId,
           roledata: roleData,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       return {
@@ -275,7 +316,7 @@ export class RoleService {
         contactId: newRole.contactid,
         roleId: newRole.roleid,
         roleData: newRole.roledata,
-        accountId: newRole.accountid
+        accountId: newRole.accountid,
       };
     } catch (error) {
       console.error('Error assigning role:', error);
@@ -291,13 +332,16 @@ export class RoleService {
     contactId: bigint,
     roleId: string,
     roleData: bigint,
-    accountId: bigint
+    accountId: bigint,
   ): Promise<boolean> {
     try {
       // Validate that assigner has permission to remove this role
       const assignerRoles = await this.getUserRoles(assignerUserId, accountId);
-      const assignerRoleNames = [...assignerRoles.globalRoles, ...assignerRoles.contactRoles.map(cr => cr.roleId)];
-      
+      const assignerRoleNames = [
+        ...assignerRoles.globalRoles,
+        ...assignerRoles.contactRoles.map((cr) => cr.roleId),
+      ];
+
       if (!validateRoleAssignment(assignerRoleNames, roleId, { accountId })) {
         throw new Error('Insufficient permissions to remove this role');
       }
@@ -307,8 +351,8 @@ export class RoleService {
           contactid: contactId,
           roleid: roleId,
           roledata: roleData,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       return deletedRole.count > 0;
@@ -326,7 +370,7 @@ export class RoleService {
       const contactRoles = await this.prisma.contactroles.findMany({
         where: {
           roleid: roleId,
-          accountid: accountId
+          accountid: accountId,
         },
         include: {
           contacts: {
@@ -334,18 +378,18 @@ export class RoleService {
               id: true,
               firstname: true,
               lastname: true,
-              email: true
-            }
-          }
-        }
+              email: true,
+            },
+          },
+        },
       });
 
-      return contactRoles.map((cr: any) => ({
+      return contactRoles.map((cr) => ({
         id: cr.id,
         contactId: cr.contactid,
         roleId: cr.roleid,
         roleData: cr.roledata,
-        accountId: cr.accountid
+        accountId: cr.accountid,
       }));
     } catch (error) {
       console.error('Error getting users with role:', error);
@@ -358,12 +402,18 @@ export class RoleService {
    */
   private validateRoleContext(contactRole: ContactRole, context: RoleContext): boolean {
     // For account-level roles, just check accountId
-    if (contactRole.roleId === ROLE_IDS['AccountAdmin'] || contactRole.roleId === ROLE_IDS['AccountPhotoAdmin']) {
+    if (
+      contactRole.roleId === ROLE_IDS['AccountAdmin'] ||
+      contactRole.roleId === ROLE_IDS['AccountPhotoAdmin']
+    ) {
       return contactRole.accountId === context.accountId;
     }
 
     // For team-level roles, check if roleData matches teamId
-    if (contactRole.roleId === ROLE_IDS['TeamAdmin'] || contactRole.roleId === ROLE_IDS['TeamPhotoAdmin']) {
+    if (
+      contactRole.roleId === ROLE_IDS['TeamAdmin'] ||
+      contactRole.roleId === ROLE_IDS['TeamPhotoAdmin']
+    ) {
       return contactRole.roleData === context.teamId;
     }
 
@@ -380,7 +430,8 @@ export class RoleService {
    */
   private getRoleLevel(roleId: string): 'global' | 'account' | 'team' | 'league' | 'none' {
     if (roleId === ROLE_IDS['Administrator']) return 'global';
-    if (roleId === ROLE_IDS['AccountAdmin'] || roleId === ROLE_IDS['AccountPhotoAdmin']) return 'account';
+    if (roleId === ROLE_IDS['AccountAdmin'] || roleId === ROLE_IDS['AccountPhotoAdmin'])
+      return 'account';
     if (roleId === ROLE_IDS['TeamAdmin'] || roleId === ROLE_IDS['TeamPhotoAdmin']) return 'team';
     if (roleId === ROLE_IDS['LeagueAdmin']) return 'league';
     return 'none';
@@ -393,7 +444,7 @@ export class RoleService {
     try {
       const role = await this.prisma.aspnetroles.findUnique({
         where: { id: roleId },
-        select: { name: true }
+        select: { name: true },
       });
       return role?.name || null;
     } catch (error) {
@@ -409,7 +460,7 @@ export class RoleService {
     try {
       const role = await this.prisma.aspnetroles.findFirst({
         where: { name: roleName },
-        select: { id: true }
+        select: { id: true },
       });
       return role?.id || null;
     } catch (error) {
@@ -417,4 +468,4 @@ export class RoleService {
       return null;
     }
   }
-} 
+}
