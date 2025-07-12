@@ -28,7 +28,7 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel
+  InputLabel,
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -38,7 +38,8 @@ import {
   Edit as EditIcon,
   SportsBasketball as SportsIcon,
   Block as BlockIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -104,7 +105,7 @@ const US_STATES = [
   { value: 'GU', label: 'Guam' },
   { value: 'MP', label: 'Northern Mariana Islands' },
   { value: 'PR', label: 'Puerto Rico' },
-  { value: 'VI', label: 'U.S. Virgin Islands' }
+  { value: 'VI', label: 'U.S. Virgin Islands' },
 ];
 
 interface Contact {
@@ -164,9 +165,16 @@ interface TeamRosterData {
   rosterMembers: RosterMember[];
 }
 
+interface ManagerType {
+  id: string;
+  teamseasonid: string;
+  contactid: string;
+  contacts: Contact;
+}
+
 const TeamRosterManagement: React.FC = () => {
   const { accountId, seasonId, teamSeasonId } = useParams();
-  
+
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
@@ -176,7 +184,8 @@ const TeamRosterManagement: React.FC = () => {
   const [availablePlayers, setAvailablePlayers] = useState<RosterPlayer[]>([]);
   const [season, setSeason] = useState<Season | null>(null);
   const [league, setLeague] = useState<League | null>(null);
-  
+  const [managers, setManagers] = useState<ManagerType[]>([]);
+
   // Dialog states
   const [signPlayerDialogOpen, setSignPlayerDialogOpen] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
@@ -199,29 +208,40 @@ const TeamRosterManagement: React.FC = () => {
     city: '',
     state: '',
     zip: '',
-    dateofbirth: ''
+    dateofbirth: '',
   });
   const [phoneErrors, setPhoneErrors] = useState({
     phone1: '',
     phone2: '',
-    phone3: ''
+    phone3: '',
   });
   const [emailError, setEmailError] = useState('');
-  
+
   // Unified roster information dialog states
   const [rosterFormData, setRosterFormData] = useState({
     playerNumber: 0,
     submittedWaiver: false,
     submittedDriversLicense: false,
-    firstYear: 0
+    firstYear: 0,
   });
+
+  // Add at the top, after other dialog states
+  const [addManagerDialogOpen, setAddManagerDialogOpen] = useState(false);
+  const [selectedManagerContactId, setSelectedManagerContactId] = useState<string | null>(null);
+  const [addManagerLoading, setAddManagerLoading] = useState(false);
+  const [addManagerError, setAddManagerError] = useState<string | null>(null);
 
   const { token } = useAuth();
 
   // Fetch roster data
   const fetchRosterData = useCallback(async () => {
     if (!accountId || !seasonId || !teamSeasonId || !token) {
-      console.log('Missing required data for fetchRosterData:', { accountId, seasonId, teamSeasonId, hasToken: !!token });
+      console.log('Missing required data for fetchRosterData:', {
+        accountId,
+        seasonId,
+        teamSeasonId,
+        hasToken: !!token,
+      });
       return;
     }
 
@@ -231,7 +251,7 @@ const TeamRosterManagement: React.FC = () => {
     try {
       const response = await axios.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       console.log('Roster data response:', response.data);
@@ -239,7 +259,13 @@ const TeamRosterManagement: React.FC = () => {
         setRosterData(response.data.data);
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -258,14 +284,20 @@ const TeamRosterManagement: React.FC = () => {
     try {
       const response = await axios.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/available-players`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
         setAvailablePlayers(response.data.data.availablePlayers);
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -280,16 +312,21 @@ const TeamRosterManagement: React.FC = () => {
     if (!accountId || !seasonId || !token) return;
 
     try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.get(`/api/accounts/${accountId}/seasons/${seasonId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
         setSeason(response.data.data.season);
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -306,14 +343,20 @@ const TeamRosterManagement: React.FC = () => {
     try {
       const response = await axios.get(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
         setLeague(response.data.data);
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -323,12 +366,43 @@ const TeamRosterManagement: React.FC = () => {
     }
   }, [accountId, seasonId, teamSeasonId, token]);
 
+  // Fetch managers
+  const fetchManagers = useCallback(async () => {
+    if (!accountId || !seasonId || !teamSeasonId || !token) return;
+    try {
+      const response = await axios.get(
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (response.data.success) {
+        setManagers(response.data.data);
+      }
+    } catch {
+      // Optionally set error
+    }
+  }, [accountId, seasonId, teamSeasonId, token]);
+
   useEffect(() => {
-    console.log('TeamRosterManagement useEffect triggered with:', { accountId, seasonId, teamSeasonId, hasToken: !!token });
+    console.log('TeamRosterManagement useEffect triggered with:', {
+      accountId,
+      seasonId,
+      teamSeasonId,
+      hasToken: !!token,
+    });
     fetchRosterData();
     fetchSeasonData();
     fetchLeagueData();
-  }, [fetchRosterData, fetchSeasonData, fetchLeagueData, accountId, seasonId, teamSeasonId, token]);
+    fetchManagers();
+  }, [
+    fetchRosterData,
+    fetchSeasonData,
+    fetchLeagueData,
+    fetchManagers,
+    accountId,
+    seasonId,
+    teamSeasonId,
+    token,
+  ]);
 
   useEffect(() => {
     if (signPlayerDialogOpen) {
@@ -352,9 +426,9 @@ const TeamRosterManagement: React.FC = () => {
           playerNumber: rosterFormData.playerNumber,
           submittedWaiver: rosterFormData.submittedWaiver,
           submittedDriversLicense: rosterFormData.submittedDriversLicense,
-          firstYear: rosterFormData.firstYear
+          firstYear: rosterFormData.firstYear,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -366,7 +440,13 @@ const TeamRosterManagement: React.FC = () => {
         setError(response.data.message || 'Failed to sign player');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -387,7 +467,7 @@ const TeamRosterManagement: React.FC = () => {
       const response = await axios.put(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/release`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -395,7 +475,13 @@ const TeamRosterManagement: React.FC = () => {
         fetchRosterData();
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -416,7 +502,7 @@ const TeamRosterManagement: React.FC = () => {
       const response = await axios.put(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/activate`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -424,7 +510,13 @@ const TeamRosterManagement: React.FC = () => {
         fetchRosterData();
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -444,7 +536,7 @@ const TeamRosterManagement: React.FC = () => {
     try {
       const response = await axios.delete(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${playerToDelete.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -454,7 +546,13 @@ const TeamRosterManagement: React.FC = () => {
         fetchRosterData();
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -508,9 +606,9 @@ const TeamRosterManagement: React.FC = () => {
           city: editFormData.city,
           state: editFormData.state,
           zip: editFormData.zip,
-          dateofbirth: editFormData.dateofbirth
+          dateofbirth: editFormData.dateofbirth,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -522,7 +620,13 @@ const TeamRosterManagement: React.FC = () => {
         setError(response.data.message || 'Failed to update player information');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -557,7 +661,9 @@ const TeamRosterManagement: React.FC = () => {
       city: rosterMember.player.contact.city || '',
       state: rosterMember.player.contact.state || '',
       zip: rosterMember.player.contact.zip || '',
-      dateofbirth: rosterMember.player.contact.dateofbirth ? rosterMember.player.contact.dateofbirth.split('T')[0] : ''
+      dateofbirth: rosterMember.player.contact.dateofbirth
+        ? rosterMember.player.contact.dateofbirth.split('T')[0]
+        : '',
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
@@ -579,7 +685,7 @@ const TeamRosterManagement: React.FC = () => {
       city: '',
       state: '',
       zip: '',
-      dateofbirth: ''
+      dateofbirth: '',
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
@@ -599,7 +705,7 @@ const TeamRosterManagement: React.FC = () => {
       playerNumber: 0,
       submittedWaiver: false,
       submittedDriversLicense: false,
-      firstYear: 0
+      firstYear: 0,
     });
     setIsSigningNewPlayer(false);
     clearMessages();
@@ -629,7 +735,7 @@ const TeamRosterManagement: React.FC = () => {
       city: '',
       state: '',
       zip: '',
-      dateofbirth: ''
+      dateofbirth: '',
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEmailError('');
@@ -644,7 +750,7 @@ const TeamRosterManagement: React.FC = () => {
       playerNumber: 0,
       submittedWaiver: false,
       submittedDriversLicense: false,
-      firstYear: 0
+      firstYear: 0,
     });
     setSignPlayerDialogOpen(true);
   };
@@ -657,7 +763,7 @@ const TeamRosterManagement: React.FC = () => {
       playerNumber: rosterMember.playerNumber,
       submittedWaiver: rosterMember.submittedWaiver,
       submittedDriversLicense: rosterMember.player.submittedDriversLicense,
-      firstYear: rosterMember.player.firstYear
+      firstYear: rosterMember.player.firstYear,
     });
     setSignPlayerDialogOpen(true);
   };
@@ -669,7 +775,9 @@ const TeamRosterManagement: React.FC = () => {
     }
 
     // Find the roster member to update
-    const rosterMember = rosterData?.rosterMembers.find(member => member.player.id === selectedPlayer.id);
+    const rosterMember = rosterData?.rosterMembers.find(
+      (member) => member.player.id === selectedPlayer.id,
+    );
     if (!rosterMember) {
       setError('Roster member not found');
       return;
@@ -684,9 +792,9 @@ const TeamRosterManagement: React.FC = () => {
           playerNumber: rosterFormData.playerNumber,
           submittedWaiver: rosterFormData.submittedWaiver,
           submittedDriversLicense: rosterFormData.submittedDriversLicense,
-          firstYear: rosterFormData.firstYear
+          firstYear: rosterFormData.firstYear,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -697,7 +805,13 @@ const TeamRosterManagement: React.FC = () => {
         setError(response.data.message || 'Failed to update roster information');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -751,28 +865,28 @@ const TeamRosterManagement: React.FC = () => {
           city: editFormData.city,
           state: editFormData.state,
           zip: editFormData.zip,
-          dateofbirth: editFormData.dateofbirth
+          dateofbirth: editFormData.dateofbirth,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (createResponse.data.success) {
         const newContact = createResponse.data.data.contact;
-        
+
         // Create the roster entry for the new player
         const rosterResponse = await axios.post(
           `/api/accounts/${accountId}/roster`,
           {
             contactId: newContact.id,
             submittedDriversLicense: false,
-            firstYear: 0
+            firstYear: 0,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
 
         if (rosterResponse.data.success) {
           const newPlayer = rosterResponse.data.data.player;
-          
+
           // If auto-sign is enabled, add to team roster
           if (autoSignToRoster && seasonId && teamSeasonId) {
             const signResponse = await axios.post(
@@ -782,20 +896,26 @@ const TeamRosterManagement: React.FC = () => {
                 playerNumber: 0,
                 submittedWaiver: false,
                 submittedDriversLicense: false,
-                firstYear: 0
+                firstYear: 0,
               },
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: { Authorization: `Bearer ${token}` } },
             );
 
             if (signResponse.data.success) {
-              setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created and signed to roster successfully`);
+              setSuccessMessage(
+                `Player "${editFormData.firstname} ${editFormData.lastname}" created and signed to roster successfully`,
+              );
             } else {
-              setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created successfully but failed to sign to roster`);
+              setSuccessMessage(
+                `Player "${editFormData.firstname} ${editFormData.lastname}" created successfully but failed to sign to roster`,
+              );
             }
           } else {
-            setSuccessMessage(`Player "${editFormData.firstname} ${editFormData.lastname}" created successfully`);
+            setSuccessMessage(
+              `Player "${editFormData.firstname} ${editFormData.lastname}" created successfully`,
+            );
           }
-          
+
           closeEditDialog();
           fetchRosterData();
           fetchAvailablePlayers();
@@ -806,7 +926,13 @@ const TeamRosterManagement: React.FC = () => {
         setError(createResponse.data.message || 'Failed to create player');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -822,14 +948,15 @@ const TeamRosterManagement: React.FC = () => {
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const phoneNumber = value.replace(/\D/g, '');
-    
+
     // Limit to exactly 10 digits
     const limitedNumber = phoneNumber.slice(0, 10);
-    
+
     // Format based on length
     if (limitedNumber.length === 0) return '';
     if (limitedNumber.length <= 3) return `(${limitedNumber}`;
-    if (limitedNumber.length <= 6) return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
+    if (limitedNumber.length <= 6)
+      return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3)}`;
     return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6, 10)}`;
   };
 
@@ -851,7 +978,7 @@ const TeamRosterManagement: React.FC = () => {
     const errors = {
       phone1: '',
       phone2: '',
-      phone3: ''
+      phone3: '',
     };
     let hasErrors = false;
 
@@ -875,120 +1002,116 @@ const TeamRosterManagement: React.FC = () => {
   // Helper function to format all contact information
   const formatContactInfo = (contact: Contact) => {
     const info = [];
-    
+
     // Address first
     if (contact.streetaddress || contact.city || contact.state || contact.zip) {
-      const addressParts = [
-        contact.streetaddress,
-        contact.city,
-        contact.state,
-        contact.zip
-      ].filter(Boolean);
-      
+      const addressParts = [contact.streetaddress, contact.city, contact.state, contact.zip].filter(
+        Boolean,
+      );
+
       if (addressParts.length > 0) {
         const fullAddress = addressParts.join(', ');
         const streetAddress = contact.streetaddress || '';
-        const cityStateZip = [
-          contact.city,
-          contact.state,
-          contact.zip
-        ].filter(Boolean).join(', ');
-        
+        const cityStateZip = [contact.city, contact.state, contact.zip].filter(Boolean).join(', ');
+
         info.push(
           <Link
             href={`https://maps.google.com/maps?q=${encodeURIComponent(fullAddress)}`}
             target="_blank"
             rel="noopener noreferrer"
-            sx={{ 
-              color: 'primary.main', 
+            sx={{
+              color: 'primary.main',
               textDecoration: 'none',
               '&:hover': { textDecoration: 'underline' },
-              display: 'block'
+              display: 'block',
             }}
           >
             {streetAddress && <div>{streetAddress}</div>}
             {cityStateZip && <div>{cityStateZip}</div>}
-          </Link>
+          </Link>,
         );
       }
     }
-    
+
     // Email second
     if (contact.email) {
       info.push(
         <Link
           href={`mailto:${contact.email}`}
-          sx={{ 
-            color: 'primary.main', 
+          sx={{
+            color: 'primary.main',
             textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' }
+            '&:hover': { textDecoration: 'underline' },
           }}
         >
           {contact.email}
-        </Link>
+        </Link>,
       );
     }
-    
+
     // Phone numbers last
     if (contact.phones && contact.phones.length > 0) {
-      contact.phones.forEach(phone => {
+      contact.phones.forEach((phone) => {
         info.push(
           <Link
             href={`tel:${phone.number.replace(/\D/g, '')}`}
-            sx={{ 
-              color: 'primary.main', 
+            sx={{
+              color: 'primary.main',
               textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' }
+              '&:hover': { textDecoration: 'underline' },
             }}
           >
             {phone.type}: {phone.number}
-          </Link>
+          </Link>,
         );
       });
     } else {
       // Fallback to individual phone fields
-      if (contact.phone1) info.push(
-        <Link
-          href={`tel:${contact.phone1.replace(/\D/g, '')}`}
-          sx={{ 
-            color: 'primary.main', 
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' }
-          }}
-        >
-          home: {contact.phone1}
-        </Link>
-      );
-      if (contact.phone2) info.push(
-        <Link
-          href={`tel:${contact.phone2.replace(/\D/g, '')}`}
-          sx={{ 
-            color: 'primary.main', 
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' }
-          }}
-        >
-          work: {contact.phone2}
-        </Link>
-      );
-      if (contact.phone3) info.push(
-        <Link
-          href={`tel:${contact.phone3.replace(/\D/g, '')}`}
-          sx={{ 
-            color: 'primary.main', 
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' }
-          }}
-        >
-          cell: {contact.phone3}
-        </Link>
-      );
+      if (contact.phone1)
+        info.push(
+          <Link
+            href={`tel:${contact.phone1.replace(/\D/g, '')}`}
+            sx={{
+              color: 'primary.main',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            home: {contact.phone1}
+          </Link>,
+        );
+      if (contact.phone2)
+        info.push(
+          <Link
+            href={`tel:${contact.phone2.replace(/\D/g, '')}`}
+            sx={{
+              color: 'primary.main',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            work: {contact.phone2}
+          </Link>,
+        );
+      if (contact.phone3)
+        info.push(
+          <Link
+            href={`tel:${contact.phone3.replace(/\D/g, '')}`}
+            sx={{
+              color: 'primary.main',
+              textDecoration: 'none',
+              '&:hover': { textDecoration: 'underline' },
+            }}
+          >
+            cell: {contact.phone3}
+          </Link>,
+        );
     }
-    
+
     if (info.length === 0) {
       return '-';
     }
-    
+
     return (
       <Table size="small" sx={{ minWidth: 0 }}>
         <TableBody>
@@ -1011,7 +1134,7 @@ const TeamRosterManagement: React.FC = () => {
     const lastName = contact.lastname || '';
     const firstName = contact.firstname || '';
     const middleName = contact.middlename || '';
-    
+
     let formattedName = lastName;
     if (firstName) {
       formattedName += `, ${firstName}`;
@@ -1019,67 +1142,91 @@ const TeamRosterManagement: React.FC = () => {
     if (middleName) {
       formattedName += ` ${middleName}`;
     }
-    
+
     return formattedName;
   };
 
   // Helper function to format verification information
   const formatVerificationInfo = (member: RosterMember) => {
     const info = [];
-    
+
     // Age and Date of Birth first
-    if (member.player.contact.dateofbirth && typeof member.player.contact.dateofbirth === 'string') {
+    if (
+      member.player.contact.dateofbirth &&
+      typeof member.player.contact.dateofbirth === 'string'
+    ) {
       try {
         const birthDate = parseISO(member.player.contact.dateofbirth);
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
+
         // Adjust age if birthday hasn't occurred this year
-        const adjustedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
-          ? age - 1 
-          : age;
-        
+        const adjustedAge =
+          monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())
+            ? age - 1
+            : age;
+
         const birthMonthYear = format(birthDate, 'MMM yyyy');
-        
+
         info.push(
           <div key="age">
             Age: {adjustedAge} ({birthMonthYear})
-          </div>
+          </div>,
         );
       } catch {
         console.warn('Invalid date of birth format:', member.player.contact.dateofbirth);
       }
     }
-    
+
     // Date Added
     if (member.dateAdded && typeof member.dateAdded === 'string') {
       try {
         info.push(
           <div key="dateadded">
             Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
-          </div>
+          </div>,
         );
       } catch {
         console.warn('Invalid date added format:', member.dateAdded);
       }
     }
-    
+
     // Submitted Waiver
-    info.push(
-      <div key="waiver">
-        Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
-      </div>
-    );
-    
+    info.push(<div key="waiver">Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}</div>);
+
     // Submitted Driver's License
     info.push(
       <div key="license">
         Submitted Driver&apos;s License: {member.player.submittedDriversLicense ? 'Yes' : 'No'}
-      </div>
+      </div>,
     );
-    
+
     return info.length > 0 ? info : ['No verification data'];
+  };
+
+  const handleAddManager = async () => {
+    if (!selectedManagerContactId) return;
+    setAddManagerLoading(true);
+    setAddManagerError(null);
+    try {
+      await axios.post(
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
+        { contactId: selectedManagerContactId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      setAddManagerDialogOpen(false);
+      setSelectedManagerContactId(null);
+      fetchManagers();
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setAddManagerError(error.response?.data?.message || 'Failed to add manager');
+      } else {
+        setAddManagerError('Failed to add manager');
+      }
+    } finally {
+      setAddManagerLoading(false);
+    }
   };
 
   if (loading) {
@@ -1108,7 +1255,7 @@ const TeamRosterManagement: React.FC = () => {
     const bFirst = b.player.contact.firstname || '';
     const aMiddle = a.player.contact.middlename || '';
     const bMiddle = b.player.contact.middlename || '';
-    
+
     // Compare last names first
     if (aLast !== bLast) {
       return aLast.localeCompare(bLast);
@@ -1121,8 +1268,8 @@ const TeamRosterManagement: React.FC = () => {
     return aMiddle.localeCompare(bMiddle);
   });
 
-  const activePlayers = sortedRosterMembers.filter(member => !member.inactive);
-  const inactivePlayers = sortedRosterMembers.filter(member => member.inactive);
+  const activePlayers = sortedRosterMembers.filter((member) => !member.inactive);
+  const inactivePlayers = sortedRosterMembers.filter((member) => member.inactive);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -1149,7 +1296,9 @@ const TeamRosterManagement: React.FC = () => {
           {season?.name || 'Season'}
         </Link>
         <Typography color="text.primary">
-          {rosterData.teamSeason.name} - Roster
+          {league?.name
+            ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
+            : `${rosterData?.teamSeason?.name} Roster`}
         </Typography>
       </Breadcrumbs>
 
@@ -1160,13 +1309,17 @@ const TeamRosterManagement: React.FC = () => {
             <ArrowBackIcon />
           </IconButton>
           <Typography variant="h4" component="h1">
-            {league?.name ? `${league.name} – ${rosterData?.teamSeason?.name} Roster` : `${rosterData?.teamSeason?.name} Roster`}
+            {league?.name
+              ? `${league.name} – ${rosterData?.teamSeason?.name} Roster`
+              : `${rosterData?.teamSeason?.name} Roster`}
           </Typography>
         </Box>
       </Box>
 
       {/* Action Buttons */}
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}>
+      <Box
+        sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3, gap: 2 }}
+      >
         <Button
           variant="outlined"
           startIcon={<PersonAddIcon />}
@@ -1205,9 +1358,7 @@ const TeamRosterManagement: React.FC = () => {
               <Typography variant="h6" color="primary">
                 Total Players
               </Typography>
-              <Typography variant="h4">
-                {rosterData.rosterMembers.length}
-              </Typography>
+              <Typography variant="h4">{rosterData.rosterMembers.length}</Typography>
             </CardContent>
           </Card>
         </Box>
@@ -1217,9 +1368,7 @@ const TeamRosterManagement: React.FC = () => {
               <Typography variant="h6" color="success.main">
                 Active Players
               </Typography>
-              <Typography variant="h4">
-                {activePlayers.length}
-              </Typography>
+              <Typography variant="h4">{activePlayers.length}</Typography>
             </CardContent>
           </Card>
         </Box>
@@ -1229,12 +1378,73 @@ const TeamRosterManagement: React.FC = () => {
               <Typography variant="h6" color="warning.main">
                 Released Players
               </Typography>
-              <Typography variant="h4">
-                {inactivePlayers.length}
-              </Typography>
+              <Typography variant="h4">{inactivePlayers.length}</Typography>
             </CardContent>
           </Card>
         </Box>
+      </Box>
+
+      {/* Managers Section */}
+      <Box sx={{ mb: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          <Typography variant="h6" color="primary" sx={{ mr: 2 }}>
+            Team Managers
+          </Typography>
+          <Button
+            variant="outlined"
+            startIcon={<ManagerIcon />}
+            onClick={() => setAddManagerDialogOpen(true)}
+            size="small"
+            sx={{ ml: 'auto' }}
+          >
+            Assign Manager
+          </Button>
+        </Box>
+        {managers.length === 0 ? (
+          <Typography variant="body2" color="text.secondary">
+            No managers assigned to this team.
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {managers.map((manager) => (
+              <Card
+                key={manager.id}
+                sx={{ minWidth: 220, display: 'flex', alignItems: 'center', p: 1 }}
+              >
+                <ManagerIcon color="primary" sx={{ mr: 1 }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {manager.contacts.lastname}, {manager.contacts.firstname}{' '}
+                    {manager.contacts.middlename}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {manager.contacts.email}
+                  </Typography>
+                </Box>
+                <IconButton
+                  color="error"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    try {
+                      await axios.delete(
+                        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers/${manager.id}`,
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        },
+                      );
+                      fetchManagers();
+                    } catch {
+                      // Optionally set error
+                    }
+                  }}
+                  aria-label="Remove Manager"
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Card>
+            ))}
+          </Box>
+        )}
       </Box>
 
       {/* Active Players Table */}
@@ -1260,21 +1470,21 @@ const TeamRosterManagement: React.FC = () => {
                 <TableRow key={member.id}>
                   <TableCell>{member.playerNumber || '-'}</TableCell>
                   <TableCell>
-                    <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                         {formatName(member.player.contact)}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        First Year: {member.player.firstYear || 'Not set'}
-                      </Typography>
+                      {/* Manager badge/icon */}
+                      {managers.some((m) => m.contactid === member.player.contact.id) && (
+                        <ManagerIcon color="primary" fontSize="small" titleAccess="Manager" />
+                      )}
                     </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      First Year: {member.player.firstYear || 'Not set'}
+                    </Typography>
                   </TableCell>
-                  <TableCell>
-                    {formatContactInfo(member.player.contact)}
-                  </TableCell>
-                  <TableCell>
-                    {formatVerificationInfo(member)}
-                  </TableCell>
+                  <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
+                  <TableCell>{formatVerificationInfo(member)}</TableCell>
                   <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
                     <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                       <Button
@@ -1372,7 +1582,10 @@ const TeamRosterManagement: React.FC = () => {
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
                       <Box>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}>
+                        <Typography
+                          variant="body1"
+                          sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
+                        >
                           {formatName(member.player.contact)}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -1380,12 +1593,8 @@ const TeamRosterManagement: React.FC = () => {
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell>
-                      {formatContactInfo(member.player.contact)}
-                    </TableCell>
-                    <TableCell>
-                      {formatVerificationInfo(member)}
-                    </TableCell>
+                    <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
+                    <TableCell>{formatVerificationInfo(member)}</TableCell>
                     <TableCell sx={{ width: '280px', maxWidth: '280px' }}>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                         <Button
@@ -1463,39 +1672,52 @@ const TeamRosterManagement: React.FC = () => {
                 {error}
               </Alert>
             )}
-            
+
             {/* Info Alert for signing new players */}
             {isSigningNewPlayer && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                When you select a player, their existing roster information (first year, driver&apos;s license status) will be pre-filled. You can modify these values as needed.
+                When you select a player, their existing roster information (first year,
+                driver&apos;s license status) will be pre-filled. You can modify these values as
+                needed.
               </Alert>
             )}
-            
+
             {/* Player Selection (only for signing new players) */}
             {isSigningNewPlayer && (
               <Autocomplete
                 options={availablePlayers}
-                getOptionLabel={(option) => 
-                  `${formatName(option.contact)}${option.contact.email ? ` (${option.contact.email})` : ''}`
-                }
+                getOptionLabel={(option) => {
+                  // Always use .contact if present, fallback to option itself
+                  const contact = option.contact || option;
+                  const last = contact.lastname || '';
+                  const first = contact.firstname || '';
+                  const middle = contact.middlename || '';
+                  return `${last}${first ? ', ' + first : ''}${middle ? ' ' + middle : ''}`.trim();
+                }}
                 value={selectedPlayer}
                 onChange={(_, newValue) => {
-                  setSelectedPlayer(newValue);
-                  // Populate form with existing player data when available
                   if (newValue) {
+                    // Extract firstYear and submittedDriversLicense from the top-level newValue only
+                    const firstYear = newValue.firstYear ?? 0;
+                    const submittedDriversLicense = newValue.submittedDriversLicense ?? false;
+                    setSelectedPlayer({
+                      id: newValue.id,
+                      contactId: newValue.contactId,
+                      submittedDriversLicense,
+                      firstYear,
+                      contact: newValue.contact || newValue,
+                    });
                     setRosterFormData({
-                      playerNumber: 0, // Default to 0 for new signings
-                      submittedWaiver: false, // Default to false for new signings
-                      submittedDriversLicense: newValue.submittedDriversLicense || false,
-                      firstYear: newValue.firstYear || 0
+                      ...rosterFormData,
+                      firstYear,
+                      submittedDriversLicense,
                     });
                   } else {
-                    // Reset form when no player is selected
+                    setSelectedPlayer(null);
                     setRosterFormData({
-                      playerNumber: 0,
-                      submittedWaiver: false,
+                      ...rosterFormData,
+                      firstYear: 0,
                       submittedDriversLicense: false,
-                      firstYear: 0
                     });
                   }
                 }}
@@ -1508,17 +1730,19 @@ const TeamRosterManagement: React.FC = () => {
                     sx={{ mb: 2 }}
                   />
                 )}
-                noOptionsText={availablePlayers.length === 0 ? "No available players" : "No players found"}
+                noOptionsText={
+                  availablePlayers.length === 0 ? 'No available players' : 'No players found'
+                }
               />
             )}
-            
+
             {/* Player Name Display (only for editing existing players) */}
             {!isSigningNewPlayer && selectedPlayer && (
               <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
                 {formatName(selectedPlayer.contact)}
               </Typography>
             )}
-            
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <TextField
                 label="Player Number"
@@ -1534,46 +1758,57 @@ const TeamRosterManagement: React.FC = () => {
                 helperText="Enter the player's jersey number (0 for no number)"
                 error={rosterFormData.playerNumber < 0}
               />
-              
+
               <TextField
                 label="First Year"
                 type="number"
                 value={rosterFormData.firstYear}
-                onChange={(e) => setRosterFormData({ ...rosterFormData, firstYear: parseInt(e.target.value) || 0 })}
+                onChange={(e) =>
+                  setRosterFormData({ ...rosterFormData, firstYear: parseInt(e.target.value) || 0 })
+                }
                 fullWidth
                 variant="outlined"
                 helperText={
-                  isSigningNewPlayer && selectedPlayer && selectedPlayer.firstYear 
-                    ? `Pre-filled with existing data: ${selectedPlayer.firstYear}` 
-                    : "Enter the year the player first joined the league"
+                  isSigningNewPlayer && selectedPlayer && selectedPlayer.firstYear
+                    ? `Pre-filled with existing data: ${selectedPlayer.firstYear}`
+                    : 'Enter the year the player first joined the league'
                 }
               />
-              
+
               <FormControlLabel
                 control={
                   <Checkbox
                     checked={rosterFormData.submittedWaiver}
-                    onChange={(e) => setRosterFormData({ ...rosterFormData, submittedWaiver: e.target.checked })}
+                    onChange={(e) =>
+                      setRosterFormData({ ...rosterFormData, submittedWaiver: e.target.checked })
+                    }
                   />
                 }
                 label="Submitted Waiver"
               />
-              
+
               <FormControlLabel
                 control={
                   <Checkbox
                     checked={rosterFormData.submittedDriversLicense}
-                    onChange={(e) => setRosterFormData({ ...rosterFormData, submittedDriversLicense: e.target.checked })}
+                    onChange={(e) =>
+                      setRosterFormData({
+                        ...rosterFormData,
+                        submittedDriversLicense: e.target.checked,
+                      })
+                    }
                   />
                 }
                 label={
                   <Box>
                     <Typography>Submitted Driver&apos;s License</Typography>
-                    {isSigningNewPlayer && selectedPlayer && selectedPlayer.submittedDriversLicense && (
-                      <Typography variant="caption" color="text.secondary">
-                        Pre-filled with existing data
-                      </Typography>
-                    )}
+                    {isSigningNewPlayer &&
+                      selectedPlayer &&
+                      selectedPlayer.submittedDriversLicense && (
+                        <Typography variant="caption" color="text.secondary">
+                          Pre-filled with existing data
+                        </Typography>
+                      )}
                   </Box>
                 }
               />
@@ -1587,8 +1822,16 @@ const TeamRosterManagement: React.FC = () => {
           <Button
             onClick={isSigningNewPlayer ? handleSignPlayer : handleSaveRosterInfo}
             variant="contained"
-            disabled={isSigningNewPlayer ? (!selectedPlayer || formLoading) : formLoading}
-            startIcon={formLoading ? <CircularProgress size={20} /> : (isSigningNewPlayer ? <PersonAddIcon /> : <SportsIcon />)}
+            disabled={isSigningNewPlayer ? !selectedPlayer || formLoading : formLoading}
+            startIcon={
+              formLoading ? (
+                <CircularProgress size={20} />
+              ) : isSigningNewPlayer ? (
+                <PersonAddIcon />
+              ) : (
+                <SportsIcon />
+              )
+            }
           >
             {isSigningNewPlayer ? 'Sign Player' : 'Save Roster Info'}
           </Button>
@@ -1606,13 +1849,12 @@ const TeamRosterManagement: React.FC = () => {
         <DialogContent>
           <Typography variant="body1" sx={{ mb: 2 }}>
             Are you sure you want to permanently delete{' '}
-            <strong>
-              {playerToDelete ? formatName(playerToDelete.player.contact) : ''}
-            </strong>{' '}
-            from the roster?
+            <strong>{playerToDelete ? formatName(playerToDelete.player.contact) : ''}</strong> from
+            the roster?
           </Typography>
           <Alert severity="warning">
-            This action cannot be undone. The player will be permanently removed from the team roster.
+            This action cannot be undone. The player will be permanently removed from the team
+            roster.
           </Alert>
         </DialogContent>
         <DialogActions>
@@ -1644,7 +1886,7 @@ const TeamRosterManagement: React.FC = () => {
                 {error}
               </Alert>
             )}
-            
+
             {/* Auto-sign checkbox for new players */}
             {isCreatingNewPlayer && (
               <Alert severity="info" sx={{ mb: 2 }}>
@@ -1659,7 +1901,7 @@ const TeamRosterManagement: React.FC = () => {
                 />
               </Alert>
             )}
-            
+
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
                 <TextField
@@ -1713,12 +1955,17 @@ const TeamRosterManagement: React.FC = () => {
                 <TextField
                   label="Home Phone"
                   value={editFormData.phone1}
-                  onChange={(e) => setEditFormData({ ...editFormData, phone1: formatPhoneNumber(e.target.value) })}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, phone1: formatPhoneNumber(e.target.value) })
+                  }
                   onBlur={() => {
                     if (editFormData.phone1 && !validatePhoneNumber(editFormData.phone1)) {
-                      setPhoneErrors(prev => ({ ...prev, phone1: 'Phone number must be exactly 10 digits' }));
+                      setPhoneErrors((prev) => ({
+                        ...prev,
+                        phone1: 'Phone number must be exactly 10 digits',
+                      }));
                     } else {
-                      setPhoneErrors(prev => ({ ...prev, phone1: '' }));
+                      setPhoneErrors((prev) => ({ ...prev, phone1: '' }));
                     }
                   }}
                   error={!!phoneErrors.phone1}
@@ -1732,12 +1979,17 @@ const TeamRosterManagement: React.FC = () => {
                 <TextField
                   label="Work Phone"
                   value={editFormData.phone2}
-                  onChange={(e) => setEditFormData({ ...editFormData, phone2: formatPhoneNumber(e.target.value) })}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, phone2: formatPhoneNumber(e.target.value) })
+                  }
                   onBlur={() => {
                     if (editFormData.phone2 && !validatePhoneNumber(editFormData.phone2)) {
-                      setPhoneErrors(prev => ({ ...prev, phone2: 'Phone number must be exactly 10 digits' }));
+                      setPhoneErrors((prev) => ({
+                        ...prev,
+                        phone2: 'Phone number must be exactly 10 digits',
+                      }));
                     } else {
-                      setPhoneErrors(prev => ({ ...prev, phone2: '' }));
+                      setPhoneErrors((prev) => ({ ...prev, phone2: '' }));
                     }
                   }}
                   error={!!phoneErrors.phone2}
@@ -1751,12 +2003,17 @@ const TeamRosterManagement: React.FC = () => {
                 <TextField
                   label="Cell Phone"
                   value={editFormData.phone3}
-                  onChange={(e) => setEditFormData({ ...editFormData, phone3: formatPhoneNumber(e.target.value) })}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, phone3: formatPhoneNumber(e.target.value) })
+                  }
                   onBlur={() => {
                     if (editFormData.phone3 && !validatePhoneNumber(editFormData.phone3)) {
-                      setPhoneErrors(prev => ({ ...prev, phone3: 'Phone number must be exactly 10 digits' }));
+                      setPhoneErrors((prev) => ({
+                        ...prev,
+                        phone3: 'Phone number must be exactly 10 digits',
+                      }));
                     } else {
-                      setPhoneErrors(prev => ({ ...prev, phone3: '' }));
+                      setPhoneErrors((prev) => ({ ...prev, phone3: '' }));
                     }
                   }}
                   error={!!phoneErrors.phone3}
@@ -1770,7 +2027,9 @@ const TeamRosterManagement: React.FC = () => {
                 <TextField
                   label="Street Address"
                   value={editFormData.streetaddress}
-                  onChange={(e) => setEditFormData({ ...editFormData, streetaddress: e.target.value })}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, streetaddress: e.target.value })
+                  }
                   fullWidth
                   variant="outlined"
                 />
@@ -1814,7 +2073,9 @@ const TeamRosterManagement: React.FC = () => {
                   label="Date of Birth"
                   type="date"
                   value={editFormData.dateofbirth ? editFormData.dateofbirth.split('T')[0] : ''}
-                  onChange={(e) => setEditFormData({ ...editFormData, dateofbirth: e.target.value })}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, dateofbirth: e.target.value })
+                  }
                   fullWidth
                   variant="outlined"
                   InputLabelProps={{ shrink: true }}
@@ -1831,9 +2092,65 @@ const TeamRosterManagement: React.FC = () => {
             onClick={isCreatingNewPlayer ? handleCreatePlayer : handleEditPlayer}
             variant="contained"
             disabled={!editFormData.firstname || !editFormData.lastname || formLoading}
-            startIcon={formLoading ? <CircularProgress size={20} /> : (isCreatingNewPlayer ? <PersonAddIcon /> : <EditIcon />)}
+            startIcon={
+              formLoading ? (
+                <CircularProgress size={20} />
+              ) : isCreatingNewPlayer ? (
+                <PersonAddIcon />
+              ) : (
+                <EditIcon />
+              )
+            }
           >
             {isCreatingNewPlayer ? 'Create Player' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Assign Manager Dialog */}
+      <Dialog
+        open={addManagerDialogOpen}
+        onClose={() => setAddManagerDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Assign Team Manager</DialogTitle>
+        <DialogContent>
+          {addManagerError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {addManagerError}
+            </Alert>
+          )}
+          <Autocomplete
+            options={activePlayers.filter(
+              (member) => !managers.some((m) => m.contactid === member.player.contact.id),
+            )}
+            getOptionLabel={(option) => formatName(option.player.contact)}
+            value={
+              activePlayers.find(
+                (member) => member.player.contact.id === selectedManagerContactId,
+              ) || null
+            }
+            onChange={(_, newValue) =>
+              setSelectedManagerContactId(newValue ? newValue.player.contact.id : null)
+            }
+            renderInput={(params) => (
+              <TextField {...params} label="Select Player" fullWidth variant="outlined" />
+            )}
+            noOptionsText={activePlayers.length === 0 ? 'No active players' : 'No eligible players'}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAddManagerDialogOpen(false)} disabled={addManagerLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleAddManager}
+            variant="contained"
+            disabled={!selectedManagerContactId || addManagerLoading}
+            startIcon={addManagerLoading ? <CircularProgress size={20} /> : <ManagerIcon />}
+          >
+            Assign
           </Button>
         </DialogActions>
       </Dialog>

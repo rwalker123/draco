@@ -37,8 +37,9 @@ export interface GameListDisplayProps {
   emptyMessage?: string;
   canEditGames?: boolean;
   onEditGame?: (game: Game) => void;
-  canEditRecap?: boolean;
+  canEditRecap?: (game: Game) => boolean;
   onEditRecap?: (game: Game) => void;
+  onViewRecap?: (game: Game) => void;
 }
 
 // Utility to get short game status text
@@ -68,6 +69,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   onEditGame,
   canEditRecap,
   onEditRecap,
+  onViewRecap,
 }) => {
   // Render a single game card
   const renderGame = (game: Game) => {
@@ -106,8 +108,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns:
-                game.gameStatusText !== 'Incomplete' ? 'auto 1fr auto auto' : 'auto 1fr auto',
+              gridTemplateColumns: game.gameStatus !== 0 ? 'auto 1fr auto auto' : 'auto 1fr auto',
               gap: 1.5,
               alignItems: 'start',
             }}
@@ -136,7 +137,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                 </Tooltip>
               )}
               {/* Recap button for completed games, only if canEditRecap is true */}
-              {game.gameStatusText !== 'Incomplete' && canEditRecap && onEditRecap && (
+              {game.gameStatus === 1 && canEditRecap && canEditRecap(game) && onEditRecap ? (
                 <Tooltip title={game.hasGameRecap ? 'Edit Summary' : 'Enter Summary'}>
                   <IconButton
                     size="small"
@@ -155,6 +156,29 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                     <EditIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
+              ) : (
+                game.gameStatus === 1 &&
+                game.hasGameRecap &&
+                onViewRecap && (
+                  <Tooltip title="View Game Summary">
+                    <IconButton
+                      size="small"
+                      onClick={() => onViewRecap(game)}
+                      sx={{
+                        color: '#b0c4de',
+                        mt: 1,
+                        ml: 1,
+                        p: 0.5,
+                        '&:hover': {
+                          color: 'white',
+                          bgcolor: 'rgba(255,255,255,0.1)',
+                        },
+                      }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )
               )}
             </Box>
             <Box sx={{ minWidth: 0 }}>
@@ -166,29 +190,27 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
               </Typography>
             </Box>
             {/* Scores column */}
-            {game.gameStatusText !== 'Incomplete' &&
-              game.gameStatus !== 2 &&
-              game.gameStatus !== 5 && (
-                <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color={game.awayScore > game.homeScore ? 'success.main' : 'white'}
-                    sx={{ mb: 0.5 }}
-                  >
-                    {game.awayScore}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color={game.homeScore > game.awayScore ? 'success.main' : 'white'}
-                  >
-                    {game.homeScore}
-                  </Typography>
-                </Box>
-              )}
+            {game.gameStatus !== 0 && game.gameStatus !== 2 && game.gameStatus !== 5 && (
+              <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  color={game.awayScore > game.homeScore ? 'success.main' : 'white'}
+                  sx={{ mb: 0.5 }}
+                >
+                  {game.awayScore}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  fontWeight={700}
+                  color={game.homeScore > game.awayScore ? 'success.main' : 'white'}
+                >
+                  {game.homeScore}
+                </Typography>
+              </Box>
+            )}
             {/* Game status badge column (far right, spans two rows, centered) */}
-            {game.gameStatusText !== 'Incomplete' && (
+            {game.gameStatus !== 0 && (
               <Box
                 sx={{
                   gridRow: '1 / span 2',
@@ -217,7 +239,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                 </span>
               </Box>
             )}
-            {game.gameStatusText === 'Incomplete' && (
+            {game.gameStatus === 0 && (
               <Box>
                 <Typography variant="body2" color="#b0c4de" sx={{ pt: 0.5 }}>
                   {localTime}
