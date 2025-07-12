@@ -1707,12 +1707,13 @@ router.delete(
  * Search contacts by name for autocomplete
  */
 router.get(
-  '/contacts/search',
+  '/:accountId/contacts/search',
   authenticateToken,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { q } = req.query; // search query
       const limit = 10; // maximum results to return
+      const accountId = BigInt(req.params.accountId);
 
       if (!q || typeof q !== 'string') {
         res.json({
@@ -1733,6 +1734,7 @@ router.get(
       } as const;
       const contacts = await prisma.contacts.findMany({
         where: {
+          creatoraccountid: accountId,
           OR: [
             {
               firstname: {

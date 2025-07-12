@@ -20,6 +20,7 @@ import { domainRouting } from './middleware/domainRouting';
 import * as swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger';
 import { globalErrorHandler } from './utils/globalErrorHandler';
+import teamManagersRouter from './routes/teamManagers';
 
 // Load environment variables
 dotenv.config();
@@ -82,6 +83,10 @@ app.use('/api/accounts/:accountId/divisions', divisionsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamsRouter);
+app.use(
+  '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
+  teamManagersRouter,
+);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler
