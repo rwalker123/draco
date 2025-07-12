@@ -102,7 +102,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     return <Alert severity="error">{error}</Alert>;
   }
   if (!recapList.length) {
-    return <Alert severity="info">No recent game recaps available.</Alert>;
+    return null;
   }
 
   // Show the current recap
