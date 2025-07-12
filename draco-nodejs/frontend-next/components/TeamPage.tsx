@@ -7,6 +7,9 @@ import TeamInfoCard from '@/components/TeamInfoCard';
 import GameListDisplay, { Game } from './GameListDisplay';
 import React from 'react';
 import EnterGameSummaryDialog from './EnterGameRecapDialog';
+import { getGameSummary, saveGameSummary } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
 
 interface TeamPageProps {
   accountId: string;
@@ -22,6 +25,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [summaryDialogOpen, setSummaryDialogOpen] = React.useState(false);
   const [selectedGame, setSelectedGame] = React.useState<Game | null>(null);
   const [summaryDraft, setSummaryDraft] = React.useState('');
+  const [summaryLoading, setSummaryLoading] = React.useState(false);
+  const [summaryError, setSummaryError] = React.useState<string | null>(null);
+  const [summaryReadOnly, setSummaryReadOnly] = React.useState(false);
+  const [summaryToView, setSummaryToView] = React.useState('');
+  const { token } = useAuth();
+  const { hasRoleInTeam } = useRole();
 
   React.useEffect(() => {
     setLoading(true);
@@ -39,21 +48,142 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       .finally(() => setLoading(false));
   }, [accountId, seasonId, teamSeasonId]);
 
-  const handleEditSummary = (game: Game) => {
+  const handleEditSummary = async (game: Game) => {
     setSelectedGame(game);
-    setSummaryDraft(game.gameRecaps?.[0]?.recap || '');
+    setSummaryDraft('');
+    setSummaryError(null);
+    setSummaryReadOnly(false);
     setSummaryDialogOpen(true);
+    if (!token) return;
+    setSummaryLoading(true);
+    try {
+      const summary = await getGameSummary({
+        accountId,
+        seasonId,
+        gameId: game.id,
+        teamSeasonId, // pass the current teamSeasonId
+        token,
+      });
+      setSummaryDraft(summary);
+    } catch (err: unknown) {
+      // If the error is a 404 with 'No recap found', treat as empty summary
+      if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string' &&
+        ((err as { message: string }).message.includes('No recap found') ||
+          (err as { message: string }).message.includes('not found'))
+      ) {
+        setSummaryDraft('');
+        setSummaryError(null);
+      } else if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      ) {
+        setSummaryError((err as { message: string }).message);
+      } else {
+        setSummaryError('Failed to load game summary');
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleViewSummary = async (game: Game) => {
+    setSelectedGame(game);
+    setSummaryReadOnly(true);
+    setSummaryDialogOpen(true);
+    setSummaryError(null);
+    setSummaryLoading(true);
+    // Try to use existing summary if present
+    if (game.gameRecaps && game.gameRecaps.length > 0 && game.gameRecaps[0].recap) {
+      setSummaryToView(game.gameRecaps[0].recap || '');
+      setSummaryLoading(false);
+    } else {
+      // Fetch from server
+      try {
+        const summary = await getGameSummary({
+          accountId,
+          seasonId,
+          gameId: game.id,
+          teamSeasonId,
+        });
+        setSummaryToView(summary || '');
+      } catch (err: unknown) {
+        if (
+          err &&
+          typeof err === 'object' &&
+          'message' in err &&
+          typeof (err as { message?: unknown }).message === 'string'
+        ) {
+          setSummaryError((err as { message: string }).message);
+        } else {
+          setSummaryError('Failed to load game summary');
+        }
+        setSummaryToView('');
+      } finally {
+        setSummaryLoading(false);
+      }
+    }
   };
 
   const handleCloseSummaryDialog = () => {
     setSummaryDialogOpen(false);
     setSelectedGame(null);
+    setSummaryReadOnly(false);
+    setSummaryToView('');
   };
 
-  const handleSaveSummary = (_summary: string) => {
-    // For now, just close the dialog. API integration will be added later.
-    setSummaryDialogOpen(false);
-    setSelectedGame(null);
+  const handleSaveSummary = async (summary: string) => {
+    if (!selectedGame || !token) return;
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      await saveGameSummary({
+        accountId,
+        seasonId,
+        gameId: selectedGame.id,
+        teamSeasonId, // pass the current teamSeasonId
+        summary,
+        token,
+      });
+      // Update the local completedGames state with the new summary
+      setCompletedGames((prev) =>
+        prev.map((g) =>
+          g.id === selectedGame.id
+            ? {
+                ...g,
+                hasGameRecap: true,
+                gameRecaps: [{ teamId: teamSeasonId, recap: summary }],
+              }
+            : g,
+        ),
+      );
+      setSummaryDialogOpen(false);
+      setSelectedGame(null);
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      ) {
+        setSummaryError((err as { message: string }).message);
+      } else {
+        setSummaryError('Failed to save game summary');
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  // Remove the old canEditRecap helper and replace with a new one using RoleContext
+  const canEditRecap = (game: Game) => {
+    // Only allow editing for completed games (status 1) and if the user is TeamAdmin for the relevant team
+    return game.gameStatus === 1 && hasRoleInTeam('TeamAdmin', teamSeasonId);
   };
 
   return (
@@ -78,8 +208,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             <GameListDisplay
               sections={[{ title: 'Completed Games', games: completedGames }]}
               emptyMessage="No completed games."
-              canEditRecap={true}
+              canEditRecap={canEditRecap}
               onEditRecap={handleEditSummary}
+              onViewRecap={handleViewSummary}
             />
           </div>
         </div>
@@ -263,7 +394,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         open={summaryDialogOpen}
         onClose={handleCloseSummaryDialog}
         onSave={handleSaveSummary}
-        initialSummary={summaryDraft}
+        initialSummary={summaryReadOnly ? summaryToView : summaryDraft}
         teamName={
           selectedGame?.homeTeamId === teamSeasonId
             ? selectedGame?.homeTeamName
@@ -274,6 +405,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         awayScore={selectedGame?.awayScore}
         homeTeamName={selectedGame?.homeTeamName}
         awayTeamName={selectedGame?.awayTeamName}
+        loading={summaryLoading}
+        error={summaryError}
+        readOnly={summaryReadOnly}
       />
     </main>
   );

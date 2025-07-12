@@ -290,6 +290,9 @@ router.get(
         return;
       }
 
+      // Get the leagueseasonid for this team
+      const leagueSeasonId = teamSeason.leagueseasonid;
+
       // Get all roster players for this account
       const allRosterPlayers = await prisma.roster.findMany({
         where: {
@@ -316,15 +319,18 @@ router.get(
             },
           },
         },
+        orderBy: [
+          { contacts: { lastname: 'asc' } },
+          { contacts: { firstname: 'asc' } },
+          { contacts: { middlename: 'asc' } },
+        ],
       });
 
-      // Get all players already on teams in this season
+      // Get all players already on teams in this league season
       const assignedPlayers = await prisma.rosterseason.findMany({
         where: {
           teamsseason: {
-            leagueseason: {
-              seasonid: seasonId,
-            },
+            leagueseasonid: leagueSeasonId,
           },
         },
         select: {
@@ -334,37 +340,48 @@ router.get(
 
       const assignedPlayerIds = new Set(assignedPlayers.map((p) => p.playerid));
 
-      // Filter out players already assigned to teams in this season
+      // Filter out players already assigned to teams in this league season
       const availablePlayers = allRosterPlayers.filter(
         (player) => !assignedPlayerIds.has(player.id),
       );
 
+      // Check for ?full=1 query parameter
+      const returnFull = req.query.full === '1' || req.query.full === 'true';
+
+      // Sort availablePlayers by lastname, firstname, middlename
+      let playersResponse;
+      if (returnFull) {
+        playersResponse = availablePlayers.map((player) => ({
+          id: player.id,
+          contactId: player.contactid,
+          firstYear: player.firstyear,
+          submittedDriversLicense: player.submitteddriverslicense,
+          contact: {
+            id: player.contacts.id,
+            firstname: player.contacts.firstname,
+            lastname: player.contacts.lastname,
+            middlename: player.contacts.middlename,
+          },
+        }));
+      } else {
+        playersResponse = availablePlayers.map((player) => ({
+          id: player.id,
+          contactId: player.contactid,
+          firstYear: player.firstyear,
+          submittedDriversLicense: player.submitteddriverslicense,
+          contact: {
+            id: player.contacts.id,
+            firstname: player.contacts.firstname,
+            lastname: player.contacts.lastname,
+            middlename: player.contacts.middlename,
+          },
+        }));
+      }
+
       res.json({
         success: true,
         data: {
-          availablePlayers: availablePlayers.map((player) => ({
-            id: player.id,
-            contactId: player.contactid,
-            submittedDriversLicense: player.submitteddriverslicense,
-            firstYear: player.firstyear,
-            contact: {
-              ...player.contacts,
-              dateofbirth: player.contacts.dateofbirth
-                ? player.contacts.dateofbirth.toISOString()
-                : null,
-              phones: [
-                ...(player.contacts.phone1
-                  ? [{ type: 'home', number: player.contacts.phone1 }]
-                  : []),
-                ...(player.contacts.phone2
-                  ? [{ type: 'work', number: player.contacts.phone2 }]
-                  : []),
-                ...(player.contacts.phone3
-                  ? [{ type: 'cell', number: player.contacts.phone3 }]
-                  : []),
-              ],
-            },
-          })),
+          availablePlayers: playersResponse,
         },
       });
     } catch (error) {
@@ -447,14 +464,15 @@ router.post(
         return;
       }
 
-      // Check if player is already on a team in this season
+      // Get the leagueseasonid for this team
+      const leagueSeasonId = teamSeason.leagueseasonid;
+
+      // Check if player is already on a team in this league season
       const existingRosterMember = await prisma.rosterseason.findFirst({
         where: {
           playerid: BigInt(playerId),
           teamsseason: {
-            leagueseason: {
-              seasonid: seasonId,
-            },
+            leagueseasonid: leagueSeasonId,
           },
         },
       });
@@ -1369,6 +1387,10 @@ router.get(
         game: leagueschedule & { availablefields?: availablefields | null },
       ) => {
         const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+        // Check if any gamerecap exists for this game
+        const recapCount = await prisma.gamerecap.count({
+          where: { gameid: game.id },
+        });
         return {
           id: game.id.toString(),
           date: game.gamedate ? game.gamedate.toISOString() : null,
@@ -1385,6 +1407,7 @@ router.get(
           fieldId: game.fieldid ? game.fieldid.toString() : null,
           fieldName: game.availablefields ? game.availablefields.name : null,
           fieldShortName: game.availablefields ? game.availablefields.shortname : null,
+          hasGameRecap: recapCount > 0,
         };
       };
 

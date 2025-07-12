@@ -21,6 +21,9 @@ interface EnterGameSummaryDialogProps {
   awayScore?: number;
   homeTeamName?: string;
   awayTeamName?: string;
+  loading?: boolean;
+  error?: string | null;
+  readOnly?: boolean;
 }
 
 const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
@@ -34,6 +37,9 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
   awayScore,
   homeTeamName,
   awayTeamName,
+  loading = false,
+  error = null,
+  readOnly = false,
 }) => {
   const [summary, setSummary] = useState(initialSummary);
 
@@ -45,9 +51,39 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
     onSave(summary);
   };
 
+  // Show loading spinner or error message if needed
+  if (loading) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
+        <DialogContent>
+          <Typography>Loading...</Typography>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
+        <DialogContent>
+          <Typography color="error">{error}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="secondary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
+      <DialogTitle>
+        {readOnly ? 'Game Summary for' : 'Enter Game Summary for'} {teamName}
+      </DialogTitle>
       <DialogContent>
         {gameDate && (
           <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -69,24 +105,48 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
             {`${awayTeamName} ${awayScore} at ${homeTeamName} ${homeScore}`}
           </Typography>
         )}
-        <TextField
-          label="Game Summary"
-          multiline
-          minRows={4}
-          fullWidth
-          value={summary}
-          onChange={(e) => setSummary(e.target.value)}
-          variant="outlined"
-          sx={{ mt: 2 }}
-        />
+        {/* Game Summary Field or Read-Only Display */}
+        {readOnly ? (
+          <div
+            style={{
+              whiteSpace: 'pre-line',
+              color: 'inherit',
+              fontSize: '1rem',
+              padding: '12px 0',
+              minHeight: '96px', // match minRows=4 of TextField
+            }}
+            data-testid="game-summary-readonly"
+          >
+            {summary || <span style={{ color: '#888' }}>(No summary provided)</span>}
+          </div>
+        ) : (
+          <TextField
+            label="Game Summary"
+            multiline
+            minRows={4}
+            fullWidth
+            value={summary}
+            onChange={(e) => setSummary(e.target.value)}
+            variant="outlined"
+            sx={{ mt: 2 }}
+            disabled={readOnly}
+          />
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="secondary">
-          Cancel
+          Close
         </Button>
-        <Button onClick={handleSave} color="primary" variant="contained" disabled={!summary.trim()}>
-          Save
-        </Button>
+        {!readOnly && (
+          <Button
+            onClick={handleSave}
+            color="primary"
+            variant="contained"
+            disabled={!summary.trim()}
+          >
+            Save
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

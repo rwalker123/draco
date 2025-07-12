@@ -848,25 +848,54 @@ router.delete(
   },
 );
 
+// Async utility to check if user has team admin rights for a teamSeasonId
+async function userHasTeamAdminRights(
+  userId: string,
+  accountId: string,
+  teamSeasonId: string,
+  roleService: RoleService,
+  prisma: PrismaClient,
+): Promise<boolean> {
+  // 1. Check contactrole for TeamAdmin
+  const userRoles = await roleService.getUserRoles(userId, BigInt(accountId));
+  const isTeamAdmin = userRoles.contactRoles.some(
+    (role: ContactRole) =>
+      role.roleId === 'TeamAdmin' &&
+      teamSeasonId &&
+      teamSeasonId.toString() === role.roleData.toString(),
+  );
+  if (isTeamAdmin) return true;
+  // 2. Look up contactid for this user/account
+  const contact = await prisma.contacts.findFirst({
+    where: {
+      userid: userId,
+      creatoraccountid: BigInt(accountId),
+    },
+  });
+  if (!contact) return false;
+  // 3. Check teamseasonmanager for this contactid
+  const managerRecord = await prisma.teamseasonmanager.findFirst({
+    where: {
+      contactid: BigInt(contact.id),
+      teamseasonid: BigInt(teamSeasonId),
+    },
+  });
+  return !!managerRecord;
+}
+
 /**
- * GET /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap
+ * GET /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap/:teamSeasonId
  * Get the recap for the current user's team for a specific game
  * Only accessible to team admins/coaches for the home or away team
  */
 router.get(
-  '/:gameId/recap',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
+  '/:gameId/recap/:teamSeasonId',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);
       const seasonId = BigInt(req.params.seasonId);
       const gameId = BigInt(req.params.gameId);
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ success: false, message: 'User not authenticated' });
-        return;
-      }
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
 
       // Fetch the game and validate it belongs to the account and season
       const game = await prisma.leagueschedule.findUnique({
@@ -892,18 +921,9 @@ router.get(
         return;
       }
 
-      // Find which team (home or away) the user is an admin/coach for
-      const userRoles = await roleService.getUserRoles(userId, accountId);
-      const teamIds = [game.hteamid, game.vteamid];
-      const adminTeamId = userRoles.contactRoles.find(
-        (role: ContactRole) =>
-          (role.roleId === 'TeamAdmin' || role.roleId === 'TeamCoach') &&
-          teamIds.some((tid) => tid && tid.toString() === role.roleData.toString()),
-      )?.roleData;
-      if (!adminTeamId) {
-        res
-          .status(403)
-          .json({ success: false, message: 'Not authorized for either team in this game' });
+      // Validate that teamSeasonId is one of the teams in the game
+      if (!(teamSeasonId === game.hteamid || teamSeasonId === game.vteamid)) {
+        res.status(400).json({ success: false, message: 'Invalid teamSeasonId for this game' });
         return;
       }
 
@@ -912,12 +932,12 @@ router.get(
         where: {
           gameid_teamid: {
             gameid: gameId,
-            teamid: BigInt(adminTeamId),
+            teamid: teamSeasonId,
           },
         },
       });
       if (!recap) {
-        res.status(404).json({ success: false, message: 'No recap found for your team' });
+        res.status(404).json({ success: false, message: 'No recap found for this team' });
         return;
       }
       res.json({ success: true, data: { recap: recap.recap } });
@@ -928,13 +948,13 @@ router.get(
 );
 
 /**
- * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap
- * Create or update the recap for the current user's team for a specific game
- * Only accessible to team admins/coaches for the home or away team
+ * PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId/recap/:teamSeasonId
+ * Create or update the recap for the specified team for a specific game
+ * Only accessible to team admins (contactrole) or team managers (teamseasonmanager) for the specified team
  * Body: { recap: string }
  */
 router.put(
-  '/:gameId/recap',
+  '/:gameId/recap/:teamSeasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -942,6 +962,7 @@ router.put(
       const accountId = BigInt(req.params.accountId);
       const seasonId = BigInt(req.params.seasonId);
       const gameId = BigInt(req.params.gameId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
       const userId = req.user?.id;
       if (!userId) {
         res.status(401).json({ success: false, message: 'User not authenticated' });
@@ -979,18 +1000,24 @@ router.put(
         return;
       }
 
-      // Find which team (home or away) the user is an admin/coach for
-      const userRoles = await roleService.getUserRoles(userId, accountId);
-      const teamIds = [game.hteamid, game.vteamid];
-      const adminTeamId = userRoles.contactRoles.find(
-        (role: ContactRole) =>
-          (role.roleId === 'TeamAdmin' || role.roleId === 'TeamCoach') &&
-          teamIds.some((tid) => tid && tid.toString() === role.roleData.toString()),
-      )?.roleData;
-      if (!adminTeamId) {
+      // Validate that teamSeasonId is one of the teams in the game
+      if (!(teamSeasonId === game.hteamid || teamSeasonId === game.vteamid)) {
+        res.status(400).json({ success: false, message: 'Invalid teamSeasonId for this game' });
+        return;
+      }
+
+      // Check admin rights for the provided teamSeasonId
+      const hasRights = await userHasTeamAdminRights(
+        String(userId),
+        String(accountId),
+        String(teamSeasonId),
+        roleService,
+        prisma,
+      );
+      if (!hasRights) {
         res
           .status(403)
-          .json({ success: false, message: 'Not authorized for either team in this game' });
+          .json({ success: false, message: 'Not authorized for this team in this game' });
         return;
       }
 
@@ -999,7 +1026,7 @@ router.put(
         where: {
           gameid_teamid: {
             gameid: gameId,
-            teamid: BigInt(adminTeamId),
+            teamid: teamSeasonId,
           },
         },
         update: {
@@ -1007,7 +1034,7 @@ router.put(
         },
         create: {
           gameid: gameId,
-          teamid: BigInt(adminTeamId),
+          teamid: teamSeasonId,
           recap,
         },
       });
