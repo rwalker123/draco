@@ -62,7 +62,7 @@ interface TeamsProps {
 }
 
 const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { hasRole, hasPermission } = useRole();
 
   // Check if user has edit permissions for teams
@@ -105,7 +105,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/roster/export`, {
       //   method: 'GET',
       //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+      //     'Authorization': `Bearer ${token}`
       //   }
       // });
       //
@@ -137,7 +137,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeason.id}/managers/export`, {
       //   method: 'GET',
       //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+      //     'Authorization': `Bearer ${token}`
       //   }
       // });
       //
@@ -194,7 +194,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/roster/export`, {
       //   method: 'GET',
       //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+      //     'Authorization': `Bearer ${token}`
       //   }
       // });
       //
@@ -225,7 +225,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       // const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/managers/export`, {
       //   method: 'GET',
       //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`
+      //     'Authorization': `Bearer ${token}`
       //   }
       // });
       //
@@ -311,7 +311,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
     // Validate team name (already done in dialog, but double-check)
     if (!updatedName.trim()) throw new Error('Team name is required');
     // Check if user is authenticated
-    const token = localStorage.getItem('jwtToken');
     if (!token) throw new Error('Authentication required. Please log in again.');
     // Prepare form data for file upload
     const formData = new FormData();
