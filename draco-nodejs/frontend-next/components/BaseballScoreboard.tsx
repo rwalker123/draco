@@ -2,11 +2,12 @@ import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
+import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
 
 interface ScoreboardData {
   today: Game[];
   yesterday: Game[];
-  recaps: Game[];
 }
 
 interface BaseballScoreboardProps {
@@ -41,22 +42,11 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
     open: boolean;
     game: Game | null;
   }>({ open: false, game: null });
-  const [userPermissions, setUserPermissions] = React.useState<{
-    isAccountAdmin: boolean;
-    isGlobalAdmin: boolean;
-  }>({ isAccountAdmin: false, isGlobalAdmin: false });
 
-  // Check user permissions (reuse previous logic)
-  React.useEffect(() => {
-    const checkPermissions = async () => {
-      // You may want to use your auth context here, but for now, just set both to true for demo
-      // Replace this with your real permission check logic
-      setUserPermissions({ isAccountAdmin: true, isGlobalAdmin: true });
-    };
-    checkPermissions();
-  }, []);
-
-  const canEditGames = userPermissions.isAccountAdmin || userPermissions.isGlobalAdmin;
+  const { token } = useAuth();
+  const { hasRole } = useRole();
+  const canEditGames =
+    hasRole('Administrator') || (accountId ? hasRole('AccountAdmin', { accountId }) : false);
 
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });
@@ -78,7 +68,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+          Authorization: token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify(gameData),
       });
@@ -112,7 +102,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
 
     const currentSeasonId = seasonData.data.season.id;
 
-    // Calculate date ranges for today, yesterday, and recaps
+    // Calculate date ranges for today and yesterday
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -121,12 +111,6 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
 
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
-
-    const fiveDaysAgo = new Date(today);
-    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-
-    const twoDaysAgo = new Date(today);
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
     // Load today's games
     const todayPromise = fetch(
@@ -138,18 +122,9 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${yesterday.toISOString()}&endDate=${today.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
     ).then((response) => response.json());
 
-    // Load recap games (2-5 days ago with recaps)
-    const recapsPromise = fetch(
-      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${fiveDaysAgo.toISOString()}&endDate=${twoDaysAgo.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
-    ).then((response) => response.json());
+    const [todayData, yesterdayData] = await Promise.all([todayPromise, yesterdayPromise]);
 
-    const [todayData, yesterdayData, recapsData] = await Promise.all([
-      todayPromise,
-      yesterdayPromise,
-      recapsPromise,
-    ]);
-
-    if (!todayData.success || !yesterdayData.success || !recapsData.success) {
+    if (!todayData.success || !yesterdayData.success) {
       throw new Error('Failed to load games data');
     }
 
@@ -203,15 +178,14 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
               'fieldId' in game ? (game.fieldId === null ? null : String(game.fieldId)) : null,
             fieldName,
             fieldShortName,
-            hasGameRecap: false, // We'll need to check for recaps separately
-            gameRecaps: [], // We'll need to load recaps separately
+            hasGameRecap: false, // No recaps in scoreboard
+            gameRecaps: [], // No recaps in scoreboard
           };
         });
 
     return {
       today: transformGames(todayData.data.games),
       yesterday: transformGames(yesterdayData.data.games),
-      recaps: transformGames(recapsData.data.games),
     };
   }, [accountId, teamId]);
 
@@ -253,7 +227,6 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
   const sections: GameListSection[] = [
     { title: 'Today', games: data.today },
     { title: 'Yesterday', games: data.yesterday },
-    { title: 'Recent Recaps (2-5 days ago)', games: data.recaps },
   ];
 
   return (
@@ -263,16 +236,18 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
         canEditGames={canEditGames}
         onEditGame={handleEditGame}
       />
-      <EnterGameResultsDialog
-        open={editGameDialog.open}
-        onClose={() => setEditGameDialog({ open: false, game: null })}
-        game={
-          editGameDialog.game
-            ? { ...editGameDialog.game, gameRecaps: editGameDialog.game.gameRecaps ?? [] }
-            : null
-        }
-        onSave={handleSaveGameResults}
-      />
+      {canEditGames && (
+        <EnterGameResultsDialog
+          open={editGameDialog.open}
+          onClose={() => setEditGameDialog({ open: false, game: null })}
+          game={
+            editGameDialog.game
+              ? { ...editGameDialog.game, gameRecaps: editGameDialog.game.gameRecaps ?? [] }
+              : null
+          }
+          onSave={handleSaveGameResults}
+        />
+      )}
     </>
   );
 };
