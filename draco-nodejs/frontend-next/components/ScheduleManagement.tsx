@@ -108,7 +108,7 @@ interface ScheduleManagementProps {
 
 const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) => {
   const { hasRole } = useRole();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Check if user has edit permissions for schedule management
   // Only authenticated users can have edit permissions
@@ -370,11 +370,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         const currentSeasonData = await currentSeasonResponse.json();
         const currentSeasonId = currentSeasonData.data.season.id;
 
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-          throw new Error('Authentication token not found');
-        }
-
         const response = await fetch(
           `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}`,
           {
@@ -419,7 +414,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         setLoadingLeagueTeams(false);
       }
     },
-    [accountId],
+    [accountId, token],
   );
 
   const handleLeagueChange = (leagueSeasonId: string) => {
@@ -475,7 +470,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(requestData),
       });
@@ -513,7 +508,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             gameDate: combinedDateTime.toISOString(),
@@ -543,13 +538,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const handleDeleteGame = async () => {
     try {
       if (!selectedGame) return;
-
-      const token = localStorage.getItem('jwtToken');
-      if (!token) {
-        setError('Authentication token not found. Please log in again.');
-        setDeleteDialogOpen(false);
-        return;
-      }
 
       const response = await fetch(
         `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
