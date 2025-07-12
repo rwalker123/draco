@@ -7,6 +7,8 @@ import TeamInfoCard from '@/components/TeamInfoCard';
 import GameListDisplay, { Game } from './GameListDisplay';
 import React from 'react';
 import EnterGameSummaryDialog from './EnterGameRecapDialog';
+import { getGameSummary, saveGameSummary } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
 
 interface TeamPageProps {
   accountId: string;
@@ -22,6 +24,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [summaryDialogOpen, setSummaryDialogOpen] = React.useState(false);
   const [selectedGame, setSelectedGame] = React.useState<Game | null>(null);
   const [summaryDraft, setSummaryDraft] = React.useState('');
+  const [summaryLoading, setSummaryLoading] = React.useState(false);
+  const [summaryError, setSummaryError] = React.useState<string | null>(null);
+  const { token } = useAuth();
 
   React.useEffect(() => {
     setLoading(true);
@@ -39,10 +44,36 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       .finally(() => setLoading(false));
   }, [accountId, seasonId, teamSeasonId]);
 
-  const handleEditSummary = (game: Game) => {
+  const handleEditSummary = async (game: Game) => {
     setSelectedGame(game);
-    setSummaryDraft(game.gameRecaps?.[0]?.recap || '');
+    setSummaryDraft('');
+    setSummaryError(null);
     setSummaryDialogOpen(true);
+    if (!token) return;
+    setSummaryLoading(true);
+    try {
+      const summary = await getGameSummary({
+        accountId,
+        seasonId,
+        gameId: game.id,
+        teamSeasonId, // pass the current teamSeasonId
+        token,
+      });
+      setSummaryDraft(summary);
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      ) {
+        setSummaryError((err as { message: string }).message);
+      } else {
+        setSummaryError('Failed to load game summary');
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   const handleCloseSummaryDialog = () => {
@@ -50,10 +81,47 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     setSelectedGame(null);
   };
 
-  const handleSaveSummary = (_summary: string) => {
-    // For now, just close the dialog. API integration will be added later.
-    setSummaryDialogOpen(false);
-    setSelectedGame(null);
+  const handleSaveSummary = async (summary: string) => {
+    if (!selectedGame || !token) return;
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      await saveGameSummary({
+        accountId,
+        seasonId,
+        gameId: selectedGame.id,
+        teamSeasonId, // pass the current teamSeasonId
+        summary,
+        token,
+      });
+      // Update the local completedGames state with the new summary
+      setCompletedGames((prev) =>
+        prev.map((g) =>
+          g.id === selectedGame.id
+            ? {
+                ...g,
+                hasGameRecap: true,
+                gameRecaps: [{ teamId: teamSeasonId, recap: summary }],
+              }
+            : g,
+        ),
+      );
+      setSummaryDialogOpen(false);
+      setSelectedGame(null);
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'message' in err &&
+        typeof (err as { message?: unknown }).message === 'string'
+      ) {
+        setSummaryError((err as { message: string }).message);
+      } else {
+        setSummaryError('Failed to save game summary');
+      }
+    } finally {
+      setSummaryLoading(false);
+    }
   };
 
   return (
@@ -274,6 +342,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
         awayScore={selectedGame?.awayScore}
         homeTeamName={selectedGame?.homeTeamName}
         awayTeamName={selectedGame?.awayTeamName}
+        loading={summaryLoading}
+        error={summaryError}
       />
     </main>
   );

@@ -21,6 +21,8 @@ interface EnterGameSummaryDialogProps {
   awayScore?: number;
   homeTeamName?: string;
   awayTeamName?: string;
+  loading?: boolean;
+  error?: string | null;
 }
 
 const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
@@ -34,6 +36,8 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
   awayScore,
   homeTeamName,
   awayTeamName,
+  loading = false,
+  error = null,
 }) => {
   const [summary, setSummary] = useState(initialSummary);
 
@@ -44,6 +48,34 @@ const EnterGameSummaryDialog: React.FC<EnterGameSummaryDialogProps> = ({
   const handleSave = () => {
     onSave(summary);
   };
+
+  // Show loading spinner or error message if needed
+  if (loading) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
+        <DialogContent>
+          <Typography>Loading...</Typography>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (error) {
+    return (
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Enter Game Summary for {teamName}</DialogTitle>
+        <DialogContent>
+          <Typography color="error">{error}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose} color="secondary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
