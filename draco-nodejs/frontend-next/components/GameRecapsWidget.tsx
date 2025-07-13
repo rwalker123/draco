@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, Typography, Box, CircularProgress, Alert, Avatar } from '@mui/material';
 import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import { AnimatePresence, motion } from 'framer-motion';
+import './GameRecapsWidget.css';
 
 interface GameRecapFlat {
   id: string; // game id
@@ -21,6 +23,8 @@ interface GameRecapsWidgetProps {
   teamSeasonId?: string;
   maxRecaps?: number;
 }
+
+const ANIMATION_TYPE = 'slide'; // Change to 'fade' for fade effect
 
 const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   accountId,
@@ -108,61 +112,94 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   // Show the current recap
   const recapItem = recapList[currentIndex];
 
+  // Animation variants for slide and fade
+  const variants = {
+    slide: {
+      initial: { x: 40, opacity: 0 },
+      animate: { x: 0, opacity: 1 },
+      exit: { x: -40, opacity: 0 },
+      transition: { duration: 0.4 },
+    },
+    fade: {
+      initial: { opacity: 0 },
+      animate: { opacity: 1 },
+      exit: { opacity: 0 },
+      transition: { duration: 0.4 },
+    },
+  };
+
   return (
-    <Card sx={{ mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-          <Avatar sx={{ bgcolor: '#1e3a8a', mr: 2 }}>
-            <SportsBaseballIcon />
-          </Avatar>
-          <Box>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
-              Game Recap
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {recapItem.gameDate ? new Date(recapItem.gameDate).toLocaleDateString() : ''} &bull;{' '}
-              {recapItem.league.name}
-            </Typography>
-          </Box>
-        </Box>
-        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
-          {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
-          {recapItem.homeScore}
-        </Typography>
-        <Typography
-          variant="caption"
-          sx={{ fontWeight: 'bold', color: '#1e3a8a', mb: 1, display: 'block' }}
-        >
-          {recapItem.teamName}
-        </Typography>
-        <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
-          {recapItem.recap}
-        </Typography>
-        {recapList.length > 1 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 2 }}>
-            <Typography variant="caption" sx={{ mr: 2 }}>
-              {currentIndex + 1} of {recapList.length}
-            </Typography>
-            <Box>
-              <button
-                aria-label="Next Recap"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-                onClick={() => setCurrentIndex((prev) => (prev + 1) % recapList.length)}
-              >
-                <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1e3a8a' }} />
-              </button>
+    <AnimatePresence mode="wait" initial={false}>
+      <motion.div
+        key={recapItem.id + '-' + recapItem.teamName}
+        initial={variants[ANIMATION_TYPE].initial}
+        animate={variants[ANIMATION_TYPE].animate}
+        exit={variants[ANIMATION_TYPE].exit}
+        transition={variants[ANIMATION_TYPE].transition}
+        style={{ width: '100%' }}
+      >
+        <Card sx={{ mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <CardContent>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Avatar sx={{ bgcolor: '#1e3a8a', mr: 2 }}>
+                <SportsBaseballIcon />
+              </Avatar>
+              <Box>
+                <Typography
+                  variant="h6"
+                  component="div"
+                  sx={{ fontWeight: 'bold', color: '#1e3a8a' }}
+                >
+                  Game Recap
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {recapItem.gameDate ? new Date(recapItem.gameDate).toLocaleDateString() : ''}{' '}
+                  &bull; {recapItem.league.name}
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
+              {recapItem.homeScore}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 'bold', color: '#1e3a8a', mb: 1, display: 'block' }}
+            >
+              {recapItem.teamName}
+            </Typography>
+            <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
+              {recapItem.recap}
+            </Typography>
+            {recapList.length > 1 && (
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 2 }}
+              >
+                <Typography variant="caption" sx={{ mr: 2 }}>
+                  {currentIndex + 1} of {recapList.length}
+                </Typography>
+                <Box>
+                  <button
+                    aria-label="Next Recap"
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                    onClick={() => setCurrentIndex((prev) => (prev + 1) % recapList.length)}
+                  >
+                    <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1e3a8a' }} />
+                  </button>
+                </Box>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
