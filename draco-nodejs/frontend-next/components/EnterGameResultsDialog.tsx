@@ -209,7 +209,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           pb: 2,
         }}
       >
-        <Typography variant="h6" fontWeight={700}>
+        <Typography variant="h6" component="div" fontWeight={700}>
           Enter Game Results
         </Typography>
         <Button onClick={onClose} sx={{ color: '#b0c4de', minWidth: 'auto', p: 0 }}>
@@ -345,7 +345,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start' }}>
             {/* Away Team */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: '300px' }}>
-              <Typography variant="h6" color="white" fontWeight={600} sx={{ minWidth: '150px' }}>
+              <Typography
+                variant="h6"
+                component="div"
+                color="white"
+                fontWeight={600}
+                sx={{ minWidth: '150px' }}
+              >
                 {game.awayTeamName}
               </Typography>
               <TextField
@@ -389,7 +395,13 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
 
             {/* Home Team */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, minWidth: '300px' }}>
-              <Typography variant="h6" color="white" fontWeight={600} sx={{ minWidth: '150px' }}>
+              <Typography
+                variant="h6"
+                component="div"
+                color="white"
+                fontWeight={600}
+                sx={{ minWidth: '150px' }}
+              >
                 {game.homeTeamName}
               </Typography>
               <TextField
