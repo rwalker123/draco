@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'draco-account-resources-dev.s3.us-east-1.amazonaws.com'],
   },
 };
 

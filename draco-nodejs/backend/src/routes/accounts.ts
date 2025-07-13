@@ -8,12 +8,12 @@ import { RoleService } from '../services/roleService';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { isEmail } from 'validator';
 import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
-import { generateLogoPath } from '../config/logo';
 import { logAndRethrow } from '../utils/logAndRethrow';
 import { ContactRole } from '../types/roles';
 import * as multer from 'multer';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
 import { createStorageService } from '../services/storageService';
+import { getLogoUrl } from '../config/logo';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -24,23 +24,6 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
-
-// Helper to generate logo URL for a team
-function getLogoUrl(accountId: string | number, teamId: string | number): string {
-  if (process.env.STORAGE_PROVIDER === 's3') {
-    if (!process.env.S3_BUCKET) {
-      throw new Error('S3_BUCKET environment variable must be set for S3 storage');
-    }
-    const bucket = process.env.S3_BUCKET;
-    const region = process.env.S3_REGION || 'us-east-1';
-    return `https://${bucket}.s3.${region}.amazonaws.com/team-logos/${teamId}-logo.png`;
-  } else {
-    // Local storage
-    console.log('Generating logo URL for account:', accountId, 'team:', teamId);
-    console.log('generateLogoPath:', generateLogoPath(accountId.toString(), teamId.toString()));
-    return `/${generateLogoPath(accountId.toString(), teamId.toString())}`;
-  }
-}
 
 /**
  * @swagger
@@ -2209,6 +2192,11 @@ router.get(
                   },
                 },
               },
+              teams: {
+                select: {
+                  accountid: true,
+                },
+              },
             },
           },
         },
@@ -2236,6 +2224,11 @@ router.get(
                   },
                 },
               },
+              teams: {
+                select: {
+                  accountid: true,
+                },
+              },
             },
           },
         },
@@ -2245,18 +2238,35 @@ router.get(
       const allTeams = [...userTeams, ...managedTeams];
       const uniqueTeams = new Map();
 
-      allTeams.forEach((team) => {
-        const teamId = team.teamsseason.id.toString();
-        if (!uniqueTeams.has(teamId)) {
-          uniqueTeams.set(teamId, {
-            id: teamId,
-            name: team.teamsseason.name,
-            leagueName: team.teamsseason.leagueseason.league.name,
-            logoUrl: getLogoUrl(accountId.toString(), team.teamsseason.teamid.toString()),
-            // TODO: Add more team data like record, standing, next game
+      for (const team of allTeams) {
+        const teamSeason = team.teamsseason;
+        // Defensive: fetch league.accountid if not already included
+        // We'll need to fetch the team base record to get its accountid
+        let teamAccountId: string | undefined = undefined;
+        if (teamSeason.teams && teamSeason.teams.accountid) {
+          teamAccountId = teamSeason.teams.accountid.toString();
+        } else {
+          // Fallback: fetch from DB (shouldn't happen if include is set up right)
+          const teamBase = await prisma.teams.findUnique({
+            where: { id: teamSeason.teamid },
+            select: { accountid: true },
           });
+          if (teamBase) teamAccountId = teamBase.accountid.toString();
         }
-      });
+        // Only include if the team's accountId matches the route accountId
+        if (teamAccountId === accountId.toString()) {
+          const teamId = teamSeason.id.toString();
+          if (!uniqueTeams.has(teamId)) {
+            uniqueTeams.set(teamId, {
+              id: teamId,
+              name: teamSeason.name,
+              leagueName: teamSeason.leagueseason.league.name,
+              logoUrl: getLogoUrl(teamAccountId, teamSeason.teamid.toString()),
+              // TODO: Add more team data like record, standing, next game
+            });
+          }
+        }
+      }
 
       res.json({
         success: true,
