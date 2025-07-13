@@ -529,7 +529,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
         umpire3: game.umpire3?.toString(),
         umpire4: game.umpire4?.toString(),
         league: {
-          id: game.leagueseason.league.id.toString(),
+          id: game.leagueseason.id.toString(), // leagueSeasonId
           name: game.leagueseason.league.name,
         },
         season: {
