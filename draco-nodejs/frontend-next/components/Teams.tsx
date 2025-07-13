@@ -334,7 +334,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       throw new Error(errorData.message || 'Failed to update team');
     }
     const updateData = await updateResponse.json();
-    const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl);
+    const newLogoUrl = addCacheBuster(updateData.data.team.logoUrl, Date.now());
     setTeamsData((prevData) => {
       if (!prevData) return prevData;
       return {
