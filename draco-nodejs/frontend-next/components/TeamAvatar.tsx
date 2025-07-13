@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Avatar, Typography } from '@mui/material';
 import Image from 'next/image';
+import { addCacheBuster } from '../config/teams';
 
 interface TeamAvatarProps {
   name: string;
@@ -19,6 +20,13 @@ const getInitials = (name: string) => {
 const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }) => {
   const [imgError, setImgError] = useState(false);
   const initials = getInitials(name);
+  // Always apply cache buster if logoUrl is present
+  const cacheBustedLogoUrl = logoUrl ? addCacheBuster(logoUrl) : undefined;
+
+  // Reset imgError when logoUrl changes
+  useEffect(() => {
+    setImgError(false);
+  }, [logoUrl]);
 
   return (
     <Avatar
@@ -34,7 +42,7 @@ const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }
     >
       {logoUrl && !imgError ? (
         <Image
-          src={logoUrl}
+          src={cacheBustedLogoUrl as string}
           alt={alt || name}
           width={size}
           height={size}
