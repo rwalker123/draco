@@ -1,0 +1,35 @@
+/* Slide animation */
+.slide-enter {
+  opacity: 0;
+  transform: translateX(40px);
+}
+.slide-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 400ms, transform 400ms;
+}
+.slide-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.slide-exit-active {
+  opacity: 0;
+  transform: translateX(-40px);
+  transition: opacity 400ms, transform 400ms;
+}
+
+/* Fade animation */
+.fade-enter {
+  opacity: 0;
+}
+.fade-enter-active {
+  opacity: 1;
+  transition: opacity 400ms;
+}
+.fade-exit {
+  opacity: 1;
+}
+.fade-exit-active {
+  opacity: 0;
+  transition: opacity 400ms;
+} 
