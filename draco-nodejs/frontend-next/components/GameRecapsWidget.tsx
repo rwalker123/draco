@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, Typography, Box, CircularProgress, Alert, Avatar } from '@mui/material';
-import SportsBaseballIcon from '@mui/icons-material/SportsBaseball';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+  Avatar,
+  LinearProgress,
+  IconButton,
+} from '@mui/material';
+import NewspaperRecapIcon from './icons/NewspaperRecapIcon';
+import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import PauseIcon from '@mui/icons-material/Pause';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { AnimatePresence, motion } from 'framer-motion';
 import './GameRecapsWidget.css';
 
@@ -36,10 +49,48 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const carouselInterval = 30000; // 30 seconds
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [progress, setProgress] = useState(0);
+  const progressRef = React.useRef<number>(0);
+  const progressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
+  // Reset index when recaps change
   useEffect(() => {
-    setCurrentIndex(0); // Reset index when recaps change
+    setCurrentIndex(0);
+    setProgress(0);
+    setIsPaused(false);
   }, [recapList]);
+
+  // Carousel auto-advance effect
+  useEffect(() => {
+    if (recapList.length <= 1 || isPaused) return; // No need to auto-advance if only one recap or paused
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % recapList.length);
+    }, carouselInterval);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [currentIndex, recapList, isPaused]);
+
+  // Progress bar effect
+  useEffect(() => {
+    if (recapList.length <= 1 || isPaused) return;
+    setProgress(0);
+    progressRef.current = 0;
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    const interval = 50; // ms
+    const step = (interval / carouselInterval) * 100;
+    progressTimerRef.current = setInterval(() => {
+      progressRef.current += step;
+      setProgress(Math.min(progressRef.current, 100));
+    }, interval);
+    return () => {
+      if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    };
+  }, [currentIndex, recapList, isPaused]);
 
   useEffect(() => {
     if (!accountId || !seasonId) return;
@@ -128,6 +179,27 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
     },
   };
 
+  // Handler for manual next click, resets the timer
+  const handleNext = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    setProgress(0);
+    setCurrentIndex((prev) => (prev + 1) % recapList.length);
+  };
+
+  // Handler for manual previous click, resets the timer
+  const handlePrev = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    setProgress(0);
+    setCurrentIndex((prev) => (prev - 1 + recapList.length) % recapList.length);
+  };
+
+  // Handler for pause/play toggle
+  const handlePausePlay = () => {
+    setIsPaused((prev) => !prev);
+  };
+
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
@@ -138,11 +210,20 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
         transition={variants[ANIMATION_TYPE].transition}
         style={{ width: '100%' }}
       >
-        <Card sx={{ mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ bgcolor: '#1e3a8a', mr: 2 }}>
-                <SportsBaseballIcon />
+        <Card
+          sx={{
+            mb: 4,
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+            position: 'relative',
+          }}
+        >
+          <CardContent sx={{ pb: 7 }}>
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}
+            >
+              <Avatar sx={{ bgcolor: '#1e3a8a', mr: 2, width: 40, height: 40 }}>
+                <NewspaperRecapIcon size={28} color="#1e3a8a" />
               </Avatar>
               <Box>
                 <Typography
@@ -157,6 +238,11 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
                   &bull; {recapItem.league.name}
                 </Typography>
               </Box>
+              {recapList.length > 1 && (
+                <Typography variant="caption" sx={{ ml: 2, minWidth: 60, textAlign: 'right' }}>
+                  {currentIndex + 1} of {recapList.length}
+                </Typography>
+              )}
             </Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
               {recapItem.visitorTeamName} {recapItem.visitorScore} @ {recapItem.homeTeamName}{' '}
@@ -171,32 +257,47 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
             <Typography variant="body2" sx={{ whiteSpace: 'pre-line', mb: 2 }}>
               {recapItem.recap}
             </Typography>
-            {recapList.length > 1 && (
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', mt: 2 }}
-              >
-                <Typography variant="caption" sx={{ mr: 2 }}>
-                  {currentIndex + 1} of {recapList.length}
-                </Typography>
-                <Box>
-                  <button
-                    aria-label="Next Recap"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                    onClick={() => setCurrentIndex((prev) => (prev + 1) % recapList.length)}
-                  >
-                    <ArrowForwardIosIcon fontSize="small" sx={{ color: '#1e3a8a' }} />
-                  </button>
-                </Box>
-              </Box>
-            )}
           </CardContent>
+          {recapList.length > 1 && (
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                px: 2,
+                pb: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.5,
+                zIndex: 1,
+              }}
+            >
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 0.5 }}
+              >
+                <IconButton aria-label="Previous Recap" size="small" onClick={handlePrev}>
+                  <SkipPreviousIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  aria-label={isPaused ? 'Play' : 'Pause'}
+                  size="small"
+                  onClick={handlePausePlay}
+                  sx={{ mx: 1 }}
+                >
+                  {isPaused ? <PlayArrowIcon fontSize="small" /> : <PauseIcon fontSize="small" />}
+                </IconButton>
+                <IconButton aria-label="Next Recap" size="small" onClick={handleNext}>
+                  <SkipNextIcon fontSize="small" />
+                </IconButton>
+              </Box>
+              <LinearProgress
+                variant="determinate"
+                value={progress}
+                sx={{ height: 4, borderRadius: 2 }}
+              />
+            </Box>
+          )}
         </Card>
       </motion.div>
     </AnimatePresence>
