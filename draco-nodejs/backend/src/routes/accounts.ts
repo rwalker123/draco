@@ -412,7 +412,7 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
       accountType?: string;
       accountTypeId: string;
       firstYear: number | null;
-      affiliation?: string;
+      affiliation?: { name: string; url: string } | null;
       timezoneId: string;
       twitterAccountName: string;
       facebookFanPage: string;
@@ -538,7 +538,7 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
           accountType: account.accounttypes?.name,
           accountTypeId: account.accounttypeid.toString(),
           firstYear: account.firstyear,
-          affiliation: affiliation?.name,
+          affiliation: affiliation ? { name: affiliation.name, url: affiliation.url } : null,
           timezoneId: account.timezoneid ?? '',
           twitterAccountName: account.twitteraccountname ?? '',
           facebookFanPage: account.facebookfanpage ?? '',
