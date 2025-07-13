@@ -165,6 +165,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Add a debounced navigation function to prevent excessive re-renders
   const [isNavigating, setIsNavigating] = useState(false);
 
+  // Add state for league/team filters
+  const [filterLeagueSeasonId, setFilterLeagueSeasonId] = useState<string>('');
+  const [filterTeamSeasonId, setFilterTeamSeasonId] = useState<string>('');
+
+  // Filter games based on league/team filter
+  const filteredGames = games.filter((game) => {
+    let leagueMatch = true;
+    let teamMatch = true;
+    if (filterLeagueSeasonId) {
+      leagueMatch = game.league && game.league.id === filterLeagueSeasonId;
+    }
+    if (filterTeamSeasonId) {
+      teamMatch =
+        game.homeTeamId === filterTeamSeasonId || game.visitorTeamId === filterTeamSeasonId;
+    }
+    return leagueMatch && teamMatch;
+  });
+
   const navigateToWeek = React.useCallback(
     (direction: 'prev' | 'next') => {
       if (isNavigating) return; // Prevent multiple rapid clicks
@@ -417,6 +435,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     },
     [accountId, token],
   );
+
+  // Update leagueTeams when filterLeagueSeasonId changes (for filter dropdown)
+  useEffect(() => {
+    if (filterLeagueSeasonId) {
+      loadLeagueTeams(filterLeagueSeasonId);
+    } else {
+      setLeagueTeams([]);
+    }
+    setFilterTeamSeasonId(''); // Reset team filter when league changes
+  }, [filterLeagueSeasonId, loadLeagueTeams]);
 
   const handleLeagueChange = (leagueSeasonId: string) => {
     setSelectedLeagueSeason(leagueSeasonId);
@@ -917,7 +945,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           }}
         >
           {weekDays.map((day, index) => {
-            const dayGames = games.filter(
+            const dayGames = filteredGames.filter(
               (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), day),
             );
 
@@ -1139,7 +1167,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     filterDate,
     isNavigating,
     navigateToWeek,
-    games,
+    filteredGames,
     openEditDialog,
     getTeamName,
     getStatusDisplayInfo,
@@ -1150,7 +1178,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const renderListView = () => {
     return (
       <List>
-        {games.map((game) => (
+        {filteredGames.map((game) => (
           <ListItem
             key={game.id}
             divider
@@ -1412,7 +1440,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
             {week.map((day, dayIndex) => {
               const isCurrentMonth = day.getMonth() === filterDate.getMonth();
-              const dayGames = games.filter(
+              const dayGames = filteredGames.filter(
                 (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), day),
               );
 
@@ -1621,7 +1649,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   };
 
   const renderDayView = () => {
-    const dayGames = games.filter(
+    const dayGames = filteredGames.filter(
       (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), filterDate),
     );
 
@@ -1842,7 +1870,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const monthName = format(monthStart, 'MMMM');
 
       // Get games for this month
-      const monthGames = games.filter((game) => {
+      const monthGames = filteredGames.filter((game) => {
         if (!game.gameDate) return false;
         const gameDate = parseISO(game.gameDate);
         return gameDate >= monthStart && gameDate <= monthEnd;
@@ -2153,6 +2181,40 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 />
               )}
             </LocalizationProvider>
+
+            {/* League Filter Dropdown */}
+            <FormControl sx={{ minWidth: 160 }}>
+              <InputLabel>League</InputLabel>
+              <Select
+                value={filterLeagueSeasonId}
+                onChange={(e) => setFilterLeagueSeasonId(e.target.value)}
+                label="League"
+              >
+                <MenuItem value="">All Leagues</MenuItem>
+                {leagues.map((league) => (
+                  <MenuItem key={league.id} value={league.id}>
+                    {league.name || 'Unknown League'}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Team Filter Dropdown */}
+            <FormControl sx={{ minWidth: 160 }} disabled={!filterLeagueSeasonId}>
+              <InputLabel>Team</InputLabel>
+              <Select
+                value={filterTeamSeasonId}
+                onChange={(e) => setFilterTeamSeasonId(e.target.value)}
+                label="Team"
+              >
+                <MenuItem value="">All Teams</MenuItem>
+                {leagueTeams.map((team) => (
+                  <MenuItem key={team.id} value={team.id}>
+                    {team.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
             <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
               {filterType === 'day' && `Showing games for ${format(filterDate, 'MMMM d, yyyy')}`}
