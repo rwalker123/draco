@@ -23,7 +23,7 @@ interface Account {
   accountType: string;
   accountTypeId: string;
   firstYear: number;
-  affiliation?: string;
+  affiliation?: { name: string; url: string } | null;
   timezoneId: string;
   twitterAccountName?: string;
   facebookFanPage?: string;
@@ -200,17 +200,39 @@ const BaseballAccountHome: React.FC = () => {
                     border: '1px solid rgba(255,255,255,0.3)',
                   }}
                 />
-                {account.affiliation && (
-                  <Chip
-                    label={account.affiliation}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.1)',
-                      color: 'white',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                    }}
-                    icon={<GroupIcon sx={{ color: 'white' }} />}
-                  />
-                )}
+                {account.affiliation &&
+                  account.affiliation.name &&
+                  (account.affiliation.url ? (
+                    <Chip
+                      label={account.affiliation.name}
+                      component="a"
+                      href={account.affiliation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      clickable
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          bgcolor: 'rgba(255,255,255,0.2)',
+                          textDecoration: 'underline',
+                        },
+                      }}
+                      icon={<GroupIcon sx={{ color: 'white' }} />}
+                    />
+                  ) : (
+                    <Chip
+                      label={account.affiliation.name}
+                      sx={{
+                        bgcolor: 'rgba(255,255,255,0.1)',
+                        color: 'white',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                      }}
+                      icon={<GroupIcon sx={{ color: 'white' }} />}
+                    />
+                  ))}
               </Box>
               <Typography
                 variant="body1"
