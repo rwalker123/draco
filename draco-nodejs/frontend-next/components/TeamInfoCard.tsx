@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
-import Image from 'next/image';
+import TeamAvatar from './TeamAvatar';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -25,7 +25,6 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [logoLoadError, setLogoLoadError] = useState(false);
   const [record, setRecord] = useState<{ wins: number; losses: number; ties: number } | null>(null);
   const [recordLoading, setRecordLoading] = useState(false);
   const [recordError, setRecordError] = useState<string | null>(null);
@@ -116,22 +115,12 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
       ) : team ? (
         <>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center bg-gray-200 overflow-hidden">
-              {team.logoUrl && !logoLoadError ? (
-                <Image
-                  src={team.logoUrl}
-                  alt="Team Logo"
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 object-cover"
-                  onError={() => setLogoLoadError(true)}
-                />
-              ) : (
-                <span className="text-3xl font-bold text-blue-900">
-                  {team.name?.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+            <TeamAvatar
+              name={team.name}
+              logoUrl={team.logoUrl}
+              size={80}
+              alt={team.name + ' logo'}
+            />
             <h1 className="text-4xl font-bold text-blue-900">{team.name}</h1>
           </div>
           <div className="flex flex-col items-center gap-1 mb-2">
