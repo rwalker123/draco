@@ -48,6 +48,7 @@ import { startOfYear } from 'date-fns/startOfYear';
 import { endOfYear } from 'date-fns/endOfYear';
 import { useRole } from '../context/RoleContext';
 import { useAuth } from '../context/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface Game {
   id: string;
@@ -1176,7 +1177,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 </Box>
               }
               secondary={
-                <Box sx={{ mt: 1 }}>
+                <>
                   {shouldShowStatusChip(game.gameStatus) && (
                     <Chip
                       label={getGameStatusText(game.gameStatus)}
@@ -1189,8 +1190,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       {game.comment}
                     </Typography>
                   )}
-                </Box>
+                </>
               }
+              secondaryTypographyProps={{ component: 'div' }}
             />
           </ListItem>
         ))}
@@ -2080,7 +2082,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         )}
 
         <Paper sx={{ mb: 3 }}>
-          <Tabs value={viewMode} onChange={(_, newValue) => setViewMode(newValue)}>
+          <Tabs
+            value={viewMode}
+            onChange={(_, newValue: string) => setViewMode(newValue as 'calendar' | 'list')}
+          >
             <Tab label="Calendar View" value="calendar" />
             <Tab label="List View" value="list" />
           </Tabs>
@@ -2159,69 +2164,123 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           </Box>
         </Paper>
 
-        {viewMode === 'calendar' ? (
-          filterType === 'month' ? (
-            <Box>
-              {loadingGames && (
-                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2" sx={{ ml: 1 }}>
-                    Loading games...
-                  </Typography>
-                </Box>
+        {viewMode === 'calendar' || viewMode === 'list' ? (
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={viewMode}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.35 }}
+            >
+              {viewMode === 'calendar' ? (
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={
+                      filterType +
+                      '-' +
+                      (filterType === 'day'
+                        ? format(filterDate, 'yyyy-MM-dd')
+                        : filterType === 'week'
+                          ? format(startDate, 'yyyy-MM-dd')
+                          : filterType === 'month'
+                            ? format(filterDate, 'yyyy-MM')
+                            : filterType === 'year'
+                              ? format(filterDate, 'yyyy')
+                              : '')
+                    }
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    {filterType === 'month' ? (
+                      <Box>
+                        {loadingGames && (
+                          <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                            <CircularProgress size={24} />
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              Loading games...
+                            </Typography>
+                          </Box>
+                        )}
+                        {renderMonthCalendarView()}
+                      </Box>
+                    ) : filterType === 'week' ? (
+                      <Box>
+                        {loadingGames && (
+                          <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                            <CircularProgress size={24} />
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              Loading games...
+                            </Typography>
+                          </Box>
+                        )}
+                        {renderWeekView()}
+                      </Box>
+                    ) : filterType === 'day' ? (
+                      <Box>
+                        {loadingGames && (
+                          <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                            <CircularProgress size={24} />
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              Loading games...
+                            </Typography>
+                          </Box>
+                        )}
+                        {renderDayView()}
+                      </Box>
+                    ) : (
+                      <Box>
+                        {loadingGames && (
+                          <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                            <CircularProgress size={24} />
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              Loading games...
+                            </Typography>
+                          </Box>
+                        )}
+                        {renderYearView()}
+                      </Box>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              ) : (
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={
+                      filterType +
+                      '-' +
+                      (filterType === 'day'
+                        ? format(filterDate, 'yyyy-MM-dd')
+                        : filterType === 'week'
+                          ? format(startOfWeek(filterDate), 'yyyy-MM-dd')
+                          : filterType === 'month'
+                            ? format(filterDate, 'yyyy-MM')
+                            : filterType === 'year'
+                              ? format(filterDate, 'yyyy')
+                              : '')
+                    }
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -40 }}
+                    transition={{ duration: 0.35 }}
+                  >
+                    {loadingGames && (
+                      <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+                        <CircularProgress size={24} />
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          Loading games...
+                        </Typography>
+                      </Box>
+                    )}
+                    {renderListView()}
+                  </motion.div>
+                </AnimatePresence>
               )}
-              {renderMonthCalendarView()}
-            </Box>
-          ) : filterType === 'week' ? (
-            <Box>
-              {loadingGames && (
-                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2" sx={{ ml: 1 }}>
-                    Loading games...
-                  </Typography>
-                </Box>
-              )}
-              {renderWeekView()}
-            </Box>
-          ) : filterType === 'day' ? (
-            <Box>
-              {loadingGames && (
-                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2" sx={{ ml: 1 }}>
-                    Loading games...
-                  </Typography>
-                </Box>
-              )}
-              {renderDayView()}
-            </Box>
-          ) : (
-            <Box>
-              {loadingGames && (
-                <Box display="flex" justifyContent="center" alignItems="center" py={2}>
-                  <CircularProgress size={24} />
-                  <Typography variant="body2" sx={{ ml: 1 }}>
-                    Loading games...
-                  </Typography>
-                </Box>
-              )}
-              {renderYearView()}
-            </Box>
-          )
-        ) : (
-          <Box>
-            {loadingGames && (
-              <Box display="flex" justifyContent="center" alignItems="center" py={2}>
-                <CircularProgress size={24} />
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  Loading games...
-                </Typography>
-              </Box>
-            )}
-            {renderListView()}
-          </Box>
-        )}
+            </motion.div>
+          </AnimatePresence>
+        ) : null}
 
         {/* Create Game Dialog */}
         <Dialog
