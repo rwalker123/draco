@@ -16,8 +16,8 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { getLogoSize, addCacheBuster } from '../config/teams';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import Image from 'next/image';
 import EditTeamDialog from './EditTeamDialog';
+import TeamAvatar from './TeamAvatar';
 
 interface Team {
   id: string;
@@ -85,9 +85,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   // Logo configuration
   const LOGO_SIZE = getLogoSize();
-
-  // Track image load errors for team cards
-  const [logoLoadError, setLogoLoadError] = useState<{ [teamId: string]: boolean }>({});
 
   // Edit dialog states
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -359,11 +356,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         })),
       };
     });
-    setLogoLoadError((prev) => {
-      const updated = { ...prev };
-      if (selectedTeam) delete updated[selectedTeam.id];
-      return updated;
-    });
     setSuccess(updateData.message || 'Team updated successfully');
   };
 
@@ -383,35 +375,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           },
         }}
       >
-        <Box
-          sx={{
-            width: LOGO_SIZE,
-            height: LOGO_SIZE,
-            bgcolor: 'grey.300',
-            flexShrink: 0,
-            borderRadius: 1,
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-          }}
-        >
-          {team.logoUrl && !logoLoadError[team.id] ? (
-            <Image
-              src={team.logoUrl}
-              alt={team.name + ' logo'}
-              fill
-              style={{ objectFit: 'cover' }}
-              unoptimized
-              onError={() => setLogoLoadError((prev) => ({ ...prev, [team.id]: true }))}
-            />
-          ) : (
-            <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
-              {team.name.charAt(0).toUpperCase()}
-            </Typography>
-          )}
-        </Box>
+        <TeamAvatar
+          name={team.name}
+          logoUrl={team.logoUrl}
+          size={LOGO_SIZE}
+          alt={team.name + ' logo'}
+        />
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Link

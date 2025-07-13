@@ -10,18 +10,17 @@ import {
   CircularProgress,
   Container,
   Chip,
-  Avatar,
 } from '@mui/material';
 import {
-  SportsBaseball as BaseballIcon,
   Group as GroupIcon,
   LocationOn as LocationIcon,
-  Person as PersonIcon,
+  Star as StarIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
+import TeamAvatar from './TeamAvatar';
 
 interface Account {
   id: string;
@@ -54,6 +53,8 @@ interface UserTeam {
     opponent: string;
     location: string;
   };
+  logoUrl?: string;
+  teamId?: string; // Added teamId to the interface
 }
 
 const BaseballAccountHome: React.FC = () => {
@@ -113,6 +114,7 @@ const BaseballAccountHome: React.FC = () => {
               const teamsData = await teamsResponse.json();
               if (teamsData.success) {
                 setUserTeams(teamsData.data.teams || []);
+                console.log('userTeams:', teamsData.data.teams);
               }
             }
           } catch (err) {
@@ -127,8 +129,9 @@ const BaseballAccountHome: React.FC = () => {
     fetchAccountData();
   }, [accountIdStr, user, token]);
 
-  const handleViewTeam = (teamId: string) => {
-    router.push(`/account/${accountIdStr}/team/${teamId}`);
+  const handleViewTeam = (teamSeasonId: string) => {
+    if (!currentSeason) return;
+    router.push(`/account/${accountIdStr}/seasons/${currentSeason.id}/teams/${teamSeasonId}`);
   };
 
   if (loading) {
@@ -152,11 +155,7 @@ const BaseballAccountHome: React.FC = () => {
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
-        <Button
-          variant="outlined"
-          onClick={() => router.push('/accounts')}
-          startIcon={<BaseballIcon />}
-        >
+        <Button variant="outlined" onClick={() => router.push('/accounts')}>
           Back to Accounts
         </Button>
       </Container>
@@ -169,11 +168,7 @@ const BaseballAccountHome: React.FC = () => {
         <Alert severity="error" sx={{ mb: 2 }}>
           Account not found
         </Alert>
-        <Button
-          variant="outlined"
-          onClick={() => router.push('/accounts')}
-          startIcon={<BaseballIcon />}
-        >
+        <Button variant="outlined" onClick={() => router.push('/accounts')}>
           Back to Accounts
         </Button>
       </Container>
@@ -201,17 +196,9 @@ const BaseballAccountHome: React.FC = () => {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: 'rgba(255,255,255,0.2)',
-                mr: 3,
-                border: '2px solid rgba(255,255,255,0.3)',
-              }}
-            >
-              <BaseballIcon sx={{ fontSize: 40, color: 'white' }} />
-            </Avatar>
+            <Box sx={{ mr: 3 }}>
+              <TeamAvatar name={account.name} size={80} alt={account.name} />
+            </Box>
             <Box>
               <Typography
                 variant="h3"
@@ -233,7 +220,6 @@ const BaseballAccountHome: React.FC = () => {
                     fontWeight: 'bold',
                     border: '1px solid rgba(255,255,255,0.3)',
                   }}
-                  icon={<BaseballIcon sx={{ color: 'white' }} />}
                 />
                 {account.affiliation && (
                   <Chip
@@ -297,7 +283,7 @@ const BaseballAccountHome: React.FC = () => {
                     mb: 3,
                   }}
                 >
-                  <PersonIcon />
+                  <StarIcon sx={{ color: '#fbbf24' }} />
                   My Teams
                 </Typography>
                 <Box
@@ -309,7 +295,7 @@ const BaseballAccountHome: React.FC = () => {
                 >
                   {userTeams.map((team) => (
                     <Card
-                      key={team.id}
+                      key={team.teamId || team.id}
                       sx={{
                         height: '100%',
                         borderRadius: 2,
@@ -324,16 +310,12 @@ const BaseballAccountHome: React.FC = () => {
                     >
                       <CardContent sx={{ p: 3 }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: '#1e3a8a',
-                              mr: 2,
-                              width: 48,
-                              height: 48,
-                            }}
-                          >
-                            <BaseballIcon />
-                          </Avatar>
+                          <TeamAvatar
+                            name={team.name}
+                            logoUrl={team.logoUrl}
+                            size={48}
+                            alt={team.name + ' logo'}
+                          />
                           <Box>
                             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
                               {team.name}
@@ -343,19 +325,16 @@ const BaseballAccountHome: React.FC = () => {
                             </Typography>
                           </Box>
                         </Box>
-
                         {team.record && (
                           <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
                             <strong>Record:</strong> {team.record}
                           </Typography>
                         )}
-
                         {team.standing && (
                           <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
                             <strong>Standing:</strong> {team.standing}
                           </Typography>
                         )}
-
                         {team.nextGame && (
                           <Box
                             sx={{
@@ -383,7 +362,6 @@ const BaseballAccountHome: React.FC = () => {
                             </Typography>
                           </Box>
                         )}
-
                         <Button
                           variant="outlined"
                           size="small"
