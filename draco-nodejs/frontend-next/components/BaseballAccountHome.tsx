@@ -14,8 +14,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
-import TeamAvatar from './TeamAvatar';
 import MyTeams, { UserTeam } from './MyTeams';
+import Image from 'next/image';
 
 interface Account {
   id: string;
@@ -176,7 +176,13 @@ const BaseballAccountHome: React.FC = () => {
         >
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Box sx={{ mr: 3 }}>
-              <TeamAvatar name={account.name} size={80} alt={account.name} />
+              <Image
+                src="/baseballaccount-transparent.png"
+                alt="Baseball Account Icon"
+                width={80}
+                height={80}
+                style={{ borderRadius: '12px' }}
+              />
             </Box>
             <Box>
               <Typography
@@ -191,15 +197,6 @@ const BaseballAccountHome: React.FC = () => {
                 {account.name}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
-                <Chip
-                  label={account.accountType}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    fontWeight: 'bold',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                  }}
-                />
                 {account.affiliation &&
                   account.affiliation.name &&
                   (account.affiliation.url ? (
@@ -244,8 +241,8 @@ const BaseballAccountHome: React.FC = () => {
                 }}
               >
                 <LocationIcon fontSize="small" />
-                {currentSeason ? `Current Season: ${currentSeason.name}` : 'No Current Season'} •
-                Established {account.firstYear}
+                {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
+                {account.firstYear}
               </Typography>
             </Box>
           </Box>
