@@ -563,151 +563,6 @@ router.get('/:accountId/public', async (req: Request, res: Response): Promise<vo
 });
 
 /**
- * GET /api/accounts
- * Get all accounts (Administrator only)
- */
-router.get(
-  '/',
-  authenticateToken,
-  routeProtection.requireAdministrator(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountListArgs = {
-        select: {
-          id: true,
-          name: true,
-          accounttypeid: true,
-          owneruserid: true,
-          firstyear: true,
-          affiliationid: true,
-          timezoneid: true,
-          twitteraccountname: true,
-          youtubeuserid: true,
-          facebookfanpage: true,
-          defaultvideo: true,
-          autoplayvideo: true,
-          accounttypes: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-        orderBy: {
-          name: Prisma.SortOrder.asc,
-        },
-      } as const;
-
-      type AccountList = Prisma.accountsGetPayload<typeof accountListArgs>;
-      type AccountListAffiliation = { id: bigint; name: string; url: string };
-      type AccountListContact = {
-        userid: string;
-        firstname: string;
-        lastname: string;
-        email: string | null;
-      };
-
-      interface AccountListResponse {
-        id: string;
-        name: string;
-        accountTypeId: string;
-        accountType?: string;
-        ownerUserId: string | null;
-        ownerName: string;
-        ownerEmail: string;
-        firstYear: number | null;
-        affiliationId: string;
-        affiliation?: string;
-        timezoneId: string;
-        twitterAccountName: string;
-        youtubeUserId: string | null;
-        facebookFanPage: string | null;
-        defaultVideo: string;
-        autoPlayVideo: boolean;
-        accountLogoUrl: string;
-      }
-
-      // Administrator can see all accounts
-      const accounts: AccountList[] = await prisma.accounts.findMany(accountListArgs);
-
-      // Get affiliations separately
-      const affiliationIds = [...new Set(accounts.map((acc) => acc.affiliationid))];
-      const affiliations: AccountListAffiliation[] = await prisma.affiliations.findMany({
-        where: {
-          id: { in: affiliationIds },
-        },
-        select: {
-          id: true,
-          name: true,
-          url: true,
-        },
-      });
-
-      const affiliationMap = new Map<string, AccountListAffiliation>(
-        affiliations.map((aff) => [aff.id.toString(), aff]),
-      );
-
-      // Get contact information for owner users
-      const ownerUserIds = [
-        ...new Set(accounts.map((acc) => acc.owneruserid).filter((id) => id !== null)),
-      ];
-      const contacts: AccountListContact[] = (
-        await prisma.contacts.findMany({
-          where: {
-            userid: { in: ownerUserIds },
-          },
-          select: {
-            userid: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        })
-      ).map((contact) => ({
-        userid: contact.userid ?? '',
-        firstname: contact.firstname,
-        lastname: contact.lastname,
-        email: contact.email,
-      }));
-
-      const contactMap = new Map<string, AccountListContact>(
-        contacts.map((contact) => [contact.userid, contact]),
-      );
-
-      res.json({
-        success: true,
-        data: {
-          accounts: accounts.map((account: AccountList): AccountListResponse => {
-            const contact = account.owneruserid ? contactMap.get(account.owneruserid) : undefined;
-            return {
-              id: account.id.toString(),
-              name: account.name,
-              accountTypeId: account.accounttypeid.toString(),
-              accountType: account.accounttypes?.name,
-              ownerUserId: account.owneruserid ? account.owneruserid.toString() : null,
-              ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
-              ownerEmail: contact?.email ?? '',
-              firstYear: account.firstyear,
-              affiliationId: account.affiliationid.toString(),
-              affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
-              timezoneId: account.timezoneid ?? '',
-              twitterAccountName: account.twitteraccountname ?? '',
-              youtubeUserId: account.youtubeuserid ?? null,
-              facebookFanPage: account.facebookfanpage ?? null,
-              defaultVideo: account.defaultvideo ?? '',
-              autoPlayVideo: account.autoplayvideo,
-              accountLogoUrl: getAccountLogoUrl(account.id.toString()),
-            };
-          }),
-        },
-      });
-    } catch (error) {
-      logAndRethrow('getting accounts', error);
-    }
-  },
-);
-
-/**
  * GET /api/accounts/my-accounts
  * Get accounts accessible to the current user (Account Admin or Administrator)
  */
@@ -804,41 +659,50 @@ router.get(
       const ownerUserIds = [
         ...new Set(accounts.map((acc) => acc.owneruserid).filter((id) => id !== null)),
       ];
-      const contacts = await prisma.contacts.findMany({
-        where: {
-          userid: { in: ownerUserIds },
-        },
-        select: {
-          userid: true,
-          firstname: true,
-          lastname: true,
-          email: true,
-        },
-      });
+      const contacts: AccountListContact[] = (
+        await prisma.contacts.findMany({
+          where: {
+            userid: { in: ownerUserIds },
+          },
+          select: {
+            userid: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        })
+      ).map((contact) => ({
+        userid: contact.userid ?? '',
+        firstname: contact.firstname,
+        lastname: contact.lastname,
+        email: contact.email,
+      }));
 
-      const contactMap = new Map(contacts.map((contact) => [contact.userid, contact]));
+      const contactMap = new Map<string, AccountListContact>(
+        contacts.map((contact) => [contact.userid, contact]),
+      );
 
       res.json({
         success: true,
         data: {
-          accounts: accounts.map((account: AccountList) => {
-            const contact = contactMap.get(account.owneruserid);
+          accounts: accounts.map((account: AccountList): AccountListResponse => {
+            const contact = account.owneruserid ? contactMap.get(account.owneruserid) : undefined;
             return {
               id: account.id.toString(),
               name: account.name,
               accountTypeId: account.accounttypeid.toString(),
               accountType: account.accounttypes?.name,
-              ownerUserId: account.owneruserid,
+              ownerUserId: account.owneruserid ? account.owneruserid.toString() : null,
               ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
-              ownerEmail: contact?.email || '',
+              ownerEmail: contact?.email ?? '',
               firstYear: account.firstyear,
               affiliationId: account.affiliationid.toString(),
               affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
-              timezoneId: account.timezoneid,
-              twitterAccountName: account.twitteraccountname,
-              youtubeUserId: account.youtubeuserid,
-              facebookFanPage: account.facebookfanpage,
-              defaultVideo: account.defaultvideo,
+              timezoneId: account.timezoneid ?? '',
+              twitterAccountName: account.twitteraccountname ?? '',
+              youtubeUserId: account.youtubeuserid ?? null,
+              facebookFanPage: account.facebookfanpage ?? null,
+              defaultVideo: account.defaultvideo ?? '',
               autoPlayVideo: account.autoplayvideo,
               accountLogoUrl: getAccountLogoUrl(account.id.toString()),
             };
@@ -2678,5 +2542,52 @@ router.delete(
     }
   },
 );
+
+// Lightweight endpoint to get only the account name
+router.get('/:accountId/name', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const accountId = BigInt(req.params.accountId);
+    const account = await prisma.accounts.findUnique({
+      where: { id: accountId },
+      select: { name: true },
+    });
+    if (!account) {
+      res.status(404).json({ success: false, message: 'Account not found' });
+      return;
+    }
+    res.json({ success: true, data: { name: account.name } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Add missing type definitions for contacts and account list response
+
+type AccountListContact = {
+  userid: string;
+  firstname: string;
+  lastname: string;
+  email: string | null;
+};
+
+interface AccountListResponse {
+  id: string;
+  name: string;
+  accountTypeId: string;
+  accountType?: string;
+  ownerUserId: string | null;
+  ownerName: string;
+  ownerEmail: string | null;
+  firstYear: number | null;
+  affiliationId: string;
+  affiliation?: string;
+  timezoneId: string;
+  twitterAccountName: string;
+  youtubeUserId: string | null;
+  facebookFanPage: string | null;
+  defaultVideo: string;
+  autoPlayVideo: boolean;
+  accountLogoUrl: string;
+}
 
 export default router;
