@@ -1,9 +1,14 @@
-"use client";
-import ScheduleManagement from '../../../../components/ScheduleManagement';
-import { useParams } from 'next/navigation';
+import { getAccountName } from '@/lib/metadataFetchers';
+import ScheduleClientWrapper from './ScheduleClientWrapper';
+
+export async function generateMetadata({ params }: { params: Promise<{ accountId: string }> }) {
+  const { accountId } = await params;
+  const accountName = await getAccountName(accountId);
+  return {
+    title: `${accountName} Schedule`,
+  };
+}
 
 export default function Page() {
-  const { accountId } = useParams();
-  const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
-  return <ScheduleManagement accountId={accountIdStr || ''} />;
+  return <ScheduleClientWrapper />;
 }

@@ -18,6 +18,7 @@ interface Team {
   defaultVideo?: string;
   autoPlayVideo?: boolean;
   seasonName?: string; // Add this if available from API
+  leagueName?: string; // Add this if available from API
   // Add other fields as needed
 }
 
@@ -30,6 +31,7 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
   const [recordError, setRecordError] = useState<string | null>(null);
   const [accountName, setAccountName] = useState<string>('');
   const [seasonName, setSeasonName] = useState<string>('');
+  const [leagueName, setLeagueName] = useState<string>('');
 
   useEffect(() => {
     async function fetchTeam() {
@@ -45,6 +47,7 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
           seasonName: data.data.season?.name || data.data.teamSeason?.seasonName || '',
         });
         setSeasonName(data.data.season?.name || data.data.teamSeason?.seasonName || '');
+        setLeagueName(data.data.teamSeason?.leagueName || '');
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
@@ -121,7 +124,10 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
               size={80}
               alt={team.name + ' logo'}
             />
-            <h1 className="text-4xl font-bold text-blue-900">{team.name}</h1>
+            <h1 className="text-4xl font-bold text-blue-900">
+              {leagueName && <span className="mr-2">{leagueName}</span>}
+              {team.name}
+            </h1>
           </div>
           <div className="flex flex-col items-center gap-1 mb-2">
             <div className="flex gap-4">

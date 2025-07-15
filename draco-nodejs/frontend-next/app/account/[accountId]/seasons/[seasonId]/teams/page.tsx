@@ -1,18 +1,18 @@
-"use client";
+import { getAccountName } from '../../../../../../lib/metadataFetchers';
+import TeamsClientWrapper from './TeamsClientWrapper';
 
-import { useParams, useRouter } from "next/navigation";
-import Teams from "../../../../../../components/Teams";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ accountId: string; seasonId: string }>;
+}) {
+  const { accountId } = await params;
+  const accountName = await getAccountName(accountId);
+  return {
+    title: `${accountName} Teams`,
+  };
+}
 
-export default function TeamsPage() {
-  const params = useParams();
-  const router = useRouter();
-  const accountId = Array.isArray(params.accountId) ? params.accountId[0] : params.accountId;
-  const seasonId = Array.isArray(params.seasonId) ? params.seasonId[0] : params.seasonId;
-
-  // Ensure both are strings
-  const accountIdStr = accountId ?? "";
-  const seasonIdStr = seasonId ?? "";
-
-  // Pass both accountId and seasonId as props
-  return <Teams accountId={accountIdStr} seasonId={seasonIdStr} router={router} />;
-} 
+export default function Page() {
+  return <TeamsClientWrapper />;
+}

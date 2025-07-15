@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
 import MyTeams, { UserTeam } from './MyTeams';
-import Image from 'next/image';
+import AccountLogoHeader from './AccountLogoHeader';
 
 interface Account {
   id: string;
@@ -28,6 +28,7 @@ interface Account {
   twitterAccountName?: string;
   facebookFanPage?: string;
   urls: Array<{ id: string; url: string }>;
+  accountLogoUrl?: string; // Added for AccountLogoHeader
 }
 
 interface Season {
@@ -174,17 +175,17 @@ const BaseballAccountHome: React.FC = () => {
             boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-            <Box sx={{ mr: 3 }}>
-              <Image
-                src="/baseballaccount-transparent.png"
-                alt="Baseball Account Icon"
-                width={80}
-                height={80}
-                style={{ borderRadius: '12px' }}
-              />
-            </Box>
-            <Box>
+          {/* Top Centered Account Logo inside the card */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <AccountLogoHeader
+              accountId={account.id}
+              accountLogoUrl={account.accountLogoUrl}
+              style={{ background: 'transparent', borderBottom: 0 }}
+            />
+          </Box>
+          <Box>
+            {/* Only show account name if no logo is present (AccountLogoHeader will show 'No Logo' if missing) */}
+            {!account.accountLogoUrl && (
               <Typography
                 variant="h3"
                 component="h1"
@@ -192,59 +193,70 @@ const BaseballAccountHome: React.FC = () => {
                 sx={{
                   fontWeight: 'bold',
                   color: 'white',
+                  textAlign: 'center',
                 }}
               >
                 {account.name}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 1 }}>
-                {account.affiliation &&
-                  account.affiliation.name &&
-                  (account.affiliation.url ? (
-                    <Chip
-                      label={account.affiliation.name}
-                      component="a"
-                      href={account.affiliation.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      clickable
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.1)',
-                        color: 'white',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        textDecoration: 'none',
-                        '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.2)',
-                          textDecoration: 'underline',
-                        },
-                      }}
-                      icon={<GroupIcon sx={{ color: 'white' }} />}
-                    />
-                  ) : (
-                    <Chip
-                      label={account.affiliation.name}
-                      sx={{
-                        bgcolor: 'rgba(255,255,255,0.1)',
-                        color: 'white',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                      }}
-                      icon={<GroupIcon sx={{ color: 'white' }} />}
-                    />
-                  ))}
-              </Box>
-              <Typography
-                variant="body1"
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  color: 'rgba(255,255,255,0.9)',
-                }}
-              >
-                <LocationIcon fontSize="small" />
-                {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
-                {account.firstYear}
-              </Typography>
+            )}
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+                mb: 1,
+                justifyContent: 'center',
+              }}
+            >
+              {account.affiliation &&
+                account.affiliation.name &&
+                (account.affiliation.url ? (
+                  <Chip
+                    label={account.affiliation.name}
+                    component="a"
+                    href={account.affiliation.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    clickable
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                        textDecoration: 'underline',
+                      },
+                    }}
+                    icon={<GroupIcon sx={{ color: 'white' }} />}
+                  />
+                ) : (
+                  <Chip
+                    label={account.affiliation.name}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.1)',
+                      color: 'white',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                    }}
+                    icon={<GroupIcon sx={{ color: 'white' }} />}
+                  />
+                ))}
             </Box>
+            <Typography
+              variant="body1"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                color: 'rgba(255,255,255,0.9)',
+                justifyContent: 'center',
+                textAlign: 'center',
+              }}
+            >
+              <LocationIcon fontSize="small" />
+              {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
+              {account.firstYear}
+            </Typography>
           </Box>
         </Paper>
 
