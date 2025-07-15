@@ -958,6 +958,11 @@ router.get(
         },
         include: {
           teams: true,
+          leagueseason: {
+            include: {
+              league: true,
+            },
+          },
         },
       });
 
@@ -977,6 +982,7 @@ router.get(
             defaultVideo: teamSeason.teams.defaultvideo,
             autoPlayVideo: teamSeason.teams.autoplayvideo,
             logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
+            leagueName: teamSeason.leagueseason?.league?.name || null,
             // Add more fields as needed
           },
         },
