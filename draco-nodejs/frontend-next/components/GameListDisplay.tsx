@@ -98,9 +98,9 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
           mb: 2,
           boxShadow: 2,
           borderRadius: 2,
-          background: 'linear-gradient(90deg, #0a2342 80%, #1e3a5c 100%)',
-          color: 'white',
-          border: 'none',
+          background: 'background.paper',
+          border: '1px solid',
+          borderColor: 'divider',
           position: 'relative',
         }}
       >
@@ -114,7 +114,12 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
             }}
           >
             <Box>
-              <Typography variant="subtitle2" color="#b0c4de" fontWeight={500} sx={{ pt: 0.5 }}>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                fontWeight={500}
+                sx={{ pt: 0.5 }}
+              >
                 {game.leagueName}
               </Typography>
               {canEditGames && onEditGame && (
@@ -123,12 +128,12 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                     size="small"
                     onClick={() => onEditGame(game)}
                     sx={{
-                      color: '#b0c4de',
+                      color: 'primary.main',
                       mt: 1,
                       p: 0.5,
                       '&:hover': {
-                        color: 'white',
-                        bgcolor: 'rgba(255,255,255,0.1)',
+                        color: 'primary.dark',
+                        bgcolor: 'action.hover',
                       },
                     }}
                   >
@@ -143,13 +148,13 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                     size="small"
                     onClick={() => onEditRecap(game)}
                     sx={{
-                      color: game.hasGameRecap ? '#ffd700' : '#b0c4de',
+                      color: game.hasGameRecap ? 'warning.main' : 'primary.main',
                       mt: 1,
                       ml: 1,
                       p: 0.5,
                       '&:hover': {
-                        color: 'white',
-                        bgcolor: 'rgba(255,255,255,0.1)',
+                        color: game.hasGameRecap ? 'warning.dark' : 'primary.dark',
+                        bgcolor: 'action.hover',
                       },
                     }}
                   >
@@ -165,13 +170,13 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                       size="small"
                       onClick={() => onViewRecap(game)}
                       sx={{
-                        color: '#b0c4de',
+                        color: 'primary.main',
                         mt: 1,
                         ml: 1,
                         p: 0.5,
                         '&:hover': {
-                          color: 'white',
-                          bgcolor: 'rgba(255,255,255,0.1)',
+                          color: 'primary.dark',
+                          bgcolor: 'action.hover',
                         },
                       }}
                     >
@@ -182,10 +187,15 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
               )}
             </Box>
             <Box sx={{ minWidth: 0 }}>
-              <Typography variant="body1" fontWeight={700} sx={{ color: 'white', mb: 0.5 }} noWrap>
+              <Typography
+                variant="body1"
+                fontWeight={700}
+                sx={{ color: 'text.primary', mb: 0.5 }}
+                noWrap
+              >
                 {game.awayTeamName}
               </Typography>
-              <Typography variant="body1" fontWeight={700} sx={{ color: 'white' }} noWrap>
+              <Typography variant="body1" fontWeight={700} sx={{ color: 'text.primary' }} noWrap>
                 {game.homeTeamName}
               </Typography>
             </Box>
@@ -195,7 +205,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                 <Typography
                   variant="h6"
                   fontWeight={700}
-                  color={game.awayScore > game.homeScore ? 'success.main' : 'white'}
+                  color={game.awayScore > game.homeScore ? 'success.main' : 'text.primary'}
                   sx={{ mb: 0.5 }}
                 >
                   {game.awayScore}
@@ -203,7 +213,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                 <Typography
                   variant="h6"
                   fontWeight={700}
-                  color={game.homeScore > game.awayScore ? 'success.main' : 'white'}
+                  color={game.homeScore > game.awayScore ? 'success.main' : 'text.primary'}
                 >
                   {game.homeScore}
                 </Typography>
@@ -223,12 +233,12 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                   width: '100%',
                 }}
               >
-                <span
-                  style={{
+                <Box
+                  sx={{
                     display: 'inline-block',
-                    background: '#b0c4de',
-                    color: '#0a2342',
-                    borderRadius: 8,
+                    background: 'primary.main',
+                    color: 'primary.contrastText',
+                    borderRadius: 1,
                     fontSize: 14,
                     fontWeight: 700,
                     padding: '4px 12px',
@@ -236,16 +246,16 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                   }}
                 >
                   {game.gameStatusShortText || getGameStatusShortText(game.gameStatus)}
-                </span>
+                </Box>
               </Box>
             )}
             {game.gameStatus === 0 && (
               <Box>
-                <Typography variant="body2" color="#b0c4de" sx={{ pt: 0.5 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ pt: 0.5 }}>
                   {localTime}
                 </Typography>
                 {(game.fieldName || game.fieldShortName) && (
-                  <Typography variant="caption" color="#b0c4de" sx={{ display: 'block' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                     {game.fieldShortName || game.fieldName}
                   </Typography>
                 )}
@@ -260,24 +270,25 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   return (
     <Box
       sx={{
-        background: 'linear-gradient(180deg, #0a2342 60%, #1e3a5c 100%)',
+        background: 'background.paper',
         borderRadius: 3,
         boxShadow: 4,
         p: 3,
         mb: 4,
-        color: 'white',
+        border: '1px solid',
+        borderColor: 'divider',
         minWidth: 0,
       }}
     >
       {sections.map((section) => (
         <Box key={section.title} mb={3}>
-          <Typography variant="h6" fontWeight={600} color="#b0c4de" mb={1}>
+          <Typography variant="h6" fontWeight={600} color="primary.main" mb={1}>
             {section.title}
           </Typography>
           {section.games.length > 0 ? (
             section.games.map(renderGame)
           ) : (
-            <Typography color="#b0c4de" textAlign="center" mt={2}>
+            <Typography color="text.secondary" textAlign="center" mt={2}>
               {emptyMessage}
             </Typography>
           )}
