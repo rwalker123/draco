@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography, Paper, Card, CardContent, Button, SxProps, Theme } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import TeamAvatar from './TeamAvatar';
 
 export interface UserTeam {
@@ -43,7 +44,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
         }}
       >
         <StarIcon sx={{ color: '#fbbf24' }} />
-        {title || 'My Teams'}
+        {title || 'Your Teams'}
       </Typography>
       <Box
         sx={{
@@ -75,7 +76,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                   size={48}
                   alt={team.name + ' logo'}
                 />
-                <Box>
+                <Box sx={{ ml: 2 }}>
                   <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
                     {team.name}
                   </Typography>
@@ -119,16 +120,15 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                 </Box>
               )}
               <Button
-                variant="outlined"
                 size="small"
+                startIcon={<VisibilityIcon />}
                 onClick={() => onViewTeam(team.id)}
                 sx={{
                   mt: 2,
-                  borderColor: '#1e3a8a',
                   color: '#1e3a8a',
                   '&:hover': {
-                    bgcolor: '#1e3a8a',
-                    color: 'white',
+                    bgcolor: 'transparent',
+                    textDecoration: 'underline',
                   },
                 }}
               >

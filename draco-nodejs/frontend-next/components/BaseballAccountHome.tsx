@@ -16,6 +16,7 @@ import BaseballScoreboard from './BaseballScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
 import MyTeams, { UserTeam } from './MyTeams';
 import AccountPageHeader from './AccountPageHeader';
+import OrganizationsWidget from './OrganizationsWidget';
 
 interface Account {
   id: string;
@@ -248,7 +249,7 @@ const BaseballAccountHome: React.FC = () => {
             )}
             {/* User Teams Section */}
             {user && userTeams.length > 0 && (
-              <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} />
+              <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
             )}
 
             {/* Contact & Links */}
@@ -311,15 +312,29 @@ const BaseballAccountHome: React.FC = () => {
             </Paper>
           </Box>
 
-          {/* Right Column - Scoreboard */}
+          {/* Right Column - Scoreboard and Sidebar Widgets */}
           <Box
             sx={{
               position: { lg: 'sticky' },
               top: { lg: 24 },
               height: 'fit-content',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 3,
             }}
           >
             <BaseballScoreboard accountId={accountIdStr!} />
+
+            {/* User Organizations Widget */}
+            {user && (
+              <OrganizationsWidget
+                title="Your Other Organizations"
+                showSearch={false}
+                maxDisplay={3}
+                sx={{ mb: 0 }}
+                excludeAccountId={accountIdStr}
+              />
+            )}
           </Box>
         </Box>
       </Container>
