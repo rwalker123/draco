@@ -1,16 +1,46 @@
-"use client";
+'use client';
 
-import { ThemeProvider } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { dracoTheme } from "../theme";
-import Layout from "./Layout";
-import React from "react";
+import { ThemeProvider, Theme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { dracoTheme } from '../theme';
+import Layout from './Layout';
+import React, { useState, createContext, useContext } from 'react';
+
+// Create context for theme management
+interface ThemeContextType {
+  currentTheme: Theme;
+  setCurrentTheme: (theme: Theme) => void;
+  currentThemeName: string;
+  setCurrentThemeName: (name: string) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export const useThemeContext = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useThemeContext must be used within a ThemeClientProvider');
+  }
+  return context;
+};
 
 export default function ThemeClientProvider({ children }: { children: React.ReactNode }) {
+  const [currentTheme, setCurrentTheme] = useState(dracoTheme);
+  const [currentThemeName, setCurrentThemeName] = useState('baseball');
+
+  const value = {
+    currentTheme,
+    setCurrentTheme,
+    currentThemeName,
+    setCurrentThemeName,
+  };
+
   return (
-    <ThemeProvider theme={dracoTheme}>
-      <CssBaseline />
-      <Layout>{children}</Layout>
-    </ThemeProvider>
+    <ThemeContext.Provider value={value}>
+      <ThemeProvider theme={currentTheme}>
+        <CssBaseline />
+        <Layout>{children}</Layout>
+      </ThemeProvider>
+    </ThemeContext.Provider>
   );
-} 
+}

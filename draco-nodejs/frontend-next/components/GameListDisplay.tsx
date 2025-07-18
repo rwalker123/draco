@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, Card, CardContent, IconButton, Tooltip, Paper } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import EventIcon from '@mui/icons-material/Event';
 
 export interface GameRecap {
   teamId: string;
@@ -96,12 +97,15 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
         variant="outlined"
         sx={{
           mb: 2,
-          boxShadow: 2,
           borderRadius: 2,
-          background: 'background.paper',
           border: '1px solid',
           borderColor: 'divider',
-          position: 'relative',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+            borderColor: 'primary.main',
+          },
         }}
       >
         <CardContent sx={{ p: 2 }}>
@@ -268,21 +272,30 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
   };
 
   return (
-    <Box
+    <Paper
       sx={{
-        background: 'background.paper',
-        borderRadius: 3,
-        boxShadow: 4,
-        p: 3,
+        p: 4,
         mb: 4,
-        border: '1px solid',
-        borderColor: 'divider',
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
         minWidth: 0,
       }}
     >
       {sections.map((section) => (
         <Box key={section.title} mb={3}>
-          <Typography variant="h6" fontWeight={600} color="primary.main" mb={1}>
+          <Typography
+            variant="h5"
+            gutterBottom
+            sx={{
+              fontWeight: 'bold',
+              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              mb: 3,
+            }}
+          >
+            <EventIcon sx={{ color: 'warning.main' }} />
             {section.title}
           </Typography>
           {section.games.length > 0 ? (
@@ -294,7 +307,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
           )}
         </Box>
       ))}
-    </Box>
+    </Paper>
   );
 };
 

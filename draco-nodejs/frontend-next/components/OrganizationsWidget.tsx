@@ -193,7 +193,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   }
 
   return (
-    <Paper sx={{ p: 3, ...sx }}>
+    <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...sx }}>
       {/* Search Section */}
       {showSearch && (
         <Box sx={{ mb: 3 }}>
@@ -243,14 +243,14 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
         gutterBottom
         sx={{
           fontWeight: 'bold',
-          color: '#1e3a8a',
+          color: 'primary.main',
           display: 'flex',
           alignItems: 'center',
           gap: 1,
           mb: 3,
         }}
       >
-        <StarIcon sx={{ color: '#fbbf24' }} />
+        <StarIcon sx={{ color: 'warning.main' }} />
         {title}
       </Typography>
 
@@ -275,9 +275,25 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       {limitedAccounts.length > 0 && (
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           {limitedAccounts.map((account) => (
-            <Card key={account.id} sx={{ minWidth: 280, flex: '1 1 300px' }}>
+            <Card
+              key={account.id}
+              sx={{
+                minWidth: 280,
+                flex: '1 1 300px',
+                height: '100%',
+                borderRadius: 2,
+                border: '1px solid',
+                borderColor: 'divider',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
+                  borderColor: 'primary.main',
+                },
+              }}
+            >
               <CardContent>
-                <Typography variant="h6" gutterBottom>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                   {account.name}
                 </Typography>
                 <Typography color="text.secondary" gutterBottom>
@@ -307,6 +323,13 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
                   size="small"
                   startIcon={<ViewIcon />}
                   onClick={() => handleViewAccount(account.id)}
+                  sx={{
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      textDecoration: 'underline',
+                    },
+                  }}
                 >
                   View Organization
                 </Button>
