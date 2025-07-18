@@ -8,6 +8,7 @@ import { validateLogoFile, getLogoUrl } from '../config/logo';
 import * as multer from 'multer';
 import { leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
+import { getTeamRecord } from '../utils/teamRecord';
 
 const router = Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -961,6 +962,7 @@ router.get(
           leagueseason: {
             include: {
               league: true,
+              season: true,
             },
           },
         },
@@ -970,6 +972,9 @@ router.get(
         res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
+
+      // Calculate team record
+      const record = await getTeamRecord(prisma, teamSeasonId);
 
       res.json({
         success: true,
@@ -985,6 +990,11 @@ router.get(
             leagueName: teamSeason.leagueseason?.league?.name || null,
             // Add more fields as needed
           },
+          season: {
+            id: teamSeason.leagueseason?.season?.id?.toString() || null,
+            name: teamSeason.leagueseason?.season?.name || null,
+          },
+          record,
         },
       });
     } catch (error) {
@@ -1280,51 +1290,14 @@ router.get(
     try {
       const teamSeasonId = BigInt(req.params.teamSeasonId);
 
-      // Fetch all games for this team in this league season where status is 1, 4, or 5
-      const games = await prisma.leagueschedule.findMany({
-        where: {
-          OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
-          gamestatus: { in: [1, 4, 5] },
-        },
-        select: {
-          hteamid: true,
-          vteamid: true,
-          hscore: true,
-          vscore: true,
-          gamestatus: true,
-        },
-      });
-
-      // Calculate record
-      let wins = 0,
-        losses = 0,
-        ties = 0;
-      for (const game of games) {
-        const isHome = game.hteamid === teamSeasonId;
-        const ourScore = isHome ? game.hscore : game.vscore;
-        const oppScore = isHome ? game.vscore : game.hscore;
-        const status = game.gamestatus;
-
-        if (status === 5) {
-          // Did not report
-          losses++;
-        } else if (ourScore > oppScore) {
-          wins++;
-        } else if (ourScore < oppScore) {
-          losses++;
-        } else if (status === 4) {
-          // Forfeit, if tie score, then both teams get a loss (double forfeit)
-          losses++;
-        } else {
-          ties++;
-        }
-      }
+      // Calculate team record
+      const record = await getTeamRecord(prisma, teamSeasonId);
 
       res.json({
         success: true,
         data: {
           teamSeasonId: teamSeasonId.toString(),
-          record: { wins, losses, ties },
+          record,
         },
       });
     } catch (error) {
