@@ -17,6 +17,7 @@ import GameRecapsWidget from './GameRecapsWidget';
 import MyTeams, { UserTeam } from './MyTeams';
 import AccountPageHeader from './AccountPageHeader';
 import OrganizationsWidget from './OrganizationsWidget';
+import ThemeSwitcher from './ThemeSwitcher';
 
 interface Account {
   id: string;
@@ -160,7 +161,7 @@ const BaseballAccountHome: React.FC = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: '#f8f9fa',
+        background: 'grey.50',
         py: 3,
       }}
     >
@@ -192,12 +193,15 @@ const BaseballAccountHome: React.FC = () => {
                       color: 'white',
                       border: '1px solid rgba(255,255,255,0.2)',
                       textDecoration: 'none',
+                      '& .MuiChip-icon': {
+                        color: 'white',
+                      },
                       '&:hover': {
                         bgcolor: 'rgba(255,255,255,0.2)',
                         textDecoration: 'underline',
                       },
                     }}
-                    icon={<GroupIcon sx={{ color: 'white' }} />}
+                    icon={<GroupIcon />}
                   />
                 ) : (
                   <Chip
@@ -206,26 +210,31 @@ const BaseballAccountHome: React.FC = () => {
                       bgcolor: 'rgba(255,255,255,0.1)',
                       color: 'white',
                       border: '1px solid rgba(255,255,255,0.2)',
+                      '& .MuiChip-icon': {
+                        color: 'white',
+                      },
                     }}
-                    icon={<GroupIcon sx={{ color: 'white' }} />}
+                    icon={<GroupIcon />}
                   />
                 ))}
             </Box>
-            <Typography
-              variant="body1"
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                color: 'rgba(255,255,255,0.9)',
-                justifyContent: 'center',
-                textAlign: 'center',
-              }}
-            >
-              <LocationIcon fontSize="small" />
-              {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
-              {account.firstYear}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  color: 'rgba(255,255,255,0.9)',
+                  textAlign: 'center',
+                }}
+              >
+                <LocationIcon fontSize="small" />
+                {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
+                {account.firstYear}
+              </Typography>
+              <ThemeSwitcher />
+            </Box>
           </AccountPageHeader>
         </Box>
 
@@ -254,7 +263,11 @@ const BaseballAccountHome: React.FC = () => {
 
             {/* Contact & Links */}
             <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ fontWeight: 'bold', color: 'primary.main' }}
+              >
                 Connect With Us
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -265,8 +278,8 @@ const BaseballAccountHome: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      bgcolor: '#1e3a8a',
-                      '&:hover': { bgcolor: '#1e40af' },
+                      bgcolor: 'primary.main',
+                      '&:hover': { bgcolor: 'primary.dark' },
                     }}
                   >
                     Visit Website
@@ -279,10 +292,10 @@ const BaseballAccountHome: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      borderColor: '#1e3a8a',
-                      color: '#1e3a8a',
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
                       '&:hover': {
-                        bgcolor: '#1e3a8a',
+                        bgcolor: 'primary.main',
                         color: 'white',
                       },
                     }}
@@ -297,10 +310,10 @@ const BaseballAccountHome: React.FC = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{
-                      borderColor: '#1e3a8a',
-                      color: '#1e3a8a',
+                      borderColor: 'primary.main',
+                      color: 'primary.main',
                       '&:hover': {
-                        bgcolor: '#1e3a8a',
+                        bgcolor: 'primary.main',
                         color: 'white',
                       },
                     }}

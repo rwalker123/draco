@@ -33,7 +33,7 @@ const TeamAvatar: React.FC<TeamAvatarProps> = ({ name, logoUrl, size = 48, alt }
       sx={{
         width: size,
         height: size,
-        bgcolor: '#1e3a8a',
+        bgcolor: 'primary.main',
         fontWeight: 'bold',
         fontSize: size * 0.45,
         color: 'white',
