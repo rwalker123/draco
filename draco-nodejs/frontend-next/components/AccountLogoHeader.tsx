@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 
 interface AccountLogoHeaderProps {
   accountId: string;
@@ -18,6 +19,7 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
   accountLogoUrl,
   style,
 }) => {
+  const theme = useTheme();
   const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
   const [error, setError] = useState(false);
   const [accountName, setAccountName] = useState<string | null>(null);
@@ -100,7 +102,7 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
             textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
             letterSpacing: '0.05em',
             fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',

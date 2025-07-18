@@ -36,14 +36,14 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
         gutterBottom
         sx={{
           fontWeight: 'bold',
-          color: '#1e3a8a',
+          color: 'primary.main',
           display: 'flex',
           alignItems: 'center',
           gap: 1,
           mb: 3,
         }}
       >
-        <StarIcon sx={{ color: '#fbbf24' }} />
+        <StarIcon sx={{ color: 'warning.main' }} />
         {title || 'Your Teams'}
       </Typography>
       <Box
@@ -59,12 +59,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
             sx={{
               height: '100%',
               borderRadius: 2,
-              border: '1px solid #e5e7eb',
+              border: '1px solid',
+              borderColor: 'divider',
               transition: 'all 0.2s ease',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: '0 8px 25px rgba(0,0,0,0.12)',
-                borderColor: '#1e3a8a',
+                borderColor: 'primary.main',
               },
             }}
           >
@@ -77,7 +78,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                   alt={team.name + ' logo'}
                 />
                 <Box sx={{ ml: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1e3a8a' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                     {team.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -86,12 +87,12 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                 </Box>
               </Box>
               {team.record && (
-                <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
+                <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
                   <strong>Record:</strong> {team.record}
                 </Typography>
               )}
               {team.standing && (
-                <Typography variant="body2" sx={{ mb: 1, color: '#374151' }}>
+                <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
                   <strong>Standing:</strong> {team.standing}
                 </Typography>
               )}
@@ -100,12 +101,16 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                   sx={{
                     mt: 2,
                     p: 2,
-                    bgcolor: '#f9fafb',
+                    bgcolor: 'grey.50',
                     borderRadius: 1,
-                    border: '1px solid #e5e7eb',
+                    border: '1px solid',
+                    borderColor: 'divider',
                   }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, color: '#1e3a8a' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 'bold', mb: 1, color: 'primary.main' }}
+                  >
                     Next Game
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -125,7 +130,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) =
                 onClick={() => onViewTeam(team.id)}
                 sx={{
                   mt: 2,
-                  color: '#1e3a8a',
+                  color: 'primary.main',
                   '&:hover': {
                     bgcolor: 'transparent',
                     textDecoration: 'underline',

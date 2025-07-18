@@ -835,7 +835,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return (
       <Box
         sx={{
-          border: '3px solid #1976d2',
+          border: '3px solid',
+          borderColor: 'primary.main',
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
@@ -848,11 +849,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             alignItems: 'center',
             justifyContent: 'center',
             py: 2,
-            backgroundColor: '#1976d2',
+            backgroundColor: 'primary.main',
             color: 'white',
             cursor: 'pointer',
             '&:hover': {
-              backgroundColor: '#1565c0',
+              backgroundColor: 'primary.dark',
             },
           }}
           onClick={() => {
@@ -874,15 +875,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             justifyContent: 'space-between',
             py: 1.5,
             px: 2,
-            backgroundColor: '#f5f5f5',
-            borderBottom: '2px solid #1976d2',
+            backgroundColor: 'grey.100',
+            borderBottom: '2px solid',
+            borderBottomColor: 'primary.main',
           }}
         >
           <IconButton
             size="small"
             onClick={() => navigateToWeek('prev')}
             disabled={isNavigating}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Previous week"
           >
             <ChevronLeftIcon />
@@ -893,7 +895,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               variant="h6"
               sx={{
                 fontWeight: 'bold',
-                color: '#1976d2',
+                color: 'primary.main',
               }}
             >
               {format(startDate, 'MMM dd')} - {format(endDate, 'MMM dd, yyyy')}
@@ -912,11 +914,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }}
               sx={{
                 ml: 1,
-                color: '#1976d2',
-                borderColor: '#1976d2',
+                color: 'primary.main',
+                borderColor: 'primary.main',
                 '&:hover': {
-                  backgroundColor: '#e3f2fd',
-                  borderColor: '#1565c0',
+                  backgroundColor: 'primary.50',
+                  borderColor: 'primary.dark',
                 },
               }}
               title="Go to today's week"
@@ -929,7 +931,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             size="small"
             onClick={() => navigateToWeek('next')}
             disabled={isNavigating}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Next week"
           >
             <ChevronRightIcon />
@@ -940,8 +942,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <Box
           sx={{
             display: 'flex',
-            borderBottom: '2px solid #1976d2',
-            backgroundColor: '#e3f2fd',
+            borderBottom: '2px solid',
+            borderBottomColor: 'primary.main',
+            backgroundColor: 'primary.50',
           }}
         >
           {dayNames.map((dayName, index) => (
@@ -952,11 +955,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 textAlign: 'center',
                 py: 1.5,
                 fontWeight: 'bold',
-                backgroundColor: '#e3f2fd',
-                borderRight: index < 6 ? '2px solid #1976d2' : 'none',
+                backgroundColor: 'primary.50',
+                borderRight: index < 6 ? '2px solid' : 'none',
+                borderRightColor: index < 6 ? 'primary.main' : 'transparent',
               }}
             >
-              <Typography variant="subtitle2" sx={{ color: '#1976d2' }}>
+              <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
                 {dayName}
               </Typography>
             </Box>
@@ -982,11 +986,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 sx={{
                   flex: 1,
                   minHeight: '300px',
-                  borderRight: index < 6 ? '2px solid #1976d2' : 'none',
-                  backgroundColor: 'white',
+                  borderRight: index < 6 ? '2px solid' : 'none',
+                  borderRightColor: index < 6 ? 'primary.main' : 'transparent',
+                  backgroundColor: 'background.paper',
                   cursor: 'pointer',
                   '&:hover': {
-                    backgroundColor: '#f5f5f5',
+                    backgroundColor: 'grey.100',
                   },
                 }}
                 onClick={() => {
@@ -1000,12 +1005,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   sx={{
                     py: 1,
                     px: 1,
-                    backgroundColor: '#f8f9fa',
-                    borderBottom: '1px solid #e0e0e0',
+                    backgroundColor: 'grey.50',
+                    borderBottom: '1px solid',
+                    borderBottomColor: 'divider',
                     textAlign: 'center',
                   }}
                 >
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                     {format(day, 'd')}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -1282,7 +1288,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return (
       <Box
         sx={{
-          border: '3px solid #1976d2',
+          border: '3px solid',
+          borderColor: 'primary.main',
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
@@ -1295,11 +1302,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             alignItems: 'center',
             justifyContent: 'center',
             py: 2,
-            backgroundColor: '#1976d2',
+            backgroundColor: 'primary.main',
             color: 'white',
             cursor: 'pointer',
             '&:hover': {
-              backgroundColor: '#1565c0',
+              backgroundColor: 'primary.dark',
             },
           }}
           onClick={() => {
@@ -1321,8 +1328,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             justifyContent: 'space-between',
             py: 1.5,
             px: 2,
-            backgroundColor: '#f5f5f5',
-            borderBottom: '2px solid #1976d2',
+            backgroundColor: 'grey.100',
+            borderBottom: '2px solid',
+            borderBottomColor: 'primary.main',
           }}
         >
           <IconButton
@@ -1332,7 +1340,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               prevMonth.setMonth(prevMonth.getMonth() - 1);
               setFilterDate(prevMonth);
             }}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Previous month"
           >
             <ChevronLeftIcon />
@@ -1343,7 +1351,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               variant="h6"
               sx={{
                 fontWeight: 'bold',
-                color: '#1976d2',
+                color: 'primary.main',
               }}
             >
               {format(filterDate, 'MMMM yyyy')}
@@ -1358,11 +1366,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }}
               sx={{
                 ml: 1,
-                color: '#1976d2',
-                borderColor: '#1976d2',
+                color: 'primary.main',
+                borderColor: 'primary.main',
                 '&:hover': {
-                  backgroundColor: '#e3f2fd',
-                  borderColor: '#1565c0',
+                  backgroundColor: 'primary.50',
+                  borderColor: 'primary.dark',
                 },
               }}
               title="Go to today's month"
@@ -1378,7 +1386,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               nextMonth.setMonth(nextMonth.getMonth() + 1);
               setFilterDate(nextMonth);
             }}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Next month"
           >
             <ChevronRightIcon />
@@ -1389,8 +1397,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <Box
           sx={{
             display: 'flex',
-            borderBottom: '3px solid #1976d2',
-            backgroundColor: '#f5f5f5',
+            borderBottom: '3px solid primary.main',
+            backgroundColor: 'grey.100',
           }}
         >
           {/* Week Zoom Header */}
@@ -1400,11 +1408,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              borderRight: '2px solid #1976d2',
-              backgroundColor: '#e3f2fd',
+              borderRight: '2px solid primary.main',
+              backgroundColor: 'primary.50',
             }}
           >
-            <Typography variant="caption" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+            <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
               Week
             </Typography>
           </Box>
@@ -1417,11 +1425,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 textAlign: 'center',
                 py: 1.5,
                 fontWeight: 'bold',
-                backgroundColor: '#e3f2fd',
-                borderRight: index < 6 ? '2px solid #1976d2' : 'none',
+                backgroundColor: 'primary.50',
+                borderRight: index < 6 ? '2px solid primary.main' : 'none',
               }}
             >
-              <Typography variant="subtitle2" sx={{ color: '#1976d2' }}>
+              <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
                 {dayName}
               </Typography>
             </Box>
@@ -1435,7 +1443,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             sx={{
               display: 'flex',
               minHeight: 120,
-              borderBottom: weekIndex < weeks.length - 1 ? '2px solid #1976d2' : 'none',
+              borderBottom: weekIndex < weeks.length - 1 ? '2px solid primary.main' : 'none',
             }}
           >
             {/* Week Zoom Button */}
@@ -1445,11 +1453,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRight: '2px solid #1976d2',
-                backgroundColor: '#f8f9fa',
+                borderRight: '2px solid primary.main',
+                backgroundColor: 'grey.50',
                 cursor: 'pointer',
                 '&:hover': {
-                  backgroundColor: '#e3f2fd',
+                  backgroundColor: 'primary.50',
                 },
               }}
               onClick={() => {
@@ -1460,7 +1468,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }}
               title={`View week of ${format(week[0], 'MMM d')} - ${format(week[6], 'MMM d')}`}
             >
-              <IconButton size="small" sx={{ color: '#1976d2' }}>
+              <IconButton size="small" sx={{ color: 'primary.main' }}>
                 <ZoomInIcon />
               </IconButton>
             </Box>
@@ -1476,16 +1484,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   key={day.toISOString()}
                   sx={{
                     flex: 1,
-                    borderRight: dayIndex < 6 ? '2px solid #1976d2' : 'none',
+                    borderRight: dayIndex < 6 ? '2px solid primary.main' : 'none',
                     p: 1,
-                    backgroundColor: isCurrentMonth ? 'white' : '#fafafa',
+                    backgroundColor: isCurrentMonth ? 'white' : 'grey.50',
                     minHeight: 120,
                     display: 'flex',
                     flexDirection: 'column',
                     cursor: 'pointer',
                     '&:hover': {
-                      backgroundColor: isCurrentMonth ? '#f0f8ff' : '#f5f5f5',
-                      boxShadow: 'inset 0 0 0 2px #1976d2',
+                      backgroundColor: isCurrentMonth ? 'primary.50' : 'grey.100',
+                      boxShadow: 'inset 0 0 0 2px primary.main',
                     },
                   }}
                   onClick={() => {
@@ -1683,7 +1691,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     return (
       <Box
         sx={{
-          border: '3px solid #1976d2',
+          border: '3px solid primary.main',
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
@@ -1696,11 +1704,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             alignItems: 'center',
             justifyContent: 'center',
             py: 2,
-            backgroundColor: '#1976d2',
+            backgroundColor: 'primary.main',
             color: 'white',
             cursor: 'pointer',
             '&:hover': {
-              backgroundColor: '#1565c0',
+              backgroundColor: 'primary.dark',
             },
           }}
           onClick={() => {
@@ -1722,11 +1730,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             justifyContent: 'center',
             py: 1.5,
             px: 2,
-            backgroundColor: '#f5f5f5',
-            borderBottom: '2px solid #1976d2',
+            backgroundColor: 'grey.100',
+            borderBottom: '2px solid primary.main',
             cursor: 'pointer',
             '&:hover': {
-              backgroundColor: '#e3f2fd',
+              backgroundColor: 'primary.50',
             },
           }}
           onClick={() => {
@@ -1740,7 +1748,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             variant="h6"
             sx={{
               fontWeight: 'bold',
-              color: '#1976d2',
+              color: 'primary.main',
             }}
           >
             {format(startOfWeek(filterDate), 'MMM dd')} -{' '}
@@ -1756,8 +1764,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             justifyContent: 'space-between',
             py: 1.5,
             px: 2,
-            backgroundColor: '#e3f2fd',
-            borderBottom: '2px solid #1976d2',
+            backgroundColor: 'primary.50',
+            borderBottom: '2px solid primary.main',
           }}
         >
           <IconButton
@@ -1767,7 +1775,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               prevDay.setDate(prevDay.getDate() - 1);
               setFilterDate(prevDay);
             }}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Previous day"
           >
             <ChevronLeftIcon />
@@ -1778,7 +1786,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               variant="h6"
               sx={{
                 fontWeight: 'bold',
-                color: '#1976d2',
+                color: 'primary.main',
               }}
             >
               {format(filterDate, 'EEEE, MMMM d, yyyy')}
@@ -1793,11 +1801,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               }}
               sx={{
                 ml: 1,
-                color: '#1976d2',
-                borderColor: '#1976d2',
+                color: 'primary.main',
+                borderColor: 'primary.main',
                 '&:hover': {
-                  backgroundColor: '#e3f2fd',
-                  borderColor: '#1565c0',
+                  backgroundColor: 'primary.50',
+                  borderColor: 'primary.dark',
                 },
               }}
               title="Go to today"
@@ -1813,7 +1821,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               nextDay.setDate(nextDay.getDate() + 1);
               setFilterDate(nextDay);
             }}
-            sx={{ color: '#1976d2' }}
+            sx={{ color: 'primary.main' }}
             title="Next day"
           >
             <ChevronRightIcon />
@@ -1940,18 +1948,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             sx={{
               width: '14.28%',
               height: '60px',
-              border: '1px solid #e0e0e0',
+              border: '1px solid divider',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: isCurrentMonth ? 'white' : '#f5f5f5',
+              bgcolor: isCurrentMonth ? 'white' : 'grey.100',
               position: 'relative',
               cursor: gameCount > 0 ? 'pointer' : 'default',
               '&:hover':
                 gameCount > 0
                   ? {
-                      bgcolor: '#f0f8ff',
+                      bgcolor: 'primary.50',
                       '& .game-count': {
                         transform: 'scale(1.1)',
                       },
@@ -2021,7 +2029,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   fontWeight: 'bold',
                   fontSize: '0.8rem',
                   color: 'text.secondary',
-                  borderBottom: '1px solid #e0e0e0',
+                  borderBottom: '1px solid divider',
                 }}
               >
                 {day}

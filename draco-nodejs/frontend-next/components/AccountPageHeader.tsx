@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { useTheme } from '@mui/material/styles';
 
 interface AccountPageHeaderProps {
   accountId: string;
@@ -21,12 +22,17 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
   accountLogoUrl,
   children,
   style,
-  background = 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+  background,
   showLogo = true,
 }) => {
+  const theme = useTheme();
   const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
   const [error, setError] = useState(false);
   const [accountName, setAccountName] = useState<string | null>(null);
+
+  // Use theme colors for default background if none provided
+  const defaultBackground = `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`;
+  const headerBackground = background || defaultBackground;
 
   // Helper to add or update cachebuster param
   function addCacheBuster(url: string, buster: number) {
@@ -72,11 +78,11 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
     <Box
       sx={{
         width: '100%',
-        background,
+        background: headerBackground,
         color: 'white',
         borderRadius: 2,
         boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        overflow: 'hidden',
+        overflow: 'visible',
         ...style,
       }}
     >
@@ -115,7 +121,7 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
                 textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
                 letterSpacing: '0.05em',
                 fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-                background: 'linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%)',
+                background: `linear-gradient(135deg, ${theme.palette.common.white} 0%, ${theme.palette.grey[100]} 100%)`,
                 backgroundClip: 'text',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
