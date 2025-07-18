@@ -50,6 +50,7 @@ import { useRole } from '../context/RoleContext';
 import { useAuth } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import AccountPageHeader from './AccountPageHeader';
+import { getGameStatusText, getGameStatusShortText } from '../utils/gameUtils';
 
 interface Game {
   id: string;
@@ -682,44 +683,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setDeleteDialogOpen(true);
   };
 
-  const getGameStatusText = (status: number): string => {
-    switch (status) {
-      case 0:
-        return 'Incomplete';
-      case 1:
-        return 'Final';
-      case 2:
-        return 'Rainout';
-      case 3:
-        return 'Postponed';
-      case 4:
-        return 'Forfeit';
-      case 5:
-        return 'Did Not Report';
-      default:
-        return 'Unknown';
-    }
-  };
-
-  const getGameStatusAbbreviation = (status: number): string => {
-    switch (status) {
-      case 0:
-        return 'INC';
-      case 1:
-        return 'FIN';
-      case 2:
-        return 'R';
-      case 3:
-        return 'PPD';
-      case 4:
-        return 'Forfeit';
-      case 5:
-        return 'DNR';
-      default:
-        return 'UNK';
-    }
-  };
-
   const getStatusDisplayInfo = useCallback(
     (game: Game): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
       if (game.gameStatus === 0 || game.gameStatus === 1) {
@@ -728,7 +691,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       }
 
       if (game.gameStatus === 4) {
-        // Forfeit - show "Forfeit" next to the team with lower score
+        // Forfeit - show "FFT" next to the team with lower score
         const visitorScore = game.visitorScore || 0;
         const homeScore = game.homeScore || 0;
 
@@ -736,20 +699,20 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           return {
             showOnVisitor: true,
             showOnHome: false,
-            statusText: 'Forfeit',
+            statusText: getGameStatusShortText(4),
           };
         } else if (homeScore < visitorScore) {
           return {
             showOnVisitor: false,
             showOnHome: true,
-            statusText: 'Forfeit',
+            statusText: getGameStatusShortText(4),
           };
         } else {
           // Equal scores (shouldn't happen for forfeit, but just in case)
           return {
             showOnVisitor: true,
             showOnHome: false,
-            statusText: 'Forfeit',
+            statusText: getGameStatusShortText(4),
           };
         }
       }
@@ -758,7 +721,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       return {
         showOnVisitor: true,
         showOnHome: false,
-        statusText: getGameStatusAbbreviation(game.gameStatus),
+        statusText: getGameStatusShortText(game.gameStatus),
       };
     },
     [],
