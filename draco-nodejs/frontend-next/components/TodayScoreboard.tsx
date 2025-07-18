@@ -1,23 +1,18 @@
 import React from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Paper } from '@mui/material';
 import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { getGameStatusText } from '../utils/gameUtils';
 
-interface ScoreboardData {
-  today: Game[];
-  yesterday: Game[];
-}
-
-interface BaseballScoreboardProps {
+interface TodayScoreboardProps {
   accountId: string;
   teamId?: string;
 }
 
-const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, teamId }) => {
-  const [data, setData] = React.useState<ScoreboardData | null>(null);
+const TodayScoreboard: React.FC<TodayScoreboardProps> = ({ accountId, teamId }) => {
+  const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [editGameDialog, setEditGameDialog] = React.useState<{
@@ -60,7 +55,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       }
       setEditGameDialog({ open: false, game: null });
       // Reload scoreboard data
-      await loadScoreboardData().then(setData);
+      await loadTodayGames().then(setGames);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -72,8 +67,8 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
     }
   };
 
-  // Common function to load scoreboard data
-  const loadScoreboardData = React.useCallback(async () => {
+  // Function to load today's games
+  const loadTodayGames = React.useCallback(async () => {
     // Get current season first
     const seasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`);
     const seasonData = await seasonResponse.json();
@@ -84,29 +79,20 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
 
     const currentSeasonId = seasonData.data.season.id;
 
-    // Calculate date ranges for today and yesterday
+    // Calculate date range for today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
     // Load today's games
-    const todayPromise = fetch(
+    const response = await fetch(
       `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${today.toISOString()}&endDate=${tomorrow.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
-    ).then((response) => response.json());
+    );
+    const data = await response.json();
 
-    // Load yesterday's games
-    const yesterdayPromise = fetch(
-      `/api/accounts/${accountId}/seasons/${currentSeasonId}/games?startDate=${yesterday.toISOString()}&endDate=${today.toISOString()}${teamId ? `&teamId=${teamId}` : ''}`,
-    ).then((response) => response.json());
-
-    const [todayData, yesterdayData] = await Promise.all([todayPromise, yesterdayPromise]);
-
-    if (!todayData.success || !yesterdayData.success) {
+    if (!data.success) {
       throw new Error('Failed to load games data');
     }
 
@@ -165,19 +151,16 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
           };
         });
 
-    return {
-      today: transformGames(todayData.data.games),
-      yesterday: transformGames(yesterdayData.data.games),
-    };
+    return transformGames(data.data.games);
   }, [accountId, teamId]);
 
   React.useEffect(() => {
     setLoading(true);
     setError(null);
 
-    loadScoreboardData()
-      .then((newData) => {
-        setData(newData);
+    loadTodayGames()
+      .then((newGames) => {
+        setGames(newGames);
       })
       .catch((error: unknown) => {
         setError(error instanceof Error ? error.message : String(error));
@@ -185,39 +168,40 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       .finally(() => {
         setLoading(false);
       });
-  }, [accountId, teamId, loadScoreboardData]);
+  }, [accountId, teamId, loadTodayGames]);
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
-        <CircularProgress />
-      </Box>
+      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+          <CircularProgress />
+        </Box>
+      </Paper>
     );
-  }
-  if (error) {
-    return (
-      <Box color="error.main" p={2}>
-        {error}
-      </Box>
-    );
-  }
-  if (!data) {
-    return null;
   }
 
-  // Prepare sections for GameListDisplay
-  const sections: GameListSection[] = [
-    { title: 'Today', games: data.today },
-    { title: 'Yesterday', games: data.yesterday },
-  ];
+  if (error) {
+    return (
+      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Box color="error.main" p={2}>
+          {error}
+        </Box>
+      </Paper>
+    );
+  }
+
+  // Prepare section for GameListDisplay
+  const sections: GameListSection[] = [{ title: 'Today', games: games }];
 
   return (
     <>
-      <GameListDisplay
-        sections={sections}
-        canEditGames={canEditGames}
-        onEditGame={handleEditGame}
-      />
+      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <GameListDisplay
+          sections={sections}
+          canEditGames={canEditGames}
+          onEditGame={handleEditGame}
+        />
+      </Paper>
       {canEditGames && (
         <EnterGameResultsDialog
           open={editGameDialog.open}
@@ -234,4 +218,4 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
   );
 };
 
-export default BaseballScoreboard;
+export default TodayScoreboard;
