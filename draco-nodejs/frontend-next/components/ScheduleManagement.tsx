@@ -49,6 +49,7 @@ import { endOfYear } from 'date-fns/endOfYear';
 import { useRole } from '../context/RoleContext';
 import { useAuth } from '../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
+import AccountPageHeader from './AccountPageHeader';
 
 interface Game {
   id: string;
@@ -133,7 +134,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
-  const [selectedLeagueSeason, setSelectedLeagueSeason] = useState<string>('');
+  const [dialogLeagueSeason, setDialogLeagueSeason] = useState<string>('');
 
   // Dialog error states
   const [editDialogError, setEditDialogError] = useState<string | null>(null);
@@ -168,6 +169,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Add state for league/team filters
   const [filterLeagueSeasonId, setFilterLeagueSeasonId] = useState<string>('');
   const [filterTeamSeasonId, setFilterTeamSeasonId] = useState<string>('');
+  const [currentSeasonName, setCurrentSeasonName] = useState<string>('');
 
   // Filter games based on league/team filter
   const filteredGames = games.filter((game) => {
@@ -229,6 +231,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
       const currentSeasonData = await currentSeasonResponse.json();
       const currentSeasonId = currentSeasonData.data.season.id;
+      setCurrentSeasonName(currentSeasonData.data.season.name);
 
       // Load static data in parallel
       const [leaguesResponse, teamsResponse, fieldsResponse] = await Promise.all([
@@ -446,23 +449,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setFilterTeamSeasonId(''); // Reset team filter when league changes
   }, [filterLeagueSeasonId, loadLeagueTeams]);
 
-  const handleLeagueChange = (leagueSeasonId: string) => {
-    setSelectedLeagueSeason(leagueSeasonId);
-    setHomeTeamId('');
-    setVisitorTeamId('');
-
-    if (leagueSeasonId) {
-      loadLeagueTeams(leagueSeasonId);
-    } else {
-      setLeagueTeams([]);
-    }
-  };
-
   const handleCreateGame = async () => {
     try {
       setCreateDialogError(null); // Clear any previous errors
 
-      if (!gameDate || !gameTime || !homeTeamId || !visitorTeamId || !selectedLeagueSeason) {
+      if (!gameDate || !gameTime || !homeTeamId || !visitorTeamId || !dialogLeagueSeason) {
         setCreateDialogError('Please fill in all required fields');
         return;
       }
@@ -486,7 +477,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
 
       const requestData = {
-        leagueSeasonId: selectedLeagueSeason,
+        leagueSeasonId: dialogLeagueSeason,
         gameDate: combinedDateTime.toISOString(),
         homeTeamId,
         visitorTeamId,
@@ -608,8 +599,44 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setComment('');
     setGameType(0);
     setSelectedGame(null);
-    setSelectedLeagueSeason('');
-    setLeagueTeams([]);
+    setDialogLeagueSeason('');
+    // Don't clear leagueTeams as they're used by filters
+  };
+
+  const initializeCreateForm = () => {
+    // Use the selected filter date based on filter type
+    let initialDate: Date;
+    switch (filterType) {
+      case 'day':
+        // Use the exact selected day
+        initialDate = filterDate;
+        break;
+      case 'week':
+        // Use the start of the selected week
+        initialDate = startDate;
+        break;
+      case 'month':
+        // Use the first day of the selected month
+        initialDate = startDate;
+        break;
+      case 'year':
+        // Use the first day of the selected year
+        initialDate = startDate;
+        break;
+      default:
+        // Fallback to current date
+        initialDate = new Date();
+    }
+
+    setGameDate(initialDate);
+    setGameTime(initialDate);
+    setHomeTeamId('');
+    setVisitorTeamId('');
+    setFieldId('');
+    setComment('');
+    setGameType(0);
+    setDialogLeagueSeason('');
+    setCreateDialogError(null);
   };
 
   const openEditDialog = useCallback(
@@ -633,13 +660,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         // The game.league.id is the actual league ID, we need to find the league season ID
         const leagueSeason = leagues.find((l) => l.id === game.league.id);
         if (leagueSeason) {
-          setSelectedLeagueSeason(leagueSeason.id);
+          setDialogLeagueSeason(leagueSeason.id);
           loadLeagueTeams(leagueSeason.id);
         } else {
           // Try to find by league name as fallback
           const leagueByName = leagues.find((l) => l.name === game.league.name);
           if (leagueByName) {
-            setSelectedLeagueSeason(leagueByName.id);
+            setDialogLeagueSeason(leagueByName.id);
             loadLeagueTeams(leagueByName.id);
           }
         }
@@ -2069,33 +2096,30 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Box>
-            <Typography variant="h4">Schedule Management</Typography>
-            {!user && (
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-                Public view - Sign in to edit schedules
+        <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            sx={{ position: 'relative' }}
+          >
+            <Box sx={{ flex: 1, textAlign: 'center' }}>
+              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                {currentSeasonName || 'Loading...'} Schedule
               </Typography>
-            )}
-            {user && !canEditSchedule && (
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-                Read-only mode - Contact an administrator for editing permissions
-              </Typography>
-            )}
+              {!user && (
+                <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
+                  Public view - Sign in to edit schedules
+                </Typography>
+              )}
+              {user && !canEditSchedule && (
+                <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
+                  Read-only mode - Contact an administrator for editing permissions
+                </Typography>
+              )}
+            </Box>
           </Box>
-          {canEditSchedule && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                setCreateDialogError(null); // Clear any previous errors
-                setCreateDialogOpen(true);
-              }}
-            >
-              Add Game
-            </Button>
-          )}
-        </Box>
+        </AccountPageHeader>
 
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -2216,13 +2240,27 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               </Select>
             </FormControl>
 
-            <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
-              {filterType === 'day' && `Showing games for ${format(filterDate, 'MMMM d, yyyy')}`}
-              {filterType === 'week' &&
-                `Showing games for week of ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`}
-              {filterType === 'month' && `Showing games for ${format(filterDate, 'MMMM yyyy')}`}
-              {filterType === 'year' && `Showing games for ${format(filterDate, 'yyyy')}`}
-            </Typography>
+            {canEditSchedule ? (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  initializeCreateForm();
+                  setCreateDialogOpen(true);
+                }}
+                sx={{ ml: 'auto' }}
+              >
+                Add Game
+              </Button>
+            ) : (
+              <Typography variant="body2" color="textSecondary" sx={{ ml: 'auto' }}>
+                {filterType === 'day' && `Showing games for ${format(filterDate, 'MMMM d, yyyy')}`}
+                {filterType === 'week' &&
+                  `Showing games for week of ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}`}
+                {filterType === 'month' && `Showing games for ${format(filterDate, 'MMMM yyyy')}`}
+                {filterType === 'year' && `Showing games for ${format(filterDate, 'yyyy')}`}
+              </Typography>
+            )}
           </Box>
         </Paper>
 
@@ -2397,8 +2435,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   <FormControl fullWidth>
                     <InputLabel>League</InputLabel>
                     <Select
-                      value={selectedLeagueSeason}
-                      onChange={(e) => handleLeagueChange(e.target.value)}
+                      value={dialogLeagueSeason}
+                      onChange={(e) => {
+                        setDialogLeagueSeason(e.target.value);
+                        setHomeTeamId('');
+                        setVisitorTeamId('');
+                        if (e.target.value) {
+                          loadLeagueTeams(e.target.value);
+                        } else {
+                          setLeagueTeams([]);
+                        }
+                      }}
                       label="League"
                     >
                       {leagues.map((league) => (
