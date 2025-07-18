@@ -3,13 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
-import TeamInfoCard from '@/components/TeamInfoCard';
 import GameListDisplay, { Game } from './GameListDisplay';
 import React from 'react';
 import EnterGameSummaryDialog from './EnterGameRecapDialog';
 import { getGameSummary, saveGameSummary } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
+import AccountPageHeader from './AccountPageHeader';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TeamAvatar from './TeamAvatar';
 
 interface TeamPageProps {
   accountId: string;
@@ -29,8 +32,42 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [summaryError, setSummaryError] = React.useState<string | null>(null);
   const [summaryReadOnly, setSummaryReadOnly] = React.useState(false);
   const [summaryToView, setSummaryToView] = React.useState('');
+  const [teamName, setTeamName] = React.useState<string>('');
+  const [leagueName, setLeagueName] = React.useState<string>('');
+  const [seasonName, setSeasonName] = React.useState<string>('');
+  const [teamLogoUrl, setTeamLogoUrl] = React.useState<string | null>(null);
+  const [teamRecord, setTeamRecord] = React.useState<{
+    wins: number;
+    losses: number;
+    ties: number;
+  } | null>(null);
   const { token } = useAuth();
   const { hasRoleInTeam } = useRole();
+
+  // Fetch team and season information for header
+  React.useEffect(() => {
+    const fetchTeamInfo = async () => {
+      try {
+        const teamRes = await fetch(
+          `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
+        );
+        if (teamRes.ok) {
+          const teamData = await teamRes.json();
+          setTeamName(teamData.data.teamSeason.name || '');
+          setLeagueName(teamData.data.teamSeason.leagueName || '');
+          setSeasonName(teamData.data.season?.name || '');
+          setTeamLogoUrl(teamData.data.teamSeason.logoUrl || null);
+          setTeamRecord(teamData.data.record || null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch team info for header:', err);
+      }
+    };
+
+    if (accountId && seasonId && teamSeasonId) {
+      fetchTeamInfo();
+    }
+  }, [accountId, seasonId, teamSeasonId]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -188,8 +225,53 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
   return (
     <main className="max-w-5xl mx-auto py-10 px-4 min-h-screen bg-background">
-      {/* Team Info Section */}
-      <TeamInfoCard accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+      {/* Account Header with Team Information */}
+      <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ position: 'relative' }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                <TeamAvatar
+                  name={teamName || 'Loading...'}
+                  logoUrl={teamLogoUrl || undefined}
+                  size={60}
+                  alt={`${teamName} logo`}
+                />
+                {leagueName && (
+                  <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    {leagueName}
+                  </Typography>
+                )}
+                <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                  {teamName || 'Loading...'}
+                </Typography>
+              </Box>
+              {teamRecord && (
+                <Typography
+                  variant="h6"
+                  sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 'medium' }}
+                >
+                  {teamRecord.wins}-{teamRecord.losses}
+                  {teamRecord.ties > 0 ? `-${teamRecord.ties}` : ''}
+                </Typography>
+              )}
+              {seasonName && (
+                <Typography
+                  variant="body1"
+                  sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'normal' }}
+                >
+                  {seasonName} Season
+                </Typography>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </AccountPageHeader>
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
       {loading ? (
