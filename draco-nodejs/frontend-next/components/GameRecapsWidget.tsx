@@ -6,9 +6,9 @@ import {
   Box,
   CircularProgress,
   Alert,
-  Avatar,
   LinearProgress,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import NewspaperRecapIcon from './icons/NewspaperRecapIcon';
 import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
@@ -55,6 +55,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
   const progressRef = React.useRef<number>(0);
   const progressTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const theme = useTheme();
 
   // Reset index when recaps change
   useEffect(() => {
@@ -222,14 +223,23 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
             <Box
               sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}
             >
-              <Avatar sx={{ bgcolor: '#1e3a8a', mr: 2, width: 40, height: 40 }}>
-                <NewspaperRecapIcon size={28} color="#1e3a8a" />
-              </Avatar>
+              <Box
+                sx={{
+                  mr: 2,
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <NewspaperRecapIcon size={28} color={theme.palette.warning.main} />
+              </Box>
               <Box>
                 <Typography
                   variant="h6"
                   component="div"
-                  sx={{ fontWeight: 'bold', color: '#1e3a8a' }}
+                  sx={{ fontWeight: 'bold', color: 'primary.main' }}
                 >
                   Game Recap
                 </Typography>
@@ -250,7 +260,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
             </Typography>
             <Typography
               variant="caption"
-              sx={{ fontWeight: 'bold', color: '#1e3a8a', mb: 1, display: 'block' }}
+              sx={{ fontWeight: 'bold', color: 'primary.main', mb: 1, display: 'block' }}
             >
               {recapItem.teamName}
             </Typography>
