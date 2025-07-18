@@ -15,6 +15,7 @@ import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-mater
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { getLogoSize, addCacheBuster } from '../config/teams';
+import AccountPageHeader from './AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import EditTeamDialog from './EditTeamDialog';
 import TeamAvatar from './TeamAvatar';
@@ -528,42 +529,37 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4">Teams</Typography>
-          {!user && (
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-              Public view - Sign in to edit teams
-            </Typography>
-          )}
-          {user && !canEditTeams && (
-            <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5 }}>
-              Read-only mode - Contact an administrator for editing permissions
-            </Typography>
-          )}
-        </Box>
-      </Box>
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
-          {success}
-        </Alert>
-      )}
-
-      <Paper sx={{ p: 3 }}>
+      <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
         <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 3,
-          }}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ position: 'relative' }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-            {teamsData.season.name} Season
-          </Typography>
-
-          {canEditTeams && (
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Teams
+            </Typography>
+            {!user && (
+              <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
+                Public view - Sign in to edit teams
+              </Typography>
+            )}
+            {user && !canEditTeams && (
+              <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
+                Read-only mode - Contact an administrator for editing permissions
+              </Typography>
+            )}
+            {teamsData && (
+              <Typography
+                variant="h6"
+                sx={{ mt: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
+              >
+                {teamsData.season.name} Season
+              </Typography>
+            )}
+          </Box>
+          {canEditTeams && teamsData && (
             <Button
               variant="outlined"
               size="small"
@@ -573,18 +569,35 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 minWidth: 'auto',
                 px: 2,
                 py: 1,
+                bgcolor: 'rgba(255,255,255,0.1)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                '&:hover': {
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                  border: '1px solid rgba(255,255,255,0.4)',
+                },
+                position: 'absolute',
+                right: 16,
               }}
             >
               Export Season
             </Button>
           )}
         </Box>
+      </AccountPageHeader>
 
+      {success && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+          {success}
+        </Alert>
+      )}
+
+      <Paper sx={{ p: 2 }}>
         <Box
           sx={{
             display: 'flex',
             flexWrap: 'wrap',
-            gap: 3,
+            gap: 2,
             justifyContent: 'flex-start',
           }}
         >

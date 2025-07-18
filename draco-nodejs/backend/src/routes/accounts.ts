@@ -2561,6 +2561,30 @@ router.get('/:accountId/name', async (req: Request, res: Response): Promise<void
   }
 });
 
+// Lightweight endpoint to get account name and logo URL
+router.get('/:accountId/header', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const accountId = BigInt(req.params.accountId);
+    const account = await prisma.accounts.findUnique({
+      where: { id: accountId },
+      select: { name: true },
+    });
+    if (!account) {
+      res.status(404).json({ success: false, message: 'Account not found' });
+      return;
+    }
+    res.json({
+      success: true,
+      data: {
+        name: account.name,
+        accountLogoUrl: getAccountLogoUrl(accountId.toString()),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // Add missing type definitions for contacts and account list response
 
 type AccountListContact = {
