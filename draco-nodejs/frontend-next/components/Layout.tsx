@@ -1,5 +1,5 @@
-"use client";
-import React from "react";
+'use client';
+import React from 'react';
 import {
   AppBar,
   Toolbar,
@@ -12,7 +12,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
-} from "@mui/material";
+} from '@mui/material';
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
@@ -22,11 +22,11 @@ import {
   Settings as SettingsIcon,
   CalendarMonth as CalendarMonthIcon,
   Home as HomeIcon,
-} from "@mui/icons-material";
-import { useAuth } from "../context/AuthContext";
-import { useRole } from "../context/RoleContext";
-import { useRouter, usePathname } from "next/navigation";
-import BaseballMenu from "./BaseballMenu";
+} from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
+import { useRole } from '../context/RoleContext';
+import { useRouter, usePathname } from 'next/navigation';
+import BaseballMenu from './BaseballMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -55,8 +55,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       if (accountId) {
         try {
           const response = await fetch(`/api/accounts/${accountId}/public`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
           });
           if (response.ok) {
             const data = await response.json();
@@ -97,26 +97,30 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogin = () => {
-    router.push("/login");
+    router.push('/login');
   };
 
   const handleHomeClick = () => {
-    router.push("/");
+    if (accountId) {
+      router.push(`/account/${accountId}/home`);
+    } else {
+      router.push('/');
+    }
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <AppBar position="static">
         <Toolbar
           sx={{
-            minHeight: "64px !important",
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
+            minHeight: '64px !important',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           {/* Left side - Main navigation */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {user && (
               <IconButton
                 size="large"
@@ -132,11 +136,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Box
               onClick={handleHomeClick}
               sx={{
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-                color: "inherit",
-                textDecoration: "none",
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: 'inherit',
+                textDecoration: 'none',
                 mr: 2,
                 '&:hover .account-name': { textDecoration: 'underline' },
               }}
@@ -150,20 +154,20 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 {currentAccount && typeof currentAccount.name === 'string'
                   ? currentAccount.name
-                  : "No Account"}
+                  : 'No Account'}
               </Typography>
             </Box>
           </Box>
 
           {/* Center - Baseball menu (only for baseball accounts) */}
-          {accountType === "Baseball" && accountId && (
-            <Box sx={{ display: "flex", alignItems: "center" }}>
+          {accountType === 'Baseball' && accountId && (
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
               <BaseballMenu accountId={accountId} />
             </Box>
           )}
 
           {/* Right side - User info and actions */}
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {user ? (
               <>
                 {user.firstname && (
@@ -190,90 +194,144 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
-          <MenuItem onClick={() => handleNavigation("/")}> 
-            <ListItemIcon><HomeIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/')}>
+            <ListItemIcon>
+              <HomeIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Home</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/dashboard")}> 
-            <ListItemIcon><DashboardIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/dashboard')}>
+            <ListItemIcon>
+              <DashboardIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Dashboard</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/accounts")}> 
-            <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/accounts')}>
+            <ListItemIcon>
+              <BusinessIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Accounts</ListItemText>
           </MenuItem>
-          {hasRole("93DAC465-4C64-4422-B444-3CE79C549329") && (
-            <MenuItem onClick={() => handleNavigation("/admin")}> 
-              <ListItemIcon><AdminPanelSettingsIcon fontSize="small" /></ListItemIcon>
+          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+            <MenuItem onClick={() => handleNavigation('/admin')}>
+              <ListItemIcon>
+                <AdminPanelSettingsIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Admin Dashboard</ListItemText>
             </MenuItem>
           )}
-          {hasRole("93DAC465-4C64-4422-B444-3CE79C549329") && (
-            <MenuItem onClick={() => handleNavigation("/account-management")}> 
-              <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+            <MenuItem onClick={() => handleNavigation('/account-management')}>
+              <ListItemIcon>
+                <BusinessIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
             </MenuItem>
           )}
-          {hasRole("93DAC465-4C64-4422-B444-3CE79C549329") && (
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/seasons`)}>
-              <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
+            >
+              <ListItemIcon>
+                <CalendarMonthIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Season Management</ListItemText>
             </MenuItem>
           )}
           {/* Account Admin Only */}
-          {hasRole("5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A") && [
-            <MenuItem onClick={() => handleNavigation("/account-management")} key="account-management"> 
-              <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+          {hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && [
+            <MenuItem
+              onClick={() => handleNavigation('/account-management')}
+              key="account-management"
+            >
+              <ListItemIcon>
+                <BusinessIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Account Management</ListItemText>
             </MenuItem>,
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/management`)} key="current-account">
-              <ListItemIcon><BusinessIcon fontSize="small" /></ListItemIcon>
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}
+              key="current-account"
+            >
+              <ListItemIcon>
+                <BusinessIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Current Account</ListItemText>
             </MenuItem>,
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/settings`)} key="account-settings">
-              <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
+              key="account-settings"
+            >
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Account Settings</ListItemText>
             </MenuItem>,
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/seasons`)} key="season-management">
-              <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
+              key="season-management"
+            >
+              <ListItemIcon>
+                <CalendarMonthIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Season Management</ListItemText>
             </MenuItem>,
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/schedule`)} key="schedule-management">
-              <ListItemIcon><CalendarMonthIcon fontSize="small" /></ListItemIcon>
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/schedule`)}
+              key="schedule-management"
+            >
+              <ListItemIcon>
+                <CalendarMonthIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Schedule Management</ListItemText>
             </MenuItem>,
-            <MenuItem onClick={() => handleNavigation(`/account/${currentAccount?.id || "1"}/teams`)} key="teams">
-              <ListItemIcon><GroupIcon fontSize="small" /></ListItemIcon>
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/teams`)}
+              key="teams"
+            >
+              <ListItemIcon>
+                <GroupIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Teams</ListItemText>
             </MenuItem>,
           ]}
           {/* League Admin Only */}
-          {hasRole("672DDF06-21AC-4D7C-B025-9319CC69281A") && (
-            <MenuItem onClick={() => handleNavigation("/league-management")}> 
-              <ListItemIcon><GroupIcon fontSize="small" /></ListItemIcon>
+          {hasRole('672DDF06-21AC-4D7C-B025-9319CC69281A') && (
+            <MenuItem onClick={() => handleNavigation('/league-management')}>
+              <ListItemIcon>
+                <GroupIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>League Management</ListItemText>
             </MenuItem>
           )}
           {/* Team Admin Only */}
-          {hasRole("777D771B-1CBA-4126-B8F3-DD7F3478D40E") && (
-            <MenuItem onClick={() => handleNavigation("/team-management")}> 
-              <ListItemIcon><GroupIcon fontSize="small" /></ListItemIcon>
+          {hasRole('777D771B-1CBA-4126-B8F3-DD7F3478D40E') && (
+            <MenuItem onClick={() => handleNavigation('/team-management')}>
+              <ListItemIcon>
+                <GroupIcon fontSize="small" />
+              </ListItemIcon>
               <ListItemText>Team Management</ListItemText>
             </MenuItem>
           )}
-          <MenuItem onClick={() => handleNavigation("/settings")}> 
-            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/settings')}>
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Settings</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/permission-test")}> 
-            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/permission-test')}>
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Permission Test</ListItemText>
           </MenuItem>
-          <MenuItem onClick={() => handleNavigation("/role-debug")}> 
-            <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+          <MenuItem onClick={() => handleNavigation('/role-debug')}>
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
             <ListItemText>Role Debug</ListItemText>
           </MenuItem>
         </Menu>
