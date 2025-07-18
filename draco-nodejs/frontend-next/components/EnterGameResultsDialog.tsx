@@ -191,8 +191,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
       }}
       PaperProps={{
         sx: {
-          background: 'linear-gradient(180deg, #0a2342 0%, #1e3a5c 100%)',
-          color: 'white',
+          background: 'background.paper',
+          color: 'text.primary',
           borderRadius: 2,
           minHeight: '600px',
           maxHeight: '85vh',
@@ -205,14 +205,15 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           pb: 2,
         }}
       >
         <Typography variant="h6" component="div" fontWeight={700}>
           Enter Game Results
         </Typography>
-        <Button onClick={onClose} sx={{ color: '#b0c4de', minWidth: 'auto', p: 0 }}>
+        <Button onClick={onClose} sx={{ color: 'text.secondary', minWidth: 'auto', p: 0 }}>
           <CloseIcon />
         </Button>
       </DialogTitle>
@@ -225,8 +226,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
         )}
 
         {/* Game Information Display */}
-        <Box sx={{ mb: 3, p: 2, bgcolor: 'rgba(255,255,255,0.05)', borderRadius: 1, mt: 1 }}>
-          <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
+        <Box sx={{ mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1, mt: 1 }}>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
             Game Information
           </Typography>
           <Box
@@ -237,26 +238,26 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
             }}
           >
             <Box>
-              <Typography variant="body2" color="white" fontWeight={600}>
+              <Typography variant="body2" color="text.primary" fontWeight={600}>
                 Date/Time:
               </Typography>
-              <Typography variant="body2" color="#b0c4de">
+              <Typography variant="body2" color="text.secondary">
                 {formatGameTime(game.date)}
               </Typography>
             </Box>
             <Box>
-              <Typography variant="body2" color="white" fontWeight={600}>
+              <Typography variant="body2" color="text.primary" fontWeight={600}>
                 Field:
               </Typography>
-              <Typography variant="body2" color="#b0c4de">
+              <Typography variant="body2" color="text.secondary">
                 {getDisplayFieldName(game) || 'TBD'}
               </Typography>
             </Box>
             <Box>
-              <Typography variant="body2" color="white" fontWeight={600}>
+              <Typography variant="body2" color="text.primary" fontWeight={600}>
                 League:
               </Typography>
-              <Typography variant="body2" color="#b0c4de">
+              <Typography variant="body2" color="text.secondary">
                 {game.leagueName}
               </Typography>
             </Box>
@@ -268,7 +269,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           {/* Game Status */}
           <Box sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-              <Typography variant="body2" color="#b0c4de" sx={{ minWidth: '100px' }}>
+              <Typography variant="body2" color="text.secondary" sx={{ minWidth: '100px' }}>
                 Game Status:
               </Typography>
               <FormControl size="small" sx={{ minWidth: 200 }}>
@@ -278,18 +279,19 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   MenuProps={{
                     PaperProps: {
                       sx: {
-                        bgcolor: '#1e3a5c',
-                        color: 'white',
+                        bgcolor: 'background.paper',
+                        color: 'text.primary',
                         zIndex: 1500,
                         '& .MuiMenuItem-root': {
-                          color: 'white',
+                          color: 'text.primary',
                           '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.1)',
+                            bgcolor: 'action.hover',
                           },
                           '&.Mui-selected': {
-                            bgcolor: 'rgba(255,255,255,0.2)',
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
                             '&:hover': {
-                              bgcolor: 'rgba(255,255,255,0.3)',
+                              bgcolor: 'primary.dark',
                             },
                           },
                         },
@@ -301,18 +303,18 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                     container: document.body,
                   }}
                   sx={{
-                    color: 'white',
+                    color: 'text.primary',
                     '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#b0c4de',
+                      borderColor: 'divider',
                     },
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                     '& .MuiSvgIcon-root': {
-                      color: '#b0c4de',
+                      color: 'text.secondary',
                     },
                   }}
                 >
@@ -321,14 +323,15 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                       key={option.value}
                       value={option.value}
                       sx={{
-                        color: 'white',
+                        color: 'text.primary',
                         '&:hover': {
-                          bgcolor: 'rgba(255,255,255,0.1)',
+                          bgcolor: 'action.hover',
                         },
                         '&.Mui-selected': {
-                          bgcolor: 'rgba(255,255,255,0.2)',
+                          bgcolor: 'primary.main',
+                          color: 'primary.contrastText',
                           '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.3)',
+                            bgcolor: 'primary.dark',
                           },
                         },
                       }}
@@ -348,7 +351,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <Typography
                 variant="h6"
                 component="div"
-                color="white"
+                color="text.primary"
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
@@ -363,22 +366,22 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 sx={{
                   width: '100px',
                   '& .MuiOutlinedInput-root': {
-                    color: 'white',
+                    color: 'text.primary',
                     fontSize: '1.2rem',
                     fontWeight: 'bold',
                     '& fieldset': {
-                      borderColor: '#b0c4de',
+                      borderColor: 'divider',
                       borderWidth: '2px',
                     },
                     '&:hover fieldset': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                   },
                   '& .MuiInputLabel-root': {
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                   },
                   '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
                     {
@@ -398,7 +401,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <Typography
                 variant="h6"
                 component="div"
-                color="white"
+                color="text.primary"
                 fontWeight={600}
                 sx={{ minWidth: '150px' }}
               >
@@ -413,22 +416,22 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                 sx={{
                   width: '100px',
                   '& .MuiOutlinedInput-root': {
-                    color: 'white',
+                    color: 'text.primary',
                     fontSize: '1.2rem',
                     fontWeight: 'bold',
                     '& fieldset': {
-                      borderColor: '#b0c4de',
+                      borderColor: 'divider',
                       borderWidth: '2px',
                     },
                     '&:hover fieldset': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: 'white',
+                      borderColor: 'primary.main',
                     },
                   },
                   '& .MuiInputLabel-root': {
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                   },
                   '& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button':
                     {
@@ -447,7 +450,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
 
         {/* Notification Options */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="#b0c4de" gutterBottom>
+          <Typography variant="subtitle2" color="text.secondary" gutterBottom>
             Notifications & Social Media
           </Typography>
           <Box
@@ -456,7 +459,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: 2,
               p: 2,
-              bgcolor: 'rgba(255,255,255,0.03)',
+              bgcolor: 'action.hover',
               borderRadius: 1,
             }}
           >
@@ -466,9 +469,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   checked={formData.emailPlayers}
                   onChange={(e) => handleInputChange('emailPlayers', e.target.checked)}
                   sx={{
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                     '&.Mui-checked': {
-                      color: 'white',
+                      color: 'primary.main',
                     },
                   }}
                 />
@@ -476,7 +479,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <EmailIcon fontSize="small" />
-                  <Typography variant="body2" color="white">
+                  <Typography variant="body2" color="text.primary">
                     Email game results to players
                   </Typography>
                 </Box>
@@ -488,9 +491,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   checked={formData.postToTwitter}
                   onChange={(e) => handleInputChange('postToTwitter', e.target.checked)}
                   sx={{
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                     '&.Mui-checked': {
-                      color: 'white',
+                      color: 'primary.main',
                     },
                   }}
                 />
@@ -498,7 +501,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <TwitterIcon fontSize="small" />
-                  <Typography variant="body2" color="white">
+                  <Typography variant="body2" color="text.primary">
                     Post to Twitter
                   </Typography>
                 </Box>
@@ -510,9 +513,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   checked={formData.postToBluesky}
                   onChange={(e) => handleInputChange('postToBluesky', e.target.checked)}
                   sx={{
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                     '&.Mui-checked': {
-                      color: 'white',
+                      color: 'primary.main',
                     },
                   }}
                 />
@@ -524,7 +527,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                     size="small"
                     sx={{ bgcolor: '#0085FF', color: 'white', fontSize: '0.75rem' }}
                   />
-                  <Typography variant="body2" color="white">
+                  <Typography variant="body2" color="text.primary">
                     Post to Bluesky
                   </Typography>
                 </Box>
@@ -536,9 +539,9 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                   checked={formData.postToFacebook}
                   onChange={(e) => handleInputChange('postToFacebook', e.target.checked)}
                   sx={{
-                    color: '#b0c4de',
+                    color: 'text.secondary',
                     '&.Mui-checked': {
-                      color: 'white',
+                      color: 'primary.main',
                     },
                   }}
                 />
@@ -550,7 +553,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
                     size="small"
                     sx={{ bgcolor: '#1877F2', color: 'white', fontSize: '0.75rem' }}
                   />
-                  <Typography variant="body2" color="white">
+                  <Typography variant="body2" color="text.primary">
                     Post to Facebook
                   </Typography>
                 </Box>
@@ -563,7 +566,8 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
       <DialogActions
         sx={{
           p: 3,
-          borderTop: '1px solid rgba(255,255,255,0.1)',
+          borderTop: '1px solid',
+          borderColor: 'divider',
           gap: 1,
         }}
       >
@@ -571,11 +575,11 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           onClick={onClose}
           variant="outlined"
           sx={{
-            color: '#b0c4de',
-            borderColor: '#b0c4de',
+            color: 'text.secondary',
+            borderColor: 'divider',
             '&:hover': {
-              borderColor: 'white',
-              color: 'white',
+              borderColor: 'primary.main',
+              color: 'primary.main',
             },
           }}
         >
@@ -587,14 +591,14 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           disabled={loading}
           startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
           sx={{
-            bgcolor: '#4CAF50',
-            color: 'white',
+            bgcolor: 'success.main',
+            color: 'success.contrastText',
             '&:hover': {
-              bgcolor: '#45a049',
+              bgcolor: 'success.dark',
             },
             '&:disabled': {
-              bgcolor: 'rgba(255,255,255,0.1)',
-              color: '#b0c4de',
+              bgcolor: 'action.disabledBackground',
+              color: 'action.disabled',
             },
           }}
         >
