@@ -15,7 +15,7 @@ import { useAuth } from '../context/AuthContext';
 import BaseballScoreboard from './BaseballScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
 import MyTeams, { UserTeam } from './MyTeams';
-import AccountLogoHeader from './AccountLogoHeader';
+import AccountPageHeader from './AccountPageHeader';
 
 interface Account {
   id: string;
@@ -164,41 +164,9 @@ const BaseballAccountHome: React.FC = () => {
       }}
     >
       <Container maxWidth="xl">
-        {/* Hero Section - Full Width */}
-        <Paper
-          sx={{
-            p: 4,
-            mb: 4,
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-            color: 'white',
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-          }}
-        >
-          {/* Top Centered Account Logo inside the card */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <AccountLogoHeader
-              accountId={account.id}
-              accountLogoUrl={account.accountLogoUrl}
-              style={{ background: 'transparent', borderBottom: 0 }}
-            />
-          </Box>
-          <Box>
-            {/* Only show account name if no logo is present (AccountLogoHeader will show 'No Logo' if missing) */}
-            {!account.accountLogoUrl && (
-              <Typography
-                variant="h3"
-                component="h1"
-                gutterBottom
-                sx={{
-                  fontWeight: 'bold',
-                  color: 'white',
-                  textAlign: 'center',
-                }}
-              >
-                {account.name}
-              </Typography>
-            )}
+        {/* Unified Header with Logo and Page Content */}
+        <Box sx={{ mb: 4 }}>
+          <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>
             <Box
               sx={{
                 display: 'flex',
@@ -257,8 +225,8 @@ const BaseballAccountHome: React.FC = () => {
               {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
               {account.firstYear}
             </Typography>
-          </Box>
-        </Paper>
+          </AccountPageHeader>
+        </Box>
 
         {/* Main Content Grid - Progressive Layout */}
         <Box
