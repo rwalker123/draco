@@ -12,7 +12,8 @@ import {
 import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
-import BaseballScoreboard from './BaseballScoreboard';
+import TodayScoreboard from './TodayScoreboard';
+import YesterdayScoreboard from './YesterdayScoreboard';
 import GameRecapsWidget from './GameRecapsWidget';
 import MyTeams, { UserTeam } from './MyTeams';
 import AccountPageHeader from './AccountPageHeader';
@@ -238,117 +239,106 @@ const BaseballAccountHome: React.FC = () => {
           </AccountPageHeader>
         </Box>
 
-        {/* Main Content Grid - Progressive Layout */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              lg: '1fr 400px',
-            },
-            gap: 4,
-            alignItems: 'start',
-          }}
-        >
-          {/* Left Column - Main Content */}
-          <Box>
-            {/* Game Recaps Widget - show as first content */}
-            {currentSeason && (
-              <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
-            )}
-            {/* User Teams Section */}
-            {user && userTeams.length > 0 && (
-              <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
-            )}
-
-            {/* Contact & Links */}
-            <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ fontWeight: 'bold', color: 'primary.main' }}
-              >
-                Connect With Us
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {account.urls.length > 0 && (
-                  <Button
-                    variant="contained"
-                    href={account.urls[0].url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      bgcolor: 'primary.main',
-                      '&:hover': { bgcolor: 'primary.dark' },
-                    }}
-                  >
-                    Visit Website
-                  </Button>
-                )}
-                {account.twitterAccountName && (
-                  <Button
-                    variant="outlined"
-                    href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
-                      '&:hover': {
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                      },
-                    }}
-                  >
-                    Twitter
-                  </Button>
-                )}
-                {account.facebookFanPage && (
-                  <Button
-                    variant="outlined"
-                    href={account.facebookFanPage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      borderColor: 'primary.main',
-                      color: 'primary.main',
-                      '&:hover': {
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                      },
-                    }}
-                  >
-                    Facebook
-                  </Button>
-                )}
-              </Box>
-            </Paper>
-          </Box>
-
-          {/* Right Column - Scoreboard and Sidebar Widgets */}
+        {/* Main Content - Single Column Layout */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* Scoreboard Widgets - Side by Side */}
           <Box
             sx={{
-              position: { lg: 'sticky' },
-              top: { lg: 24 },
-              height: 'fit-content',
-              display: 'flex',
-              flexDirection: 'column',
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: '1fr 1fr',
+              },
               gap: 3,
             }}
           >
-            <BaseballScoreboard accountId={accountIdStr!} />
-
-            {/* User Organizations Widget */}
-            {user && (
-              <OrganizationsWidget
-                title="Your Other Organizations"
-                showSearch={false}
-                maxDisplay={3}
-                sx={{ mb: 0 }}
-                excludeAccountId={accountIdStr}
-              />
-            )}
+            <TodayScoreboard accountId={accountIdStr!} />
+            <YesterdayScoreboard accountId={accountIdStr!} />
           </Box>
+
+          {/* Game Recaps Widget */}
+          {currentSeason && (
+            <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
+          )}
+
+          {/* User Teams Section */}
+          {user && userTeams.length > 0 && (
+            <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
+          )}
+
+          {/* Contact & Links */}
+          <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{ fontWeight: 'bold', color: 'primary.main' }}
+            >
+              Connect With Us
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {account.urls.length > 0 && (
+                <Button
+                  variant="contained"
+                  href={account.urls[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    bgcolor: 'primary.main',
+                    '&:hover': { bgcolor: 'primary.dark' },
+                  }}
+                >
+                  Visit Website
+                </Button>
+              )}
+              {account.twitterAccountName && (
+                <Button
+                  variant="outlined"
+                  href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                >
+                  Twitter
+                </Button>
+              )}
+              {account.facebookFanPage && (
+                <Button
+                  variant="outlined"
+                  href={account.facebookFanPage}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.main',
+                      color: 'white',
+                    },
+                  }}
+                >
+                  Facebook
+                </Button>
+              )}
+            </Box>
+          </Paper>
+
+          {/* User Organizations Widget */}
+          {user && (
+            <OrganizationsWidget
+              title="Your Other Organizations"
+              showSearch={false}
+              maxDisplay={3}
+              sx={{ mb: 0 }}
+              excludeAccountId={accountIdStr}
+            />
+          )}
         </Box>
       </Container>
     </Box>

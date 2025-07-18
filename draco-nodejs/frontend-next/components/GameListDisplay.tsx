@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Card, CardContent, IconButton, Tooltip, Paper } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import { getGameStatusShortText } from '../utils/gameUtils';
 
 export interface GameRecap {
   teamId: string;
@@ -42,26 +43,6 @@ export interface GameListDisplayProps {
   onEditRecap?: (game: Game) => void;
   onViewRecap?: (game: Game) => void;
 }
-
-// Utility to get short game status text
-const getGameStatusShortText = (status: number): string => {
-  switch (status) {
-    case 0:
-      return '';
-    case 1:
-      return 'F';
-    case 2:
-      return 'R';
-    case 3:
-      return 'PPD';
-    case 4:
-      return 'FFT';
-    case 5:
-      return 'DNR';
-    default:
-      return '';
-  }
-};
 
 const GameListDisplay: React.FC<GameListDisplayProps> = ({
   sections,
