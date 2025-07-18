@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 interface AccountLogoHeaderProps {
   accountId: string;
@@ -19,6 +20,7 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
 }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
   const [error, setError] = useState(false);
+  const [accountName, setAccountName] = useState<string | null>(null);
 
   // Helper to add or update cachebuster param
   function addCacheBuster(url: string, buster: number) {
@@ -32,22 +34,31 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
   }
 
   useEffect(() => {
-    if (!accountLogoUrl && accountId) {
-      // Fetch public account info to get logo URL
-      fetch(`/api/accounts/${accountId}/public`)
+    // Always fetch account name when accountId is provided
+    if (accountId) {
+      fetch(`/api/accounts/${accountId}/header`)
         .then((res) => res.json())
         .then((data) => {
-          if (data?.data?.account?.accountLogoUrl) {
-            setLogoUrl(addCacheBuster(data.data.account.accountLogoUrl, Date.now()));
+          // Set account name
+          if (data?.data?.name) {
+            setAccountName(data.data.name);
+          }
+
+          // Handle logo URL
+          if (accountLogoUrl) {
+            // Use provided logo URL
+            setLogoUrl(addCacheBuster(accountLogoUrl, Date.now()));
+          } else if (data?.data?.accountLogoUrl) {
+            // Use logo URL from API
+            setLogoUrl(addCacheBuster(data.data.accountLogoUrl, Date.now()));
           } else {
             setLogoUrl(null);
           }
         })
         .catch(() => {
           setLogoUrl(null);
+          setAccountName(null);
         });
-    } else if (accountLogoUrl) {
-      setLogoUrl(addCacheBuster(accountLogoUrl, Date.now()));
     }
   }, [accountId, accountLogoUrl]);
 
@@ -78,7 +89,26 @@ const AccountLogoHeader: React.FC<AccountLogoHeaderProps> = ({
           unoptimized
         />
       ) : (
-        <Box sx={{ color: 'grey.500', fontWeight: 500, fontSize: { xs: 18, sm: 28 } }}>No Logo</Box>
+        <Typography
+          variant="h3"
+          component="div"
+          sx={{
+            color: 'grey.700',
+            fontWeight: 700,
+            fontSize: { xs: '1.5rem', sm: '2.5rem' },
+            textAlign: 'center',
+            textShadow: '2px 2px 4px rgba(0,0,0,0.1)',
+            letterSpacing: '0.05em',
+            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+            background: 'linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)',
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            filter: 'drop-shadow(1px 1px 2px rgba(0,0,0,0.1))',
+          }}
+        >
+          {accountName || 'Loading...'}
+        </Typography>
       )}
     </Box>
   );
