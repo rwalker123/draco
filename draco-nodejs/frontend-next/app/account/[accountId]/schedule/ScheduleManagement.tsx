@@ -379,6 +379,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       try {
         setLoadingLeagueTeams(true);
 
+        // Check if user is authenticated
+        if (!user || !token) {
+          console.log('User not authenticated, skipping league teams load');
+          setLeagueTeams([]);
+          return;
+        }
+
         // Get current season first
         const currentSeasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`, {
           headers: {
@@ -404,6 +411,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         );
 
         if (!response.ok) {
+          if (response.status === 401) {
+            console.log('Authentication failed, skipping league teams load');
+            setLeagueTeams([]);
+            return;
+          }
           throw new Error('Failed to load league teams');
         }
 
@@ -437,7 +449,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         setLoadingLeagueTeams(false);
       }
     },
-    [accountId, token],
+    [accountId, token, user],
   );
 
   // Update leagueTeams when filterLeagueSeasonId changes (for filter dropdown)
@@ -642,6 +654,24 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const openEditDialog = useCallback(
     (game: Game) => {
+      // Check if user can edit games
+      if (!canEditSchedule) {
+        console.log('User cannot edit games, opening view-only dialog');
+        setSelectedGame(game);
+        setGameDate(parseISO(game.gameDate));
+        setGameTime(parseISO(game.gameDate));
+        setHomeTeamId(game.homeTeamId);
+        setVisitorTeamId(game.visitorTeamId);
+        setFieldId(game.fieldId || '');
+        setComment(game.comment);
+        const gameTypeValue = game.gameType || 0;
+        setGameType(gameTypeValue);
+        setEditDialogError(null);
+        setDialogLeagueSeason(''); // No need to load league teams for view-only
+        setEditDialogOpen(true);
+        return;
+      }
+
       console.log('openEditDialog - game.gameType:', game.gameType, typeof game.gameType);
       setSelectedGame(game);
       setGameDate(parseISO(game.gameDate));
@@ -655,7 +685,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setGameType(gameTypeValue);
       setEditDialogError(null); // Clear any previous errors
 
-      // Load teams for the specific league of this game
+      // Load teams for the specific league of this game (only if user can edit)
       if (game.league?.id) {
         // Find the league season ID for this league
         // The game.league.id is the actual league ID, we need to find the league season ID
@@ -675,7 +705,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
       setEditDialogOpen(true);
     },
-    [leagues, loadLeagueTeams],
+    [leagues, loadLeagueTeams, canEditSchedule],
   );
 
   const openDeleteDialog = (game: Game) => {
@@ -1073,7 +1103,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 : undefined
             }
             showActions={!!canEditSchedule}
-            onClick={canEditSchedule ? () => openEditDialog(game) : undefined}
+            onClick={() => openEditDialog(game)}
           />
         ))}
       </Box>
@@ -1557,7 +1587,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     : undefined
                 }
                 showActions={!!canEditSchedule}
-                onClick={canEditSchedule ? () => openEditDialog(game) : undefined}
+                onClick={() => openEditDialog(game)}
               />
             ))
           ) : (
@@ -2231,6 +2261,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 multiline
                 rows={3}
                 disabled={!canEditSchedule}
+                slotProps={
+                  !canEditSchedule
+                    ? {
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }
+                    : undefined
+                }
               />
             </Box>
           </DialogContent>
@@ -2295,7 +2337,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Game Date"
                       value={selectedGame && gameDate ? format(gameDate, 'EEEE, MMMM d, yyyy') : ''}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2314,7 +2363,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Game Time"
                       value={selectedGame && gameTime ? format(gameTime, 'h:mm a') : ''}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2349,7 +2405,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Home Team"
                       value={selectedGame ? getTeamName(selectedGame.homeTeamId) : ''}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2381,7 +2444,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Visitor Team"
                       value={selectedGame ? getTeamName(selectedGame.visitorTeamId) : ''}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2410,7 +2480,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Field"
                       value={selectedGame ? getFieldName(selectedGame.fieldId) : ''}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2433,7 +2510,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       fullWidth
                       label="Game Type"
                       value={getGameTypeText(gameType)}
-                      disabled
+                      slotProps={{
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }}
                     />
                   )}
                 </Box>
@@ -2447,6 +2531,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 multiline
                 rows={3}
                 disabled={!canEditSchedule}
+                slotProps={
+                  !canEditSchedule
+                    ? {
+                        input: {
+                          readOnly: true,
+                          sx: {
+                            color: 'text.primary',
+                          },
+                        },
+                      }
+                    : undefined
+                }
               />
             </Box>
           </DialogContent>
