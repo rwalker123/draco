@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { Box, Typography, Paper, Button, Container } from '@mui/material';
+import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import OrganizationsWidget from './OrganizationsWidget';
+import { useAuth } from '../../context/AuthContext';
+import OrganizationsWidget from '../../components/OrganizationsWidget';
 
 interface Account {
   id: string;
@@ -77,7 +77,7 @@ const Accounts: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       <Typography variant="h3" component="h1" gutterBottom align="center">
         Draco Sports Manager
       </Typography>
@@ -132,7 +132,7 @@ const Accounts: React.FC = () => {
           </Box>
         </Paper>
       )}
-    </Container>
+    </main>
   );
 };
 

@@ -36,12 +36,12 @@ import {
   Settings as SettingsIcon,
   PhotoCamera as PhotoCameraIcon,
 } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { useAccount } from '../context/AccountContext';
-import ContactAutocomplete from './ContactAutocomplete';
-import { US_TIMEZONES, getTimezoneLabel } from '../utils/timezones';
-import EditAccountLogoDialog from './EditAccountLogoDialog';
+import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
+import { useAccount } from '../../context/AccountContext';
+import ContactAutocomplete from '../../components/ContactAutocomplete';
+import { US_TIMEZONES, getTimezoneLabel } from '../../utils/timezones';
+import EditAccountLogoDialog from '../../components/EditAccountLogoDialog';
 
 interface Account {
   id: string;
@@ -325,7 +325,7 @@ const AccountManagement: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
           Account Management
@@ -622,7 +622,7 @@ const AccountManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </main>
   );
 };
 

@@ -3,16 +3,16 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
-import GameListDisplay, { Game } from './GameListDisplay';
+import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
 import React from 'react';
-import EnterGameSummaryDialog from './EnterGameRecapDialog';
-import { getGameSummary, saveGameSummary } from '../lib/utils';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import AccountPageHeader from './AccountPageHeader';
+import EnterGameSummaryDialog from '../../../../../../../components/EnterGameRecapDialog';
+import { getGameSummary, saveGameSummary } from '../../../../../../../lib/utils';
+import { useAuth } from '../../../../../../../context/AuthContext';
+import { useRole } from '../../../../../../../context/RoleContext';
+import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import TeamAvatar from './TeamAvatar';
+import TeamAvatar from '../../../../../../../components/TeamAvatar';
 
 interface TeamPageProps {
   accountId: string;
@@ -224,7 +224,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   };
 
   return (
-    <main className="max-w-5xl mx-auto py-10 px-4 min-h-screen bg-background">
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Account Header with Team Information */}
       <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
         <Box

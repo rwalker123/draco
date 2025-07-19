@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -25,7 +25,7 @@ import {
   Fab,
   Autocomplete,
   FormControlLabel,
-  Checkbox
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,11 +37,11 @@ import {
   Refresh as RefreshIcon,
   Group as GroupIcon,
   Remove as RemoveIcon,
-  Sports as SportsIcon
+  Sports as SportsIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
+import { useAuth } from '../../../../context/AuthContext';
+import { useRole } from '../../../../context/RoleContext';
 import axios from 'axios';
 
 interface Season {
@@ -78,14 +78,14 @@ const SeasonManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
+
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [copyDialogOpen, setCopyDialogOpen] = useState(false);
   const [leagueManagementDialogOpen, setLeagueManagementDialogOpen] = useState(false);
-  
+
   // Form states
   const [formData, setFormData] = useState<SeasonFormData>({ name: '' });
   const [selectedSeason, setSelectedSeason] = useState<Season | null>(null);
@@ -97,11 +97,16 @@ const SeasonManagement: React.FC = () => {
   const [dialogErrorMessage, setDialogErrorMessage] = useState<string | null>(null);
 
   // Check permissions
-  const canCreate = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canEdit = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canDelete = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canSetCurrent = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canManageLeagues = hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canCreate =
+    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canEdit =
+    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canDelete =
+    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canSetCurrent =
+    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  const canManageLeagues =
+    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
 
   const fetchSeasons = useCallback(async () => {
     if (!accountId || !token) return;
@@ -110,7 +115,7 @@ const SeasonManagement: React.FC = () => {
     setError(null);
     try {
       const response = await axios.get(`/api/accounts/${accountId}/seasons`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
@@ -119,7 +124,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to fetch seasons');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -136,14 +147,20 @@ const SeasonManagement: React.FC = () => {
 
     try {
       const response = await axios.get(`/api/accounts/${accountId}/leagues`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
         setAvailableLeagues(response.data.data.leagues);
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -162,54 +179,63 @@ const SeasonManagement: React.FC = () => {
 
   // Targeted update functions for better UX
   const addSeasonToState = useCallback((newSeason: Season) => {
-    setSeasons(prev => [...prev, newSeason]);
+    setSeasons((prev) => [...prev, newSeason]);
   }, []);
 
   const updateSeasonInState = useCallback((updatedSeason: Season) => {
-    setSeasons(prev => prev.map(season => 
-      season.id === updatedSeason.id ? updatedSeason : season
-    ));
+    setSeasons((prev) =>
+      prev.map((season) => (season.id === updatedSeason.id ? updatedSeason : season)),
+    );
   }, []);
 
   const removeSeasonFromState = useCallback((seasonId: string) => {
-    setSeasons(prev => prev.filter(season => season.id !== seasonId));
+    setSeasons((prev) => prev.filter((season) => season.id !== seasonId));
   }, []);
 
   const updateCurrentSeasonInState = useCallback((currentSeasonId: string) => {
-    setSeasons(prev => prev.map(season => ({
-      ...season,
-      isCurrent: season.id === currentSeasonId
-    })));
+    setSeasons((prev) =>
+      prev.map((season) => ({
+        ...season,
+        isCurrent: season.id === currentSeasonId,
+      })),
+    );
   }, []);
 
-  const addLeagueToSeasonInState = useCallback((seasonId: string, leagueSeason: { id: string; leagueId: string; leagueName: string }) => {
-    setSeasons(prev => prev.map(season => {
-      if (season.id !== seasonId) return season;
-      return {
-        ...season,
-        leagues: [...season.leagues, leagueSeason]
-      };
-    }));
-  }, []);
+  const addLeagueToSeasonInState = useCallback(
+    (seasonId: string, leagueSeason: { id: string; leagueId: string; leagueName: string }) => {
+      setSeasons((prev) =>
+        prev.map((season) => {
+          if (season.id !== seasonId) return season;
+          return {
+            ...season,
+            leagues: [...season.leagues, leagueSeason],
+          };
+        }),
+      );
+    },
+    [],
+  );
 
   const removeLeagueFromSeasonInState = useCallback((seasonId: string, leagueSeasonId: string) => {
-    setSeasons(prev => prev.map(season => {
-      if (season.id !== seasonId) return season;
-      return {
-        ...season,
-        leagues: season.leagues.filter(league => league.id !== leagueSeasonId)
-      };
-    }));
+    setSeasons((prev) =>
+      prev.map((season) => {
+        if (season.id !== seasonId) return season;
+        return {
+          ...season,
+          leagues: season.leagues.filter((league) => league.id !== leagueSeasonId),
+        };
+      }),
+    );
   }, []);
 
   const addLeagueToAvailableLeagues = useCallback((newLeague: League) => {
-    setAvailableLeagues(prev => [...prev, newLeague]);
+    setAvailableLeagues((prev) => [...prev, newLeague]);
   }, []);
 
   const updateLeagueInAvailableLeagues = useCallback((updatedLeague: League) => {
-    setAvailableLeagues(prev => prev.map(league => 
-      league.id === updatedLeague.id ? updatedLeague : league
-    ));
+    setAvailableLeagues((prev) =>
+      prev.map((league) => (league.id === updatedLeague.id ? updatedLeague : league)),
+    );
   }, []);
 
   const handleCreateSeason = async () => {
@@ -220,7 +246,7 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.post(
         `/api/accounts/${accountId}/seasons`,
         { name: formData.name.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -232,7 +258,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to create season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -252,7 +284,7 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.put(
         `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
         { name: formData.name.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -265,7 +297,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to update season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -284,7 +322,7 @@ const SeasonManagement: React.FC = () => {
     try {
       const response = await axios.delete(
         `/api/accounts/${accountId}/seasons/${selectedSeason.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -296,7 +334,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to delete season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -316,11 +360,13 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.post(
         `/api/accounts/${accountId}/seasons/${selectedSeason.id}/copy`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
-        setSuccessMessage(`Season copied successfully. ${response.data.data.copiedLeagues} leagues copied.`);
+        setSuccessMessage(
+          `Season copied successfully. ${response.data.data.copiedLeagues} leagues copied.`,
+        );
         setCopyDialogOpen(false);
         setSelectedSeason(null);
         addSeasonToState(response.data.data.season);
@@ -328,7 +374,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to copy season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -347,7 +399,7 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.post(
         `/api/accounts/${accountId}/seasons/${season.id}/set-current`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
@@ -357,7 +409,13 @@ const SeasonManagement: React.FC = () => {
         setError(response.data.message || 'Failed to set current season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
         setError((err as { response: { data: { message: string } } }).response.data.message);
       } else if (err instanceof Error) {
         setError(err.message);
@@ -410,24 +468,38 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.post(
         `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
         { leagueId: selectedLeague.id },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
-        setDialogSuccessMessage(`League "${selectedLeague.name}" added to season "${selectedSeason.name}"`);
+        setDialogSuccessMessage(
+          `League "${selectedLeague.name}" added to season "${selectedSeason.name}"`,
+        );
         addLeagueToSeasonInState(selectedSeason.id, response.data.data.leagueSeason);
         // Update selectedSeason for dialog
-        setSelectedSeason(prev => prev ? {
-          ...prev,
-          leagues: [...prev.leagues, response.data.data.leagueSeason]
-        } : prev);
+        setSelectedSeason((prev) =>
+          prev
+            ? {
+                ...prev,
+                leagues: [...prev.leagues, response.data.data.leagueSeason],
+              }
+            : prev,
+        );
         setSelectedLeague(null);
       } else {
         setDialogErrorMessage(response.data.message || 'Failed to add league to season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
-        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
+        setDialogErrorMessage(
+          (err as { response: { data: { message: string } } }).response.data.message,
+        );
       } else if (err instanceof Error) {
         setDialogErrorMessage(err.message);
       } else {
@@ -447,23 +519,37 @@ const SeasonManagement: React.FC = () => {
     try {
       const response = await axios.delete(
         `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues/${leagueSeasonId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
-        setDialogSuccessMessage(`League "${leagueName}" removed from season "${selectedSeason.name}"`);
+        setDialogSuccessMessage(
+          `League "${leagueName}" removed from season "${selectedSeason.name}"`,
+        );
         removeLeagueFromSeasonInState(selectedSeason.id, leagueSeasonId);
         // Update selectedSeason for dialog
-        setSelectedSeason(prev => prev ? {
-          ...prev,
-          leagues: prev.leagues.filter(league => league.id !== leagueSeasonId)
-        } : prev);
+        setSelectedSeason((prev) =>
+          prev
+            ? {
+                ...prev,
+                leagues: prev.leagues.filter((league) => league.id !== leagueSeasonId),
+              }
+            : prev,
+        );
       } else {
         setDialogErrorMessage(response.data.message || 'Failed to remove league from season');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
-        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
+        setDialogErrorMessage(
+          (err as { response: { data: { message: string } } }).response.data.message,
+        );
       } else if (err instanceof Error) {
         setDialogErrorMessage(err.message);
       } else {
@@ -485,9 +571,9 @@ const SeasonManagement: React.FC = () => {
   // Get leagues that are not already in the selected season
   const getAvailableLeaguesForSeason = () => {
     if (!selectedSeason) return availableLeagues;
-    
-    const seasonLeagueIds = selectedSeason.leagues.map(ls => ls.leagueId);
-    return availableLeagues.filter(league => !seasonLeagueIds.includes(league.id));
+
+    const seasonLeagueIds = selectedSeason.leagues.map((ls) => ls.leagueId);
+    return availableLeagues.filter((league) => !seasonLeagueIds.includes(league.id));
   };
 
   const closeDialogs = () => {
@@ -533,7 +619,7 @@ const SeasonManagement: React.FC = () => {
       const response = await axios.put(
         `/api/accounts/${accountId}/leagues/${leagueToEdit.id}`,
         { name: editLeagueName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       if (response.data.success) {
         setDialogSuccessMessage('League updated successfully');
@@ -544,8 +630,16 @@ const SeasonManagement: React.FC = () => {
         setDialogErrorMessage(response.data.message || 'Failed to update league');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
-        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
+        setDialogErrorMessage(
+          (err as { response: { data: { message: string } } }).response.data.message,
+        );
       } else if (err instanceof Error) {
         setDialogErrorMessage(err.message);
       } else {
@@ -565,33 +659,41 @@ const SeasonManagement: React.FC = () => {
       const createResponse = await axios.post(
         `/api/accounts/${accountId}/leagues`,
         { name: newLeagueName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (createResponse.data.success) {
         const newLeague = createResponse.data.data.league;
-        
+
         // If checkbox is checked, add the league to the season
         if (addToSeasonAfterCreate && selectedSeason) {
           const addResponse = await axios.post(
             `/api/accounts/${accountId}/seasons/${selectedSeason.id}/leagues`,
             { leagueId: newLeague.id },
-            { headers: { Authorization: `Bearer ${token}` } }
+            { headers: { Authorization: `Bearer ${token}` } },
           );
 
           if (addResponse.data.success) {
-            setDialogSuccessMessage(`League "${newLeague.name}" created and added to season "${selectedSeason.name}"`);
-            
+            setDialogSuccessMessage(
+              `League "${newLeague.name}" created and added to season "${selectedSeason.name}"`,
+            );
+
             // Use targeted update instead of full refresh
             addLeagueToSeasonInState(selectedSeason.id, addResponse.data.data.leagueSeason);
-            
+
             // Also update selectedSeason for the dialog
-            setSelectedSeason(prev => prev ? {
-              ...prev,
-              leagues: [...prev.leagues, addResponse.data.data.leagueSeason]
-            } : prev);
+            setSelectedSeason((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    leagues: [...prev.leagues, addResponse.data.data.leagueSeason],
+                  }
+                : prev,
+            );
           } else {
-            setDialogSuccessMessage(`League "${newLeague.name}" created successfully, but failed to add to season`);
+            setDialogSuccessMessage(
+              `League "${newLeague.name}" created successfully, but failed to add to season`,
+            );
           }
         } else {
           setDialogSuccessMessage(`League "${newLeague.name}" created successfully`);
@@ -605,8 +707,16 @@ const SeasonManagement: React.FC = () => {
         setDialogErrorMessage(createResponse.data.message || 'Failed to create league');
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err && typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
-        setDialogErrorMessage((err as { response: { data: { message: string } } }).response.data.message);
+      if (
+        err &&
+        typeof err === 'object' &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+          'string'
+      ) {
+        setDialogErrorMessage(
+          (err as { response: { data: { message: string } } }).response.data.message,
+        );
       } else if (err instanceof Error) {
         setDialogErrorMessage(err.message);
       } else {
@@ -626,7 +736,7 @@ const SeasonManagement: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
@@ -643,11 +753,7 @@ const SeasonManagement: React.FC = () => {
             Refresh
           </Button>
           {canCreate && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreateDialog}
-            >
+            <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>
               Create Season
             </Button>
           )}
@@ -683,7 +789,9 @@ const SeasonManagement: React.FC = () => {
                   No seasons found
                 </Typography>
                 <Typography variant="body2" color="textSecondary" align="center">
-                  {canCreate ? 'Create your first season to get started.' : 'No seasons are available.'}
+                  {canCreate
+                    ? 'Create your first season to get started.'
+                    : 'No seasons are available.'}
                 </Typography>
               </CardContent>
             </Card>
@@ -693,24 +801,24 @@ const SeasonManagement: React.FC = () => {
               gridTemplateColumns={{
                 xs: '1fr',
                 md: 'repeat(2, 1fr)',
-                lg: 'repeat(3, 1fr)'
+                lg: 'repeat(3, 1fr)',
               }}
               gap={3}
             >
               {seasons.map((season) => (
                 <Card key={season.id}>
                   <CardContent>
-                    <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      mb={2}
+                    >
                       <Typography variant="h6" component="h2">
                         {season.name}
                       </Typography>
                       {season.isCurrent && (
-                        <Chip
-                          icon={<StarIcon />}
-                          label="Current"
-                          color="primary"
-                          size="small"
-                        />
+                        <Chip icon={<StarIcon />} label="Current" color="primary" size="small" />
                       )}
                     </Box>
 
@@ -746,15 +854,12 @@ const SeasonManagement: React.FC = () => {
                     <Box display="flex" gap={1} flexWrap="wrap">
                       {canSetCurrent && !season.isCurrent && (
                         <Tooltip title="Set as current season">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleSetCurrentSeason(season)}
-                          >
+                          <IconButton size="small" onClick={() => handleSetCurrentSeason(season)}>
                             <StarBorderIcon />
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {canManageLeagues && (
                         <Tooltip title="Manage leagues">
                           <IconButton
@@ -765,7 +870,7 @@ const SeasonManagement: React.FC = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {canManageLeagues && (
                         <Tooltip title="League Season Management">
                           <IconButton
@@ -776,29 +881,23 @@ const SeasonManagement: React.FC = () => {
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {canEdit && (
                         <Tooltip title="Edit season">
-                          <IconButton
-                            size="small"
-                            onClick={() => openEditDialog(season)}
-                          >
+                          <IconButton size="small" onClick={() => openEditDialog(season)}>
                             <EditIcon />
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {canEdit && (
                         <Tooltip title="Copy season">
-                          <IconButton
-                            size="small"
-                            onClick={() => openCopyDialog(season)}
-                          >
+                          <IconButton size="small" onClick={() => openCopyDialog(season)}>
                             <CopyIcon />
                           </IconButton>
                         </Tooltip>
                       )}
-                      
+
                       {canDelete && !season.isCurrent && (
                         <Tooltip title="Delete season">
                           <IconButton
@@ -820,15 +919,13 @@ const SeasonManagement: React.FC = () => {
       )}
 
       {/* League Management Dialog */}
-      <Dialog 
-        open={leagueManagementDialogOpen} 
-        onClose={closeLeagueManagementDialog} 
-        maxWidth="md" 
+      <Dialog
+        open={leagueManagementDialogOpen}
+        onClose={closeLeagueManagementDialog}
+        maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          Manage Leagues - {selectedSeason?.name}
-        </DialogTitle>
+        <DialogTitle>Manage Leagues - {selectedSeason?.name}</DialogTitle>
         <DialogContent>
           {/* Dialog-specific messages */}
           {dialogSuccessMessage && (
@@ -910,7 +1007,13 @@ const SeasonManagement: React.FC = () => {
                         <Tooltip title="Edit league">
                           <IconButton
                             edge="end"
-                            onClick={() => openEditLeagueDialog({ id: league.leagueId, name: league.leagueName, accountId: accountIdStr || '' })}
+                            onClick={() =>
+                              openEditLeagueDialog({
+                                id: league.leagueId,
+                                name: league.leagueName,
+                                accountId: accountIdStr || '',
+                              })
+                            }
                             disabled={formLoading}
                           >
                             <EditIcon />
@@ -920,7 +1023,9 @@ const SeasonManagement: React.FC = () => {
                           <IconButton
                             edge="end"
                             color="error"
-                            onClick={() => handleRemoveLeagueFromSeason(league.id, league.leagueName)}
+                            onClick={() =>
+                              handleRemoveLeagueFromSeason(league.id, league.leagueName)
+                            }
                             disabled={formLoading}
                           >
                             <RemoveIcon />
@@ -1010,7 +1115,8 @@ const SeasonManagement: React.FC = () => {
             Are you sure you want to delete the season &quot;{selectedSeason?.name}&quot;?
           </Typography>
           <Alert severity="warning" sx={{ mt: 2 }}>
-            This action cannot be undone. All data associated with this season will be permanently deleted.
+            This action cannot be undone. All data associated with this season will be permanently
+            deleted.
           </Alert>
         </DialogContent>
         <DialogActions>
@@ -1036,28 +1142,30 @@ const SeasonManagement: React.FC = () => {
             Are you sure you want to copy the season &quot;{selectedSeason?.name}&quot;?
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            This will create a new season with the name &quot;{selectedSeason?.name} Copy&quot; and copy all associated leagues.
+            This will create a new season with the name &quot;{selectedSeason?.name} Copy&quot; and
+            copy all associated leagues.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialogs} disabled={formLoading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleCopySeason}
-            variant="contained"
-            disabled={formLoading}
-          >
+          <Button onClick={handleCopySeason} variant="contained" disabled={formLoading}>
             {formLoading ? <CircularProgress size={20} /> : 'Copy'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit League Dialog */}
-      <Dialog open={editLeagueDialogOpen} onClose={() => {
-        setEditLeagueDialogOpen(false);
-        setError(null);
-      }} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editLeagueDialogOpen}
+        onClose={() => {
+          setEditLeagueDialogOpen(false);
+          setError(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit League</DialogTitle>
         <DialogContent>
           {error && (
@@ -1078,10 +1186,13 @@ const SeasonManagement: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setEditLeagueDialogOpen(false);
-            setError(null);
-          }} disabled={formLoading}>
+          <Button
+            onClick={() => {
+              setEditLeagueDialogOpen(false);
+              setError(null);
+            }}
+            disabled={formLoading}
+          >
             Cancel
           </Button>
           <Button
@@ -1095,10 +1206,15 @@ const SeasonManagement: React.FC = () => {
       </Dialog>
 
       {/* Create League Dialog */}
-      <Dialog open={createLeagueDialogOpen} onClose={() => {
-        setCreateLeagueDialogOpen(false);
-        setError(null);
-      }} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createLeagueDialogOpen}
+        onClose={() => {
+          setCreateLeagueDialogOpen(false);
+          setError(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create New League</DialogTitle>
         <DialogContent>
           {error && (
@@ -1131,10 +1247,13 @@ const SeasonManagement: React.FC = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setCreateLeagueDialogOpen(false);
-            setError(null);
-          }} disabled={formLoading}>
+          <Button
+            onClick={() => {
+              setCreateLeagueDialogOpen(false);
+              setError(null);
+            }}
+            disabled={formLoading}
+          >
             Cancel
           </Button>
           <Button
@@ -1158,8 +1277,8 @@ const SeasonManagement: React.FC = () => {
           <AddIcon />
         </Fab>
       )}
-    </Box>
+    </main>
   );
 };
 
-export default SeasonManagement; 
+export default SeasonManagement;

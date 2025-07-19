@@ -1,4 +1,4 @@
-import AccountManagement from '../../components/AccountManagement';
+import AccountManagement from './AccountManagement';
 
 export default function Page() {
   return <AccountManagement />;

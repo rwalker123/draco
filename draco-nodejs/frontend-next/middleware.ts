@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Host': host,
+        Host: host,
       },
     });
     if (res.ok) {
@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(`/account/${data.data.account.id}/home`, request.url));
       }
     }
-  } catch (err) {
+  } catch {
     // Fail silently and continue
   }
   // If not found or error, continue as normal
@@ -44,4 +44,4 @@ export const config = {
   matcher: [
     '/', // Only run on the root path
   ],
-}; 
+};

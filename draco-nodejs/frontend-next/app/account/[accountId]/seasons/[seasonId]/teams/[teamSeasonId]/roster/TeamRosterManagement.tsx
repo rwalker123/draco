@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
@@ -42,11 +44,10 @@ import {
   SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../../../../../../../context/AuthContext';
 import axios from 'axios';
 import { isEmail } from 'validator';
-import { format } from 'date-fns';
-import { parseISO } from 'date-fns/parseISO';
+import { format, parseISO } from 'date-fns';
 
 // US States and Territories for dropdown
 const US_STATES = [
@@ -1272,7 +1273,7 @@ const TeamRosterManagement: React.FC = () => {
   const inactivePlayers = sortedRosterMembers.filter((member) => member.inactive);
 
   return (
-    <Box sx={{ p: 3 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Breadcrumbs */}
       <Breadcrumbs sx={{ mb: 3 }}>
         <Link
@@ -2154,7 +2155,7 @@ const TeamRosterManagement: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </main>
   );
 };
 
