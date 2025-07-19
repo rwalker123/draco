@@ -4,8 +4,6 @@ import {
   Box,
   Typography,
   Paper,
-  Card,
-  CardContent,
   Button,
   Dialog,
   DialogTitle,
@@ -17,14 +15,10 @@ import {
   Select,
   MenuItem,
   IconButton,
-  Chip,
   Alert,
   CircularProgress,
   Tabs,
   Tab,
-  List,
-  ListItem,
-  ListItemText,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -51,6 +45,10 @@ import { useAuth } from '../../../../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { getGameStatusText, getGameStatusShortText } from '../../../../utils/gameUtils';
+import GameCard, { GameCardData } from '../../../../components/GameCard';
+import EnterGameResultsDialog, {
+  GameResultData,
+} from '../../../../components/EnterGameResultsDialog';
 
 interface Game {
   id: string;
@@ -134,7 +132,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [gameResultsDialogOpen, setGameResultsDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [selectedGameForResults, setSelectedGameForResults] = useState<Game | null>(null);
   const [dialogLeagueSeason, setDialogLeagueSeason] = useState<string>('');
 
   // Dialog error states
@@ -683,73 +683,49 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setDeleteDialogOpen(true);
   };
 
-  const getStatusDisplayInfo = useCallback(
-    (game: Game): { showOnVisitor: boolean; showOnHome: boolean; statusText: string } => {
-      if (game.gameStatus === 0 || game.gameStatus === 1) {
-        // Incomplete or Final - no status display
-        return { showOnVisitor: false, showOnHome: false, statusText: '' };
-      }
+  const openGameResultsDialog = useCallback((game: Game) => {
+    setSelectedGameForResults(game);
+    setGameResultsDialogOpen(true);
+  }, []);
 
-      if (game.gameStatus === 4) {
-        // Forfeit - show "FFT" next to the team with lower score
-        const visitorScore = game.visitorScore || 0;
-        const homeScore = game.homeScore || 0;
+  const handleSaveGameResults = async (gameResultData: GameResultData) => {
+    if (!selectedGameForResults) {
+      throw new Error('No game selected for results');
+    }
 
-        if (visitorScore < homeScore) {
-          return {
-            showOnVisitor: true,
-            showOnHome: false,
-            statusText: getGameStatusShortText(4),
-          };
-        } else if (homeScore < visitorScore) {
-          return {
-            showOnVisitor: false,
-            showOnHome: true,
-            statusText: getGameStatusShortText(4),
-          };
-        } else {
-          // Equal scores (shouldn't happen for forfeit, but just in case)
-          return {
-            showOnVisitor: true,
-            showOnHome: false,
-            statusText: getGameStatusShortText(4),
-          };
-        }
-      }
+    const requestBody = {
+      homeScore: gameResultData.homeScore,
+      awayScore: gameResultData.awayScore,
+      gameStatus: gameResultData.gameStatus,
+      emailPlayers: gameResultData.emailPlayers,
+      postToTwitter: gameResultData.postToTwitter,
+      postToBluesky: gameResultData.postToBluesky,
+      postToFacebook: gameResultData.postToFacebook,
+    };
 
-      // All other statuses (Rainout, Postponed, Did Not Report) - show on visitor team only
-      return {
-        showOnVisitor: true,
-        showOnHome: false,
-        statusText: getGameStatusShortText(game.gameStatus),
-      };
-    },
-    [],
-  );
+    const response = await fetch(
+      `/api/accounts/${accountId}/seasons/${selectedGameForResults.season.id}/games/${selectedGameForResults.id}/results`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(requestBody),
+      },
+    );
 
-  const getGameStatusColor = useCallback(
-    (
-      status: number,
-    ): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
-      switch (status) {
-        case 0:
-          return 'default';
-        case 1:
-          return 'success';
-        case 2:
-          return 'primary';
-        case 3:
-          return 'warning';
-        case 4:
-          return 'error';
-        case 5:
-          return 'error';
-        default:
-          return 'default';
-      }
-    },
-    [],
-  );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to save game results');
+    }
+
+    // Only set success and close dialog on successful save
+    setSuccess('Game results saved successfully');
+    setGameResultsDialogOpen(false);
+    setSelectedGameForResults(null);
+    loadGamesData();
+  };
 
   const getTeamName = useCallback(
     (teamId: string): string => {
@@ -787,9 +763,32 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     }
   };
 
-  const shouldShowStatusChip = (gameStatus: number): boolean => {
-    return gameStatus !== 0; // Don't show chip for incomplete games (status 0)
-  };
+  // Convert ScheduleManagement Game format to GameCardData format
+  const convertGameToGameCardData = useCallback(
+    (game: Game): GameCardData => {
+      return {
+        id: game.id,
+        date: game.gameDate,
+        homeTeamId: game.homeTeamId,
+        awayTeamId: game.visitorTeamId,
+        homeTeamName: getTeamName(game.homeTeamId),
+        awayTeamName: getTeamName(game.visitorTeamId),
+        homeScore: game.homeScore,
+        awayScore: game.visitorScore,
+        gameStatus: game.gameStatus,
+        gameStatusText: getGameStatusText(game.gameStatus),
+        gameStatusShortText: getGameStatusShortText(game.gameStatus),
+        leagueName: game.league?.name || 'Unknown League',
+        fieldId: game.fieldId || null,
+        fieldName: game.field?.name || null,
+        fieldShortName: game.field?.shortName || null,
+        hasGameRecap: false, // ScheduleManagement doesn't have game recaps
+        gameRecaps: [], // ScheduleManagement doesn't have game recaps
+        comment: game.comment,
+      };
+    },
+    [getTeamName],
+  );
 
   const renderWeekView = React.useCallback(() => {
     const weekDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -803,6 +802,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          overflowX: 'auto', // Allow horizontal scrolling if needed
+          minWidth: 'fit-content', // Ensure minimum width based on content
         }}
       >
         {/* Month Header - Clickable to go to month view */}
@@ -904,23 +905,25 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         {/* Week Header */}
         <Box
           sx={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
             borderBottom: '2px solid',
             borderBottomColor: 'primary.main',
             backgroundColor: 'primary.50',
+            minWidth: '700px', // Ensure minimum width for 7 columns
           }}
         >
           {dayNames.map((dayName, index) => (
             <Box
               key={dayName}
               sx={{
-                flex: 1,
                 textAlign: 'center',
                 py: 1.5,
                 fontWeight: 'bold',
                 backgroundColor: 'primary.50',
                 borderRight: index < 6 ? '2px solid' : 'none',
                 borderRightColor: index < 6 ? 'primary.main' : 'transparent',
+                minWidth: 0, // Allow shrinking
               }}
             >
               <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
@@ -933,9 +936,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         {/* Week Content */}
         <Box
           sx={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)',
             opacity: isNavigating ? 0.7 : 1,
             transition: 'opacity 0.2s ease-in-out',
+            minHeight: '300px',
+            minWidth: '700px', // Ensure minimum width for 7 columns
           }}
         >
           {weekDays.map((day, index) => {
@@ -947,12 +953,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               <Box
                 key={day.toISOString()}
                 sx={{
-                  flex: 1,
                   minHeight: '300px',
                   borderRight: index < 6 ? '2px solid' : 'none',
                   borderRightColor: index < 6 ? 'primary.main' : 'transparent',
                   backgroundColor: 'background.paper',
                   cursor: 'pointer',
+                  minWidth: 0, // Allow shrinking
                   '&:hover': {
                     backgroundColor: 'grey.100',
                   },
@@ -988,157 +994,33 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     dayGames.map((game) => (
                       <Box
                         key={game.id}
-                        sx={{
-                          mb: 1,
-                          p: 1,
-                          backgroundColor: 'primary.light',
-                          borderRadius: 1,
-                          fontSize: '0.75rem',
-                          lineHeight: 1.2,
-                          cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                            color: 'white',
-                          },
-                        }}
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent triggering day view
                           openEditDialog(game);
                         }}
                       >
-                        {game.gameStatus === 1 ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                {getTeamName(game.visitorTeamId)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ minWidth: 'fit-content', ml: 1 }}
-                              >
-                                {game.visitorScore}
-                              </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                {getTeamName(game.homeTeamId)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ minWidth: 'fit-content', ml: 1 }}
-                              >
-                                {game.homeScore}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                {getTeamName(game.visitorTeamId)}
-                              </Typography>
-                              {getStatusDisplayInfo(game).showOnVisitor && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    minWidth: 'fit-content',
-                                    ml: 1,
-                                    color: 'white',
-                                    backgroundColor:
-                                      getGameStatusColor(game.gameStatus) === 'error'
-                                        ? 'error.main'
-                                        : getGameStatusColor(game.gameStatus) === 'warning'
-                                          ? 'warning.main'
-                                          : 'primary.main',
-                                    px: 1,
-                                    py: 0.25,
-                                    borderRadius: 0.5,
-                                  }}
-                                >
-                                  {getStatusDisplayInfo(game).statusText}
-                                </Typography>
-                              )}
-                            </Box>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                {getTeamName(game.homeTeamId)}
-                              </Typography>
-                              {getStatusDisplayInfo(game).showOnHome && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    minWidth: 'fit-content',
-                                    ml: 1,
-                                    color: 'white',
-                                    backgroundColor:
-                                      getGameStatusColor(game.gameStatus) === 'error'
-                                        ? 'error.main'
-                                        : getGameStatusColor(game.gameStatus) === 'warning'
-                                          ? 'warning.main'
-                                          : 'primary.main',
-                                    px: 1,
-                                    py: 0.25,
-                                    borderRadius: 0.5,
-                                  }}
-                                >
-                                  {getStatusDisplayInfo(game).statusText}
-                                </Typography>
-                              )}
-                            </Box>
-                            {game.gameStatus === 0 && (
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: 'text.primary',
-                                  fontWeight: 'medium',
-                                }}
-                              >
-                                {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'}{' '}
-                                • {getFieldName(game.fieldId)}
-                              </Typography>
-                            )}
-                          </Box>
-                        )}
+                        <GameCard
+                          game={convertGameToGameCardData(game)}
+                          layout="horizontal"
+                          compact={true}
+                          calendar={true}
+                          canEditGames={!!canEditSchedule}
+                          onEnterGameResults={
+                            canEditSchedule
+                              ? (gameCardData) => {
+                                  // Find the original game by ID and call openGameResultsDialog
+                                  const originalGame = dayGames.find(
+                                    (g) => g.id === gameCardData.id,
+                                  );
+                                  if (originalGame) {
+                                    openGameResultsDialog(originalGame);
+                                  }
+                                }
+                              : undefined
+                          }
+                          showActions={!!canEditSchedule}
+                          onClick={() => openEditDialog(game)}
+                        />
                       </Box>
                     ))
                   ) : (
@@ -1165,62 +1047,36 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     navigateToWeek,
     filteredGames,
     openEditDialog,
-    getTeamName,
-    getStatusDisplayInfo,
-    getGameStatusColor,
-    getFieldName,
+    openGameResultsDialog,
+    canEditSchedule,
+    convertGameToGameCardData,
   ]);
 
   const renderListView = () => {
     return (
-      <List>
+      <Box>
         {filteredGames.map((game) => (
-          <ListItem
+          <GameCard
             key={game.id}
-            divider
-            sx={{
-              cursor: canEditSchedule ? 'pointer' : 'default',
-              '&:hover': canEditSchedule ? { backgroundColor: 'action.hover' } : {},
-            }}
+            game={convertGameToGameCardData(game)}
+            layout="vertical"
+            canEditGames={!!canEditSchedule}
+            onEnterGameResults={
+              canEditSchedule
+                ? (gameCardData) => {
+                    // Find the original game by ID and call openGameResultsDialog
+                    const originalGame = filteredGames.find((g) => g.id === gameCardData.id);
+                    if (originalGame) {
+                      openGameResultsDialog(originalGame);
+                    }
+                  }
+                : undefined
+            }
+            showActions={!!canEditSchedule}
             onClick={canEditSchedule ? () => openEditDialog(game) : undefined}
-          >
-            <ListItemText
-              primary={
-                <Box>
-                  <Typography variant="h6">
-                    {getTeamName(game.visitorTeamId)} @ {getTeamName(game.homeTeamId)}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {game.gameDate
-                      ? format(parseISO(game.gameDate), 'EEEE, MMMM d, yyyy h:mm a')
-                      : 'TBD'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {getFieldName(game.fieldId)}
-                  </Typography>
-                </Box>
-              }
-              secondary={
-                <>
-                  {shouldShowStatusChip(game.gameStatus) && (
-                    <Chip
-                      label={getGameStatusText(game.gameStatus)}
-                      color={getGameStatusColor(game.gameStatus)}
-                      size="small"
-                    />
-                  )}
-                  {game.comment && (
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      {game.comment}
-                    </Typography>
-                  )}
-                </>
-              }
-              secondaryTypographyProps={{ component: 'div' }}
-            />
-          </ListItem>
+          />
         ))}
-      </List>
+      </Box>
     );
   };
 
@@ -1256,6 +1112,8 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+          overflowX: 'auto', // Allow horizontal scrolling if needed
+          minWidth: 'fit-content', // Ensure minimum width based on content
         }}
       >
         {/* Year Header */}
@@ -1359,15 +1217,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         {/* Calendar Header */}
         <Box
           sx={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: '50px repeat(7, 1fr)',
             borderBottom: '3px solid primary.main',
             backgroundColor: 'grey.100',
+            minWidth: '750px', // Ensure minimum width for 8 columns (1 week + 7 days)
           }}
         >
           {/* Week Zoom Header */}
           <Box
             sx={{
-              width: 50,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1384,12 +1243,15 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             <Box
               key={dayName}
               sx={{
-                flex: 1,
                 textAlign: 'center',
                 py: 1.5,
                 fontWeight: 'bold',
                 backgroundColor: 'primary.50',
-                borderRight: index < 6 ? '2px solid primary.main' : 'none',
+                borderLeft: index === 0 ? '2px solid' : 'none',
+                borderLeftColor: index === 0 ? 'primary.main' : 'transparent',
+                borderRight: index < 6 ? '2px solid' : 'none',
+                borderRightColor: index < 6 ? 'primary.main' : 'transparent',
+                minWidth: 0, // Allow shrinking
               }}
             >
               <Typography variant="subtitle2" sx={{ color: 'primary.main' }}>
@@ -1404,15 +1266,19 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           <Box
             key={weekIndex}
             sx={{
-              display: 'flex',
+              display: 'grid',
+              gridTemplateColumns: '50px repeat(7, 1fr)',
               minHeight: 120,
-              borderBottom: weekIndex < weeks.length - 1 ? '2px solid primary.main' : 'none',
+              borderTop: weekIndex === 0 ? '2px solid' : 'none',
+              borderTopColor: weekIndex === 0 ? 'primary.main' : 'transparent',
+              borderBottom: weekIndex < weeks.length - 1 ? '2px solid' : 'none',
+              borderBottomColor: weekIndex < weeks.length - 1 ? 'primary.main' : 'transparent',
+              minWidth: '750px', // Ensure minimum width for 8 columns (1 week + 7 days)
             }}
           >
             {/* Week Zoom Button */}
             <Box
               sx={{
-                width: 50,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1446,14 +1312,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 <Box
                   key={day.toISOString()}
                   sx={{
-                    flex: 1,
-                    borderRight: dayIndex < 6 ? '2px solid primary.main' : 'none',
+                    borderLeft: dayIndex === 0 ? '2px solid' : 'none',
+                    borderLeftColor: dayIndex === 0 ? 'primary.main' : 'transparent',
+                    borderRight: dayIndex < 6 ? '2px solid' : 'none',
+                    borderRightColor: dayIndex < 6 ? 'primary.main' : 'transparent',
                     p: 1,
                     backgroundColor: isCurrentMonth ? 'white' : 'grey.50',
                     minHeight: 120,
                     display: 'flex',
                     flexDirection: 'column',
                     cursor: 'pointer',
+                    minWidth: 0, // Allow shrinking
                     '&:hover': {
                       backgroundColor: isCurrentMonth ? 'primary.50' : 'grey.100',
                       boxShadow: 'inset 0 0 0 2px primary.main',
@@ -1479,161 +1348,37 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                   </Typography>
 
                   {/* Games for this day */}
-                  <Box sx={{ flex: 1, overflow: 'hidden' }}>
+                  <Box sx={{ flex: 1, overflow: 'hidden', pt: 0.5 }}>
                     {dayGames.map((game) => (
                       <Box
                         key={game.id}
-                        sx={{
-                          mb: 0.5,
-                          p: 0.5,
-                          backgroundColor: 'primary.light',
-                          borderRadius: 0.5,
-                          fontSize: '0.75rem',
-                          lineHeight: 1.2,
-                          cursor: 'pointer',
-                          '&:hover': {
-                            backgroundColor: 'primary.main',
-                            color: 'white',
-                          },
-                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           openEditDialog(game);
                         }}
                       >
-                        {game.gameStatus === 1 ? (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                {getTeamName(game.visitorTeamId)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ minWidth: 'fit-content', ml: 1 }}
-                              >
-                                {game.visitorScore}
-                              </Typography>
-                            </Box>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="body2" fontWeight="bold" sx={{ flex: 1 }}>
-                                {getTeamName(game.homeTeamId)}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                fontWeight="bold"
-                                sx={{ minWidth: 'fit-content', ml: 1 }}
-                              >
-                                {game.homeScore}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                {getTeamName(game.visitorTeamId)}
-                              </Typography>
-                              {getStatusDisplayInfo(game).showOnVisitor && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    minWidth: 'fit-content',
-                                    ml: 1,
-                                    color: 'white',
-                                    backgroundColor:
-                                      getGameStatusColor(game.gameStatus) === 'error'
-                                        ? 'error.main'
-                                        : getGameStatusColor(game.gameStatus) === 'warning'
-                                          ? 'warning.main'
-                                          : 'primary.main',
-                                    px: 1,
-                                    py: 0.25,
-                                    borderRadius: 0.5,
-                                  }}
-                                >
-                                  {getStatusDisplayInfo(game).statusText}
-                                </Typography>
-                              )}
-                            </Box>
-                            <Box
-                              sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <Typography variant="caption" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                {getTeamName(game.homeTeamId)}
-                              </Typography>
-                              {getStatusDisplayInfo(game).showOnHome && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    fontWeight: 'bold',
-                                    minWidth: 'fit-content',
-                                    ml: 1,
-                                    color: 'white',
-                                    backgroundColor:
-                                      getGameStatusColor(game.gameStatus) === 'error'
-                                        ? 'error.main'
-                                        : getGameStatusColor(game.gameStatus) === 'warning'
-                                          ? 'warning.main'
-                                          : 'primary.main',
-                                    px: 1,
-                                    py: 0.25,
-                                    borderRadius: 0.5,
-                                  }}
-                                >
-                                  {getStatusDisplayInfo(game).statusText}
-                                </Typography>
-                              )}
-                            </Box>
-                            {game.gameStatus === 0 && (
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: 'text.primary',
-                                  fontWeight: 'medium',
-                                }}
-                              >
-                                {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'}{' '}
-                                • {getFieldName(game.fieldId)}
-                              </Typography>
-                            )}
-                          </Box>
-                        )}
+                        <GameCard
+                          game={convertGameToGameCardData(game)}
+                          layout="horizontal"
+                          compact={true}
+                          calendar={true}
+                          canEditGames={!!canEditSchedule}
+                          onEnterGameResults={
+                            canEditSchedule
+                              ? (gameCardData) => {
+                                  // Find the original game by ID and call openGameResultsDialog
+                                  const originalGame = dayGames.find(
+                                    (g) => g.id === gameCardData.id,
+                                  );
+                                  if (originalGame) {
+                                    openGameResultsDialog(originalGame);
+                                  }
+                                }
+                              : undefined
+                          }
+                          showActions={!!canEditSchedule}
+                          onClick={() => openEditDialog(game)}
+                        />
                       </Box>
                     ))}
                   </Box>
@@ -1795,56 +1540,25 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <Box sx={{ p: 2, backgroundColor: 'white', minHeight: '300px' }}>
           {dayGames.length > 0 ? (
             dayGames.map((game) => (
-              <Card
+              <GameCard
                 key={game.id}
-                sx={{
-                  mb: 2,
-                  cursor: canEditSchedule ? 'pointer' : 'default',
-                  '&:hover': canEditSchedule ? { backgroundColor: 'action.hover' } : {},
-                }}
+                game={convertGameToGameCardData(game)}
+                layout="vertical"
+                canEditGames={!!canEditSchedule}
+                onEnterGameResults={
+                  canEditSchedule
+                    ? (gameCardData) => {
+                        // Find the original game by ID and call openGameResultsDialog
+                        const originalGame = dayGames.find((g) => g.id === gameCardData.id);
+                        if (originalGame) {
+                          openGameResultsDialog(originalGame);
+                        }
+                      }
+                    : undefined
+                }
+                showActions={!!canEditSchedule}
                 onClick={canEditSchedule ? () => openEditDialog(game) : undefined}
-              >
-                <CardContent>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      mb: 1,
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      {getTeamName(game.visitorTeamId)} @ {getTeamName(game.homeTeamId)}
-                    </Typography>
-                    {shouldShowStatusChip(game.gameStatus) && (
-                      <Chip
-                        label={getGameStatusText(game.gameStatus)}
-                        color={getGameStatusColor(game.gameStatus)}
-                        size="small"
-                      />
-                    )}
-                  </Box>
-
-                  <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
-                    {game.gameDate ? format(parseISO(game.gameDate), 'h:mm a') : 'TBD'} •{' '}
-                    {getFieldName(game.fieldId)}
-                  </Typography>
-
-                  {game.gameStatus === 1 && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                        {game.visitorScore} - {game.homeScore}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {game.comment && (
-                    <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
-                      {game.comment}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
+              />
             ))
           ) : (
             <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -1918,22 +1632,17 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               justifyContent: 'center',
               bgcolor: isCurrentMonth ? 'white' : 'grey.100',
               position: 'relative',
-              cursor: gameCount > 0 ? 'pointer' : 'default',
-              '&:hover':
-                gameCount > 0
-                  ? {
-                      bgcolor: 'primary.50',
-                      '& .game-count': {
-                        transform: 'scale(1.1)',
-                      },
-                    }
-                  : {},
+              cursor: 'pointer',
+              '&:hover': {
+                bgcolor: isCurrentMonth ? 'primary.50' : 'grey.200',
+                '& .game-count': {
+                  transform: 'scale(1.1)',
+                },
+              },
             }}
             onClick={() => {
-              if (gameCount > 0) {
-                setFilterType('day');
-                setFilterDate(day);
-              }
+              setFilterType('day');
+              setFilterDate(day);
             }}
           >
             <Typography
@@ -1975,7 +1684,25 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
       months.push(
         <Box key={month} sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2, textAlign: 'center', fontWeight: 'bold' }}>
+          <Typography
+            variant="h6"
+            sx={{
+              mb: 2,
+              textAlign: 'center',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              color: 'primary.main',
+              '&:hover': {
+                color: 'primary.dark',
+                textDecoration: 'underline',
+              },
+            }}
+            onClick={() => {
+              setFilterType('month');
+              setFilterDate(new Date(year, month, 1));
+            }}
+            title={`View ${monthName} ${year} in month view`}
+          >
             {monthName}
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -2778,6 +2505,40 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Button>
           </DialogActions>
         </Dialog>
+
+        {/* Game Results Dialog */}
+        {canEditSchedule && (
+          <EnterGameResultsDialog
+            open={gameResultsDialogOpen}
+            onClose={() => {
+              setGameResultsDialogOpen(false);
+              setSelectedGameForResults(null);
+            }}
+            game={
+              selectedGameForResults
+                ? {
+                    id: selectedGameForResults.id,
+                    date: selectedGameForResults.gameDate,
+                    homeTeamId: selectedGameForResults.homeTeamId,
+                    awayTeamId: selectedGameForResults.visitorTeamId,
+                    homeTeamName: getTeamName(selectedGameForResults.homeTeamId),
+                    awayTeamName: getTeamName(selectedGameForResults.visitorTeamId),
+                    homeScore: selectedGameForResults.homeScore,
+                    awayScore: selectedGameForResults.visitorScore,
+                    gameStatus: selectedGameForResults.gameStatus,
+                    gameStatusText: getGameStatusText(selectedGameForResults.gameStatus),
+                    leagueName: selectedGameForResults.league?.name || 'Unknown League',
+                    fieldId: selectedGameForResults.fieldId || null,
+                    fieldName: selectedGameForResults.field?.name || null,
+                    fieldShortName: selectedGameForResults.field?.shortName || null,
+                    hasGameRecap: false,
+                    gameRecaps: [],
+                  }
+                : null
+            }
+            onSave={handleSaveGameResults}
+          />
+        )}
       </main>
     </LocalizationProvider>
   );
