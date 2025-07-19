@@ -213,7 +213,7 @@ const GameRecapsWidget: React.FC<GameRecapsWidgetProps> = ({
       >
         <Card
           sx={{
-            mb: 4,
+            mb: 2,
             borderRadius: 2,
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             position: 'relative',

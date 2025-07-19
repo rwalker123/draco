@@ -8,8 +8,15 @@ import {
   CircularProgress,
   Container,
   Chip,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
-import { Group as GroupIcon, LocationOn as LocationIcon } from '@mui/icons-material';
+import {
+  Group as GroupIcon,
+  LocationOn as LocationIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
+} from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import TodayScoreboard from './TodayScoreboard';
@@ -46,6 +53,7 @@ const BaseballAccountHome: React.FC = () => {
   const [userTeams, setUserTeams] = useState<UserTeam[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -240,21 +248,54 @@ const BaseballAccountHome: React.FC = () => {
         </Box>
 
         {/* Main Content - Single Column Layout */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {/* Scoreboard Widgets - Side by Side */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: '1fr 1fr',
-              },
-              gap: 3,
-            }}
-          >
-            <TodayScoreboard accountId={accountIdStr!} />
-            <YesterdayScoreboard accountId={accountIdStr!} />
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {/* Scoreboard Layout Toggle */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <ToggleButtonGroup
+              value={scoreboardLayout}
+              exclusive
+              onChange={(_, newLayout) => {
+                if (newLayout !== null) {
+                  setScoreboardLayout(newLayout);
+                }
+              }}
+              aria-label="scoreboard layout"
+              size="small"
+            >
+              <ToggleButton value="vertical" aria-label="vertical layout">
+                <ViewListIcon sx={{ mr: 1 }} />
+                Vertical
+              </ToggleButton>
+              <ToggleButton value="horizontal" aria-label="horizontal layout">
+                <ViewModuleIcon sx={{ mr: 1 }} />
+                Horizontal
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Box>
+
+          {/* Scoreboard Widgets - Layout changes based on selected layout */}
+          {scoreboardLayout === 'horizontal' ? (
+            // Single column layout for horizontal to allow full width scaling
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+              <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+            </Box>
+          ) : (
+            // Two column layout for vertical layout
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: '1fr 1fr',
+                },
+                gap: 3,
+              }}
+            >
+              <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+              <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+            </Box>
+          )}
 
           {/* Game Recaps Widget */}
           {currentSeason && (
@@ -267,7 +308,7 @@ const BaseballAccountHome: React.FC = () => {
           )}
 
           {/* Contact & Links */}
-          <Paper sx={{ p: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Paper sx={{ p: 4, borderRadius: 2, mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
             <Typography
               variant="h6"
               gutterBottom

@@ -9,9 +9,14 @@ import { getGameStatusText } from '../utils/gameUtils';
 interface TodayScoreboardProps {
   accountId: string;
   teamId?: string;
+  layout?: 'vertical' | 'horizontal';
 }
 
-const TodayScoreboard: React.FC<TodayScoreboardProps> = ({ accountId, teamId }) => {
+const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
+  accountId,
+  teamId,
+  layout = 'vertical',
+}) => {
   const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -195,13 +200,12 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({ accountId, teamId }) 
 
   return (
     <>
-      <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <GameListDisplay
-          sections={sections}
-          canEditGames={canEditGames}
-          onEditGame={handleEditGame}
-        />
-      </Paper>
+      <GameListDisplay
+        sections={sections}
+        canEditGames={canEditGames}
+        onEditGame={handleEditGame}
+        layout={layout}
+      />
       {canEditGames && (
         <EnterGameResultsDialog
           open={editGameDialog.open}
