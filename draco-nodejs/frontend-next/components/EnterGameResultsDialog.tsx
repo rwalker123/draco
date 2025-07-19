@@ -275,7 +275,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <FormControl size="small" sx={{ minWidth: 200 }}>
                 <Select
                   value={formData.gameStatus}
-                  onChange={(e) => handleInputChange('gameStatus', e.target.value)}
+                  onChange={(e) => handleInputChange('gameStatus', Number(e.target.value))}
                   MenuProps={{
                     PaperProps: {
                       sx: {
@@ -360,7 +360,10 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <TextField
                 type="number"
                 value={formData.awayScore}
-                onChange={(e) => handleInputChange('awayScore', parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  handleInputChange('awayScore', isNaN(value) ? 0 : value);
+                }}
                 inputProps={{ min: 0 }}
                 size="medium"
                 sx={{
@@ -410,7 +413,10 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
               <TextField
                 type="number"
                 value={formData.homeScore}
-                onChange={(e) => handleInputChange('homeScore', parseInt(e.target.value) || 0)}
+                onChange={(e) => {
+                  const value = e.target.value === '' ? 0 : Number(e.target.value);
+                  handleInputChange('homeScore', isNaN(value) ? 0 : value);
+                }}
                 inputProps={{ min: 0 }}
                 size="medium"
                 sx={{
@@ -590,17 +596,6 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
           variant="contained"
           disabled={loading}
           startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
-          sx={{
-            bgcolor: 'success.main',
-            color: 'success.contrastText',
-            '&:hover': {
-              bgcolor: 'success.dark',
-            },
-            '&:disabled': {
-              bgcolor: 'action.disabledBackground',
-              color: 'action.disabled',
-            },
-          }}
         >
           {loading ? 'Saving...' : 'Save Results'}
         </Button>

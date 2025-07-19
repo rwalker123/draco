@@ -216,7 +216,7 @@ const BaseballScoreboard: React.FC<BaseballScoreboardProps> = ({ accountId, team
       <GameListDisplay
         sections={sections}
         canEditGames={canEditGames}
-        onEditGame={handleEditGame}
+        onEnterGameResults={handleEditGame}
       />
       {canEditGames && (
         <EnterGameResultsDialog

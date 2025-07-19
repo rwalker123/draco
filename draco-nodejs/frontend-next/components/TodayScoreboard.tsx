@@ -203,7 +203,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       <GameListDisplay
         sections={sections}
         canEditGames={canEditGames}
-        onEditGame={handleEditGame}
+        onEnterGameResults={handleEditGame}
         layout={layout}
       />
       {canEditGames && (
