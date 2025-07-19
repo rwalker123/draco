@@ -167,7 +167,7 @@ const BaseballAccountHome: React.FC = () => {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {/* Unified Header with Logo and Page Content */}
       <Box>
         <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>

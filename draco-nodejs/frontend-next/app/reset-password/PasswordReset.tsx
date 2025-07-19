@@ -275,7 +275,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
   };
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
         <Paper sx={{ p: 3 }}>
           <Typography variant="h5" align="center" gutterBottom>
