@@ -3,7 +3,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { RoleService } from '../services/roleService';
-import { RoleContext, RoleType } from '../types/roles';
+import { RoleContext, RoleType, UserRoles } from '../types/roles';
 import { ROLE_IDS } from '../config/roles';
 import { PrismaClient } from '@prisma/client';
 
@@ -15,10 +15,7 @@ declare global {
         id: string;
         username: string;
       };
-      userRoles?: {
-        globalRoles: string[];
-        contactRoles: any[];
-      };
+      userRoles?: UserRoles;
       accountBoundary?: {
         accountId: bigint;
         enforced: boolean;
@@ -44,7 +41,7 @@ export class RouteProtection {
       if (!req.user?.id) {
         res.status(401).json({
           success: false,
-          message: 'Authentication required'
+          message: 'Authentication required',
         });
         return;
       }
@@ -61,7 +58,7 @@ export class RouteProtection {
         if (!req.user?.id) {
           res.status(401).json({
             success: false,
-            message: 'Authentication required'
+            message: 'Authentication required',
           });
           return;
         }
@@ -70,30 +67,30 @@ export class RouteProtection {
           accountId: context?.accountId || this.extractAccountId(req),
           teamId: context?.teamId || this.extractTeamId(req),
           leagueId: context?.leagueId || this.extractLeagueId(req),
-          seasonId: context?.seasonId || this.extractSeasonId(req)
+          seasonId: context?.seasonId || this.extractSeasonId(req),
         };
 
         const roleCheck = await this.roleService.hasRole(req.user.id, requiredRole, roleContext);
-        
+
         if (!roleCheck.hasRole) {
           res.status(403).json({
             success: false,
             message: `Role '${requiredRole}' required`,
             requiredRole,
-            context: roleContext
+            context: roleContext,
           });
           return;
         }
 
         // Add role information to request for downstream use
         req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-        
+
         next();
       } catch (error) {
         console.error('Role middleware error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     };
@@ -108,7 +105,7 @@ export class RouteProtection {
         if (!req.user?.id) {
           res.status(401).json({
             success: false,
-            message: 'Authentication required'
+            message: 'Authentication required',
           });
           return;
         }
@@ -117,34 +114,34 @@ export class RouteProtection {
           accountId: context?.accountId || this.extractAccountId(req),
           teamId: context?.teamId || this.extractTeamId(req),
           leagueId: context?.leagueId || this.extractLeagueId(req),
-          seasonId: context?.seasonId || this.extractSeasonId(req)
+          seasonId: context?.seasonId || this.extractSeasonId(req),
         };
 
         const hasPermission = await this.roleService.hasPermission(
-          req.user.id, 
-          requiredPermission, 
-          roleContext
+          req.user.id,
+          requiredPermission,
+          roleContext,
         );
-        
+
         if (!hasPermission) {
           res.status(403).json({
             success: false,
             message: `Permission '${requiredPermission}' required`,
             requiredPermission,
-            context: roleContext
+            context: roleContext,
           });
           return;
         }
 
         // Add role information to request for downstream use
         req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-        
+
         next();
       } catch (error) {
         console.error('Permission middleware error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     };
@@ -159,7 +156,7 @@ export class RouteProtection {
         if (!req.user?.id) {
           res.status(401).json({
             success: false,
-            message: 'Authentication required'
+            message: 'Authentication required',
           });
           return;
         }
@@ -168,14 +165,14 @@ export class RouteProtection {
         if (!accountId) {
           res.status(400).json({
             success: false,
-            message: 'Account ID required'
+            message: 'Account ID required',
           });
           return;
         }
 
         // Check if user has access to this account
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        
+
         // Allow if user has global administrator role
         if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
           req.userRoles = userRoles;
@@ -200,13 +197,13 @@ export class RouteProtection {
 
         res.status(403).json({
           success: false,
-          message: 'Access denied to this account'
+          message: 'Access denied to this account',
         });
       } catch (error) {
         console.error('Account boundary middleware error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     };
@@ -221,7 +218,7 @@ export class RouteProtection {
         if (!req.user?.id) {
           res.status(401).json({
             success: false,
-            message: 'Authentication required'
+            message: 'Authentication required',
           });
           return;
         }
@@ -230,7 +227,7 @@ export class RouteProtection {
         if (!teamId) {
           res.status(400).json({
             success: false,
-            message: 'Team ID required'
+            message: 'Team ID required',
           });
           return;
         }
@@ -239,14 +236,14 @@ export class RouteProtection {
         if (!accountId) {
           res.status(400).json({
             success: false,
-            message: 'Account ID required'
+            message: 'Account ID required',
           });
           return;
         }
 
         // First check account boundary
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        
+
         // Allow if user has global administrator role
         if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
           req.userRoles = userRoles;
@@ -254,8 +251,10 @@ export class RouteProtection {
         }
 
         // Allow if user has account admin role
-        if (userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) || 
-            userRoles.contactRoles.some(cr => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])) {
+        if (
+          userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) ||
+          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
+        ) {
           req.userRoles = userRoles;
           return next();
         }
@@ -263,9 +262,9 @@ export class RouteProtection {
         // Check if user has team-specific roles
         const teamContext = { accountId, teamId };
         const hasTeamRole = await this.roleService.hasRole(
-          req.user.id, 
-          ROLE_IDS[RoleType.TEAM_ADMIN], 
-          teamContext
+          req.user.id,
+          ROLE_IDS[RoleType.TEAM_ADMIN],
+          teamContext,
         );
 
         if (hasTeamRole.hasRole) {
@@ -275,13 +274,13 @@ export class RouteProtection {
 
         res.status(403).json({
           success: false,
-          message: 'Access denied to this team'
+          message: 'Access denied to this team',
         });
       } catch (error) {
         console.error('Team boundary middleware error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     };
@@ -296,7 +295,7 @@ export class RouteProtection {
         if (!req.user?.id) {
           res.status(401).json({
             success: false,
-            message: 'Authentication required'
+            message: 'Authentication required',
           });
           return;
         }
@@ -305,7 +304,7 @@ export class RouteProtection {
         if (!leagueId) {
           res.status(400).json({
             success: false,
-            message: 'League ID required'
+            message: 'League ID required',
           });
           return;
         }
@@ -314,14 +313,14 @@ export class RouteProtection {
         if (!accountId) {
           res.status(400).json({
             success: false,
-            message: 'Account ID required'
+            message: 'Account ID required',
           });
           return;
         }
 
         // First check account boundary
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        
+
         // Allow if user has global administrator role
         if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
           req.userRoles = userRoles;
@@ -329,8 +328,10 @@ export class RouteProtection {
         }
 
         // Allow if user has account admin role
-        if (userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) || 
-            userRoles.contactRoles.some(cr => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])) {
+        if (
+          userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) ||
+          userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
+        ) {
           req.userRoles = userRoles;
           return next();
         }
@@ -338,9 +339,9 @@ export class RouteProtection {
         // Check if user has league-specific roles
         const leagueContext = { accountId, leagueId };
         const hasLeagueRole = await this.roleService.hasRole(
-          req.user.id, 
-          ROLE_IDS[RoleType.LEAGUE_ADMIN], 
-          leagueContext
+          req.user.id,
+          ROLE_IDS[RoleType.LEAGUE_ADMIN],
+          leagueContext,
         );
 
         if (hasLeagueRole.hasRole) {
@@ -350,13 +351,13 @@ export class RouteProtection {
 
         res.status(403).json({
           success: false,
-          message: 'Access denied to this league'
+          message: 'Access denied to this league',
         });
       } catch (error) {
         console.error('League boundary middleware error:', error);
         res.status(500).json({
           success: false,
-          message: 'Internal server error'
+          message: 'Internal server error',
         });
       }
     };
@@ -468,7 +469,7 @@ export class RouteProtection {
     try {
       const account = await this.prisma.accounts.findUnique({
         where: { id: accountId },
-        select: { owneruserid: true }
+        select: { owneruserid: true },
       });
 
       return account?.owneruserid === userId;
@@ -477,4 +478,4 @@ export class RouteProtection {
       return false;
     }
   }
-} 
+}

@@ -17,5 +17,13 @@ module.exports = {
   rules: {
     // Add custom rules here
     '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+    '@typescript-eslint/no-namespace': ['error', { 'allowDeclarations': true }],
   },
+  ignorePatterns: [
+    'node_modules/',
+    'dist/',
+    'src/generated/',
+    '*.generated.*',
+    '*.d.ts'
+  ],
 }; 

@@ -3,7 +3,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { RoleService } from '../services/roleService';
-import { RoleContext, RoleType } from '../types/roles';
+import { RoleContext, RoleType, UserRoles } from '../types/roles';
 import { ROLE_IDS } from '../config/roles';
 
 // Extend the Request interface to include user and role information
@@ -14,10 +14,7 @@ declare global {
         id: string;
         username: string;
       };
-      userRoles?: {
-        globalRoles: string[];
-        contactRoles: any[];
-      };
+      userRoles?: UserRoles;
     }
   }
 }
@@ -44,23 +41,23 @@ export class RoleMiddleware {
           accountId: context?.accountId || this.extractAccountId(req),
           teamId: context?.teamId,
           leagueId: context?.leagueId,
-          seasonId: context?.seasonId
+          seasonId: context?.seasonId,
         };
 
         const roleCheck = await this.roleService.hasRole(req.user.id, requiredRole, roleContext);
-        
+
         if (!roleCheck.hasRole) {
-          res.status(403).json({ 
+          res.status(403).json({
             error: 'Insufficient permissions',
             requiredRole,
-            context: roleContext
+            context: roleContext,
           });
           return;
         }
 
         // Add role information to request for downstream use
         req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-        
+
         next();
       } catch (error) {
         console.error('Role middleware error:', error);
@@ -84,27 +81,27 @@ export class RoleMiddleware {
           accountId: context?.accountId || this.extractAccountId(req),
           teamId: context?.teamId,
           leagueId: context?.leagueId,
-          seasonId: context?.seasonId
+          seasonId: context?.seasonId,
         };
 
         const hasPermission = await this.roleService.hasPermission(
-          req.user.id, 
-          requiredPermission, 
-          roleContext
+          req.user.id,
+          requiredPermission,
+          roleContext,
         );
-        
+
         if (!hasPermission) {
-          res.status(403).json({ 
+          res.status(403).json({
             error: 'Insufficient permissions',
             requiredPermission,
-            context: roleContext
+            context: roleContext,
           });
           return;
         }
 
         // Add role information to request for downstream use
         req.userRoles = await this.roleService.getUserRoles(req.user.id, roleContext.accountId);
-        
+
         next();
       } catch (error) {
         console.error('Permission middleware error:', error);
@@ -158,7 +155,7 @@ export class RoleMiddleware {
 
         // Check if user has access to this account
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
-        
+
         // Allow if user has global administrator role
         if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
           req.userRoles = userRoles;
@@ -215,7 +212,7 @@ export class RoleMiddleware {
     try {
       const account = await this.roleService['prisma'].accounts.findUnique({
         where: { id: accountId },
-        select: { owneruserid: true }
+        select: { owneruserid: true },
       });
 
       return account?.owneruserid === userId;
@@ -243,4 +240,4 @@ export class RoleMiddleware {
       }
     };
   };
-} 
+}
