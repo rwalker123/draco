@@ -214,7 +214,7 @@ const GameCard: React.FC<GameCardProps> = ({
               {game.gameStatus !== 0 && game.gameStatus !== 2 && game.gameStatus !== 5 && (
                 <Box textAlign="center" sx={{ minWidth: 'auto' }}>
                   <Typography
-                    variant="h6"
+                    variant="body1"
                     fontWeight={700}
                     color={game.awayScore > game.homeScore ? 'success.main' : 'text.primary'}
                     sx={{ mb: 0.5 }}
@@ -222,7 +222,7 @@ const GameCard: React.FC<GameCardProps> = ({
                     {game.awayScore}
                   </Typography>
                   <Typography
-                    variant="h6"
+                    variant="body1"
                     fontWeight={700}
                     color={game.homeScore > game.awayScore ? 'success.main' : 'text.primary'}
                   >
@@ -356,7 +356,7 @@ const GameCard: React.FC<GameCardProps> = ({
             {game.gameStatus !== 0 && game.gameStatus !== 2 && game.gameStatus !== 5 ? (
               <Box textAlign="center" sx={{ minWidth: 'auto', width: 'auto' }}>
                 <Typography
-                  variant="h6"
+                  variant="body1"
                   fontWeight={700}
                   color={game.awayScore > game.homeScore ? 'success.main' : 'text.primary'}
                   sx={{ mb: 0.5 }}
@@ -364,7 +364,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   {game.awayScore}
                 </Typography>
                 <Typography
-                  variant="h6"
+                  variant="body1"
                   fontWeight={700}
                   color={game.homeScore > game.awayScore ? 'success.main' : 'text.primary'}
                 >
