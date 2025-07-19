@@ -9,7 +9,7 @@ const PermissionTest: React.FC = () => {
   const { hasPermission } = useRole();
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <Typography variant="h4" gutterBottom>
         Permission Test Page
       </Typography>

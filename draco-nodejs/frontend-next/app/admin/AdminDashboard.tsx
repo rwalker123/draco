@@ -21,7 +21,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <RequireAdministrator>
-      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      <main className="min-h-screen bg-background">
         <Typography variant="h4" gutterBottom>
           Administrator Dashboard
         </Typography>

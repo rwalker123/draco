@@ -257,7 +257,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </Menu>
       )}
 
-      <Container maxWidth="lg" sx={{ flex: 1, py: 3 }}>
+      <Container maxWidth={false} sx={{ flex: 1, py: 3, px: 4 }}>
         {children}
       </Container>
     </Box>
