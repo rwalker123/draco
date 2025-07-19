@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { TeamManagerService } from '../services/teamManagerService';
+import prisma from '../lib/prisma';
 
 /**
  * @swagger
@@ -148,7 +148,6 @@ import { TeamManagerService } from '../services/teamManagerService';
  */
 
 const router = Router({ mergeParams: true });
-const prisma = new PrismaClient();
 const teamManagerService = new TeamManagerService(prisma);
 
 // GET: List all managers for a team season
@@ -159,13 +158,11 @@ router.get('/', async (req: Request, res: Response) => {
     const managers = await teamManagerService.listManagers(teamSeasonId);
     res.json({ success: true, data: managers });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Failed to fetch managers',
-        error: error instanceof Error ? error.message : error,
-      });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch managers',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 });
 
@@ -188,13 +185,11 @@ router.post('/', async (req: Request, res: Response) => {
     res.json({ success: true, data: manager });
     return;
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Failed to add manager',
-        error: error instanceof Error ? error.message : error,
-      });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add manager',
+      error: error instanceof Error ? error.message : error,
+    });
     return;
   }
 });
@@ -206,13 +201,11 @@ router.delete('/:managerId', async (req: Request, res: Response) => {
     await teamManagerService.removeManager(managerId);
     res.json({ success: true });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: 'Failed to remove manager',
-        error: error instanceof Error ? error.message : error,
-      });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to remove manager',
+      error: error instanceof Error ? error.message : error,
+    });
   }
 });
 

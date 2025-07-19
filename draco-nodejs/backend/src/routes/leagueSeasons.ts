@@ -1,15 +1,96 @@
 // LeagueSeason Management Routes for Draco Sports Manager
 // Handles league-season relationships, divisions, and teams within leagues
 
-import { Router, Request, Response, NextFunction } from "express";
-import { authenticateToken } from "../middleware/authMiddleware";
-import { RouteProtection } from "../middleware/routeProtection";
-import { RoleService } from "../services/roleService";
-import { PrismaClient } from "@prisma/client";
-import { getLogoUrl } from "../config/logo";
+import { Router, Request, Response, NextFunction } from 'express';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { RouteProtection } from '../middleware/routeProtection';
+import { RoleService } from '../services/roleService';
+import { getLogoUrl } from '../config/logo';
+import prisma from '../lib/prisma';
+
+// Type definitions for Prisma query results
+interface LeagueSeason {
+  id: bigint;
+  leagueid: bigint;
+  league: {
+    id: bigint;
+    name: string;
+    accountid: bigint;
+  };
+  divisionseason: Array<{
+    id: bigint;
+    divisionid: bigint;
+    priority: number;
+    divisiondefs: {
+      id: bigint;
+      name: string;
+    };
+    teamsseason: Array<{
+      id: bigint;
+      teamid: bigint;
+      name: string;
+      teams: {
+        id: bigint;
+        webaddress: string | null;
+        youtubeuserid: string | null;
+        defaultvideo: string | null;
+        autoplayvideo: boolean;
+      };
+    }>;
+  }>;
+  teamsseason: Array<{
+    id: bigint;
+    teamid: bigint;
+    name: string;
+    teams: {
+      id: bigint;
+      webaddress: string | null;
+      youtubeuserid: string | null;
+      defaultvideo: string | null;
+      autoplayvideo: boolean;
+    };
+  }>;
+}
+
+interface DivisionSeason {
+  id: bigint;
+  divisionid: bigint;
+  priority: number;
+  divisiondefs: {
+    id: bigint;
+    name: string;
+  };
+  teamsseason: Array<{
+    id: bigint;
+    teamid: bigint;
+    name: string;
+    teams: {
+      id: bigint;
+      webaddress: string | null;
+      youtubeuserid: string | null;
+      defaultvideo: string | null;
+      autoplayvideo: boolean;
+    };
+  }>;
+}
+
+interface PrismaWhereClause {
+  leagueid: bigint;
+  gamedate?: {
+    gte: Date;
+    lte: Date;
+  };
+  OR?: Array<
+    | {
+        hteamid: bigint;
+      }
+    | {
+        vteamid: bigint;
+      }
+  >;
+}
 
 const router = Router({ mergeParams: true });
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
@@ -17,167 +98,158 @@ const routeProtection = new RouteProtection(roleService, prisma);
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
  * Get all leagues for a season with their divisions and teams
  */
-router.get(
-  "/",
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+router.get('/', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  try {
+    const seasonId = BigInt(req.params.seasonId);
+    const accountId = BigInt(req.params.accountId);
 
-      // Verify the season belongs to this account
-      const season = await prisma.season.findFirst({
-        where: {
-          id: seasonId,
-          accountid: accountId,
-        },
+    // Verify the season belongs to this account
+    const season = await prisma.season.findFirst({
+      where: {
+        id: seasonId,
+        accountid: accountId,
+      },
+    });
+
+    if (!season) {
+      res.status(404).json({
+        success: false,
+        message: 'Season not found',
       });
+      return;
+    }
 
-      if (!season) {
-        res.status(404).json({
-          success: false,
-          message: "Season not found",
-        });
-        return;
-      }
-
-      const leagueSeasons = await prisma.leagueseason.findMany({
-        where: {
-          seasonid: seasonId,
-        },
-        include: {
-          league: {
-            select: {
-              id: true,
-              name: true,
-              accountid: true,
-            },
+    const leagueSeasons = await prisma.leagueseason.findMany({
+      where: {
+        seasonid: seasonId,
+      },
+      include: {
+        league: {
+          select: {
+            id: true,
+            name: true,
+            accountid: true,
           },
-          divisionseason: {
-            include: {
-              divisiondefs: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+        },
+        divisionseason: {
+          include: {
+            divisiondefs: {
+              select: {
+                id: true,
+                name: true,
               },
-              teamsseason: {
-                include: {
-                  teams: {
-                    select: {
-                      id: true,
-                      webaddress: true,
-                      youtubeuserid: true,
-                      defaultvideo: true,
-                      autoplayvideo: true,
-                    },
+            },
+            teamsseason: {
+              include: {
+                teams: {
+                  select: {
+                    id: true,
+                    webaddress: true,
+                    youtubeuserid: true,
+                    defaultvideo: true,
+                    autoplayvideo: true,
                   },
                 },
               },
             },
-            orderBy: {
-              priority: "asc",
-            },
           },
-          teamsseason: {
-            where: {
-              divisionseasonid: null, // Teams not assigned to any division
-            },
-            include: {
-              teams: {
-                select: {
-                  id: true,
-                  webaddress: true,
-                  youtubeuserid: true,
-                  defaultvideo: true,
-                  autoplayvideo: true,
-                },
+          orderBy: {
+            priority: 'asc',
+          },
+        },
+        teamsseason: {
+          where: {
+            divisionseasonid: null, // Teams not assigned to any division
+          },
+          include: {
+            teams: {
+              select: {
+                id: true,
+                webaddress: true,
+                youtubeuserid: true,
+                defaultvideo: true,
+                autoplayvideo: true,
               },
             },
           },
         },
-        orderBy: {
-          league: {
-            name: "asc",
-          },
+      },
+      orderBy: {
+        league: {
+          name: 'asc',
         },
-      });
+      },
+    });
 
-      res.json({
-        success: true,
-        data: {
-          season: {
-            id: season.id.toString(),
-            name: season.name,
-            accountId: season.accountid.toString(),
-          },
-          leagueSeasons: leagueSeasons.map((ls: any) => {
-            const base = {
-              id: ls.id.toString(),
-              leagueId: ls.leagueid.toString(),
-              leagueName: ls.league.name,
-              accountId: ls.league.accountid.toString(),
-              divisions: ls.divisionseason.map((ds: any) => ({
-                id: ds.id.toString(),
-                divisionId: ds.divisionid.toString(),
-                divisionName: ds.divisiondefs.name,
-                priority: ds.priority,
-                teams: ds.teamsseason.map((ts: any) => ({
-                  id: ts.id.toString(),
-                  teamId: ts.teamid.toString(),
-                  name: ts.name,
-                  webAddress: ts.teams.webaddress,
-                  youtubeUserId: ts.teams.youtubeuserid,
-                  defaultVideo: ts.teams.defaultvideo,
-                  autoPlayVideo: ts.teams.autoplayvideo,
-                  logoUrl: getLogoUrl(
-                    season.accountid.toString(),
-                    ts.teamid.toString(),
-                  ),
-                })),
+    res.json({
+      success: true,
+      data: {
+        season: {
+          id: season.id.toString(),
+          name: season.name,
+          accountId: season.accountid.toString(),
+        },
+        leagueSeasons: leagueSeasons.map((ls: LeagueSeason) => {
+          const base = {
+            id: ls.id.toString(),
+            leagueId: ls.leagueid.toString(),
+            leagueName: ls.league.name,
+            accountId: ls.league.accountid.toString(),
+            divisions: ls.divisionseason.map((ds) => ({
+              id: ds.id.toString(),
+              divisionId: ds.divisionid.toString(),
+              divisionName: ds.divisiondefs.name,
+              priority: ds.priority,
+              teams: ds.teamsseason.map((ts) => ({
+                id: ts.id.toString(),
+                teamId: ts.teamid.toString(),
+                name: ts.name,
+                webAddress: ts.teams.webaddress,
+                youtubeUserId: ts.teams.youtubeuserid,
+                defaultVideo: ts.teams.defaultvideo,
+                autoPlayVideo: ts.teams.autoplayvideo,
+                logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
+              })),
+            })),
+          };
+          if (req.query.unassignedTeams === 'false') {
+            return base;
+          } else {
+            return {
+              ...base,
+              unassignedTeams: ls.teamsseason.map((ts) => ({
+                id: ts.id.toString(),
+                teamId: ts.teamid.toString(),
+                name: ts.name,
+                webAddress: ts.teams.webaddress,
+                youtubeUserId: ts.teams.youtubeuserid,
+                defaultVideo: ts.teams.defaultvideo,
+                autoPlayVideo: ts.teams.autoplayvideo,
+                logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
               })),
             };
-            if (req.query.unassignedTeams === "false") {
-              return base;
-            } else {
-              return {
-                ...base,
-                unassignedTeams: ls.teamsseason.map((ts: any) => ({
-                  id: ts.id.toString(),
-                  teamId: ts.teamid.toString(),
-                  name: ts.name,
-                  webAddress: ts.teams.webaddress,
-                  youtubeUserId: ts.teams.youtubeuserid,
-                  defaultVideo: ts.teams.defaultvideo,
-                  autoPlayVideo: ts.teams.autoplayvideo,
-                  logoUrl: getLogoUrl(
-                    season.accountid.toString(),
-                    ts.teamid.toString(),
-                  ),
-                })),
-              };
-            }
-          }),
-        },
-      });
-    } catch (error) {
-      console.error("Error getting league seasons:", error);
-      res.status(500).json({
-        success: false,
-        message: "Internal server error",
-      });
-    }
-  },
-);
+          }
+        }),
+      },
+    });
+  } catch (error) {
+    console.error('Error getting league seasons:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId
  * Get specific league season with its divisions and teams
  */
 router.get(
-  "/:leagueSeasonId",
+  '/:leagueSeasonId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -194,7 +266,7 @@ router.get(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -235,7 +307,7 @@ router.get(
               },
             },
             orderBy: {
-              priority: "asc",
+              priority: 'asc',
             },
           },
           teamsseason: {
@@ -260,7 +332,7 @@ router.get(
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: "League season not found",
+          message: 'League season not found',
         });
         return;
       }
@@ -273,12 +345,12 @@ router.get(
             leagueId: leagueSeason.leagueid.toString(),
             leagueName: leagueSeason.league.name,
             accountId: leagueSeason.league.accountid.toString(),
-            divisions: leagueSeason.divisionseason.map((ds: any) => ({
+            divisions: leagueSeason.divisionseason.map((ds) => ({
               id: ds.id.toString(),
               divisionId: ds.divisionid.toString(),
               divisionName: ds.divisiondefs.name,
               priority: ds.priority,
-              teams: ds.teamsseason.map((ts: any) => ({
+              teams: ds.teamsseason.map((ts) => ({
                 id: ts.id.toString(),
                 teamId: ts.teamid.toString(),
                 name: ts.name,
@@ -286,13 +358,10 @@ router.get(
                 youtubeUserId: ts.teams.youtubeuserid,
                 defaultVideo: ts.teams.defaultvideo,
                 autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(
-                  season.accountid.toString(),
-                  ts.teamid.toString(),
-                ),
+                logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
               })),
             })),
-            unassignedTeams: leagueSeason.teamsseason.map((ts: any) => ({
+            unassignedTeams: leagueSeason.teamsseason.map((ts) => ({
               id: ts.id.toString(),
               teamId: ts.teamid.toString(),
               name: ts.name,
@@ -300,19 +369,16 @@ router.get(
               youtubeUserId: ts.teams.youtubeuserid,
               defaultVideo: ts.teams.defaultvideo,
               autoPlayVideo: ts.teams.autoplayvideo,
-              logoUrl: getLogoUrl(
-                season.accountid.toString(),
-                ts.teamid.toString(),
-              ),
+              logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
             })),
           },
         },
       });
     } catch (error) {
-      console.error("Error getting league season:", error);
+      console.error('Error getting league season:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -323,10 +389,10 @@ router.get(
  * Add a league to a season
  */
 router.post(
-  "/",
+  '/',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -335,7 +401,7 @@ router.post(
       if (!leagueId) {
         res.status(400).json({
           success: false,
-          message: "League ID is required",
+          message: 'League ID is required',
         });
         return;
       }
@@ -351,7 +417,7 @@ router.post(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -367,7 +433,7 @@ router.post(
       if (!league) {
         res.status(404).json({
           success: false,
-          message: "League not found",
+          message: 'League not found',
         });
         return;
       }
@@ -383,7 +449,7 @@ router.post(
       if (existingLeagueSeason) {
         res.status(409).json({
           success: false,
-          message: "This league is already added to this season",
+          message: 'This league is already added to this season',
         });
         return;
       }
@@ -422,21 +488,21 @@ router.post(
           message: `League "${leagueDetails!.name}" has been added to season "${season.name}"`,
         },
       });
-    } catch (error: any) {
-      console.error("Error adding league to season:", error);
+    } catch (error: unknown) {
+      console.error('Error adding league to season:', error);
 
       // Check if it's a unique constraint violation
-      if (error.code === "P2002") {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
         res.status(409).json({
           success: false,
-          message: "This league is already added to this season",
+          message: 'This league is already added to this season',
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -447,10 +513,10 @@ router.post(
  * Remove a league from a season
  */
 router.delete(
-  "/:leagueSeasonId",
+  '/:leagueSeasonId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -467,7 +533,7 @@ router.delete(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -492,7 +558,7 @@ router.delete(
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: "League season not found",
+          message: 'League season not found',
         });
         return;
       }
@@ -501,7 +567,7 @@ router.delete(
       if (leagueSeason.league.accountid !== accountId) {
         res.status(403).json({
           success: false,
-          message: "Access denied",
+          message: 'Access denied',
         });
         return;
       }
@@ -539,7 +605,7 @@ router.delete(
         res.status(400).json({
           success: false,
           message:
-            "Cannot remove league from season because it has related data (divisions, games, teams, etc.). Remove related data first.",
+            'Cannot remove league from season because it has related data (divisions, games, teams, etc.). Remove related data first.',
         });
         return;
       }
@@ -557,22 +623,22 @@ router.delete(
           message: `League "${leagueSeason.league.name}" has been removed from season "${season.name}"`,
         },
       });
-    } catch (error: any) {
-      console.error("Error removing league from season:", error);
+    } catch (error: unknown) {
+      console.error('Error removing league from season:', error);
 
       // Check if it's a foreign key constraint error
-      if (error.code === "P2003") {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
         res.status(400).json({
           success: false,
           message:
-            "Cannot remove league from season because it has related data. Remove related data first.",
+            'Cannot remove league from season because it has related data. Remove related data first.',
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -585,10 +651,10 @@ router.delete(
  * Get all divisions for a league season
  */
 router.get(
-  "/:leagueSeasonId/divisions",
+  '/:leagueSeasonId/divisions',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -605,7 +671,7 @@ router.get(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -621,7 +687,7 @@ router.get(
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: "League season not found",
+          message: 'League season not found',
         });
         return;
       }
@@ -652,19 +718,19 @@ router.get(
           },
         },
         orderBy: {
-          priority: "asc",
+          priority: 'asc',
         },
       });
 
       res.json({
         success: true,
         data: {
-          divisions: divisions.map((ds: any) => ({
+          divisions: divisions.map((ds: DivisionSeason) => ({
             id: ds.id.toString(),
             divisionId: ds.divisionid.toString(),
             divisionName: ds.divisiondefs.name,
             priority: ds.priority,
-            teams: ds.teamsseason.map((ts: any) => ({
+            teams: ds.teamsseason.map((ts) => ({
               id: ts.id.toString(),
               teamId: ts.teamid.toString(),
               name: ts.name,
@@ -677,10 +743,10 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error getting divisions:", error);
+      console.error('Error getting divisions:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -688,14 +754,14 @@ router.get(
 
 // Get all games for a specific league season
 router.get(
-  "/:leagueSeasonId/games",
+  '/:leagueSeasonId/games',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { seasonId, leagueSeasonId } = req.params;
+      const { leagueSeasonId } = req.params;
       const { startDate, endDate, teamId } = req.query;
 
       // Build where clause
-      const where: any = {
+      const where: PrismaWhereClause = {
         leagueid: BigInt(leagueSeasonId),
       };
 
@@ -707,10 +773,7 @@ router.get(
       }
 
       if (teamId) {
-        where.OR = [
-          { hteamid: BigInt(teamId as string) },
-          { vteamid: BigInt(teamId as string) },
-        ];
+        where.OR = [{ hteamid: BigInt(teamId as string) }, { vteamid: BigInt(teamId as string) }];
       }
 
       const games = await prisma.leagueschedule.findMany({
@@ -725,15 +788,12 @@ router.get(
           },
         },
         orderBy: {
-          gamedate: "asc",
+          gamedate: 'asc',
         },
       });
 
       // Helper function to get team names
-      const getTeamNames = async (
-        homeTeamId: bigint,
-        visitorTeamId: bigint,
-      ) => {
+      const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
         const teams = await prisma.teamsseason.findMany({
           where: {
             id: {
@@ -804,7 +864,7 @@ router.get(
         },
       });
     } catch (error) {
-      console.error("Error fetching schedule:", error);
+      console.error('Error fetching schedule:', error);
       next(error);
     }
   },
@@ -815,10 +875,10 @@ router.get(
  * Add a division to a league season
  */
 router.post(
-  "/:leagueSeasonId/divisions",
+  '/:leagueSeasonId/divisions',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -828,7 +888,7 @@ router.post(
       if (!divisionId) {
         res.status(400).json({
           success: false,
-          message: "Division ID is required",
+          message: 'Division ID is required',
         });
         return;
       }
@@ -844,7 +904,7 @@ router.post(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -860,7 +920,7 @@ router.post(
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: "League season not found",
+          message: 'League season not found',
         });
         return;
       }
@@ -876,7 +936,7 @@ router.post(
       if (!divisionDef) {
         res.status(404).json({
           success: false,
-          message: "Division not found",
+          message: 'Division not found',
         });
         return;
       }
@@ -892,7 +952,7 @@ router.post(
       if (existingDivision) {
         res.status(409).json({
           success: false,
-          message: "This division is already added to this league season",
+          message: 'This division is already added to this league season',
         });
         return;
       }
@@ -927,21 +987,21 @@ router.post(
           message: `Division "${newDivisionSeason.divisiondefs.name}" has been added to the league season`,
         },
       });
-    } catch (error: any) {
-      console.error("Error adding division to league season:", error);
+    } catch (error: unknown) {
+      console.error('Error adding division to league season:', error);
 
       // Check if it's a unique constraint violation
-      if (error.code === "P2002") {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
         res.status(409).json({
           success: false,
-          message: "This division is already added to this league season",
+          message: 'This division is already added to this league season',
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -952,10 +1012,10 @@ router.post(
  * Remove a division from a league season
  */
 router.delete(
-  "/:leagueSeasonId/divisions/:divisionSeasonId",
+  '/:leagueSeasonId/divisions/:divisionSeasonId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -973,7 +1033,7 @@ router.delete(
       if (!season) {
         res.status(404).json({
           success: false,
-          message: "Season not found",
+          message: 'Season not found',
         });
         return;
       }
@@ -989,7 +1049,7 @@ router.delete(
       if (!leagueSeason) {
         res.status(404).json({
           success: false,
-          message: "League season not found",
+          message: 'League season not found',
         });
         return;
       }
@@ -1014,7 +1074,7 @@ router.delete(
       if (!divisionSeason) {
         res.status(404).json({
           success: false,
-          message: "Division season not found",
+          message: 'Division season not found',
         });
         return;
       }
@@ -1023,7 +1083,7 @@ router.delete(
       if (divisionSeason.divisiondefs.accountid !== accountId) {
         res.status(403).json({
           success: false,
-          message: "Access denied",
+          message: 'Access denied',
         });
         return;
       }
@@ -1039,7 +1099,7 @@ router.delete(
         res.status(400).json({
           success: false,
           message:
-            "Cannot remove division because it contains teams. Remove teams from division first.",
+            'Cannot remove division because it contains teams. Remove teams from division first.',
         });
         return;
       }
@@ -1057,22 +1117,21 @@ router.delete(
           message: `Division "${divisionSeason.divisiondefs.name}" has been removed from the league season`,
         },
       });
-    } catch (error: any) {
-      console.error("Error removing division from league season:", error);
+    } catch (error: unknown) {
+      console.error('Error removing division from league season:', error);
 
       // Check if it's a foreign key constraint error
-      if (error.code === "P2003") {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
         res.status(400).json({
           success: false,
-          message:
-            "Cannot remove division because it has related data. Remove related data first.",
+          message: 'Cannot remove division because it has related data. Remove related data first.',
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -1083,10 +1142,10 @@ router.delete(
  * Assign a team to a division within a league season
  */
 router.put(
-  "/:leagueSeasonId/teams/:teamSeasonId/assign-division",
+  '/:leagueSeasonId/teams/:teamSeasonId/assign-division',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -1097,7 +1156,7 @@ router.put(
       if (!divisionSeasonId) {
         res.status(400).json({
           success: false,
-          message: "DivisionSeasonId is required",
+          message: 'DivisionSeasonId is required',
         });
         return;
       }
@@ -1110,7 +1169,7 @@ router.put(
         },
       });
       if (!season) {
-        res.status(404).json({ success: false, message: "Season not found" });
+        res.status(404).json({ success: false, message: 'Season not found' });
         return;
       }
 
@@ -1122,9 +1181,7 @@ router.put(
         },
       });
       if (!leagueSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "League season not found" });
+        res.status(404).json({ success: false, message: 'League season not found' });
         return;
       }
 
@@ -1136,9 +1193,7 @@ router.put(
         },
       });
       if (!divisionSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Division season not found" });
+        res.status(404).json({ success: false, message: 'Division season not found' });
         return;
       }
 
@@ -1158,9 +1213,7 @@ router.put(
         },
       });
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -1168,8 +1221,7 @@ router.put(
       if (teamSeason.divisionseasonid) {
         res.status(400).json({
           success: false,
-          message:
-            "Team is already assigned to a division. Remove from current division first.",
+          message: 'Team is already assigned to a division. Remove from current division first.',
         });
         return;
       }
@@ -1183,14 +1235,12 @@ router.put(
       res.json({
         success: true,
         data: {
-          message: "Team assigned to division successfully",
+          message: 'Team assigned to division successfully',
         },
       });
     } catch (error) {
-      console.error("Error assigning team to division:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      console.error('Error assigning team to division:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
     }
   },
 );
@@ -1200,10 +1250,10 @@ router.put(
  * Remove a team from its current division (make it unassigned)
  */
 router.delete(
-  "/:leagueSeasonId/teams/:teamSeasonId/remove-from-division",
+  '/:leagueSeasonId/teams/:teamSeasonId/remove-from-division',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
@@ -1218,7 +1268,7 @@ router.delete(
         },
       });
       if (!season) {
-        res.status(404).json({ success: false, message: "Season not found" });
+        res.status(404).json({ success: false, message: 'Season not found' });
         return;
       }
 
@@ -1230,9 +1280,7 @@ router.delete(
         },
       });
       if (!leagueSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "League season not found" });
+        res.status(404).json({ success: false, message: 'League season not found' });
         return;
       }
 
@@ -1252,9 +1300,7 @@ router.delete(
         },
       });
       if (!teamSeason) {
-        res
-          .status(404)
-          .json({ success: false, message: "Team season not found" });
+        res.status(404).json({ success: false, message: 'Team season not found' });
         return;
       }
 
@@ -1262,7 +1308,7 @@ router.delete(
       if (!teamSeason.divisionseasonid) {
         res.status(400).json({
           success: false,
-          message: "Team is not currently assigned to any division",
+          message: 'Team is not currently assigned to any division',
         });
         return;
       }
@@ -1276,14 +1322,12 @@ router.delete(
       res.json({
         success: true,
         data: {
-          message: `Team "${teamSeason.name}" has been removed from division "${teamSeason.divisionseason?.divisiondefs.name || "Unknown Division"}"`,
+          message: `Team "${teamSeason.name}" has been removed from division "${teamSeason.divisionseason?.divisiondefs.name || 'Unknown Division'}"`,
         },
       });
     } catch (error) {
-      console.error("Error removing team from division:", error);
-      res
-        .status(500)
-        .json({ success: false, message: "Internal server error" });
+      console.error('Error removing team from division:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
     }
   },
 );

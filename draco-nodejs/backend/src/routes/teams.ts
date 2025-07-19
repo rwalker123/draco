@@ -1,5 +1,4 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
@@ -9,9 +8,9 @@ import * as multer from 'multer';
 import { leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { getTeamRecord } from '../utils/teamRecord';
+import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 const storageService = createStorageService();

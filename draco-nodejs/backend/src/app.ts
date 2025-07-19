@@ -2,8 +2,8 @@ import * as express from 'express';
 import * as cors from 'cors';
 import helmet from 'helmet';
 import * as dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 import { initializeRoleIds } from './config/roles';
+import prisma from './lib/prisma';
 import testDatabaseRouter from './routes/testdatabase';
 import authRouter from './routes/auth';
 import passwordResetRouter from './routes/passwordReset';
@@ -24,9 +24,6 @@ import teamManagersRouter from './routes/teamManagers';
 
 // Load environment variables
 dotenv.config();
-
-// Initialize Prisma and roles
-const prisma = new PrismaClient();
 
 // Initialize role IDs from database
 initializeRoleIds(prisma).catch((error: unknown) => {

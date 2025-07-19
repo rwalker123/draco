@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export interface PasswordResetToken {
   id: string;
@@ -15,14 +13,18 @@ export class PasswordResetModel {
   /**
    * Create a new password reset token
    */
-  static async createToken(userId: string, token: string, expiresInHours: number = 24): Promise<PasswordResetToken> {
+  static async createToken(
+    userId: string,
+    token: string,
+    expiresInHours: number = 24,
+  ): Promise<PasswordResetToken> {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
     // Invalidate any existing tokens for this user
     await prisma.passwordresettokens.updateMany({
       where: { userid: userId, used: false },
-      data: { used: true }
+      data: { used: true },
     });
 
     // Create new token
@@ -31,8 +33,8 @@ export class PasswordResetModel {
         userid: userId,
         token: token,
         expiresat: expiresAt,
-        used: false
-      }
+        used: false,
+      },
     });
 
     return {
@@ -41,7 +43,7 @@ export class PasswordResetModel {
       token: resetToken.token,
       expiresAt: resetToken.expiresat,
       used: resetToken.used,
-      createdAt: resetToken.createdat
+      createdAt: resetToken.createdat,
     };
   }
 
@@ -54,9 +56,9 @@ export class PasswordResetModel {
         token: token,
         used: false,
         expiresat: {
-          gt: new Date()
-        }
-      }
+          gt: new Date(),
+        },
+      },
     });
 
     if (!resetToken) {
@@ -69,7 +71,7 @@ export class PasswordResetModel {
       token: resetToken.token,
       expiresAt: resetToken.expiresat,
       used: resetToken.used,
-      createdAt: resetToken.createdat
+      createdAt: resetToken.createdat,
     };
   }
 
@@ -79,7 +81,7 @@ export class PasswordResetModel {
   static async markTokenAsUsed(tokenId: string): Promise<void> {
     await prisma.passwordresettokens.update({
       where: { id: tokenId },
-      data: { used: true }
+      data: { used: true },
     });
   }
 
@@ -90,11 +92,11 @@ export class PasswordResetModel {
     const result = await prisma.passwordresettokens.deleteMany({
       where: {
         expiresat: {
-          lt: new Date()
-        }
-      }
+          lt: new Date(),
+        },
+      },
     });
 
     return result.count;
   }
-} 
+}

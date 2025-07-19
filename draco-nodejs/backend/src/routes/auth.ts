@@ -1,16 +1,11 @@
-import { Router, Request, Response, NextFunction } from "express";
-import {
-  AuthService,
-  LoginCredentials,
-  RegisterData,
-} from "../services/authService";
-import { authenticateToken } from "../middleware/authMiddleware";
-import { RoleService } from "../services/roleService";
-import { PrismaClient } from "@prisma/client";
+import { Router, Request, Response, NextFunction } from 'express';
+import { AuthService, LoginCredentials, RegisterData } from '../services/authService';
+import { authenticateToken } from '../middleware/authMiddleware';
+import { RoleService } from '../services/roleService';
+import prisma from '../lib/prisma';
 
 const router = Router();
 const authService = new AuthService();
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 
 /**
@@ -65,37 +60,34 @@ const roleService = new RoleService(prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post(
-  "/login",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { username, password }: LoginCredentials = req.body;
+router.post('/login', async (req: Request, res: Response, _next: NextFunction) => {
+  try {
+    const { username, password }: LoginCredentials = req.body;
 
-      // Validate input
-      if (!username || !password) {
-        res.status(400).json({
-          success: false,
-          message: "Username and password are required",
-        });
-        return;
-      }
-
-      const result = await authService.login({ username, password });
-
-      if (result.success) {
-        res.status(200).json(result);
-      } else {
-        res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error("Login route error:", error);
-      res.status(500).json({
+    // Validate input
+    if (!username || !password) {
+      res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: 'Username and password are required',
       });
+      return;
     }
-  },
-);
+
+    const result = await authService.login({ username, password });
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(401).json(result);
+    }
+  } catch (error) {
+    console.error('Login route error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * @swagger
@@ -139,63 +131,59 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post(
-  "/register",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { username, email, password, firstName, lastName }: RegisterData =
-        req.body;
+router.post('/register', async (req: Request, res: Response, _next: NextFunction) => {
+  try {
+    const { username, email, password, firstName, lastName }: RegisterData = req.body;
 
-      // Validate input
-      if (!username || !email || !password) {
-        res.status(400).json({
-          success: false,
-          message: "Username, email, and password are required",
-        });
-        return;
-      }
-
-      // Validate password strength
-      if (password.length < 6) {
-        res.status(400).json({
-          success: false,
-          message: "Password must be at least 6 characters long",
-        });
-        return;
-      }
-
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        res.status(400).json({
-          success: false,
-          message: "Invalid email format",
-        });
-        return;
-      }
-
-      const result = await authService.register({
-        username,
-        email,
-        password,
-        firstName,
-        lastName,
-      });
-
-      if (result.success) {
-        res.status(201).json(result);
-      } else {
-        res.status(400).json(result);
-      }
-    } catch (error) {
-      console.error("Register route error:", error);
-      res.status(500).json({
+    // Validate input
+    if (!username || !email || !password) {
+      res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: 'Username, email, and password are required',
       });
+      return;
     }
-  },
-);
+
+    // Validate password strength
+    if (password.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid email format',
+      });
+      return;
+    }
+
+    const result = await authService.register({
+      username,
+      email,
+      password,
+      firstName,
+      lastName,
+    });
+
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('Register route error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * @swagger
@@ -212,12 +200,12 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/Success'
  */
-router.post("/logout", (req: Request, res: Response, next: NextFunction) => {
+router.post('/logout', (req: Request, res: Response, _next: NextFunction) => {
   // JWT tokens are stateless, so logout is handled client-side
   // This endpoint can be used for logging purposes
   res.status(200).json({
     success: true,
-    message: "Logout successful",
+    message: 'Logout successful',
   });
 });
 
@@ -259,54 +247,50 @@ router.post("/logout", (req: Request, res: Response, next: NextFunction) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get(
-  "/me",
-  authenticateToken,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: "User not authenticated",
-        });
-        return;
-      }
-
-      // Fetch first and last name from contacts table
-      let firstname = undefined;
-      let lastname = undefined;
-      try {
-        const contact = await prisma.contacts.findFirst({
-          where: { userid: req.user.id },
-          select: { firstname: true, lastname: true },
-        });
-        if (contact) {
-          firstname = contact.firstname;
-          lastname = contact.lastname;
-        }
-      } catch (e) {
-        // If contacts table is missing or error, just skip
-      }
-
-      res.status(200).json({
-        success: true,
-        message: "User information retrieved",
-        user: {
-          id: req.user.id,
-          username: req.user.username,
-          firstname,
-          lastname,
-        },
-      });
-    } catch (error) {
-      console.error("Get user info error:", error);
-      res.status(500).json({
+router.get('/me', authenticateToken, async (req: Request, res: Response, _next: NextFunction) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({
         success: false,
-        message: "Internal server error",
+        message: 'User not authenticated',
       });
+      return;
     }
-  },
-);
+
+    // Fetch first and last name from contacts table
+    let firstname = undefined;
+    let lastname = undefined;
+    try {
+      const contact = await prisma.contacts.findFirst({
+        where: { userid: req.user.id },
+        select: { firstname: true, lastname: true },
+      });
+      if (contact) {
+        firstname = contact.firstname;
+        lastname = contact.lastname;
+      }
+    } catch (e) {
+      // If contacts table is missing or error, just skip
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User information retrieved',
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        firstname,
+        lastname,
+      },
+    });
+  } catch (error) {
+    console.error('Get user info error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * @swagger
@@ -363,36 +347,33 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post(
-  "/verify",
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { token } = req.body;
+router.post('/verify', async (req: Request, res: Response, _next: NextFunction) => {
+  try {
+    const { token } = req.body;
 
-      if (!token) {
-        res.status(400).json({
-          success: false,
-          message: "Token is required",
-        });
-        return;
-      }
-
-      const result = await authService.verifyToken(token);
-
-      if (result.success) {
-        res.status(200).json(result);
-      } else {
-        res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error("Token verification error:", error);
-      res.status(500).json({
+    if (!token) {
+      res.status(400).json({
         success: false,
-        message: "Internal server error",
+        message: 'Token is required',
       });
+      return;
     }
-  },
-);
+
+    const result = await authService.verifyToken(token);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      res.status(401).json(result);
+    }
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * @swagger
@@ -448,9 +429,9 @@ router.post(
  *               $ref: '#/components/schemas/Error'
  */
 router.post(
-  "/change-password",
+  '/change-password',
   authenticateToken,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     try {
       const { currentPassword, newPassword } = req.body;
 
@@ -458,7 +439,7 @@ router.post(
       if (!currentPassword || !newPassword) {
         res.status(400).json({
           success: false,
-          message: "Current password and new password are required",
+          message: 'Current password and new password are required',
         });
         return;
       }
@@ -467,7 +448,7 @@ router.post(
       if (newPassword.length < 6) {
         res.status(400).json({
           success: false,
-          message: "New password must be at least 6 characters long",
+          message: 'New password must be at least 6 characters long',
         });
         return;
       }
@@ -475,16 +456,12 @@ router.post(
       if (!req.user) {
         res.status(401).json({
           success: false,
-          message: "User not authenticated",
+          message: 'User not authenticated',
         });
         return;
       }
 
-      const result = await authService.changePassword(
-        req.user.id,
-        currentPassword,
-        newPassword,
-      );
+      const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
 
       if (result.success) {
         res.status(200).json(result);
@@ -492,10 +469,10 @@ router.post(
         res.status(401).json(result);
       }
     } catch (error) {
-      console.error("Change password error:", error);
+      console.error('Change password error:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -506,14 +483,14 @@ router.post(
  * Refresh JWT token
  */
 router.post(
-  "/refresh",
+  '/refresh',
   authenticateToken,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     try {
       if (!req.user) {
         res.status(401).json({
           success: false,
-          message: "User not authenticated",
+          message: 'User not authenticated',
         });
         return;
       }
@@ -526,10 +503,10 @@ router.post(
         res.status(401).json(result);
       }
     } catch (error) {
-      console.error("Token refresh error:", error);
+      console.error('Token refresh error:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
@@ -540,14 +517,14 @@ router.post(
  * Check if current user has a specific role
  */
 router.get(
-  "/check-role/:roleId",
+  '/check-role/:roleId',
   authenticateToken,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, _next: NextFunction) => {
     try {
       if (!req.user?.id) {
         res.status(401).json({
           success: false,
-          message: "User not authenticated",
+          message: 'User not authenticated',
         });
         return;
       }
@@ -570,10 +547,10 @@ router.get(
         context: roleCheck.context,
       });
     } catch (error) {
-      console.error("Role check error:", error);
+      console.error('Role check error:', error);
       res.status(500).json({
         success: false,
-        message: "Internal server error",
+        message: 'Internal server error',
       });
     }
   },
