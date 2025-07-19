@@ -30,7 +30,7 @@ interface MyTeamsProps {
 const MyTeams: React.FC<MyTeamsProps> = ({ userTeams, onViewTeam, sx, title }) => {
   if (!userTeams || userTeams.length === 0) return null;
   return (
-    <Paper sx={{ p: 4, mb: 4, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...sx }}>
+    <Paper sx={{ p: 4, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', ...sx }}>
       <Typography
         variant="h5"
         gutterBottom
