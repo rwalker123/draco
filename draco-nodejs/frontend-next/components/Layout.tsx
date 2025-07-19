@@ -15,7 +15,6 @@ import {
 } from '@mui/material';
 import {
   Menu as MenuIcon,
-  Dashboard as DashboardIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Business as BusinessIcon,
   Group as GroupIcon,
@@ -197,18 +196,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           transformOrigin={{ vertical: 'top', horizontal: 'left' }}
         >
-          <MenuItem onClick={() => handleNavigation('/')}>
-            <ListItemIcon>
-              <HomeIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Home</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => handleNavigation('/dashboard')}>
-            <ListItemIcon>
-              <DashboardIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Dashboard</ListItemText>
-          </MenuItem>
           <MenuItem onClick={() => handleNavigation('/accounts')}>
             <ListItemIcon>
               <BusinessIcon fontSize="small" />

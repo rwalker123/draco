@@ -167,222 +167,210 @@ const BaseballAccountHome: React.FC = () => {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        background: 'grey.50',
-        py: 3,
-      }}
-    >
-      <Container maxWidth="xl">
-        {/* Unified Header with Logo and Page Content */}
-        <Box sx={{ mb: 4 }}>
-          <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>
-            <Box
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      {/* Unified Header with Logo and Page Content */}
+      <Box>
+        <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 1,
+              alignItems: 'center',
+              mb: 1,
+              justifyContent: 'center',
+            }}
+          >
+            {account.affiliation &&
+              account.affiliation.name &&
+              (account.affiliation.url ? (
+                <Chip
+                  label={account.affiliation.name}
+                  component="a"
+                  href={account.affiliation.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  clickable
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    textDecoration: 'none',
+                    '& .MuiChip-icon': {
+                      color: 'white',
+                    },
+                    '&:hover': {
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      textDecoration: 'underline',
+                    },
+                  }}
+                  icon={<GroupIcon />}
+                />
+              ) : (
+                <Chip
+                  label={account.affiliation.name}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    '& .MuiChip-icon': {
+                      color: 'white',
+                    },
+                  }}
+                  icon={<GroupIcon />}
+                />
+              ))}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
+            <Typography
+              variant="body1"
               sx={{
                 display: 'flex',
-                gap: 1,
                 alignItems: 'center',
-                mb: 1,
-                justifyContent: 'center',
+                gap: 1,
+                color: 'rgba(255,255,255,0.9)',
+                textAlign: 'center',
               }}
             >
-              {account.affiliation &&
-                account.affiliation.name &&
-                (account.affiliation.url ? (
-                  <Chip
-                    label={account.affiliation.name}
-                    component="a"
-                    href={account.affiliation.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    clickable
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.1)',
-                      color: 'white',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      textDecoration: 'none',
-                      '& .MuiChip-icon': {
-                        color: 'white',
-                      },
-                      '&:hover': {
-                        bgcolor: 'rgba(255,255,255,0.2)',
-                        textDecoration: 'underline',
-                      },
-                    }}
-                    icon={<GroupIcon />}
-                  />
-                ) : (
-                  <Chip
-                    label={account.affiliation.name}
-                    sx={{
-                      bgcolor: 'rgba(255,255,255,0.1)',
-                      color: 'white',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      '& .MuiChip-icon': {
-                        color: 'white',
-                      },
-                    }}
-                    icon={<GroupIcon />}
-                  />
-                ))}
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
-              <Typography
-                variant="body1"
+              <LocationIcon fontSize="small" />
+              {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
+              {account.firstYear}
+            </Typography>
+            <ThemeSwitcher />
+          </Box>
+        </AccountPageHeader>
+      </Box>
+
+      {/* Main Content - Single Column Layout */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {/* Scoreboard Layout Toggle */}
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+          <ToggleButtonGroup
+            value={scoreboardLayout}
+            exclusive
+            onChange={(_, newLayout) => {
+              if (newLayout !== null) {
+                setScoreboardLayout(newLayout);
+              }
+            }}
+            aria-label="scoreboard layout"
+            size="small"
+          >
+            <ToggleButton value="vertical" aria-label="vertical layout">
+              <ViewListIcon sx={{ mr: 1 }} />
+              Vertical
+            </ToggleButton>
+            <ToggleButton value="horizontal" aria-label="horizontal layout">
+              <ViewModuleIcon sx={{ mr: 1 }} />
+              Horizontal
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
+        {/* Scoreboard Widgets - Layout changes based on selected layout */}
+        {scoreboardLayout === 'horizontal' ? (
+          // Single column layout for horizontal to allow full width scaling
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+            <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+          </Box>
+        ) : (
+          // Two column layout for vertical layout
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                md: '1fr 1fr',
+              },
+              gap: 3,
+            }}
+          >
+            <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+            <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+          </Box>
+        )}
+
+        {/* Game Recaps Widget */}
+        {currentSeason && (
+          <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
+        )}
+
+        {/* User Teams Section */}
+        {user && userTeams.length > 0 && (
+          <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
+        )}
+
+        {/* Contact & Links */}
+        <Paper sx={{ p: 4, borderRadius: 2, mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+            Connect With Us
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            {account.urls.length > 0 && (
+              <Button
+                variant="contained"
+                href={account.urls[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                  color: 'rgba(255,255,255,0.9)',
-                  textAlign: 'center',
+                  bgcolor: 'primary.main',
+                  '&:hover': { bgcolor: 'primary.dark' },
                 }}
               >
-                <LocationIcon fontSize="small" />
-                {currentSeason ? `${currentSeason.name} Season` : 'No Current Season'} • Established{' '}
-                {account.firstYear}
-              </Typography>
-              <ThemeSwitcher />
-            </Box>
-          </AccountPageHeader>
-        </Box>
-
-        {/* Main Content - Single Column Layout */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {/* Scoreboard Layout Toggle */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-            <ToggleButtonGroup
-              value={scoreboardLayout}
-              exclusive
-              onChange={(_, newLayout) => {
-                if (newLayout !== null) {
-                  setScoreboardLayout(newLayout);
-                }
-              }}
-              aria-label="scoreboard layout"
-              size="small"
-            >
-              <ToggleButton value="vertical" aria-label="vertical layout">
-                <ViewListIcon sx={{ mr: 1 }} />
-                Vertical
-              </ToggleButton>
-              <ToggleButton value="horizontal" aria-label="horizontal layout">
-                <ViewModuleIcon sx={{ mr: 1 }} />
-                Horizontal
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-
-          {/* Scoreboard Widgets - Layout changes based on selected layout */}
-          {scoreboardLayout === 'horizontal' ? (
-            // Single column layout for horizontal to allow full width scaling
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-              <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-            </Box>
-          ) : (
-            // Two column layout for vertical layout
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: '1fr',
-                  md: '1fr 1fr',
-                },
-                gap: 3,
-              }}
-            >
-              <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-              <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-            </Box>
-          )}
-
-          {/* Game Recaps Widget */}
-          {currentSeason && (
-            <GameRecapsWidget accountId={accountIdStr!} seasonId={currentSeason.id} />
-          )}
-
-          {/* User Teams Section */}
-          {user && userTeams.length > 0 && (
-            <MyTeams userTeams={userTeams} onViewTeam={handleViewTeam} title="Your Teams" />
-          )}
-
-          {/* Contact & Links */}
-          <Paper sx={{ p: 4, borderRadius: 2, mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-            <Typography
-              variant="h6"
-              gutterBottom
-              sx={{ fontWeight: 'bold', color: 'primary.main' }}
-            >
-              Connect With Us
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              {account.urls.length > 0 && (
-                <Button
-                  variant="contained"
-                  href={account.urls[0].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
+                Visit Website
+              </Button>
+            )}
+            {account.twitterAccountName && (
+              <Button
+                variant="outlined"
+                href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  '&:hover': {
                     bgcolor: 'primary.main',
-                    '&:hover': { bgcolor: 'primary.dark' },
-                  }}
-                >
-                  Visit Website
-                </Button>
-              )}
-              {account.twitterAccountName && (
-                <Button
-                  variant="outlined"
-                  href={`https://twitter.com/${account.twitterAccountName?.replace('@', '') || account.twitterAccountName}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                    },
-                  }}
-                >
-                  Twitter
-                </Button>
-              )}
-              {account.facebookFanPage && (
-                <Button
-                  variant="outlined"
-                  href={account.facebookFanPage}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  sx={{
-                    borderColor: 'primary.main',
-                    color: 'primary.main',
-                    '&:hover': {
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                    },
-                  }}
-                >
-                  Facebook
-                </Button>
-              )}
-            </Box>
-          </Paper>
+                    color: 'white',
+                  },
+                }}
+              >
+                Twitter
+              </Button>
+            )}
+            {account.facebookFanPage && (
+              <Button
+                variant="outlined"
+                href={account.facebookFanPage}
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  borderColor: 'primary.main',
+                  color: 'primary.main',
+                  '&:hover': {
+                    bgcolor: 'primary.main',
+                    color: 'white',
+                  },
+                }}
+              >
+                Facebook
+              </Button>
+            )}
+          </Box>
+        </Paper>
 
-          {/* User Organizations Widget */}
-          {user && (
-            <OrganizationsWidget
-              title="Your Other Organizations"
-              showSearch={false}
-              maxDisplay={3}
-              sx={{ mb: 0 }}
-              excludeAccountId={accountIdStr}
-            />
-          )}
-        </Box>
-      </Container>
-    </Box>
+        {/* User Organizations Widget */}
+        {user && (
+          <OrganizationsWidget
+            title="Your Other Organizations"
+            showSearch={false}
+            maxDisplay={3}
+            sx={{ mb: 0 }}
+            excludeAccountId={accountIdStr}
+          />
+        )}
+      </Box>
+    </main>
   );
 };
 
