@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import OrganizationsWidget from './OrganizationsWidget';
+import { useAuth } from '../../context/AuthContext';
+import OrganizationsWidget from '../../components/OrganizationsWidget';
 
 interface Account {
   id: string;

@@ -1,17 +1,19 @@
+'use client';
+
 import React from 'react';
 import { Box, Typography, Paper, Button, Alert } from '@mui/material';
-import { RequirePermission } from './ProtectedRoute';
-import { useRole } from '../context/RoleContext';
+import { RequirePermission } from '../../components/ProtectedRoute';
+import { useRole } from '../../context/RoleContext';
 
 const PermissionTest: React.FC = () => {
   const { hasPermission } = useRole();
 
   return (
-    <Box sx={{ p: 3 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       <Typography variant="h4" gutterBottom>
         Permission Test Page
       </Typography>
-      
+
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Current User Permissions
@@ -79,21 +81,22 @@ const PermissionTest: React.FC = () => {
       </RequirePermission>
 
       {/* Show message if user has no permissions */}
-      {!hasPermission('account.manage') && 
-       !hasPermission('league.manage') && 
-       !hasPermission('team.manage') && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          <Typography variant="body1">
-            You don&apos;t have any management permissions. Contact your administrator to request access.
-          </Typography>
-        </Alert>
-      )}
+      {!hasPermission('account.manage') &&
+        !hasPermission('league.manage') &&
+        !hasPermission('team.manage') && (
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body1">
+              You don&apos;t have any management permissions. Contact your administrator to request
+              access.
+            </Typography>
+          </Alert>
+        )}
 
       <Typography variant="body2" color="text.secondary">
         You&apos;re not authorized to view this page.
       </Typography>
-    </Box>
+    </main>
   );
 };
 
-export default PermissionTest; 
+export default PermissionTest;

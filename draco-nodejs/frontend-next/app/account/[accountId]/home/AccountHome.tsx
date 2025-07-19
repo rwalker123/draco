@@ -20,8 +20,8 @@ import {
   Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import BaseballAccountHome from './BaseballAccountHome';
+import { useAuth } from '../../../../context/AuthContext';
+import BaseballAccountHome from '../BaseballAccountHome';
 
 interface Account {
   id: string;

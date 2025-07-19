@@ -1,20 +1,19 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Card, 
-  CardContent, 
-  CardActions, 
+import {
+  Typography,
+  Paper,
+  Card,
+  CardContent,
+  CardActions,
   Button,
   List,
   ListItem,
   ListItemText,
-  Stack
+  Stack,
 } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { RequireAdministrator } from './ProtectedRoute';
+import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
+import { RequireAdministrator } from '../../components/ProtectedRoute';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -22,11 +21,11 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <RequireAdministrator>
-      <Box sx={{ p: 3 }}>
+      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
         <Typography variant="h4" gutterBottom>
           Administrator Dashboard
         </Typography>
-        
+
         <Stack spacing={3}>
           {/* User Info */}
           <Paper sx={{ p: 2 }}>
@@ -35,22 +34,13 @@ const AdminDashboard: React.FC = () => {
             </Typography>
             <List dense>
               <ListItem>
-                <ListItemText 
-                  primary="Username" 
-                  secondary={user?.username || 'N/A'} 
-                />
+                <ListItemText primary="Username" secondary={user?.username || 'N/A'} />
               </ListItem>
               <ListItem>
-                <ListItemText 
-                  primary="Email" 
-                  secondary={user?.email || 'N/A'} 
-                />
+                <ListItemText primary="Email" secondary={user?.email || 'N/A'} />
               </ListItem>
               <ListItem>
-                <ListItemText 
-                  primary="User ID" 
-                  secondary={user?.id || 'N/A'} 
-                />
+                <ListItemText primary="User ID" secondary={user?.id || 'N/A'} />
               </ListItem>
             </List>
           </Paper>
@@ -63,23 +53,22 @@ const AdminDashboard: React.FC = () => {
             {userRoles ? (
               <List dense>
                 <ListItem>
-                  <ListItemText 
-                    primary="Global Roles" 
-                    secondary={userRoles.globalRoles.length > 0 
-                      ? userRoles.globalRoles.join(', ') 
-                      : 'None'
-                    } 
+                  <ListItemText
+                    primary="Global Roles"
+                    secondary={
+                      userRoles.globalRoles.length > 0 ? userRoles.globalRoles.join(', ') : 'None'
+                    }
                   />
                 </ListItem>
                 <ListItem>
-                  <ListItemText 
-                    primary="Contact Roles" 
-                    secondary={`${userRoles.contactRoles.length} role(s)`} 
+                  <ListItemText
+                    primary="Contact Roles"
+                    secondary={`${userRoles.contactRoles.length} role(s)`}
                   />
                 </ListItem>
                 {userRoles.contactRoles.map((role) => (
                   <ListItem key={role.id}>
-                    <ListItemText 
+                    <ListItemText
                       primary={`Role: ${role.roleName || role.roleId}`}
                       secondary={`Account: ${role.accountId} | Context: ${role.roleData}`}
                     />
@@ -87,9 +76,7 @@ const AdminDashboard: React.FC = () => {
                 ))}
               </List>
             ) : (
-              <Typography color="text.secondary">
-                Loading roles...
-              </Typography>
+              <Typography color="text.secondary">Loading roles...</Typography>
             )}
           </Paper>
 
@@ -112,7 +99,7 @@ const AdminDashboard: React.FC = () => {
                   <Button size="small">Manage Users</Button>
                 </CardActions>
               </Card>
-              
+
               <Card sx={{ minWidth: 200 }}>
                 <CardContent>
                   <Typography variant="h6" component="div">
@@ -126,7 +113,7 @@ const AdminDashboard: React.FC = () => {
                   <Button size="small">Manage Accounts</Button>
                 </CardActions>
               </Card>
-              
+
               <Card sx={{ minWidth: 200 }}>
                 <CardContent>
                   <Typography variant="h6" component="div">
@@ -140,7 +127,7 @@ const AdminDashboard: React.FC = () => {
                   <Button size="small">Settings</Button>
                 </CardActions>
               </Card>
-              
+
               <Card sx={{ minWidth: 200 }}>
                 <CardContent>
                   <Typography variant="h6" component="div">
@@ -157,9 +144,9 @@ const AdminDashboard: React.FC = () => {
             </Stack>
           </Paper>
         </Stack>
-      </Box>
+      </main>
     </RequireAdministrator>
   );
 };
 
-export default AdminDashboard; 
+export default AdminDashboard;

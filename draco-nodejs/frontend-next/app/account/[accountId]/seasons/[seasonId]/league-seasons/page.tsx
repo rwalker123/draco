@@ -1,5 +1,5 @@
-import ProtectedLeagueSeasonManagement from '../../../../../../components/ProtectedLeagueSeasonManagement';
+import LeagueSeasonManagementClientWrapper from './LeagueSeasonManagementClientWrapper';
 
 export default function Page() {
-  return <ProtectedLeagueSeasonManagement />;
+  return <LeagueSeasonManagementClientWrapper />;
 }

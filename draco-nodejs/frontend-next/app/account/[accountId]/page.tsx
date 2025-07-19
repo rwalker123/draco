@@ -1,6 +1,6 @@
 'use client';
-import Accounts from '../../../components/Accounts';
+import BaseballAccountHome from './BaseballAccountHome';
 
 export default function AccountPage() {
-  return <Accounts />;
+  return <BaseballAccountHome />;
 }

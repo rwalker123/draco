@@ -46,11 +46,11 @@ import { startOfMonth } from 'date-fns/startOfMonth';
 import { endOfMonth } from 'date-fns/endOfMonth';
 import { startOfYear } from 'date-fns/startOfYear';
 import { endOfYear } from 'date-fns/endOfYear';
-import { useRole } from '../context/RoleContext';
-import { useAuth } from '../context/AuthContext';
+import { useRole } from '../../../../context/RoleContext';
+import { useAuth } from '../../../../context/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
-import AccountPageHeader from './AccountPageHeader';
-import { getGameStatusText, getGameStatusShortText } from '../utils/gameUtils';
+import AccountPageHeader from '../../../../components/AccountPageHeader';
+import { getGameStatusText, getGameStatusShortText } from '../../../../utils/gameUtils';
 
 interface Game {
   id: string;

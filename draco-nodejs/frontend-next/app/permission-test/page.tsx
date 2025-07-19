@@ -1,1 +1,10 @@
-export default function Page() { return <div>permission-test page</div>; }
+import React, { Suspense } from 'react';
+import PermissionTest from './PermissionTest';
+
+export default function Page() {
+  return (
+    <Suspense>
+      <PermissionTest />
+    </Suspense>
+  );
+}

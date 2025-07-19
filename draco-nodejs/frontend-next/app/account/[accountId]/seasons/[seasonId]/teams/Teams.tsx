@@ -12,13 +12,13 @@ import {
   MenuItem,
 } from '@mui/material';
 import { Edit as EditIcon, ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { getLogoSize, addCacheBuster } from '../config/teams';
-import AccountPageHeader from './AccountPageHeader';
+import { useAuth } from '../../../../../../context/AuthContext';
+import { useRole } from '../../../../../../context/RoleContext';
+import { getLogoSize, addCacheBuster } from '../../../../../../config/teams';
+import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import EditTeamDialog from './EditTeamDialog';
-import TeamAvatar from './TeamAvatar';
+import EditTeamDialog from '../../../../../../components/EditTeamDialog';
+import TeamAvatar from '../../../../../../components/TeamAvatar';
 
 interface Team {
   id: string;

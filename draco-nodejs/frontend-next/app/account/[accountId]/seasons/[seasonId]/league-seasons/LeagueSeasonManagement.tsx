@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-import { isAxiosError } from '../context/AccountContext';
+import { isAxiosError } from '../../../../../../context/AccountContext';
 
 interface LeagueSeason {
   id: string;
@@ -929,7 +929,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   }
 
   return (
-    <Box>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
@@ -1616,7 +1616,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       >
         <AddIcon />
       </Fab>
-    </Box>
+    </main>
   );
 };
 

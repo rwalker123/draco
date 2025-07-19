@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import Teams from '../../../../../../components/Teams';
+import Teams from './Teams';
 
 export default function TeamsClientWrapper() {
   const params = useParams();

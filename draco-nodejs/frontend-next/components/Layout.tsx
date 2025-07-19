@@ -17,7 +17,6 @@ import {
   Menu as MenuIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   Business as BusinessIcon,
-  Group as GroupIcon,
   Settings as SettingsIcon,
   CalendarMonth as CalendarMonthIcon,
   Home as HomeIcon,
@@ -218,7 +217,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <ListItemText>Account Management</ListItemText>
             </MenuItem>
           )}
-          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+          {(hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
+            hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
             <MenuItem
               onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
             >
@@ -231,24 +231,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Account Admin Only */}
           {hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && [
             <MenuItem
-              onClick={() => handleNavigation('/account-management')}
-              key="account-management"
-            >
-              <ListItemIcon>
-                <BusinessIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Management</ListItemText>
-            </MenuItem>,
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/management`)}
-              key="current-account"
-            >
-              <ListItemIcon>
-                <BusinessIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Current Account</ListItemText>
-            </MenuItem>,
-            <MenuItem
               onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
               key="account-settings"
             >
@@ -257,58 +239,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </ListItemIcon>
               <ListItemText>Account Settings</ListItemText>
             </MenuItem>,
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
-              key="season-management"
-            >
-              <ListItemIcon>
-                <CalendarMonthIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Season Management</ListItemText>
-            </MenuItem>,
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/schedule`)}
-              key="schedule-management"
-            >
-              <ListItemIcon>
-                <CalendarMonthIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Schedule Management</ListItemText>
-            </MenuItem>,
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/teams`)}
-              key="teams"
-            >
-              <ListItemIcon>
-                <GroupIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Teams</ListItemText>
-            </MenuItem>,
           ]}
           {/* League Admin Only */}
-          {hasRole('672DDF06-21AC-4D7C-B025-9319CC69281A') && (
-            <MenuItem onClick={() => handleNavigation('/league-management')}>
-              <ListItemIcon>
-                <GroupIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>League Management</ListItemText>
-            </MenuItem>
-          )}
           {/* Team Admin Only */}
-          {hasRole('777D771B-1CBA-4126-B8F3-DD7F3478D40E') && (
-            <MenuItem onClick={() => handleNavigation('/team-management')}>
-              <ListItemIcon>
-                <GroupIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Team Management</ListItemText>
-            </MenuItem>
-          )}
-          <MenuItem onClick={() => handleNavigation('/settings')}>
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Settings</ListItemText>
-          </MenuItem>
           <MenuItem onClick={() => handleNavigation('/permission-test')}>
             <ListItemIcon>
               <SettingsIcon fontSize="small" />
