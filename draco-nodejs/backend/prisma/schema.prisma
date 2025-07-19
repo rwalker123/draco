@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [citext]
 }
 
 model accounthandouts {
@@ -205,9 +207,9 @@ model contactroles {
 model contacts {
   id                                                        BigInt                     @id @default(autoincrement())
   userid                                                    String?                    @db.VarChar(128)
-  lastname                                                  String                     @db.VarChar(25)
-  firstname                                                 String                     @db.VarChar(25)
-  middlename                                                String                     @db.VarChar(25)
+  lastname                                                  String                     @db.Citext
+  firstname                                                 String                     @db.Citext
+  middlename                                                String                     @db.Citext
   phone1                                                    String?                    @db.VarChar(14)
   phone2                                                    String?                    @db.VarChar(14)
   phone3                                                    String?                    @db.VarChar(14)
@@ -744,7 +746,7 @@ model leagueseason {
   playoffsetup   playoffsetup[]
   teamsseason    teamsseason[]
 
-  @@unique([seasonid, leagueid])
+  @@unique([leagueid, seasonid], map: "league_season")
 }
 
 model leagueumpires {
