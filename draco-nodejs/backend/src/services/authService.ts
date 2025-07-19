@@ -1,8 +1,6 @@
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '../lib/prisma';
 
 export interface LoginCredentials {
   username: string;
@@ -28,6 +26,13 @@ export interface AuthResponse {
   };
 }
 
+export interface JWTPayload {
+  userId: string;
+  username: string;
+  iat: number;
+  exp: number;
+}
+
 export class AuthService {
   private readonly JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
   private readonly JWT_EXPIRES_IN = '24h';
@@ -45,16 +50,16 @@ export class AuthService {
         include: {
           aspnetuserroles: {
             include: {
-              aspnetroles: true
-            }
-          }
-        }
+              aspnetroles: true,
+            },
+          },
+        },
       });
 
       if (!user) {
         return {
           success: false,
-          message: 'Invalid username or password'
+          message: 'Invalid username or password',
         };
       }
 
@@ -62,7 +67,7 @@ export class AuthService {
       if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
         return {
           success: false,
-          message: 'Account is temporarily locked. Please try again later.'
+          message: 'Account is temporarily locked. Please try again later.',
         };
       }
 
@@ -70,7 +75,7 @@ export class AuthService {
       if (!user.passwordhash) {
         return {
           success: false,
-          message: 'Invalid username or password'
+          message: 'Invalid username or password',
         };
       }
 
@@ -80,7 +85,7 @@ export class AuthService {
         await this.incrementFailedLoginCount(user.id);
         return {
           success: false,
-          message: 'Invalid username or password'
+          message: 'Invalid username or password',
         };
       }
 
@@ -88,7 +93,7 @@ export class AuthService {
       if (user.accessfailedcount > 0) {
         await prisma.aspnetusers.update({
           where: { id: user.id },
-          data: { accessfailedcount: 0 }
+          data: { accessfailedcount: 0 },
         });
       }
 
@@ -102,14 +107,14 @@ export class AuthService {
         user: {
           id: user.id,
           username: user.username || '',
-          email: user.email || ''
-        }
+          email: user.email || '',
+        },
       };
     } catch (error) {
       console.error('Login error:', error);
       return {
         success: false,
-        message: 'An error occurred during login'
+        message: 'An error occurred during login',
       };
     }
   }
@@ -123,26 +128,26 @@ export class AuthService {
 
       // Check if username already exists
       const existingUser = await prisma.aspnetusers.findUnique({
-        where: { username }
+        where: { username },
       });
 
       if (existingUser) {
         return {
           success: false,
-          message: 'Username already exists'
+          message: 'Username already exists',
         };
       }
 
       // Check if email already exists
       if (email) {
         const existingEmail = await prisma.aspnetusers.findFirst({
-          where: { email }
+          where: { email },
         });
 
         if (existingEmail) {
           return {
             success: false,
-            message: 'Email already exists'
+            message: 'Email already exists',
           };
         }
       }
@@ -165,8 +170,8 @@ export class AuthService {
           phonenumberconfirmed: false,
           twofactorenabled: false,
           lockoutenabled: true,
-          accessfailedcount: 0
-        }
+          accessfailedcount: 0,
+        },
       });
 
       // Create contact record if name provided
@@ -183,8 +188,8 @@ export class AuthService {
               middlename: '', // Required field, use empty string as default
               email,
               creatoraccountid: defaultAccount.id,
-              dateofbirth: new Date('1900-01-01') // Default date
-            }
+              dateofbirth: new Date('1900-01-01'), // Default date
+            },
           });
         }
       }
@@ -199,14 +204,14 @@ export class AuthService {
         user: {
           id: newUser.id,
           username: newUser.username || '',
-          email: newUser.email || ''
-        }
+          email: newUser.email || '',
+        },
       };
     } catch (error) {
       console.error('Registration error:', error);
       return {
         success: false,
-        message: 'An error occurred during registration'
+        message: 'An error occurred during registration',
       };
     }
   }
@@ -216,16 +221,16 @@ export class AuthService {
    */
   async verifyToken(token: string): Promise<AuthResponse> {
     try {
-      const decoded = jwt.verify(token, this.JWT_SECRET) as any;
-      
+      const decoded = jwt.verify(token, this.JWT_SECRET) as JWTPayload;
+
       const user = await prisma.aspnetusers.findUnique({
-        where: { id: decoded.userId }
+        where: { id: decoded.userId },
       });
 
       if (!user) {
         return {
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         };
       }
 
@@ -235,13 +240,13 @@ export class AuthService {
         user: {
           id: user.id,
           username: user.username || '',
-          email: user.email || ''
-        }
+          email: user.email || '',
+        },
       };
     } catch (error) {
       return {
         success: false,
-        message: 'Invalid token'
+        message: 'Invalid token',
       };
     }
   }
@@ -249,17 +254,21 @@ export class AuthService {
   /**
    * Change user password
    */
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<AuthResponse> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<AuthResponse> {
     try {
       // Find user
       const user = await prisma.aspnetusers.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
 
       if (!user) {
         return {
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         };
       }
 
@@ -267,7 +276,7 @@ export class AuthService {
       if (!user.passwordhash) {
         return {
           success: false,
-          message: 'User has no password set'
+          message: 'User has no password set',
         };
       }
 
@@ -275,7 +284,7 @@ export class AuthService {
       if (!isCurrentPasswordValid) {
         return {
           success: false,
-          message: 'Current password is incorrect'
+          message: 'Current password is incorrect',
         };
       }
 
@@ -285,18 +294,18 @@ export class AuthService {
       // Update password
       await prisma.aspnetusers.update({
         where: { id: userId },
-        data: { passwordhash: hashedNewPassword }
+        data: { passwordhash: hashedNewPassword },
       });
 
       return {
         success: true,
-        message: 'Password changed successfully'
+        message: 'Password changed successfully',
       };
     } catch (error) {
       console.error('Change password error:', error);
       return {
         success: false,
-        message: 'An error occurred while changing password'
+        message: 'An error occurred while changing password',
       };
     }
   }
@@ -308,13 +317,13 @@ export class AuthService {
     try {
       // Find user
       const user = await prisma.aspnetusers.findUnique({
-        where: { id: userId }
+        where: { id: userId },
       });
 
       if (!user) {
         return {
           success: false,
-          message: 'User not found'
+          message: 'User not found',
         };
       }
 
@@ -322,7 +331,7 @@ export class AuthService {
       if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
         return {
           success: false,
-          message: 'Account is temporarily locked'
+          message: 'Account is temporarily locked',
         };
       }
 
@@ -336,14 +345,14 @@ export class AuthService {
         user: {
           id: user.id,
           username: user.username || '',
-          email: user.email || ''
-        }
+          email: user.email || '',
+        },
       };
     } catch (error) {
       console.error('Token refresh error:', error);
       return {
         success: false,
-        message: 'An error occurred while refreshing token'
+        message: 'An error occurred while refreshing token',
       };
     }
   }
@@ -363,20 +372,16 @@ export class AuthService {
    * Generate JWT token
    */
   private generateToken(userId: string, username: string): string {
-    return jwt.sign(
-      { userId, username },
-      this.JWT_SECRET,
-      { expiresIn: this.JWT_EXPIRES_IN }
-    );
+    return jwt.sign({ userId, username }, this.JWT_SECRET, { expiresIn: this.JWT_EXPIRES_IN });
   }
 
   /**
    * Generate user ID (GUID format)
    */
   private generateUserId(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   }
@@ -385,7 +390,9 @@ export class AuthService {
    * Generate security stamp
    */
   private generateSecurityStamp(): string {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    return (
+      Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    );
   }
 
   /**
@@ -396,9 +403,9 @@ export class AuthService {
       where: { id: userId },
       data: {
         accessfailedcount: {
-          increment: 1
-        }
-      }
+          increment: 1,
+        },
+      },
     });
   }
-} 
+}

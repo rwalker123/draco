@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as express from 'express';
 import * as request from 'supertest';
-import { PrismaClient } from '@prisma/client';
 import accountsRouter from '../accounts';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
 import * as accountsModule from '../accounts';
@@ -22,61 +21,65 @@ jest.mock('../../middleware/routeProtection', () => {
   };
 });
 
-jest.mock('@prisma/client', () => {
-  const actual = jest.requireActual('@prisma/client');
-  const mPrisma = {
-    accounts: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    affiliations: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    accountsurl: {
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    currentseason: {
-      findUnique: jest.fn(),
-    },
-    season: {
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-    },
-    contacts: {
-      findFirst: jest.fn(),
-      update: jest.fn(),
-      findMany: jest.fn(),
-    },
-    availablefields: {
-      findFirst: jest.fn(),
-      update: jest.fn(),
-    },
-    teams: {
-      findFirst: jest.fn(),
-      delete: jest.fn(),
-    },
-    teamsseason: {
-      findFirst: jest.fn(),
-    },
-    // Add more as needed for other routes
-  };
-  return {
-    ...actual,
-    PrismaClient: jest.fn(() => mPrisma),
-  };
-});
+// Mock the centralized prisma module
+const mockPrisma = {
+  accounts: {
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  affiliations: {
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+  },
+  accountsurl: {
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  },
+  currentseason: {
+    findUnique: jest.fn(),
+  },
+  season: {
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+  },
+  contacts: {
+    findFirst: jest.fn(),
+    update: jest.fn(),
+    findMany: jest.fn(),
+  },
+  availablefields: {
+    findFirst: jest.fn(),
+    update: jest.fn(),
+  },
+  teams: {
+    findFirst: jest.fn(),
+    delete: jest.fn(),
+  },
+  teamsseason: {
+    findFirst: jest.fn(),
+  },
+  leagueschedule: {
+    findFirst: jest.fn(),
+    update: jest.fn(),
+  },
+  // Add more as needed for other routes
+};
 
-const mockPrisma = (PrismaClient as jest.Mock).mock.results[0].value;
-const mockFindManyAccounts = mockPrisma.accounts.findMany;
-const mockFindManyAffiliations = mockPrisma.affiliations.findMany;
-const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst;
+jest.mock('../../lib/prisma', () => mockPrisma);
+const mockFindManyAccounts = mockPrisma.accounts.findMany as jest.MockedFunction<
+  typeof mockPrisma.accounts.findMany
+>;
+const mockFindManyAffiliations = mockPrisma.affiliations.findMany as jest.MockedFunction<
+  typeof mockPrisma.affiliations.findMany
+>;
+const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst as jest.MockedFunction<
+  typeof mockPrisma.accountsurl.findFirst
+>;
 
 function createTestApp() {
   const app = express();

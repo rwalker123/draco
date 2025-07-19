@@ -5,10 +5,16 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
+
+// Type definitions for Prisma query results
+interface League {
+  id: bigint;
+  name: string;
+  accountid: bigint;
+}
 
 const router = Router({ mergeParams: true });
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
@@ -76,45 +82,46 @@ const routeProtection = new RouteProtection(roleService, prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', 
+router.get(
+  '/',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const accountId = BigInt(req.params.accountId);
-      
+
       const leagues = await prisma.league.findMany({
         where: {
-          accountid: accountId
+          accountid: accountId,
         },
         select: {
           id: true,
           name: true,
-          accountid: true
+          accountid: true,
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: 'asc',
+        },
       });
 
       res.json({
         success: true,
         data: {
-          leagues: leagues.map((league: any) => ({
+          leagues: leagues.map((league: League) => ({
             id: league.id.toString(),
             name: league.name,
-            accountId: league.accountid.toString()
-          }))
-        }
+            accountId: league.accountid.toString(),
+          })),
+        },
       });
     } catch (error) {
       console.error('Error getting leagues:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
 /**
@@ -192,10 +199,11 @@ router.get('/',
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/:leagueId',
+router.get(
+  '/:leagueId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const leagueId = BigInt(req.params.leagueId);
       const accountId = BigInt(req.params.accountId);
@@ -203,19 +211,19 @@ router.get('/:leagueId',
       const league = await prisma.league.findFirst({
         where: {
           id: leagueId,
-          accountid: accountId
+          accountid: accountId,
         },
         select: {
           id: true,
           name: true,
-          accountid: true
-        }
+          accountid: true,
+        },
       });
 
       if (!league) {
         res.status(404).json({
           success: false,
-          message: 'League not found'
+          message: 'League not found',
         });
         return;
       }
@@ -226,18 +234,18 @@ router.get('/:leagueId',
           league: {
             id: league.id.toString(),
             name: league.name,
-            accountId: league.accountid.toString()
-          }
-        }
+            accountId: league.accountid.toString(),
+          },
+        },
       });
     } catch (error) {
       console.error('Error getting league:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
 /**
@@ -327,10 +335,11 @@ router.get('/:leagueId',
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/',
+router.post(
+  '/',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const { name } = req.body;
       const accountId = BigInt(req.params.accountId);
@@ -338,7 +347,7 @@ router.post('/',
       if (!name) {
         res.status(400).json({
           success: false,
-          message: 'League name is required'
+          message: 'League name is required',
         });
         return;
       }
@@ -347,14 +356,14 @@ router.post('/',
       const existingLeague = await prisma.league.findFirst({
         where: {
           name: name,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (existingLeague) {
         res.status(409).json({
           success: false,
-          message: 'A league with this name already exists for this account'
+          message: 'A league with this name already exists for this account',
         });
         return;
       }
@@ -362,13 +371,13 @@ router.post('/',
       const newLeague = await prisma.league.create({
         data: {
           name: name,
-          accountid: accountId
+          accountid: accountId,
         },
         select: {
           id: true,
           name: true,
-          accountid: true
-        }
+          accountid: true,
+        },
       });
 
       res.status(201).json({
@@ -377,28 +386,29 @@ router.post('/',
           league: {
             id: newLeague.id.toString(),
             name: newLeague.name,
-            accountId: newLeague.accountid.toString()
-          }
-        }
+            accountId: newLeague.accountid.toString(),
+          },
+        },
       });
     } catch (error) {
       console.error('Error creating league:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
 /**
  * PUT /api/accounts/:accountId/leagues/:leagueId
  * Update league name (requires AccountAdmin or Administrator)
  */
-router.put('/:leagueId',
+router.put(
+  '/:leagueId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const leagueId = BigInt(req.params.leagueId);
       const accountId = BigInt(req.params.accountId);
@@ -407,7 +417,7 @@ router.put('/:leagueId',
       if (!name) {
         res.status(400).json({
           success: false,
-          message: 'League name is required'
+          message: 'League name is required',
         });
         return;
       }
@@ -416,14 +426,14 @@ router.put('/:leagueId',
       const existingLeague = await prisma.league.findFirst({
         where: {
           id: leagueId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!existingLeague) {
         res.status(404).json({
           success: false,
-          message: 'League not found'
+          message: 'League not found',
         });
         return;
       }
@@ -433,30 +443,30 @@ router.put('/:leagueId',
         where: {
           name: name,
           accountid: accountId,
-          id: { not: leagueId }
-        }
+          id: { not: leagueId },
+        },
       });
 
       if (duplicateLeague) {
         res.status(409).json({
           success: false,
-          message: 'A league with this name already exists for this account'
+          message: 'A league with this name already exists for this account',
         });
         return;
       }
 
       const updatedLeague = await prisma.league.update({
         where: {
-          id: leagueId
+          id: leagueId,
         },
         data: {
-          name: name
+          name: name,
         },
         select: {
           id: true,
           name: true,
-          accountid: true
-        }
+          accountid: true,
+        },
       });
 
       res.json({
@@ -465,18 +475,18 @@ router.put('/:leagueId',
           league: {
             id: updatedLeague.id.toString(),
             name: updatedLeague.name,
-            accountId: updatedLeague.accountid.toString()
-          }
-        }
+            accountId: updatedLeague.accountid.toString(),
+          },
+        },
       });
     } catch (error) {
       console.error('Error updating league:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
 /**
@@ -484,10 +494,11 @@ router.put('/:leagueId',
  * Delete a league (requires AccountAdmin or Administrator)
  * Note: This will fail if the league has any related data
  */
-router.delete('/:leagueId',
+router.delete(
+  '/:leagueId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const leagueId = BigInt(req.params.leagueId);
       const accountId = BigInt(req.params.accountId);
@@ -496,14 +507,14 @@ router.delete('/:leagueId',
       const league = await prisma.league.findFirst({
         where: {
           id: leagueId,
-          accountid: accountId
-        }
+          accountid: accountId,
+        },
       });
 
       if (!league) {
         res.status(404).json({
           success: false,
-          message: 'League not found'
+          message: 'League not found',
         });
         return;
       }
@@ -511,14 +522,15 @@ router.delete('/:leagueId',
       // Check if there are any related records that would prevent deletion
       const hasRelatedData = await prisma.leagueseason.findFirst({
         where: {
-          leagueid: leagueId
-        }
+          leagueid: leagueId,
+        },
       });
 
       if (hasRelatedData) {
         res.status(400).json({
           success: false,
-          message: 'Cannot delete league because it is associated with seasons. Remove league from seasons first.'
+          message:
+            'Cannot delete league because it is associated with seasons. Remove league from seasons first.',
         });
         return;
       }
@@ -526,34 +538,34 @@ router.delete('/:leagueId',
       // Delete the league
       await prisma.league.delete({
         where: {
-          id: leagueId
-        }
+          id: leagueId,
+        },
       });
 
       res.json({
         success: true,
         data: {
-          message: `League "${league.name}" has been deleted`
-        }
+          message: `League "${league.name}" has been deleted`,
+        },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting league:', error);
-      
+
       // Check if it's a foreign key constraint error
-      if (error.code === 'P2003') {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
         res.status(400).json({
           success: false,
-          message: 'Cannot delete league because it has related data. Remove related data first.'
+          message: 'Cannot delete league because it has related data. Remove related data first.',
         });
         return;
       }
 
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
-  }
+  },
 );
 
-export default router; 
+export default router;
