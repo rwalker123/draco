@@ -2066,7 +2066,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box>
+      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
         <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
           <Box
             display="flex"
@@ -2778,7 +2778,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             </Button>
           </DialogActions>
         </Dialog>
-      </Box>
+      </main>
     </LocalizationProvider>
   );
 };

@@ -556,8 +556,6 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                   msOverflowStyle: 'none', // IE/Edge
                   // Touch scrolling improvements
                   WebkitOverflowScrolling: 'touch',
-                  // Smooth momentum scrolling on iOS
-                  '-webkit-overflow-scrolling': 'touch',
                 }}
               >
                 {layout === 'horizontal'

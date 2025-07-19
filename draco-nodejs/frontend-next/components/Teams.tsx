@@ -528,7 +528,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   }
 
   return (
-    <Box>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
         <Box
           display="flex"
@@ -635,7 +635,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
           Export All Managers
         </MenuItem>
       </Menu>
-    </Box>
+    </main>
   );
 };
 

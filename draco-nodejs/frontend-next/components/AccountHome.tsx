@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Button, 
-  Card, 
-  CardContent, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Button,
+  Card,
+  CardContent,
   Alert,
   CircularProgress,
   Container,
-  Chip
+  Chip,
 } from '@mui/material';
-import { 
-  CalendarMonth, 
-  Group, 
+import {
+  CalendarMonth,
+  Group,
   Business,
   Visibility as ViewIcon,
   Edit as EditIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -128,9 +128,7 @@ const AccountHome: React.FC = () => {
   if (error || !account) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">
-          {error || 'Account not found'}
-        </Alert>
+        <Alert severity="error">{error || 'Account not found'}</Alert>
         <Box sx={{ mt: 2 }}>
           <Button variant="contained" onClick={() => router.push('/accounts')}>
             Back to Accounts
@@ -145,28 +143,24 @@ const AccountHome: React.FC = () => {
     return <BaseballAccountHome />;
   }
 
-  const currentSeason = seasons.find(s => s.isCurrent);
+  const currentSeason = seasons.find((s) => s.isCurrent);
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
           {account.name}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
-          <Chip 
-            label={account.accountType} 
-            color="primary" 
+          <Chip
+            label={account.accountType}
+            color="primary"
             variant="outlined"
             icon={<Business />}
           />
           {account.affiliation && (
-            <Chip 
-              label={account.affiliation} 
-              variant="outlined"
-              icon={<Group />}
-            />
+            <Chip label={account.affiliation} variant="outlined" icon={<Group />} />
           )}
         </Box>
         <Typography variant="body1" color="text.secondary">
@@ -186,18 +180,10 @@ const AccountHome: React.FC = () => {
         </Button>
         {user && (
           <>
-            <Button
-              variant="outlined"
-              startIcon={<EditIcon />}
-              onClick={handleManageAccount}
-            >
+            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleManageAccount}>
               Manage Account
             </Button>
-            <Button
-              variant="outlined"
-              startIcon={<SettingsIcon />}
-              onClick={handleAccountSettings}
-            >
+            <Button variant="outlined" startIcon={<SettingsIcon />} onClick={handleAccountSettings}>
               Settings
             </Button>
           </>
@@ -225,11 +211,7 @@ const AccountHome: React.FC = () => {
             This is the active season for {account.name}. View schedules, standings, and more.
           </Typography>
           <Box sx={{ mt: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<ViewIcon />}
-              onClick={handleViewSeasons}
-            >
+            <Button variant="contained" startIcon={<ViewIcon />} onClick={handleViewSeasons}>
               View Season Details
             </Button>
           </Box>
@@ -329,8 +311,8 @@ const AccountHome: React.FC = () => {
           </Box>
         </Paper>
       )}
-    </Container>
+    </main>
   );
 };
 
-export default AccountHome; 
+export default AccountHome;
