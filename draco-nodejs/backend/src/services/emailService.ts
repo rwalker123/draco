@@ -1,5 +1,4 @@
-const nodemailer = require('nodemailer');
-import type { Transporter } from 'nodemailer';
+import nodemailer, { type Transporter } from 'nodemailer';
 
 export interface EmailConfig {
   host: string;
@@ -25,16 +24,20 @@ export class EmailService {
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(toEmail: string, username: string, resetToken: string): Promise<boolean> {
+  async sendPasswordResetEmail(
+    toEmail: string,
+    username: string,
+    resetToken: string,
+  ): Promise<boolean> {
     try {
       const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
-      
+
       const mailOptions = {
         from: this.fromEmail,
         to: toEmail,
         subject: 'Draco Sports Manager - Password Reset Request',
         html: this.generatePasswordResetEmailHtml(username, resetUrl),
-        text: this.generatePasswordResetEmailText(username, resetUrl)
+        text: this.generatePasswordResetEmailText(username, resetUrl),
       };
 
       await this.transporter.sendMail(mailOptions);
@@ -123,4 +126,4 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
       return false;
     }
   }
-} 
+}
