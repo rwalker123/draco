@@ -103,7 +103,7 @@ const AccountSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      <main className="min-h-screen bg-background">
         <Box sx={{ textAlign: 'center', mt: 8 }}>
           <CircularProgress size={60} />
           <Typography variant="h6" sx={{ mt: 2 }}>
@@ -116,7 +116,7 @@ const AccountSettings: React.FC = () => {
 
   if (error || !account) {
     return (
-      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      <main className="min-h-screen bg-background">
         <Box sx={{ mt: 8 }}>
           <Alert severity="error">{error || 'Account not found'}</Alert>
         </Box>
@@ -126,7 +126,7 @@ const AccountSettings: React.FC = () => {
 
   if (!canManageAccount) {
     return (
-      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      <main className="min-h-screen bg-background">
         <Box sx={{ mt: 8 }}>
           <Alert severity="warning">
             You don&apos;t have permission to manage this account@apos;s settings.
@@ -137,7 +137,7 @@ const AccountSettings: React.FC = () => {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>

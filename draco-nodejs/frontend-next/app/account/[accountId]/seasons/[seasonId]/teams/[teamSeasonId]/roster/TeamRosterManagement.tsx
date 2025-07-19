@@ -1273,7 +1273,7 @@ const TeamRosterManagement: React.FC = () => {
   const inactivePlayers = sortedRosterMembers.filter((member) => member.inactive);
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {/* Breadcrumbs */}
       <Breadcrumbs sx={{ mb: 3 }}>
         <Link

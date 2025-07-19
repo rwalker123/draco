@@ -929,7 +929,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4" component="h1">
