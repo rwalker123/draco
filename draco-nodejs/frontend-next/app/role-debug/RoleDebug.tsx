@@ -1,8 +1,10 @@
+'use client';
+
 import React from 'react';
 import { Box, Typography, Paper, Button } from '@mui/material';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { useAccount } from '../context/AccountContext';
+import { useAuth } from '../../context/AuthContext';
+import { useRole } from '../../context/RoleContext';
+import { useAccount } from '../../context/AccountContext';
 
 const RoleDebug: React.FC = () => {
   const { user, token } = useAuth();
@@ -10,11 +12,11 @@ const RoleDebug: React.FC = () => {
   const { currentAccount, hasAccessToAccount } = useAccount();
 
   return (
-    <Box sx={{ p: 3 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       <Typography variant="h4" gutterBottom>
         Role Debug Information
       </Typography>
-      
+
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           User Information
@@ -30,8 +32,12 @@ const RoleDebug: React.FC = () => {
         </Typography>
         {userRoles ? (
           <>
-            <Typography><strong>Global Roles:</strong> {userRoles.globalRoles.join(', ') || 'None'}</Typography>
-            <Typography><strong>Contact Roles:</strong> {userRoles.contactRoles.length} role(s)</Typography>
+            <Typography>
+              <strong>Global Roles:</strong> {userRoles.globalRoles.join(', ') || 'None'}
+            </Typography>
+            <Typography>
+              <strong>Contact Roles:</strong> {userRoles.contactRoles.length} role(s)
+            </Typography>
             {userRoles.contactRoles.map((role) => (
               <Typography key={role.id} sx={{ ml: 2 }}>
                 - {role.roleName || role.roleId} (Account: {role.accountId})
@@ -57,16 +63,25 @@ const RoleDebug: React.FC = () => {
         <Typography variant="h6" gutterBottom>
           Permission Checks
         </Typography>
-        <Typography>Has account.manage permission: {hasPermission('account.manage') ? '✅' : '❌'}</Typography>
-        <Typography>Has league.manage permission: {hasPermission('league.manage') ? '✅' : '❌'}</Typography>
-        <Typography>Has team.manage permission: {hasPermission('team.manage') ? '✅' : '❌'}</Typography>
+        <Typography>
+          Has account.manage permission: {hasPermission('account.manage') ? '✅' : '❌'}
+        </Typography>
+        <Typography>
+          Has league.manage permission: {hasPermission('league.manage') ? '✅' : '❌'}
+        </Typography>
+        <Typography>
+          Has team.manage permission: {hasPermission('team.manage') ? '✅' : '❌'}
+        </Typography>
       </Paper>
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <Typography variant="h6" gutterBottom>
           Account Context
         </Typography>
-        <Typography>Current Account: {currentAccount ? `${currentAccount.name} (${currentAccount.id})` : 'None'}</Typography>
+        <Typography>
+          Current Account:{' '}
+          {currentAccount ? `${currentAccount.name} (${currentAccount.id})` : 'None'}
+        </Typography>
         <Typography>Has access to account 1: {hasAccessToAccount('1') ? '✅' : '❌'}</Typography>
         <Typography>Has access to account 2: {hasAccessToAccount('2') ? '✅' : '❌'}</Typography>
       </Paper>
@@ -76,19 +91,22 @@ const RoleDebug: React.FC = () => {
           Test Links
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-          <Button variant="contained" onClick={() => window.location.href = '/account/1/management'}>
+          <Button
+            variant="contained"
+            onClick={() => (window.location.href = '/account/1/management')}
+          >
             Test Account 1 Management
           </Button>
-          <Button variant="contained" onClick={() => window.location.href = '/admin'}>
+          <Button variant="contained" onClick={() => (window.location.href = '/admin')}>
             Test Admin Dashboard
           </Button>
-          <Button variant="contained" onClick={() => window.location.href = '/permission-test'}>
+          <Button variant="contained" onClick={() => (window.location.href = '/permission-test')}>
             Test Permission Page
           </Button>
         </Box>
       </Paper>
-    </Box>
+    </main>
   );
 };
 
-export default RoleDebug; 
+export default RoleDebug;

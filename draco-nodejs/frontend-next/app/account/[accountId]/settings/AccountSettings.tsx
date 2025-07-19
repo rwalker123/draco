@@ -1,20 +1,11 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Tabs,
-  Tab,
-  Container,
-  Alert,
-  CircularProgress
-} from '@mui/material';
+import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress } from '@mui/material';
 import { useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import UrlManagement from './UrlManagement';
+import { useAuth } from '../../../../context/AuthContext';
+import { useRole } from '../../../../context/RoleContext';
+import UrlManagement from '../../../../components/UrlManagement';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -33,11 +24,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`account-tab-${index}`}
       {...other}
     >
-      {value === index && (
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
-      )}
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
 }
@@ -68,7 +55,7 @@ const AccountSettings: React.FC = () => {
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const { token } = useAuth();
   const { hasRole } = useRole();
-  
+
   const [tabValue, setTabValue] = useState(0);
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
@@ -116,37 +103,41 @@ const AccountSettings: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4, textAlign: 'center' }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Loading account settings...
-        </Typography>
-      </Container>
+      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+        <Box sx={{ textAlign: 'center', mt: 8 }}>
+          <CircularProgress size={60} />
+          <Typography variant="h6" sx={{ mt: 2 }}>
+            Loading account settings...
+          </Typography>
+        </Box>
+      </main>
     );
   }
 
   if (error || !account) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">
-          {error || 'Account not found'}
-        </Alert>
-      </Container>
+      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+        <Box sx={{ mt: 8 }}>
+          <Alert severity="error">{error || 'Account not found'}</Alert>
+        </Box>
+      </main>
     );
   }
 
   if (!canManageAccount) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="warning">
-          You don&apos;t have permission to manage this account@apos;s settings.
-        </Alert>
-      </Container>
+      <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+        <Box sx={{ mt: 8 }}>
+          <Alert severity="warning">
+            You don&apos;t have permission to manage this account@apos;s settings.
+          </Alert>
+        </Box>
+      </main>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
@@ -163,9 +154,9 @@ const AccountSettings: React.FC = () => {
       {/* Settings Tabs */}
       <Paper sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange} 
+          <Tabs
+            value={tabValue}
+            onChange={handleTabChange}
             aria-label="account settings tabs"
             variant="scrollable"
             scrollButtons="auto"
@@ -179,8 +170,8 @@ const AccountSettings: React.FC = () => {
 
         {/* URL Management Tab */}
         <TabPanel value={tabValue} index={0}>
-          <UrlManagement 
-            accountId={accountIdStr || ''} 
+          <UrlManagement
+            accountId={accountIdStr || ''}
             accountName={account.name}
             onUrlsChange={(urls) => {
               setAccount({ ...account, urls });
@@ -196,18 +187,22 @@ const AccountSettings: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Configure basic account information and preferences.
           </Typography>
-          
+
           <Alert severity="info" sx={{ mb: 3 }}>
-            General settings management is coming soon. This will include account name, 
-            timezone, and other basic configuration options.
+            General settings management is coming soon. This will include account name, timezone,
+            and other basic configuration options.
           </Alert>
-          
+
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              <strong>Account Name:</strong> {account.name}<br />
-              <strong>Account Type:</strong> {account.accountType}<br />
-              <strong>First Year:</strong> {account.firstYear}<br />
-              <strong>Affiliation:</strong> {account.affiliation || 'None'}<br />
+              <strong>Account Name:</strong> {account.name}
+              <br />
+              <strong>Account Type:</strong> {account.accountType}
+              <br />
+              <strong>First Year:</strong> {account.firstYear}
+              <br />
+              <strong>Affiliation:</strong> {account.affiliation || 'None'}
+              <br />
               <strong>Timezone:</strong> {account.timezoneId}
             </Typography>
           </Box>
@@ -221,16 +216,18 @@ const AccountSettings: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Connect your social media accounts and configure sharing options.
           </Typography>
-          
+
           <Alert severity="info" sx={{ mb: 3 }}>
-            Social media integration is coming soon. This will include Twitter, 
-            Facebook, and YouTube account connections.
+            Social media integration is coming soon. This will include Twitter, Facebook, and
+            YouTube account connections.
           </Alert>
-          
+
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              <strong>Twitter Account:</strong> {account.twitterAccountName || 'Not configured'}<br />
-              <strong>Facebook Fan Page:</strong> {account.facebookFanPage || 'Not configured'}<br />
+              <strong>Twitter Account:</strong> {account.twitterAccountName || 'Not configured'}
+              <br />
+              <strong>Facebook Fan Page:</strong> {account.facebookFanPage || 'Not configured'}
+              <br />
               <strong>YouTube User ID:</strong> {account.youtubeUserId || 'Not configured'}
             </Typography>
           </Box>
@@ -244,23 +241,25 @@ const AccountSettings: React.FC = () => {
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
             Manage account security, user permissions, and access controls.
           </Typography>
-          
+
           <Alert severity="info" sx={{ mb: 3 }}>
-            Security settings management is coming soon. This will include user roles, 
-            permissions, and access control configuration.
+            Security settings management is coming soon. This will include user roles, permissions,
+            and access control configuration.
           </Alert>
-          
+
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              <strong>Owner:</strong> {account.ownerName || 'Not assigned'}<br />
-              <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}<br />
+              <strong>Owner:</strong> {account.ownerName || 'Not assigned'}
+              <br />
+              <strong>Account Admin:</strong> {hasRole('AccountAdmin') ? 'Yes' : 'No'}
+              <br />
               <strong>Administrator:</strong> {hasRole('Administrator') ? 'Yes' : 'No'}
             </Typography>
           </Box>
         </TabPanel>
       </Paper>
-    </Container>
+    </main>
   );
 };
 
-export default AccountSettings; 
+export default AccountSettings;

@@ -18,14 +18,14 @@ import {
   ViewModule as ViewModuleIcon,
 } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth } from '../context/AuthContext';
-import TodayScoreboard from './TodayScoreboard';
-import YesterdayScoreboard from './YesterdayScoreboard';
-import GameRecapsWidget from './GameRecapsWidget';
-import MyTeams, { UserTeam } from './MyTeams';
-import AccountPageHeader from './AccountPageHeader';
-import OrganizationsWidget from './OrganizationsWidget';
-import ThemeSwitcher from './ThemeSwitcher';
+import { useAuth } from '../../../context/AuthContext';
+import TodayScoreboard from '../../../components/TodayScoreboard';
+import YesterdayScoreboard from '../../../components/YesterdayScoreboard';
+import GameRecapsWidget from '../../../components/GameRecapsWidget';
+import MyTeams, { UserTeam } from '../../../components/MyTeams';
+import AccountPageHeader from '../../../components/AccountPageHeader';
+import OrganizationsWidget from '../../../components/OrganizationsWidget';
+import ThemeSwitcher from '../../../components/ThemeSwitcher';
 
 interface Account {
   id: string;
