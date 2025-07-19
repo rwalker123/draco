@@ -224,7 +224,7 @@ For local S3 testing and development, you can use LocalStack to emulate AWS S3 w
    docker-compose up -d localstack
    ```
 
-2. **Create S3 bucket**
+2. **Optional: Create S3 bucket manually** (the application will create it automatically if it doesn't exist)
    ```bash
    # Create the bucket for team logos
    aws --endpoint-url=http://localhost:4566 s3 mb s3://draco-team-logos
@@ -279,7 +279,7 @@ curl http://localhost:4566/_localstack/health
 ### Notes
 
 - LocalStack uses dummy credentials (`test`/`test`) that work for local development
-- The S3 bucket `draco-team-logos` is created automatically if it doesn't exist
+- The S3 bucket `draco-team-logos` is created automatically when the application starts
 - All S3 operations work exactly like real AWS S3
 - Data persists in the `./localstack-data` directory
 

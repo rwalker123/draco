@@ -6,8 +6,18 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
+  CreateBucketCommand,
+  HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
+// AWS Error interface for better type safety
+interface AWSError extends Error {
+  name: string;
+  $metadata?: {
+    httpStatusCode?: number;
+  };
+}
 
 export interface StorageService {
   saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void>;
@@ -151,6 +161,33 @@ export class S3StorageService implements StorageService {
       },
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true', // Required for LocalStack
     });
+
+    // Ensure bucket exists on initialization
+    this.ensureBucketExists();
+  }
+
+  private async ensureBucketExists(): Promise<void> {
+    try {
+      // Check if bucket exists
+      await this.s3Client.send(new HeadBucketCommand({ Bucket: this.bucketName }));
+      console.log(`S3 bucket '${this.bucketName}' already exists`);
+    } catch (error: unknown) {
+      // If bucket doesn't exist, create it
+      const awsError = error as AWSError;
+      if (awsError.name === 'NotFound' || awsError.$metadata?.httpStatusCode === 404) {
+        try {
+          console.log(`Creating S3 bucket '${this.bucketName}'...`);
+          await this.s3Client.send(new CreateBucketCommand({ Bucket: this.bucketName }));
+          console.log(`S3 bucket '${this.bucketName}' created successfully`);
+        } catch (createError) {
+          console.error(`Failed to create S3 bucket '${this.bucketName}':`, createError);
+          // Don't throw here - let individual operations handle bucket errors
+        }
+      } else {
+        console.error(`Error checking S3 bucket '${this.bucketName}':`, error);
+        // Don't throw here - let individual operations handle bucket errors
+      }
+    }
   }
 
   async saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void> {
@@ -175,9 +212,20 @@ export class S3StorageService implements StorageService {
 
       await this.s3Client.send(command);
       console.log(`Logo saved to S3: ${key}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving logo to S3:', error);
-      throw new Error('Failed to save logo to S3');
+
+      // Provide more specific error messages
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchBucket') {
+        throw new Error(
+          `S3 bucket '${this.bucketName}' does not exist. Please ensure the bucket is created or check your S3 configuration.`,
+        );
+      } else if (awsError.name === 'AccessDenied') {
+        throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
+      } else {
+        throw new Error(`Failed to save logo to S3: ${awsError.message || 'Unknown error'}`);
+      }
     }
   }
 
@@ -268,9 +316,22 @@ export class S3StorageService implements StorageService {
       });
       await this.s3Client.send(command);
       console.log(`Account logo saved to S3: ${key}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error saving account logo to S3:', error);
-      throw new Error('Failed to save account logo to S3');
+
+      // Provide more specific error messages
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchBucket') {
+        throw new Error(
+          `S3 bucket '${this.bucketName}' does not exist. Please ensure the bucket is created or check your S3 configuration.`,
+        );
+      } else if (awsError.name === 'AccessDenied') {
+        throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
+      } else {
+        throw new Error(
+          `Failed to save account logo to S3: ${awsError.message || 'Unknown error'}`,
+        );
+      }
     }
   }
 
