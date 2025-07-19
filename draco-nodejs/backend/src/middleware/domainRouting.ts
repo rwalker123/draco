@@ -1,16 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
+// Type definitions for Prisma query results
+interface Account {
+  id: bigint;
+  name: string;
+  accounttypeid: bigint;
+  accounttypes: {
+    id: bigint;
+    name: string;
+  };
+}
 
 /**
  * Domain routing middleware
  * Looks up the host in the accountsurl table and redirects to the appropriate account
  */
-export const domainRouting = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const domainRouting = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const host = req.get('host');
-    
+
     if (!host) {
       next();
       return;
@@ -22,16 +35,16 @@ export const domainRouting = async (req: Request, res: Response, next: NextFunct
         OR: [
           { url: host.toLowerCase() },
           { url: `www.${host.toLowerCase()}` },
-          { url: host.toLowerCase().replace('www.', '') }
-        ]
+          { url: host.toLowerCase().replace('www.', '') },
+        ],
       },
       include: {
         accounts: {
           include: {
-            accounttypes: true
-          }
-        }
-      }
+            accounttypes: true,
+          },
+        },
+      },
     });
 
     if (!accountUrl) {
@@ -52,11 +65,11 @@ export const domainRouting = async (req: Request, res: Response, next: NextFunct
       '/health',
       '/favicon.ico',
       '/static',
-      '/assets'
+      '/assets',
     ];
 
-    const isCommonPath = commonPaths.some(path => req.path.startsWith(path));
-    
+    const isCommonPath = commonPaths.some((path) => req.path.startsWith(path));
+
     if (isCommonPath) {
       next();
       return;
@@ -73,7 +86,6 @@ export const domainRouting = async (req: Request, res: Response, next: NextFunct
     // For frontend requests, redirect to the account home page
     // This will be handled by the frontend routing
     res.redirect(`/account/${accountId}/home`);
-    
   } catch (error) {
     console.error('Error in domain routing:', error);
     next();
@@ -81,11 +93,9 @@ export const domainRouting = async (req: Request, res: Response, next: NextFunct
 };
 
 // Extend Express Request interface to include account context
-declare global {
-  namespace Express {
-    interface Request {
-      accountId?: string;
-      account?: any;
-    }
+declare module 'express-serve-static-core' {
+  interface Request {
+    accountId?: string;
+    account?: Account;
   }
-} 
+}

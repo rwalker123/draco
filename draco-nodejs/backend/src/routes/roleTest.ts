@@ -4,10 +4,36 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RoleService } from '../services/roleService';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
+
+// Type definitions for Prisma query results
+interface ContactRole {
+  id: bigint;
+  contactId: bigint;
+  roleId: string;
+  roleData: bigint;
+  accountId: bigint;
+}
+
+interface AspNetRole {
+  id: string;
+  name: string;
+}
+
+interface ContactWithRoles {
+  id: bigint;
+  firstname: string;
+  lastname: string;
+  email: string | null;
+  userid: string | null;
+  contactroles: Array<{
+    id: bigint;
+    roleid: string;
+    roledata: bigint;
+  }>;
+}
 
 const router = Router();
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 
 /**
@@ -31,14 +57,14 @@ router.get('/user-roles', authenticateToken, async (req, res): Promise<void> => 
         username: req.user.username,
         accountId: accountId?.toString(),
         globalRoles: userRoles.globalRoles,
-        contactRoles: userRoles.contactRoles.map((cr: any) => ({
+        contactRoles: userRoles.contactRoles.map((cr: ContactRole) => ({
           id: cr.id.toString(),
           contactId: cr.contactId.toString(),
           roleId: cr.roleId,
           roleData: cr.roleData.toString(),
-          accountId: cr.accountId.toString()
-        }))
-      }
+          accountId: cr.accountId.toString(),
+        })),
+      },
     });
   } catch (error) {
     console.error('Error getting user roles:', error);
@@ -67,7 +93,7 @@ router.get('/check-role', authenticateToken, async (req, res): Promise<void> => 
     const context = {
       accountId: accountId ? BigInt(accountId as string) : undefined,
       teamId: teamId ? BigInt(teamId as string) : undefined,
-      leagueId: leagueId ? BigInt(leagueId as string) : undefined
+      leagueId: leagueId ? BigInt(leagueId as string) : undefined,
     };
 
     const roleCheck = await roleService.hasRole(req.user.id, roleId as string, context);
@@ -79,8 +105,8 @@ router.get('/check-role', authenticateToken, async (req, res): Promise<void> => 
         roleId: roleId as string,
         hasRole: roleCheck.hasRole,
         roleLevel: roleCheck.roleLevel,
-        context: roleCheck.context
-      }
+        context: roleCheck.context,
+      },
     });
   } catch (error) {
     console.error('Error checking role:', error);
@@ -109,13 +135,13 @@ router.get('/check-permission', authenticateToken, async (req, res): Promise<voi
     const context = {
       accountId: accountId ? BigInt(accountId as string) : undefined,
       teamId: teamId ? BigInt(teamId as string) : undefined,
-      leagueId: leagueId ? BigInt(leagueId as string) : undefined
+      leagueId: leagueId ? BigInt(leagueId as string) : undefined,
     };
 
     const hasPermission = await roleService.hasPermission(
-      req.user.id, 
-      permission as string, 
-      context
+      req.user.id,
+      permission as string,
+      context,
     );
 
     res.json({
@@ -124,8 +150,8 @@ router.get('/check-permission', authenticateToken, async (req, res): Promise<voi
         userId: req.user.id,
         permission: permission as string,
         hasPermission,
-        context
-      }
+        context,
+      },
     });
   } catch (error) {
     console.error('Error checking permission:', error);
@@ -142,21 +168,21 @@ router.get('/role-ids', async (req, res) => {
     const roles = await prisma.aspnetroles.findMany({
       select: {
         id: true,
-        name: true
+        name: true,
       },
       orderBy: {
-        name: 'asc'
-      }
+        name: 'asc',
+      },
     });
 
     res.json({
       success: true,
       data: {
-        roles: roles.map((role: any) => ({
+        roles: roles.map((role: AspNetRole) => ({
           id: role.id,
-          name: role.name
-        }))
-      }
+          name: role.name,
+        })),
+      },
     });
   } catch (error) {
     console.error('Error getting role IDs:', error);
@@ -175,36 +201,36 @@ router.get('/account-users/:accountId', authenticateToken, async (req, res) => {
     // Get all contacts in this account
     const contacts = await prisma.contacts.findMany({
       where: {
-        creatoraccountid: accountId
+        creatoraccountid: accountId,
       },
       include: {
         contactroles: {
           where: {
-            accountid: accountId
-          }
-        }
-      }
+            accountid: accountId,
+          },
+        },
+      },
     });
 
-    const usersWithRoles = contacts.map((contact: any) => ({
+    const usersWithRoles = contacts.map((contact: ContactWithRoles) => ({
       contactId: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
       email: contact.email,
       userId: contact.userid,
-      roles: contact.contactroles.map((cr: any) => ({
+      roles: contact.contactroles.map((cr) => ({
         id: cr.id.toString(),
         roleId: cr.roleid,
-        roleData: cr.roledata.toString()
-      }))
+        roleData: cr.roledata.toString(),
+      })),
     }));
 
     res.json({
       success: true,
       data: {
         accountId: accountId.toString(),
-        users: usersWithRoles
-      }
+        users: usersWithRoles,
+      },
     });
   } catch (error) {
     console.error('Error getting account users:', error);
@@ -221,8 +247,8 @@ router.post('/assign-role', authenticateToken, async (req, res): Promise<void> =
     const { contactId, roleId, roleData, accountId } = req.body;
 
     if (!contactId || !roleId || !roleData || !accountId) {
-      res.status(400).json({ 
-        error: 'contactId, roleId, roleData, and accountId are required' 
+      res.status(400).json({
+        error: 'contactId, roleId, roleData, and accountId are required',
       });
       return;
     }
@@ -232,7 +258,7 @@ router.post('/assign-role', authenticateToken, async (req, res): Promise<void> =
       BigInt(contactId),
       roleId,
       BigInt(roleData),
-      BigInt(accountId)
+      BigInt(accountId),
     );
 
     res.json({
@@ -243,17 +269,17 @@ router.post('/assign-role', authenticateToken, async (req, res): Promise<void> =
           contactId: assignedRole.contactId.toString(),
           roleId: assignedRole.roleId,
           roleData: assignedRole.roleData.toString(),
-          accountId: assignedRole.accountId.toString()
-        }
-      }
+          accountId: assignedRole.accountId.toString(),
+        },
+      },
     });
   } catch (error) {
     console.error('Error assigning role:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 });
 
-export default router; 
+export default router;

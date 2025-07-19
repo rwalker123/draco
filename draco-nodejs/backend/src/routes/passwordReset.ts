@@ -1,13 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PasswordResetModel } from '../models/PasswordReset';
 import { EmailService, EmailConfig } from '../services/emailService';
+import prisma from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
-
 // Email configuration - you'll need to update these with your actual email settings
 const emailConfig: EmailConfig = {
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -15,14 +13,14 @@ const emailConfig: EmailConfig = {
   secure: false, // true for 465, false for other ports
   auth: {
     user: process.env.SMTP_USER || 'your-email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your-app-password'
-  }
+    pass: process.env.SMTP_PASS || 'your-app-password',
+  },
 };
 
 const emailService = new EmailService(
   emailConfig,
   process.env.FROM_EMAIL || 'noreply@dracosports.com',
-  process.env.BASE_URL || 'http://localhost:3000'
+  process.env.BASE_URL || 'http://localhost:3000',
 );
 
 /**
@@ -36,28 +34,28 @@ router.post('/request', async (req: Request, res: Response): Promise<void> => {
     if (!email) {
       res.status(400).json({
         success: false,
-        message: 'Email is required'
+        message: 'Email is required',
       });
       return;
     }
 
     // Find user by email
     const user = await prisma.aspnetusers.findFirst({
-      where: { username: email }
+      where: { username: email },
     });
 
     if (!user) {
       // Don't reveal if user exists or not for security
       res.status(200).json({
         success: true,
-        message: 'If an account with that email exists, a password reset link has been sent.'
+        message: 'If an account with that email exists, a password reset link has been sent.',
       });
       return;
     }
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
-    
+
     // Save token to database
     await PasswordResetModel.createToken(user.id, resetToken, 24); // 24 hours expiry
 
@@ -69,8 +67,8 @@ router.post('/request', async (req: Request, res: Response): Promise<void> => {
         testData: {
           token: resetToken,
           userId: user.id,
-          email: user.username
-        }
+          email: user.username,
+        },
       });
       return;
     }
@@ -79,27 +77,26 @@ router.post('/request', async (req: Request, res: Response): Promise<void> => {
     const emailSent = await emailService.sendPasswordResetEmail(
       email,
       user.username || email,
-      resetToken
+      resetToken,
     );
 
     if (!emailSent) {
       res.status(500).json({
         success: false,
-        message: 'Failed to send password reset email. Please try again later.'
+        message: 'Failed to send password reset email. Please try again later.',
       });
       return;
     }
 
     res.status(200).json({
       success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
+      message: 'If an account with that email exists, a password reset link has been sent.',
     });
-
   } catch (error) {
     console.error('Password reset request error:', error);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while processing your request.'
+      message: 'An error occurred while processing your request.',
     });
   }
 });
@@ -115,7 +112,7 @@ router.get('/verify/:token', async (req: Request, res: Response): Promise<void> 
     if (!token) {
       res.status(400).json({
         success: false,
-        message: 'Reset token is required'
+        message: 'Reset token is required',
       });
       return;
     }
@@ -126,7 +123,7 @@ router.get('/verify/:token', async (req: Request, res: Response): Promise<void> 
     if (!resetToken) {
       res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: 'Invalid or expired reset token',
       });
       return;
     }
@@ -134,13 +131,13 @@ router.get('/verify/:token', async (req: Request, res: Response): Promise<void> 
     // Get user info
     const user = await prisma.aspnetusers.findUnique({
       where: { id: resetToken.userId },
-      select: { id: true, username: true }
+      select: { id: true, username: true },
     });
 
     if (!user) {
       res.status(400).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
       return;
     }
@@ -150,15 +147,14 @@ router.get('/verify/:token', async (req: Request, res: Response): Promise<void> 
       message: 'Token is valid',
       data: {
         token: token,
-        email: user.username
-      }
+        email: user.username,
+      },
     });
-
   } catch (error) {
     console.error('Token verification error:', error);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while verifying the token.'
+      message: 'An error occurred while verifying the token.',
     });
   }
 });
@@ -174,7 +170,7 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
     if (!token || !newPassword) {
       res.status(400).json({
         success: false,
-        message: 'Token and new password are required'
+        message: 'Token and new password are required',
       });
       return;
     }
@@ -183,7 +179,7 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
     if (newPassword.length < 6) {
       res.status(400).json({
         success: false,
-        message: 'Password must be at least 6 characters long'
+        message: 'Password must be at least 6 characters long',
       });
       return;
     }
@@ -194,7 +190,7 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
     if (!resetToken) {
       res.status(400).json({
         success: false,
-        message: 'Invalid or expired reset token'
+        message: 'Invalid or expired reset token',
       });
       return;
     }
@@ -205,7 +201,7 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
     // Update user password
     await prisma.aspnetusers.update({
       where: { id: resetToken.userId },
-      data: { passwordhash: hashedPassword }
+      data: { passwordhash: hashedPassword },
     });
 
     // Mark token as used
@@ -213,14 +209,13 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
 
     res.status(200).json({
       success: true,
-      message: 'Password has been reset successfully'
+      message: 'Password has been reset successfully',
     });
-
   } catch (error) {
     console.error('Password reset error:', error);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while resetting the password.'
+      message: 'An error occurred while resetting the password.',
     });
   }
 });
@@ -232,19 +227,18 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
 router.post('/cleanup', async (req: Request, res: Response) => {
   try {
     const deletedCount = await PasswordResetModel.cleanupExpiredTokens();
-    
+
     res.status(200).json({
       success: true,
-      message: `Cleaned up ${deletedCount} expired tokens`
+      message: `Cleaned up ${deletedCount} expired tokens`,
     });
-
   } catch (error) {
     console.error('Token cleanup error:', error);
     res.status(500).json({
       success: false,
-      message: 'An error occurred while cleaning up tokens.'
+      message: 'An error occurred while cleaning up tokens.',
     });
   }
 });
 
-export default router; 
+export default router;
