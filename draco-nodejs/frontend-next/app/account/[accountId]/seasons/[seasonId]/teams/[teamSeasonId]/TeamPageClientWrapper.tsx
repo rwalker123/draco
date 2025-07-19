@@ -1,6 +1,6 @@
 'use client';
 import { useParams } from 'next/navigation';
-import TeamPage from '@/components/TeamPage';
+import TeamPage from './TeamPage';
 
 export default function TeamPageClientWrapper() {
   const params = useParams();

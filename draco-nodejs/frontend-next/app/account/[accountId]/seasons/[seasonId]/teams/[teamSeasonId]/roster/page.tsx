@@ -1,5 +1,5 @@
-import ProtectedTeamRosterManagement from '../../../../../../../../components/ProtectedTeamRosterManagement';
+import TeamRosterManagement from './TeamRosterManagement';
 
 export default function Page() {
-  return <ProtectedTeamRosterManagement />;
+  return <TeamRosterManagement />;
 }

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import {
   Box,
@@ -9,7 +11,7 @@ import {
   CircularProgress,
   Stepper,
   Step,
-  StepLabel
+  StepLabel,
 } from '@mui/material';
 import axios from 'axios';
 
@@ -41,7 +43,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     try {
       const response = await axios.post(`/api/passwordReset/request`, {
         email,
-        testMode: true
+        testMode: true,
       });
 
       if (response.data.success) {
@@ -57,7 +59,13 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
         setError(response.data.message || 'Failed to request password reset');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -88,7 +96,13 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
         setError(response.data.message || 'Invalid token');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -122,7 +136,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
     try {
       const response = await axios.post(`/api/passwordReset/reset`, {
         token,
-        newPassword
+        newPassword,
       });
 
       if (response.data.success) {
@@ -134,7 +148,13 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
         setError(response.data.message || 'Failed to reset password');
       }
     } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'response' in error && typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string') {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
+          ?.message === 'string'
+      ) {
         setError((error as { response: { data: { message: string } } }).response.data.message);
       } else if (error instanceof Error) {
         setError(error.message);
@@ -255,36 +275,38 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          Password Reset
-        </Typography>
+    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+      <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
+        <Paper sx={{ p: 3 }}>
+          <Typography variant="h5" align="center" gutterBottom>
+            Password Reset
+          </Typography>
 
-        <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
-        </Stepper>
+          <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+            {steps.map((label) => (
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
+            ))}
+          </Stepper>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            {success}
-          </Alert>
-        )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
+            </Alert>
+          )}
 
-        {renderStepContent(activeStep)}
-      </Paper>
-    </Box>
+          {renderStepContent(activeStep)}
+        </Paper>
+      </Box>
+    </main>
   );
 };
 
-export default PasswordReset; 
+export default PasswordReset;

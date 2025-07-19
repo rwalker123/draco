@@ -1,6 +1,6 @@
 'use client';
 import { useParams } from 'next/navigation';
-import ScheduleManagement from '../../../../components/ScheduleManagement';
+import ScheduleManagement from './ScheduleManagement';
 
 export default function ScheduleClientWrapper() {
   const params = useParams();
