@@ -528,7 +528,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
         <Box
           display="flex"

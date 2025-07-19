@@ -146,7 +146,7 @@ const AccountHome: React.FC = () => {
   const currentSeason = seasons.find((s) => s.isCurrent);
 
   return (
-    <main className="max-w-5xl mx-auto px-4 min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" component="h1" gutterBottom>
