@@ -1,19 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
-const prisma = new PrismaClient();
-
-// Extend Express Request interface to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        username: string;
-      };
-    }
-  }
+// Type definitions for Prisma query results
+interface UserRole {
+  userid: string;
+  aspnetroles: {
+    name: string;
+  } | null;
 }
 
 export interface JWTPayload {
@@ -23,10 +17,24 @@ export interface JWTPayload {
   exp: number;
 }
 
+// Extend Express Request interface to include user
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: {
+      id: string;
+      username: string;
+    };
+  }
+}
+
 /**
  * Middleware to verify JWT token and attach user to request
  */
-export const authenticateToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const authenticateToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
@@ -34,24 +42,24 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     if (!token) {
       res.status(401).json({
         success: false,
-        message: 'Access token required'
+        message: 'Access token required',
       });
       return;
     }
 
     const JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
+
     // Verify user still exists in database
     const user = await prisma.aspnetusers.findUnique({
-      where: { id: decoded.userId }
+      where: { id: decoded.userId },
     });
 
     if (!user) {
       res.status(401).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
       return;
     }
@@ -60,7 +68,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     if (user.lockoutenabled && user.lockoutenddateutc && user.lockoutenddateutc > new Date()) {
       res.status(401).json({
         success: false,
-        message: 'Account is temporarily locked'
+        message: 'Account is temporarily locked',
       });
       return;
     }
@@ -68,7 +76,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     // Attach user to request
     req.user = {
       id: user.id,
-      username: user.username || ''
+      username: user.username || '',
     };
 
     next();
@@ -76,15 +84,15 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     if (error instanceof jwt.JsonWebTokenError) {
       res.status(401).json({
         success: false,
-        message: 'Invalid token'
+        message: 'Invalid token',
       });
       return;
     }
-    
+
     if (error instanceof jwt.TokenExpiredError) {
       res.status(401).json({
         success: false,
-        message: 'Token expired'
+        message: 'Token expired',
       });
       return;
     }
@@ -92,7 +100,7 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
     console.error('Auth middleware error:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
     });
   }
 };
@@ -110,17 +118,20 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
     }
 
     const JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
-    
+
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
+
     const user = await prisma.aspnetusers.findUnique({
-      where: { id: decoded.userId }
+      where: { id: decoded.userId },
     });
 
-    if (user && (!user.lockoutenabled || !user.lockoutenddateutc || user.lockoutenddateutc <= new Date())) {
+    if (
+      user &&
+      (!user.lockoutenabled || !user.lockoutenddateutc || user.lockoutenddateutc <= new Date())
+    ) {
       req.user = {
         id: user.id,
-        username: user.username || ''
+        username: user.username || '',
       };
     }
 
@@ -140,24 +151,24 @@ export const requireRole = (roleName: string) => {
       if (!req.user) {
         res.status(401).json({
           success: false,
-          message: 'Authentication required'
+          message: 'Authentication required',
         });
         return;
       }
 
       const userRoles = await prisma.aspnetuserroles.findMany({
         where: { userid: req.user.id },
-        include: { aspnetroles: true }
+        include: { aspnetroles: true },
       });
 
-      const hasRole = userRoles.some((userRole: any) => 
-        userRole.aspnetroles?.name === roleName
+      const hasRole = userRoles.some(
+        (userRole: UserRole) => userRole.aspnetroles?.name === roleName,
       );
 
       if (!hasRole) {
         res.status(403).json({
           success: false,
-          message: `Role '${roleName}' required`
+          message: `Role '${roleName}' required`,
         });
         return;
       }
@@ -167,8 +178,8 @@ export const requireRole = (roleName: string) => {
       console.error('Role check error:', error);
       res.status(500).json({
         success: false,
-        message: 'Internal server error'
+        message: 'Internal server error',
       });
     }
   };
-}; 
+};

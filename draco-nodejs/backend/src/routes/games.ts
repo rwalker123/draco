@@ -5,9 +5,9 @@ import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { ContactRole } from '../types/roles';
+import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
-const prisma = new PrismaClient();
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 

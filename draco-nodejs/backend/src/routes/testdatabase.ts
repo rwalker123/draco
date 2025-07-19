@@ -1,9 +1,7 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 
 const testDatabaseRouter = Router();
-const prisma = new PrismaClient();
-
 testDatabaseRouter.get('/', async (req, res, _next) => {
   try {
     const accounts = await prisma.accounts.findMany({
