@@ -1,4 +1,6 @@
-import nodemailer, { type Transporter } from 'nodemailer';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const nodemailer = require('nodemailer');
+import type { Transporter } from 'nodemailer';
 
 export interface EmailConfig {
   host: string;
