@@ -1,7 +1,10 @@
 import app from './app';
-import dotenv from 'dotenv';
-import fs from 'fs';
-import https from 'https';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const dotenv = require('dotenv');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const fs = require('fs');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const https = require('https');
 
 // Load environment variables
 dotenv.config();
