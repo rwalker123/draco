@@ -138,7 +138,22 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
 
       if (response.ok) {
         const data = await response.json();
-        const teamsData = Array.isArray(data.data) ? data.data : [];
+        // Transform the API response structure to match expected format
+        const rawTeams = data.data?.teams || [];
+        const teamsData = rawTeams.map(
+          (team: {
+            id: string;
+            name: string;
+            teamId: string;
+            league?: { name: string };
+            division?: { name: string } | null;
+          }) => ({
+            teamId: team.id, // Use team season ID for API calls
+            teamName: team.name,
+            leagueName: team.league?.name || 'Unknown League',
+            divisionName: team.division?.name || 'No Division',
+          }),
+        );
         setTeams(teamsData);
 
         // Auto-select first team if available

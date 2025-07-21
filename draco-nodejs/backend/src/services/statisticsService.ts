@@ -147,6 +147,7 @@ export class StatisticsService {
     const {
       leagueId,
       divisionId,
+      teamId,
       isHistorical = false,
       sortField,
       sortOrder = 'desc',
@@ -175,6 +176,11 @@ export class StatisticsService {
     if (divisionId && divisionId !== BigInt(0)) {
       whereClause += ' AND ts.divisionseasonid = $' + (params.length + 1);
       params.push(divisionId);
+    }
+
+    if (teamId && teamId !== BigInt(0)) {
+      whereClause += ' AND bs.teamid = $' + (params.length + 1);
+      params.push(teamId);
     }
 
     // For rate stats, add minimum AB requirement if specified
@@ -272,6 +278,16 @@ export class StatisticsService {
       params.push(filters.leagueId);
     }
 
+    if (filters.teamId && filters.teamId !== BigInt(0)) {
+      whereClause +=
+        ' AND (bs.teamid = $' +
+        (params.length + 1) +
+        ' OR ps.teamid = $' +
+        (params.length + 1) +
+        ')';
+      params.push(filters.teamId);
+    }
+
     // Convert playerIds to a string for IN clause
     const playerIdStrings = playerIds.map((id) => id.toString()).join(',');
 
@@ -325,6 +341,7 @@ export class StatisticsService {
     const {
       leagueId,
       divisionId,
+      teamId,
       isHistorical = false,
       sortField,
       sortOrder = 'asc', // ERA is better when lower
@@ -352,6 +369,11 @@ export class StatisticsService {
     if (divisionId && divisionId !== BigInt(0)) {
       whereClause += ' AND ts.divisionseasonid = $' + (params.length + 1);
       params.push(divisionId);
+    }
+
+    if (teamId && teamId !== BigInt(0)) {
+      whereClause += ' AND ps.teamid = $' + (params.length + 1);
+      params.push(teamId);
     }
 
     // For rate stats, add minimum IP requirement if specified
