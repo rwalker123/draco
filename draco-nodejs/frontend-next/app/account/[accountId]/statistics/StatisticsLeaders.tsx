@@ -23,6 +23,8 @@ interface LeaderRow {
   statValue: number | string;
   category: string;
   rank: number;
+  isTie?: boolean;
+  tieCount?: number;
 }
 
 interface StatisticsFilters {
@@ -252,8 +254,12 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
                             </Avatar>
                           </ListItemAvatar>
                           <ListItemText
-                            primary={leader.playerName}
-                            secondary={`${leader.teamName} • ${formatStatValue(leader.statValue, category.format)}`}
+                            primary={leader.isTie ? `${leader.tieCount} tied` : leader.playerName}
+                            secondary={
+                              leader.isTie
+                                ? `with ${formatStatValue(leader.statValue, category.format)}`
+                                : `${leader.teamName} • ${formatStatValue(leader.statValue, category.format)}`
+                            }
                           />
                           <Box sx={{ ml: 1 }}>
                             <Chip
@@ -294,8 +300,12 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
                             </Avatar>
                           </ListItemAvatar>
                           <ListItemText
-                            primary={leader.playerName}
-                            secondary={`${leader.teamName} • ${formatStatValue(leader.statValue, category.format)}`}
+                            primary={leader.isTie ? `${leader.tieCount} tied` : leader.playerName}
+                            secondary={
+                              leader.isTie
+                                ? `with ${formatStatValue(leader.statValue, category.format)}`
+                                : `${leader.teamName} • ${formatStatValue(leader.statValue, category.format)}`
+                            }
                           />
                           <Box sx={{ ml: 1 }}>
                             <Chip

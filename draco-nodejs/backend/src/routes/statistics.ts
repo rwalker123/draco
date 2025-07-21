@@ -115,7 +115,8 @@ router.get('/leaders/:leagueId', async (req: Request, res: Response): Promise<vo
       isHistorical: req.query.historical === 'true',
     };
 
-    const leaders = await statisticsService.getLeaders(accountId, category, filters);
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+    const leaders = await statisticsService.getLeaders(accountId, category, filters, limit);
 
     res.json({
       success: true,

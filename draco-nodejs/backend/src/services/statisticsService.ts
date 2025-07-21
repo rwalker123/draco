@@ -64,7 +64,9 @@ export interface LeaderRow {
   statValue: number;
   category: string;
   rank: number;
-  [key: string]: string | number | bigint;
+  isTie?: boolean;
+  tieCount?: number;
+  [key: string]: string | number | bigint | boolean | undefined;
 }
 
 export interface StandingsRow {
@@ -333,9 +335,8 @@ export class StatisticsService {
     accountId: bigint,
     category: string,
     filters: StatisticsFilters,
+    limit: number = 5,
   ): Promise<LeaderRow[]> {
-    const limit = 5; // Default number of leaders
-
     // Check the database to determine if this is a batting or pitching stat
     const categoryConfig = await this.prisma.displayleagueleaders.findFirst({
       where: {
@@ -381,17 +382,19 @@ export class StatisticsService {
     }
 
     // Apply calculated minimums to filters
+    // Get more records than needed to handle ties properly
+    const queryLimit = Math.max(50, limit * 10);
     const updatedFilters = {
       ...filters,
-      pageSize: limit,
+      pageSize: queryLimit,
       minAB: Math.max(minAB, filters.minAB || 0),
       minIP: Math.max(minIP, filters.minIP || 0),
     };
 
     if (isBattingStat) {
-      return this.getBattingLeaders(accountId, category, updatedFilters);
+      return this.getBattingLeaders(accountId, category, updatedFilters, limit);
     } else {
-      return this.getPitchingLeaders(accountId, category, updatedFilters);
+      return this.getPitchingLeaders(accountId, category, updatedFilters, limit);
     }
   }
 
@@ -487,6 +490,7 @@ export class StatisticsService {
     accountId: bigint,
     category: string,
     filters: StatisticsFilters,
+    limit: number,
   ): Promise<LeaderRow[]> {
     const sortOrder = this.getBattingSortOrder(category);
     const stats = await this.getBattingStats(accountId, {
@@ -495,20 +499,16 @@ export class StatisticsService {
       sortOrder,
     });
 
-    return stats.slice(0, 5).map((stat, index) => ({
-      playerId: stat.playerId,
-      playerName: stat.playerName,
-      teamName: stat.teamName,
-      statValue: this.getStatValue(stat, category),
-      category,
-      rank: index + 1,
-    }));
+    return this.processLeadersWithTies(stats, category, limit, (stat) =>
+      this.getStatValue(stat, category),
+    );
   }
 
   private async getPitchingLeaders(
     accountId: bigint,
     category: string,
     filters: StatisticsFilters,
+    limit: number,
   ): Promise<LeaderRow[]> {
     const sortOrder = this.getPitchingSortOrder(category);
     const stats = await this.getPitchingStats(accountId, {
@@ -516,14 +516,80 @@ export class StatisticsService {
       sortField: category,
       sortOrder,
     });
-    return stats.slice(0, 5).map((stat, index) => ({
-      playerId: stat.playerId,
-      playerName: stat.playerName,
-      teamName: stat.teamName,
-      statValue: this.getPitchingStatValue(stat, category),
-      category,
-      rank: index + 1,
-    }));
+
+    return this.processLeadersWithTies(stats, category, limit, (stat) =>
+      this.getPitchingStatValue(stat, category),
+    );
+  }
+
+  /**
+   * Process leaders with proper tie handling based on ASP.NET ProcessLeaders logic
+   */
+  private processLeadersWithTies<
+    T extends { playerId: bigint; playerName: string; teamName: string },
+  >(stats: T[], category: string, limit: number, getStatValue: (stat: T) => number): LeaderRow[] {
+    const result: LeaderRow[] = [];
+    const leadersByValue = new Map<number, T[]>();
+    const leaderValues: number[] = [];
+    let numRecords = 0;
+
+    // Group stats by their values (to handle ties)
+    for (const stat of stats) {
+      const statValue = getStatValue(stat);
+
+      if (leadersByValue.has(statValue)) {
+        leadersByValue.get(statValue)!.push(stat);
+      } else {
+        // If we need to add a new value group, check if we exceed limit
+        if (numRecords >= limit) {
+          break;
+        }
+
+        leaderValues.push(statValue);
+        leadersByValue.set(statValue, [stat]);
+      }
+
+      numRecords++;
+    }
+
+    // Process each value group
+    let currentRank = 1;
+    for (const value of leaderValues) {
+      const playersWithValue = leadersByValue.get(value)!;
+
+      // If we can display all players in this tie group within the limit
+      if (playersWithValue.length + result.length <= limit) {
+        for (const player of playersWithValue) {
+          result.push({
+            playerId: player.playerId,
+            playerName: player.playerName,
+            teamName: player.teamName,
+            statValue: value,
+            category,
+            rank: currentRank,
+          });
+        }
+        currentRank += playersWithValue.length;
+      } else if (result.length < limit) {
+        // We have space but not enough for all tied players, show tie indicator
+        result.push({
+          playerId: BigInt(0), // Indicates this is a tie entry
+          playerName: '',
+          teamName: '',
+          statValue: value,
+          category,
+          rank: currentRank,
+          isTie: true,
+          tieCount: playersWithValue.length,
+        });
+        break;
+      } else {
+        // We've reached the limit, stop processing
+        break;
+      }
+    }
+
+    return result;
   }
 
   private getStatValue(stat: BattingStatsRow, category: string): number {
