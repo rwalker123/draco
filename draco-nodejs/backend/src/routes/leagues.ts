@@ -568,4 +568,62 @@ router.delete(
   },
 );
 
+/**
+ * GET /api/accounts/:accountId/leagues/:leagueId/divisions
+ * Get divisions for a specific league (public endpoint for statistics)
+ */
+router.get(
+  '/:leagueId/divisions',
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+      const leagueId = BigInt(req.params.leagueId);
+
+      // Get divisions that are active in this specific league
+      const divisionSeasons = await prisma.divisionseason.findMany({
+        where: {
+          leagueseason: {
+            leagueid: leagueId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+        include: {
+          divisiondefs: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          divisiondefs: {
+            name: 'asc',
+          },
+        },
+      });
+
+      const divisions = divisionSeasons.map((ds) => ({
+        id: ds.divisiondefs.id,
+        name: ds.divisiondefs.name,
+      }));
+
+      res.json({
+        success: true,
+        data: divisions.map((division: { id: bigint; name: string }) => ({
+          ...division,
+          id: division.id.toString(),
+        })),
+      });
+    } catch (error) {
+      console.error('Error fetching divisions for league:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch divisions',
+      });
+    }
+  },
+);
+
 export default router;

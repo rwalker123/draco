@@ -100,6 +100,7 @@ const routeProtection = new RouteProtection(roleService, prisma);
  */
 router.get('/', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
   try {
+    console.log('LeagueSeasonsRouter hit with params:', req.params, 'query:', req.query);
     const seasonId = BigInt(req.params.seasonId);
     const accountId = BigInt(req.params.accountId);
 

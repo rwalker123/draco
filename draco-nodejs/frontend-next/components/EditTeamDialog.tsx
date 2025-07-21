@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -10,10 +10,10 @@ import {
   Typography,
   Box,
   CircularProgress,
-} from "@mui/material";
-import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from "@mui/icons-material";
-import Image from "next/image";
-import { getLogoSize, validateLogoFile } from "../config/teams";
+} from '@mui/material';
+import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-material';
+import Image from 'next/image';
+import { getLogoSize, validateLogoFile } from '../config/teams';
 
 interface Team {
   id: string;
@@ -33,14 +33,9 @@ interface EditTeamDialogProps {
   onSave: (updatedName: string, logoFile: File | null) => Promise<void>;
 }
 
-const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
-  open,
-  team,
-  onClose,
-  onSave,
-}) => {
+const EditTeamDialog: React.FC<EditTeamDialogProps> = ({ open, team, onClose, onSave }) => {
   const LOGO_SIZE = getLogoSize();
-  const [editingTeamName, setEditingTeamName] = useState<string>("");
+  const [editingTeamName, setEditingTeamName] = useState<string>('');
   const [editingLogoFile, setEditingLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [editDialogError, setEditDialogError] = useState<string | null>(null);
@@ -49,8 +44,14 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
 
   useEffect(() => {
     if (team) {
-      setEditingTeamName(team.name);
+      setEditingTeamName(team.name || '');
       setLogoPreview(team.logoUrl || null);
+      setEditingLogoFile(null);
+      setEditDialogError(null);
+      setLogoPreviewError(false);
+    } else {
+      setEditingTeamName('');
+      setLogoPreview(null);
       setEditingLogoFile(null);
       setEditDialogError(null);
       setLogoPreviewError(false);
@@ -77,7 +78,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
 
   const handleSave = async () => {
     if (!editingTeamName.trim()) {
-      setEditDialogError("Team name is required");
+      setEditDialogError('Team name is required');
       return;
     }
     setSaving(true);
@@ -86,7 +87,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
       await onSave(editingTeamName.trim(), editingLogoFile);
       onClose();
     } catch (err) {
-      setEditDialogError(err instanceof Error ? err.message : "Failed to update team");
+      setEditDialogError(err instanceof Error ? err.message : 'Failed to update team');
     } finally {
       setSaving(false);
     }
@@ -100,11 +101,15 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
     setLogoPreviewError(false);
   }, [logoPreview]);
 
+  if (!team) {
+    return null;
+  }
+
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
       <DialogTitle>Edit Team</DialogTitle>
       <DialogContent>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
           {editDialogError && (
             <Alert severity="error" onClose={() => setEditDialogError(null)}>
               {editDialogError}
@@ -121,32 +126,32 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
             <Typography variant="subtitle1" sx={{ mb: 1 }}>
               Team Logo
             </Typography>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
               <Box
                 sx={{
                   width: LOGO_SIZE,
                   height: LOGO_SIZE,
-                  bgcolor: "grey.300",
+                  bgcolor: 'grey.300',
                   borderRadius: 1,
-                  overflow: "hidden",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  position: "relative",
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
                 }}
               >
                 {logoPreview && !logoPreviewError ? (
                   <Image
                     src={logoPreview}
-                    alt={editingTeamName + " logo preview"}
+                    alt={editingTeamName + ' logo preview'}
                     fill
-                    style={{ objectFit: "cover" }}
+                    style={{ objectFit: 'cover' }}
                     unoptimized
                     onError={() => setLogoPreviewError(true)}
                   />
                 ) : (
-                  <Typography variant="h6" sx={{ fontSize: "1.2rem" }}>
-                    {editingTeamName.charAt(0).toUpperCase()}
+                  <Typography variant="h6" sx={{ fontSize: '1.2rem' }}>
+                    {editingTeamName ? editingTeamName.charAt(0).toUpperCase() : '?'}
                   </Typography>
                 )}
               </Box>
@@ -157,12 +162,7 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
                 disabled={saving}
               >
                 Upload Logo
-                <input
-                  type="file"
-                  hidden
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                />
+                <input type="file" hidden accept="image/*" onChange={handleLogoChange} />
               </Button>
             </Box>
             <Typography variant="caption" color="textSecondary">
@@ -181,11 +181,11 @@ const EditTeamDialog: React.FC<EditTeamDialogProps> = ({
           startIcon={saving ? <CircularProgress size={20} /> : <SaveIcon />}
           disabled={saving}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? 'Saving...' : 'Save Changes'}
         </Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default EditTeamDialog; 
+export default EditTeamDialog;

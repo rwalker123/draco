@@ -1444,4 +1444,235 @@ router.get(
   },
 );
 
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/batting-stats
+ * Get batting statistics for a specific team
+ */
+router.get(
+  '/:teamSeasonId/batting-stats',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Team season not found',
+        });
+        return;
+      }
+
+      // Get batting stats for this team
+      const battingStats = await prisma.$queryRawUnsafe(
+        `
+        SELECT 
+          bs.player_id as "playerId",
+          CONCAT(p.first_name, ' ', p.last_name) as "playerName",
+          t.name as "teamName",
+          COALESCE(SUM(bs.at_bats), 0)::INTEGER as ab,
+          COALESCE(SUM(bs.hits), 0)::INTEGER as h,
+          COALESCE(SUM(bs.runs), 0)::INTEGER as r,
+          COALESCE(SUM(bs.doubles), 0)::INTEGER as d,
+          COALESCE(SUM(bs.triples), 0)::INTEGER as t,
+          COALESCE(SUM(bs.home_runs), 0)::INTEGER as hr,
+          COALESCE(SUM(bs.rbis), 0)::INTEGER as rbi,
+          COALESCE(SUM(bs.walks), 0)::INTEGER as bb,
+          COALESCE(SUM(bs.strikeouts), 0)::INTEGER as so,
+          COALESCE(SUM(bs.hit_by_pitch), 0)::INTEGER as hbp,
+          COALESCE(SUM(bs.stolen_bases), 0)::INTEGER as sb,
+          COALESCE(SUM(bs.sacrifice_flies), 0)::INTEGER as sf,
+          COALESCE(SUM(bs.sacrifice_hits), 0)::INTEGER as sh,
+          -- Calculated stats
+          CASE 
+            WHEN SUM(bs.at_bats) > 0 
+            THEN ROUND(SUM(bs.hits)::DECIMAL / SUM(bs.at_bats)::DECIMAL, 3)
+            ELSE 0.000
+          END as avg,
+          CASE 
+            WHEN (SUM(bs.at_bats) + SUM(bs.walks) + SUM(bs.hit_by_pitch) + SUM(bs.sacrifice_flies)) > 0
+            THEN ROUND((SUM(bs.hits) + SUM(bs.walks) + SUM(bs.hit_by_pitch))::DECIMAL / 
+                 (SUM(bs.at_bats) + SUM(bs.walks) + SUM(bs.hit_by_pitch) + SUM(bs.sacrifice_flies))::DECIMAL, 3)
+            ELSE 0.000
+          END as obp,
+          CASE 
+            WHEN SUM(bs.at_bats) > 0
+            THEN ROUND((SUM(bs.hits) + SUM(bs.doubles) + 2*SUM(bs.triples) + 3*SUM(bs.home_runs))::DECIMAL / 
+                 SUM(bs.at_bats)::DECIMAL, 3)
+            ELSE 0.000
+          END as slg,
+          CASE 
+            WHEN SUM(bs.at_bats) > 0
+            THEN ROUND(
+              ((SUM(bs.hits) + SUM(bs.walks) + SUM(bs.hit_by_pitch))::DECIMAL / 
+               (SUM(bs.at_bats) + SUM(bs.walks) + SUM(bs.hit_by_pitch) + SUM(bs.sacrifice_flies))::DECIMAL) +
+              ((SUM(bs.hits) + SUM(bs.doubles) + 2*SUM(bs.triples) + 3*SUM(bs.home_runs))::DECIMAL / 
+               SUM(bs.at_bats)::DECIMAL), 3)
+            ELSE 0.000
+          END as ops,
+          COALESCE(SUM(bs.hits) + SUM(bs.doubles) + 2*SUM(bs.triples) + 3*SUM(bs.home_runs), 0)::INTEGER as tb,
+          COALESCE(SUM(bs.at_bats) + SUM(bs.walks) + SUM(bs.hit_by_pitch) + SUM(bs.sacrifice_flies), 0)::INTEGER as pa
+        FROM batting_stats bs
+        INNER JOIN players p ON bs.player_id = p.id
+        INNER JOIN team_seasons ts ON bs.team_season_id = ts.id
+        INNER JOIN teams t ON ts.team_id = t.id
+        WHERE t.account_id = $1 
+          AND bs.team_season_id = $2
+        GROUP BY bs.player_id, p.first_name, p.last_name, t.name
+        HAVING SUM(bs.at_bats) > 0
+        ORDER BY avg DESC, h DESC
+      `,
+        accountId,
+        teamSeasonId,
+      );
+
+      res.json({
+        success: true,
+        data: (battingStats as Array<{ playerId: bigint; [key: string]: unknown }>).map((stat) => ({
+          ...stat,
+          playerId: stat.playerId.toString(),
+        })),
+      });
+    } catch (error) {
+      console.error('Team batting stats route error:', error);
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/pitching-stats
+ * Get pitching statistics for a specific team
+ */
+router.get(
+  '/:teamSeasonId/pitching-stats',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Team season not found',
+        });
+        return;
+      }
+
+      // Get pitching stats for this team
+      const pitchingStats = await prisma.$queryRawUnsafe(
+        `
+        SELECT 
+          ps.player_id as "playerId",
+          CONCAT(p.first_name, ' ', p.last_name) as "playerName",
+          t.name as "teamName",
+          COALESCE(SUM(ps.innings_pitched), 0)::INTEGER as ip,
+          COALESCE(SUM(ps.partial_innings), 0)::INTEGER as ip2,
+          COALESCE(SUM(ps.wins), 0)::INTEGER as w,
+          COALESCE(SUM(ps.losses), 0)::INTEGER as l,
+          COALESCE(SUM(ps.saves), 0)::INTEGER as s,
+          COALESCE(SUM(ps.hits_allowed), 0)::INTEGER as h,
+          COALESCE(SUM(ps.runs_allowed), 0)::INTEGER as r,
+          COALESCE(SUM(ps.earned_runs), 0)::INTEGER as er,
+          COALESCE(SUM(ps.walks), 0)::INTEGER as bb,
+          COALESCE(SUM(ps.strikeouts), 0)::INTEGER as so,
+          COALESCE(SUM(ps.home_runs_allowed), 0)::INTEGER as hr,
+          COALESCE(SUM(ps.batters_faced), 0)::INTEGER as bf,
+          COALESCE(SUM(ps.wild_pitches), 0)::INTEGER as wp,
+          COALESCE(SUM(ps.hit_batters), 0)::INTEGER as hbp,
+          -- Calculated stats
+          CASE 
+            WHEN (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3) > 0
+            THEN ROUND((SUM(ps.earned_runs) * 9.0) / (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3), 2)
+            ELSE 0.00
+          END as era,
+          CASE 
+            WHEN (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3) > 0
+            THEN ROUND((SUM(ps.hits_allowed) + SUM(ps.walks))::DECIMAL / 
+                 (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3), 3)
+            ELSE 0.000
+          END as whip,
+          CASE 
+            WHEN (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3) > 0
+            THEN ROUND((SUM(ps.strikeouts) * 9.0) / (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3), 2)
+            ELSE 0.00
+          END as k9,
+          CASE 
+            WHEN (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3) > 0
+            THEN ROUND((SUM(ps.walks) * 9.0) / (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3), 2)
+            ELSE 0.00
+          END as bb9,
+          CASE 
+            WHEN SUM(ps.batters_faced) > 0
+            THEN ROUND(SUM(ps.hits_allowed)::DECIMAL / SUM(ps.batters_faced)::DECIMAL, 3)
+            ELSE 0.000
+          END as oba,
+          CASE 
+            WHEN SUM(ps.batters_faced) > 0
+            THEN ROUND((SUM(ps.hits_allowed) + SUM(ps.walks))::DECIMAL / SUM(ps.batters_faced)::DECIMAL, 3)
+            ELSE 0.000
+          END as slg,
+          SUM(ps.innings_pitched) + ROUND(SUM(ps.partial_innings)::DECIMAL/3, 2) as "ipDecimal"
+        FROM pitching_stats ps
+        INNER JOIN players p ON ps.player_id = p.id
+        INNER JOIN team_seasons ts ON ps.team_season_id = ts.id
+        INNER JOIN teams t ON ts.team_id = t.id
+        WHERE t.account_id = $1 
+          AND ps.team_season_id = $2
+        GROUP BY ps.player_id, p.first_name, p.last_name, t.name
+        HAVING (SUM(ps.innings_pitched) + SUM(ps.partial_innings)::DECIMAL/3) > 0
+        ORDER BY era ASC, whip ASC
+      `,
+        accountId,
+        teamSeasonId,
+      );
+
+      res.json({
+        success: true,
+        data: (pitchingStats as Array<{ playerId: bigint; [key: string]: unknown }>).map(
+          (stat) => ({
+            ...stat,
+            playerId: stat.playerId.toString(),
+          }),
+        ),
+      });
+    } catch (error) {
+      console.error('Team pitching stats route error:', error);
+      next(error);
+    }
+  },
+);
+
 export default router;
