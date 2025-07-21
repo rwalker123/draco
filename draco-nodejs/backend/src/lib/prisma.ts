@@ -12,7 +12,7 @@ declare global {
 const prisma =
   globalThis.__prisma ||
   new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? [/*'query',*/ 'error', 'warn'] : ['error'],
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   });
 
 // In development, store the instance on globalThis to prevent multiple instances

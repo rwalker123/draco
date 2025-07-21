@@ -282,6 +282,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       }
 
       const leagueSeasonsData = await leagueSeasonsResponse.json();
+      console.log('API Response:', leagueSeasonsData);
       setTeamsData(leagueSeasonsData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams data');
@@ -377,10 +378,10 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         }}
       >
         <TeamAvatar
-          name={team.name}
+          name={team.name || 'Unknown Team'}
           logoUrl={team.logoUrl}
           size={LOGO_SIZE}
-          alt={team.name + ' logo'}
+          alt={(team.name || 'Unknown Team') + ' logo'}
         />
 
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -408,7 +409,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
               fontSize: 'inherit',
             }}
           >
-            {team.name}
+            {team.name || 'Unknown Team'}
           </Link>
         </Box>
 
@@ -444,7 +445,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
         </Typography>
         <Box sx={{ pl: 1 }}>
           {division.teams
-            .sort((a, b) => a.name.localeCompare(b.name))
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
             .map((team) => renderTeamCard(team))}
         </Box>
       </Box>
@@ -555,7 +556,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
                 variant="h6"
                 sx={{ mt: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
               >
-                {teamsData.season.name} Season
+                {teamsData.season?.name || 'Unknown'} Season
               </Typography>
             )}
           </Box>
@@ -601,7 +602,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             justifyContent: 'flex-start',
           }}
         >
-          {teamsData.leagueSeasons.map(renderLeagueSeason)}
+          {teamsData?.leagueSeasons?.map(renderLeagueSeason) || null}
         </Box>
       </Paper>
 
