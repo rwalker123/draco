@@ -156,7 +156,13 @@ export class StatisticsService {
     const params: (bigint | number)[] = [];
 
     if (leagueId && leagueId !== BigInt(0)) {
-      whereClause += ' AND ls.id = $' + (params.length + 1);
+      if (isHistorical) {
+        // For all-time stats, filter by league.id (not leagueseason.id)
+        whereClause += ' AND ls.leagueid = $' + (params.length + 1);
+      } else {
+        // For season stats, filter by leagueseason.id
+        whereClause += ' AND ls.id = $' + (params.length + 1);
+      }
       params.push(leagueId);
     }
 
@@ -251,7 +257,13 @@ export class StatisticsService {
     const params: (bigint | number)[] = [];
 
     if (leagueId && leagueId !== BigInt(0)) {
-      whereClause += ' AND ls.id = $' + (params.length + 1);
+      if (isHistorical) {
+        // For all-time stats, filter by league.id (not leagueseason.id)
+        whereClause += ' AND ls.leagueid = $' + (params.length + 1);
+      } else {
+        // For season stats, filter by leagueseason.id
+        whereClause += ' AND ls.id = $' + (params.length + 1);
+      }
       params.push(leagueId);
     }
 
