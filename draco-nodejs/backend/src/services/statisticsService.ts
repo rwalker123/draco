@@ -96,6 +96,7 @@ export interface StatisticsFilters {
   pageSize?: number;
   minAB?: number;
   minIP?: number;
+  includeAllGameTypes?: boolean;
 }
 
 export class StatisticsService {
@@ -154,6 +155,7 @@ export class StatisticsService {
       page = 1,
       pageSize = 50,
       minAB = isHistorical ? 150 : 30,
+      includeAllGameTypes = false,
     } = filters;
 
     const offset = (page - 1) * pageSize;
@@ -237,7 +239,7 @@ export class StatisticsService {
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
       ${teamJoin}
-      WHERE lg.gametype = 0
+      WHERE ${includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
         ${whereClause}
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
@@ -304,7 +306,7 @@ export class StatisticsService {
       LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
       LEFT JOIN leagueschedule lg ON (bs.gameid = lg.id OR ps.gameid = lg.id)
       WHERE c.id IN (${playerIdStrings})
-        AND lg.gametype = 0
+        AND ${filters.includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
         AND (bs.playerid IS NOT NULL OR ps.playerid IS NOT NULL)
         ${whereClause}
       ORDER BY c.id, ts.name
@@ -348,6 +350,7 @@ export class StatisticsService {
       page = 1,
       pageSize = 50,
       minIP = isHistorical ? 100 : 20,
+      includeAllGameTypes = false,
     } = filters;
 
     const offset = (page - 1) * pageSize;
@@ -436,7 +439,7 @@ export class StatisticsService {
       LEFT JOIN leagueschedule lg ON ps.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
       ${teamJoin}
-      WHERE lg.gametype = 0
+      WHERE ${includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
         ${whereClause}
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}

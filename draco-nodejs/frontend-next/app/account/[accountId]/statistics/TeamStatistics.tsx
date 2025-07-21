@@ -13,16 +13,15 @@ import {
   SelectChangeEvent,
   Tabs,
   Tab,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  CircularProgress,
   Alert,
 } from '@mui/material';
+import StatisticsTable, {
+  formatBattingAverage,
+  formatPercentage,
+  formatERA,
+  formatIPDecimal,
+} from './StatisticsTable';
 
 interface Team {
   teamId: string;
@@ -54,6 +53,7 @@ interface BattingStatsRow {
   ops: number;
   tb: number;
   pa: number;
+  [key: string]: unknown;
 }
 
 interface PitchingStatsRow {
@@ -81,7 +81,101 @@ interface PitchingStatsRow {
   oba: number;
   slg: number;
   ipDecimal: number;
+  [key: string]: unknown;
 }
+
+// Column configurations matching the exact order from BattingStatistics
+const BATTING_COLUMNS = [
+  { field: 'playerName' as const, label: 'Player', align: 'left' as const, sortable: false },
+  { field: 'ab' as const, label: 'AB', align: 'right' as const, tooltip: 'At Bats' },
+  { field: 'h' as const, label: 'H', align: 'right' as const, tooltip: 'Hits' },
+  { field: 'r' as const, label: 'R', align: 'right' as const, tooltip: 'Runs' },
+  { field: 'd' as const, label: '2B', align: 'right' as const, tooltip: 'Doubles' },
+  { field: 't' as const, label: '3B', align: 'right' as const, tooltip: 'Triples' },
+  { field: 'hr' as const, label: 'HR', align: 'right' as const, tooltip: 'Home Runs' },
+  { field: 'rbi' as const, label: 'RBI', align: 'right' as const, tooltip: 'Runs Batted In' },
+  { field: 'bb' as const, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
+  { field: 'so' as const, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
+  { field: 'sb' as const, label: 'SB', align: 'right' as const, tooltip: 'Stolen Bases' },
+  {
+    field: 'avg' as const,
+    label: 'AVG',
+    align: 'right' as const,
+    tooltip: 'Batting Average',
+    primary: true,
+    formatter: formatBattingAverage,
+  },
+  {
+    field: 'obp' as const,
+    label: 'OBP',
+    align: 'right' as const,
+    tooltip: 'On-Base Percentage',
+    formatter: formatPercentage,
+  },
+  {
+    field: 'slg' as const,
+    label: 'SLG',
+    align: 'right' as const,
+    tooltip: 'Slugging Percentage',
+    formatter: formatPercentage,
+  },
+  {
+    field: 'ops' as const,
+    label: 'OPS',
+    align: 'right' as const,
+    tooltip: 'On-Base Plus Slugging',
+    formatter: formatPercentage,
+  },
+];
+
+const PITCHING_COLUMNS = [
+  { field: 'playerName' as const, label: 'Player', align: 'left' as const, sortable: false },
+  { field: 'w' as const, label: 'W', align: 'right' as const, tooltip: 'Wins' },
+  { field: 'l' as const, label: 'L', align: 'right' as const, tooltip: 'Losses' },
+  { field: 's' as const, label: 'S', align: 'right' as const, tooltip: 'Saves' },
+  {
+    field: 'ipDecimal' as const,
+    label: 'IP',
+    align: 'right' as const,
+    tooltip: 'Innings Pitched',
+    formatter: formatIPDecimal,
+  },
+  { field: 'h' as const, label: 'H', align: 'right' as const, tooltip: 'Hits Allowed' },
+  { field: 'r' as const, label: 'R', align: 'right' as const, tooltip: 'Runs Allowed' },
+  { field: 'er' as const, label: 'ER', align: 'right' as const, tooltip: 'Earned Runs' },
+  { field: 'bb' as const, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
+  { field: 'so' as const, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
+  { field: 'hr' as const, label: 'HR', align: 'right' as const, tooltip: 'Home Runs Allowed' },
+  {
+    field: 'era' as const,
+    label: 'ERA',
+    align: 'right' as const,
+    tooltip: 'Earned Run Average',
+    primary: true,
+    formatter: formatERA,
+  },
+  {
+    field: 'whip' as const,
+    label: 'WHIP',
+    align: 'right' as const,
+    tooltip: 'Walks + Hits per Inning Pitched',
+    formatter: formatERA,
+  },
+  {
+    field: 'k9' as const,
+    label: 'K/9',
+    align: 'right' as const,
+    tooltip: 'Strikeouts per 9 Innings',
+    formatter: formatERA,
+  },
+  {
+    field: 'bb9' as const,
+    label: 'BB/9',
+    align: 'right' as const,
+    tooltip: 'Walks per 9 Innings',
+    formatter: formatERA,
+  },
+];
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -122,6 +216,10 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     pitching: false,
   });
   const [error, setError] = useState<string | null>(null);
+  const [battingSortField, setBattingSortField] = useState<keyof BattingStatsRow>('avg');
+  const [battingSortOrder, setBattingSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [pitchingSortField, setPitchingSortField] = useState<keyof PitchingStatsRow>('era');
+  const [pitchingSortOrder, setPitchingSortOrder] = useState<'asc' | 'desc'>('asc');
 
   const loadTeams = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -247,21 +345,82 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
     setPitchingStats([]);
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  const formatBattingAverage = (avg: number) => avg.toFixed(3);
-  const formatPercentage = (pct: number) => pct.toFixed(3);
-  const formatERA = (era: number) => era.toFixed(2);
-  const formatIP = (ip: number, ip2: number) => {
-    const totalInnings = ip + ip2 / 3;
-    return totalInnings.toFixed(1);
+  const handleBattingSort = (field: keyof BattingStatsRow) => {
+    if (field === battingSortField) {
+      setBattingSortOrder(battingSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setBattingSortField(field);
+      // Default sort order for different types of stats
+      const defaultDescFields: (keyof BattingStatsRow)[] = [
+        'avg',
+        'obp',
+        'slg',
+        'ops',
+        'h',
+        'hr',
+        'rbi',
+        'r',
+        'sb',
+      ];
+      setBattingSortOrder(defaultDescFields.includes(field) ? 'desc' : 'asc');
+    }
+  };
+
+  const handlePitchingSort = (field: keyof PitchingStatsRow) => {
+    if (field === pitchingSortField) {
+      setPitchingSortOrder(pitchingSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setPitchingSortField(field);
+      // Default sort order for pitching stats (lower is better for rates)
+      const defaultAscFields: (keyof PitchingStatsRow)[] = [
+        'era',
+        'whip',
+        'bb9',
+        'l',
+        'h',
+        'r',
+        'er',
+        'bb',
+      ];
+      setPitchingSortOrder(defaultAscFields.includes(field) ? 'asc' : 'desc');
+    }
   };
 
   const selectedTeam = Array.isArray(teams)
     ? teams.find((team) => team.teamId === selectedTeamId)
     : null;
+
+  // Sort the batting stats
+  const sortedBattingStats = [...battingStats].sort((a, b) => {
+    const aValue = a[battingSortField];
+    const bValue = b[battingSortField];
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return battingSortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+
+    const aStr = String(aValue);
+    const bStr = String(bValue);
+    return battingSortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+  });
+
+  // Sort the pitching stats
+  const sortedPitchingStats = [...pitchingStats].sort((a, b) => {
+    const aValue = a[pitchingSortField];
+    const bValue = b[pitchingSortField];
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return pitchingSortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    }
+
+    const aStr = String(aValue);
+    const bStr = String(bValue);
+    return pitchingSortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+  });
 
   if (error) {
     return (
@@ -322,119 +481,29 @@ export default function TeamStatistics({ accountId, seasonId }: TeamStatisticsPr
             </Box>
 
             <TabPanel value={tabValue} index={0}>
-              {loading.batting ? (
-                <Box display="flex" justifyContent="center" p={4}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Player</TableCell>
-                        <TableCell align="right">AVG</TableCell>
-                        <TableCell align="right">AB</TableCell>
-                        <TableCell align="right">H</TableCell>
-                        <TableCell align="right">R</TableCell>
-                        <TableCell align="right">HR</TableCell>
-                        <TableCell align="right">RBI</TableCell>
-                        <TableCell align="right">BB</TableCell>
-                        <TableCell align="right">SO</TableCell>
-                        <TableCell align="right">OBP</TableCell>
-                        <TableCell align="right">SLG</TableCell>
-                        <TableCell align="right">OPS</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {battingStats.map((stat) => (
-                        <TableRow key={stat.playerId} hover>
-                          <TableCell component="th" scope="row">
-                            {stat.playerName}
-                          </TableCell>
-                          <TableCell align="right">{formatBattingAverage(stat.avg)}</TableCell>
-                          <TableCell align="right">{stat.ab}</TableCell>
-                          <TableCell align="right">{stat.h}</TableCell>
-                          <TableCell align="right">{stat.r}</TableCell>
-                          <TableCell align="right">{stat.hr}</TableCell>
-                          <TableCell align="right">{stat.rbi}</TableCell>
-                          <TableCell align="right">{stat.bb}</TableCell>
-                          <TableCell align="right">{stat.so}</TableCell>
-                          <TableCell align="right">{formatPercentage(stat.obp)}</TableCell>
-                          <TableCell align="right">{formatPercentage(stat.slg)}</TableCell>
-                          <TableCell align="right">{formatPercentage(stat.ops)}</TableCell>
-                        </TableRow>
-                      ))}
-                      {battingStats.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={12} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No batting statistics available
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <StatisticsTable
+                data={sortedBattingStats}
+                columns={BATTING_COLUMNS}
+                loading={loading.batting}
+                emptyMessage="No batting statistics available"
+                getRowKey={(stat) => stat.playerId}
+                sortField={battingSortField}
+                sortOrder={battingSortOrder}
+                onSort={handleBattingSort}
+              />
             </TabPanel>
 
             <TabPanel value={tabValue} index={1}>
-              {loading.pitching ? (
-                <Box display="flex" justifyContent="center" p={4}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <TableContainer>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Player</TableCell>
-                        <TableCell align="right">ERA</TableCell>
-                        <TableCell align="right">W</TableCell>
-                        <TableCell align="right">L</TableCell>
-                        <TableCell align="right">IP</TableCell>
-                        <TableCell align="right">H</TableCell>
-                        <TableCell align="right">R</TableCell>
-                        <TableCell align="right">ER</TableCell>
-                        <TableCell align="right">BB</TableCell>
-                        <TableCell align="right">SO</TableCell>
-                        <TableCell align="right">WHIP</TableCell>
-                        <TableCell align="right">K/9</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {pitchingStats.map((stat) => (
-                        <TableRow key={stat.playerId} hover>
-                          <TableCell component="th" scope="row">
-                            {stat.playerName}
-                          </TableCell>
-                          <TableCell align="right">{formatERA(stat.era)}</TableCell>
-                          <TableCell align="right">{stat.w}</TableCell>
-                          <TableCell align="right">{stat.l}</TableCell>
-                          <TableCell align="right">{formatIP(stat.ip, stat.ip2)}</TableCell>
-                          <TableCell align="right">{stat.h}</TableCell>
-                          <TableCell align="right">{stat.r}</TableCell>
-                          <TableCell align="right">{stat.er}</TableCell>
-                          <TableCell align="right">{stat.bb}</TableCell>
-                          <TableCell align="right">{stat.so}</TableCell>
-                          <TableCell align="right">{formatPercentage(stat.whip)}</TableCell>
-                          <TableCell align="right">{formatERA(stat.k9)}</TableCell>
-                        </TableRow>
-                      ))}
-                      {pitchingStats.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={12} align="center">
-                            <Typography variant="body2" color="text.secondary">
-                              No pitching statistics available
-                            </Typography>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              )}
+              <StatisticsTable
+                data={sortedPitchingStats}
+                columns={PITCHING_COLUMNS}
+                loading={loading.pitching}
+                emptyMessage="No pitching statistics available"
+                getRowKey={(stat) => stat.playerId}
+                sortField={pitchingSortField}
+                sortOrder={pitchingSortOrder}
+                onSort={handlePitchingSort}
+              />
             </TabPanel>
           </Paper>
         </>
