@@ -296,6 +296,7 @@ export class StatisticsService {
     const teamQuery = `
       SELECT DISTINCT
         c.id as "playerId",
+        t.id as "teamId",
         ts.name as "teamName"
       FROM contacts c
       LEFT JOIN roster r ON c.id = r.contactid
@@ -303,26 +304,38 @@ export class StatisticsService {
       LEFT JOIN batstatsum bs ON rs.id = bs.playerid
       LEFT JOIN pitchstatsum ps ON rs.id = ps.playerid
       LEFT JOIN teamsseason ts ON (bs.teamid = ts.id OR ps.teamid = ts.id)
+      LEFT JOIN teams t ON ts.teamid = t.id
       LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
       LEFT JOIN leagueschedule lg ON (bs.gameid = lg.id OR ps.gameid = lg.id)
       WHERE c.id IN (${playerIdStrings})
         AND ${filters.includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
         AND (bs.playerid IS NOT NULL OR ps.playerid IS NOT NULL)
         ${whereClause}
-      ORDER BY c.id, ts.name
+      ORDER BY c.id, t.id, ts.name
     `;
 
     const teamResults = await this.prisma.$queryRawUnsafe(teamQuery, ...params);
     const teamsByPlayer = new Map<string, string[]>();
+    const teamIdsByPlayer = new Map<string, Set<string>>();
 
-    // Group teams by player
-    for (const row of teamResults as Array<{ playerId: bigint; teamName?: string }>) {
+    // Group teams by player, deduplicating by teamId
+    for (const row of teamResults as Array<{
+      playerId: bigint;
+      teamId?: bigint;
+      teamName?: string;
+    }>) {
       const playerId = row.playerId.toString();
+      const teamId = row.teamId?.toString();
+
       if (!teamsByPlayer.has(playerId)) {
         teamsByPlayer.set(playerId, []);
+        teamIdsByPlayer.set(playerId, new Set());
       }
-      if (row.teamName) {
+
+      // Only add team if we haven't seen this teamId for this player
+      if (row.teamName && teamId && !teamIdsByPlayer.get(playerId)!.has(teamId)) {
         teamsByPlayer.get(playerId)!.push(row.teamName);
+        teamIdsByPlayer.get(playerId)!.add(teamId);
       }
     }
 

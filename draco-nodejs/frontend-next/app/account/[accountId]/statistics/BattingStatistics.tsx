@@ -21,12 +21,14 @@ import {
   MenuItem,
   SelectChangeEvent,
   Tooltip,
-  Chip,
 } from '@mui/material';
+import TeamBadges from './TeamBadges';
+import ScrollableTable from './ScrollableTable';
 
 interface BattingStatsRow {
   playerId: string;
   playerName: string;
+  teams?: string[];
   teamName: string;
   ab: number;
   h: number;
@@ -265,96 +267,97 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              {BATTING_COLUMNS.map((column) => (
-                <TableCell
-                  key={column.field}
-                  align={column.align}
-                  sx={{
-                    fontWeight: 'bold',
-                    backgroundColor: 'background.paper',
-                    ...(column.primary && {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                    }),
-                  }}
-                >
-                  {column.sortable !== false ? (
-                    <Tooltip title={column.tooltip || ''}>
-                      <TableSortLabel
-                        active={sortField === column.field}
-                        direction={sortField === column.field ? sortOrder : 'asc'}
-                        onClick={() => handleSort(column.field)}
-                        sx={{
-                          '& .MuiTableSortLabel-icon': {
-                            color: column.primary ? 'inherit' : undefined,
-                          },
-                        }}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title={column.tooltip || ''}>
-                      <Typography variant="inherit" component="span">
-                        {column.label}
-                      </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {stats.map((player, index) => (
-              <TableRow
-                key={`${player.playerId}-${index}`}
-                hover
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell align="left">
-                  <Typography variant="body2" fontWeight="medium">
-                    {player.playerName}
-                  </Typography>
-                </TableCell>
-                <TableCell align="left">
-                  <Chip
-                    label={player.teamName}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                </TableCell>
-                <TableCell align="right">{player.ab}</TableCell>
-                <TableCell align="right">{player.h}</TableCell>
-                <TableCell align="right">{player.r}</TableCell>
-                <TableCell align="right">{player.d}</TableCell>
-                <TableCell align="right">{player.t}</TableCell>
-                <TableCell align="right">{player.hr}</TableCell>
-                <TableCell align="right">{player.rbi}</TableCell>
-                <TableCell align="right">{player.bb}</TableCell>
-                <TableCell align="right">{player.so}</TableCell>
-                <TableCell align="right">{player.sb}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    fontWeight: 'bold',
-                    backgroundColor: sortField === 'avg' ? 'action.selected' : undefined,
-                  }}
-                >
-                  {formatBattingAverage(player.avg)}
-                </TableCell>
-                <TableCell align="right">{formatPercentage(player.obp)}</TableCell>
-                <TableCell align="right">{formatPercentage(player.slg)}</TableCell>
-                <TableCell align="right">{formatPercentage(player.ops)}</TableCell>
+      <ScrollableTable>
+        <TableContainer component={Paper}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                {BATTING_COLUMNS.map((column) => (
+                  <TableCell
+                    key={column.field}
+                    align={column.align}
+                    sx={{
+                      fontWeight: 'bold',
+                      backgroundColor: 'background.paper',
+                      ...(column.primary && {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                      }),
+                    }}
+                  >
+                    {column.sortable !== false ? (
+                      <Tooltip title={column.tooltip || ''}>
+                        <TableSortLabel
+                          active={sortField === column.field}
+                          direction={sortField === column.field ? sortOrder : 'asc'}
+                          onClick={() => handleSort(column.field)}
+                          sx={{
+                            '& .MuiTableSortLabel-icon': {
+                              color: column.primary ? 'inherit' : undefined,
+                            },
+                          }}
+                        >
+                          {column.label}
+                        </TableSortLabel>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title={column.tooltip || ''}>
+                        <Typography variant="inherit" component="span">
+                          {column.label}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {stats.map((player, index) => (
+                <TableRow
+                  key={`${player.playerId}-${index}`}
+                  hover
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell align="left">
+                    <Typography variant="body2" fontWeight="medium">
+                      {player.playerName}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="left">
+                    <TeamBadges
+                      teams={player.teams as string[] | undefined}
+                      teamName={player.teamName}
+                      maxVisible={3}
+                    />
+                  </TableCell>
+                  <TableCell align="right">{player.ab}</TableCell>
+                  <TableCell align="right">{player.h}</TableCell>
+                  <TableCell align="right">{player.r}</TableCell>
+                  <TableCell align="right">{player.d}</TableCell>
+                  <TableCell align="right">{player.t}</TableCell>
+                  <TableCell align="right">{player.hr}</TableCell>
+                  <TableCell align="right">{player.rbi}</TableCell>
+                  <TableCell align="right">{player.bb}</TableCell>
+                  <TableCell align="right">{player.so}</TableCell>
+                  <TableCell align="right">{player.sb}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      fontWeight: 'bold',
+                      backgroundColor: sortField === 'avg' ? 'action.selected' : undefined,
+                    }}
+                  >
+                    {formatBattingAverage(player.avg)}
+                  </TableCell>
+                  <TableCell align="right">{formatPercentage(player.obp)}</TableCell>
+                  <TableCell align="right">{formatPercentage(player.slg)}</TableCell>
+                  <TableCell align="right">{formatPercentage(player.ops)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </ScrollableTable>
 
       <Box display="flex" justifyContent="center" mt={3}>
         <Pagination

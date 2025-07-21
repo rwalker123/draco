@@ -21,12 +21,14 @@ import {
   MenuItem,
   SelectChangeEvent,
   Tooltip,
-  Chip,
 } from '@mui/material';
+import TeamBadges from './TeamBadges';
+import ScrollableTable from './ScrollableTable';
 
 interface PitchingStatsRow {
   playerId: string;
   playerName: string;
+  teams?: string[];
   teamName: string;
   ip: number;
   ip2: number; // partial innings (outs)
@@ -273,96 +275,97 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
         </Box>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              {PITCHING_COLUMNS.map((column) => (
-                <TableCell
-                  key={column.field}
-                  align={column.align}
-                  sx={{
-                    fontWeight: 'bold',
-                    backgroundColor: 'background.paper',
-                    ...(column.primary && {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                    }),
-                  }}
-                >
-                  {column.sortable !== false ? (
-                    <Tooltip title={column.tooltip || ''}>
-                      <TableSortLabel
-                        active={sortField === column.field}
-                        direction={sortField === column.field ? sortOrder : 'asc'}
-                        onClick={() => handleSort(column.field)}
-                        sx={{
-                          '& .MuiTableSortLabel-icon': {
-                            color: column.primary ? 'inherit' : undefined,
-                          },
-                        }}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title={column.tooltip || ''}>
-                      <Typography variant="inherit" component="span">
-                        {column.label}
-                      </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {stats.map((player, index) => (
-              <TableRow
-                key={`${player.playerId}-${index}`}
-                hover
-                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-              >
-                <TableCell align="left">
-                  <Typography variant="body2" fontWeight="medium">
-                    {player.playerName}
-                  </Typography>
-                </TableCell>
-                <TableCell align="left">
-                  <Chip
-                    label={player.teamName}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: '0.75rem' }}
-                  />
-                </TableCell>
-                <TableCell align="right">{player.w}</TableCell>
-                <TableCell align="right">{player.l}</TableCell>
-                <TableCell align="right">{player.s}</TableCell>
-                <TableCell align="right">{formatIP(player.ipDecimal)}</TableCell>
-                <TableCell align="right">{player.h}</TableCell>
-                <TableCell align="right">{player.r}</TableCell>
-                <TableCell align="right">{player.er}</TableCell>
-                <TableCell align="right">{player.bb}</TableCell>
-                <TableCell align="right">{player.so}</TableCell>
-                <TableCell align="right">{player.hr}</TableCell>
-                <TableCell
-                  align="right"
-                  sx={{
-                    fontWeight: 'bold',
-                    backgroundColor: sortField === 'era' ? 'action.selected' : undefined,
-                  }}
-                >
-                  {formatERA(player.era)}
-                </TableCell>
-                <TableCell align="right">{formatRate(player.whip)}</TableCell>
-                <TableCell align="right">{formatK9(player.k9)}</TableCell>
-                <TableCell align="right">{formatK9(player.bb9)}</TableCell>
+      <ScrollableTable>
+        <TableContainer component={Paper}>
+          <Table size="small" stickyHeader>
+            <TableHead>
+              <TableRow>
+                {PITCHING_COLUMNS.map((column) => (
+                  <TableCell
+                    key={column.field}
+                    align={column.align}
+                    sx={{
+                      fontWeight: 'bold',
+                      backgroundColor: 'background.paper',
+                      ...(column.primary && {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                      }),
+                    }}
+                  >
+                    {column.sortable !== false ? (
+                      <Tooltip title={column.tooltip || ''}>
+                        <TableSortLabel
+                          active={sortField === column.field}
+                          direction={sortField === column.field ? sortOrder : 'asc'}
+                          onClick={() => handleSort(column.field)}
+                          sx={{
+                            '& .MuiTableSortLabel-icon': {
+                              color: column.primary ? 'inherit' : undefined,
+                            },
+                          }}
+                        >
+                          {column.label}
+                        </TableSortLabel>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title={column.tooltip || ''}>
+                        <Typography variant="inherit" component="span">
+                          {column.label}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {stats.map((player, index) => (
+                <TableRow
+                  key={`${player.playerId}-${index}`}
+                  hover
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell align="left">
+                    <Typography variant="body2" fontWeight="medium">
+                      {player.playerName}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="left">
+                    <TeamBadges
+                      teams={player.teams as string[] | undefined}
+                      teamName={player.teamName}
+                      maxVisible={3}
+                    />
+                  </TableCell>
+                  <TableCell align="right">{player.w}</TableCell>
+                  <TableCell align="right">{player.l}</TableCell>
+                  <TableCell align="right">{player.s}</TableCell>
+                  <TableCell align="right">{formatIP(player.ipDecimal)}</TableCell>
+                  <TableCell align="right">{player.h}</TableCell>
+                  <TableCell align="right">{player.r}</TableCell>
+                  <TableCell align="right">{player.er}</TableCell>
+                  <TableCell align="right">{player.bb}</TableCell>
+                  <TableCell align="right">{player.so}</TableCell>
+                  <TableCell align="right">{player.hr}</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      fontWeight: 'bold',
+                      backgroundColor: sortField === 'era' ? 'action.selected' : undefined,
+                    }}
+                  >
+                    {formatERA(player.era)}
+                  </TableCell>
+                  <TableCell align="right">{formatRate(player.whip)}</TableCell>
+                  <TableCell align="right">{formatK9(player.k9)}</TableCell>
+                  <TableCell align="right">{formatK9(player.bb9)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </ScrollableTable>
 
       <Box display="flex" justifyContent="center" mt={3}>
         <Pagination
