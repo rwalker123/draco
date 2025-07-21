@@ -1501,11 +1501,12 @@ router.get(
 
       // Use the statistics service to get batting stats for this team
       const battingStats = await statisticsService.getBattingStats(accountId, {
-        seasonId,
         teamId: teamSeasonId,
         sortField: 'avg',
         sortOrder: 'desc',
         pageSize: 1000, // Get all players on the team
+        minAB: 0, // No minimum requirements for team stats
+        includeAllGameTypes: true, // Include both regular season and postseason
       });
 
       res.json({
@@ -1562,6 +1563,8 @@ router.get(
         sortField: 'era',
         sortOrder: 'asc',
         pageSize: 1000, // Get all players on the team
+        minIP: 0, // No minimum requirements for team stats
+        includeAllGameTypes: true, // Include both regular season and postseason
       });
 
       res.json({
