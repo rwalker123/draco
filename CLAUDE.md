@@ -114,6 +114,11 @@ Key patterns:
 4. **ALWAYS** check for lint/typecheck errors after changes
 5. **ALWAYS** use the account boundary enforcement in backend routes
 6. **ALWAYS** use season-specific tables (leagueseason, divisionseason, teamsseason) for statistics and season-related queries, NOT the definition tables (league, divisiondefs, teams). The definition tables are season-agnostic, while the season tables contain season-specific data.
+7. **NEVER** change API response structures or data contracts without checking ALL consumers first. Before modifying any API endpoint response:
+   - Search for all usages of that endpoint across the entire codebase
+   - Check both frontend and backend consumers
+   - Maintain backward compatibility by adding new fields rather than changing existing ones
+   - If changes are absolutely necessary, update ALL consumers in the same commit
 
 ## Common Tasks
 

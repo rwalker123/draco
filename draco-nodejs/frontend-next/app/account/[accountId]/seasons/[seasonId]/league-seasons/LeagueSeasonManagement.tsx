@@ -19,6 +19,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  AccordionActions,
   Autocomplete,
   FormControlLabel,
   Checkbox,
@@ -156,9 +157,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
     setLoading(true);
     try {
-      const response = await axios.get(`/api/accounts/${accountId}/seasons/${season.id}/leagues`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues?unassignedTeams=true`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
 
       if (response.data.success) {
         setLeagueSeasons(response.data.data.leagueSeasons);
@@ -981,13 +985,18 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             expanded={expandedAccordions.has(leagueSeason.id)}
             onChange={handleAccordionChange(leagueSeason.id)}
           >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box display="flex" alignItems="center" justifyContent="space-between" width="100%">
-                <Box display="flex" alignItems="center">
-                  <SportsIcon sx={{ mr: 1 }} />
-                  <Typography variant="h6">{leagueSeason.leagueName}</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" gap={1}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              sx={{
+                '& .MuiAccordionSummary-content': {
+                  alignItems: 'center',
+                },
+              }}
+            >
+              <Box display="flex" alignItems="center" flex={1} mr={2}>
+                <SportsIcon sx={{ mr: 1 }} />
+                <Typography variant="h6">{leagueSeason.leagueName}</Typography>
+                <Box display="flex" alignItems="center" gap={1} ml={2}>
                   <Chip
                     label={`${leagueSeason.divisions.length} divisions`}
                     size="small"
@@ -1000,44 +1009,36 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                     color="secondary"
                     variant="outlined"
                   />
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openAddDivisionDialog(leagueSeason);
-                    }}
-                    aria-label="Add Division"
-                  >
-                    <AddIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openCreateTeamDialog(leagueSeason);
-                    }}
-                    aria-label="Create Team"
-                  >
-                    <AddIcon />
-                  </IconButton>
-                  <Tooltip title="Remove League from Season">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openDeleteLeagueDialog(leagueSeason);
-                      }}
-                      disabled={formLoading}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
                 </Box>
               </Box>
             </AccordionSummary>
+            <AccordionActions>
+              <Button
+                size="small"
+                color="primary"
+                onClick={() => openAddDivisionDialog(leagueSeason)}
+                startIcon={<AddIcon />}
+              >
+                Add Division
+              </Button>
+              <Button
+                size="small"
+                color="primary"
+                onClick={() => openCreateTeamDialog(leagueSeason)}
+                startIcon={<AddIcon />}
+              >
+                Create Team
+              </Button>
+              <Button
+                size="small"
+                color="error"
+                onClick={() => openDeleteLeagueDialog(leagueSeason)}
+                disabled={formLoading}
+                startIcon={<DeleteIcon />}
+              >
+                Remove League
+              </Button>
+            </AccordionActions>
             <AccordionDetails>
               <Box display="flex" gap={2} flexWrap="wrap">
                 {/* Divisions */}

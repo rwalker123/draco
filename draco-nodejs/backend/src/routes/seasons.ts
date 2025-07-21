@@ -974,6 +974,7 @@ router.get(
               select: {
                 id: true,
                 name: true,
+                accountid: true,
               },
             },
           },
@@ -1032,6 +1033,7 @@ router.get(
             select: {
               id: true,
               name: true,
+              accountid: true,
             },
           },
           divisionseason: {
@@ -1069,10 +1071,12 @@ router.get(
         id: ls.id.toString(),
         leagueId: ls.league.id.toString(),
         leagueName: ls.league.name,
+        accountId: ls.league.accountid.toString(),
         divisions: (ls.divisionseason || []).map((ds) => ({
           id: ds.id.toString(), // Use divisionSeason.id for filtering
           divisionId: ds.divisiondefs.id.toString(),
           divisionName: ds.divisiondefs.name,
+          priority: ds.priority,
           teams: (ls.teamsseason || [])
             .filter((ts) => ts.divisionseasonid === ds.id)
             .map((ts) => ({
@@ -1085,6 +1089,17 @@ router.get(
               autoPlayVideo: ts.teams.autoplayvideo,
             })),
         })),
+        unassignedTeams: (ls.teamsseason || [])
+          .filter((ts) => !ts.divisionseasonid || ts.divisionseasonid === null)
+          .map((ts) => ({
+            id: ts.id.toString(),
+            teamId: ts.teams.id.toString(),
+            name: ts.name,
+            webAddress: ts.teams.webaddress,
+            youtubeUserId: ts.teams.youtubeuserid,
+            defaultVideo: ts.teams.defaultvideo,
+            autoPlayVideo: ts.teams.autoplayvideo,
+          })),
       }));
 
       res.json({
