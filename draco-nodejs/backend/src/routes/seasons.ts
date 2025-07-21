@@ -197,7 +197,8 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
             ...(includeDivisions &&
               ls.divisionseason && {
                 divisions: ls.divisionseason.map((ds) => ({
-                  id: ds.divisiondefs?.id.toString() || ds.id.toString(),
+                  id: ds.id.toString(), // Use divisionSeason.id for filtering
+                  divisionId: ds.divisiondefs?.id.toString(),
                   name: ds.divisiondefs?.name || 'Unknown Division',
                 })),
               }),
@@ -1069,7 +1070,7 @@ router.get(
         leagueId: ls.league.id.toString(),
         leagueName: ls.league.name,
         divisions: (ls.divisionseason || []).map((ds) => ({
-          id: ds.divisiondefs.id.toString(),
+          id: ds.id.toString(), // Use divisionSeason.id for filtering
           divisionId: ds.divisiondefs.id.toString(),
           divisionName: ds.divisiondefs.name,
           teams: (ls.teamsseason || [])
