@@ -125,6 +125,47 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/leagues/all-time
+ * Get unique leagues for all-time statistics (public endpoint)
+ */
+router.get('/all-time', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  try {
+    const accountId = BigInt(req.params.accountId);
+
+    // Get unique leagues that have been used in seasons
+    const leaguesWithSeasons = await prisma.league.findMany({
+      where: {
+        accountid: accountId,
+        leagueseason: {
+          some: {}, // League must have at least one season
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
+
+    res.json({
+      success: true,
+      data: leaguesWithSeasons.map((league) => ({
+        id: league.id.toString(), // This is league.id for all-time queries
+        name: league.name,
+      })),
+    });
+  } catch (error) {
+    console.error('Error fetching all-time leagues:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch all-time leagues',
+    });
+  }
+});
+
+/**
  * @swagger
  * /api/accounts/{accountId}/leagues/{leagueId}:
  *   get:

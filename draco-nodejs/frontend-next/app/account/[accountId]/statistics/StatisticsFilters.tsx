@@ -133,18 +133,34 @@ export default function StatisticsFilters({
     }
   }, [accountId, onChange, filters.seasonId]);
 
-  const loadLeagues = useCallback(() => {
+  const loadLeagues = useCallback(async () => {
     setLoading((prev) => ({ ...prev, leagues: true }));
     try {
-      // Find the season from cached data
-      const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
-      const leaguesData = selectedSeason?.leagues || [];
+      let formattedLeagues: League[] = [];
 
-      // Convert to the format expected by the dropdown
-      const formattedLeagues = leaguesData.map((league) => ({
-        id: league.id, // Use leagueseason.id, not league.id
-        name: league.leagueName,
-      }));
+      if (filters.isHistorical) {
+        // For all-time stats, fetch leagues from the all-time endpoint
+        const response = await fetch(`/api/accounts/${accountId}/leagues/all-time`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          formattedLeagues = data.data || [];
+        }
+      } else {
+        // For season stats, use cached season data
+        const selectedSeason = seasonsData.find((s) => s.id === filters.seasonId);
+        const leaguesData = selectedSeason?.leagues || [];
+
+        // Convert to the format expected by the dropdown
+        formattedLeagues = leaguesData.map((league) => ({
+          id: league.id, // Use leagueseason.id for season stats
+          name: league.leagueName,
+        }));
+      }
 
       setLeagues(formattedLeagues);
 
@@ -157,7 +173,7 @@ export default function StatisticsFilters({
     } finally {
       setLoading((prev) => ({ ...prev, leagues: false }));
     }
-  }, [seasonsData, filters.seasonId, onChange, filters.leagueId]);
+  }, [accountId, seasonsData, filters.seasonId, filters.isHistorical, onChange, filters.leagueId]);
 
   const loadDivisions = useCallback(() => {
     setLoading((prev) => ({ ...prev, divisions: true }));

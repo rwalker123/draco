@@ -24,6 +24,11 @@ npm run backend:dev          # Start backend only (port 5000)
 npm run frontend-next:start  # Start frontend only (port 3000)
 ```
 
+**Important Development Notes:**
+- Backend API is served via HTTPS on port 3001 (https://localhost:3001)
+- Frontend proxies API requests through Next.js
+- Use HTTPS and port 3001 when testing backend endpoints directly
+
 ### Building
 ```bash
 npm run build               # Build both projects
