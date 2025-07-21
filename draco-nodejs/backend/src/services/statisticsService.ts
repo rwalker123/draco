@@ -4,7 +4,8 @@ import { MinimumCalculator } from './minimumCalculator';
 export interface BattingStatsRow {
   playerId: bigint;
   playerName: string;
-  teamName: string;
+  teams?: string[]; // Array of team names player played for
+  teamName: string; // Formatted string of teams for display
   ab: number;
   h: number;
   r: number;
@@ -25,13 +26,14 @@ export interface BattingStatsRow {
   ops: number;
   tb: number;
   pa: number;
-  [key: string]: string | number | bigint;
+  [key: string]: string | number | bigint | string[] | undefined;
 }
 
 export interface PitchingStatsRow {
   playerId: bigint;
   playerName: string;
-  teamName: string;
+  teams?: string[]; // Array of team names player played for
+  teamName: string; // Formatted string of teams for display
   ip: number;
   ip2: number; // partial innings (outs)
   w: number;
@@ -54,19 +56,20 @@ export interface PitchingStatsRow {
   oba: number; // opponent batting average
   slg: number; // opponent slugging
   ipDecimal: number; // innings pitched as decimal
-  [key: string]: string | number | bigint;
+  [key: string]: string | number | bigint | string[] | undefined;
 }
 
 export interface LeaderRow {
   playerId: bigint;
   playerName: string;
-  teamName: string;
+  teams?: string[]; // Array of team names player played for
+  teamName: string; // Formatted string of teams for display
   statValue: number;
   category: string;
   rank: number;
   isTie?: boolean;
   tieCount?: number;
-  [key: string]: string | number | bigint | boolean | undefined;
+  [key: string]: string | number | bigint | boolean | undefined | string[];
 }
 
 export interface StandingsRow {
@@ -137,7 +140,10 @@ export class StatisticsService {
   }
 
   // Get batting statistics with pagination and filtering
-  async getBattingStats(accountId: bigint, filters: StatisticsFilters): Promise<BattingStatsRow[]> {
+  async getBattingStats(
+    _accountId: bigint,
+    filters: StatisticsFilters,
+  ): Promise<BattingStatsRow[]> {
     const {
       leagueId,
       divisionId,
@@ -181,11 +187,14 @@ export class StatisticsService {
     const orderDirection = sortOrder === 'asc' ? 'ASC' : 'DESC';
     const sortFieldSql = sortField.toLowerCase();
 
+    // Conditionally include teamsseason JOIN only if filtering by division
+    const teamJoin =
+      divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON bs.teamid = ts.id' : '';
+
     const query = `
       SELECT 
-        bs.playerid as "playerId",
+        c.id as "playerId",
         CONCAT(c.firstname, ' ', c.lastname) as "playerName",
-        ts.name as "teamName",
         SUM(bs.ab)::int as ab,
         SUM(bs.h)::int as h,
         SUM(bs.r)::int as r,
@@ -219,25 +228,98 @@ export class StatisticsService {
       LEFT JOIN rosterseason rs ON bs.playerid = rs.id
       LEFT JOIN roster r ON rs.playerid = r.id
       LEFT JOIN contacts c ON r.contactid = c.id
-      LEFT JOIN teamsseason ts ON bs.teamid = ts.id
-      LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
-      LEFT JOIN season s ON ls.seasonid = s.id
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
+      LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
+      ${teamJoin}
       WHERE lg.gametype = 0
         ${whereClause}
-      GROUP BY bs.playerid, c.firstname, c.lastname, ts.name
+      GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
       ORDER BY ${sortFieldSql} ${orderDirection}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
     const result = await this.prisma.$queryRawUnsafe(query, ...params);
-    return result as BattingStatsRow[];
+    const battingStats = result as BattingStatsRow[];
+
+    // Fetch teams for each player
+    await this.addTeamsToStats(battingStats, filters);
+
+    return battingStats;
+  }
+
+  // Helper method to fetch and add team information to player stats
+  private async addTeamsToStats(
+    stats: (BattingStatsRow | PitchingStatsRow)[],
+    filters: StatisticsFilters,
+  ): Promise<void> {
+    if (stats.length === 0) return;
+
+    const playerIds = stats.map((stat) => stat.playerId);
+
+    // Query to get all teams a player has played for in the relevant time period
+    let whereClause = '';
+    const params: (bigint | number)[] = [];
+
+    if (filters.leagueId && filters.leagueId !== BigInt(0)) {
+      if (filters.isHistorical) {
+        // For all-time stats, filter by league.id
+        whereClause += ' AND ls.leagueid = $' + (params.length + 1);
+      } else {
+        // For season stats, filter by leagueseason.id
+        whereClause += ' AND ls.id = $' + (params.length + 1);
+      }
+      params.push(filters.leagueId);
+    }
+
+    // Convert playerIds to a string for IN clause
+    const playerIdStrings = playerIds.map((id) => id.toString()).join(',');
+
+    const teamQuery = `
+      SELECT DISTINCT
+        c.id as "playerId",
+        ts.name as "teamName"
+      FROM contacts c
+      LEFT JOIN roster r ON c.id = r.contactid
+      LEFT JOIN rosterseason rs ON r.id = rs.playerid
+      LEFT JOIN batstatsum bs ON rs.id = bs.playerid
+      LEFT JOIN pitchstatsum ps ON rs.id = ps.playerid
+      LEFT JOIN teamsseason ts ON (bs.teamid = ts.id OR ps.teamid = ts.id)
+      LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
+      LEFT JOIN leagueschedule lg ON (bs.gameid = lg.id OR ps.gameid = lg.id)
+      WHERE c.id IN (${playerIdStrings})
+        AND lg.gametype = 0
+        AND (bs.playerid IS NOT NULL OR ps.playerid IS NOT NULL)
+        ${whereClause}
+      ORDER BY c.id, ts.name
+    `;
+
+    const teamResults = await this.prisma.$queryRawUnsafe(teamQuery, ...params);
+    const teamsByPlayer = new Map<string, string[]>();
+
+    // Group teams by player
+    for (const row of teamResults as Array<{ playerId: bigint; teamName?: string }>) {
+      const playerId = row.playerId.toString();
+      if (!teamsByPlayer.has(playerId)) {
+        teamsByPlayer.set(playerId, []);
+      }
+      if (row.teamName) {
+        teamsByPlayer.get(playerId)!.push(row.teamName);
+      }
+    }
+
+    // Add team information to each stat
+    for (const stat of stats) {
+      const playerId = stat.playerId.toString();
+      const teams = teamsByPlayer.get(playerId) || [];
+      stat.teams = teams;
+      stat.teamName = teams.length > 1 ? teams.join(', ') : teams[0] || 'Unknown';
+    }
   }
 
   // Get pitching statistics with pagination and filtering
   async getPitchingStats(
-    accountId: bigint,
+    _accountId: bigint,
     filters: StatisticsFilters,
   ): Promise<PitchingStatsRow[]> {
     const {
@@ -283,11 +365,14 @@ export class StatisticsService {
     // Special case for innings pitched which uses decimal calculation
     const sortFieldSql = sortField.toLowerCase() === 'ip' ? '"ipDecimal"' : sortField.toLowerCase();
 
+    // Conditionally include teamsseason JOIN only if filtering by division
+    const teamJoin =
+      divisionId && divisionId !== BigInt(0) ? 'LEFT JOIN teamsseason ts ON ps.teamid = ts.id' : '';
+
     const query = `
       SELECT 
-        ps.playerid as "playerId",
+        c.id as "playerId",
         CONCAT(c.firstname, ' ', c.lastname) as "playerName",
-        ts.name as "teamName",
         SUM(ps.ip)::int as ip,
         SUM(ps.ip2)::int as ip2,
         SUM(ps.w)::int as w,
@@ -326,20 +411,24 @@ export class StatisticsService {
       LEFT JOIN rosterseason rs ON ps.playerid = rs.id
       LEFT JOIN roster r ON rs.playerid = r.id
       LEFT JOIN contacts c ON r.contactid = c.id
-      LEFT JOIN teamsseason ts ON ps.teamid = ts.id
-      LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
-      LEFT JOIN season s ON ls.seasonid = s.id
       LEFT JOIN leagueschedule lg ON ps.gameid = lg.id
+      LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
+      ${teamJoin}
       WHERE lg.gametype = 0
         ${whereClause}
-      GROUP BY ps.playerid, c.firstname, c.lastname, ts.name
+      GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
       ORDER BY ${sortFieldSql} ${orderDirection}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
     const result = await this.prisma.$queryRawUnsafe(query, ...params);
-    return result as PitchingStatsRow[];
+    const pitchingStats = result as PitchingStatsRow[];
+
+    // Fetch teams for each player
+    await this.addTeamsToStats(pitchingStats, filters);
+
+    return pitchingStats;
   }
 
   // Get statistical leaders for a category
