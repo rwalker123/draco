@@ -86,13 +86,22 @@ export default function Statistics({ accountId }: StatisticsProps) {
 
   return (
     <main className="min-h-screen bg-background">
-      <AccountPageHeader accountId={accountId} />
+      <AccountPageHeader accountId={accountId}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ position: 'relative' }}
+        >
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Statistics
+            </Typography>
+          </Box>
+        </Box>
+      </AccountPageHeader>
 
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Statistics
-        </Typography>
-
         {/* Filters */}
         <Paper sx={{ p: 3, mb: 3 }}>
           <StatisticsFilters
