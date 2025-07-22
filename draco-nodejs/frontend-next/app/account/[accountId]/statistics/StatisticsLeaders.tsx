@@ -8,6 +8,7 @@ import StatisticsTable, {
   formatIPDecimal,
 } from './StatisticsTable';
 import type { ColumnConfig } from './StatisticsTable';
+import LeaderCard from './LeaderCard';
 
 interface LeaderRow {
   playerId: string;
@@ -185,37 +186,42 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
     }
   };
 
-  const createLeaderColumns = (category: LeaderCategory): ColumnConfig<LeaderRow>[] => [
-    {
-      field: 'rank',
-      label: '#',
-      align: 'center',
-      tooltip: 'Rank',
-      sortable: false,
-      formatter: (value: unknown) => String(value ?? ''),
-    },
-    {
-      field: 'playerName',
-      label: 'Player',
-      align: 'left',
-      sortable: false,
-    },
-    {
-      field: 'teamName',
-      label: 'Team',
-      align: 'left',
-      sortable: false,
-    },
-    {
-      field: 'statValue',
-      label: category.label,
-      align: 'right',
-      tooltip: category.label,
-      primary: true,
-      sortable: false,
-      formatter: getFormatter(category.format),
-    },
-  ];
+  const createLeaderColumns = (
+    category: LeaderCategory,
+    _data: LeaderRow[],
+  ): ColumnConfig<LeaderRow>[] => {
+    return [
+      {
+        field: 'rank',
+        label: '#',
+        align: 'center',
+        tooltip: 'Rank',
+        sortable: false,
+        formatter: (value: unknown) => String(value ?? ''),
+      },
+      {
+        field: 'playerName',
+        label: 'Player',
+        align: 'left',
+        sortable: false,
+      },
+      {
+        field: 'teamName',
+        label: 'Team',
+        align: 'left',
+        sortable: false,
+      },
+      {
+        field: 'statValue',
+        label: category.label,
+        align: 'right',
+        tooltip: category.label,
+        primary: true,
+        sortable: false,
+        formatter: getFormatter(category.format),
+      },
+    ];
+  };
 
   const getRowKey = (item: LeaderRow, index: number) => {
     if (item.isTie) {
@@ -224,8 +230,11 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
     return `${item.playerId}-${item.rank}-${index}`;
   };
 
-  const processLeadersForTable = (leaders: LeaderRow[]): LeaderRow[] => {
-    return leaders.map((leader) => {
+  const processLeadersForTable = (
+    leaders: LeaderRow[],
+    leaderCard: LeaderRow | null,
+  ): LeaderRow[] => {
+    const processed = leaders.map((leader) => {
       if (leader.isTie) {
         return {
           ...leader,
@@ -236,6 +245,40 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
       }
       return leader;
     });
+
+    // If we're showing a single leader card (not a tie), filter out that leader from the table
+    if (leaderCard && !leaderCard.isTie) {
+      return processed.filter((leader) => leader.rank !== 1 || leader.isTie);
+    }
+
+    // If it's a tie card, show all leaders in the table
+    return processed;
+  };
+
+  const getLeaderForCard = (leaders: LeaderRow[]): LeaderRow | null => {
+    const firstPlaceEntries = leaders.filter((row) => row.rank === 1 && !row.isTie);
+
+    // If there's exactly one leader, return them
+    if (firstPlaceEntries.length === 1) {
+      return firstPlaceEntries[0];
+    }
+
+    // If there are multiple leaders tied for first, create a special tie entry
+    if (firstPlaceEntries.length > 1) {
+      return {
+        playerId: 'tie-entry',
+        playerName: `${firstPlaceEntries.length} tied`,
+        teams: [],
+        teamName: '',
+        statValue: firstPlaceEntries[0].statValue, // All have the same value
+        category: firstPlaceEntries[0].category,
+        rank: 1,
+        isTie: true,
+        tieCount: firstPlaceEntries.length,
+      };
+    }
+
+    return null;
   };
 
   if (!filters.leagueId) {
@@ -279,20 +322,31 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {battingCategories.map((category) => {
               const leaders = battingLeaders[category.key] || [];
-              const processedLeaders = processLeadersForTable(leaders);
+              const leaderForCard = getLeaderForCard(leaders);
+              const processedLeaders = processLeadersForTable(leaders, leaderForCard);
 
               return (
                 <Box key={category.key}>
-                  <Typography variant="subtitle1" gutterBottom sx={{ mb: 1 }}>
-                    {category.label}
-                  </Typography>
-                  <StatisticsTable
-                    data={processedLeaders}
-                    columns={createLeaderColumns(category)}
-                    loading={loading}
-                    emptyMessage={`No ${category.label.toLowerCase()} leaders available`}
-                    getRowKey={getRowKey}
-                  />
+                  {/* Leader Card */}
+                  {leaderForCard && (
+                    <LeaderCard
+                      leader={leaderForCard}
+                      statLabel={category.label}
+                      formatter={getFormatter(category.format)}
+                    />
+                  )}
+
+                  {/* Statistics Table */}
+                  {processedLeaders.length > 0 && (
+                    <StatisticsTable
+                      data={processedLeaders}
+                      columns={createLeaderColumns(category, processedLeaders)}
+                      loading={loading}
+                      emptyMessage={`No additional ${category.label.toLowerCase()} data available`}
+                      getRowKey={getRowKey}
+                      hideHeader={leaderForCard !== null}
+                    />
+                  )}
                 </Box>
               );
             })}
@@ -307,20 +361,31 @@ export default function StatisticsLeaders({ accountId, filters }: StatisticsLead
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {pitchingCategories.map((category) => {
               const leaders = pitchingLeaders[category.key] || [];
-              const processedLeaders = processLeadersForTable(leaders);
+              const leaderForCard = getLeaderForCard(leaders);
+              const processedLeaders = processLeadersForTable(leaders, leaderForCard);
 
               return (
                 <Box key={category.key}>
-                  <Typography variant="subtitle1" gutterBottom sx={{ mb: 1 }}>
-                    {category.label}
-                  </Typography>
-                  <StatisticsTable
-                    data={processedLeaders}
-                    columns={createLeaderColumns(category)}
-                    loading={loading}
-                    emptyMessage={`No ${category.label.toLowerCase()} leaders available`}
-                    getRowKey={getRowKey}
-                  />
+                  {/* Leader Card */}
+                  {leaderForCard && (
+                    <LeaderCard
+                      leader={leaderForCard}
+                      statLabel={category.label}
+                      formatter={getFormatter(category.format)}
+                    />
+                  )}
+
+                  {/* Statistics Table */}
+                  {processedLeaders.length > 0 && (
+                    <StatisticsTable
+                      data={processedLeaders}
+                      columns={createLeaderColumns(category, processedLeaders)}
+                      loading={loading}
+                      emptyMessage={`No additional ${category.label.toLowerCase()} data available`}
+                      getRowKey={getRowKey}
+                      hideHeader={leaderForCard !== null}
+                    />
+                  )}
                 </Box>
               );
             })}
