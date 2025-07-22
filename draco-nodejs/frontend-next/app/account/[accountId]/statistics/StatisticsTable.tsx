@@ -25,7 +25,7 @@ export interface ColumnConfig<T> {
   tooltip?: string;
   primary?: boolean;
   sortable?: boolean;
-  formatter?: (value: unknown) => string;
+  formatter?: (value: unknown, row?: T) => string;
 }
 
 interface StatisticsTableProps<T> {
@@ -37,6 +37,7 @@ interface StatisticsTableProps<T> {
   sortField?: keyof T;
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: keyof T) => void;
+  hideHeader?: boolean;
 }
 
 // Common formatters
@@ -74,6 +75,7 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
   sortField,
   sortOrder = 'asc',
   onSort,
+  hideHeader = false,
 }: StatisticsTableProps<T>) {
   if (loading) {
     return (
@@ -96,48 +98,50 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
   return (
     <ScrollableTable>
       <TableContainer component={Paper}>
-        <Table size="small" stickyHeader>
-          <TableHead>
-            <TableRow>
-              {columns.map((column) => (
-                <TableCell
-                  key={String(column.field)}
-                  align={column.align}
-                  sx={{
-                    fontWeight: 'bold',
-                    backgroundColor: 'background.paper',
-                    ...(column.primary && {
-                      backgroundColor: 'primary.main',
-                      color: 'primary.contrastText',
-                    }),
-                  }}
-                >
-                  {column.sortable !== false && onSort ? (
-                    <Tooltip title={column.tooltip || ''}>
-                      <TableSortLabel
-                        active={sortField === column.field}
-                        direction={sortField === column.field ? sortOrder : 'asc'}
-                        onClick={() => onSort(column.field)}
-                        sx={{
-                          '& .MuiTableSortLabel-icon': {
-                            color: column.primary ? 'inherit' : undefined,
-                          },
-                        }}
-                      >
-                        {column.label}
-                      </TableSortLabel>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title={column.tooltip || ''}>
-                      <Typography variant="inherit" component="span">
-                        {column.label}
-                      </Typography>
-                    </Tooltip>
-                  )}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
+        <Table size="small" stickyHeader={!hideHeader}>
+          {!hideHeader && (
+            <TableHead>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableCell
+                    key={String(column.field)}
+                    align={column.align}
+                    sx={{
+                      fontWeight: 'bold',
+                      backgroundColor: 'background.paper',
+                      ...(column.primary && {
+                        backgroundColor: 'primary.main',
+                        color: 'primary.contrastText',
+                      }),
+                    }}
+                  >
+                    {column.sortable !== false && onSort ? (
+                      <Tooltip title={column.tooltip || ''}>
+                        <TableSortLabel
+                          active={sortField === column.field}
+                          direction={sortField === column.field ? sortOrder : 'asc'}
+                          onClick={() => onSort(column.field)}
+                          sx={{
+                            '& .MuiTableSortLabel-icon': {
+                              color: column.primary ? 'inherit' : undefined,
+                            },
+                          }}
+                        >
+                          {column.label}
+                        </TableSortLabel>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title={column.tooltip || ''}>
+                        <Typography variant="inherit" component="span">
+                          {column.label}
+                        </Typography>
+                      </Tooltip>
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+          )}
           <TableBody>
             {data.map((row, index) => (
               <TableRow
@@ -148,7 +152,7 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
                 {columns.map((column) => {
                   const value = row[column.field];
                   const displayValue = column.formatter
-                    ? column.formatter(value)
+                    ? column.formatter(value, row)
                     : String(value ?? '');
 
                   return (
