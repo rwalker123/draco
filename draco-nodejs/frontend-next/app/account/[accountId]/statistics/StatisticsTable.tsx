@@ -39,6 +39,7 @@ interface StatisticsTableProps<T> {
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: keyof T) => void;
   hideHeader?: boolean;
+  maxHeight?: string | number; // Optional max height for vertical scrolling
 }
 
 // Common formatters
@@ -77,6 +78,7 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
   sortOrder = 'asc',
   onSort,
   hideHeader = false,
+  maxHeight = '70vh', // Default to 70% of viewport height
 }: StatisticsTableProps<T>) {
   const dataVersion = `${String(sortField)}-${sortOrder}-${data.length}`;
   if (loading) {
@@ -99,7 +101,20 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
 
   return (
     <ScrollableTable preserveScrollOnUpdate={true} dataVersion={dataVersion}>
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          maxHeight,
+          overflowY: 'auto',
+          // Ensure the sticky header stays on top
+          '& .MuiTableHead-root': {
+            position: 'sticky',
+            top: 0,
+            zIndex: 2,
+            backgroundColor: 'background.paper',
+          },
+        }}
+      >
         <Table size="small" stickyHeader={!hideHeader}>
           {!hideHeader && (
             <TableHead>
