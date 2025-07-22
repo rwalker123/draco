@@ -3,16 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Paper,
   Typography,
-  CircularProgress,
   Alert,
   Pagination,
   FormControl,
@@ -20,10 +11,9 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-  Tooltip,
 } from '@mui/material';
-import TeamBadges from './TeamBadges';
-import ScrollableTable from './ScrollableTable';
+import StatisticsTable, { formatERA, formatIPDecimal } from './StatisticsTable';
+import type { ColumnConfig } from './StatisticsTable';
 
 interface PitchingStatsRow {
   playerId: string;
@@ -52,6 +42,7 @@ interface PitchingStatsRow {
   oba: number | string; // opponent batting average
   slg: number | string; // opponent slugging
   ipDecimal: number | string; // innings pitched as decimal
+  [key: string]: unknown;
 }
 
 interface StatisticsFilters {
@@ -69,53 +60,67 @@ interface PitchingStatisticsProps {
 type SortField = keyof PitchingStatsRow;
 type SortOrder = 'asc' | 'desc';
 
-const PITCHING_COLUMNS = [
-  { field: 'playerName' as SortField, label: 'Player', align: 'left' as const, sortable: false },
-  { field: 'teamName' as SortField, label: 'Team', align: 'left' as const, sortable: false },
-  { field: 'w' as SortField, label: 'W', align: 'right' as const, tooltip: 'Wins' },
-  { field: 'l' as SortField, label: 'L', align: 'right' as const, tooltip: 'Losses' },
-  { field: 's' as SortField, label: 'S', align: 'right' as const, tooltip: 'Saves' },
+const PITCHING_COLUMNS: ColumnConfig<PitchingStatsRow>[] = [
+  { field: 'playerName', label: 'Player', align: 'left', sortable: false },
+  { field: 'teamName', label: 'Team', align: 'left', sortable: false },
+  { field: 'w', label: 'W', align: 'right', tooltip: 'Wins' },
+  { field: 'l', label: 'L', align: 'right', tooltip: 'Losses' },
+  { field: 's', label: 'S', align: 'right', tooltip: 'Saves' },
   {
-    field: 'ipDecimal' as SortField,
+    field: 'ipDecimal',
     label: 'IP',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Innings Pitched',
+    formatter: formatIPDecimal,
   },
-  { field: 'h' as SortField, label: 'H', align: 'right' as const, tooltip: 'Hits Allowed' },
-  { field: 'r' as SortField, label: 'R', align: 'right' as const, tooltip: 'Runs Allowed' },
-  { field: 'er' as SortField, label: 'ER', align: 'right' as const, tooltip: 'Earned Runs' },
-  { field: 'bb' as SortField, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
-  { field: 'so' as SortField, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
-  { field: 'hr' as SortField, label: 'HR', align: 'right' as const, tooltip: 'Home Runs Allowed' },
+  { field: 'h', label: 'H', align: 'right', tooltip: 'Hits Allowed' },
+  { field: 'r', label: 'R', align: 'right', tooltip: 'Runs Allowed' },
+  { field: 'er', label: 'ER', align: 'right', tooltip: 'Earned Runs' },
+  { field: 'bb', label: 'BB', align: 'right', tooltip: 'Walks' },
+  { field: 'so', label: 'SO', align: 'right', tooltip: 'Strikeouts' },
+  { field: 'hr', label: 'HR', align: 'right', tooltip: 'Home Runs Allowed' },
   {
-    field: 'era' as SortField,
+    field: 'era',
     label: 'ERA',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Earned Run Average',
     primary: true,
+    formatter: formatERA,
   },
   {
-    field: 'whip' as SortField,
+    field: 'whip',
     label: 'WHIP',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Walks + Hits per Inning Pitched',
+    formatter: formatERA,
   },
   {
-    field: 'k9' as SortField,
+    field: 'k9',
     label: 'K/9',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Strikeouts per 9 Innings',
+    formatter: (value: unknown) => {
+      const num =
+        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+      return isNaN(num) ? '0.0' : num.toFixed(1);
+    },
   },
   {
-    field: 'bb9' as SortField,
+    field: 'bb9',
     label: 'BB/9',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Walks per 9 Innings',
+    formatter: (value: unknown) => {
+      const num =
+        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+      return isNaN(num) ? '0.0' : num.toFixed(1);
+    },
   },
 ];
 
 export default function PitchingStatistics({ accountId, filters }: PitchingStatisticsProps) {
   const [stats, setStats] = useState<PitchingStatsRow[]>([]);
+  const [previousStats, setPreviousStats] = useState<PitchingStatsRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('era');
@@ -126,7 +131,11 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
 
   useEffect(() => {
     if (filters.leagueId && filters.leagueId !== '') {
-      loadPitchingStats();
+      const timeoutId = setTimeout(() => {
+        loadPitchingStats();
+      }, 50); // Short debounce for all operations
+
+      return () => clearTimeout(timeoutId);
     } else {
       setStats([]);
     }
@@ -134,12 +143,23 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
   }, [filters, sortField, sortOrder, page, pageSize, accountId]);
 
   const loadPitchingStats = useCallback(async () => {
+    // Store current stats as previous before loading
+    if (stats.length > 0) {
+      setPreviousStats(stats);
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      // Map frontend field names to backend expected field names
+      const sortFieldMap: Record<string, string> = {
+        ipDecimal: 'ip', // Backend expects 'ip' and maps it to 'ipDecimal' in SQL
+      };
+      const backendSortField = sortFieldMap[String(sortField)] || String(sortField);
+
       const params = new URLSearchParams({
-        sortBy: sortField,
+        sortBy: backendSortField,
         sortOrder,
         page: page.toString(),
         pageSize: pageSize.toString(),
@@ -159,7 +179,10 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
       if (response.ok) {
         const data = await response.json();
         const statsData = data.data || [];
+
+        // Atomic swap - new data replaces everything instantly
         setStats(statsData);
+        setPreviousStats([]); // Clear previous data after successful load
 
         // Calculate total pages (this would ideally come from the API)
         // For now, assume there might be more data if we get a full page
@@ -174,7 +197,7 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
     } finally {
       setLoading(false);
     }
-  }, [accountId, filters, sortField, sortOrder, page, pageSize]);
+  }, [accountId, filters, sortField, sortOrder, page, pageSize, stats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -198,40 +221,12 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
     setPage(1); // Reset to first page when changing page size
   };
 
-  const formatERA = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.00' : num.toFixed(2);
-  };
-
-  const formatRate = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.00' : num.toFixed(2);
-  };
-
-  const formatK9 = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.0' : num.toFixed(1);
-  };
-
-  const formatIP = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.0' : num.toFixed(1);
-  };
-
   if (!filters.leagueId) {
     return (
       <Box p={3}>
         <Typography variant="body1" color="text.secondary">
           Please select a league to view pitching statistics.
         </Typography>
-      </Box>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
       </Box>
     );
   }
@@ -275,97 +270,16 @@ export default function PitchingStatistics({ accountId, filters }: PitchingStati
         </Box>
       </Box>
 
-      <ScrollableTable>
-        <TableContainer component={Paper}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                {PITCHING_COLUMNS.map((column) => (
-                  <TableCell
-                    key={column.field}
-                    align={column.align}
-                    sx={{
-                      fontWeight: 'bold',
-                      backgroundColor: 'background.paper',
-                      ...(column.primary && {
-                        backgroundColor: 'primary.main',
-                        color: 'primary.contrastText',
-                      }),
-                    }}
-                  >
-                    {column.sortable !== false ? (
-                      <Tooltip title={column.tooltip || ''}>
-                        <TableSortLabel
-                          active={sortField === column.field}
-                          direction={sortField === column.field ? sortOrder : 'asc'}
-                          onClick={() => handleSort(column.field)}
-                          sx={{
-                            '& .MuiTableSortLabel-icon': {
-                              color: column.primary ? 'inherit' : undefined,
-                            },
-                          }}
-                        >
-                          {column.label}
-                        </TableSortLabel>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title={column.tooltip || ''}>
-                        <Typography variant="inherit" component="span">
-                          {column.label}
-                        </Typography>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {stats.map((player, index) => (
-                <TableRow
-                  key={`${player.playerId}-${index}`}
-                  hover
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell align="left">
-                    <Typography variant="body2" fontWeight="medium">
-                      {player.playerName}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="left">
-                    <TeamBadges
-                      teams={player.teams as string[] | undefined}
-                      teamName={player.teamName}
-                      maxVisible={3}
-                    />
-                  </TableCell>
-                  <TableCell align="right">{player.w}</TableCell>
-                  <TableCell align="right">{player.l}</TableCell>
-                  <TableCell align="right">{player.s}</TableCell>
-                  <TableCell align="right">{formatIP(player.ipDecimal)}</TableCell>
-                  <TableCell align="right">{player.h}</TableCell>
-                  <TableCell align="right">{player.r}</TableCell>
-                  <TableCell align="right">{player.er}</TableCell>
-                  <TableCell align="right">{player.bb}</TableCell>
-                  <TableCell align="right">{player.so}</TableCell>
-                  <TableCell align="right">{player.hr}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 'bold',
-                      backgroundColor: sortField === 'era' ? 'action.selected' : undefined,
-                    }}
-                  >
-                    {formatERA(player.era)}
-                  </TableCell>
-                  <TableCell align="right">{formatRate(player.whip)}</TableCell>
-                  <TableCell align="right">{formatK9(player.k9)}</TableCell>
-                  <TableCell align="right">{formatK9(player.bb9)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </ScrollableTable>
+      <StatisticsTable
+        data={loading && previousStats.length > 0 ? previousStats : stats}
+        columns={PITCHING_COLUMNS}
+        loading={loading && previousStats.length === 0}
+        emptyMessage="No pitching statistics available for the selected filters."
+        getRowKey={(player, index) => `${player.playerId}-${index}`}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+      />
 
       <Box display="flex" justifyContent="center" mt={3}>
         <Pagination

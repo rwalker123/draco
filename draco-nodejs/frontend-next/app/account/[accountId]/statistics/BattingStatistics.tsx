@@ -3,16 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TableSortLabel,
-  Paper,
   Typography,
-  CircularProgress,
   Alert,
   Pagination,
   FormControl,
@@ -20,10 +11,12 @@ import {
   Select,
   MenuItem,
   SelectChangeEvent,
-  Tooltip,
 } from '@mui/material';
-import TeamBadges from './TeamBadges';
-import ScrollableTable from './ScrollableTable';
+import StatisticsTable, {
+  ColumnConfig,
+  formatBattingAverage,
+  formatPercentage,
+} from './StatisticsTable';
 
 interface BattingStatsRow {
   playerId: string;
@@ -50,6 +43,7 @@ interface BattingStatsRow {
   ops: number | string;
   tb: number | string;
   pa: number | string;
+  [key: string]: unknown;
 }
 
 interface StatisticsFilters {
@@ -67,48 +61,53 @@ interface BattingStatisticsProps {
 type SortField = keyof BattingStatsRow;
 type SortOrder = 'asc' | 'desc';
 
-const BATTING_COLUMNS = [
-  { field: 'playerName' as SortField, label: 'Player', align: 'left' as const, sortable: false },
-  { field: 'teamName' as SortField, label: 'Team', align: 'left' as const, sortable: false },
-  { field: 'ab' as SortField, label: 'AB', align: 'right' as const, tooltip: 'At Bats' },
-  { field: 'h' as SortField, label: 'H', align: 'right' as const, tooltip: 'Hits' },
-  { field: 'r' as SortField, label: 'R', align: 'right' as const, tooltip: 'Runs' },
-  { field: 'd' as SortField, label: '2B', align: 'right' as const, tooltip: 'Doubles' },
-  { field: 't' as SortField, label: '3B', align: 'right' as const, tooltip: 'Triples' },
-  { field: 'hr' as SortField, label: 'HR', align: 'right' as const, tooltip: 'Home Runs' },
-  { field: 'rbi' as SortField, label: 'RBI', align: 'right' as const, tooltip: 'Runs Batted In' },
-  { field: 'bb' as SortField, label: 'BB', align: 'right' as const, tooltip: 'Walks' },
-  { field: 'so' as SortField, label: 'SO', align: 'right' as const, tooltip: 'Strikeouts' },
-  { field: 'sb' as SortField, label: 'SB', align: 'right' as const, tooltip: 'Stolen Bases' },
+const BATTING_COLUMNS: ColumnConfig<BattingStatsRow>[] = [
+  { field: 'playerName', label: 'Player', align: 'left', sortable: false },
+  { field: 'teamName', label: 'Team', align: 'left', sortable: false },
+  { field: 'ab', label: 'AB', align: 'right', tooltip: 'At Bats' },
+  { field: 'h', label: 'H', align: 'right', tooltip: 'Hits' },
+  { field: 'r', label: 'R', align: 'right', tooltip: 'Runs' },
+  { field: 'd', label: '2B', align: 'right', tooltip: 'Doubles' },
+  { field: 't', label: '3B', align: 'right', tooltip: 'Triples' },
+  { field: 'hr', label: 'HR', align: 'right', tooltip: 'Home Runs' },
+  { field: 'rbi', label: 'RBI', align: 'right', tooltip: 'Runs Batted In' },
+  { field: 'bb', label: 'BB', align: 'right', tooltip: 'Walks' },
+  { field: 'so', label: 'SO', align: 'right', tooltip: 'Strikeouts' },
+  { field: 'sb', label: 'SB', align: 'right', tooltip: 'Stolen Bases' },
   {
-    field: 'avg' as SortField,
+    field: 'avg',
     label: 'AVG',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Batting Average',
     primary: true,
+    formatter: formatBattingAverage,
   },
   {
-    field: 'obp' as SortField,
+    field: 'obp',
     label: 'OBP',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'On-Base Percentage',
+    formatter: formatPercentage,
   },
   {
-    field: 'slg' as SortField,
+    field: 'slg',
     label: 'SLG',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'Slugging Percentage',
+    formatter: formatPercentage,
   },
   {
-    field: 'ops' as SortField,
+    field: 'ops',
     label: 'OPS',
-    align: 'right' as const,
+    align: 'right',
     tooltip: 'On-Base Plus Slugging',
+    formatter: formatPercentage,
   },
 ];
 
 export default function BattingStatistics({ accountId, filters }: BattingStatisticsProps) {
   const [stats, setStats] = useState<BattingStatsRow[]>([]);
+  const [previousStats, setPreviousStats] = useState<BattingStatsRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('avg');
@@ -119,7 +118,11 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
 
   useEffect(() => {
     if (filters.leagueId && filters.leagueId !== '') {
-      loadBattingStats();
+      const timeoutId = setTimeout(() => {
+        loadBattingStats();
+      }, 50); // Short debounce for all operations
+
+      return () => clearTimeout(timeoutId);
     } else {
       setStats([]);
     }
@@ -127,12 +130,17 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
   }, [filters, sortField, sortOrder, page, pageSize, accountId]);
 
   const loadBattingStats = useCallback(async () => {
+    // Store current stats as previous before loading
+    if (stats.length > 0) {
+      setPreviousStats(stats);
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const params = new URLSearchParams({
-        sortBy: sortField,
+        sortBy: String(sortField),
         sortOrder,
         page: page.toString(),
         pageSize: pageSize.toString(),
@@ -152,7 +160,10 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
       if (response.ok) {
         const data = await response.json();
         const statsData = data.data || [];
+
+        // Atomic swap - new data replaces everything instantly
         setStats(statsData);
+        setPreviousStats([]); // Clear previous data after successful load
 
         // Calculate total pages (this would ideally come from the API)
         // For now, assume there might be more data if we get a full page
@@ -167,7 +178,7 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
     } finally {
       setLoading(false);
     }
-  }, [accountId, filters, sortField, sortOrder, page, pageSize]);
+  }, [accountId, filters, sortField, sortOrder, page, pageSize, stats]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -200,16 +211,6 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
     setPage(1); // Reset to first page when changing page size
   };
 
-  const formatBattingAverage = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.000' : num.toFixed(3);
-  };
-
-  const formatPercentage = (value: number | string) => {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    return isNaN(num) ? '0.000' : num.toFixed(3);
-  };
-
   if (!filters.leagueId) {
     return (
       <Box p={3}>
@@ -220,28 +221,10 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
     );
   }
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" p={4}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   if (error) {
     return (
       <Box p={3}>
         <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
-  if (stats.length === 0) {
-    return (
-      <Box p={3}>
-        <Typography variant="body1" color="text.secondary">
-          No batting statistics available for the selected filters.
-        </Typography>
       </Box>
     );
   }
@@ -267,97 +250,16 @@ export default function BattingStatistics({ accountId, filters }: BattingStatist
         </Box>
       </Box>
 
-      <ScrollableTable>
-        <TableContainer component={Paper}>
-          <Table size="small" stickyHeader>
-            <TableHead>
-              <TableRow>
-                {BATTING_COLUMNS.map((column) => (
-                  <TableCell
-                    key={column.field}
-                    align={column.align}
-                    sx={{
-                      fontWeight: 'bold',
-                      backgroundColor: 'background.paper',
-                      ...(column.primary && {
-                        backgroundColor: 'primary.main',
-                        color: 'primary.contrastText',
-                      }),
-                    }}
-                  >
-                    {column.sortable !== false ? (
-                      <Tooltip title={column.tooltip || ''}>
-                        <TableSortLabel
-                          active={sortField === column.field}
-                          direction={sortField === column.field ? sortOrder : 'asc'}
-                          onClick={() => handleSort(column.field)}
-                          sx={{
-                            '& .MuiTableSortLabel-icon': {
-                              color: column.primary ? 'inherit' : undefined,
-                            },
-                          }}
-                        >
-                          {column.label}
-                        </TableSortLabel>
-                      </Tooltip>
-                    ) : (
-                      <Tooltip title={column.tooltip || ''}>
-                        <Typography variant="inherit" component="span">
-                          {column.label}
-                        </Typography>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {stats.map((player, index) => (
-                <TableRow
-                  key={`${player.playerId}-${index}`}
-                  hover
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell align="left">
-                    <Typography variant="body2" fontWeight="medium">
-                      {player.playerName}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="left">
-                    <TeamBadges
-                      teams={player.teams as string[] | undefined}
-                      teamName={player.teamName}
-                      maxVisible={3}
-                    />
-                  </TableCell>
-                  <TableCell align="right">{player.ab}</TableCell>
-                  <TableCell align="right">{player.h}</TableCell>
-                  <TableCell align="right">{player.r}</TableCell>
-                  <TableCell align="right">{player.d}</TableCell>
-                  <TableCell align="right">{player.t}</TableCell>
-                  <TableCell align="right">{player.hr}</TableCell>
-                  <TableCell align="right">{player.rbi}</TableCell>
-                  <TableCell align="right">{player.bb}</TableCell>
-                  <TableCell align="right">{player.so}</TableCell>
-                  <TableCell align="right">{player.sb}</TableCell>
-                  <TableCell
-                    align="right"
-                    sx={{
-                      fontWeight: 'bold',
-                      backgroundColor: sortField === 'avg' ? 'action.selected' : undefined,
-                    }}
-                  >
-                    {formatBattingAverage(player.avg)}
-                  </TableCell>
-                  <TableCell align="right">{formatPercentage(player.obp)}</TableCell>
-                  <TableCell align="right">{formatPercentage(player.slg)}</TableCell>
-                  <TableCell align="right">{formatPercentage(player.ops)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </ScrollableTable>
+      <StatisticsTable
+        data={loading && previousStats.length > 0 ? previousStats : stats}
+        columns={BATTING_COLUMNS}
+        loading={loading && previousStats.length === 0}
+        emptyMessage="No batting statistics available for the selected filters."
+        getRowKey={(player, index) => `${player.playerId}-${index}`}
+        sortField={sortField}
+        sortOrder={sortOrder}
+        onSort={handleSort}
+      />
 
       <Box display="flex" justifyContent="center" mt={3}>
         <Pagination

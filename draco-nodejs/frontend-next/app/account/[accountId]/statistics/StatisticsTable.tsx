@@ -14,6 +14,7 @@ import {
   Typography,
   CircularProgress,
   Tooltip,
+  alpha,
 } from '@mui/material';
 import TeamBadges from './TeamBadges';
 import ScrollableTable from './ScrollableTable';
@@ -77,6 +78,7 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
   onSort,
   hideHeader = false,
 }: StatisticsTableProps<T>) {
+  const dataVersion = `${String(sortField)}-${sortOrder}-${data.length}`;
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" p={4}>
@@ -96,7 +98,7 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
   }
 
   return (
-    <ScrollableTable>
+    <ScrollableTable preserveScrollOnUpdate={true} dataVersion={dataVersion}>
       <TableContainer component={Paper}>
         <Table size="small" stickyHeader={!hideHeader}>
           {!hideHeader && (
@@ -109,9 +111,8 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
                     sx={{
                       fontWeight: 'bold',
                       backgroundColor: 'background.paper',
-                      ...(column.primary && {
-                        backgroundColor: 'primary.main',
-                        color: 'primary.contrastText',
+                      ...(sortField === column.field && {
+                        backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.02),
                       }),
                     }}
                   >
@@ -121,11 +122,6 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
                           active={sortField === column.field}
                           direction={sortField === column.field ? sortOrder : 'asc'}
                           onClick={() => onSort(column.field)}
-                          sx={{
-                            '& .MuiTableSortLabel-icon': {
-                              color: column.primary ? 'inherit' : undefined,
-                            },
-                          }}
                         >
                           {column.label}
                         </TableSortLabel>
@@ -160,11 +156,8 @@ export default function StatisticsTable<T extends Record<string, unknown>>({
                       key={String(column.field)}
                       align={column.align}
                       sx={{
-                        ...(column.primary && {
-                          fontWeight: 'bold',
-                        }),
                         ...(sortField === column.field && {
-                          backgroundColor: 'action.selected',
+                          backgroundColor: (theme) => alpha(theme.palette.action.hover, 0.04),
                         }),
                       }}
                     >
