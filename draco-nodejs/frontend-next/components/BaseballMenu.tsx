@@ -58,7 +58,22 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     {
       label: 'Standings',
       icon: <StandingsIcon />,
-      path: `/account/${accountId}/standings`,
+      onClick: async () => {
+        // Fetch current season for the account
+        try {
+          const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
+          if (response.ok) {
+            const data = await response.json();
+            const seasonId = data.data.season.id;
+            router.push(`/account/${accountId}/seasons/${seasonId}/standings`);
+          } else {
+            // fallback: go to account page or show error
+            router.push(`/account/${accountId}`);
+          }
+        } catch {
+          router.push(`/account/${accountId}`);
+        }
+      },
     },
     {
       label: 'Teams',
@@ -78,7 +93,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
         } catch {
           router.push(`/account/${accountId}`);
         }
-      }
+      },
     },
   ];
 
@@ -98,11 +113,13 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   // Show full menu on large screens, hamburger on smaller screens
   if (isLargeScreen) {
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 1,
-        alignItems: 'center'
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+        }}
+      >
         {menuItems.map((item, index) => (
           <React.Fragment key={item.label}>
             <Button
@@ -119,30 +136,30 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
                 minWidth: 'auto',
                 '&:hover': {
                   bgcolor: 'rgba(255,255,255,0.1)',
-                  color: 'white'
+                  color: 'white',
                 },
                 '&:active': {
-                  bgcolor: 'rgba(255,255,255,0.2)'
-                }
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                },
               }}
             >
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  fontWeight: 500
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
                 }}
               >
                 {item.label}
               </Typography>
             </Button>
             {index < menuItems.length - 1 && (
-              <Divider 
-                orientation="vertical" 
-                flexItem 
-                sx={{ 
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
                   bgcolor: 'rgba(255,255,255,0.2)',
-                  height: 20
-                }} 
+                  height: 20,
+                }}
               />
             )}
           </React.Fragment>
@@ -157,11 +174,13 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     const hiddenItems = menuItems.slice(3); // Hide last 3 items
 
     return (
-      <Box sx={{ 
-        display: 'flex', 
-        gap: 1,
-        alignItems: 'center'
-      }}>
+      <Box
+        sx={{
+          display: 'flex',
+          gap: 1,
+          alignItems: 'center',
+        }}
+      >
         {visibleItems.map((item, index) => (
           <React.Fragment key={item.label}>
             <Button
@@ -178,43 +197,43 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
                 minWidth: 'auto',
                 '&:hover': {
                   bgcolor: 'rgba(255,255,255,0.1)',
-                  color: 'white'
+                  color: 'white',
                 },
                 '&:active': {
-                  bgcolor: 'rgba(255,255,255,0.2)'
-                }
+                  bgcolor: 'rgba(255,255,255,0.2)',
+                },
               }}
             >
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  fontWeight: 500
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
                 }}
               >
                 {item.label}
               </Typography>
             </Button>
             {index < visibleItems.length - 1 && (
-              <Divider 
-                orientation="vertical" 
-                flexItem 
-                sx={{ 
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
                   bgcolor: 'rgba(255,255,255,0.2)',
-                  height: 20
-                }} 
+                  height: 20,
+                }}
               />
             )}
           </React.Fragment>
         ))}
-        
+
         {/* Hamburger menu for remaining items */}
-        <Divider 
-          orientation="vertical" 
-          flexItem 
-          sx={{ 
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
             bgcolor: 'rgba(255,255,255,0.2)',
-            height: 20
-          }} 
+            height: 20,
+          }}
         />
         <IconButton
           color="inherit"
@@ -222,13 +241,13 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           sx={{
             color: 'white',
             '&:hover': {
-              bgcolor: 'rgba(255,255,255,0.1)'
-            }
+              bgcolor: 'rgba(255,255,255,0.1)',
+            },
           }}
         >
           <HamburgerIcon />
         </IconButton>
-        
+
         <Menu
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
@@ -243,10 +262,11 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
           }}
         >
           {hiddenItems.map((item) => (
-            <MenuItem key={item.label} onClick={item.onClick || (() => handleNavigation(item.path))}>
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
+            <MenuItem
+              key={item.label}
+              onClick={item.onClick || (() => handleNavigation(item.path))}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText>{item.label}</ListItemText>
             </MenuItem>
           ))}
@@ -257,23 +277,25 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
 
   // Show only hamburger menu on small screens
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      alignItems: 'center'
-    }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+      }}
+    >
       <IconButton
         color="inherit"
         onClick={handleMenuOpen}
         sx={{
           color: 'white',
           '&:hover': {
-            bgcolor: 'rgba(255,255,255,0.1)'
-          }
+            bgcolor: 'rgba(255,255,255,0.1)',
+          },
         }}
       >
         <HamburgerIcon />
       </IconButton>
-      
+
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
@@ -289,9 +311,7 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
       >
         {menuItems.map((item) => (
           <MenuItem key={item.label} onClick={item.onClick || (() => handleNavigation(item.path))}>
-            <ListItemIcon>
-              {item.icon}
-            </ListItemIcon>
+            <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText>{item.label}</ListItemText>
           </MenuItem>
         ))}
@@ -300,4 +320,4 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   );
 };
 
-export default BaseballMenu; 
+export default BaseballMenu;

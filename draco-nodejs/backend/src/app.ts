@@ -21,6 +21,8 @@ import * as swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger';
 import { globalErrorHandler } from './utils/globalErrorHandler';
 import teamManagersRouter from './routes/teamManagers';
+import statisticsRouter from './routes/statistics';
+import standingsRouter from './routes/standings';
 
 // Load environment variables
 dotenv.config();
@@ -77,6 +79,7 @@ app.use('/api/roleTest', roleTestRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
 app.use('/api/accounts/:accountId/divisions', divisionsRouter);
+app.use('/api/accounts/:accountId/statistics', statisticsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamsRouter);
@@ -84,6 +87,7 @@ app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,
 );
+app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler
