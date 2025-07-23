@@ -8,6 +8,42 @@ import { RoleService } from '../services/roleService';
 import { getLogoUrl } from '../config/logo';
 import prisma from '../lib/prisma';
 
+// Type definitions for Prisma query results
+interface TeamSeason {
+  id: bigint;
+  teamid: bigint;
+  name: string;
+  divisionseasonid: bigint | null;
+  teams: {
+    id: bigint;
+    webaddress: string | null;
+    youtubeuserid: string | null;
+    defaultvideo: string | null;
+    autoplayvideo: boolean;
+  };
+}
+
+interface DivisionSeasonWithTeams {
+  id: bigint;
+  divisionid: bigint;
+  priority: number;
+  divisiondefs: {
+    id: bigint;
+    name: string;
+  };
+}
+
+interface LeagueSeasonWithRelations {
+  id: bigint;
+  league: {
+    id: bigint;
+    name: string;
+    accountid: bigint;
+  };
+  divisionseason?: DivisionSeasonWithTeams[];
+  teamsseason?: TeamSeason[];
+}
+
 interface DivisionSeason {
   id: bigint;
   divisionid: bigint;
@@ -158,36 +194,31 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
 
       // Add divisions with teams if includeTeams was requested
       if (includeTeams) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result.divisions = (ls.divisionseason || []).map((ds: any) => ({
-          id: ds.id.toString(),
-          divisionId: ds.divisiondefs.id.toString(),
-          divisionName: ds.divisiondefs.name,
-          priority: ds.priority,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          teams: (ls.teamsseason || [])
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((ts: any) => ts.divisionseasonid === ds.id)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((ts: any) => ({
-              id: ts.id.toString(),
-              teamId: ts.teams.id.toString(),
-              name: ts.name,
-              webAddress: ts.teams.webaddress,
-              youtubeUserId: ts.teams.youtubeuserid,
-              defaultVideo: ts.teams.defaultvideo,
-              autoPlayVideo: ts.teams.autoplayvideo,
-            })),
-        }));
+        result.divisions = ((ls as unknown as LeagueSeasonWithRelations).divisionseason || []).map(
+          (ds) => ({
+            id: ds.id.toString(),
+            divisionId: ds.divisiondefs.id.toString(),
+            divisionName: ds.divisiondefs.name,
+            priority: ds.priority,
+            teams: ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
+              .filter((ts) => ts.divisionseasonid === ds.id)
+              .map((ts) => ({
+                id: ts.id.toString(),
+                teamId: ts.teams.id.toString(),
+                name: ts.name,
+                webAddress: ts.teams.webaddress,
+                youtubeUserId: ts.teams.youtubeuserid,
+                defaultVideo: ts.teams.defaultvideo,
+                autoPlayVideo: ts.teams.autoplayvideo,
+              })),
+          }),
+        );
 
         // Add unassigned teams if both includeTeams AND includeUnassignedTeams are true
         if (includeUnassignedTeams) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          result.unassignedTeams = (ls.teamsseason || [])
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .filter((ts: any) => !ts.divisionseasonid)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            .map((ts: any) => ({
+          result.unassignedTeams = ((ls as unknown as LeagueSeasonWithRelations).teamsseason || [])
+            .filter((ts) => !ts.divisionseasonid)
+            .map((ts) => ({
               id: ts.id.toString(),
               teamId: ts.teams.id.toString(),
               name: ts.name,
