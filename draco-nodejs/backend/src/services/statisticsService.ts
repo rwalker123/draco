@@ -75,13 +75,34 @@ export interface LeaderRow {
 export interface StandingsRow {
   teamName: string;
   teamId: bigint;
+  leagueId: bigint;
+  leagueName: string;
+  divisionId: bigint | null;
+  divisionName: string | null;
+  divisionPriority: number | null;
   w: number;
   l: number;
+  t: number; // ties
   pct: number;
   gb: number; // games back
-  streak: string;
-  last10: string;
-  [key: string]: string | number | bigint;
+  divisionRecord?: { w: number; l: number; t: number };
+}
+
+export interface GroupedStandingsResponse {
+  leagues: LeagueStandings[];
+}
+
+export interface LeagueStandings {
+  leagueId: bigint;
+  leagueName: string;
+  divisions: DivisionStandings[];
+}
+
+export interface DivisionStandings {
+  divisionId: bigint | null;
+  divisionName: string | null;
+  divisionPriority: number | null;
+  teams: StandingsRow[];
 }
 
 export interface StatisticsFilters {
@@ -539,50 +560,223 @@ export class StatisticsService {
 
   // Get standings for a season
   async getStandings(accountId: bigint, seasonId: bigint): Promise<StandingsRow[]> {
-    // This is a complex calculation involving win/loss records
-    // For now, returning a placeholder structure
+    // Simplified query: only aggregate wins, losses, ties
     const query = `
       SELECT 
         ts.name as "teamName",
-        t.id as "teamId",
+        ts.id as "teamId",
+        ls.id as "leagueId",
+        l.name as "leagueName",
+        ds.id as "divisionId",
+        dd.name as "divisionName",
+        ds.priority as "divisionPriority",
         COALESCE(SUM(CASE 
-          WHEN (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore) 
-          THEN 1 ELSE 0 END), 0)::int as w,
+          WHEN lg.gamestatus = 1 AND (
+            (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR 
+            (lg.vteamid = ts.id AND lg.vscore > lg.hscore)
+          ) THEN 1 ELSE 0 END), 0)::int as w,
         COALESCE(SUM(CASE 
-          WHEN (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore < lg.hscore) 
-          THEN 1 ELSE 0 END), 0)::int as l,
-        CASE WHEN (SUM(CASE 
-          WHEN (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore) 
-          THEN 1 ELSE 0 END) + SUM(CASE 
-          WHEN (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore < lg.hscore) 
-          THEN 1 ELSE 0 END)) = 0 
-             THEN 0 
-             ELSE ROUND(SUM(CASE 
-               WHEN (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore) 
-               THEN 1 ELSE 0 END)::decimal / 
-                       (SUM(CASE 
-                         WHEN (lg.hteamid = ts.id AND lg.hscore > lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore) 
-                         THEN 1 ELSE 0 END) + SUM(CASE 
-                         WHEN (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR (lg.vteamid = ts.id AND lg.vscore < lg.hscore) 
-                         THEN 1 ELSE 0 END)), 3) 
-        END as pct,
-        0 as gb, -- Games back calculation would be more complex
-        '' as streak, -- Streak calculation would require game order analysis
-        '' as "last10" -- Last 10 games calculation
+          WHEN lg.gamestatus = 1 AND (
+            (lg.hteamid = ts.id AND lg.hscore < lg.vscore) OR 
+            (lg.vteamid = ts.id AND lg.vscore < lg.hscore)
+          ) THEN 1
+          WHEN lg.gamestatus = 5 AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) THEN 1
+          WHEN lg.gamestatus = 4 AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) THEN 1
+          ELSE 0 END), 0)::int as l,
+        COALESCE(SUM(CASE 
+          WHEN lg.gamestatus = 1 AND lg.hscore = lg.vscore AND (lg.hteamid = ts.id OR lg.vteamid = ts.id) 
+          THEN 1 ELSE 0 END), 0)::int as t,
+        -- Division Wins
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus = 1
+            AND (
+              (lg.hteamid = ts.id AND lg.hscore > lg.vscore)
+              OR (lg.vteamid = ts.id AND lg.vscore > lg.hscore)
+            )
+            AND hts.divisionseasonid = vts.divisionseasonid
+            AND hts.divisionseasonid = ts.divisionseasonid
+            AND hts.divisionseasonid IS NOT NULL
+          THEN 1 ELSE 0 END), 0)::int as div_w,
+        -- Division Losses
+        COALESCE(SUM(CASE
+          WHEN (
+            (lg.gamestatus = 1 AND (
+              (lg.hteamid = ts.id AND lg.hscore < lg.vscore)
+              OR (lg.vteamid = ts.id AND lg.vscore < lg.hscore)
+            ))
+            OR (lg.gamestatus IN (4, 5) AND (lg.hteamid = ts.id OR lg.vteamid = ts.id))
+          )
+            AND hts.divisionseasonid = vts.divisionseasonid
+            AND hts.divisionseasonid = ts.divisionseasonid
+            AND hts.divisionseasonid IS NOT NULL
+          THEN 1 ELSE 0 END), 0)::int as div_l,
+        -- Division Ties
+        COALESCE(SUM(CASE
+          WHEN lg.gamestatus = 1
+            AND lg.hscore = lg.vscore
+            AND (lg.hteamid = ts.id OR lg.vteamid = ts.id)
+            AND hts.divisionseasonid = vts.divisionseasonid
+            AND hts.divisionseasonid = ts.divisionseasonid
+            AND hts.divisionseasonid IS NOT NULL
+          THEN 1 ELSE 0 END), 0)::int as div_t
       FROM teams t
       INNER JOIN teamsseason ts ON t.id = ts.teamid
       INNER JOIN leagueseason ls ON ts.leagueseasonid = ls.id
+      INNER JOIN league l ON ls.leagueid = l.id
+      LEFT JOIN divisionseason ds ON ts.divisionseasonid = ds.id
+      LEFT JOIN divisiondefs dd ON ds.divisionid = dd.id
       LEFT JOIN leagueschedule lg ON (lg.hteamid = ts.id OR lg.vteamid = ts.id) 
         AND lg.gamestatus IN (1, 4, 5)
         AND lg.leagueid = ls.id
+      LEFT JOIN teamsseason hts ON lg.hteamid = hts.id
+      LEFT JOIN teamsseason vts ON lg.vteamid = vts.id
       WHERE ls.seasonid = $1
         AND t.accountid = $2
-      GROUP BY t.id, ts.name
-      ORDER BY pct DESC, w DESC
+      GROUP BY ts.id, ts.name, ls.id, l.name, ds.id, dd.name, ds.priority
+      ORDER BY l.name, w DESC
     `;
 
     const result = await this.prisma.$queryRawUnsafe(query, seasonId, accountId);
-    return result as StandingsRow[];
+    const rawStandings = result as Array<{
+      teamSeasonId: bigint;
+      teamName: string;
+      leagueSeasonId: bigint;
+      leagueName: string;
+      divisionSeasonId: bigint | null;
+      divisionName: string | null;
+      divisionPriority: number | null;
+      w: bigint;
+      l: bigint;
+      t: bigint;
+      div_w: number;
+      div_l: number;
+      div_t: number;
+    }>;
+
+    // Map to StandingsRow format and calculate pct
+    const standings: StandingsRow[] = rawStandings.map((team) => {
+      const w = Number(team.w);
+      const l = Number(team.l);
+      const t = Number(team.t);
+      const totalGames = w + l + t;
+      const pct = totalGames > 0 ? (w + 0.5 * t) / totalGames : 0;
+
+      return {
+        teamName: team.teamName,
+        teamId: team.teamSeasonId, // Using teamSeasonId as teamId
+        leagueId: team.leagueSeasonId,
+        leagueName: team.leagueName,
+        divisionId: team.divisionSeasonId,
+        divisionName: team.divisionName,
+        divisionPriority: team.divisionPriority,
+        w,
+        l,
+        t,
+        pct,
+        gb: 0, // Will be calculated later
+        divisionRecord: { w: team.div_w, l: team.div_l, t: team.div_t },
+      };
+    });
+
+    return standings;
+  }
+
+  async getGroupedStandings(
+    accountId: bigint,
+    seasonId: bigint,
+  ): Promise<GroupedStandingsResponse> {
+    const standings = await this.getStandings(accountId, seasonId);
+
+    // Group by league and division
+    const leaguesMap = new Map<string, LeagueStandings>();
+
+    for (const team of standings) {
+      const leagueKey = team.leagueId.toString();
+
+      if (!leaguesMap.has(leagueKey)) {
+        leaguesMap.set(leagueKey, {
+          leagueId: team.leagueId,
+          leagueName: team.leagueName,
+          divisions: [],
+        });
+      }
+
+      const league = leaguesMap.get(leagueKey)!;
+      const divisionKey = team.divisionId ? team.divisionId.toString() : 'no-division';
+
+      let division = league.divisions.find(
+        (d) =>
+          (d.divisionId === null && team.divisionId === null) ||
+          (d.divisionId !== null &&
+            team.divisionId !== null &&
+            d.divisionId.toString() === divisionKey),
+      );
+
+      if (!division) {
+        division = {
+          divisionId: team.divisionId,
+          divisionName: team.divisionName,
+          divisionPriority: team.divisionPriority,
+          teams: [],
+        };
+        league.divisions.push(division);
+      }
+
+      division.teams.push(team);
+    }
+
+    // Sort divisions by priority within each league and calculate games back
+    for (const league of leaguesMap.values()) {
+      league.divisions.sort((a, b) => {
+        const aPriority = a.divisionPriority ?? 999999;
+        const bPriority = b.divisionPriority ?? 999999;
+        return aPriority - bPriority;
+      });
+
+      // Calculate games back within each division
+      for (const division of league.divisions) {
+        // Sort teams by winning percentage (descending), then by wins (descending)
+        division.teams.sort((a, b) => {
+          if (b.pct !== a.pct) return b.pct - a.pct;
+          return b.w - a.w;
+        });
+
+        // Calculate games back for each team relative to division leader
+        if (division.teams.length > 0) {
+          const leader = division.teams[0];
+          const leaderWins = leader.w;
+          const leaderLosses = leader.l;
+          const leaderTies = leader.t;
+
+          // Calculate leader's winning points (wins + 0.5 * ties)
+          const leaderPoints = leaderWins + leaderTies * 0.5;
+
+          for (const team of division.teams) {
+            if (team === leader) {
+              team.gb = 0;
+            } else {
+              // Calculate team's winning points (wins + 0.5 * ties)
+              const teamPoints = team.w + team.t * 0.5;
+
+              // Games back formula with ties:
+              // GB = ((leaderPoints - teamPoints) + (teamLosses - leaderLosses)) / 2
+              // Simplified: GB = (leaderPoints - teamPoints + teamLosses - leaderLosses) / 2
+              const pointsDiff = leaderPoints - teamPoints;
+              const lossesDiff = team.l - leaderLosses;
+              const gb = (pointsDiff + lossesDiff) / 2;
+
+              team.gb = Math.max(0, gb); // Don't show negative games back
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      leagues: Array.from(leaguesMap.values()).sort((a, b) =>
+        a.leagueName.localeCompare(b.leagueName),
+      ),
+    };
   }
 
   // Helper methods

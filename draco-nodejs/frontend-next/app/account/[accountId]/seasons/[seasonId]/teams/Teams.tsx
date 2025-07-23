@@ -269,7 +269,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
       // Load league seasons with divisions and teams for the given season
       const leagueSeasonsResponse = await fetch(
-        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?unassignedTeams=false`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/leagues?includeTeams`,
         {
           headers: {
             'Content-Type': 'application/json',

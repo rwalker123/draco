@@ -91,7 +91,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   onClose,
 }) => {
   const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeason[]>([]);
-  const [divisions, setDivisions] = useState<Division[]>([]);
+  // Remove global divisions state and fetchDivisions
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -142,30 +142,36 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   // Get available divisions (excluding those already assigned to the selected league)
   const availableDivisions = useMemo(() => {
-    if (!selectedLeagueSeason) return divisions;
+    if (!selectedLeagueSeason) return [];
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const assignedDivisionIds = new Set(
-      selectedLeagueSeason.divisions.map((div) => div.divisionId),
+      selectedLeagueSeason.divisions?.map((div) => div.divisionId) || [],
     );
 
-    return divisions.filter((division) => !assignedDivisionIds.has(division.id));
-  }, [divisions, selectedLeagueSeason]);
+    return []; // No global divisions list, divisions are fetched per league
+  }, [selectedLeagueSeason]);
 
   // Fetch league seasons with divisions and teams
   const fetchLeagueSeasons = useCallback(async () => {
-    if (!accountId || !token) return;
+    if (!accountId) return;
 
     setLoading(true);
     try {
       const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${season.id}/leagues?unassignedTeams=true`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues?includeTeams=includeUnassigned`,
       );
 
       if (response.data.success) {
-        setLeagueSeasons(response.data.data.leagueSeasons);
+        // Ensure each league season has the required properties with default values
+        const leagueSeasonsWithDefaults = response.data.data.leagueSeasons.map(
+          (ls: LeagueSeason) => ({
+            ...ls,
+            divisions: ls.divisions || [],
+            unassignedTeams: ls.unassignedTeams || [],
+          }),
+        );
+        setLeagueSeasons(leagueSeasonsWithDefaults);
       }
     } catch (error: unknown) {
       console.error('Error fetching league seasons:', error);
@@ -179,31 +185,37 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [accountId, season.id, token]);
+  }, [accountId, season.id]);
 
-  // Fetch available divisions
-  const fetchDivisions = useCallback(async () => {
-    if (!accountId || !token) return;
+  // Fetch divisions for a specific league season
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const fetchDivisionsForLeagueSeason = useCallback(
+    async (leagueSeasonId: string) => {
+      if (!accountId) return;
 
-    try {
-      const response = await axios.get(`/api/accounts/${accountId}/divisions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        const response = await axios.get(
+          `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeasonId}/divisions`,
+        );
 
-      if (response.data.success) {
-        setDivisions(response.data.data.divisions);
+        if (response.data.success) {
+          return response.data.data.divisions;
+        }
+        return [];
+      } catch (error: unknown) {
+        console.error('Error fetching divisions for league season:', error);
+        if (isAxiosError(error)) {
+          setError(error.response.data.message);
+        } else if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('Failed to fetch divisions for league season');
+        }
+        return [];
       }
-    } catch (error: unknown) {
-      console.error('Error fetching divisions:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch divisions');
-      }
-    }
-  }, [accountId, token]);
+    },
+    [accountId, season.id],
+  );
 
   // Targeted update functions for better UX
   const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
@@ -225,7 +237,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 teams: [...div.teams, teamSeason],
               };
             }),
-            unassignedTeams: ls.unassignedTeams.filter((team) => team.id !== teamSeason.id),
+            unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeason.id) || [],
           };
         }),
       );
@@ -248,7 +260,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 teams: div.teams.filter((team) => team.id !== teamSeason.id),
               };
             }),
-            unassignedTeams: [...ls.unassignedTeams, teamSeason],
+            unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
           };
         }),
       );
@@ -264,7 +276,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
           return {
             ...ls,
-            unassignedTeams: [...ls.unassignedTeams, teamSeason],
+            unassignedTeams: [...(ls.unassignedTeams || []), teamSeason],
           };
         }),
       );
@@ -280,11 +292,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
           return {
             ...ls,
-            divisions: ls.divisions.map((div) => ({
-              ...div,
-              teams: div.teams.filter((team) => team.id !== teamSeasonId),
-            })),
-            unassignedTeams: ls.unassignedTeams.filter((team) => team.id !== teamSeasonId),
+            divisions:
+              ls.divisions?.map((div) => ({
+                ...div,
+                teams: div.teams?.filter((team) => team.id !== teamSeasonId) || [],
+              })) || [],
+            unassignedTeams: ls.unassignedTeams?.filter((team) => team.id !== teamSeasonId) || [],
           };
         }),
       );
@@ -300,7 +313,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
           return {
             ...ls,
-            divisions: [...ls.divisions, divisionSeason],
+            divisions: [...(ls.divisions || []), divisionSeason],
           };
         }),
       );
@@ -315,13 +328,13 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           if (ls.id !== leagueSeasonId) return ls;
 
           // Move all teams from the deleted division to unassigned
-          const divisionToRemove = ls.divisions.find((div) => div.id === divisionSeasonId);
-          const teamsToMove = divisionToRemove ? divisionToRemove.teams : [];
+          const divisionToRemove = ls.divisions?.find((div) => div.id === divisionSeasonId);
+          const teamsToMove = divisionToRemove ? divisionToRemove.teams || [] : [];
 
           return {
             ...ls,
-            divisions: ls.divisions.filter((div) => div.id !== divisionSeasonId),
-            unassignedTeams: [...ls.unassignedTeams, ...teamsToMove],
+            divisions: ls.divisions?.filter((div) => div.id !== divisionSeasonId) || [],
+            unassignedTeams: [...(ls.unassignedTeams || []), ...teamsToMove],
           };
         }),
       );
@@ -330,9 +343,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   );
 
   useEffect(() => {
-    fetchLeagueSeasons();
-    fetchDivisions();
-  }, [fetchLeagueSeasons, fetchDivisions]);
+    if (accountId) {
+      fetchLeagueSeasons();
+      // Initial fetch for divisions is now handled per league season
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId, season.id]);
 
   // Handler to open add division dialog
   const openAddDivisionDialog = (leagueSeason: LeagueSeason) => {
@@ -428,7 +444,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setSuccessMessage(response.data.data.message);
         setCreateDivisionDialogOpen(false);
         setNewDivisionName('');
-        fetchDivisions(); // Refresh divisions list
+        // No need to fetchDivisions() here, as divisions are fetched per league
       }
     } catch (error: unknown) {
       console.error('Error creating division:', error);
@@ -489,7 +505,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
         setCreateDivisionInAddDialog(false);
         setNewDivisionNameInAddDialog('');
-        fetchDivisions(); // Still need to refresh divisions list for dropdown
+        // No need to fetchDivisions() here, as divisions are fetched per league
         // fetchLeagueSeasons(); // Removed - using targeted update above
       } else {
         setError(createResponse.data.message || 'Failed to create division');
@@ -601,7 +617,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
 
     // Check if there's only one division - if so, assign automatically
-    if (leagueSeason.divisions.length === 1) {
+    if (leagueSeason.divisions?.length === 1) {
       const singleDivision = leagueSeason.divisions[0];
       handleAssignTeamToDivisionDirectly(teamSeason, leagueSeason, singleDivision);
       return;
@@ -651,8 +667,8 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
         setSuccessMessage(response.data.data.message);
         // Use targeted update instead of full refresh
         // Find which division the team was in
-        const divisionSeason = leagueSeason.divisions.find((div) =>
-          div.teams.some((team) => team.id === teamSeason.id),
+        const divisionSeason = leagueSeason.divisions?.find((div) =>
+          div.teams?.some((team) => team.id === teamSeason.id),
         );
         if (divisionSeason) {
           removeTeamFromDivisionInState(leagueSeason.id, divisionSeason.id, teamSeason);
@@ -998,13 +1014,13 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 <Typography variant="h6">{leagueSeason.leagueName}</Typography>
                 <Box display="flex" alignItems="center" gap={1} ml={2}>
                   <Chip
-                    label={`${leagueSeason.divisions.length} divisions`}
+                    label={`${leagueSeason.divisions?.length || 0} divisions`}
                     size="small"
                     color="primary"
                     variant="outlined"
                   />
                   <Chip
-                    label={`${leagueSeason.unassignedTeams.length} unassigned teams`}
+                    label={`${leagueSeason.unassignedTeams?.length || 0} unassigned teams`}
                     size="small"
                     color="secondary"
                     variant="outlined"
@@ -1046,19 +1062,19 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                   <Typography variant="h6" gutterBottom>
                     Divisions
                   </Typography>
-                  {leagueSeason.divisions.length === 0 ? (
+                  {leagueSeason.divisions?.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
                       No divisions created yet.
                     </Typography>
                   ) : (
-                    leagueSeason.divisions.map((division) => (
+                    leagueSeason.divisions?.map((division) => (
                       <Card key={division.id} sx={{ mb: 1 }}>
                         <CardContent sx={{ py: 1 }}>
                           <Box display="flex" justifyContent="space-between" alignItems="center">
                             <Box>
                               <Typography variant="subtitle1">{division.divisionName}</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {division.teams.length} teams • Priority: {division.priority}
+                                {division.teams?.length || 0} teams • Priority: {division.priority}
                               </Typography>
                             </Box>
                             <Box display="flex" gap={1}>
@@ -1074,9 +1090,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                               </Tooltip>
                             </Box>
                           </Box>
-                          {division.teams.length > 0 && (
+                          {division.teams?.length > 0 && (
                             <Box mt={1}>
-                              {division.teams.map((team) => (
+                              {division.teams?.map((team) => (
                                 <Box
                                   key={team.id}
                                   sx={{
@@ -1134,12 +1150,12 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                   <Typography variant="h6" gutterBottom>
                     Unassigned Teams
                   </Typography>
-                  {leagueSeason.unassignedTeams.length === 0 ? (
+                  {leagueSeason.unassignedTeams?.length === 0 ? (
                     <Typography variant="body2" color="text.secondary">
                       All teams are assigned to divisions.
                     </Typography>
                   ) : (
-                    leagueSeason.unassignedTeams.map((team) => (
+                    leagueSeason.unassignedTeams?.map((team) => (
                       <Card key={team.id} sx={{ mb: 1 }} component="div">
                         <CardContent sx={{ py: 1 }} component="div">
                           <Box
@@ -1428,7 +1444,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
           <Typography variant="body2" sx={{ mb: 2 }}>
             Assigning team: <strong>{selectedTeamSeason?.name}</strong>
           </Typography>
-          {selectedTeamLeagueSeason?.divisions.length === 0 ? (
+          {selectedTeamLeagueSeason?.divisions?.length === 0 ? (
             <Alert severity="info" sx={{ mb: 2 }}>
               No divisions are available in this league. Please add divisions to the league first.
             </Alert>
@@ -1458,7 +1474,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             onClick={handleAssignTeamToDivision}
             variant="contained"
             disabled={
-              formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions.length
+              formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions?.length
             }
           >
             {formLoading ? <CircularProgress size={20} /> : 'Assign Team'}
@@ -1495,10 +1511,10 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                 This league currently has:
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                • {leagueToDelete.divisions.length} divisions
+                • {leagueToDelete.divisions?.length || 0} divisions
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                • {leagueToDelete.unassignedTeams.length} unassigned teams
+                • {leagueToDelete.unassignedTeams?.length || 0} unassigned teams
               </Typography>
             </Box>
           )}
