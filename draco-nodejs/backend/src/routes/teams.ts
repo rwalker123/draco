@@ -8,12 +8,14 @@ import * as multer from 'multer';
 import { leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { getTeamRecord } from '../utils/teamRecord';
+import { StatisticsService } from '../services/statisticsService';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 const storageService = createStorageService();
+const statisticsService = new StatisticsService(prisma);
 
 // Configure multer for file uploads
 const upload = multer({
@@ -33,6 +35,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
     const accountId = BigInt(req.params.accountId);
 
     // Get all teams for this season across all leagues
+    // Only include teams that have been assigned to a division
     const teams = await prisma.teamsseason.findMany({
       where: {
         leagueseason: {
@@ -40,6 +43,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
           league: {
             accountid: accountId,
           },
+        },
+        divisionseasonid: {
+          not: null,
         },
       },
       include: {
@@ -62,6 +68,16 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
             },
           },
         },
+        divisionseason: {
+          include: {
+            divisiondefs: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
       orderBy: [{ leagueseason: { league: { name: 'asc' } } }, { name: 'asc' }],
     });
@@ -77,6 +93,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
             id: team.leagueseason.league.id.toString(),
             name: team.leagueseason.league.name,
           },
+          division: team.divisionseason?.divisiondefs
+            ? {
+                id: team.divisionseason.divisiondefs.id.toString(),
+                name: team.divisionseason.divisiondefs.name,
+              }
+            : null,
           webAddress: team.teams.webaddress,
           youtubeUserId: team.teams.youtubeuserid,
           defaultVideo: team.teams.defaultvideo,
@@ -1439,6 +1461,121 @@ router.get(
       });
     } catch (error) {
       console.error('Team games route error:', error);
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/batting-stats
+ * Get batting statistics for a specific team
+ */
+router.get(
+  '/:teamSeasonId/batting-stats',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Team season not found',
+        });
+        return;
+      }
+
+      // Use the statistics service to get batting stats for this team
+      const battingStats = await statisticsService.getBattingStats(accountId, {
+        teamId: teamSeasonId,
+        sortField: 'avg',
+        sortOrder: 'desc',
+        pageSize: 1000, // Get all players on the team
+        minAB: 0, // No minimum requirements for team stats
+        includeAllGameTypes: true, // Include both regular season and postseason
+      });
+
+      res.json({
+        success: true,
+        data: battingStats.map((stat) => ({
+          ...stat,
+          playerId: stat.playerId.toString(),
+        })),
+      });
+    } catch (error) {
+      console.error('Team batting stats route error:', error);
+      next(error);
+    }
+  },
+);
+
+/**
+ * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/pitching-stats
+ * Get pitching statistics for a specific team
+ */
+router.get(
+  '/:teamSeasonId/pitching-stats',
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const teamSeasonId = BigInt(req.params.teamSeasonId);
+
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await prisma.teamsseason.findFirst({
+        where: {
+          id: teamSeasonId,
+          leagueseason: {
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+        },
+      });
+
+      if (!teamSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Team season not found',
+        });
+        return;
+      }
+
+      // Use the statistics service to get pitching stats for this team
+      const pitchingStats = await statisticsService.getPitchingStats(accountId, {
+        seasonId,
+        teamId: teamSeasonId,
+        sortField: 'era',
+        sortOrder: 'asc',
+        pageSize: 1000, // Get all players on the team
+        minIP: 0, // No minimum requirements for team stats
+        includeAllGameTypes: true, // Include both regular season and postseason
+      });
+
+      res.json({
+        success: true,
+        data: pitchingStats.map((stat) => ({
+          ...stat,
+          playerId: stat.playerId.toString(),
+        })),
+      });
+    } catch (error) {
+      console.error('Team pitching stats route error:', error);
       next(error);
     }
   },

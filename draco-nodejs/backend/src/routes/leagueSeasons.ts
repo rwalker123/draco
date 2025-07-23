@@ -8,50 +8,6 @@ import { RoleService } from '../services/roleService';
 import { getLogoUrl } from '../config/logo';
 import prisma from '../lib/prisma';
 
-// Type definitions for Prisma query results
-interface LeagueSeason {
-  id: bigint;
-  leagueid: bigint;
-  league: {
-    id: bigint;
-    name: string;
-    accountid: bigint;
-  };
-  divisionseason: Array<{
-    id: bigint;
-    divisionid: bigint;
-    priority: number;
-    divisiondefs: {
-      id: bigint;
-      name: string;
-    };
-    teamsseason: Array<{
-      id: bigint;
-      teamid: bigint;
-      name: string;
-      teams: {
-        id: bigint;
-        webaddress: string | null;
-        youtubeuserid: string | null;
-        defaultvideo: string | null;
-        autoplayvideo: boolean;
-      };
-    }>;
-  }>;
-  teamsseason: Array<{
-    id: bigint;
-    teamid: bigint;
-    name: string;
-    teams: {
-      id: bigint;
-      webaddress: string | null;
-      youtubeuserid: string | null;
-      defaultvideo: string | null;
-      autoplayvideo: boolean;
-    };
-  }>;
-}
-
 interface DivisionSeason {
   id: bigint;
   divisionid: bigint;
@@ -96,32 +52,23 @@ const routeProtection = new RouteProtection(roleService, prisma);
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/leagues
- * Get all leagues for a season with their divisions and teams
+ * Get leagues for a specific season with optional teams and divisions data
  */
 router.get('/', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
   try {
-    const seasonId = BigInt(req.params.seasonId);
     const accountId = BigInt(req.params.accountId);
+    const seasonId = BigInt(req.params.seasonId);
+    const includeTeams = req.query.includeTeams !== undefined;
+    const includeUnassignedTeams = req.query.includeTeams === 'includeUnassigned';
 
-    // Verify the season belongs to this account
-    const season = await prisma.season.findFirst({
-      where: {
-        id: seasonId,
-        accountid: accountId,
-      },
-    });
-
-    if (!season) {
-      res.status(404).json({
-        success: false,
-        message: 'Season not found',
-      });
-      return;
-    }
-
+    // Base query always includes leagueseason + league data
+    // we add division/team information based on qs values
     const leagueSeasons = await prisma.leagueseason.findMany({
       where: {
         seasonid: seasonId,
+        league: {
+          accountid: accountId,
+        },
       },
       include: {
         league: {
@@ -131,48 +78,38 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
             accountid: true,
           },
         },
-        divisionseason: {
-          include: {
-            divisiondefs: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            teamsseason: {
-              include: {
-                teams: {
-                  select: {
-                    id: true,
-                    webaddress: true,
-                    youtubeuserid: true,
-                    defaultvideo: true,
-                    autoplayvideo: true,
-                  },
+        // Conditionally include divisionseason and teamsseason when includeTeams is true
+        ...(includeTeams && {
+          divisionseason: {
+            include: {
+              divisiondefs: {
+                select: {
+                  id: true,
+                  name: true,
                 },
               },
             },
-          },
-          orderBy: {
-            priority: 'asc',
-          },
-        },
-        teamsseason: {
-          where: {
-            divisionseasonid: null, // Teams not assigned to any division
-          },
-          include: {
-            teams: {
-              select: {
-                id: true,
-                webaddress: true,
-                youtubeuserid: true,
-                defaultvideo: true,
-                autoplayvideo: true,
-              },
+            orderBy: {
+              priority: 'asc',
             },
           },
-        },
+          teamsseason: {
+            include: {
+              teams: {
+                select: {
+                  id: true,
+                  webaddress: true,
+                  youtubeuserid: true,
+                  defaultvideo: true,
+                  autoplayvideo: true,
+                },
+              },
+            },
+            orderBy: {
+              name: 'asc',
+            },
+          },
+        }),
       },
       orderBy: {
         league: {
@@ -181,62 +118,101 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
       },
     });
 
+    // Format the response
+    const formattedLeagueSeasons = leagueSeasons.map((ls) => {
+      const result: {
+        id: string;
+        leagueId: string;
+        leagueName: string;
+        accountId: string;
+        divisions?: Array<{
+          id: string;
+          divisionId: string;
+          divisionName: string;
+          priority: number;
+          teams: Array<{
+            id: string;
+            teamId: string;
+            name: string;
+            webAddress: string | null;
+            youtubeUserId: string | null;
+            defaultVideo: string | null;
+            autoPlayVideo: boolean;
+          }>;
+        }>;
+        unassignedTeams?: Array<{
+          id: string;
+          teamId: string;
+          name: string;
+          webAddress: string | null;
+          youtubeUserId: string | null;
+          defaultVideo: string | null;
+          autoPlayVideo: boolean;
+        }>;
+      } = {
+        id: ls.id.toString(),
+        leagueId: ls.league.id.toString(),
+        leagueName: ls.league.name,
+        accountId: ls.league.accountid.toString(),
+      };
+
+      // Add divisions with teams if includeTeams was requested
+      if (includeTeams) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        result.divisions = (ls.divisionseason || []).map((ds: any) => ({
+          id: ds.id.toString(),
+          divisionId: ds.divisiondefs.id.toString(),
+          divisionName: ds.divisiondefs.name,
+          priority: ds.priority,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          teams: (ls.teamsseason || [])
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((ts: any) => ts.divisionseasonid === ds.id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((ts: any) => ({
+              id: ts.id.toString(),
+              teamId: ts.teams.id.toString(),
+              name: ts.name,
+              webAddress: ts.teams.webaddress,
+              youtubeUserId: ts.teams.youtubeuserid,
+              defaultVideo: ts.teams.defaultvideo,
+              autoPlayVideo: ts.teams.autoplayvideo,
+            })),
+        }));
+
+        // Add unassigned teams if both includeTeams AND includeUnassignedTeams are true
+        if (includeUnassignedTeams) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          result.unassignedTeams = (ls.teamsseason || [])
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((ts: any) => !ts.divisionseasonid)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((ts: any) => ({
+              id: ts.id.toString(),
+              teamId: ts.teams.id.toString(),
+              name: ts.name,
+              webAddress: ts.teams.webaddress,
+              youtubeUserId: ts.teams.youtubeuserid,
+              defaultVideo: ts.teams.defaultvideo,
+              autoPlayVideo: ts.teams.autoplayvideo,
+            }));
+        }
+      }
+
+      return result;
+    });
+
     res.json({
       success: true,
       data: {
-        season: {
-          id: season.id.toString(),
-          name: season.name,
-          accountId: season.accountid.toString(),
-        },
-        leagueSeasons: leagueSeasons.map((ls: LeagueSeason) => {
-          const base = {
-            id: ls.id.toString(),
-            leagueId: ls.leagueid.toString(),
-            leagueName: ls.league.name,
-            accountId: ls.league.accountid.toString(),
-            divisions: ls.divisionseason.map((ds) => ({
-              id: ds.id.toString(),
-              divisionId: ds.divisionid.toString(),
-              divisionName: ds.divisiondefs.name,
-              priority: ds.priority,
-              teams: ds.teamsseason.map((ts) => ({
-                id: ts.id.toString(),
-                teamId: ts.teamid.toString(),
-                name: ts.name,
-                webAddress: ts.teams.webaddress,
-                youtubeUserId: ts.teams.youtubeuserid,
-                defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
-              })),
-            })),
-          };
-          if (req.query.unassignedTeams === 'false') {
-            return base;
-          } else {
-            return {
-              ...base,
-              unassignedTeams: ls.teamsseason.map((ts) => ({
-                id: ts.id.toString(),
-                teamId: ts.teamid.toString(),
-                name: ts.name,
-                webAddress: ts.teams.webaddress,
-                youtubeUserId: ts.teams.youtubeuserid,
-                defaultVideo: ts.teams.defaultvideo,
-                autoPlayVideo: ts.teams.autoplayvideo,
-                logoUrl: getLogoUrl(season.accountid.toString(), ts.teamid.toString()),
-              })),
-            };
-          }
-        }),
+        leagueSeasons: formattedLeagueSeasons,
       },
     });
   } catch (error) {
-    console.error('Error getting league seasons:', error);
+    console.error('Error fetching leagues for season:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error',
+      message: 'Failed to fetch leagues',
     });
   }
 });

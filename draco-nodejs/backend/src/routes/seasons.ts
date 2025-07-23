@@ -8,6 +8,17 @@ import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
 
 // Type definitions for Prisma query results
+
+interface LeagueSeasonWithLeague {
+  id: bigint;
+  seasonid: bigint;
+  leagueid: bigint;
+  league: {
+    id: bigint;
+    name: string;
+  };
+}
+
 interface SeasonWithLeagues {
   id: bigint;
   name: string;
@@ -19,17 +30,17 @@ interface SeasonWithLeagues {
       id: bigint;
       name: string;
     };
+    divisionseason?: Array<{
+      id: bigint;
+      priority?: number;
+      leagueseasonid?: bigint;
+      divisionid?: bigint;
+      divisiondefs?: {
+        id: bigint;
+        name: string;
+      };
+    }>;
   }>;
-}
-
-interface LeagueSeasonWithLeague {
-  id: bigint;
-  seasonid: bigint;
-  leagueid: bigint;
-  league: {
-    id: bigint;
-    name: string;
-  };
 }
 
 const router = Router({ mergeParams: true });
@@ -117,75 +128,92 @@ const routeProtection = new RouteProtection(roleService, prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get(
-  '/',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+router.get('/', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+  try {
+    const accountId = BigInt(req.params.accountId);
+    const includeDivisions = req.query.includeDivisions === 'true';
 
-      const seasons = await prisma.season.findMany({
-        where: {
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-          leagueseason: {
-            select: {
-              id: true,
-              leagueid: true,
-              league: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+    const seasons = await prisma.season.findMany({
+      where: {
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+        leagueseason: {
+          select: {
+            id: true,
+            leagueid: true,
+            league: {
+              select: {
+                id: true,
+                name: true,
               },
             },
+            ...(includeDivisions && {
+              divisionseason: {
+                select: {
+                  id: true,
+                  divisiondefs: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
+                  },
+                },
+              },
+            }),
           },
         },
-        orderBy: {
-          name: 'desc', // Most recent first
-        },
-      });
+      },
+      orderBy: {
+        name: 'desc', // Most recent first
+      },
+    });
 
-      // Get current season for this account
-      const currentSeason = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId,
-        },
-        select: {
-          seasonid: true,
-        },
-      });
+    // Get current season for this account
+    const currentSeason = await prisma.currentseason.findUnique({
+      where: {
+        accountid: accountId,
+      },
+      select: {
+        seasonid: true,
+      },
+    });
 
-      res.json({
-        success: true,
-        data: {
-          seasons: seasons.map((season: SeasonWithLeagues) => ({
-            id: season.id.toString(),
-            name: season.name,
-            accountId: season.accountid.toString(),
-            isCurrent: currentSeason?.seasonid === season.id,
-            leagues: season.leagueseason.map((ls) => ({
-              id: ls.id.toString(),
-              leagueId: ls.leagueid.toString(),
-              leagueName: ls.league.name,
-            })),
+    res.json({
+      success: true,
+      data: {
+        seasons: seasons.map((season: SeasonWithLeagues) => ({
+          id: season.id.toString(),
+          name: season.name,
+          accountId: season.accountid.toString(),
+          isCurrent: currentSeason?.seasonid === season.id,
+          leagues: season.leagueseason.map((ls) => ({
+            id: ls.id.toString(),
+            leagueId: ls.leagueid.toString(),
+            leagueName: ls.league.name,
+            ...(includeDivisions &&
+              ls.divisionseason && {
+                divisions: ls.divisionseason.map((ds) => ({
+                  id: ds.id.toString(), // Use divisionSeason.id for filtering
+                  divisionId: ds.divisiondefs?.id.toString(),
+                  name: ds.divisiondefs?.name || 'Unknown Division',
+                })),
+              }),
           })),
-        },
-      });
-    } catch (error) {
-      console.error('Error getting seasons:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
-    }
-  },
-);
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('Error getting seasons:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+});
 
 /**
  * @swagger

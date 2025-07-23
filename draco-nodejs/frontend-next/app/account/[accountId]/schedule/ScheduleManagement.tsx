@@ -125,6 +125,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [fields, setFields] = useState<Field[]>([]);
   const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([]);
   const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
+  const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, Team[]>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -162,7 +163,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   // Loading states
   const [loadingGames, setLoadingGames] = useState(false);
   const [loadingStaticData, setLoadingStaticData] = useState(true);
-  const [loadingLeagueTeams, setLoadingLeagueTeams] = useState(false);
 
   // Add a debounced navigation function to prevent excessive re-renders
   const [isNavigating, setIsNavigating] = useState(false);
@@ -235,13 +235,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setCurrentSeasonName(currentSeasonData.data.season.name);
 
       // Load static data in parallel
-      const [leaguesResponse, teamsResponse, fieldsResponse] = await Promise.all([
-        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues`, {
+      const [leaguesResponse, fieldsResponse] = await Promise.all([
+        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`, {
           headers: { 'Content-Type': 'application/json' },
         }),
-        fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/teams`, {
-          headers: { 'Content-Type': 'application/json' },
-        }),
+
         fetch(`/api/accounts/${accountId}/fields`, {
           headers: { 'Content-Type': 'application/json' },
         }),
@@ -250,31 +248,77 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       // Process leagues for current season (may fail for unauthenticated users)
       if (leaguesResponse.ok) {
         const leaguesData = await leaguesResponse.json();
-        setLeagues(
-          leaguesData.data?.leagueSeasons?.map((ls: { id: string; leagueName: string }) => ({
-            id: ls.id,
-            name: ls.leagueName,
-          })) || [],
+        const leaguesList = leaguesData.data?.leagueSeasons || [];
+
+        // Build the leagues array and cache teams for each league
+        const newLeagueTeamsCache = new Map<string, Team[]>();
+        const processedLeagues = leaguesList.map(
+          (ls: {
+            id: string;
+            leagueName: string;
+            divisions?: Array<{ teams: Team[] }>;
+            unassignedTeams?: Team[];
+          }) => {
+            const allTeams: Team[] = [];
+
+            // Add teams from divisions
+            if (ls.divisions) {
+              ls.divisions.forEach((division: { teams: Team[] }) => {
+                division.teams.forEach((team: Team) => {
+                  allTeams.push({
+                    id: team.id,
+                    name: team.name,
+                  });
+                });
+              });
+            }
+
+            // Add unassigned teams
+            if (ls.unassignedTeams) {
+              ls.unassignedTeams.forEach((team: Team) => {
+                allTeams.push({
+                  id: team.id,
+                  name: team.name,
+                });
+              });
+            }
+
+            // Cache the teams for this league
+            newLeagueTeamsCache.set(ls.id, allTeams);
+
+            return {
+              id: ls.id,
+              name: ls.leagueName,
+            };
+          },
         );
+
+        setLeagues(processedLeagues);
+        setLeagueTeamsCache(newLeagueTeamsCache);
+
+        // Also set all teams (for backwards compatibility)
+        const allTeamsSet = new Set<string>();
+        const allTeamsArray: Team[] = [];
+        newLeagueTeamsCache.forEach((teams) => {
+          teams.forEach((team) => {
+            if (!allTeamsSet.has(team.id)) {
+              allTeamsSet.add(team.id);
+              allTeamsArray.push(team);
+            }
+          });
+        });
+        setTeams(allTeamsArray);
       } else if (leaguesResponse.status === 401) {
         // For unauthenticated users, set empty leagues array
         setLeagues([]);
+        setLeagueTeamsCache(new Map());
       } else {
         console.warn('Failed to load leagues:', leaguesResponse.status);
         setLeagues([]);
+        setLeagueTeamsCache(new Map());
       }
 
-      // Process teams (may fail for unauthenticated users)
-      if (teamsResponse.ok) {
-        const teamsData = await teamsResponse.json();
-        setTeams(teamsData.data.teams || []);
-      } else if (teamsResponse.status === 401) {
-        // For unauthenticated users, set empty teams array
-        setTeams([]);
-      } else {
-        console.warn('Failed to load teams:', teamsResponse.status);
-        setTeams([]);
-      }
+      // Teams are now loaded from the leagues response above
 
       // Process fields (should work for all users)
       if (fieldsResponse.ok) {
@@ -290,9 +334,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const loadGamesData = useCallback(async () => {
     try {
-      if (filterType !== 'week' || !games.length) {
-        setLoadingGames(true);
-      }
+      setLoadingGames(true);
       setError('');
 
       // Get current season first
@@ -362,7 +404,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     } finally {
       setLoadingGames(false);
     }
-  }, [accountId, filterType, filterDate, games.length]);
+  }, [accountId, filterType, filterDate]);
 
   useEffect(() => {
     loadStaticData();
@@ -375,81 +417,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   }, [accountId, filterType, filterDate, loadGamesData]);
 
   const loadLeagueTeams = useCallback(
-    async (leagueSeasonId: string) => {
-      try {
-        setLoadingLeagueTeams(true);
-
-        // Check if user is authenticated
-        if (!user || !token) {
-          console.log('User not authenticated, skipping league teams load');
-          setLeagueTeams([]);
-          return;
-        }
-
-        // Get current season first
-        const currentSeasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`, {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!currentSeasonResponse.ok) {
-          throw new Error('Failed to load current season');
-        }
-
-        const currentSeasonData = await currentSeasonResponse.json();
-        const currentSeasonId = currentSeasonData.data.season.id;
-
-        const response = await fetch(
-          `/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues/${leagueSeasonId}`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            console.log('Authentication failed, skipping league teams load');
-            setLeagueTeams([]);
-            return;
-          }
-          throw new Error('Failed to load league teams');
-        }
-
-        const data = await response.json();
-
-        const allTeams: Team[] = [];
-
-        // Add teams from divisions
-        data.data.leagueSeason.divisions.forEach((division: { teams: Team[] }) => {
-          division.teams.forEach((team: Team) => {
-            allTeams.push({
-              id: team.id,
-              name: team.name,
-            });
-          });
-        });
-
-        // Add unassigned teams
-        data.data.leagueSeason.unassignedTeams.forEach((team: Team) => {
-          allTeams.push({
-            id: team.id,
-            name: team.name,
-          });
-        });
-
-        setLeagueTeams(allTeams);
-      } catch (err) {
-        console.error('Error loading league teams:', err);
+    (leagueSeasonId: string) => {
+      // Use cached teams instead of making an API call
+      const cachedTeams = leagueTeamsCache.get(leagueSeasonId);
+      if (cachedTeams) {
+        setLeagueTeams(cachedTeams);
+      } else {
         setLeagueTeams([]);
-      } finally {
-        setLoadingLeagueTeams(false);
       }
     },
-    [accountId, token, user],
+    [leagueTeamsCache],
   );
 
   // Update leagueTeams when filterLeagueSeasonId changes (for filter dropdown)
@@ -2191,11 +2168,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={homeTeamId}
                       onChange={(e) => setHomeTeamId(e.target.value)}
                       label="Home Team"
-                      disabled={loadingLeagueTeams || !canEditSchedule}
+                      disabled={!canEditSchedule}
                     >
-                      {loadingLeagueTeams ? (
-                        <MenuItem disabled>Loading teams...</MenuItem>
-                      ) : leagueTeams.length === 0 ? (
+                      {leagueTeams.length === 0 ? (
                         <MenuItem disabled>No teams available</MenuItem>
                       ) : (
                         leagueTeams.map((team) => (
@@ -2217,11 +2192,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                       value={visitorTeamId}
                       onChange={(e) => setVisitorTeamId(e.target.value)}
                       label="Visitor Team"
-                      disabled={loadingLeagueTeams || !canEditSchedule}
+                      disabled={!canEditSchedule}
                     >
-                      {loadingLeagueTeams ? (
-                        <MenuItem disabled>Loading teams...</MenuItem>
-                      ) : leagueTeams.length === 0 ? (
+                      {leagueTeams.length === 0 ? (
                         <MenuItem disabled>No teams available</MenuItem>
                       ) : (
                         leagueTeams.map((team) => (
@@ -2385,11 +2358,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                         value={homeTeamId}
                         onChange={(e) => setHomeTeamId(e.target.value)}
                         label="Home Team"
-                        disabled={loadingLeagueTeams}
+                        disabled={false}
                       >
-                        {loadingLeagueTeams ? (
-                          <MenuItem disabled>Loading teams...</MenuItem>
-                        ) : leagueTeams.length === 0 ? (
+                        {leagueTeams.length === 0 ? (
                           <MenuItem disabled>No teams available</MenuItem>
                         ) : (
                           leagueTeams.map((team) => (
@@ -2424,11 +2395,9 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                         value={visitorTeamId}
                         onChange={(e) => setVisitorTeamId(e.target.value)}
                         label="Visitor Team"
-                        disabled={loadingLeagueTeams}
+                        disabled={false}
                       >
-                        {loadingLeagueTeams ? (
-                          <MenuItem disabled>Loading teams...</MenuItem>
-                        ) : leagueTeams.length === 0 ? (
+                        {leagueTeams.length === 0 ? (
                           <MenuItem disabled>No teams available</MenuItem>
                         ) : (
                           leagueTeams.map((team) => (

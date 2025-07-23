@@ -109,14 +109,12 @@ const SeasonManagement: React.FC = () => {
     hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
 
   const fetchSeasons = useCallback(async () => {
-    if (!accountId || !token) return;
+    if (!accountId) return;
 
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`/api/accounts/${accountId}/seasons`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(`/api/accounts/${accountId}/seasons`);
 
       if (response.data.success) {
         setSeasons(response.data.data.seasons);
@@ -140,7 +138,7 @@ const SeasonManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [accountId, token]);
+  }, [accountId]);
 
   const fetchAvailableLeagues = useCallback(async () => {
     if (!accountId || !token) return;
@@ -175,7 +173,8 @@ const SeasonManagement: React.FC = () => {
       fetchSeasons();
       fetchAvailableLeagues();
     }
-  }, [accountId, fetchSeasons, fetchAvailableLeagues]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountId]);
 
   // Targeted update functions for better UX
   const addSeasonToState = useCallback((newSeason: Season) => {
