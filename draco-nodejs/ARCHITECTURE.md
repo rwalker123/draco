@@ -22,10 +22,14 @@ The Draco Sports Manager is a comprehensive sports management application migrat
 
 ### Key Features
 - **Multi-sport Support**: Baseball and golf league management
+- **Multi-tenant Architecture**: Account-based data isolation
 - **User Management**: Authentication, authorization, and role-based access
 - **League Management**: Seasons, teams, players, schedules, and statistics
-- **Real-time Updates**: Live game tracking and statistics
-- **Media Management**: Photo galleries and video integration
+- **Statistics Engine**: Comprehensive batting, pitching, and team statistics
+- **Standings System**: League and division standings with tie support
+- **Schedule Management**: Game scheduling with calendar views
+- **Media Management**: Team logos, player photos, and galleries
+- **Domain Routing**: Custom domain support for accounts
 - **Communication**: Messaging system and announcements
 
 ## System Architecture
@@ -35,7 +39,7 @@ The Draco Sports Manager is a comprehensive sports management application migrat
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │   Database      │
 │   (React)       │◄──►│   (Node.js)     │◄──►│  (PostgreSQL)   │
-│   Port: 3000    │    │   Port: 5000    │    │   Port: 5432    │
+│   Port: 3000    │    │   Port: 3001    │    │   Port: 5432    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
          │                       │                       │
          │                       │                       │
@@ -56,25 +60,28 @@ The Draco Sports Manager is a comprehensive sports management application migrat
 
 ### Backend Stack
 - **Runtime**: Node.js v22.16.0
-- **Framework**: Express.js 4.18.2
+- **Framework**: Express.js 5.1.0
 - **Language**: TypeScript 5.8.3
-- **Database ORM**: Prisma 6.9.0
+- **Database ORM**: Prisma 6.12.0
 - **Database**: PostgreSQL
 - **Authentication**: JWT (jsonwebtoken 9.0.2)
-- **Password Hashing**: bcrypt 6.0.0
-- **Email Service**: Nodemailer 7.0.3
-- **Security**: Helmet 8.1.0, CORS 2.8.5
+- **Password Hashing**: bcrypt 5.1.1
+- **Email Service**: Nodemailer 6.9.21
+- **Security**: Helmet 9.0.0, CORS 2.8.5
+- **Storage**: AWS S3 SDK 3.540.0, LocalStack for development
 - **Development**: Nodemon 3.1.10, ts-node 10.9.2
 
 ### Frontend Stack
-- **Framework**: React 19.1.0
-- **Language**: TypeScript 4.9.5
-- **UI Library**: Material-UI 7.1.1
-- **State Management**: Redux Toolkit 2.8.2
-- **Routing**: React Router DOM 7.6.2
+- **Framework**: Next.js 15.3.4 with React 19.0.0
+- **Language**: TypeScript 5.8.3
+- **UI Library**: Material-UI 7.2.0
+- **State Management**: React Context API (Auth, Role, Account contexts)
+- **Routing**: Next.js App Router
 - **HTTP Client**: Axios 1.10.0
-- **Build Tool**: Create React App 5.0.1
-- **Styling**: Emotion 11.14.0
+- **Build Tool**: Next.js built-in build system
+- **Styling**: Emotion 11.14.0, Tailwind CSS 4.0
+- **Date Handling**: date-fns 4.1.0
+- **Form Validation**: Built-in HTML5 + custom validation
 
 ### Development Tools
 - **Package Manager**: npm
@@ -102,19 +109,23 @@ draco-nodejs/
 │   ├── dist/               # Compiled JavaScript output
 │   ├── package.json        # Backend dependencies
 │   └── tsconfig.json       # TypeScript configuration
-├── frontend-next/           # Frontend application
-│   ├── src/                # Source code
-│   │   ├── components/     # React components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API service calls
-│   │   ├── store/         # Redux store configuration
-│   │   ├── types/         # TypeScript type definitions
-│   │   ├── utils/         # Utility functions
-│   │   ├── App.tsx        # Main application component
-│   │   └── index.tsx      # Application entry point
-│   ├── public/            # Static assets
-│   ├── package.json       # Frontend dependencies
-│   └── tsconfig.json      # TypeScript configuration
+├── frontend-next/           # Frontend application (Next.js)
+│   ├── app/                # Next.js App Router
+│   │   ├── account/       # Account-specific pages
+│   │   ├── admin/         # Admin pages
+│   │   ├── api/           # API routes (proxy)
+│   │   ├── login/         # Authentication pages
+│   │   ├── globals.css    # Global styles
+│   │   ├── layout.tsx     # Root layout
+│   │   └── page.tsx       # Home page
+│   ├── components/        # Shared React components
+│   ├── context/          # React contexts
+│   ├── lib/              # Core libraries
+│   ├── public/           # Static assets
+│   ├── utils/            # Utility functions
+│   ├── package.json      # Frontend dependencies
+│   ├── next.config.mjs   # Next.js configuration
+│   └── tsconfig.json     # TypeScript configuration
 ├── run-backend.sh         # Backend helper script
 ├── run-frontend.sh        # Frontend helper script
 └── .gitignore            # Git ignore rules
@@ -169,37 +180,44 @@ draco-nodejs/
 - **Type Safety**: Generated TypeScript types
 
 #### Database Models
-- **User Management**: `aspnetusers`, `aspnetroles`, `aspnetuserroles`
-- **League Management**: `accounts`, `league`, `teams`, `players`
-- **Game Management**: `games`, `gamestats`, `schedules`
-- **Media Management**: `photogallery`, `videos`
+- **User Management**: `aspnetusers`, `aspnetroles`, `aspnetuserroles`, `aspnetuserclaims`
+- **Account Management**: `accounts`, `seasons`, `accountroles`, `contactroles`
+- **League Structure**: 
+  - Definition tables: `league`, `divisiondefs`, `teams`
+  - Season-specific tables: `leagueseason`, `divisionseason`, `teamsseason`
+- **Player Management**: `contacts`, `players`, `rosters`
+- **Game Management**: `leagueschedule`, `gamestats`, `batstatsum`, `pitchstatsum`
+- **Media Management**: `photogallery`, `teamlogos`
+- **Important**: Always use season-specific tables for statistics and queries
 
-## Frontend Architecture
+## Frontend Architecture (Next.js)
 
 ### Core Components
 
 #### 1. Application Structure
-- **App Component**: Main application wrapper
-- **Routing**: React Router for navigation
-- **Theme**: Material-UI theme configuration
-- **State Management**: Redux store setup
+- **App Router**: Next.js 13+ App Router for file-based routing
+- **Root Layout**: Global layout with providers and theme
+- **Route Segments**: Dynamic and static routes
+- **Server Components**: Default rendering for better performance
+- **Client Components**: Interactive components with 'use client'
 
 #### 2. Component Architecture
-- **Presentational Components**: UI-only components
-- **Container Components**: State-connected components
-- **Layout Components**: Page structure components
-- **Form Components**: Input and validation components
+- **Shared Components**: Reusable UI components in `/components`
+- **Page Components**: Route-specific components in `/app`
+- **Layout Components**: Nested layouts for route groups
+- **Server vs Client**: Strategic component splitting
 
-#### 3. State Management (Redux)
-- **Store Configuration**: Centralized state management
-- **Slices**: Feature-based state organization
-- **Actions**: State modification operations
-- **Selectors**: State access patterns
+#### 3. State Management (Context API)
+- **AuthContext**: User authentication state and methods
+- **RoleContext**: User permissions and role management
+- **AccountContext**: Current account selection
+- **Local State**: Component-level state with hooks
 
 #### 4. Service Layer
-- **API Services**: HTTP client configuration
-- **Authentication Service**: Login/logout operations
-- **Data Services**: CRUD operations for entities
+- **API Proxy**: Next.js API routes for backend communication
+- **Type-Safe Fetching**: Shared types between frontend and backend
+- **Error Handling**: Consistent error boundaries
+- **Data Caching**: Next.js built-in caching strategies
 
 ### UI/UX Design
 
@@ -274,9 +292,13 @@ draco-nodejs/
 ### Authorization
 
 #### Role-Based Access Control
-- **User Roles**: Admin, Manager, Player, Viewer
-- **Permission System**: Feature-based permissions
-- **Route Protection**: Middleware-based access control
+- **Three-Tier Role System**:
+  - **Global Roles**: Administrator, User - system-wide permissions
+  - **Account Roles**: AccountAdmin, ContactAdmin, Contact - account-specific permissions
+  - **Contact Permissions**: Team/player-specific access control
+- **Hierarchical Permissions**: Admin > ContactAdmin > Contact
+- **Route Protection**: Middleware-based access control with account boundary enforcement
+- **Frontend Integration**: useRole() hook for permission checks
 
 ## API Design
 
@@ -297,12 +319,40 @@ draco-nodejs/
 - `PUT /api/users/profile` - Update user profile
 - `GET /api/users/:id` - Get user by ID
 
-#### League Management
-- `GET /api/leagues` - List leagues
-- `POST /api/leagues` - Create league
-- `GET /api/leagues/:id` - Get league details
-- `PUT /api/leagues/:id` - Update league
-- `DELETE /api/leagues/:id` - Delete league
+#### Account Management
+- `GET /api/accounts` - List user accounts
+- `GET /api/accounts/:accountId` - Get account details
+- `POST /api/accounts/:accountId/logo` - Upload account logo
+
+#### Season Management
+- `GET /api/accounts/:accountId/seasons` - List seasons
+- `POST /api/accounts/:accountId/seasons` - Create season
+- `PUT /api/accounts/:accountId/seasons/:seasonId` - Update season
+- `DELETE /api/accounts/:accountId/seasons/:seasonId` - Delete season
+
+#### League & Division Management
+- `GET /api/accounts/:accountId/seasons/:seasonId/leagues` - List leagues
+- `POST /api/accounts/:accountId/seasons/:seasonId/leagues` - Create league
+- `GET /api/accounts/:accountId/divisions` - List divisions
+- `POST /api/accounts/:accountId/divisions` - Create division
+
+#### Team Management
+- `GET /api/accounts/:accountId/teams` - List teams
+- `POST /api/accounts/:accountId/teams` - Create team
+- `GET /api/accounts/:accountId/teams/:teamId` - Get team details
+- `PUT /api/accounts/:accountId/teams/:teamId` - Update team
+- `POST /api/accounts/:accountId/teams/:teamId/logo` - Upload team logo
+
+#### Schedule Management
+- `GET /api/accounts/:accountId/seasons/:seasonId/schedule` - Get schedule
+- `POST /api/accounts/:accountId/seasons/:seasonId/schedule` - Create games
+- `PUT /api/accounts/:accountId/seasons/:seasonId/games/:gameId` - Update game
+
+#### Statistics & Standings
+- `GET /api/accounts/:accountId/seasons/:seasonId/standings` - Get standings
+- `GET /api/accounts/:accountId/seasons/:seasonId/statistics/batting` - Batting stats
+- `GET /api/accounts/:accountId/seasons/:seasonId/statistics/pitching` - Pitching stats
+- `GET /api/accounts/:accountId/seasons/:seasonId/statistics/leaders` - Statistical leaders
 
 ### API Standards
 
@@ -327,15 +377,26 @@ draco-nodejs/
 ### Development Environment
 
 #### Local Setup
-1. **Database**: PostgreSQL with pgloader migration
-2. **Backend**: Node.js with TypeScript compilation
-3. **Frontend**: React development server
+1. **Database**: PostgreSQL with Prisma ORM
+2. **Backend**: Node.js with TypeScript (port 5000, HTTPS on 3001)
+3. **Frontend**: Next.js development server (port 3000)
 4. **Environment Variables**: `.env` configuration
+5. **SSL/TLS**: mkcert for local HTTPS development
 
-#### Helper Scripts
-- **`run-backend.sh`**: Backend development commands
-- **`run-frontend.sh`**: Frontend development commands
-- **Build Scripts**: TypeScript compilation and bundling
+#### Development Commands (from root directory)
+- **`npm run dev`**: Start both backend and frontend concurrently
+- **`npm run backend:dev`**: Start backend only
+- **`npm run frontend-next:start`**: Start frontend only
+- **`npm run build`**: Build both projects
+- **`npm run lint:all`**: Lint all code
+- **`npm run type-check:all`**: Type check all code
+- **`npm run test:all`**: Run all tests
+
+#### Database Commands
+- **`npx prisma generate`**: Generate Prisma client
+- **`npx prisma db push`**: Push schema changes
+- **`npx prisma migrate dev`**: Run migrations
+- **`npx prisma studio`**: Open Prisma Studio GUI
 
 ### Development Process
 
@@ -418,10 +479,12 @@ PORT=5000
 - **Compression**: Response compression middleware
 
 ### Frontend Optimization
-- **Code Splitting**: Lazy loading of components
-- **Bundle Optimization**: Webpack optimization
-- **Image Optimization**: Compressed and responsive images
-- **CDN Integration**: Content delivery network
+- **Server Components**: Default server-side rendering
+- **Code Splitting**: Automatic with Next.js App Router
+- **Image Optimization**: Next.js Image component
+- **Font Optimization**: Next.js font optimization
+- **Bundle Analysis**: Built-in bundle analyzer
+- **Prefetching**: Automatic link prefetching
 
 ### Monitoring
 - **Performance Metrics**: Response time and throughput
@@ -451,20 +514,56 @@ PORT=5000
 
 ---
 
+## Migration Progress
+
+The application is approximately 31% migrated from ASP.NET Framework to Node.js.
+
+### Completed Features
+- ✅ Authentication system with JWT and role-based access control
+- ✅ Account management with multi-tenant support
+- ✅ Season and league management
+- ✅ Team management with logo upload
+- ✅ Schedule management with calendar views
+- ✅ Statistics engine (batting, pitching, team)
+- ✅ Standings with league/division grouping and tie support
+- ✅ Domain-based routing for custom URLs
+- ✅ File storage (local and S3)
+
+### In Progress
+- 🔄 Player/contact management
+- 🔄 Game scoring and recap functionality
+- 🔄 Umpire management
+- 🔄 Email notifications
+
+### Pending
+- ⏳ Golf league features
+- ⏳ Photo galleries
+- ⏳ Advanced statistics and analytics
+- ⏳ Mobile application
+
+---
+
 ## Conclusion
 
-The Draco Sports Manager Node.js architecture provides a robust, scalable, and maintainable foundation for sports league management. The modern technology stack, comprehensive security measures, and well-defined development processes ensure a high-quality application that can grow with user needs.
+The Draco Sports Manager Node.js architecture provides a robust, scalable, and maintainable foundation for sports league management. The migration to Next.js and modern Node.js technologies has resulted in improved performance, better developer experience, and a more maintainable codebase.
 
 ### Key Strengths
-- **Modern Stack**: Latest technologies and best practices
-- **Type Safety**: TypeScript throughout for better development experience
-- **Scalable Design**: Modular architecture supporting growth
-- **Security Focus**: Comprehensive security measures
-- **Developer Experience**: Clear structure and helper tools
+- **Modern Stack**: Next.js 15, Express 5, and latest TypeScript
+- **Type Safety**: End-to-end TypeScript with Prisma
+- **Multi-tenant Architecture**: Secure account isolation
+- **Comprehensive Statistics**: Advanced baseball statistics engine
+- **Developer Experience**: Clear structure and excellent tooling
+
+### Architecture Best Practices
+- **DRY Principles**: Minimize code duplication
+- **Season-Specific Tables**: Always use season tables for statistics
+- **Account Boundaries**: Enforce multi-tenant isolation
+- **Role-Based Security**: Three-tier permission system
+- **API Consistency**: Never change contracts without updating consumers
 
 ### Future Considerations
-- **Microservices**: Potential decomposition for scalability
-- **Real-time Features**: WebSocket integration for live updates
-- **Mobile App**: React Native for mobile experience
-- **AI Integration**: Machine learning for statistics and predictions
-- **API Versioning**: Backward compatibility management 
+- **Real-time Features**: WebSocket for live game updates
+- **Mobile App**: React Native or PWA approach
+- **Advanced Analytics**: Machine learning for predictions
+- **Performance**: Redis caching and query optimization
+- **Scalability**: Horizontal scaling and load balancing 

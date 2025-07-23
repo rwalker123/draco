@@ -8,6 +8,7 @@ import StatisticsLeaders from './StatisticsLeaders';
 import BattingStatistics from './BattingStatistics';
 import PitchingStatistics from './PitchingStatistics';
 import TeamStatistics from './TeamStatistics';
+import Standings from '/Users/raywalker/source/Draco/draco-nodejs/frontend-next/components/Standings';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -125,6 +126,7 @@ export default function Statistics({ accountId }: StatisticsProps) {
               <Tab label="Batting" {...a11yProps(1)} />
               <Tab label="Pitching" {...a11yProps(2)} />
               <Tab label="Teams" {...a11yProps(3)} />
+              <Tab label="Standings" {...a11yProps(4)} />
             </Tabs>
           </Box>
 
@@ -142,6 +144,10 @@ export default function Statistics({ accountId }: StatisticsProps) {
 
           <TabPanel value={tabValue} index={3}>
             <TeamStatistics accountId={accountId} seasonId={filters.seasonId} />
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={4}>
+            <Standings accountId={accountId} seasonId={filters.seasonId} showHeader={false} />
           </TabPanel>
         </Paper>
       </Container>

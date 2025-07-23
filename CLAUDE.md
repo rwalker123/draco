@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Draco Sports Manager is a comprehensive sports management application being migrated from ASP.NET Framework to a modern Node.js stack. The application manages baseball and golf leagues, teams, players, games, and sports-related activities.
 
+**📚 For detailed architecture documentation, see [ARCHITECTURE.md](./draco-nodejs/ARCHITECTURE.md)**
+
 ## Technology Stack
 
 - **Backend**: Node.js with Express.js and TypeScript, Prisma ORM, PostgreSQL
