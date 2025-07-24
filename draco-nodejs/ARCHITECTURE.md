@@ -333,8 +333,10 @@ draco-nodejs/
 #### League & Division Management
 - `GET /api/accounts/:accountId/seasons/:seasonId/leagues` - List leagues
 - `POST /api/accounts/:accountId/seasons/:seasonId/leagues` - Create league
-- `GET /api/accounts/:accountId/divisions` - List divisions
-- `POST /api/accounts/:accountId/divisions` - Create division
+- `GET /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions` - List divisions for league season
+- `POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions` - Create and add division to league season
+- `PUT /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions/:divisionSeasonId` - Update division name and priority
+- `DELETE /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions/:divisionSeasonId` - Remove division from league season
 
 #### Team Management
 - `GET /api/accounts/:accountId/teams` - List teams
