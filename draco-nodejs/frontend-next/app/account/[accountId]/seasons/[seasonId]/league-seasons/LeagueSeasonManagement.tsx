@@ -15,22 +15,21 @@ import {
   Alert,
   CircularProgress,
   Tooltip,
-  Fab,
   Accordion,
   AccordionSummary,
   AccordionDetails,
   AccordionActions,
   Autocomplete,
-  FormControlLabel,
-  Checkbox,
+  Select,
+  MenuItem,
+  FormControl,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   ExpandMore as ExpandMoreIcon,
-  Group as GroupIcon,
   Remove as RemoveIcon,
-  Person as PersonIcon,
   Sports as SportsIcon,
   People as PeopleIcon,
 } from '@mui/icons-material';
@@ -104,21 +103,14 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   const [selectedDivision, setSelectedDivision] = useState<Division | null>(null);
   const [divisionPriority, setDivisionPriority] = useState(0);
 
-  // Division definition management state
-  const [createDivisionDialogOpen, setCreateDivisionDialogOpen] = useState(false);
-  const [newDivisionName, setNewDivisionName] = useState('');
-
   // Division creation within Add Division dialog state
   const [createDivisionInAddDialog, setCreateDivisionInAddDialog] = useState(false);
   const [newDivisionNameInAddDialog, setNewDivisionNameInAddDialog] = useState('');
-  const [addToLeagueAfterCreate, setAddToLeagueAfterCreate] = useState(true);
 
   // Team assignment state
   const [assignTeamDialogOpen, setAssignTeamDialogOpen] = useState(false);
-  const [selectedTeamSeason, setSelectedTeamSeason] = useState<TeamSeason | null>(null);
-  const [selectedTeamLeagueSeason, setSelectedTeamLeagueSeason] = useState<LeagueSeason | null>(
-    null,
-  );
+  const [selectedTeamSeason] = useState<TeamSeason | null>(null);
+  const [selectedTeamLeagueSeason] = useState<LeagueSeason | null>(null);
   const [targetDivisionSeason, setTargetDivisionSeason] = useState<DivisionSeason | null>(null);
   const [expandedAccordions, setExpandedAccordions] = useState<Set<string>>(new Set());
 
@@ -140,15 +132,32 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
   );
   const [newTeamName, setNewTeamName] = useState('');
 
+  // Edit division state
+  const [editDivisionDialogOpen, setEditDivisionDialogOpen] = useState(false);
+  const [divisionToEdit, setDivisionToEdit] = useState<DivisionSeason | null>(null);
+  const [leagueSeasonForEdit, setLeagueSeasonForEdit] = useState<LeagueSeason | null>(null);
+  const [editDivisionName, setEditDivisionName] = useState('');
+  const [editDivisionPriority, setEditDivisionPriority] = useState(0);
+
+  // State for managing selected teams per division
+  const [selectedTeamsPerDivision, setSelectedTeamsPerDivision] = useState<Record<string, string>>(
+    {},
+  );
+
+  // Helper function to split teams into balanced columns
+  const splitTeamsIntoColumns = useCallback((teams: TeamSeason[]) => {
+    if (!teams || teams.length === 0) return { leftColumn: [], rightColumn: [] };
+
+    const midPoint = Math.ceil(teams.length / 2);
+    return {
+      leftColumn: teams.slice(0, midPoint),
+      rightColumn: teams.slice(midPoint),
+    };
+  }, []);
+
   // Get available divisions (excluding those already assigned to the selected league)
   const availableDivisions = useMemo(() => {
     if (!selectedLeagueSeason) return [];
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const assignedDivisionIds = new Set(
-      selectedLeagueSeason.divisions?.map((div) => div.divisionId) || [],
-    );
-
     return []; // No global divisions list, divisions are fetched per league
   }, [selectedLeagueSeason]);
 
@@ -186,36 +195,6 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
       setLoading(false);
     }
   }, [accountId, season.id]);
-
-  // Fetch divisions for a specific league season
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const fetchDivisionsForLeagueSeason = useCallback(
-    async (leagueSeasonId: string) => {
-      if (!accountId) return;
-
-      try {
-        const response = await axios.get(
-          `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeasonId}/divisions`,
-        );
-
-        if (response.data.success) {
-          return response.data.data.divisions;
-        }
-        return [];
-      } catch (error: unknown) {
-        console.error('Error fetching divisions for league season:', error);
-        if (isAxiosError(error)) {
-          setError(error.response.data.message);
-        } else if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('Failed to fetch divisions for league season');
-        }
-        return [];
-      }
-    },
-    [accountId, season.id],
-  );
 
   // Targeted update functions for better UX
   const removeLeagueSeasonFromState = useCallback((leagueSeasonId: string) => {
@@ -428,91 +407,40 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   };
 
-  // Handler to create new division definition
-  const handleCreateDivision = async () => {
-    if (!accountId || !token || !newDivisionName.trim()) return;
-
-    setFormLoading(true);
-    try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/divisions`,
-        { name: newDivisionName.trim() },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        setCreateDivisionDialogOpen(false);
-        setNewDivisionName('');
-        // No need to fetchDivisions() here, as divisions are fetched per league
-      }
-    } catch (error: unknown) {
-      console.error('Error creating division:', error);
-      if (isAxiosError(error)) {
-        setError(error.response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to create division');
-      }
-    } finally {
-      setFormLoading(false);
-    }
-  };
-
   // Handler to create division within Add Division dialog
   const handleCreateDivisionInAddDialog = async () => {
     if (!accountId || !token || !newDivisionNameInAddDialog.trim() || !selectedLeagueSeason) return;
 
     setFormLoading(true);
     try {
-      // Create the division
-      const createResponse = await axios.post(
-        `/api/accounts/${accountId}/divisions`,
-        { name: newDivisionNameInAddDialog.trim() },
+      // Single API call to create division and add to league season
+      const response = await axios.post(
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
+        {
+          name: newDivisionNameInAddDialog.trim(),
+          priority: divisionPriority,
+        },
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      if (createResponse.data.success) {
-        const newDivision = createResponse.data.data.division;
+      if (response.data.success) {
+        const newDivisionSeason = response.data.data.divisionSeason;
 
-        // If checkbox is checked, add the division to the league season
-        if (addToLeagueAfterCreate && selectedLeagueSeason) {
-          const addResponse = await axios.post(
-            `/api/accounts/${accountId}/seasons/${season.id}/leagues/${selectedLeagueSeason.id}/divisions`,
-            {
-              divisionId: newDivision.id,
-              priority: divisionPriority,
-            },
-            { headers: { Authorization: `Bearer ${token}` } },
-          );
-
-          if (addResponse.data.success) {
-            setSuccessMessage(
-              `Division "${newDivision.name}" created and added to league "${selectedLeagueSeason.leagueName}"`,
-            );
-            // Use targeted update instead of full refresh
-            const newDivisionSeason = addResponse.data.data.divisionSeason;
-            addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
-          } else {
-            setSuccessMessage(
-              `Division "${newDivision.name}" created successfully, but failed to add to league`,
-            );
-          }
-        } else {
-          setSuccessMessage(`Division "${newDivision.name}" created successfully`);
-        }
+        setSuccessMessage(
+          `Division "${newDivisionSeason.divisionName}" created and added to league "${selectedLeagueSeason.leagueName}"`,
+        );
+        // Use targeted update instead of full refresh
+        addDivisionToLeagueSeasonInState(selectedLeagueSeason.id, newDivisionSeason);
 
         setCreateDivisionInAddDialog(false);
         setNewDivisionNameInAddDialog('');
-        // No need to fetchDivisions() here, as divisions are fetched per league
-        // fetchLeagueSeasons(); // Removed - using targeted update above
+        setAddDivisionDialogOpen(false);
       } else {
-        setError(createResponse.data.message || 'Failed to create division');
+        setError(response.data.message || 'Failed to create division');
       }
     } catch (err: unknown) {
       if (isAxiosError(err)) {
-        setError(err.response.data.message);
+        setError(err.response?.data?.message || 'Failed to create division');
       } else if (err instanceof Error) {
         setError(err.message);
       } else {
@@ -609,37 +537,9 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   };
 
-  // Handler to open assign team dialog
-  const openAssignTeamDialog = (teamSeason: TeamSeason, leagueSeason: LeagueSeason) => {
-    if (!teamSeason || !leagueSeason) {
-      console.error('Invalid parameters for openAssignTeamDialog:', { teamSeason, leagueSeason });
-      return;
-    }
-
-    // Check if there's only one division - if so, assign automatically
-    if (leagueSeason.divisions?.length === 1) {
-      const singleDivision = leagueSeason.divisions[0];
-      handleAssignTeamToDivisionDirectly(teamSeason, leagueSeason, singleDivision);
-      return;
-    }
-
-    // If multiple divisions, show the dialog as before
-    setSelectedTeamSeason(teamSeason);
-    setSelectedTeamLeagueSeason(leagueSeason);
-    setTargetDivisionSeason(null);
-    setError(null);
-
-    // Ensure the accordion for this league is expanded
-    if (!expandedAccordions.has(leagueSeason.id)) {
-      setExpandedAccordions((prev) => new Set([...Array.from(prev), leagueSeason.id]));
-    }
-
-    setAssignTeamDialogOpen(true);
-  };
-
   // Handler for accordion expansion
   const handleAccordionChange =
-    (leagueSeasonId: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    (leagueSeasonId: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
       const newExpanded = new Set(expandedAccordions);
       if (isExpanded) {
         newExpanded.add(leagueSeasonId);
@@ -940,6 +840,58 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
     }
   };
 
+  // Handler to open edit division dialog
+  const openEditDivisionDialog = (division: DivisionSeason, leagueSeason: LeagueSeason) => {
+    setDivisionToEdit(division);
+    setLeagueSeasonForEdit(leagueSeason);
+    setEditDivisionName(division.divisionName);
+    setEditDivisionPriority(division.priority);
+    setError(null);
+    setEditDivisionDialogOpen(true);
+  };
+
+  // Handler to update division
+  const handleUpdateDivision = async () => {
+    if (!accountId || !token || !divisionToEdit || !leagueSeasonForEdit) return;
+
+    setFormLoading(true);
+    try {
+      // Single API call to update both name and priority
+      const response = await axios.put(
+        `/api/accounts/${accountId}/seasons/${season.id}/leagues/${leagueSeasonForEdit.id}/divisions/${divisionToEdit.id}`,
+        {
+          name: editDivisionName.trim(),
+          priority: editDivisionPriority,
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (response.data.success) {
+        setSuccessMessage('Division updated successfully');
+        setEditDivisionDialogOpen(false);
+        setDivisionToEdit(null);
+        setLeagueSeasonForEdit(null);
+        setEditDivisionName('');
+        setEditDivisionPriority(0);
+        // Refresh the data to show updated values
+        fetchLeagueSeasons();
+      } else {
+        setError(response.data.message || 'Failed to update division');
+      }
+    } catch (error: unknown) {
+      console.error('Error updating division:', error);
+      if (isAxiosError(error)) {
+        setError(error.response.data.message);
+      } else if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Failed to update division');
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -950,368 +902,585 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          League Season Management
-        </Typography>
-        <Button variant="outlined" onClick={onClose} startIcon={<RemoveIcon />}>
-          Back to Seasons
-        </Button>
-      </Box>
-
-      {/* Success/Error Messages */}
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
-          {successMessage}
-        </Alert>
-      )}
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      {/* Season Info */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Season: {season.name}
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3 }}>
+        {/* Header */}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography variant="h4" component="h1">
+            League Season Management
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage leagues, divisions, and team assignments for this season
-          </Typography>
-        </CardContent>
-      </Card>
+          <Button variant="outlined" onClick={onClose} startIcon={<RemoveIcon />}>
+            Back to Seasons
+          </Button>
+        </Box>
 
-      {/* League Seasons */}
-      {leagueSeasons.length === 0 ? (
-        <Card>
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
+        {/* Season Info */}
+        <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="body1" textAlign="center" color="text.secondary">
-              No leagues have been added to this season yet.
+            <Typography variant="h6" gutterBottom>
+              Season: {season.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Manage leagues, divisions, and team assignments for this season
             </Typography>
           </CardContent>
         </Card>
-      ) : (
-        leagueSeasons.map((leagueSeason) => (
-          <Accordion
-            key={leagueSeason.id}
-            sx={{ mb: 2 }}
-            expanded={expandedAccordions.has(leagueSeason.id)}
-            onChange={handleAccordionChange(leagueSeason.id)}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              sx={{
-                '& .MuiAccordionSummary-content': {
-                  alignItems: 'center',
-                },
-              }}
-            >
-              <Box display="flex" alignItems="center" flex={1} mr={2}>
-                <SportsIcon sx={{ mr: 1 }} />
-                <Typography variant="h6">{leagueSeason.leagueName}</Typography>
-                <Box display="flex" alignItems="center" gap={1} ml={2}>
-                  <Chip
-                    label={`${leagueSeason.divisions?.length || 0} divisions`}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                  <Chip
-                    label={`${leagueSeason.unassignedTeams?.length || 0} unassigned teams`}
-                    size="small"
-                    color="secondary"
-                    variant="outlined"
-                  />
-                </Box>
-              </Box>
-            </AccordionSummary>
-            <AccordionActions>
-              <Button
-                size="small"
-                color="primary"
-                onClick={() => openAddDivisionDialog(leagueSeason)}
-                startIcon={<AddIcon />}
-              >
-                Add Division
-              </Button>
-              <Button
-                size="small"
-                color="primary"
-                onClick={() => openCreateTeamDialog(leagueSeason)}
-                startIcon={<AddIcon />}
-              >
-                Create Team
-              </Button>
-              <Button
-                size="small"
-                color="error"
-                onClick={() => openDeleteLeagueDialog(leagueSeason)}
-                disabled={formLoading}
-                startIcon={<DeleteIcon />}
-              >
-                Remove League
-              </Button>
-            </AccordionActions>
-            <AccordionDetails>
-              <Box display="flex" gap={2} flexWrap="wrap">
-                {/* Divisions */}
-                <Box flex="1" minWidth="300px">
-                  <Typography variant="h6" gutterBottom>
-                    Divisions
-                  </Typography>
-                  {leagueSeason.divisions?.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      No divisions created yet.
-                    </Typography>
-                  ) : (
-                    leagueSeason.divisions?.map((division) => (
-                      <Card key={division.id} sx={{ mb: 1 }}>
-                        <CardContent sx={{ py: 1 }}>
-                          <Box display="flex" justifyContent="space-between" alignItems="center">
-                            <Box>
-                              <Typography variant="subtitle1">{division.divisionName}</Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {division.teams?.length || 0} teams • Priority: {division.priority}
-                              </Typography>
-                            </Box>
-                            <Box display="flex" gap={1}>
-                              <Tooltip title="Remove Division">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => handleRemoveDivision(leagueSeason, division)}
-                                  disabled={formLoading}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
-                          </Box>
-                          {division.teams?.length > 0 && (
-                            <Box mt={1}>
-                              {division.teams?.map((team) => (
-                                <Box
-                                  key={team.id}
-                                  sx={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    mr: 0.5,
-                                    mb: 0.5,
-                                  }}
-                                >
-                                  <Chip label={team.name} size="small" sx={{ mr: 0.5 }} />
-                                  <Tooltip title="Manage Roster">
-                                    <IconButton
-                                      size="small"
-                                      color="primary"
-                                      onClick={() => handleManageRoster(team)}
-                                      disabled={formLoading}
-                                    >
-                                      <PeopleIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Remove from Division">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() =>
-                                        handleRemoveTeamFromDivision(team, leagueSeason)
-                                      }
-                                      disabled={formLoading}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                  <Tooltip title="Remove Team from Season">
-                                    <IconButton
-                                      size="small"
-                                      color="error"
-                                      onClick={() => openDeleteTeamDialog(team, leagueSeason)}
-                                      disabled={formLoading}
-                                    >
-                                      <DeleteIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </Box>
-                              ))}
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </Box>
 
-                {/* Unassigned Teams */}
-                <Box flex="1" minWidth="300px">
-                  <Typography variant="h6" gutterBottom>
-                    Unassigned Teams
+        {/* League Seasons */}
+        {leagueSeasons.length === 0 ? (
+          <Card>
+            <CardContent>
+              <Typography variant="body1" textAlign="center" color="text.secondary">
+                No leagues have been added to this season yet.
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : (
+          leagueSeasons.map((leagueSeason) => (
+            <Accordion
+              key={leagueSeason.id}
+              sx={{
+                mb: 2,
+                ...(expandedAccordions.has(leagueSeason.id) && {
+                  backgroundColor: 'primary.main',
+                  background: (theme) =>
+                    `linear-gradient(135deg, ${theme.palette.primary.main}08 0%, ${theme.palette.primary.main}12 100%)`,
+                  borderRadius: 1,
+                  '& .MuiAccordionSummary-root': {
+                    backgroundColor: 'transparent',
+                  },
+                  '& .MuiAccordionDetails-root': {
+                    backgroundColor: 'transparent',
+                  },
+                  '& .MuiAccordionActions-root': {
+                    backgroundColor: 'transparent',
+                  },
+                }),
+              }}
+              expanded={expandedAccordions.has(leagueSeason.id)}
+              onChange={handleAccordionChange(leagueSeason.id)}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                sx={{
+                  '& .MuiAccordionSummary-content': {
+                    alignItems: 'center',
+                  },
+                }}
+              >
+                <Box display="flex" alignItems="center" flex={1} mr={2}>
+                  <SportsIcon sx={{ mr: 1 }} />
+                  <Typography variant="h6">{leagueSeason.leagueName}</Typography>
+                  <Box display="flex" alignItems="center" gap={1} ml={2}>
+                    <Chip
+                      label={`${leagueSeason.divisions?.length || 0} divisions`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                    />
+                    <Chip
+                      label={`${leagueSeason.unassignedTeams?.length || 0} unassigned teams`}
+                      size="small"
+                      color="secondary"
+                      variant="outlined"
+                    />
+                  </Box>
+                </Box>
+              </AccordionSummary>
+              <AccordionActions>
+                <Button
+                  size="small"
+                  color="primary"
+                  onClick={() => openAddDivisionDialog(leagueSeason)}
+                  startIcon={<AddIcon />}
+                >
+                  Add Division
+                </Button>
+                <Button
+                  size="small"
+                  color="primary"
+                  onClick={() => openCreateTeamDialog(leagueSeason)}
+                  startIcon={<AddIcon />}
+                >
+                  Create Team
+                </Button>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => openDeleteLeagueDialog(leagueSeason)}
+                  disabled={formLoading}
+                  startIcon={<DeleteIcon />}
+                >
+                  Remove League
+                </Button>
+              </AccordionActions>
+              <AccordionDetails>
+                {/* Divisions with integrated team assignment */}
+                {leagueSeason.divisions?.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    No divisions created yet. Click &quote;Add Division&quote; to create one.
                   </Typography>
-                  {leagueSeason.unassignedTeams?.length === 0 ? (
-                    <Typography variant="body2" color="text.secondary">
-                      All teams are assigned to divisions.
-                    </Typography>
-                  ) : (
-                    leagueSeason.unassignedTeams?.map((team) => (
-                      <Card key={team.id} sx={{ mb: 1 }} component="div">
-                        <CardContent sx={{ py: 1 }} component="div">
+                ) : (
+                  <Box>
+                    {leagueSeason.divisions?.map((division) => (
+                      <Card key={division.id} sx={{ mb: 2 }}>
+                        <CardContent>
+                          {/* Division Header with Team Assignment */}
                           <Box
                             display="flex"
                             justifyContent="space-between"
                             alignItems="center"
-                            component="div"
+                            mb={2}
                           >
-                            <Box display="flex" alignItems="center" component="div">
-                              <PersonIcon sx={{ mr: 1 }} />
-                              <Typography
-                                key={`team-${team.id}`}
-                                variant="subtitle1"
-                                component="span"
-                              >
-                                {team.name}
-                              </Typography>
+                            {/* Left side: Division info and action buttons */}
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Box>
+                                <Typography variant="h6">{division.divisionName}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  {division.teams?.length || 0} teams • Priority:{' '}
+                                  {division.priority}
+                                </Typography>
+                              </Box>
+                              <Box display="flex" gap={0.5} alignItems="center">
+                                <Tooltip title="Edit Division">
+                                  <IconButton
+                                    size="small"
+                                    color="primary"
+                                    onClick={() => openEditDivisionDialog(division, leagueSeason)}
+                                    disabled={formLoading}
+                                  >
+                                    <EditIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Remove Division">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => handleRemoveDivision(leagueSeason, division)}
+                                    disabled={formLoading}
+                                  >
+                                    <DeleteIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
                             </Box>
-                            <Box display="flex" gap={1}>
-                              <Tooltip title="Manage Roster">
-                                <IconButton
-                                  size="small"
-                                  color="primary"
-                                  onClick={() => handleManageRoster(team)}
-                                  disabled={formLoading}
-                                >
-                                  <PeopleIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Assign to Division">
-                                <IconButton
-                                  size="small"
-                                  color="secondary"
-                                  onClick={() => {
-                                    if (leagueSeason) {
-                                      openAssignTeamDialog(team, leagueSeason);
-                                    }
-                                  }}
-                                  disabled={formLoading}
-                                >
-                                  <GroupIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Remove Team from Season">
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() => openDeleteTeamDialog(team, leagueSeason)}
-                                  disabled={formLoading}
-                                >
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
+
+                            {/* Right side: Team assignment controls */}
+                            <Box display="flex" gap={1} alignItems="center">
+                              {/* Team Assignment Dropdown */}
+                              {leagueSeason.unassignedTeams?.length > 0 && (
+                                <>
+                                  <FormControl size="small" sx={{ minWidth: 200 }}>
+                                    <Select
+                                      value={selectedTeamsPerDivision[division.id] || ''}
+                                      onChange={(e) =>
+                                        setSelectedTeamsPerDivision({
+                                          ...selectedTeamsPerDivision,
+                                          [division.id]: e.target.value,
+                                        })
+                                      }
+                                      displayEmpty
+                                      disabled={formLoading}
+                                      sx={{ bgcolor: 'background.paper' }}
+                                    >
+                                      <MenuItem value="">
+                                        <em>Select team to add...</em>
+                                      </MenuItem>
+                                      {leagueSeason.unassignedTeams?.map((team) => (
+                                        <MenuItem key={team.id} value={team.id}>
+                                          {team.name}
+                                        </MenuItem>
+                                      ))}
+                                    </Select>
+                                  </FormControl>
+                                  <Tooltip title="Add Selected Team">
+                                    <IconButton
+                                      color="primary"
+                                      onClick={() => {
+                                        const selectedTeamId =
+                                          selectedTeamsPerDivision[division.id];
+                                        const selectedTeam = leagueSeason.unassignedTeams?.find(
+                                          (t) => t.id === selectedTeamId,
+                                        );
+                                        if (selectedTeam) {
+                                          handleAssignTeamToDivisionDirectly(
+                                            selectedTeam,
+                                            leagueSeason,
+                                            division,
+                                          );
+                                          setSelectedTeamsPerDivision({
+                                            ...selectedTeamsPerDivision,
+                                            [division.id]: '',
+                                          });
+                                        }
+                                      }}
+                                      disabled={
+                                        !selectedTeamsPerDivision[division.id] || formLoading
+                                      }
+                                    >
+                                      <AddIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </>
+                              )}
                             </Box>
                           </Box>
+
+                          {/* Teams List */}
+                          {division.teams?.length > 0 && (
+                            <Box>
+                              {(() => {
+                                const { leftColumn, rightColumn } = splitTeamsIntoColumns(
+                                  division.teams || [],
+                                );
+                                return (
+                                  <Box
+                                    sx={{
+                                      display: 'grid',
+                                      gridTemplateColumns: {
+                                        xs: '1fr', // Single column on small screens
+                                        sm: '1fr 1fr', // Two columns on larger screens
+                                      },
+                                      gap: 1,
+                                    }}
+                                  >
+                                    {/* Left Column */}
+                                    <Box>
+                                      {leftColumn.map((team) => (
+                                        <Box
+                                          key={team.id}
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            py: 1,
+                                            px: 1.5,
+                                            mb: 0.5,
+                                            borderRadius: 1,
+                                            backgroundColor: 'action.hover',
+                                            '&:hover': {
+                                              backgroundColor: 'action.selected',
+                                            },
+                                          }}
+                                        >
+                                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {team.name}
+                                          </Typography>
+                                          <Box display="flex" gap={0.5} alignItems="center">
+                                            <Tooltip title="Manage Roster">
+                                              <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={() => handleManageRoster(team)}
+                                                disabled={formLoading}
+                                              >
+                                                <PeopleIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove from Division">
+                                              <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() =>
+                                                  handleRemoveTeamFromDivision(team, leagueSeason)
+                                                }
+                                                disabled={formLoading}
+                                              >
+                                                <RemoveIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove Team from Season">
+                                              <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() =>
+                                                  openDeleteTeamDialog(team, leagueSeason)
+                                                }
+                                                disabled={formLoading}
+                                              >
+                                                <DeleteIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                          </Box>
+                                        </Box>
+                                      ))}
+                                    </Box>
+
+                                    {/* Right Column */}
+                                    <Box>
+                                      {rightColumn.map((team) => (
+                                        <Box
+                                          key={team.id}
+                                          sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            py: 1,
+                                            px: 1.5,
+                                            mb: 0.5,
+                                            borderRadius: 1,
+                                            backgroundColor: 'action.hover',
+                                            '&:hover': {
+                                              backgroundColor: 'action.selected',
+                                            },
+                                          }}
+                                        >
+                                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {team.name}
+                                          </Typography>
+                                          <Box display="flex" gap={0.5} alignItems="center">
+                                            <Tooltip title="Manage Roster">
+                                              <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={() => handleManageRoster(team)}
+                                                disabled={formLoading}
+                                              >
+                                                <PeopleIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove from Division">
+                                              <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() =>
+                                                  handleRemoveTeamFromDivision(team, leagueSeason)
+                                                }
+                                                disabled={formLoading}
+                                              >
+                                                <RemoveIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove Team from Season">
+                                              <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() =>
+                                                  openDeleteTeamDialog(team, leagueSeason)
+                                                }
+                                                disabled={formLoading}
+                                              >
+                                                <DeleteIcon fontSize="small" />
+                                              </IconButton>
+                                            </Tooltip>
+                                          </Box>
+                                        </Box>
+                                      ))}
+                                    </Box>
+                                  </Box>
+                                );
+                              })()}
+                            </Box>
+                          )}
                         </CardContent>
                       </Card>
-                    ))
-                  )}
+                    ))}
+
+                    {/* Unassigned Teams Summary */}
+                    {leagueSeason.unassignedTeams?.length > 0 && (
+                      <Alert severity="info" sx={{ mt: 2 }}>
+                        {leagueSeason.unassignedTeams.length} unassigned team
+                        {leagueSeason.unassignedTeams.length > 1 ? 's' : ''}:{' '}
+                        {leagueSeason.unassignedTeams.map((t) => t.name).join(', ')}
+                      </Alert>
+                    )}
+                  </Box>
+                )}
+              </AccordionDetails>
+            </Accordion>
+          ))
+        )}
+
+        {/* Add Division Dialog */}
+        <Dialog
+          open={addDivisionDialogOpen}
+          onClose={() => setAddDivisionDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Add Division to League</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Adding division to: <strong>{selectedLeagueSeason?.leagueName}</strong>
+            </Typography>
+
+            {!createDivisionInAddDialog ? (
+              <>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="h6" gutterBottom>
+                    Select Existing Division
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setCreateDivisionInAddDialog(true);
+                      setNewDivisionNameInAddDialog('');
+                      setError(null);
+                    }}
+                    startIcon={<AddIcon />}
+                    disabled={formLoading}
+                  >
+                    Create New Division
+                  </Button>
                 </Box>
-              </Box>
-            </AccordionDetails>
-          </Accordion>
-        ))
-      )}
-
-      {/* Create Division Dialog */}
-      <Dialog
-        open={createDivisionDialogOpen}
-        onClose={() => setCreateDivisionDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Create New Division</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <Typography variant="body2" color="text.secondary">
-            The league name must be unique. If you&apos;re trying to add a league that already
-            exists, you&apos;ll need to use a different name.
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            You can use &quot;League Management&quot; to update your leagues.
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Division Name"
-            fullWidth
-            variant="outlined"
-            value={newDivisionName}
-            onChange={(e) => setNewDivisionName(e.target.value)}
-            disabled={formLoading}
-            sx={{ mt: 1 }}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateDivisionDialogOpen(false)} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCreateDivision}
-            variant="contained"
-            disabled={formLoading || !newDivisionName.trim()}
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Create Division'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add Division Dialog */}
-      <Dialog
-        open={addDivisionDialogOpen}
-        onClose={() => setAddDivisionDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Add Division to League</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Adding division to: <strong>{selectedLeagueSeason?.leagueName}</strong>
-          </Typography>
-
-          {!createDivisionInAddDialog ? (
-            <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" gutterBottom>
-                  Select Existing Division
-                </Typography>
-                <Button
+                <Autocomplete
+                  options={availableDivisions}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedDivision}
+                  onChange={(_, newValue) => setSelectedDivision(newValue)}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Select Division"
+                      fullWidth
+                      variant="outlined"
+                      sx={{ mb: 2 }}
+                    />
+                  )}
+                  noOptionsText={
+                    availableDivisions.length === 0
+                      ? 'All divisions are already assigned to this league'
+                      : 'No divisions available'
+                  }
+                />
+                <TextField
+                  margin="dense"
+                  label="Priority"
+                  type="number"
+                  fullWidth
                   variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setCreateDivisionInAddDialog(true);
-                    setNewDivisionNameInAddDialog('');
-                    setError(null);
-                  }}
-                  startIcon={<AddIcon />}
+                  value={divisionPriority}
+                  onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
                   disabled={formLoading}
-                >
-                  Create New Division
-                </Button>
-              </Box>
+                  helperText="Lower numbers have higher priority"
+                />
+              </>
+            ) : (
+              <>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="h6" gutterBottom>
+                    Create New Division
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setCreateDivisionInAddDialog(false);
+                      setSelectedDivision(null);
+                      setError(null);
+                    }}
+                    disabled={formLoading}
+                  >
+                    Select Existing
+                  </Button>
+                </Box>
+                <TextField
+                  autoFocus
+                  margin="dense"
+                  label="Division Name"
+                  fullWidth
+                  variant="outlined"
+                  value={newDivisionNameInAddDialog}
+                  onChange={(e) => setNewDivisionNameInAddDialog(e.target.value)}
+                  disabled={formLoading}
+                  sx={{ mb: 2 }}
+                />
+                <TextField
+                  margin="dense"
+                  label="Priority"
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  value={divisionPriority}
+                  onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
+                  disabled={formLoading}
+                  helperText="Lower numbers have higher priority"
+                  sx={{ mb: 2 }}
+                />
+                {selectedLeagueSeason && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    This division will be created and added to league &quote;
+                    {selectedLeagueSeason.leagueName}&quote;
+                  </Typography>
+                )}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => {
+                setAddDivisionDialogOpen(false);
+                setCreateDivisionInAddDialog(false);
+                setError(null);
+              }}
+              disabled={formLoading}
+            >
+              Cancel
+            </Button>
+            {!createDivisionInAddDialog ? (
+              <Button
+                onClick={handleAddDivision}
+                variant="contained"
+                disabled={formLoading || !selectedDivision}
+              >
+                {formLoading ? <CircularProgress size={20} /> : 'Add Division'}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleCreateDivisionInAddDialog}
+                variant="contained"
+                disabled={formLoading || !newDivisionNameInAddDialog.trim()}
+              >
+                {formLoading ? <CircularProgress size={20} /> : 'Create Division'}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Assign Team Dialog */}
+        <Dialog
+          open={assignTeamDialogOpen}
+          onClose={() => setAssignTeamDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Assign Team to Division</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Assigning team: <strong>{selectedTeamSeason?.name}</strong>
+            </Typography>
+            {selectedTeamLeagueSeason?.divisions?.length === 0 ? (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                No divisions are available in this league. Please add divisions to the league first.
+              </Alert>
+            ) : (
               <Autocomplete
-                options={availableDivisions}
-                getOptionLabel={(option) => option.name}
-                value={selectedDivision}
-                onChange={(_, newValue) => setSelectedDivision(newValue)}
+                options={selectedTeamLeagueSeason?.divisions || []}
+                getOptionLabel={(option) => option.divisionName}
+                value={targetDivisionSeason}
+                onChange={(_, newValue) => setTargetDivisionSeason(newValue)}
                 renderInput={(params) => (
                   <TextField
                     {...params}
@@ -1321,318 +1490,222 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
                     sx={{ mb: 2 }}
                   />
                 )}
-                noOptionsText={
-                  availableDivisions.length === 0
-                    ? 'All divisions are already assigned to this league'
-                    : 'No divisions available'
-                }
               />
-              <TextField
-                margin="dense"
-                label="Priority"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={divisionPriority}
-                onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
-                disabled={formLoading}
-                helperText="Lower numbers have higher priority"
-              />
-            </>
-          ) : (
-            <>
-              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h6" gutterBottom>
-                  Create New Division
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setAssignTeamDialogOpen(false)} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAssignTeamToDivision}
+              variant="contained"
+              disabled={
+                formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions?.length
+              }
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Assign Team'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Delete League Confirmation Dialog */}
+        <Dialog
+          open={deleteLeagueDialogOpen}
+          onClose={() => setDeleteLeagueDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Remove League from Season</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Are you sure you want to remove the league{' '}
+              <strong>&quot;{leagueToDelete?.leagueName}&quot;</strong> from this season?
+            </Typography>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              This action will remove the league from this season and all its associated data
+              (divisions, teams, etc.). The system will also attempt to delete the league definition
+              if it&apos;s not used in other seasons.
+            </Alert>
+            {leagueToDelete && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  This league currently has:
                 </Typography>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setCreateDivisionInAddDialog(false);
-                    setSelectedDivision(null);
-                    setError(null);
-                  }}
-                  disabled={formLoading}
-                >
-                  Select Existing
-                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  • {leagueToDelete.divisions?.length || 0} divisions
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  • {leagueToDelete.unassignedTeams?.length || 0} unassigned teams
+                </Typography>
               </Box>
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Division Name"
-                fullWidth
-                variant="outlined"
-                value={newDivisionNameInAddDialog}
-                onChange={(e) => setNewDivisionNameInAddDialog(e.target.value)}
-                disabled={formLoading}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                margin="dense"
-                label="Priority"
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={divisionPriority}
-                onChange={(e) => setDivisionPriority(parseInt(e.target.value) || 0)}
-                disabled={formLoading}
-                helperText="Lower numbers have higher priority"
-                sx={{ mb: 2 }}
-              />
-              {selectedLeagueSeason && (
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={addToLeagueAfterCreate}
-                      onChange={(e) => setAddToLeagueAfterCreate(e.target.checked)}
-                      disabled={formLoading}
-                    />
-                  }
-                  label={`Add to league "${selectedLeagueSeason.leagueName}" after creation`}
-                />
-              )}
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setAddDivisionDialogOpen(false);
-              setCreateDivisionInAddDialog(false);
-              setError(null);
-            }}
-            disabled={formLoading}
-          >
-            Cancel
-          </Button>
-          {!createDivisionInAddDialog ? (
-            <Button
-              onClick={handleAddDivision}
-              variant="contained"
-              disabled={formLoading || !selectedDivision}
-            >
-              {formLoading ? <CircularProgress size={20} /> : 'Add Division'}
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteLeagueDialogOpen(false)} disabled={formLoading}>
+              Cancel
             </Button>
-          ) : (
             <Button
-              onClick={handleCreateDivisionInAddDialog}
+              onClick={handleDeleteLeague}
               variant="contained"
-              disabled={formLoading || !newDivisionNameInAddDialog.trim()}
+              color="error"
+              disabled={formLoading}
             >
-              {formLoading ? <CircularProgress size={20} /> : 'Create Division'}
+              {formLoading ? <CircularProgress size={20} /> : 'Remove League'}
             </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+          </DialogActions>
+        </Dialog>
 
-      {/* Assign Team Dialog */}
-      <Dialog
-        open={assignTeamDialogOpen}
-        onClose={() => setAssignTeamDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Assign Team to Division</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Assigning team: <strong>{selectedTeamSeason?.name}</strong>
-          </Typography>
-          {selectedTeamLeagueSeason?.divisions?.length === 0 ? (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              No divisions are available in this league. Please add divisions to the league first.
-            </Alert>
-          ) : (
-            <Autocomplete
-              options={selectedTeamLeagueSeason?.divisions || []}
-              getOptionLabel={(option) => option.divisionName}
-              value={targetDivisionSeason}
-              onChange={(_, newValue) => setTargetDivisionSeason(newValue)}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Select Division"
-                  fullWidth
-                  variant="outlined"
-                  sx={{ mb: 2 }}
-                />
-              )}
+        {/* Create Team Dialog */}
+        <Dialog
+          open={createTeamDialogOpen}
+          onClose={() => setCreateTeamDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Create New Team</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Creating team for league: <strong>{teamToCreateLeagueSeason?.leagueName}</strong>
+            </Typography>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Team Name"
+              fullWidth
+              variant="outlined"
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
+              disabled={formLoading}
+              sx={{ mb: 2 }}
+              helperText="Enter a unique name for the new team"
             />
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAssignTeamDialogOpen(false)} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAssignTeamToDivision}
-            variant="contained"
-            disabled={
-              formLoading || !targetDivisionSeason || !selectedTeamLeagueSeason?.divisions?.length
-            }
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Assign Team'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCreateTeamDialogOpen(false)} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateTeam}
+              variant="contained"
+              disabled={formLoading || !newTeamName.trim()}
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Create Team'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* Delete League Confirmation Dialog */}
-      <Dialog
-        open={deleteLeagueDialogOpen}
-        onClose={() => setDeleteLeagueDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Remove League from Season</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
+        {/* Delete Team Confirmation Dialog */}
+        <Dialog
+          open={deleteTeamDialogOpen}
+          onClose={() => setDeleteTeamDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Remove Team from Season</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              Are you sure you want to remove the team{' '}
+              <strong>&quot;{teamToDelete?.name}&quot;</strong> from this season?
+            </Typography>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              This action will remove the team from this season and all its associated data
+              (divisions, etc.). The system will also attempt to delete the team definition if
+              it&apos;s not used in other seasons.
             </Alert>
-          )}
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to remove the league{' '}
-            <strong>&quot;{leagueToDelete?.leagueName}&quot;</strong> from this season?
-          </Typography>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            This action will remove the league from this season and all its associated data
-            (divisions, teams, etc.). The system will also attempt to delete the league definition
-            if it&apos;s not used in other seasons.
-          </Alert>
-          {leagueToDelete && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                This league currently has:
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                • {leagueToDelete.divisions?.length || 0} divisions
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                • {leagueToDelete.unassignedTeams?.length || 0} unassigned teams
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteLeagueDialogOpen(false)} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteLeague}
-            variant="contained"
-            color="error"
-            disabled={formLoading}
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Remove League'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            {teamToDelete && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  This team will be removed from the current season.
+                </Typography>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteTeamDialogOpen(false)} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteTeam}
+              variant="contained"
+              color="error"
+              disabled={formLoading}
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Remove Team'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      {/* Create Team Dialog */}
-      <Dialog
-        open={createTeamDialogOpen}
-        onClose={() => setCreateTeamDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Create New Team</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <Typography variant="body2" sx={{ mb: 2 }}>
-            Creating team for league: <strong>{teamToCreateLeagueSeason?.leagueName}</strong>
-          </Typography>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Team Name"
-            fullWidth
-            variant="outlined"
-            value={newTeamName}
-            onChange={(e) => setNewTeamName(e.target.value)}
-            disabled={formLoading}
-            sx={{ mb: 2 }}
-            helperText="Enter a unique name for the new team"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCreateTeamDialogOpen(false)} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleCreateTeam}
-            variant="contained"
-            disabled={formLoading || !newTeamName.trim()}
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Create Team'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Delete Team Confirmation Dialog */}
-      <Dialog
-        open={deleteTeamDialogOpen}
-        onClose={() => setDeleteTeamDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Remove Team from Season</DialogTitle>
-        <DialogContent>
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Are you sure you want to remove the team{' '}
-            <strong>&quot;{teamToDelete?.name}&quot;</strong> from this season?
-          </Typography>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            This action will remove the team from this season and all its associated data
-            (divisions, etc.). The system will also attempt to delete the team definition if
-            it&apos;s not used in other seasons.
-          </Alert>
-          {teamToDelete && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                This team will be removed from the current season.
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTeamDialogOpen(false)} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleDeleteTeam}
-            variant="contained"
-            color="error"
-            disabled={formLoading}
-          >
-            {formLoading ? <CircularProgress size={20} /> : 'Remove Team'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Floating Action Button for creating divisions */}
-      <Fab
-        color="primary"
-        aria-label="create division"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={() => setCreateDivisionDialogOpen(true)}
-      >
-        <AddIcon />
-      </Fab>
+        {/* Edit Division Dialog */}
+        <Dialog
+          open={editDivisionDialogOpen}
+          onClose={() => setEditDivisionDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Edit Division</DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+                {error}
+              </Alert>
+            )}
+            <Typography variant="body2" sx={{ mb: 2 }}>
+              Editing division in league: <strong>{leagueSeasonForEdit?.leagueName}</strong>
+            </Typography>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="Division Name"
+              fullWidth
+              variant="outlined"
+              value={editDivisionName}
+              onChange={(e) => setEditDivisionName(e.target.value)}
+              disabled={formLoading}
+              sx={{ mb: 2 }}
+              helperText="Enter the new name for the division"
+            />
+            <TextField
+              margin="dense"
+              label="Priority"
+              type="number"
+              fullWidth
+              variant="outlined"
+              value={editDivisionPriority}
+              onChange={(e) => setEditDivisionPriority(parseInt(e.target.value) || 0)}
+              disabled={formLoading}
+              helperText="Lower numbers have higher priority"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setEditDivisionDialogOpen(false)} disabled={formLoading}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateDivision}
+              variant="contained"
+              disabled={formLoading || !editDivisionName.trim()}
+            >
+              {formLoading ? <CircularProgress size={20} /> : 'Update Division'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
     </main>
   );
 };

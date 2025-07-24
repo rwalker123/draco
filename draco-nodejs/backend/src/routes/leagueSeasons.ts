@@ -879,7 +879,7 @@ router.get(
 
 /**
  * POST /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions
- * Add a division to a league season
+ * Add a division to a league season (supports both existing divisions and creating new ones)
  */
 router.post(
   '/:leagueSeasonId/divisions',
@@ -890,12 +890,13 @@ router.post(
       const seasonId = BigInt(req.params.seasonId);
       const accountId = BigInt(req.params.accountId);
       const leagueSeasonId = BigInt(req.params.leagueSeasonId);
-      const { divisionId, priority } = req.body;
+      const { divisionId, name, priority } = req.body;
 
-      if (!divisionId) {
+      // Must provide either divisionId (existing) or name (new)
+      if (!divisionId && (!name || !name.trim())) {
         res.status(400).json({
           success: false,
-          message: 'Division ID is required',
+          message: 'Either Division ID or Division name is required',
         });
         return;
       }
@@ -932,31 +933,62 @@ router.post(
         return;
       }
 
-      // Verify the division definition belongs to this account
-      const divisionDef = await prisma.divisiondefs.findFirst({
-        where: {
-          id: BigInt(divisionId),
-          accountid: accountId,
-        },
-      });
+      let divisionDef;
 
-      if (!divisionDef) {
-        res.status(404).json({
-          success: false,
-          message: 'Division not found',
+      if (divisionId) {
+        // Using existing division
+        divisionDef = await prisma.divisiondefs.findFirst({
+          where: {
+            id: BigInt(divisionId),
+            accountid: accountId,
+          },
         });
-        return;
+
+        if (!divisionDef) {
+          res.status(404).json({
+            success: false,
+            message: 'Division not found',
+          });
+          return;
+        }
+      } else {
+        // Creating new division
+        const trimmedName = name.trim();
+
+        // Check if division with this name already exists
+        const existingDivision = await prisma.divisiondefs.findFirst({
+          where: {
+            name: trimmedName,
+            accountid: accountId,
+          },
+        });
+
+        if (existingDivision) {
+          res.status(400).json({
+            success: false,
+            message: 'A division with this name already exists',
+          });
+          return;
+        }
+
+        // Create new division
+        divisionDef = await prisma.divisiondefs.create({
+          data: {
+            name: trimmedName,
+            accountid: accountId,
+          },
+        });
       }
 
       // Check if this division is already added to this league season
-      const existingDivision = await prisma.divisionseason.findFirst({
+      const existingDivisionSeason = await prisma.divisionseason.findFirst({
         where: {
           leagueseasonid: leagueSeasonId,
-          divisionid: BigInt(divisionId),
+          divisionid: divisionDef.id,
         },
       });
 
-      if (existingDivision) {
+      if (existingDivisionSeason) {
         res.status(409).json({
           success: false,
           message: 'This division is already added to this league season',
@@ -968,7 +1000,7 @@ router.post(
       const newDivisionSeason = await prisma.divisionseason.create({
         data: {
           leagueseasonid: leagueSeasonId,
-          divisionid: BigInt(divisionId),
+          divisionid: divisionDef.id,
           priority: priority || 0,
         },
         include: {
@@ -991,7 +1023,7 @@ router.post(
             priority: newDivisionSeason.priority,
             teams: [],
           },
-          message: `Division "${newDivisionSeason.divisiondefs.name}" has been added to the league season`,
+          message: `Division "${newDivisionSeason.divisiondefs.name}" has been ${divisionId ? 'added to' : 'created and added to'} the league season`,
         },
       });
     } catch (error: unknown) {
@@ -1006,6 +1038,142 @@ router.post(
         return;
       }
 
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+      });
+    }
+  },
+);
+
+/**
+ * PUT /api/accounts/:accountId/seasons/:seasonId/leagues/:leagueSeasonId/divisions/:divisionSeasonId
+ * Update a division's name and priority within a league season
+ */
+router.put(
+  '/:leagueSeasonId/divisions/:divisionSeasonId',
+  authenticateToken,
+  routeProtection.requireAccountAdmin(),
+  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
+    try {
+      const seasonId = BigInt(req.params.seasonId);
+      const accountId = BigInt(req.params.accountId);
+      const leagueSeasonId = BigInt(req.params.leagueSeasonId);
+      const divisionSeasonId = BigInt(req.params.divisionSeasonId);
+      const { name, priority } = req.body;
+
+      // Verify the season belongs to this account
+      const season = await prisma.season.findFirst({
+        where: {
+          id: seasonId,
+          accountid: accountId,
+        },
+      });
+
+      if (!season) {
+        res.status(404).json({
+          success: false,
+          message: 'Season not found',
+        });
+        return;
+      }
+
+      // Verify the league season exists
+      const leagueSeason = await prisma.leagueseason.findFirst({
+        where: {
+          id: leagueSeasonId,
+          seasonid: seasonId,
+        },
+      });
+
+      if (!leagueSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'League season not found',
+        });
+        return;
+      }
+
+      // Verify the division season exists and belongs to this league season
+      const divisionSeason = await prisma.divisionseason.findFirst({
+        where: {
+          id: divisionSeasonId,
+          leagueseasonid: leagueSeasonId,
+        },
+        include: {
+          divisiondefs: true,
+        },
+      });
+
+      if (!divisionSeason) {
+        res.status(404).json({
+          success: false,
+          message: 'Division season not found',
+        });
+        return;
+      }
+
+      // Verify the division belongs to this account
+      if (divisionSeason.divisiondefs.accountid !== accountId) {
+        res.status(403).json({
+          success: false,
+          message: 'Access denied',
+        });
+        return;
+      }
+
+      // Update division season priority if provided
+      if (priority !== undefined) {
+        await prisma.divisionseason.update({
+          where: {
+            id: divisionSeasonId,
+          },
+          data: {
+            priority: parseInt(priority),
+          },
+        });
+      }
+
+      // Update division definition name if provided and different
+      if (name && name.trim() && name.trim() !== divisionSeason.divisiondefs.name) {
+        // Check if another division with this name already exists for this account
+        const existingDivision = await prisma.divisiondefs.findFirst({
+          where: {
+            name: name.trim(),
+            accountid: accountId,
+            id: {
+              not: divisionSeason.divisiondefs.id,
+            },
+          },
+        });
+
+        if (existingDivision) {
+          res.status(400).json({
+            success: false,
+            message: 'A division with this name already exists',
+          });
+          return;
+        }
+
+        // Update the division definition
+        await prisma.divisiondefs.update({
+          where: {
+            id: divisionSeason.divisiondefs.id,
+          },
+          data: {
+            name: name.trim(),
+          },
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: 'Division updated successfully',
+        },
+      });
+    } catch (error: unknown) {
+      console.error('Error updating division season:', error);
       res.status(500).json({
         success: false,
         message: 'Internal server error',
