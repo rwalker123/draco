@@ -68,7 +68,7 @@ const AccountSettings: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/accounts/${accountIdStr}/public`, {
+      const response = await fetch(`/api/accounts/${accountIdStr}`, {
         headers: {
           'Content-Type': 'application/json',
         },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -11,6 +11,7 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
+  CircularProgress,
 } from '@mui/material';
 import {
   Article as NewsIcon,
@@ -33,6 +34,32 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
   const isMediumScreen = useMediaQuery(theme.breakpoints.up('md'));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [currentSeasonId, setCurrentSeasonId] = useState<string | null>(null);
+  const [loadingSeason, setLoadingSeason] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCurrentSeason = async () => {
+      setLoadingSeason(true);
+      try {
+        const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
+        if (response.ok) {
+          const data = await response.json();
+          if (isMounted) setCurrentSeasonId(data.data.season.id);
+        } else {
+          if (isMounted) setCurrentSeasonId(null);
+        }
+      } catch {
+        if (isMounted) setCurrentSeasonId(null);
+      } finally {
+        if (isMounted) setLoadingSeason(false);
+      }
+    };
+    fetchCurrentSeason();
+    return () => {
+      isMounted = false;
+    };
+  }, [accountId]);
 
   const menuItems = [
     {
@@ -48,7 +75,15 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     {
       label: 'Schedule',
       icon: <ScheduleIcon />,
-      path: `/account/${accountId}/schedule`,
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/schedule`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
+        }
+      },
+      needsSeason: true,
     },
     {
       label: 'Stats',
@@ -58,42 +93,28 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
     {
       label: 'Standings',
       icon: <StandingsIcon />,
-      onClick: async () => {
-        // Fetch current season for the account
-        try {
-          const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
-          if (response.ok) {
-            const data = await response.json();
-            const seasonId = data.data.season.id;
-            router.push(`/account/${accountId}/seasons/${seasonId}/standings`);
-          } else {
-            // fallback: go to account page or show error
-            router.push(`/account/${accountId}`);
-          }
-        } catch {
-          router.push(`/account/${accountId}`);
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/seasons/${currentSeasonId}/standings`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
         }
       },
+      needsSeason: true,
     },
     {
       label: 'Teams',
       icon: <TeamsIcon />,
-      onClick: async () => {
-        // Fetch current season for the account
-        try {
-          const response = await fetch(`/api/accounts/${accountId}/seasons/current`);
-          if (response.ok) {
-            const data = await response.json();
-            const seasonId = data.data.season.id;
-            router.push(`/account/${accountId}/seasons/${seasonId}/teams`);
-          } else {
-            // fallback: go to account page or show error
-            router.push(`/account/${accountId}`);
-          }
-        } catch {
-          router.push(`/account/${accountId}`);
+      onClick: () => {
+        if (loadingSeason) return;
+        if (currentSeasonId) {
+          router.push(`/account/${accountId}/seasons/${currentSeasonId}/teams`);
+        } else {
+          router.push(`/account/${accountId}/no-current-seasons`);
         }
       },
+      needsSeason: true,
     },
   ];
 
@@ -142,15 +163,20 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
                   bgcolor: 'rgba(255,255,255,0.2)',
                 },
               }}
+              disabled={loadingSeason}
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 500,
-                }}
-              >
-                {item.label}
-              </Typography>
+              {loadingSeason ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 500,
+                  }}
+                >
+                  {item.label}
+                </Typography>
+              )}
             </Button>
             {index < menuItems.length - 1 && (
               <Divider
@@ -203,15 +229,20 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
                   bgcolor: 'rgba(255,255,255,0.2)',
                 },
               }}
+              disabled={loadingSeason}
             >
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 500,
-                }}
-              >
-                {item.label}
-              </Typography>
+              {loadingSeason ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 500,
+                  }}
+                >
+                  {item.label}
+                </Typography>
+              )}
             </Button>
             {index < visibleItems.length - 1 && (
               <Divider
@@ -265,9 +296,12 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
             <MenuItem
               key={item.label}
               onClick={item.onClick || (() => handleNavigation(item.path))}
+              disabled={loadingSeason}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText>{item.label}</ListItemText>
+              <ListItemText>
+                {loadingSeason ? <CircularProgress size={16} color="inherit" /> : item.label}
+              </ListItemText>
             </MenuItem>
           ))}
         </Menu>
@@ -310,9 +344,15 @@ const BaseballMenu: React.FC<BaseballMenuProps> = ({ accountId }) => {
         }}
       >
         {menuItems.map((item) => (
-          <MenuItem key={item.label} onClick={item.onClick || (() => handleNavigation(item.path))}>
+          <MenuItem
+            key={item.label}
+            onClick={item.onClick || (() => handleNavigation(item.path))}
+            disabled={loadingSeason}
+          >
             <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText>{item.label}</ListItemText>
+            <ListItemText>
+              {loadingSeason ? <CircularProgress size={16} color="inherit" /> : item.label}
+            </ListItemText>
           </MenuItem>
         ))}
       </Menu>

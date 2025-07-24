@@ -10,12 +10,16 @@ interface TodayScoreboardProps {
   accountId: string;
   teamId?: string;
   layout?: 'vertical' | 'horizontal';
+  currentSeasonId: string;
+  onGamesLoaded?: (games: Game[]) => void;
 }
 
 const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
   accountId,
   teamId,
   layout = 'vertical',
+  currentSeasonId,
+  onGamesLoaded,
 }) => {
   const [games, setGames] = React.useState<Game[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -39,12 +43,6 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
     setLoading(true);
     setError(null);
     try {
-      // Get current seasonId as done elsewhere
-      const seasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`);
-      const seasonData = await seasonResponse.json();
-      if (!seasonData.success) throw new Error('Failed to load current season');
-      const currentSeasonId = seasonData.data.season.id;
-
       const url = `/api/accounts/${accountId}/seasons/${currentSeasonId}/games/${gameData.gameId}/results`;
       const response = await fetch(url, {
         method: 'PUT',
@@ -74,16 +72,6 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
 
   // Function to load today's games
   const loadTodayGames = React.useCallback(async () => {
-    // Get current season first
-    const seasonResponse = await fetch(`/api/accounts/${accountId}/seasons/current`);
-    const seasonData = await seasonResponse.json();
-
-    if (!seasonData.success) {
-      throw new Error('Failed to load current season');
-    }
-
-    const currentSeasonId = seasonData.data.season.id;
-
     // Calculate date range for today
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -157,15 +145,18 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
         });
 
     return transformGames(data.data.games);
-  }, [accountId, teamId]);
+  }, [accountId, teamId, currentSeasonId]);
 
   React.useEffect(() => {
+    if (!accountId) return;
+
     setLoading(true);
     setError(null);
 
     loadTodayGames()
       .then((newGames) => {
         setGames(newGames);
+        if (onGamesLoaded) onGamesLoaded(newGames);
       })
       .catch((error: unknown) => {
         setError(error instanceof Error ? error.message : String(error));
@@ -173,7 +164,7 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
       .finally(() => {
         setLoading(false);
       });
-  }, [accountId, teamId, loadTodayGames]);
+  }, [accountId, teamId, currentSeasonId, loadTodayGames, onGamesLoaded]);
 
   if (loading) {
     return (
@@ -193,6 +184,11 @@ const TodayScoreboard: React.FC<TodayScoreboardProps> = ({
         </Box>
       </Paper>
     );
+  }
+
+  // Don't render anything if there are no games
+  if (games.length === 0) {
+    return null;
   }
 
   // Prepare section for GameListDisplay
