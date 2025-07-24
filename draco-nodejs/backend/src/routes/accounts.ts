@@ -364,205 +364,6 @@ router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
 });
 
 /**
- * GET /api/accounts/:accountId/public
- * Get public account information (no authentication required)
- */
-router.get('/:accountId/public', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const accountId = BigInt(req.params.accountId);
-    const { seasonId, currentSeasonOnly } = req.query;
-
-    const accountSelectArgs = {
-      where: { id: accountId },
-      select: {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        firstyear: true,
-        affiliationid: true,
-        timezoneid: true,
-        twitteraccountname: true,
-        facebookfanpage: true,
-        accounttypes: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        accountsurl: {
-          select: {
-            id: true,
-            url: true,
-          },
-          orderBy: {
-            id: Prisma.SortOrder.asc,
-          },
-        },
-      },
-    } as const;
-
-    type PublicAccount = Prisma.accountsGetPayload<typeof accountSelectArgs>;
-    type PublicAccountUrl = PublicAccount['accountsurl'][number];
-    type PublicAffiliation = { id: bigint; name: string; url: string };
-    type PublicSeason = { id: bigint; name: string };
-
-    interface PublicAccountResponse {
-      id: string;
-      name: string;
-      accountType?: string;
-      accountTypeId: string;
-      firstYear: number | null;
-      affiliation?: { name: string; url: string } | null;
-      timezoneId: string;
-      twitterAccountName: string;
-      facebookFanPage: string;
-      urls: { id: string; url: string }[];
-      accountLogoUrl: string;
-    }
-    interface PublicSeasonResponse {
-      id: string;
-      name: string;
-      isCurrent: boolean;
-    }
-
-    const account: PublicAccount | null = await prisma.accounts.findUnique(accountSelectArgs);
-
-    if (!account) {
-      res.status(404).json({
-        success: false,
-        message: 'Account not found',
-      });
-      return;
-    }
-
-    // Get affiliation separately
-    const affiliation: PublicAffiliation | null = await prisma.affiliations.findUnique({
-      where: { id: account.affiliationid },
-      select: {
-        id: true,
-        name: true,
-        url: true,
-      },
-    });
-
-    // Get current season
-    const currentSeasonRecord = await prisma.currentseason.findUnique({
-      where: {
-        accountid: accountId,
-      },
-    });
-
-    if (!currentSeasonRecord) {
-      res.json({
-        success: true,
-        data: {
-          teams: [],
-        },
-      });
-      return;
-    }
-
-    const currentSeason: PublicSeason | null = await prisma.season.findUnique({
-      where: {
-        id: currentSeasonRecord.seasonid,
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
-
-    if (!currentSeason) {
-      res.json({
-        success: true,
-        data: {
-          teams: [],
-        },
-      });
-      return;
-    }
-
-    let seasonsWithCurrentFlag: PublicSeasonResponse[] = [];
-    if (seasonId) {
-      // Only return the requested season
-      const season = await prisma.season.findUnique({
-        where: { id: BigInt(seasonId as string) },
-        select: { id: true, name: true },
-      });
-      if (season) {
-        seasonsWithCurrentFlag = [
-          {
-            id: season.id.toString(),
-            name: season.name,
-            isCurrent: currentSeason ? season.id === currentSeason.id : false,
-          },
-        ];
-      }
-    } else if (currentSeasonOnly === 'true') {
-      // Only return the current season
-      seasonsWithCurrentFlag = [
-        {
-          id: currentSeason.id.toString(),
-          name: currentSeason.name,
-          isCurrent: true,
-        },
-      ];
-    } else {
-      // Default: return recent seasons
-      const recentSeasons: PublicSeason[] = await prisma.season.findMany({
-        where: {
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-        orderBy: {
-          name: Prisma.SortOrder.desc,
-        },
-        take: 5,
-      });
-      seasonsWithCurrentFlag = recentSeasons.map((season) => ({
-        id: season.id.toString(),
-        name: season.name,
-        isCurrent: currentSeason ? season.id === currentSeason.id : false,
-      }));
-    }
-
-    res.json({
-      success: true,
-      data: {
-        account: {
-          id: account.id.toString(),
-          name: account.name,
-          accountType: account.accounttypes?.name,
-          accountTypeId: account.accounttypeid.toString(),
-          firstYear: account.firstyear,
-          affiliation: affiliation ? { name: affiliation.name, url: affiliation.url } : null,
-          timezoneId: account.timezoneid ?? '',
-          twitterAccountName: account.twitteraccountname ?? '',
-          facebookFanPage: account.facebookfanpage ?? '',
-          urls: account.accountsurl.map((url: PublicAccountUrl) => ({
-            id: url.id.toString(),
-            url: url.url,
-          })),
-          accountLogoUrl: getAccountLogoUrl(account.id.toString()),
-        } satisfies PublicAccountResponse,
-        currentSeason: currentSeason
-          ? {
-              id: currentSeason.id.toString(),
-              name: currentSeason.name,
-            }
-          : null,
-        seasons: seasonsWithCurrentFlag,
-      },
-    });
-  } catch (error) {
-    logAndRethrow('getting public account', error);
-  }
-});
-
-/**
  * GET /api/accounts/my-accounts
  * Get accounts accessible to the current user (Account Admin or Administrator)
  */
@@ -745,6 +546,177 @@ router.get('/types', authenticateToken, async (req: Request, res: Response): Pro
     });
   } catch (error) {
     logAndRethrow('getting account types', error);
+  }
+});
+
+/**
+ * GET /api/accounts/:accountId/public
+ * Get public account information (no authentication required)
+ */
+router.get('/:accountId', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const accountId = BigInt(req.params.accountId);
+    const { includeCurrentSeason } = req.query;
+
+    const accountSelectArgs = {
+      where: { id: accountId },
+      select: {
+        id: true,
+        name: true,
+        accounttypeid: true,
+        firstyear: true,
+        affiliationid: true,
+        timezoneid: true,
+        twitteraccountname: true,
+        facebookfanpage: true,
+        accounttypes: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        accountsurl: {
+          select: {
+            id: true,
+            url: true,
+          },
+          orderBy: {
+            id: Prisma.SortOrder.asc,
+          },
+        },
+      },
+    } as const;
+
+    type PublicAccount = Prisma.accountsGetPayload<typeof accountSelectArgs>;
+    type PublicAccountUrl = PublicAccount['accountsurl'][number];
+    type PublicAffiliation = { id: bigint; name: string; url: string };
+    type PublicSeason = { id: bigint; name: string };
+
+    interface PublicAccountResponse {
+      id: string;
+      name: string;
+      accountType?: string;
+      accountTypeId: string;
+      firstYear: number | null;
+      affiliation?: { name: string; url: string } | null;
+      timezoneId: string;
+      twitterAccountName: string;
+      facebookFanPage: string;
+      urls: { id: string; url: string }[];
+      accountLogoUrl: string;
+    }
+    interface PublicSeasonResponse {
+      id: string;
+      name: string;
+      isCurrent: boolean;
+    }
+
+    const account: PublicAccount | null = await prisma.accounts.findUnique(accountSelectArgs);
+
+    if (!account) {
+      res.status(404).json({
+        success: false,
+        message: 'Account not found',
+      });
+      return;
+    }
+
+    // Get affiliation separately
+    const affiliation: PublicAffiliation | null = await prisma.affiliations.findUnique({
+      where: { id: account.affiliationid },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+      },
+    });
+
+    // Get current season
+    const currentSeasonRecord = await prisma.currentseason.findUnique({
+      where: {
+        accountid: accountId,
+      },
+    });
+
+    if (!currentSeasonRecord) {
+      res.json({
+        success: true,
+        data: {
+          account: {
+            id: account.id.toString(),
+            name: account.name,
+            accountType: account.accounttypes?.name,
+            accountTypeId: account.accounttypeid.toString(),
+            firstYear: account.firstyear,
+            affiliation: affiliation ? { name: affiliation.name, url: affiliation.url } : null,
+            timezoneId: account.timezoneid ?? '',
+            twitterAccountName: account.twitteraccountname ?? '',
+            facebookFanPage: account.facebookfanpage ?? '',
+            urls: account.accountsurl.map((url: PublicAccountUrl) => ({
+              id: url.id.toString(),
+              url: url.url,
+            })),
+            accountLogoUrl: getAccountLogoUrl(account.id.toString()),
+          },
+          currentSeason: null,
+          seasons: [],
+        },
+      });
+      return;
+    }
+
+    const currentSeason: PublicSeason | null = await prisma.season.findUnique({
+      where: {
+        id: currentSeasonRecord.seasonid,
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    let seasonsWithCurrentFlag: PublicSeasonResponse[] = [];
+    if (includeCurrentSeason === 'true' && currentSeason) {
+      // Only return the current season
+      seasonsWithCurrentFlag = [
+        {
+          id: currentSeason.id.toString(),
+          name: currentSeason.name,
+          isCurrent: true,
+        },
+      ];
+    }
+
+    res.json({
+      success: true,
+      data: {
+        account: {
+          id: account.id.toString(),
+          name: account.name,
+          accountType: account.accounttypes?.name,
+          accountTypeId: account.accounttypeid.toString(),
+          firstYear: account.firstyear,
+          affiliation: affiliation ? { name: affiliation.name, url: affiliation.url } : null,
+          timezoneId: account.timezoneid ?? '',
+          twitterAccountName: account.twitteraccountname ?? '',
+          facebookFanPage: account.facebookfanpage ?? '',
+          urls: account.accountsurl.map((url: PublicAccountUrl) => ({
+            id: url.id.toString(),
+            url: url.url,
+          })),
+          accountLogoUrl: getAccountLogoUrl(account.id.toString()),
+        } satisfies PublicAccountResponse,
+        currentSeason: currentSeason
+          ? {
+              id: currentSeason.id.toString(),
+              name: currentSeason.name,
+            }
+          : null,
+        seasons: seasonsWithCurrentFlag,
+      },
+    });
+  } catch (error) {
+    logAndRethrow('getting public account', error);
   }
 });
 
@@ -2549,13 +2521,13 @@ router.get('/:accountId/name', async (req: Request, res: Response): Promise<void
     const accountId = BigInt(req.params.accountId);
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
-      select: { name: true },
+      select: { id: true, name: true },
     });
     if (!account) {
       res.status(404).json({ success: false, message: 'Account not found' });
       return;
     }
-    res.json({ success: true, data: { name: account.name } });
+    res.json({ success: true, data: { id: accountId.toString(), name: account.name } });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Internal server error' });
   }

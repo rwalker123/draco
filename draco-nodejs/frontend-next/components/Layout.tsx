@@ -52,7 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const fetchAccount = async () => {
       if (accountId) {
         try {
-          const response = await fetch(`/api/accounts/${accountId}/public`, {
+          const response = await fetch(`/api/accounts/${accountId}`, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
           });

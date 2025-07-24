@@ -64,15 +64,14 @@ interface TeamsProps {
 
 const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
   const { user, token } = useAuth();
-  const { hasRole, hasPermission } = useRole();
+  const { hasRole } = useRole();
 
   // Check if user has edit permissions for teams
   const canEditTeams =
     user &&
     (hasRole('Administrator') ||
       hasRole('AccountAdmin', { accountId }) ||
-      hasRole('LeagueAdmin', { accountId }) ||
-      hasPermission('team.manage', { accountId }));
+      hasRole('LeagueAdmin', { accountId }));
 
   const [teamsData, setTeamsData] = useState<TeamsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -599,7 +598,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             display: 'flex',
             flexWrap: 'wrap',
             gap: 2,
-            justifyContent: 'flex-start',
+            justifyContent: 'center',
           }}
         >
           {teamsData?.leagueSeasons?.map(renderLeagueSeason) || null}

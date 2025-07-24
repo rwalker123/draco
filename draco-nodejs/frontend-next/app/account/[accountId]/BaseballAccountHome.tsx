@@ -54,11 +54,13 @@ const BaseballAccountHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
+  const [hasAnyGames, setHasAnyGames] = useState(false);
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
 
+  // Fetch public account data
   useEffect(() => {
     if (!accountIdStr) return;
 
@@ -68,15 +70,12 @@ const BaseballAccountHome: React.FC = () => {
 
       try {
         // Fetch account data
-        const accountResponse = await fetch(
-          `/api/accounts/${accountIdStr}/public?currentSeasonOnly=true`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+        const accountResponse = await fetch(`/api/accounts/${accountIdStr}?includeCurrentSeason`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        );
+        });
 
         if (accountResponse.ok) {
           const accountData = await accountResponse.json();
@@ -89,35 +88,44 @@ const BaseballAccountHome: React.FC = () => {
         } else {
           setError('Account not found or not publicly accessible');
         }
-
-        // Fetch user teams if logged in
-        if (user) {
-          try {
-            const teamsResponse = await fetch(`/api/accounts/${accountIdStr}/user-teams`, {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-            });
-
-            if (teamsResponse.ok) {
-              const teamsData = await teamsResponse.json();
-              if (teamsData.success) {
-                setUserTeams(teamsData.data.teams || []);
-                console.log('userTeams:', teamsData.data.teams);
-              }
-            }
-          } catch (err) {
-            console.warn('Failed to fetch user teams:', err);
-          }
-        }
+      } catch (err) {
+        console.error('Failed to fetch account data:', err);
+        setError('Failed to load account data');
       } finally {
         setLoading(false);
       }
     };
 
     fetchAccountData();
+  }, [accountIdStr]);
+
+  // Fetch user teams if logged in
+  useEffect(() => {
+    if (!accountIdStr || !user || !token) return;
+
+    const fetchUserTeams = async () => {
+      try {
+        const teamsResponse = await fetch(`/api/accounts/${accountIdStr}/user-teams`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (teamsResponse.ok) {
+          const teamsData = await teamsResponse.json();
+          if (teamsData.success) {
+            setUserTeams(teamsData.data.teams || []);
+            console.log('userTeams:', teamsData.data.teams);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user teams:', err);
+      }
+    };
+
+    fetchUserTeams();
   }, [accountIdStr, user, token]);
 
   const handleViewTeam = (teamSeasonId: string) => {
@@ -171,55 +179,57 @@ const BaseballAccountHome: React.FC = () => {
       {/* Unified Header with Logo and Page Content */}
       <Box>
         <AccountPageHeader accountId={account.id} accountLogoUrl={account.accountLogoUrl}>
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 1,
-              alignItems: 'center',
-              mb: 1,
-              justifyContent: 'center',
-            }}
-          >
-            {account.affiliation &&
-              account.affiliation.name &&
-              (account.affiliation.url ? (
-                <Chip
-                  label={account.affiliation.name}
-                  component="a"
-                  href={account.affiliation.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  clickable
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    textDecoration: 'none',
-                    '& .MuiChip-icon': {
+          {account.affiliation &&
+            account.affiliation.name &&
+            account.affiliation.name.trim().toLowerCase() !== 'no affiliation' && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  alignItems: 'center',
+                  mb: 1,
+                  justifyContent: 'center',
+                }}
+              >
+                {account.affiliation.url ? (
+                  <Chip
+                    label={account.affiliation.name}
+                    component="a"
+                    href={account.affiliation.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    clickable
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.1)',
                       color: 'white',
-                    },
-                    '&:hover': {
-                      bgcolor: 'rgba(255,255,255,0.2)',
-                      textDecoration: 'underline',
-                    },
-                  }}
-                  icon={<GroupIcon />}
-                />
-              ) : (
-                <Chip
-                  label={account.affiliation.name}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    color: 'white',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    '& .MuiChip-icon': {
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      textDecoration: 'none',
+                      '& .MuiChip-icon': {
+                        color: 'white',
+                      },
+                      '&:hover': {
+                        bgcolor: 'rgba(255,255,255,0.2)',
+                        textDecoration: 'underline',
+                      },
+                    }}
+                    icon={<GroupIcon />}
+                  />
+                ) : (
+                  <Chip
+                    label={account.affiliation.name}
+                    sx={{
+                      bgcolor: 'rgba(255,255,255,0.1)',
                       color: 'white',
-                    },
-                  }}
-                  icon={<GroupIcon />}
-                />
-              ))}
-          </Box>
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      '& .MuiChip-icon': {
+                        color: 'white',
+                      },
+                    }}
+                    icon={<GroupIcon />}
+                  />
+                )}
+              </Box>
+            )}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'center' }}>
             <Typography
               variant="body1"
@@ -243,50 +253,63 @@ const BaseballAccountHome: React.FC = () => {
       {/* Main Content - Single Column Layout */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {/* Scoreboard Layout Toggle */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-          <ToggleButtonGroup
-            value={scoreboardLayout}
-            exclusive
-            onChange={(_, newLayout) => {
-              if (newLayout !== null) {
-                setScoreboardLayout(newLayout);
-              }
-            }}
-            aria-label="scoreboard layout"
-            size="small"
-          >
-            <ToggleButton value="vertical" aria-label="vertical layout">
-              <ViewListIcon sx={{ mr: 1 }} />
-              Vertical
-            </ToggleButton>
-            <ToggleButton value="horizontal" aria-label="horizontal layout">
-              <ViewModuleIcon sx={{ mr: 1 }} />
-              Horizontal
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Box>
+        {hasAnyGames && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+            <ToggleButtonGroup
+              value={scoreboardLayout}
+              exclusive
+              onChange={(_, newLayout) => {
+                if (newLayout !== null) {
+                  setScoreboardLayout(newLayout);
+                }
+              }}
+              aria-label="scoreboard layout"
+              size="small"
+            >
+              <ToggleButton value="vertical" aria-label="vertical layout">
+                <ViewListIcon sx={{ mr: 1 }} />
+                Vertical
+              </ToggleButton>
+              <ToggleButton value="horizontal" aria-label="horizontal layout">
+                <ViewModuleIcon sx={{ mr: 1 }} />
+                Horizontal
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+        )}
 
         {/* Scoreboard Widgets - Layout changes based on selected layout */}
-        {scoreboardLayout === 'horizontal' ? (
-          // Single column layout for horizontal to allow full width scaling
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-            <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-          </Box>
-        ) : (
-          // Two column layout for vertical layout
+        {currentSeason && (
           <Box
             sx={{
-              display: 'grid',
-              gridTemplateColumns: {
-                xs: '1fr',
-                md: '1fr 1fr',
-              },
-              gap: 3,
+              display: scoreboardLayout === 'horizontal' ? 'flex' : 'grid',
+              flexDirection: scoreboardLayout === 'horizontal' ? 'column' : undefined,
+              gridTemplateColumns:
+                scoreboardLayout === 'vertical'
+                  ? {
+                      xs: '1fr',
+                      md: '1fr 1fr',
+                    }
+                  : undefined,
+              gap: scoreboardLayout === 'horizontal' ? 1 : 3,
             }}
           >
-            <TodayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
-            <YesterdayScoreboard accountId={accountIdStr!} layout={scoreboardLayout} />
+            <TodayScoreboard
+              accountId={accountIdStr!}
+              layout={scoreboardLayout}
+              currentSeasonId={currentSeason.id}
+              onGamesLoaded={(games) => {
+                if (games && games.length > 0) setHasAnyGames(true);
+              }}
+            />
+            <YesterdayScoreboard
+              accountId={accountIdStr!}
+              layout={scoreboardLayout}
+              currentSeasonId={currentSeason.id}
+              onGamesLoaded={(games) => {
+                if (games && games.length > 0) setHasAnyGames(true);
+              }}
+            />
           </Box>
         )}
 
