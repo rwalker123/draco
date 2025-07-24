@@ -7,6 +7,14 @@ interface TeamInfoCardProps {
   accountId?: string;
   seasonId?: string;
   teamSeasonId?: string;
+  onTeamDataLoaded?: (teamData: {
+    teamName: string;
+    leagueName: string;
+    seasonName: string;
+    accountName: string;
+    logoUrl?: string;
+    record?: { wins: number; losses: number; ties: number };
+  }) => void;
 }
 
 interface Team {
@@ -22,7 +30,12 @@ interface Team {
   // Add other fields as needed
 }
 
-export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: TeamInfoCardProps) {
+export default function TeamInfoCard({
+  accountId,
+  seasonId,
+  teamSeasonId,
+  onTeamDataLoaded,
+}: TeamInfoCardProps) {
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +55,12 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch team info');
         const data = await res.json();
-        setTeam({
+        const teamData = {
           ...data.data.teamSeason,
-          seasonName: data.data.season?.name || data.data.teamSeason?.seasonName || '',
-        });
-        setSeasonName(data.data.season?.name || data.data.teamSeason?.seasonName || '');
+          seasonName: data.data.season?.name || '',
+        };
+        setTeam(teamData);
+        setSeasonName(data.data.season?.name || '');
         setLeagueName(data.data.teamSeason?.leagueName || '');
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Unknown error');
@@ -78,36 +92,33 @@ export default function TeamInfoCard({ accountId, seasonId, teamSeasonId }: Team
   }, [accountId, seasonId, teamSeasonId]);
 
   useEffect(() => {
-    async function fetchAccountNameAndSeason() {
+    async function fetchAccountName() {
       if (!accountId) return;
-      // Add query param to avoid fetching all seasons
-      const url = seasonId
-        ? `/api/accounts/${accountId}/public?seasonId=${seasonId}`
-        : `/api/accounts/${accountId}/public?currentSeasonOnly=true`;
       try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to fetch account info');
+        const res = await fetch(`/api/accounts/${accountId}/name`);
+        if (!res.ok) throw new Error('Failed to fetch account name');
         const data = await res.json();
-        setAccountName(data.data.account.name);
-        // If seasonId is provided, find the season name
-        if (seasonId && data.data.seasons) {
-          type Season = { id: string | number; name?: string };
-          const foundSeason = (data.data.seasons as Season[]).find(
-            (s) => String(s.id) === String(seasonId),
-          );
-          setSeasonName(foundSeason?.name || '');
-        } else if (data.data.currentSeason) {
-          setSeasonName(data.data.currentSeason.name || '');
-        } else {
-          setSeasonName('');
-        }
+        setAccountName(data.data.name);
       } catch {
         setAccountName('');
-        setSeasonName('');
       }
     }
-    fetchAccountNameAndSeason();
-  }, [accountId, seasonId]);
+    fetchAccountName();
+  }, [accountId]);
+
+  // Call onTeamDataLoaded when all data is available
+  useEffect(() => {
+    if (team && accountName && seasonName && leagueName && onTeamDataLoaded) {
+      onTeamDataLoaded({
+        teamName: team.name,
+        leagueName,
+        seasonName,
+        accountName,
+        logoUrl: team.logoUrl,
+        record: record || undefined,
+      });
+    }
+  }, [team, accountName, seasonName, leagueName, record, onTeamDataLoaded]);
 
   return (
     <section className="flex flex-col items-center mb-10">

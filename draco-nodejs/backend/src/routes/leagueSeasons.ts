@@ -114,6 +114,13 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
             accountid: true,
           },
         },
+        season: {
+          select: {
+            id: true,
+            name: true,
+            accountid: true,
+          },
+        },
         // Conditionally include divisionseason and teamsseason when includeTeams is true
         ...(includeTeams && {
           divisionseason: {
@@ -237,6 +244,14 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
       success: true,
       data: {
         leagueSeasons: formattedLeagueSeasons,
+        season:
+          leagueSeasons.length > 0
+            ? {
+                id: leagueSeasons[0].season.id.toString(),
+                name: leagueSeasons[0].season.name,
+                accountId: leagueSeasons[0].season.accountid.toString(),
+              }
+            : null,
       },
     });
   } catch (error) {

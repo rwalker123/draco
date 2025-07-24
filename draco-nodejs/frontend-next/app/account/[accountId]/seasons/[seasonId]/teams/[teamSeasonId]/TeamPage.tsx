@@ -13,6 +13,7 @@ import AccountPageHeader from '../../../../../../../components/AccountPageHeader
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TeamAvatar from '../../../../../../../components/TeamAvatar';
+import TeamInfoCard from '../../../../../../../components/TeamInfoCard';
 
 interface TeamPageProps {
   accountId: string;
@@ -32,42 +33,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
   const [summaryError, setSummaryError] = React.useState<string | null>(null);
   const [summaryReadOnly, setSummaryReadOnly] = React.useState(false);
   const [summaryToView, setSummaryToView] = React.useState('');
-  const [teamName, setTeamName] = React.useState<string>('');
-  const [leagueName, setLeagueName] = React.useState<string>('');
-  const [seasonName, setSeasonName] = React.useState<string>('');
-  const [teamLogoUrl, setTeamLogoUrl] = React.useState<string | null>(null);
-  const [teamRecord, setTeamRecord] = React.useState<{
-    wins: number;
-    losses: number;
-    ties: number;
+  const [teamData, setTeamData] = React.useState<{
+    teamName: string;
+    leagueName: string;
+    seasonName: string;
+    accountName: string;
+    logoUrl?: string;
+    record?: { wins: number; losses: number; ties: number };
   } | null>(null);
   const { token } = useAuth();
   const { hasRoleInTeam } = useRole();
-
-  // Fetch team and season information for header
-  React.useEffect(() => {
-    const fetchTeamInfo = async () => {
-      try {
-        const teamRes = await fetch(
-          `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}`,
-        );
-        if (teamRes.ok) {
-          const teamData = await teamRes.json();
-          setTeamName(teamData.data.teamSeason.name || '');
-          setLeagueName(teamData.data.teamSeason.leagueName || '');
-          setSeasonName(teamData.data.season?.name || '');
-          setTeamLogoUrl(teamData.data.teamSeason.logoUrl || null);
-          setTeamRecord(teamData.data.record || null);
-        }
-      } catch (err) {
-        console.error('Failed to fetch team info for header:', err);
-      }
-    };
-
-    if (accountId && seasonId && teamSeasonId) {
-      fetchTeamInfo();
-    }
-  }, [accountId, seasonId, teamSeasonId]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -237,41 +212,51 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                 <TeamAvatar
-                  name={teamName || 'Loading...'}
-                  logoUrl={teamLogoUrl || undefined}
+                  name={teamData?.teamName || 'Loading...'}
+                  logoUrl={teamData?.logoUrl || undefined}
                   size={60}
-                  alt={`${teamName} logo`}
+                  alt={`${teamData?.teamName} logo`}
                 />
-                {leagueName && (
+                {teamData?.leagueName && (
                   <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                    {leagueName}
+                    {teamData.leagueName}
                   </Typography>
                 )}
                 <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  {teamName || 'Loading...'}
+                  {teamData?.teamName || 'Loading...'}
                 </Typography>
               </Box>
-              {teamRecord && (
+              {teamData?.record && (
                 <Typography
                   variant="h6"
                   sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 'medium' }}
                 >
-                  {teamRecord.wins}-{teamRecord.losses}
-                  {teamRecord.ties > 0 ? `-${teamRecord.ties}` : ''}
+                  {teamData.record.wins}-{teamData.record.losses}
+                  {teamData.record.ties > 0 ? `-${teamData.record.ties}` : ''}
                 </Typography>
               )}
-              {seasonName && (
+              {teamData?.seasonName && (
                 <Typography
                   variant="body1"
                   sx={{ color: 'rgba(255,255,255,0.8)', fontWeight: 'normal' }}
                 >
-                  {seasonName} Season
+                  {teamData.seasonName} Season
                 </Typography>
               )}
             </Box>
           </Box>
         </Box>
       </AccountPageHeader>
+
+      {/* Hidden TeamInfoCard to load data */}
+      <div style={{ display: 'none' }}>
+        <TeamInfoCard
+          accountId={accountId}
+          seasonId={seasonId}
+          teamSeasonId={teamSeasonId}
+          onTeamDataLoaded={setTeamData}
+        />
+      </div>
 
       {/* Upcoming & Recent Games - Responsive Side by Side */}
       {loading ? (

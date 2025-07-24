@@ -76,7 +76,7 @@ describe('AccountLogoHeader', () => {
       expect(logo).toHaveAttribute('src', expect.stringContaining('https://example.com/logo.png'));
     });
 
-    expect(fetch).toHaveBeenCalledWith('/api/accounts/123/public');
+    expect(fetch).toHaveBeenCalledWith('/api/accounts/123');
   });
 
   it('should display account name when logo fails to load', async () => {
