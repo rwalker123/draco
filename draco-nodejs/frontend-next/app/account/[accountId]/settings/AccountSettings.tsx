@@ -41,7 +41,7 @@ interface Account {
   name: string;
   accountType?: string;
   firstYear?: number;
-  affiliation?: string;
+  affiliation?: { name: string; url: string } | null;
   timezoneId?: string;
   twitterAccountName?: string;
   facebookFanPage?: string;
@@ -129,7 +129,7 @@ const AccountSettings: React.FC = () => {
       <main className="min-h-screen bg-background">
         <Box sx={{ mt: 8 }}>
           <Alert severity="warning">
-            You don&apos;t have permission to manage this account@apos;s settings.
+            {"You don't have permission to manage this account's settings."}
           </Alert>
         </Box>
       </main>
@@ -147,7 +147,7 @@ const AccountSettings: React.FC = () => {
           {account.name}
         </Typography>
         <Typography variant="body1" color="text.secondary">
-          Manage your organization@apos;s configuration and settings
+          {"Manage your organization's configuration and settings"}
         </Typography>
       </Box>
 
@@ -201,7 +201,7 @@ const AccountSettings: React.FC = () => {
               <br />
               <strong>First Year:</strong> {account.firstYear}
               <br />
-              <strong>Affiliation:</strong> {account.affiliation || 'None'}
+              <strong>Affiliation:</strong> {account.affiliation?.name || 'None'}
               <br />
               <strong>Timezone:</strong> {account.timezoneId}
             </Typography>

@@ -1013,8 +1013,8 @@ const TeamRosterManagement: React.FC = () => {
               display: 'block',
             }}
           >
-            {streetAddress && <div>{streetAddress}</div>}
-            {cityStateZip && <div>{cityStateZip}</div>}
+            {streetAddress && <span style={{ display: 'block' }}>{streetAddress}</span>}
+            {cityStateZip && <span style={{ display: 'block' }}>{cityStateZip}</span>}
           </Link>,
         );
       }
@@ -1157,9 +1157,9 @@ const TeamRosterManagement: React.FC = () => {
         const birthMonthYear = format(birthDate, 'MMM yyyy');
 
         info.push(
-          <div key="age">
+          <span key="age" style={{ display: 'block' }}>
             Age: {adjustedAge} ({birthMonthYear})
-          </div>,
+          </span>,
         );
       } catch {}
     }
@@ -1168,21 +1168,26 @@ const TeamRosterManagement: React.FC = () => {
     if (member.dateAdded && typeof member.dateAdded === 'string') {
       try {
         info.push(
-          <div key="dateadded">
+          <span key="dateadded" style={{ display: 'block' }}>
             Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
-          </div>,
+          </span>,
         );
       } catch {}
     }
 
     // Submitted Waiver
-    info.push(<div key="waiver">Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}</div>);
+    info.push(
+      <span key="waiver" style={{ display: 'block' }}>
+        Submitted Waiver: {member.submittedWaiver ? 'Yes' : 'No'}
+      </span>,
+    );
 
     // Submitted Driver's License
     info.push(
-      <div key="license">
-        Submitted Driver&apos;s License: {member.player.submittedDriversLicense ? 'Yes' : 'No'}
-      </div>,
+      <span key="license" style={{ display: 'block' }}>
+        {"Submitted Driver's License: "}
+        {member.player.submittedDriversLicense ? 'Yes' : 'No'}
+      </span>,
     );
 
     return info.length > 0 ? info : ['No verification data'];
@@ -1368,9 +1373,11 @@ const TeamRosterManagement: React.FC = () => {
       </Box>
 
       {/* Managers Section */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Typography variant="h6" color="primary" sx={{ mr: 2 }}>
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2, gap: 2 }}
+        >
+          <Typography variant="h6" color="primary">
             Team Managers
           </Typography>
           <Button
@@ -1378,7 +1385,6 @@ const TeamRosterManagement: React.FC = () => {
             startIcon={<ManagerIcon />}
             onClick={() => setAddManagerDialogOpen(true)}
             size="small"
-            sx={{ ml: 'auto' }}
           >
             Assign Manager
           </Button>
@@ -1388,7 +1394,7 @@ const TeamRosterManagement: React.FC = () => {
             No managers assigned to this team.
           </Typography>
         ) : (
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
             {managers.map((manager) => (
               <Card
                 key={manager.id}
@@ -1660,7 +1666,7 @@ const TeamRosterManagement: React.FC = () => {
             {isSigningNewPlayer && (
               <Alert severity="info" sx={{ mb: 2 }}>
                 When you select a player, their existing roster information (first year,
-                driver&apos;s license status) will be pre-filled. You can modify these values as
+                {"driver's license status) will be pre-filled. You can modify these values as "}
                 needed.
               </Alert>
             )}
@@ -1784,7 +1790,7 @@ const TeamRosterManagement: React.FC = () => {
                 }
                 label={
                   <Box>
-                    <Typography>Submitted Driver&apos;s License</Typography>
+                    <Typography>{"Submitted Driver's License"}</Typography>
                     {isSigningNewPlayer &&
                       selectedPlayer &&
                       selectedPlayer.submittedDriversLicense && (

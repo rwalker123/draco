@@ -1530,7 +1530,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             <Alert severity="warning" sx={{ mb: 2 }}>
               This action will remove the league from this season and all its associated data
               (divisions, teams, etc.). The system will also attempt to delete the league definition
-              if it&apos;s not used in other seasons.
+              {" if it's not used in other seasons."}
             </Alert>
             {leagueToDelete && (
               <Box sx={{ mb: 2 }}>
@@ -1626,7 +1626,7 @@ const LeagueSeasonManagement: React.FC<LeagueSeasonManagementProps> = ({
             <Alert severity="warning" sx={{ mb: 2 }}>
               This action will remove the team from this season and all its associated data
               (divisions, etc.). The system will also attempt to delete the team definition if
-              it&apos;s not used in other seasons.
+              {" it's not used in other seasons."}
             </Alert>
             {teamToDelete && (
               <Box sx={{ mb: 2 }}>
