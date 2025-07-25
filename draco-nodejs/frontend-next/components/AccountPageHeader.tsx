@@ -13,6 +13,8 @@ interface AccountPageHeaderProps {
   style?: React.CSSProperties;
   background?: string;
   showLogo?: boolean;
+  seasonName?: string | null;
+  showSeasonInfo?: boolean;
 }
 
 const LOGO_HEIGHT = 125;
@@ -24,6 +26,8 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
   style,
   background,
   showLogo = true,
+  seasonName,
+  showSeasonInfo = false,
 }) => {
   const theme = useTheme();
   const [logoUrl, setLogoUrl] = useState<string | null>(accountLogoUrl || null);
@@ -134,8 +138,30 @@ const AccountPageHeader: React.FC<AccountPageHeaderProps> = ({
         </Box>
       )}
 
+      {/* Season info section */}
+      {showSeasonInfo && seasonName && (
+        <Box sx={{ px: 4, pb: 2, pt: 0 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+            <Typography
+              variant="h6"
+              sx={{
+                color: 'common.white',
+                opacity: 0.9,
+                fontWeight: 500,
+                textAlign: 'center',
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+              }}
+            >
+              {seasonName} Season
+            </Typography>
+          </Box>
+        </Box>
+      )}
+
       {/* Page-specific content */}
-      {children && <Box sx={{ p: 4, pt: showLogo ? 0 : 4 }}>{children}</Box>}
+      {children && (
+        <Box sx={{ p: 4, pt: showLogo || (showSeasonInfo && seasonName) ? 0 : 4 }}>{children}</Box>
+      )}
     </Box>
   );
 };

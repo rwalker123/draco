@@ -528,7 +528,12 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
 
   return (
     <main className="min-h-screen bg-background">
-      <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
+      <AccountPageHeader
+        accountId={accountId}
+        style={{ marginBottom: 1 }}
+        seasonName={teamsData?.season?.name}
+        showSeasonInfo={true}
+      >
         <Box
           display="flex"
           justifyContent="space-between"
@@ -547,14 +552,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             {user && !canEditTeams && (
               <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
                 Read-only mode - Contact an administrator for editing permissions
-              </Typography>
-            )}
-            {teamsData && (
-              <Typography
-                variant="h6"
-                sx={{ mt: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
-              >
-                {teamsData.season?.name || 'Unknown'} Season
               </Typography>
             )}
           </Box>

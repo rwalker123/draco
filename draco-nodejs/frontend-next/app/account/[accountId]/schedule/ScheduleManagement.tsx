@@ -1055,29 +1055,78 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   ]);
 
   const renderListView = () => {
+    // Sort games by date ascending (if not already sorted)
+    const sortedGames = [...filteredGames].sort((a, b) => {
+      const aDate = a.gameDate ? new Date(a.gameDate).getTime() : 0;
+      const bDate = b.gameDate ? new Date(b.gameDate).getTime() : 0;
+      return aDate - bDate;
+    });
+
+    let lastWeekMonday: string | null = null;
+
     return (
-      <Box>
-        {filteredGames.map((game) => (
-          <GameCard
-            key={game.id}
-            game={convertGameToGameCardData(game)}
-            layout="vertical"
-            canEditGames={!!canEditSchedule}
-            onEnterGameResults={
-              canEditSchedule
-                ? (gameCardData) => {
-                    // Find the original game by ID and call openGameResultsDialog
-                    const originalGame = filteredGames.find((g) => g.id === gameCardData.id);
-                    if (originalGame) {
-                      openGameResultsDialog(originalGame);
-                    }
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '700px',
+          mx: 'auto',
+          px: 2,
+          py: 1,
+        }}
+      >
+        {sortedGames.map((game, idx) => {
+          const gameDate = game.gameDate ? parseISO(game.gameDate) : null;
+          // Get the Monday of this week
+          const weekMonday = gameDate ? startOfWeek(gameDate, { weekStartsOn: 1 }) : null;
+          const weekMondayStr = weekMonday ? weekMonday.toISOString().slice(0, 10) : '';
+          let showWeekLabel = false;
+          if (weekMondayStr && weekMondayStr !== lastWeekMonday) {
+            showWeekLabel = true;
+            lastWeekMonday = weekMondayStr;
+          }
+          return (
+            <React.Fragment key={game.id}>
+              {showWeekLabel && weekMonday && (
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  sx={{
+                    mt: idx === 0 ? 0 : 0.1,
+                    mb: 0.1,
+                    fontWeight: 500,
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  {`Week of ${format(weekMonday, 'MMMM d, yyyy')}`}
+                </Typography>
+              )}
+              <Box sx={{ width: '100%', maxWidth: 600, mb: 0.25 }}>
+                <GameCard
+                  game={convertGameToGameCardData(game)}
+                  layout="vertical"
+                  canEditGames={!!canEditSchedule}
+                  onEnterGameResults={
+                    canEditSchedule
+                      ? (gameCardData) => {
+                          // Find the original game by ID and call openGameResultsDialog
+                          const originalGame = sortedGames.find((g) => g.id === gameCardData.id);
+                          if (originalGame) {
+                            openGameResultsDialog(originalGame);
+                          }
+                        }
+                      : undefined
                   }
-                : undefined
-            }
-            showActions={!!canEditSchedule}
-            onClick={() => openEditDialog(game)}
-          />
-        ))}
+                  showActions={!!canEditSchedule}
+                  onClick={() => openEditDialog(game)}
+                  showDate={true}
+                />
+              </Box>
+            </React.Fragment>
+          );
+        })}
       </Box>
     );
   };
@@ -1539,28 +1588,42 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         </Box>
 
         {/* Day Content */}
-        <Box sx={{ p: 2, backgroundColor: 'white', minHeight: '300px' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            width: '100%',
+            maxWidth: '700px',
+            mx: 'auto',
+            px: 1,
+            py: 0,
+            backgroundColor: 'white',
+            minHeight: '300px',
+          }}
+        >
           {dayGames.length > 0 ? (
             dayGames.map((game) => (
-              <GameCard
-                key={game.id}
-                game={convertGameToGameCardData(game)}
-                layout="vertical"
-                canEditGames={!!canEditSchedule}
-                onEnterGameResults={
-                  canEditSchedule
-                    ? (gameCardData) => {
-                        // Find the original game by ID and call openGameResultsDialog
-                        const originalGame = dayGames.find((g) => g.id === gameCardData.id);
-                        if (originalGame) {
-                          openGameResultsDialog(originalGame);
+              <Box key={game.id} sx={{ width: '100%', maxWidth: 600, mb: 0.25 }}>
+                <GameCard
+                  game={convertGameToGameCardData(game)}
+                  layout="vertical"
+                  canEditGames={!!canEditSchedule}
+                  onEnterGameResults={
+                    canEditSchedule
+                      ? (gameCardData) => {
+                          // Find the original game by ID and call openGameResultsDialog
+                          const originalGame = dayGames.find((g) => g.id === gameCardData.id);
+                          if (originalGame) {
+                            openGameResultsDialog(originalGame);
+                          }
                         }
-                      }
-                    : undefined
-                }
-                showActions={!!canEditSchedule}
-                onClick={() => openEditDialog(game)}
-              />
+                      : undefined
+                  }
+                  showActions={!!canEditSchedule}
+                  onClick={() => openEditDialog(game)}
+                />
+              </Box>
             ))
           ) : (
             <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -1796,7 +1859,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <main className="min-h-screen bg-background">
-        <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }}>
+        <AccountPageHeader
+          accountId={accountId}
+          style={{ marginBottom: 1 }}
+          seasonName={currentSeasonName}
+          showSeasonInfo={true}
+        >
           <Box
             display="flex"
             justifyContent="space-between"
@@ -1805,7 +1873,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           >
             <Box sx={{ flex: 1, textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
-                {currentSeasonName || 'Loading...'} Schedule
+                Schedule
               </Typography>
               {!user && (
                 <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>

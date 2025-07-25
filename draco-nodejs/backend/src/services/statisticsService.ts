@@ -691,6 +691,11 @@ export class StatisticsService {
     const leaguesMap = new Map<string, LeagueStandings>();
 
     for (const team of standings) {
+      // Skip teams that are not assigned to a proper division
+      if (!team.divisionId || !team.divisionName) {
+        continue;
+      }
+
       const leagueKey = team.leagueId.toString();
 
       if (!leaguesMap.has(leagueKey)) {
@@ -702,14 +707,10 @@ export class StatisticsService {
       }
 
       const league = leaguesMap.get(leagueKey)!;
-      const divisionKey = team.divisionId ? team.divisionId.toString() : 'no-division';
+      const divisionKey = team.divisionId.toString();
 
       let division = league.divisions.find(
-        (d) =>
-          (d.divisionId === null && team.divisionId === null) ||
-          (d.divisionId !== null &&
-            team.divisionId !== null &&
-            d.divisionId.toString() === divisionKey),
+        (d) => d.divisionId !== null && d.divisionId.toString() === divisionKey,
       );
 
       if (!division) {

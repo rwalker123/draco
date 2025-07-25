@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Typography, Card, CardContent, IconButton, Tooltip } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { getGameStatusShortText } from '../utils/gameUtils';
+import { format, parseISO } from 'date-fns';
 
 // Unified Game interface that works for both ScheduleManagement and GameListDisplay
 export interface GameCardData {
@@ -37,6 +38,7 @@ export interface GameCardProps {
   showActions?: boolean;
   compact?: boolean;
   calendar?: boolean;
+  showDate?: boolean;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -51,6 +53,7 @@ const GameCard: React.FC<GameCardProps> = ({
   showActions = true,
   compact = false,
   calendar = false,
+  showDate = false,
 }) => {
   let localTime = '';
   try {
@@ -114,7 +117,17 @@ const GameCard: React.FC<GameCardProps> = ({
       }}
       onClick={handleCardClick}
     >
-      <CardContent sx={{ p: calendar ? 0.5 : compact ? 1 : 2 }}>
+      <CardContent
+        sx={{
+          p: layout === 'vertical' && showDate ? 0.5 : calendar ? 0.5 : compact ? 1 : 2,
+          position: 'relative',
+        }}
+      >
+        {layout === 'vertical' && showDate && game.date && (
+          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
+            {format(parseISO(game.date), 'EEE MMM d')}
+          </Typography>
+        )}
         {layout === 'horizontal' ? (
           // Horizontal layout with time/field below teams
           <Box>
