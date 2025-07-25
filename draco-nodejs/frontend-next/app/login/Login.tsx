@@ -30,11 +30,16 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
 
   return (
     <main className="min-h-screen bg-background">
-      {accountId && <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }} />}
+      {accountId && (
+        <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Sign In
+            </Typography>
+          </Box>
+        </AccountPageHeader>
+      )}
       <Paper sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
-        <Typography variant="h5" align="center" gutterBottom>
-          Sign In
-        </Typography>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
