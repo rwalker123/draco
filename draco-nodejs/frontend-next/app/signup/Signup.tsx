@@ -16,12 +16,9 @@ import AccountPageHeader from '../../components/AccountPageHeader';
 
 const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,32 +33,28 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   };
 
   const validateForm = () => {
-    if (!formData.username.trim()) {
-      setError('Username is required');
-      return false;
-    }
     if (!formData.email.trim()) {
       setError('Email is required');
       return false;
     }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+
     if (!formData.password) {
       setError('Password is required');
       return false;
     }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      return false;
-    }
-    if (!formData.firstName.trim()) {
-      setError('First name is required');
-      return false;
-    }
-    if (!formData.lastName.trim()) {
-      setError('Last name is required');
       return false;
     }
     return true;
@@ -74,18 +67,15 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: formData.username.trim(),
+          username: formData.email.trim(), // Use email as username
           email: formData.email.trim(),
           password: formData.password,
-          firstname: formData.firstName.trim(),
-          lastname: formData.lastName.trim(),
-          middlename: '', // Required by backend
         }),
       });
 
@@ -108,66 +98,50 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   if (success) {
     return (
       <main className="min-h-screen bg-background">
-        {accountId && <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }} />}
-        <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
-          <Paper sx={{ p: 3, textAlign: 'center' }}>
-            <Typography variant="h5" gutterBottom color="primary">
-              Sign Up Successful!
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              You can now sign in with your new account.
-            </Typography>
-            <Box sx={{ mt: 2 }}>
-              <CircularProgress size={24} />
+        {accountId && (
+          <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
+            <Box sx={{ flex: 1, textAlign: 'center' }}>
+              <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                Sign Up
+              </Typography>
             </Box>
-          </Paper>
-        </Box>
+          </AccountPageHeader>
+        )}
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h5" gutterBottom color="primary">
+            Sign Up Successful!
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            You can now sign in with your new account.
+          </Typography>
+          <Box sx={{ mt: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        </Paper>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-background">
-      {accountId && <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }} />}
+      {accountId && (
+        <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Sign Up
+            </Typography>
+            <Typography align="center" color="white" sx={{ mb: 3 }}>
+              Join Draco Sports Manager to sign up and manage your sports organization
+            </Typography>
+          </Box>
+        </AccountPageHeader>
+      )}
       <Paper sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          Sign Up
-        </Typography>
-        <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-          Join Draco Sports Manager to sign up and manage your sports organization
-        </Typography>
-
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
-
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <TextField
-            fullWidth
-            label="First Name"
-            value={formData.firstName}
-            onChange={handleInputChange('firstName')}
-            required
-          />
-          <TextField
-            fullWidth
-            label="Last Name"
-            value={formData.lastName}
-            onChange={handleInputChange('lastName')}
-            required
-          />
-        </Box>
-
-        <TextField
-          fullWidth
-          label="Username"
-          value={formData.username}
-          onChange={handleInputChange('username')}
-          margin="normal"
-          required
-        />
 
         <TextField
           fullWidth
@@ -187,7 +161,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
           onChange={handleInputChange('password')}
           margin="normal"
           required
-          helperText="Password must be at least 8 characters long"
+          helperText="Password must be at least 6 characters long"
         />
 
         <TextField
