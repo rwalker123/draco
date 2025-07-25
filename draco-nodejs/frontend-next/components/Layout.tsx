@@ -132,18 +132,16 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
         >
           {/* Left side - Main navigation */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {user && (
-              <IconButton
-                size="large"
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                sx={{ mr: 2 }}
-                onClick={handleMenuOpen}
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
+            <IconButton
+              size="large"
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              sx={{ mr: 2 }}
+              onClick={handleMenuOpen}
+            >
+              <MenuIcon />
+            </IconButton>
             <Box
               onClick={handleHomeClick}
               sx={{
@@ -205,75 +203,65 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
       </AppBar>
 
       {/* Hamburger Menu */}
-      {user && (
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-        >
-          <MenuItem onClick={() => handleNavigation('/accounts')}>
-            <ListItemIcon>
-              <BusinessIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Accounts</ListItemText>
-          </MenuItem>
-          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
-            <MenuItem onClick={() => handleNavigation('/admin')}>
-              <ListItemIcon>
-                <AdminPanelSettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Admin Dashboard</ListItemText>
-            </MenuItem>
-          )}
-          {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
-            <MenuItem onClick={() => handleNavigation('/account-management')}>
-              <ListItemIcon>
-                <BusinessIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Management</ListItemText>
-            </MenuItem>
-          )}
-          {(hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
-            hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
-            >
-              <ListItemIcon>
-                <CalendarMonthIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Season Management</ListItemText>
-            </MenuItem>
-          )}
-          {/* Account Admin Only */}
-          {hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && [
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
-              key="account-settings"
-            >
-              <ListItemIcon>
-                <SettingsIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Account Settings</ListItemText>
-            </MenuItem>,
-          ]}
-          {/* League Admin Only */}
-          {/* Team Admin Only */}
-          <MenuItem onClick={() => handleNavigation('/permission-test')}>
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Permission Test</ListItemText>
-          </MenuItem>
-          <MenuItem onClick={() => handleNavigation('/role-debug')}>
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Role Debug</ListItemText>
-          </MenuItem>
-        </Menu>
-      )}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+      >
+        <MenuItem onClick={() => handleNavigation('/accounts')}>
+          <ListItemIcon>
+            <BusinessIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>Organizations</ListItemText>
+        </MenuItem>
+        {user && (
+          <>
+            {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+              <MenuItem onClick={() => handleNavigation('/admin')}>
+                <ListItemIcon>
+                  <AdminPanelSettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Admin Dashboard</ListItemText>
+              </MenuItem>
+            )}
+            {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+              <MenuItem onClick={() => handleNavigation('/account-management')}>
+                <ListItemIcon>
+                  <BusinessIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Management</ListItemText>
+              </MenuItem>
+            )}
+            {(hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
+              hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
+              >
+                <ListItemIcon>
+                  <CalendarMonthIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Season Management</ListItemText>
+              </MenuItem>
+            )}
+            {/* Account Admin Only */}
+            {hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && [
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
+                key="account-settings"
+              >
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Settings</ListItemText>
+              </MenuItem>,
+            ]}
+            {/* League Admin Only */}
+            {/* Team Admin Only */}
+          </>
+        )}
+      </Menu>
 
       <Container maxWidth={false} sx={{ flex: 1, py: 3, px: 4 }}>
         {children}
