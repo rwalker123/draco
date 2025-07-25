@@ -117,7 +117,6 @@ const BaseballAccountHome: React.FC = () => {
           const teamsData = await teamsResponse.json();
           if (teamsData.success) {
             setUserTeams(teamsData.data.teams || []);
-            console.log('userTeams:', teamsData.data.teams);
           }
         }
       } catch (err) {

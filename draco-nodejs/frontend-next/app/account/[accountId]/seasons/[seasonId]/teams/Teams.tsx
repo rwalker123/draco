@@ -281,7 +281,6 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
       }
 
       const leagueSeasonsData = await leagueSeasonsResponse.json();
-      console.log('API Response:', leagueSeasonsData);
       setTeamsData(leagueSeasonsData.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load teams data');
