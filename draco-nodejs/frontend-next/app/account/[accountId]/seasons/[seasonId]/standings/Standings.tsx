@@ -18,7 +18,8 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
     async function fetchSeasonName() {
       if (!accountId || !seasonId) return;
       try {
-        const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}`);
+        // Use the leagues endpoint to get season data (same as Teams page)
+        const res = await fetch(`/api/accounts/${accountId}/seasons/${seasonId}/leagues`);
         if (res.ok) {
           const data = await res.json();
           setSeasonName(data.data?.season?.name || '');
@@ -35,7 +36,11 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
   if (!seasonId || seasonId === '0') {
     return (
       <main className="min-h-screen bg-background">
-        <AccountPageHeader accountId={accountId}>
+        <AccountPageHeader
+          accountId={accountId}
+          seasonName={seasonName}
+          showSeasonInfo={!!seasonName}
+        >
           <Box
             display="flex"
             justifyContent="space-between"
@@ -60,7 +65,7 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
 
   return (
     <main className="min-h-screen bg-background">
-      <AccountPageHeader accountId={accountId}>
+      <AccountPageHeader accountId={accountId} seasonName={seasonName} showSeasonInfo={true}>
         <Box
           display="flex"
           justifyContent="space-between"
@@ -71,14 +76,6 @@ export default function StandingsPage({ accountId, seasonId }: StandingsPageProp
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
               Standings
             </Typography>
-            {seasonName && (
-              <Typography
-                variant="h6"
-                sx={{ mt: 1, color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}
-              >
-                {seasonName} Season
-              </Typography>
-            )}
           </Box>
         </Box>
       </AccountPageHeader>

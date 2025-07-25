@@ -1,11 +1,19 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
-import StatisticsTable, {
-  ColumnConfig,
-  formatPercentage,
-} from '/Users/raywalker/source/Draco/draco-nodejs/frontend-next/app/account/[accountId]/statistics/StatisticsTable';
+import {
+  Box,
+  Typography,
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+} from '@mui/material';
 
 interface StandingsRow {
   teamId: string;
@@ -17,7 +25,7 @@ interface StandingsRow {
   divisionPriority: number | null;
   w: number;
   l: number;
-  t: number; // ties
+  t: number;
   pct: number;
   gb: number;
   divisionRecord: { w: number; l: number; t: number };
@@ -48,64 +56,32 @@ interface StandingsProps {
   showHeader?: boolean;
 }
 
-const STANDINGS_COLUMNS: ColumnConfig<StandingsRow>[] = [
-  { field: 'teamName', label: 'Team', align: 'left', sortable: false },
-  { field: 'w', label: 'W', align: 'right', tooltip: 'Wins' },
-  { field: 'l', label: 'L', align: 'right', tooltip: 'Losses' },
-  {
-    field: 't',
-    label: 'T',
-    align: 'right',
-    tooltip: 'Ties',
-    formatter: (value: unknown) => {
-      if (value === 0 || value === '0') return '0';
-      if (value == null || value === '') return '0';
-      return String(value);
-    },
-  },
-  {
-    field: 'pct',
-    label: 'PCT',
-    align: 'right',
-    tooltip: 'Winning Percentage',
-    primary: true,
-    formatter: formatPercentage,
-  },
-  {
-    field: 'gb',
-    label: 'GB',
-    align: 'right',
-    tooltip: 'Games Back',
-    formatter: (value: unknown) => {
-      const num =
-        typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
-      return num === 0 ? '-' : num.toFixed(1);
-    },
-  },
-  {
-    field: 'divisionRecord',
-    label: 'Div Record',
-    align: 'right',
-    tooltip: 'Division Record',
-    formatter: (value: unknown) => {
-      if (!value || typeof value !== 'object') return '';
-      const { w, l, t } = value as { w: number; l: number; t: number };
-      return t > 0 ? `${w}-${l}-${t}` : `${w}-${l}`;
-    },
-  },
-];
+const formatPercentage = (value: unknown): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+  return num.toFixed(3);
+};
 
-export default function Standings({
-  accountId,
-  seasonId,
-  title = 'Standings',
-  showHeader = true,
-}: StandingsProps) {
+const formatGamesBehind = (value: unknown): string => {
+  const num = typeof value === 'string' ? parseFloat(value) : typeof value === 'number' ? value : 0;
+  return num === 0 ? '-' : num.toFixed(1);
+};
+
+const formatDivisionRecord = (value: unknown): string => {
+  if (!value || typeof value !== 'object') return '';
+  const { w, l, t } = value as { w: number; l: number; t: number };
+  return t > 0 ? `${w}-${l}-${t}` : `${w}-${l}`;
+};
+
+const formatTies = (value: unknown): string => {
+  if (value === 0 || value === '0') return '0';
+  if (value == null || value === '') return '0';
+  return String(value);
+};
+
+export default function Standings({ accountId, seasonId, showHeader = true }: StandingsProps) {
   const [groupedStandings, setGroupedStandings] = useState<GroupedStandingsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortField, setSortField] = useState<keyof StandingsRow>('pct');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   const loadStandings = useCallback(async () => {
     if (!seasonId || seasonId === '0') return;
@@ -141,29 +117,13 @@ export default function Standings({
     loadStandings();
   }, [loadStandings]);
 
-  const handleSort = (field: keyof StandingsRow) => {
-    if (field === sortField) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      // Default sort order - higher is better for wins/pct, lower is better for losses/GB
-      const defaultDescFields: (keyof StandingsRow)[] = ['w', 'pct'];
-      setSortOrder(defaultDescFields.includes(field) ? 'desc' : 'asc');
-    }
-  };
-
   const sortTeams = (teams: StandingsRow[]): StandingsRow[] => {
     return [...teams].sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      // Sort by winning percentage (descending), then by wins (descending)
+      if (a.pct !== b.pct) {
+        return b.pct - a.pct;
       }
-
-      const aStr = String(aValue);
-      const bStr = String(bValue);
-      return sortOrder === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      return b.w - a.w;
     });
   };
 
@@ -195,38 +155,159 @@ export default function Standings({
     );
   }
 
+  const renderStandingsTable = (teams: StandingsRow[], isFirstTable: boolean = false) => (
+    <TableContainer
+      component={Paper}
+      sx={{
+        mb: 3,
+        maxWidth: 800,
+        mx: 'auto',
+        boxShadow: 2,
+        borderRadius: 2,
+      }}
+    >
+      <Table size="small" sx={{ minWidth: 650 }}>
+        {isFirstTable && (
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'grey.50' }}>
+              <TableCell sx={{ fontWeight: 'bold', minWidth: 200 }}>Team</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+                W
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+                L
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 50 }}>
+                T
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 60 }}>
+                PCT
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 60 }}>
+                GB
+              </TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold', minWidth: 100 }}>
+                Div Record
+              </TableCell>
+            </TableRow>
+          </TableHead>
+        )}
+        <TableBody>
+          {sortTeams(teams).map((team, index) => (
+            <TableRow
+              key={team.teamId}
+              sx={{
+                '&:hover': { backgroundColor: 'action.hover' },
+                backgroundColor: index === 0 ? 'success.light' : 'inherit',
+              }}
+            >
+              <TableCell sx={{ minWidth: 200 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {team.teamName}
+                  {index === 0 && (
+                    <Chip
+                      label="1st"
+                      size="small"
+                      color="success"
+                      sx={{ fontSize: '0.7rem', height: 20 }}
+                    />
+                  )}
+                </Box>
+              </TableCell>
+              <TableCell align="right" sx={{ minWidth: 50, fontWeight: 'medium' }}>
+                {team.w}
+              </TableCell>
+              <TableCell align="right" sx={{ minWidth: 50 }}>
+                {team.l}
+              </TableCell>
+              <TableCell align="right" sx={{ minWidth: 50 }}>
+                {formatTies(team.t)}
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ minWidth: 60, fontWeight: 'bold', color: 'primary.main' }}
+              >
+                {formatPercentage(team.pct)}
+              </TableCell>
+              <TableCell align="right" sx={{ minWidth: 60 }}>
+                {formatGamesBehind(team.gb)}
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{ minWidth: 100, fontSize: '0.875rem', color: 'text.secondary' }}
+              >
+                {formatDivisionRecord(team.divisionRecord)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
   const renderStandingsContent = () => {
     if (!groupedStandings) return null;
 
+    let isFirstTable = true;
+
     return (
-      <Box>
+      <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
         {groupedStandings.leagues.map((league) => (
-          <Box key={league.leagueId} sx={{ mb: 4 }}>
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+          <Box key={league.leagueId} sx={{ mb: 5 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                mb: 3,
+                fontWeight: 'bold',
+                textAlign: 'center',
+                color: 'primary.main',
+                borderBottom: '2px solid',
+                borderColor: 'primary.main',
+                pb: 1,
+                letterSpacing: '0.05em',
+              }}
+            >
               {league.leagueName}
             </Typography>
 
-            {league.divisions.map((division) => (
-              <Box key={division.divisionId || 'no-division'} sx={{ mb: 3 }}>
-                {division.divisionName && (
-                  <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'medium' }}>
+            {league.divisions.map((division) => {
+              const currentIsFirst = isFirstTable;
+              isFirstTable = false;
+
+              return (
+                <Box key={division.divisionId || 'no-division'} sx={{ mb: 4 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mb: 2,
+                      fontWeight: 'bold',
+                      textAlign: 'center',
+                      color: 'secondary.main',
+                      textTransform: 'uppercase',
+                      fontSize: '1rem',
+                      letterSpacing: '0.08em',
+                      borderBottom: '1px solid',
+                      borderColor: 'secondary.light',
+                      pb: 0.5,
+                      display: 'inline-block',
+                      minWidth: '200px',
+                    }}
+                  >
                     {division.divisionName}
                   </Typography>
-                )}
 
-                <StatisticsTable
-                  data={sortTeams(division.teams)}
-                  columns={STANDINGS_COLUMNS}
-                  loading={loading}
-                  emptyMessage="No teams in this division."
-                  getRowKey={(team) => team.teamId}
-                  sortField={sortField}
-                  sortOrder={sortOrder}
-                  onSort={handleSort}
-                  maxHeight="40vh"
-                />
-              </Box>
-            ))}
+                  {division.teams.length > 0 ? (
+                    renderStandingsTable(division.teams, currentIsFirst)
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No teams in this division.
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
           </Box>
         ))}
       </Box>
@@ -234,10 +315,12 @@ export default function Standings({
   };
 
   const content = (
-    <Box>
+    <Box sx={{ py: 2 }}>
       {loading ? (
         <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-          <Typography>Loading standings...</Typography>
+          <Typography variant="h6" color="text.secondary">
+            Loading standings...
+          </Typography>
         </Box>
       ) : (
         renderStandingsContent()
@@ -249,12 +332,5 @@ export default function Standings({
     return content;
   }
 
-  return (
-    <Box p={3}>
-      <Typography variant="h5" gutterBottom>
-        {title}
-      </Typography>
-      {content}
-    </Box>
-  );
+  return <Box sx={{ py: 3, px: 2 }}>{content}</Box>;
 }
