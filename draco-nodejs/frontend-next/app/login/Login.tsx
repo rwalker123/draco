@@ -30,7 +30,7 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
 
   return (
     <main className="min-h-screen bg-background">
-      {accountId && (
+      {accountId ? (
         <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
           <Box sx={{ flex: 1, textAlign: 'center' }}>
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -38,8 +38,14 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
             </Typography>
           </Box>
         </AccountPageHeader>
+      ) : (
+        <Box sx={{ pt: 4, pb: 2, textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            Sign In
+          </Typography>
+        </Box>
       )}
-      <Paper sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
+      <Paper sx={{ maxWidth: 400, mx: 'auto', mt: accountId ? 8 : 4, p: 3 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -74,10 +80,17 @@ const Login: React.FC<{ accountId?: string; next?: string }> = ({ accountId, nex
           {loading ? <CircularProgress size={24} /> : 'Sign In'}
         </Button>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Link href="/reset-password">Forgot your password?</Link>
+          <Link
+            href={`/reset-password${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
+          >
+            Forgot your password?
+          </Link>
         </Box>
         <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Link href="/signup" underline="hover">
+          <Link
+            href={`/signup${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
+            underline="hover"
+          >
             {"Don't have an account? Sign Up"}
           </Link>
         </Box>
