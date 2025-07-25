@@ -130,7 +130,7 @@ const Accounts: React.FC = () => {
             Create Your Account
           </Typography>
           <Typography variant="body2" color="text.secondary" gutterBottom>
-            To create and manage your own sports organization, you&apos;ll need to create an account
+            {"To create and manage your own sports organization, you'll need to create an account"}
             first.
           </Typography>
           <Box sx={{ mt: 2 }}>
