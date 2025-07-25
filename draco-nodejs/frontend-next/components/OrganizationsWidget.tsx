@@ -187,8 +187,8 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   // Filter and limit accounts for display
   const limitedAccounts = maxDisplay ? filteredAccounts.slice(0, maxDisplay) : filteredAccounts;
 
-  // Don't show widget for non-authenticated users unless organizations are provided
-  if (!user && !providedOrganizations) {
+  // Don't show widget for non-authenticated users unless organizations are provided or search is enabled
+  if (!user && !providedOrganizations && !showSearch) {
     return null;
   }
 
@@ -230,7 +230,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
           {displaySearchTerm && (
             <Box sx={{ mt: 2 }}>
               <Button variant="outlined" size="small" onClick={handleClearSearch}>
-                Clear Search & Show My Organizations
+                {user ? 'Clear Search & Show My Organizations' : 'Clear Search'}
               </Button>
             </Box>
           )}

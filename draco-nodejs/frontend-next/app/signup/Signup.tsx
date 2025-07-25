@@ -12,8 +12,9 @@ import {
   Link,
 } from '@mui/material';
 import { useRouter } from 'next/navigation';
+import AccountPageHeader from '../../components/AccountPageHeader';
 
-const Signup: React.FC = () => {
+const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, next }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -91,14 +92,14 @@ const Signup: React.FC = () => {
       if (response.ok) {
         setSuccess(true);
         setTimeout(() => {
-          router.push('/login');
+          router.push(next || '/login');
         }, 2000);
       } else {
         const data = await response.json();
-        setError(data.message || 'Failed to create account');
+        setError(data.message || 'Failed to sign up');
       }
     } catch {
-      setError('Failed to create account. Please try again.');
+      setError('Failed to sign up. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -107,10 +108,11 @@ const Signup: React.FC = () => {
   if (success) {
     return (
       <main className="min-h-screen bg-background">
+        {accountId && <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }} />}
         <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
           <Paper sx={{ p: 3, textAlign: 'center' }}>
             <Typography variant="h5" gutterBottom color="primary">
-              Account Created Successfully!
+              Sign Up Successful!
             </Typography>
             <Typography variant="body1" color="text.secondary">
               You can now sign in with your new account.
@@ -126,99 +128,98 @@ const Signup: React.FC = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h4" align="center" gutterBottom>
-            Create Account
+      {accountId && <AccountPageHeader accountId={accountId} style={{ marginBottom: 1 }} />}
+      <Paper sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
+        <Typography variant="h4" align="center" gutterBottom>
+          Sign Up
+        </Typography>
+        <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 3 }}>
+          Join Draco Sports Manager to sign up and manage your sports organization
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <TextField
+            fullWidth
+            label="First Name"
+            value={formData.firstName}
+            onChange={handleInputChange('firstName')}
+            required
+          />
+          <TextField
+            fullWidth
+            label="Last Name"
+            value={formData.lastName}
+            onChange={handleInputChange('lastName')}
+            required
+          />
+        </Box>
+
+        <TextField
+          fullWidth
+          label="Username"
+          value={formData.username}
+          onChange={handleInputChange('username')}
+          margin="normal"
+          required
+        />
+
+        <TextField
+          fullWidth
+          label="Email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange('email')}
+          margin="normal"
+          required
+        />
+
+        <TextField
+          fullWidth
+          label="Password"
+          type="password"
+          value={formData.password}
+          onChange={handleInputChange('password')}
+          margin="normal"
+          required
+          helperText="Password must be at least 8 characters long"
+        />
+
+        <TextField
+          fullWidth
+          label="Confirm Password"
+          type="password"
+          value={formData.confirmPassword}
+          onChange={handleInputChange('confirmPassword')}
+          margin="normal"
+          required
+        />
+
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          onClick={handleSignup}
+          disabled={loading}
+          sx={{ mt: 3 }}
+        >
+          {loading ? <CircularProgress size={24} /> : 'Sign Up'}
+        </Button>
+
+        <Box sx={{ mt: 2, textAlign: 'center' }}>
+          <Typography variant="body2" color="text.secondary">
+            Already have an account?{' '}
+            <Link href="/login" sx={{ cursor: 'pointer' }}>
+              Sign In
+            </Link>
           </Typography>
-          <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-            Join Draco Sports Manager to create and manage your sports organization
-          </Typography>
-
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              fullWidth
-              label="First Name"
-              value={formData.firstName}
-              onChange={handleInputChange('firstName')}
-              required
-            />
-            <TextField
-              fullWidth
-              label="Last Name"
-              value={formData.lastName}
-              onChange={handleInputChange('lastName')}
-              required
-            />
-          </Box>
-
-          <TextField
-            fullWidth
-            label="Username"
-            value={formData.username}
-            onChange={handleInputChange('username')}
-            margin="normal"
-            required
-          />
-
-          <TextField
-            fullWidth
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange('email')}
-            margin="normal"
-            required
-          />
-
-          <TextField
-            fullWidth
-            label="Password"
-            type="password"
-            value={formData.password}
-            onChange={handleInputChange('password')}
-            margin="normal"
-            required
-            helperText="Password must be at least 8 characters long"
-          />
-
-          <TextField
-            fullWidth
-            label="Confirm Password"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange('confirmPassword')}
-            margin="normal"
-            required
-          />
-
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            onClick={handleSignup}
-            disabled={loading}
-            sx={{ mt: 3 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Create Account'}
-          </Button>
-
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Already have an account?{' '}
-              <Link href="/login" sx={{ cursor: 'pointer' }}>
-                Sign In
-              </Link>
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
+        </Box>
+      </Paper>
     </main>
   );
 };

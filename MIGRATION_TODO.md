@@ -508,21 +508,21 @@
 
 ## 🔄 In Progress Tasks
 
-### Team Management
-- [ ] **Team Management API** - RESTful API for team CRUD operations
-- [ ] **Team Assignment to Leagues** - API for assigning teams to leagues within seasons
-- [ ] **Team Roster Management** - API for managing team rosters and player assignments
-
-### Player Management
-- [ ] **Player Management API** - RESTful API for player CRUD operations
-- [ ] **Player Registration** - API for player registration and profile management
-- [ ] **Player Statistics** - API for tracking and managing player statistics
-
-### Game Management
-- [ ] **Game Management API** - RESTful API for game CRUD operations
-- [ ] **Game Scheduling** - API for creating and managing game schedules
-- [ ] **Score Management** - API for recording and managing game scores
-- [ ] **Game Statistics** - API for tracking game statistics and results
+- [x] Team Management API  
+- [x] Team assignment to leagues  
+- [x] Team roster management  
+- [x] Player Management API  
+- [ ] Player registration
+    - [ ] Backend API for player registration
+    - [ ] Frontend UI for player registration
+    - [ ] Validation and error handling for registration
+- [ ] Player statistics
+    - [ ] Backend API for entering player statistics
+    - [x] Backend API for retrieving player statistics
+    - [ ] Frontend UI for entering player statistics
+    - [ ] Display player statistics on team page
+    - [ ] Validation and error handling for statistics entry
+- [ ] Game Management API (CRUD, scheduling, scores, stats)
 
 ## 📋 Planned Tasks
 
