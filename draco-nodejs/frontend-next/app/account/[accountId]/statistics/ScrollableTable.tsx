@@ -37,40 +37,12 @@ export default function ScrollableTable({
 
   // Save scroll position BEFORE render when data is about to change
   useMemo(() => {
-    console.log(
-      '🔄 ScrollableTable useMemo triggered - dataVersion:',
-      dataVersion,
-      'storeKey:',
-      storeKey,
-    );
     if (preserveScrollOnUpdate && scrollRef.current) {
       const currentScroll = scrollRef.current.scrollLeft;
       // Only save if we have a meaningful scroll position
       if (currentScroll > 0) {
         scrollPositionStore.set(storeKey, currentScroll);
-        console.log(
-          '💾 ScrollableTable saved scroll position:',
-          currentScroll,
-          'to key:',
-          storeKey,
-        );
-      } else {
-        console.log(
-          '⚠️ Current scroll is 0, keeping stored position:',
-          scrollPositionStore.get(storeKey) || 0,
-        );
       }
-      console.log('📊 ScrollRef exists:', !!scrollRef.current);
-      console.log('📏 ScrollRef info:', {
-        scrollLeft: scrollRef.current.scrollLeft,
-        scrollWidth: scrollRef.current.scrollWidth,
-        clientWidth: scrollRef.current.clientWidth,
-      });
-    } else {
-      console.log(
-        '❌ ScrollRef is null or preserveScrollOnUpdate is false, stored position:',
-        scrollPositionStore.get(storeKey) || 0,
-      );
     }
   }, [dataVersion, preserveScrollOnUpdate, storeKey]);
 
@@ -85,45 +57,24 @@ export default function ScrollableTable({
   // Restore scroll position AFTER render but BEFORE paint
   useLayoutEffect(() => {
     const storedPosition = scrollPositionStore.get(storeKey) || 0;
-    console.log(
-      '🎨 ScrollableTable useLayoutEffect triggered - dataVersion:',
-      dataVersion,
-      'storeKey:',
-      storeKey,
-    );
-    console.log('📍 Attempting to restore scroll position:', storedPosition);
 
     if (preserveScrollOnUpdate && scrollRef.current) {
-      console.log('✅ ScrollRef exists in useLayoutEffect');
-      console.log('📏 Current ScrollRef info:', {
-        scrollLeft: scrollRef.current.scrollLeft,
-        scrollWidth: scrollRef.current.scrollWidth,
-        clientWidth: scrollRef.current.clientWidth,
-      });
-
       if (storedPosition > 0) {
         // Temporarily disable smooth scrolling for instant restore
         const originalBehavior = scrollRef.current.style.scrollBehavior;
         scrollRef.current.style.scrollBehavior = 'auto';
 
         // Apply scroll position immediately without animation
-        console.log('🔧 Restoring scroll from', scrollRef.current.scrollLeft, 'to', storedPosition);
         scrollRef.current.scrollLeft = storedPosition;
-        console.log('✔️ After restore - scrollLeft:', scrollRef.current.scrollLeft);
 
         // Restore smooth scrolling and update button visibility
         requestAnimationFrame(() => {
           if (scrollRef.current) {
             scrollRef.current.style.scrollBehavior = originalBehavior;
-            console.log('🎬 Restored scroll behavior and updating buttons');
             checkScrollButtons();
           }
         });
-      } else {
-        console.log('⚠️ Stored scroll position is 0 or negative, not restoring');
       }
-    } else {
-      console.log('❌ ScrollRef is null or preserveScrollOnUpdate is false in useLayoutEffect');
     }
   }, [dataVersion, preserveScrollOnUpdate, checkScrollButtons, storeKey]);
 

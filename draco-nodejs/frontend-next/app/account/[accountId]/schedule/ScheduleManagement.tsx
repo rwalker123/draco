@@ -633,7 +633,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     (game: Game) => {
       // Check if user can edit games
       if (!canEditSchedule) {
-        console.log('User cannot edit games, opening view-only dialog');
         setSelectedGame(game);
         setGameDate(parseISO(game.gameDate));
         setGameTime(parseISO(game.gameDate));
@@ -649,7 +648,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         return;
       }
 
-      console.log('openEditDialog - game.gameType:', game.gameType, typeof game.gameType);
       setSelectedGame(game);
       setGameDate(parseISO(game.gameDate));
       setGameTime(parseISO(game.gameDate));
@@ -658,7 +656,6 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setFieldId(game.fieldId || '');
       setComment(game.comment);
       const gameTypeValue = game.gameType || 0;
-      console.log('Setting gameType to:', gameTypeValue);
       setGameType(gameTypeValue);
       setEditDialogError(null); // Clear any previous errors
 
@@ -755,9 +752,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   );
 
   const getGameTypeText = (gameType: number | string): string => {
-    console.log('getGameTypeText called with:', gameType, typeof gameType);
     const gameTypeNum = Number(gameType);
-    console.log('Converted to number:', gameTypeNum);
     switch (gameTypeNum) {
       case 0:
         return 'Regular Season';

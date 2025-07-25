@@ -167,9 +167,7 @@ const AccountManagement: React.FC = () => {
     }
   }, [token, loadData]);
 
-  useEffect(() => {
-    // Removed debug message: console.log('[AccountManagement] accounts:', accounts);
-  }, [accounts]);
+  useEffect(() => {}, [accounts]);
 
   const handleCreateAccount = async () => {
     try {
