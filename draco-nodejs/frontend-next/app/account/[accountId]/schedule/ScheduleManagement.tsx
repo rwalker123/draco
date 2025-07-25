@@ -1875,11 +1875,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
               <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
                 Schedule
               </Typography>
-              {!user && (
-                <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
-                  Public view - Sign in to edit schedules
-                </Typography>
-              )}
+
               {user && !canEditSchedule && (
                 <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
                   Read-only mode - Contact an administrator for editing permissions
