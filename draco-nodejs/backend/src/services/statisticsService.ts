@@ -638,16 +638,16 @@ export class StatisticsService {
 
     const result = await this.prisma.$queryRawUnsafe(query, seasonId, accountId);
     const rawStandings = result as Array<{
-      teamSeasonId: bigint;
       teamName: string;
-      leagueSeasonId: bigint;
+      teamId: bigint;
+      leagueId: bigint;
       leagueName: string;
-      divisionSeasonId: bigint | null;
+      divisionId: bigint | null;
       divisionName: string | null;
       divisionPriority: number | null;
-      w: bigint;
-      l: bigint;
-      t: bigint;
+      w: number;
+      l: number;
+      t: number;
       div_w: number;
       div_l: number;
       div_t: number;
@@ -663,10 +663,10 @@ export class StatisticsService {
 
       return {
         teamName: team.teamName,
-        teamId: team.teamSeasonId, // Using teamSeasonId as teamId
-        leagueId: team.leagueSeasonId,
+        teamId: team.teamId,
+        leagueId: team.leagueId,
         leagueName: team.leagueName,
-        divisionId: team.divisionSeasonId,
+        divisionId: team.divisionId,
         divisionName: team.divisionName,
         divisionPriority: team.divisionPriority,
         w,
