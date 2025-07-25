@@ -76,3 +76,6 @@ Thumbs.db
 **/.env
 
 /src/generated/prisma
+
+# Database backups
+draco-nodejs/backend/db_dump.bak
