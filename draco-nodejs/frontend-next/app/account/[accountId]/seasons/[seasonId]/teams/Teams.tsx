@@ -544,11 +544,7 @@ const Teams: React.FC<TeamsProps> = ({ accountId, seasonId, router }) => {
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
               Teams
             </Typography>
-            {!user && (
-              <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
-                Public view - Sign in to edit teams
-              </Typography>
-            )}
+
             {user && !canEditTeams && (
               <Typography variant="body2" sx={{ mt: 0.5, color: 'rgba(255,255,255,0.8)' }}>
                 Read-only mode - Contact an administrator for editing permissions
