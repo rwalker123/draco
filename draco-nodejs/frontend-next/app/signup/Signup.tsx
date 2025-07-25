@@ -98,7 +98,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
   if (success) {
     return (
       <main className="min-h-screen bg-background">
-        {accountId && (
+        {accountId ? (
           <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
             <Box sx={{ flex: 1, textAlign: 'center' }}>
               <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -106,8 +106,14 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
               </Typography>
             </Box>
           </AccountPageHeader>
+        ) : (
+          <Box sx={{ pt: 4, pb: 2, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+              Sign Up
+            </Typography>
+          </Box>
         )}
-        <Paper sx={{ p: 3, textAlign: 'center' }}>
+        <Paper sx={{ maxWidth: 400, mx: 'auto', mt: accountId ? 8 : 4, p: 3, textAlign: 'center' }}>
           <Typography variant="h5" gutterBottom color="primary">
             Sign Up Successful!
           </Typography>
@@ -124,7 +130,7 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
 
   return (
     <main className="min-h-screen bg-background">
-      {accountId && (
+      {accountId ? (
         <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
           <Box sx={{ flex: 1, textAlign: 'center' }}>
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
@@ -135,8 +141,17 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
             </Typography>
           </Box>
         </AccountPageHeader>
+      ) : (
+        <Box sx={{ pt: 4, pb: 2, textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+            Sign Up
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Join Draco Sports Manager to sign up and manage your sports organization
+          </Typography>
+        </Box>
       )}
-      <Paper sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
+      <Paper sx={{ maxWidth: 400, mx: 'auto', mt: accountId ? 8 : 4, p: 3 }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -188,7 +203,10 @@ const Signup: React.FC<{ accountId?: string; next?: string }> = ({ accountId, ne
         <Box sx={{ mt: 2, textAlign: 'center' }}>
           <Typography variant="body2" color="text.secondary">
             Already have an account?{' '}
-            <Link href="/login" sx={{ cursor: 'pointer' }}>
+            <Link
+              href={`/login${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
+              sx={{ cursor: 'pointer' }}
+            >
               Sign In
             </Link>
           </Typography>

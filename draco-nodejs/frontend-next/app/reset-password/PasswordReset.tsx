@@ -12,14 +12,20 @@ import {
   Stepper,
   Step,
   StepLabel,
+  Link,
 } from '@mui/material';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
+import AccountPageHeader from '../../components/AccountPageHeader';
 
 interface PasswordResetProps {
   onResetSuccess?: () => void;
+  accountId?: string;
+  next?: string;
 }
 
-const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
+const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess, accountId, next }) => {
+  const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [email, setEmail] = useState('');
   const [token, setToken] = useState('');
@@ -144,6 +150,12 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
         if (onResetSuccess) {
           onResetSuccess();
         }
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          router.push(
+            `/login${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`,
+          );
+        }, 2000);
       } else {
         setError(response.data.message || 'Failed to reset password');
       }
@@ -276,12 +288,23 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
 
   return (
     <main className="min-h-screen bg-background">
-      <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h5" align="center" gutterBottom>
+      {accountId ? (
+        <AccountPageHeader accountId={accountId} seasonName={''} showSeasonInfo={false}>
+          <Box sx={{ flex: 1, textAlign: 'center' }}>
+            <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+              Password Reset
+            </Typography>
+          </Box>
+        </AccountPageHeader>
+      ) : (
+        <Box sx={{ pt: 4, pb: 2, textAlign: 'center' }}>
+          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
             Password Reset
           </Typography>
-
+        </Box>
+      )}
+      <Box sx={{ maxWidth: 400, mx: 'auto', mt: accountId ? 8 : 4 }}>
+        <Paper sx={{ p: 3 }}>
           <Stepper activeStep={activeStep} sx={{ mb: 3 }}>
             {steps.map((label) => (
               <Step key={label}>
@@ -303,6 +326,18 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
           )}
 
           {renderStepContent(activeStep)}
+
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="body2" color="text.secondary">
+              Remember your password?{' '}
+              <Link
+                href={`/login${accountId ? `?accountId=${accountId}` : ''}${next ? `${accountId ? '&' : '?'}next=${encodeURIComponent(next)}` : ''}`}
+                sx={{ cursor: 'pointer' }}
+              >
+                Back to Sign In
+              </Link>
+            </Typography>
+          </Box>
         </Paper>
       </Box>
     </main>
