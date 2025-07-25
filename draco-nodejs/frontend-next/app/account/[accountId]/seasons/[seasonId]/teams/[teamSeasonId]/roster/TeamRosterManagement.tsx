@@ -237,16 +237,9 @@ const TeamRosterManagement: React.FC = () => {
   // Fetch roster data
   const fetchRosterData = useCallback(async () => {
     if (!accountId || !seasonId || !teamSeasonId || !token) {
-      console.log('Missing required data for fetchRosterData:', {
-        accountId,
-        seasonId,
-        teamSeasonId,
-        hasToken: !!token,
-      });
       return;
     }
 
-    console.log('Fetching roster data for:', { accountId, seasonId, teamSeasonId });
     setLoading(true);
     setError(null);
     try {
@@ -255,7 +248,6 @@ const TeamRosterManagement: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      console.log('Roster data response:', response.data);
       if (response.data.success) {
         setRosterData(response.data.data);
       }
@@ -384,12 +376,6 @@ const TeamRosterManagement: React.FC = () => {
   }, [accountId, seasonId, teamSeasonId, token]);
 
   useEffect(() => {
-    console.log('TeamRosterManagement useEffect triggered with:', {
-      accountId,
-      seasonId,
-      teamSeasonId,
-      hasToken: !!token,
-    });
     fetchRosterData();
     fetchSeasonData();
     fetchLeagueData();
@@ -1175,9 +1161,7 @@ const TeamRosterManagement: React.FC = () => {
             Age: {adjustedAge} ({birthMonthYear})
           </div>,
         );
-      } catch {
-        console.warn('Invalid date of birth format:', member.player.contact.dateofbirth);
-      }
+      } catch {}
     }
 
     // Date Added
@@ -1188,9 +1172,7 @@ const TeamRosterManagement: React.FC = () => {
             Date Added: {format(parseISO(member.dateAdded), 'MMM dd, yyyy')}
           </div>,
         );
-      } catch {
-        console.warn('Invalid date added format:', member.dateAdded);
-      }
+      } catch {}
     }
 
     // Submitted Waiver

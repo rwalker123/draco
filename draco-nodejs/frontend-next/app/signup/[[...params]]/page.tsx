@@ -7,7 +7,6 @@ export async function generateMetadata({
 }: {
   searchParams: Promise<URLSearchParams>;
 }) {
-  console.log('searchParams', await searchParams);
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   const { accountId } = (await searchParams) as any;
   let title = 'Sign Up - Draco Sports Manager';
