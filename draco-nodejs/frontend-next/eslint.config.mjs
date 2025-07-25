@@ -16,6 +16,11 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     },
   },
+  {
+    ignores: [
+      "app/social-hub-test/**/*",
+    ],
+  },
 ];
 
 export default eslintConfig;

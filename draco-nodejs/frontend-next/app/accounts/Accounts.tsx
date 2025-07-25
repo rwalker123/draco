@@ -92,6 +92,11 @@ const Accounts: React.FC = () => {
             {user ? 'Create New Organization' : 'Create Your Organization'}
           </Button>
           {!user && (
+            <Button variant="contained" color="primary" size="large" onClick={handleSignup}>
+              Sign Up
+            </Button>
+          )}
+          {!user && (
             <Button variant="outlined" color="primary" size="large" onClick={handleLogin}>
               Sign In
             </Button>
@@ -99,18 +104,24 @@ const Accounts: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Organizations Widget */}
-      {user && (
-        <OrganizationsWidget
-          title={searchTerm ? 'Search Results' : 'Your Organizations'}
-          showSearch={true}
-          organizations={searchTerm ? searchResults : undefined}
-          loading={isSearching}
-          onSearch={handleSearch}
-          searchTerm={searchTerm}
-          onSearchTermChange={setSearchTerm}
-        />
-      )}
+      {/* Organizations Widget - Show for all users */}
+      <OrganizationsWidget
+        title={
+          user
+            ? searchTerm
+              ? 'Search Results'
+              : 'Your Organizations'
+            : searchTerm
+              ? 'Search Results'
+              : 'Find Organizations'
+        }
+        showSearch={true}
+        organizations={searchTerm ? searchResults : user ? undefined : []}
+        loading={isSearching}
+        onSearch={handleSearch}
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+      />
 
       {/* Signup Modal */}
       {showSignup && (
@@ -124,7 +135,7 @@ const Accounts: React.FC = () => {
           </Typography>
           <Box sx={{ mt: 2 }}>
             <Button variant="contained" color="primary" onClick={handleSignup} sx={{ mr: 2 }}>
-              Create Account
+              Sign Up
             </Button>
             <Button variant="outlined" onClick={() => setShowSignup(false)}>
               Cancel
