@@ -21,7 +21,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 
-interface Account {
+export interface Account {
   id: string;
   name: string;
   accountType: string;
@@ -46,6 +46,8 @@ interface OrganizationsWidgetProps {
   onSearchTermChange?: (searchTerm: string) => void;
   // Account ID to exclude from the list (e.g., current account)
   excludeAccountId?: string;
+  // Callback when organizations are loaded
+  onOrganizationsLoaded?: (organizations: Account[]) => void;
 }
 
 const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
@@ -61,6 +63,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
   searchTerm: providedSearchTerm,
   onSearchTermChange,
   excludeAccountId,
+  onOrganizationsLoaded,
 }) => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,7 +99,12 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setAccounts(data.data.accounts || []);
+          const accountsData = data.data.accounts || [];
+          setAccounts(accountsData);
+          // Notify parent component about loaded organizations
+          if (onOrganizationsLoaded) {
+            onOrganizationsLoaded(accountsData);
+          }
         } else {
           setError(data.message || 'Failed to load your organizations');
         }
@@ -108,7 +116,7 @@ const OrganizationsWidget: React.FC<OrganizationsWidgetProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [user, token, providedOrganizations]);
+  }, [user, token, providedOrganizations, onOrganizationsLoaded]);
 
   useEffect(() => {
     if (user && !providedOrganizations) {
