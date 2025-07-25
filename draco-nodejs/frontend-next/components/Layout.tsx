@@ -23,11 +23,13 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
+import { useAccount } from '../context/AccountContext';
 import { useRouter, usePathname } from 'next/navigation';
 import BaseballMenu from './BaseballMenu';
 
 interface LayoutProps {
   children: React.ReactNode;
+  accountId?: string | null;
 }
 
 const getAccountIdFromPath = (pathname: string): string | null => {
@@ -35,17 +37,18 @@ const getAccountIdFromPath = (pathname: string): string | null => {
   return match ? match[1] : null;
 };
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
   const { user, logout, clearAllContexts } = useAuth();
   const { hasRole } = useRole();
+  const { currentAccount: contextAccount } = useAccount();
   const router = useRouter();
   const pathname = usePathname();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
   const [currentAccount, setCurrentAccount] = React.useState<Record<string, unknown> | null>(null);
 
-  // Extract accountId from URL
-  const accountId = getAccountIdFromPath(pathname);
+  // Extract accountId from prop, context, or URL (in that order of preference)
+  const accountId = propAccountId ?? contextAccount?.id ?? getAccountIdFromPath(pathname);
 
   // Fetch account type and current account info
   React.useEffect(() => {
@@ -95,7 +98,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const handleLogin = () => {
-    router.push('/login');
+    const params = new URLSearchParams();
+    if (accountId) params.set('accountId', accountId);
+    params.set('next', pathname);
+    router.push(`/login?${params.toString()}`);
+  };
+
+  const handleSignup = () => {
+    const params = new URLSearchParams();
+    if (accountId) params.set('accountId', accountId);
+    params.set('next', pathname);
+    router.push(`/signup?${params.toString()}`);
   };
 
   const handleHomeClick = () => {
@@ -144,16 +157,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               }}
             >
               <HomeIcon sx={{ mr: 1 }} />
-              <Typography
-                variant="h6"
-                component="span"
-                className="account-name"
-                sx={{ fontWeight: 700, color: 'inherit' }}
-              >
-                {currentAccount && typeof currentAccount.name === 'string'
-                  ? currentAccount.name
-                  : 'No Account'}
-              </Typography>
+              {currentAccount && typeof currentAccount.name === 'string' && (
+                <Typography
+                  variant="h6"
+                  component="span"
+                  className="account-name"
+                  sx={{ fontWeight: 700, color: 'inherit' }}
+                >
+                  {currentAccount.name}
+                </Typography>
+              )}
             </Box>
           </Box>
 
@@ -178,9 +191,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </Button>
               </>
             ) : (
-              <Button color="inherit" onClick={handleLogin}>
-                Login
-              </Button>
+              <>
+                <Button color="inherit" onClick={handleLogin} sx={{ mr: 1 }}>
+                  Sign In
+                </Button>
+                <Button color="inherit" onClick={handleSignup}>
+                  Sign Up
+                </Button>
+              </>
             )}
           </Box>
         </Toolbar>
