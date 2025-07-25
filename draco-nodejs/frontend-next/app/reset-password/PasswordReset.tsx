@@ -175,7 +175,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
               Request Password Reset
             </Typography>
             <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-              Enter your email address and we&apos;ll send you a password reset link.
+              {"Enter your email address and we'll send you a password reset link."}
             </Typography>
             <TextField
               fullWidth
@@ -208,7 +208,7 @@ const PasswordReset: React.FC<PasswordResetProps> = ({ onResetSuccess }) => {
               Check your email for the reset token and enter it below.
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              If you don&apos;t see the email, check your spam folder.
+              {"If you don't see the email, check your spam folder."}
             </Typography>
             <TextField
               fullWidth
