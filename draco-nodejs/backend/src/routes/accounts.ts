@@ -2557,6 +2557,62 @@ router.get('/:accountId/header', async (req: Request, res: Response): Promise<vo
   }
 });
 
+/**
+ * GET /api/accounts/:accountId/umpires
+ * Get all umpires for an account
+ */
+router.get(
+  '/:accountId/umpires',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const accountId = BigInt(req.params.accountId);
+
+      const umpires = await prisma.leagueumpires.findMany({
+        where: {
+          accountid: accountId,
+        },
+        include: {
+          contacts: {
+            select: {
+              id: true,
+              firstname: true,
+              lastname: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          contacts: {
+            lastname: 'asc',
+          },
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          umpires: umpires.map((umpire) => ({
+            id: umpire.id.toString(),
+            contactId: umpire.contactid.toString(),
+            firstName: umpire.contacts.firstname,
+            lastName: umpire.contacts.lastname,
+            email: umpire.contacts.email,
+            displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
+          })),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching umpires:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch umpires',
+      });
+    }
+  },
+);
+
 // Add missing type definitions for contacts and account list response
 
 type AccountListContact = {
