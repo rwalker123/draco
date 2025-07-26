@@ -9,7 +9,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -19,6 +18,8 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  Checkbox,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -27,12 +28,27 @@ import {
   ChevronRight as ChevronRightIcon,
 } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { format } from 'date-fns';
 import { parseISO } from 'date-fns/parseISO';
+
 import { startOfWeek } from 'date-fns/startOfWeek';
+
+// Helper function to parse UTC date string as local time (for editing)
+const parseUTCAsLocal = (utcString: string): Date => {
+  // Parse the UTC string and extract components
+  const date = new Date(utcString);
+  // Create a new date using the UTC components as local time
+  return new Date(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+  );
+};
 import { endOfWeek } from 'date-fns/endOfWeek';
 import { eachDayOfInterval } from 'date-fns/eachDayOfInterval';
 import { isSameDay } from 'date-fns/isSameDay';
@@ -49,6 +65,7 @@ import GameCard, { GameCardData } from '../../../../components/GameCard';
 import EnterGameResultsDialog, {
   GameResultData,
 } from '../../../../components/EnterGameResultsDialog';
+import GameFormFields from './GameFormFields';
 
 interface Game {
   id: string;
@@ -103,6 +120,15 @@ interface Field {
   longitude: string;
 }
 
+interface Umpire {
+  id: string;
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  displayName: string;
+}
+
 interface ScheduleManagementProps {
   accountId: string;
 }
@@ -120,9 +146,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       // TODO: LeagueAdmin should be tied to a leagueSeasonId
       hasRole('LeagueAdmin', { accountId }));
 
+  // Check if user is an account administrator (for viewing umpires)
+  const isAccountAdmin =
+    user && (hasRole('Administrator') || hasRole('AccountAdmin', { accountId }));
+
   const [games, setGames] = useState<Game[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
+  const [umpires, setUmpires] = useState<Umpire[]>([]);
   const [leagues, setLeagues] = useState<{ id: string; name: string }[]>([]);
   const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
   const [leagueTeamsCache, setLeagueTeamsCache] = useState<Map<string, Team[]>>(new Map());
@@ -133,6 +164,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [keepDialogOpen, setKeepDialogOpen] = useState(false);
   const [gameResultsDialogOpen, setGameResultsDialogOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [selectedGameForResults, setSelectedGameForResults] = useState<Game | null>(null);
@@ -149,7 +181,11 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
   const [visitorTeamId, setVisitorTeamId] = useState<string>('');
   const [fieldId, setFieldId] = useState<string>('');
   const [comment, setComment] = useState<string>('');
-  const [gameType, setGameType] = useState<number>(0);
+  const [gameType, setGameType] = useState<number>(1);
+  const [umpire1, setUmpire1] = useState<string>('');
+  const [umpire2, setUmpire2] = useState<string>('');
+  const [umpire3, setUmpire3] = useState<string>('');
+  const [umpire4, setUmpire4] = useState<string>('');
 
   // View states
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -235,13 +271,20 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       setCurrentSeasonName(currentSeasonData.data.season.name);
 
       // Load static data in parallel
-      const [leaguesResponse, fieldsResponse] = await Promise.all([
+      const [leaguesResponse, fieldsResponse, umpiresResponse] = await Promise.all([
         fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`, {
           headers: { 'Content-Type': 'application/json' },
         }),
 
         fetch(`/api/accounts/${accountId}/fields`, {
           headers: { 'Content-Type': 'application/json' },
+        }),
+
+        fetch(`/api/accounts/${accountId}/umpires`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
         }),
       ]);
 
@@ -325,12 +368,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         const fieldsData = await fieldsResponse.json();
         setFields(fieldsData.data.fields);
       }
+
+      // Process umpires (should work for all users)
+      if (umpiresResponse.ok) {
+        const umpiresData = await umpiresResponse.json();
+        setUmpires(umpiresData.data.umpires);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load static data');
     } finally {
       setLoadingStaticData(false);
     }
-  }, [accountId]);
+  }, [accountId, token]);
 
   const loadGamesData = useCallback(async () => {
     try {
@@ -462,18 +511,26 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const currentSeasonData = await currentSeasonResponse.json();
       const currentSeasonId = currentSeasonData.data.season.id;
 
-      // Combine date and time
-      const combinedDateTime = new Date(gameDate);
-      combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
+      // Create ISO string without timezone manipulation
+      const gameYear = gameDate.getFullYear();
+      const gameMonth = String(gameDate.getMonth() + 1).padStart(2, '0');
+      const gameDay = String(gameDate.getDate()).padStart(2, '0');
+      const gameHours = String(gameTime.getHours()).padStart(2, '0');
+      const gameMinutes = String(gameTime.getMinutes()).padStart(2, '0');
+      const gameDateString = `${gameYear}-${gameMonth}-${gameDay}T${gameHours}:${gameMinutes}:00`;
 
       const requestData = {
         leagueSeasonId: dialogLeagueSeason,
-        gameDate: combinedDateTime.toISOString(),
+        gameDate: gameDateString,
         homeTeamId,
         visitorTeamId,
         fieldId: fieldId || null,
         comment,
         gameType,
+        umpire1: umpire1 || null,
+        umpire2: umpire2 || null,
+        umpire3: umpire3 || null,
+        umpire4: umpire4 || null,
       };
 
       const response = await fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/games`, {
@@ -491,8 +548,23 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       }
 
       setSuccess('Game created successfully');
-      setCreateDialogOpen(false);
-      resetForm();
+      if (!keepDialogOpen) {
+        setCreateDialogOpen(false);
+        resetForm();
+      } else {
+        // When keeping dialog open, preserve league selection, game time, and game date but reset other fields
+        const currentLeague = dialogLeagueSeason;
+        const currentGameTime = gameTime;
+        const currentGameDate = gameDate;
+        resetForm();
+        setDialogLeagueSeason(currentLeague);
+        setGameTime(currentGameTime);
+        setGameDate(currentGameDate);
+        // Reload teams for the preserved league
+        if (currentLeague) {
+          loadLeagueTeams(currentLeague);
+        }
+      }
       loadGamesData();
     } catch (err) {
       setCreateDialogError(err instanceof Error ? err.message : 'Failed to create game');
@@ -508,9 +580,13 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         return;
       }
 
-      // Combine date and time
-      const combinedDateTime = new Date(gameDate);
-      combinedDateTime.setHours(gameTime.getHours(), gameTime.getMinutes());
+      // Create ISO string without timezone manipulation
+      const gameYear = gameDate.getFullYear();
+      const gameMonth = String(gameDate.getMonth() + 1).padStart(2, '0');
+      const gameDay = String(gameDate.getDate()).padStart(2, '0');
+      const gameHours = String(gameTime.getHours()).padStart(2, '0');
+      const gameMinutes = String(gameTime.getMinutes()).padStart(2, '0');
+      const gameDateString = `${gameYear}-${gameMonth}-${gameDay}T${gameHours}:${gameMinutes}:00`;
 
       const response = await fetch(
         `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,
@@ -521,12 +597,16 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            gameDate: combinedDateTime.toISOString(),
+            gameDate: gameDateString,
             homeTeamId,
             visitorTeamId,
             fieldId: fieldId || null,
             comment,
             gameType,
+            umpire1: umpire1 || null,
+            umpire2: umpire2 || null,
+            umpire3: umpire3 || null,
+            umpire4: umpire4 || null,
           }),
         },
       );
@@ -588,6 +668,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setFieldId('');
     setComment('');
     setGameType(0);
+    setUmpire1('');
+    setUmpire2('');
+    setUmpire3('');
+    setUmpire4('');
     setSelectedGame(null);
     setDialogLeagueSeason('');
     // Don't clear leagueTeams as they're used by filters
@@ -625,7 +709,12 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     setFieldId('');
     setComment('');
     setGameType(0);
+    setUmpire1('');
+    setUmpire2('');
+    setUmpire3('');
+    setUmpire4('');
     setDialogLeagueSeason('');
+    setLeagueTeams([]); // Clear teams so they don't show without a league selected
     setCreateDialogError(null);
   };
 
@@ -634,14 +723,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       // Check if user can edit games
       if (!canEditSchedule) {
         setSelectedGame(game);
-        setGameDate(parseISO(game.gameDate));
-        setGameTime(parseISO(game.gameDate));
+        setGameDate(parseUTCAsLocal(game.gameDate));
+        setGameTime(parseUTCAsLocal(game.gameDate));
         setHomeTeamId(game.homeTeamId);
         setVisitorTeamId(game.visitorTeamId);
         setFieldId(game.fieldId || '');
         setComment(game.comment);
         const gameTypeValue = game.gameType || 0;
         setGameType(gameTypeValue);
+        setUmpire1(game.umpire1 || '');
+        setUmpire2(game.umpire2 || '');
+        setUmpire3(game.umpire3 || '');
+        setUmpire4(game.umpire4 || '');
         setEditDialogError(null);
         setDialogLeagueSeason(''); // No need to load league teams for view-only
         setEditDialogOpen(true);
@@ -649,14 +742,18 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       }
 
       setSelectedGame(game);
-      setGameDate(parseISO(game.gameDate));
-      setGameTime(parseISO(game.gameDate));
+      setGameDate(parseUTCAsLocal(game.gameDate));
+      setGameTime(parseUTCAsLocal(game.gameDate));
       setHomeTeamId(game.homeTeamId);
       setVisitorTeamId(game.visitorTeamId);
       setFieldId(game.fieldId || '');
       setComment(game.comment);
       const gameTypeValue = game.gameType || 0;
       setGameType(gameTypeValue);
+      setUmpire1(game.umpire1 || '');
+      setUmpire2(game.umpire2 || '');
+      setUmpire3(game.umpire3 || '');
+      setUmpire4(game.umpire4 || '');
       setEditDialogError(null); // Clear any previous errors
 
       // Load teams for the specific league of this game (only if user can edit)
@@ -763,6 +860,14 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       default:
         return `Unknown (${gameType})`;
     }
+  };
+
+  // Helper function to get available umpires for a specific position
+  const getAvailableUmpires = (currentPosition: string, currentValue: string) => {
+    const selectedUmpires = [umpire1, umpire2, umpire3, umpire4].filter(
+      (id) => id && id !== currentValue,
+    );
+    return umpires.filter((umpire) => !selectedUmpires.includes(umpire.id));
   };
 
   // Convert ScheduleManagement Game format to GameCardData format
@@ -948,7 +1053,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         >
           {weekDays.map((day, index) => {
             const dayGames = filteredGames.filter(
-              (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), day),
+              (game) => game?.gameDate && isSameDay(new Date(game.gameDate), day),
             );
 
             return (
@@ -1078,7 +1183,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         }}
       >
         {sortedGames.map((game, idx) => {
-          const gameDate = game.gameDate ? parseISO(game.gameDate) : null;
+          const gameDate = game.gameDate ? new Date(game.gameDate) : null;
           // Get the Monday of this week
           const weekMonday = gameDate ? startOfWeek(gameDate, { weekStartsOn: 1 }) : null;
           const weekMondayStr = weekMonday ? weekMonday.toISOString().slice(0, 10) : '';
@@ -1356,7 +1461,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             {week.map((day, dayIndex) => {
               const isCurrentMonth = day.getMonth() === filterDate.getMonth();
               const dayGames = filteredGames.filter(
-                (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), day),
+                (game) => game?.gameDate && isSameDay(new Date(game.gameDate), day),
               );
 
               return (
@@ -1444,7 +1549,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
 
   const renderDayView = () => {
     const dayGames = filteredGames.filter(
-      (game) => game?.gameDate && isSameDay(parseISO(game.gameDate), filterDate),
+      (game) => game?.gameDate && isSameDay(new Date(game.gameDate), filterDate),
     );
 
     return (
@@ -1657,7 +1762,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
       const gamesByDay = new Map<number, Game[]>();
       monthGames.forEach((game) => {
         if (game.gameDate) {
-          const gameDate = parseISO(game.gameDate);
+          const gameDate = new Date(game.gameDate);
           const day = gameDate.getDate();
           if (!gamesByDay.has(day)) {
             gamesByDay.set(day, []);
@@ -2152,50 +2257,23 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           onClose={() => {
             setCreateDialogOpen(false);
             resetForm();
+            setKeepDialogOpen(false);
           }}
           maxWidth="md"
           fullWidth
         >
           <DialogTitle>Create New Game</DialogTitle>
           <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {createDialogError && (
-                <Alert severity="error" onClose={() => setCreateDialogError(null)}>
-                  {createDialogError}
-                </Alert>
-              )}
+            {createDialogError && (
+              <Alert severity="error" onClose={() => setCreateDialogError(null)}>
+                {createDialogError}
+              </Alert>
+            )}
 
-              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                  {filterDate.getFullYear()} Season
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DatePicker
-                      label="Game Date"
-                      value={gameDate}
-                      onChange={(newValue) => setGameDate(newValue)}
-                      slotProps={{ textField: { fullWidth: true } }}
-                    />
-                  </LocalizationProvider>
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <TimePicker
-                      label="Game Time"
-                      value={gameTime}
-                      onChange={(newValue) => setGameTime(newValue)}
-                      slotProps={{ textField: { fullWidth: true } }}
-                    />
-                  </LocalizationProvider>
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
+            {/* League Selection Header */}
+            <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ width: '50%', mr: 2 }}>
                   <FormControl fullWidth>
                     <InputLabel>League</InputLabel>
                     <Select
@@ -2220,99 +2298,68 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                     </Select>
                   </FormControl>
                 </Box>
-                <Box sx={{ flex: 1 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Home Team</InputLabel>
-                    <Select
-                      value={homeTeamId}
-                      onChange={(e) => setHomeTeamId(e.target.value)}
-                      label="Home Team"
-                      disabled={!canEditSchedule}
-                    >
-                      {leagueTeams.length === 0 ? (
-                        <MenuItem disabled>No teams available</MenuItem>
-                      ) : (
-                        leagueTeams.map((team) => (
-                          <MenuItem key={team.id} value={team.id}>
-                            {team.name}
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-                  </FormControl>
+                <Box sx={{ minWidth: 'fit-content' }}>
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    {currentSeasonName ? `${currentSeasonName} season` : 'Loading season...'}
+                  </Typography>
                 </Box>
               </Box>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Visitor Team</InputLabel>
-                    <Select
-                      value={visitorTeamId}
-                      onChange={(e) => setVisitorTeamId(e.target.value)}
-                      label="Visitor Team"
-                      disabled={!canEditSchedule}
-                    >
-                      {leagueTeams.length === 0 ? (
-                        <MenuItem disabled>No teams available</MenuItem>
-                      ) : (
-                        leagueTeams.map((team) => (
-                          <MenuItem key={team.id} value={team.id}>
-                            {team.name}
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-                  </FormControl>
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <FormControl fullWidth>
-                    <InputLabel>Field</InputLabel>
-                    <Select
-                      value={fieldId}
-                      onChange={(e) => setFieldId(e.target.value)}
-                      label="Field"
-                      disabled={!canEditSchedule}
-                    >
-                      <MenuItem value="">No field assigned</MenuItem>
-                      {fields.map((field) => (
-                        <MenuItem key={field.id} value={field.id}>
-                          {field.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Box>
-              </Box>
-
-              <TextField
-                fullWidth
-                label="Comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                multiline
-                rows={3}
-                disabled={!canEditSchedule}
-                slotProps={
-                  !canEditSchedule
-                    ? {
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }
-                    : undefined
-                }
-              />
             </Box>
+
+            <GameFormFields
+              // Form state
+              gameDate={gameDate}
+              gameTime={gameTime}
+              homeTeamId={homeTeamId}
+              visitorTeamId={visitorTeamId}
+              fieldId={fieldId}
+              comment={comment}
+              gameType={gameType}
+              umpire1={umpire1}
+              umpire2={umpire2}
+              umpire3={umpire3}
+              umpire4={umpire4}
+              // Form setters
+              setGameDate={setGameDate}
+              setGameTime={setGameTime}
+              setHomeTeamId={setHomeTeamId}
+              setVisitorTeamId={setVisitorTeamId}
+              setFieldId={setFieldId}
+              setComment={setComment}
+              setGameType={setGameType}
+              setUmpire1={setUmpire1}
+              setUmpire2={setUmpire2}
+              setUmpire3={setUmpire3}
+              setUmpire4={setUmpire4}
+              // Data
+              leagueTeams={leagueTeams}
+              fields={fields}
+              umpires={umpires}
+              // Configuration
+              canEditSchedule={!!canEditSchedule}
+              isAccountAdmin={!!isAccountAdmin}
+              getAvailableUmpires={getAvailableUmpires}
+              getTeamName={getTeamName}
+              getFieldName={getFieldName}
+              getGameTypeText={getGameTypeText}
+            />
           </DialogContent>
           <DialogActions>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={keepDialogOpen}
+                  onChange={(e) => setKeepDialogOpen(e.target.checked)}
+                />
+              }
+              label="Keep dialog open"
+              sx={{ mr: 'auto' }}
+            />
             <Button
               onClick={() => {
                 setCreateDialogOpen(false);
                 resetForm();
+                setKeepDialogOpen(false);
               }}
             >
               Cancel
@@ -2335,244 +2382,70 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         >
           <DialogTitle>{canEditSchedule ? 'Edit Game' : 'View Game'}</DialogTitle>
           <DialogContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {editDialogError && (
-                <Alert severity="error" onClose={() => setEditDialogError(null)}>
-                  {editDialogError}
-                </Alert>
-              )}
+            {editDialogError && (
+              <Alert severity="error" onClose={() => setEditDialogError(null)}>
+                {editDialogError}
+              </Alert>
+            )}
 
-              {selectedGame && (
-                <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                    {selectedGame.league?.name || 'Unknown League'}
-                  </Typography>
-                  <Typography variant="body2" color="textSecondary">
-                    {selectedGame.season?.name || 'Unknown Season'}
-                  </Typography>
-                </Box>
-              )}
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="Game Date"
-                        value={gameDate}
-                        onChange={(newValue) => setGameDate(newValue)}
-                        slotProps={{ textField: { fullWidth: true } }}
-                      />
-                    </LocalizationProvider>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Game Date"
-                      value={selectedGame && gameDate ? format(gameDate, 'EEEE, MMMM d, yyyy') : ''}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <TimePicker
-                        label="Game Time"
-                        value={gameTime}
-                        onChange={(newValue) => setGameTime(newValue)}
-                        slotProps={{ textField: { fullWidth: true } }}
-                      />
-                    </LocalizationProvider>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Game Time"
-                      value={selectedGame && gameTime ? format(gameTime, 'h:mm a') : ''}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
+            {selectedGame && (
+              <Box sx={{ p: 2, bgcolor: 'grey.100', borderRadius: 1, mb: 2 }}>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                      {selectedGame.league?.name || 'Unknown League'}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ minWidth: 'fit-content' }}>
+                    <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                      {currentSeasonName ? `${currentSeasonName} season` : 'Loading season...'}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
+            )}
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <FormControl fullWidth>
-                      <InputLabel>Home Team</InputLabel>
-                      <Select
-                        value={homeTeamId}
-                        onChange={(e) => setHomeTeamId(e.target.value)}
-                        label="Home Team"
-                        disabled={false}
-                      >
-                        {leagueTeams.length === 0 ? (
-                          <MenuItem disabled>No teams available</MenuItem>
-                        ) : (
-                          leagueTeams.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                              {team.name}
-                            </MenuItem>
-                          ))
-                        )}
-                      </Select>
-                    </FormControl>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Home Team"
-                      value={selectedGame ? getTeamName(selectedGame.homeTeamId) : ''}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <FormControl fullWidth>
-                      <InputLabel>Visitor Team</InputLabel>
-                      <Select
-                        value={visitorTeamId}
-                        onChange={(e) => setVisitorTeamId(e.target.value)}
-                        label="Visitor Team"
-                        disabled={false}
-                      >
-                        {leagueTeams.length === 0 ? (
-                          <MenuItem disabled>No teams available</MenuItem>
-                        ) : (
-                          leagueTeams.map((team) => (
-                            <MenuItem key={team.id} value={team.id}>
-                              {team.name}
-                            </MenuItem>
-                          ))
-                        )}
-                      </Select>
-                    </FormControl>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Visitor Team"
-                      value={selectedGame ? getTeamName(selectedGame.visitorTeamId) : ''}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <FormControl fullWidth>
-                      <InputLabel>Field</InputLabel>
-                      <Select
-                        value={fieldId}
-                        onChange={(e) => setFieldId(e.target.value)}
-                        label="Field"
-                      >
-                        <MenuItem value="">No field assigned</MenuItem>
-                        {fields.map((field) => (
-                          <MenuItem key={field.id} value={field.id}>
-                            {field.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Field"
-                      value={selectedGame ? getFieldName(selectedGame.fieldId) : ''}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  {canEditSchedule ? (
-                    <FormControl fullWidth>
-                      <InputLabel>Game Type</InputLabel>
-                      <Select
-                        value={gameType}
-                        onChange={(e) => setGameType(e.target.value as number)}
-                        label="Game Type"
-                      >
-                        <MenuItem value={0}>Regular Season</MenuItem>
-                        <MenuItem value={1}>Playoff</MenuItem>
-                        <MenuItem value={2}>Exhibition</MenuItem>
-                      </Select>
-                    </FormControl>
-                  ) : (
-                    <TextField
-                      fullWidth
-                      label="Game Type"
-                      value={getGameTypeText(gameType)}
-                      slotProps={{
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }}
-                    />
-                  )}
-                </Box>
-              </Box>
-
-              <TextField
-                fullWidth
-                label="Comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                multiline
-                rows={3}
-                disabled={!canEditSchedule}
-                slotProps={
-                  !canEditSchedule
-                    ? {
-                        input: {
-                          readOnly: true,
-                          sx: {
-                            color: 'text.primary',
-                          },
-                        },
-                      }
-                    : undefined
-                }
-              />
-            </Box>
+            <GameFormFields
+              // Form state
+              gameDate={gameDate}
+              gameTime={gameTime}
+              homeTeamId={homeTeamId}
+              visitorTeamId={visitorTeamId}
+              fieldId={fieldId}
+              comment={comment}
+              gameType={gameType}
+              umpire1={umpire1}
+              umpire2={umpire2}
+              umpire3={umpire3}
+              umpire4={umpire4}
+              // Form setters
+              setGameDate={setGameDate}
+              setGameTime={setGameTime}
+              setHomeTeamId={setHomeTeamId}
+              setVisitorTeamId={setVisitorTeamId}
+              setFieldId={setFieldId}
+              setComment={setComment}
+              setGameType={setGameType}
+              setUmpire1={setUmpire1}
+              setUmpire2={setUmpire2}
+              setUmpire3={setUmpire3}
+              setUmpire4={setUmpire4}
+              // Data
+              leagueTeams={leagueTeams}
+              fields={fields}
+              umpires={umpires}
+              // Configuration
+              canEditSchedule={!!canEditSchedule}
+              isAccountAdmin={!!isAccountAdmin}
+              getAvailableUmpires={getAvailableUmpires}
+              getTeamName={getTeamName}
+              getFieldName={getFieldName}
+              getGameTypeText={getGameTypeText}
+              // For edit mode
+              _selectedGame={selectedGame || undefined}
+            />
           </DialogContent>
           <DialogActions>
             <Button
@@ -2616,7 +2489,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
                   {selectedGame.gameDate
-                    ? format(parseISO(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a')
+                    ? format(new Date(selectedGame.gameDate), 'EEEE, MMMM d, yyyy h:mm a')
                     : 'TBD'}
                 </Typography>
               </Box>

@@ -11,6 +11,30 @@ const router = Router({ mergeParams: true });
 const roleService = new RoleService(prisma);
 const routeProtection = new RouteProtection(roleService, prisma);
 
+// Helper function to parse ISO date string without timezone conversion
+const parseGameDate = (dateString: string): Date => {
+  // Parse YYYY-MM-DDTHH:MM:SS format manually to avoid timezone issues
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) {
+    throw new Error('Invalid date format. Expected YYYY-MM-DDTHH:MM:SS');
+  }
+
+  const [, year, month, day, hours, minutes, seconds] = match;
+
+  const result = new Date(
+    Date.UTC(
+      parseInt(year),
+      parseInt(month) - 1, // Month is 0-indexed
+      parseInt(day),
+      parseInt(hours),
+      parseInt(minutes),
+      parseInt(seconds),
+    ),
+  );
+
+  return result;
+};
+
 /**
  * @swagger
  * /api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results:
@@ -625,7 +649,7 @@ router.post(
         const existingGame = await prisma.leagueschedule.findFirst({
           where: {
             fieldid: BigInt(fieldId),
-            gamedate: new Date(gameDate),
+            gamedate: parseGameDate(gameDate),
             leagueid: BigInt(leagueSeasonId),
           },
         });
@@ -641,7 +665,7 @@ router.post(
 
       const game = await prisma.leagueschedule.create({
         data: {
-          gamedate: new Date(gameDate),
+          gamedate: parseGameDate(gameDate),
           hteamid: BigInt(homeTeamId),
           vteamid: BigInt(visitorTeamId),
           hscore: 0,
@@ -770,7 +794,7 @@ router.put(
         const conflictingGame = await prisma.leagueschedule.findFirst({
           where: {
             fieldid: BigInt(fieldId),
-            gamedate: gameDate ? new Date(gameDate) : existingGame.gamedate,
+            gamedate: gameDate ? parseGameDate(gameDate) : existingGame.gamedate,
             leagueid: existingGame.leagueid,
             id: { not: BigInt(gameId) },
           },
@@ -788,7 +812,7 @@ router.put(
       const updatedGame = await prisma.leagueschedule.update({
         where: { id: BigInt(gameId) },
         data: {
-          gamedate: gameDate ? new Date(gameDate) : undefined,
+          gamedate: gameDate ? parseGameDate(gameDate) : undefined,
           hteamid: homeTeamId ? BigInt(homeTeamId) : undefined,
           vteamid: visitorTeamId ? BigInt(visitorTeamId) : undefined,
           comment: comment !== undefined ? comment : undefined,

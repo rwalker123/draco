@@ -216,51 +216,48 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </ListItemIcon>
           <ListItemText>Organizations</ListItemText>
         </MenuItem>
-        {user && (
-          <>
-            {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
-              <MenuItem onClick={() => handleNavigation('/admin')}>
-                <ListItemIcon>
-                  <AdminPanelSettingsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Admin Dashboard</ListItemText>
-              </MenuItem>
-            )}
-            {hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
-              <MenuItem onClick={() => handleNavigation('/account-management')}>
-                <ListItemIcon>
-                  <BusinessIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Account Management</ListItemText>
-              </MenuItem>
-            )}
-            {(hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
-              hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
-              >
-                <ListItemIcon>
-                  <CalendarMonthIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Season Management</ListItemText>
-              </MenuItem>
-            )}
-            {/* Account Admin Only */}
-            {hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && [
-              <MenuItem
-                onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
-                key="account-settings"
-              >
-                <ListItemIcon>
-                  <SettingsIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText>Account Settings</ListItemText>
-              </MenuItem>,
-            ]}
-            {/* League Admin Only */}
-            {/* Team Admin Only */}
-          </>
+        {user && hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+          <MenuItem onClick={() => handleNavigation('/admin')}>
+            <ListItemIcon>
+              <AdminPanelSettingsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Admin Dashboard</ListItemText>
+          </MenuItem>
         )}
+        {user && hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+          <MenuItem onClick={() => handleNavigation('/account-management')}>
+            <ListItemIcon>
+              <BusinessIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Account Management</ListItemText>
+          </MenuItem>
+        )}
+        {user &&
+          (hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
+            hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
+            <MenuItem
+              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
+            >
+              <ListItemIcon>
+                <CalendarMonthIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>Season Management</ListItemText>
+            </MenuItem>
+          )}
+        {/* Account Admin Only */}
+        {user && hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && (
+          <MenuItem
+            onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
+            key="account-settings"
+          >
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Account Settings</ListItemText>
+          </MenuItem>
+        )}
+        {/* League Admin Only */}
+        {/* Team Admin Only */}
       </Menu>
 
       <Container maxWidth={false} sx={{ flex: 1, py: 3, px: 4 }}>
