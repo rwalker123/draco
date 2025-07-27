@@ -119,13 +119,19 @@ export class ContactService {
         // Get existing roles from contactroles table
         const existingRoles =
           'contactroles' in contact && contact.contactroles
-            ? (contact.contactroles as Array<{ id: bigint; roleid: string; roledata: bigint }>).map(
-                (cr) => ({
-                  id: cr.id.toString(),
-                  roleId: cr.roleid,
-                  roleData: cr.roledata.toString(),
-                }),
-              )
+            ? (
+                contact.contactroles as Array<{
+                  id: bigint;
+                  roleid: string;
+                  roledata: bigint;
+                  aspnetroles?: { name: string };
+                }>
+              ).map((cr) => ({
+                id: cr.id.toString(),
+                roleId: cr.roleid,
+                roleName: cr.aspnetroles?.name || cr.roleid, // Use role name if available, fallback to roleId
+                roleData: cr.roledata.toString(),
+              }))
             : [];
 
         // Check if user is account owner
@@ -143,6 +149,7 @@ export class ContactService {
             allRoles.push({
               id: `owner-account-admin-${contact.id}`,
               roleId: 'AccountAdmin',
+              roleName: 'AccountAdmin',
               roleData: accountId.toString(),
             });
           }
