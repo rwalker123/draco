@@ -697,6 +697,20 @@
 ## TODO
 
 ### High Priority
+- [ ] **Handle authentication state changes on admin-protected pages**
+  - **Problem**: When users sign out on admin-protected pages, they remain on pages they can no longer access
+  - **Current behavior**: User stays on admin page after logout, causing confusion and potential errors
+  - **Solution needed**:
+    1. Detect when user signs out while on admin-protected pages
+    2. Redirect to appropriate home page (account home if available, or main accounts page)
+    3. Implement proper authentication state monitoring in Layout component
+    4. Add route protection middleware for admin pages
+    5. Handle edge cases (direct URL access, browser refresh, etc.)
+  - **Files affected**:
+    - Frontend: `Layout.tsx`, `AuthContext.tsx`, admin page components
+    - Middleware: Authentication state monitoring
+  - **Priority**: High (affects user experience and security)
+
 - [ ] **Fix timezone handling in games database**
   - **Problem**: Database currently stores game times in local time instead of UTC
   - **Current workaround**: Frontend removes "Z" from ISO string to treat as local time
@@ -780,6 +794,26 @@
   - **Priority**: Medium (provides valuable insights for league management)
 
 ### Medium Priority
+- [ ] **Account Access Control Improvements**
+  - [ ] **Account Admin Access Filtering** - Account admins should only see accounts they own/are members of
+    - [ ] Update `/api/accounts/my-accounts` endpoint to filter by user's actual account memberships
+    - [ ] Ensure AccountAdmin role only shows accounts where user has contact roles
+    - [ ] Test with users who have multiple account memberships
+  - [ ] **Login-Required Route Protection** - Pages that require login should redirect if user isn't allowed
+    - [ ] Add route protection middleware for account-specific pages
+    - [ ] Implement proper redirect logic for unauthorized access
+    - [ ] Update frontend routing to handle authentication requirements
+    - [ ] Test with anonymous users accessing protected routes
+  - [ ] **Signup Account Membership** - Update signup process to join an account as a member
+    - [ ] Modify signup flow to include account selection or invitation
+    - [ ] Add account membership creation during user registration
+    - [ ] Handle account invitation codes or direct account joining
+    - [ ] Test signup flow with different account scenarios
+  - [ ] **Account Join Functionality** - Allow logged-in users to join accounts they're not part of
+    - [ ] Add "Join Account" option in menu bar for users not in current account
+    - [ ] Implement account joining interface and workflow
+    - [ ] Add account invitation system or public join requests
+    - [ ] Update menu visibility based on user's account membership status
 - [ ] Add more baseball-specific features
 - [ ] Implement golf scoreboard
 - [ ] Add user role management
