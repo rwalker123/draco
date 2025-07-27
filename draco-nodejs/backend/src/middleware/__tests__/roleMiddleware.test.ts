@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import * as httpMocks from 'node-mocks-http';
 import { RoleMiddleware } from '../roleMiddleware';
-import { RoleService } from '../../services/roleService';
+import { IRoleMiddleware } from '../../interfaces/roleInterfaces';
 import { RoleType } from '../../types/roles';
+import { PrismaClient } from '@prisma/client';
 
 const mockHasRole = jest.fn();
 const mockHasPermission = jest.fn();
@@ -13,9 +14,21 @@ const mockRoleService = {
   hasRole: mockHasRole,
   hasPermission: mockHasPermission,
   getUserRoles: mockGetUserRoles,
-};
+  getGlobalRoles: jest.fn(),
+  getContactRoles: jest.fn(),
+  getUsersWithRole: jest.fn(),
+  getRoleName: jest.fn(),
+  getRoleId: jest.fn(),
+  hasRoleOrHigher: jest.fn(),
+} as unknown as IRoleMiddleware;
 
-const roleMiddleware = new RoleMiddleware(mockRoleService as unknown as RoleService);
+const mockPrisma = {
+  accounts: {
+    findUnique: jest.fn(),
+  },
+} as unknown as PrismaClient;
+
+const roleMiddleware = new RoleMiddleware(mockRoleService, mockPrisma);
 
 // Patch private method for enforceAccountBoundary
 (

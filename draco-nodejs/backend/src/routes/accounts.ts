@@ -3,8 +3,7 @@
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
+import { ServiceFactory } from '../lib/serviceFactory';
 import { Prisma } from '@prisma/client';
 import { isEmail } from 'validator';
 import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
@@ -28,8 +27,8 @@ import { getLogoUrl } from '../config/logo';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
-export const roleService = new RoleService(prisma);
-const routeProtection = new RouteProtection(roleService, prisma);
+export const roleService = ServiceFactory.getRoleService();
+const routeProtection = ServiceFactory.getRouteProtection();
 const storageService = createStorageService();
 const upload = multer({
   storage: multer.memoryStorage(),

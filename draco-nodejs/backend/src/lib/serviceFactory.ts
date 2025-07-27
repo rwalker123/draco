@@ -1,6 +1,14 @@
 import { RoleService } from '../services/roleService';
 import { TeamService } from '../services/teamService';
 import { RouteProtection } from '../middleware/routeProtection';
+import { RoleMiddleware } from '../middleware/roleMiddleware';
+import {
+  IRoleService,
+  IRoleQuery,
+  IRoleVerification,
+  IRoleManagement,
+  IRoleMiddleware,
+} from '../interfaces/roleInterfaces';
 import prisma from './prisma';
 
 /**
@@ -11,12 +19,37 @@ export class ServiceFactory {
   private static roleService: RoleService;
   private static teamService: TeamService;
   private static routeProtection: RouteProtection;
+  private static roleMiddleware: RoleMiddleware;
 
-  static getRoleService(): RoleService {
+  static getRoleService(): IRoleService {
     if (!this.roleService) {
       this.roleService = new RoleService(prisma);
     }
     return this.roleService;
+  }
+
+  static getRoleQuery(): IRoleQuery {
+    return this.getRoleService();
+  }
+
+  static getRoleVerification(): IRoleVerification {
+    return this.getRoleService();
+  }
+
+  static getRoleManagement(): IRoleManagement {
+    return this.getRoleService();
+  }
+
+  static getRoleMiddleware(): IRoleMiddleware {
+    return this.getRoleService();
+  }
+
+  static getRoleMiddlewareClass(): RoleMiddleware {
+    if (!this.roleMiddleware) {
+      const roleService = this.getRoleMiddleware();
+      this.roleMiddleware = new RoleMiddleware(roleService, prisma);
+    }
+    return this.roleMiddleware;
   }
 
   static getTeamService(): TeamService {
@@ -28,7 +61,7 @@ export class ServiceFactory {
 
   static getRouteProtection(): RouteProtection {
     if (!this.routeProtection) {
-      const roleService = this.getRoleService();
+      const roleService = this.getRoleMiddleware();
       this.routeProtection = new RouteProtection(roleService, prisma);
     }
     return this.routeProtection;
