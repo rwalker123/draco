@@ -5,47 +5,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-
-// Interfaces for data types
-interface Team {
-  id: string;
-  name: string;
-}
-
-interface Field {
-  id: string;
-  name: string;
-}
-
-interface Umpire {
-  id: string;
-  contactId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  displayName: string;
-}
-
-interface Game {
-  id: string;
-  gameDate: string;
-  homeTeamId: string;
-  visitorTeamId: string;
-  fieldId?: string;
-  comment: string;
-  gameType: number;
-  umpire1?: string;
-  umpire2?: string;
-  umpire3?: string;
-  umpire4?: string;
-  league?: {
-    name: string;
-  };
-  season?: {
-    id: string;
-    name: string;
-  };
-}
+import {
+  getReadOnlyInputProps,
+  getReadOnlyDatePickerInputProps,
+} from '../../../../utils/formUtils';
+import { useGameFormContext } from '../../../../components/schedule/contexts/GameFormContext';
 
 interface GameFormFieldsProps {
   // Form state props
@@ -73,22 +37,6 @@ interface GameFormFieldsProps {
   setUmpire2: (id: string) => void;
   setUmpire3: (id: string) => void;
   setUmpire4: (id: string) => void;
-
-  // Data props
-  leagueTeams: Team[];
-  fields: Field[];
-  umpires: Umpire[];
-
-  // Configuration/Helper props
-  canEditSchedule: boolean;
-  isAccountAdmin: boolean;
-  getAvailableUmpires: (currentPosition: string, currentValue: string) => Umpire[];
-  getTeamName: (teamId: string) => string;
-  getFieldName: (fieldId?: string) => string;
-  getGameTypeText: (gameType: number | string) => string;
-
-  // For edit mode
-  _selectedGame?: Game;
 }
 
 const GameFormFields: React.FC<GameFormFieldsProps> = ({
@@ -115,23 +63,21 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
   setUmpire3,
   umpire4,
   setUmpire4,
-
-  // Data
-  leagueTeams,
-  fields,
-  umpires,
-
-  // Configuration
-  canEditSchedule,
-  isAccountAdmin,
-  getAvailableUmpires,
-  getTeamName,
-  getFieldName,
-  getGameTypeText,
-
-  // For edit mode
-  _selectedGame,
 }) => {
+  // Get context values
+  const {
+    leagueTeams,
+    fields,
+    umpires,
+    canEditSchedule,
+    isAccountAdmin,
+    getAvailableUmpires,
+    getTeamName,
+    getFieldName,
+    getGameTypeText,
+    // selectedGame: _selectedGame, // Available if needed in future
+  } = useGameFormContext();
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -146,22 +92,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
               textField: {
                 fullWidth: true,
                 required: true,
-                InputProps: !canEditSchedule
-                  ? {
-                      readOnly: true,
-                      sx: {
-                        '& .MuiInputBase-input': {
-                          cursor: 'default',
-                        },
-                        '&:before': {
-                          borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                        },
-                        '&:hover:not(.Mui-disabled):before': {
-                          borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                        },
-                      },
-                    }
-                  : undefined,
+                InputProps: !canEditSchedule ? getReadOnlyDatePickerInputProps() : undefined,
               },
             }}
           />
@@ -174,22 +105,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
               textField: {
                 fullWidth: true,
                 required: true,
-                InputProps: !canEditSchedule
-                  ? {
-                      readOnly: true,
-                      sx: {
-                        '& .MuiInputBase-input': {
-                          cursor: 'default',
-                        },
-                        '&:before': {
-                          borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                        },
-                        '&:hover:not(.Mui-disabled):before': {
-                          borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                        },
-                      },
-                    }
-                  : undefined,
+                InputProps: !canEditSchedule ? getReadOnlyDatePickerInputProps() : undefined,
               },
             }}
           />
@@ -234,39 +150,13 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                 fullWidth
                 label="Home Team"
                 value={getTeamName(homeTeamId)}
-                InputProps={{
-                  readOnly: true,
-                  sx: {
-                    '& .MuiInputBase-input': {
-                      cursor: 'default',
-                    },
-                    '&:before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                    },
-                    '&:hover:not(.Mui-disabled):before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                    },
-                  },
-                }}
+                InputProps={getReadOnlyInputProps()}
               />
               <TextField
                 fullWidth
                 label="Visitor Team"
                 value={getTeamName(visitorTeamId)}
-                InputProps={{
-                  readOnly: true,
-                  sx: {
-                    '& .MuiInputBase-input': {
-                      cursor: 'default',
-                    },
-                    '&:before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                    },
-                    '&:hover:not(.Mui-disabled):before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                    },
-                  },
-                }}
+                InputProps={getReadOnlyInputProps()}
               />
             </>
           )}
@@ -305,39 +195,13 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                 fullWidth
                 label="Field"
                 value={getFieldName(fieldId)}
-                InputProps={{
-                  readOnly: true,
-                  sx: {
-                    '& .MuiInputBase-input': {
-                      cursor: 'default',
-                    },
-                    '&:before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                    },
-                    '&:hover:not(.Mui-disabled):before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                    },
-                  },
-                }}
+                InputProps={getReadOnlyInputProps()}
               />
               <TextField
                 fullWidth
                 label="Game Type"
                 value={getGameTypeText(gameType)}
-                InputProps={{
-                  readOnly: true,
-                  sx: {
-                    '& .MuiInputBase-input': {
-                      cursor: 'default',
-                    },
-                    '&:before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                    },
-                    '&:hover:not(.Mui-disabled):before': {
-                      borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                    },
-                  },
-                }}
+                InputProps={getReadOnlyInputProps()}
               />
             </>
           )}
@@ -393,20 +257,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                       ? umpires.find((u) => u.id === umpire1)?.displayName || 'Unknown'
                       : 'None'
                   }
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      '& .MuiInputBase-input': {
-                        cursor: 'default',
-                      },
-                      '&:before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                      },
-                      '&:hover:not(.Mui-disabled):before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                      },
-                    },
-                  }}
+                  InputProps={getReadOnlyInputProps()}
                 />
                 <TextField
                   fullWidth
@@ -416,20 +267,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                       ? umpires.find((u) => u.id === umpire2)?.displayName || 'Unknown'
                       : 'None'
                   }
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      '& .MuiInputBase-input': {
-                        cursor: 'default',
-                      },
-                      '&:before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                      },
-                      '&:hover:not(.Mui-disabled):before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                      },
-                    },
-                  }}
+                  InputProps={getReadOnlyInputProps()}
                 />
               </>
             )}
@@ -486,20 +324,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                       ? umpires.find((u) => u.id === umpire3)?.displayName || 'Unknown'
                       : 'None'
                   }
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      '& .MuiInputBase-input': {
-                        cursor: 'default',
-                      },
-                      '&:before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                      },
-                      '&:hover:not(.Mui-disabled):before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                      },
-                    },
-                  }}
+                  InputProps={getReadOnlyInputProps()}
                 />
                 <TextField
                   fullWidth
@@ -509,20 +334,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
                       ? umpires.find((u) => u.id === umpire4)?.displayName || 'Unknown'
                       : 'None'
                   }
-                  InputProps={{
-                    readOnly: true,
-                    sx: {
-                      '& .MuiInputBase-input': {
-                        cursor: 'default',
-                      },
-                      '&:before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                      },
-                      '&:hover:not(.Mui-disabled):before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                      },
-                    },
-                  }}
+                  InputProps={getReadOnlyInputProps()}
                 />
               </>
             )}
@@ -538,24 +350,7 @@ const GameFormFields: React.FC<GameFormFieldsProps> = ({
             onChange={(e) => setComment(e.target.value)}
             multiline
             rows={3}
-            InputProps={
-              !canEditSchedule
-                ? {
-                    readOnly: true,
-                    sx: {
-                      '& .MuiInputBase-input': {
-                        cursor: 'default',
-                      },
-                      '&:before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.42)',
-                      },
-                      '&:hover:not(.Mui-disabled):before': {
-                        borderBottomColor: 'rgba(0, 0, 0, 0.87)',
-                      },
-                    },
-                  }
-                : undefined
-            }
+            InputProps={!canEditSchedule ? getReadOnlyInputProps() : undefined}
           />
         )}
       </Box>

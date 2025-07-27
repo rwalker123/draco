@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { GameStatus, GameType } from '../types/gameEnums';
 
 export class MinimumCalculator {
   private prisma: PrismaClient;
@@ -52,13 +53,13 @@ export class MinimumCalculator {
    * Matches ASP.NET CalculateMin method exactly
    */
   private async calculateLeagueMin(leagueSeasonId: bigint, minMultiplier: number): Promise<number> {
-    // Count total completed games (GameType = 0, GameStatus in [1, 4, 5])
+    // Count total completed games (GameType = RegularSeason, GameStatus in [Completed, Forfeit, DidNotReport])
     const totalGames = await this.prisma.leagueschedule.count({
       where: {
         leagueid: leagueSeasonId,
-        gametype: 0,
+        gametype: GameType.RegularSeason,
         gamestatus: {
-          in: [1, 4, 5], // Completed game statuses
+          in: [GameStatus.Completed, GameStatus.Forfeit, GameStatus.DidNotReport], // Completed game statuses
         },
       },
     });
