@@ -34,7 +34,13 @@ export interface JWTPayload {
 }
 
 export class AuthService {
-  private readonly JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
+  private readonly JWT_SECRET = (() => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+    return secret;
+  })();
   private readonly JWT_EXPIRES_IN = '24h';
 
   /**
