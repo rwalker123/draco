@@ -26,6 +26,7 @@ import { createStorageService } from '../services/storageService';
 import { getLogoUrl } from '../config/logo';
 import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
+import { ContactService } from '../services/contactService';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -1198,6 +1199,7 @@ router.delete(
 /**
  * GET /api/accounts/:accountId/contacts
  * Get users in account (requires account access) - with pagination
+ * Optional query parameter: roles=true to include contactroles data (roleId, roleData) without role names
  */
 router.get(
   '/:accountId/contacts',
@@ -1207,62 +1209,30 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const { roles } = req.query;
+    const includeRoles = roles === 'true';
 
     // Parse pagination parameters
     const paginationParams = PaginationHelper.parseParams(req.query);
-    const allowedSortFields = ['firstname', 'lastname', 'email', 'id'];
-    const sortBy = PaginationHelper.validateSortField(paginationParams.sortBy, allowedSortFields);
 
-    // Get total count
-    const totalCount = await prisma.contacts.count({
-      where: {
-        creatoraccountid: accountId,
+    // Use ContactService to get contacts with roles
+    const result = await ContactService.getContactsWithRoles(accountId, {
+      includeRoles,
+      pagination: {
+        page: paginationParams.page,
+        limit: paginationParams.limit,
+        sortBy: paginationParams.sortBy,
+        sortOrder: paginationParams.sortOrder,
       },
     });
-
-    const contactSelect = {
-      id: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-      userid: true,
-    } as const;
-
-    const contacts = await prisma.contacts.findMany({
-      where: {
-        creatoraccountid: accountId,
-      },
-      select: contactSelect,
-      orderBy: sortBy
-        ? PaginationHelper.getPrismaOrderBy(sortBy, paginationParams.sortOrder)
-        : [{ lastname: 'asc' }, { firstname: 'asc' }],
-      skip: paginationParams.skip,
-      take: paginationParams.limit,
-    });
-
-    type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
-    const users = contacts.map((contact: Contact) => ({
-      id: contact.id.toString(),
-      firstName: contact.firstname,
-      lastName: contact.lastname,
-      email: contact.email,
-      userId: contact.userid,
-    }));
-
-    // Format paginated response
-    const response = PaginationHelper.formatResponse(
-      users,
-      paginationParams.page,
-      paginationParams.limit,
-      totalCount,
-    );
 
     res.json({
-      ...response,
+      success: true,
       data: {
         accountId: accountId.toString(),
-        contacts: response.data,
+        contacts: result.contacts,
       },
+      pagination: result.pagination,
     });
   }),
 );
@@ -1337,6 +1307,7 @@ router.delete(
 /**
  * GET /api/accounts/contacts/search
  * Search contacts by name for autocomplete
+ * Optional query parameter: roles=true to include contactroles data
  */
 router.get(
   '/:accountId/contacts/search',
@@ -1345,9 +1316,9 @@ router.get(
   routeProtection.requireAdministrator(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q } = req.query; // search query
-    const limit = 10; // maximum results to return
+    const { q, roles } = req.query; // search query and roles flag
     const { accountId } = extractAccountParams(req.params);
+    const includeRoles = roles === 'true';
 
     if (!q || typeof q !== 'string') {
       res.json({
@@ -1359,54 +1330,28 @@ router.get(
       return;
     }
 
-    const contactSelect = {
-      id: true,
-      firstname: true,
-      lastname: true,
-      email: true,
-      userid: true,
-    } as const;
-    const contacts = await prisma.contacts.findMany({
-      where: {
-        creatoraccountid: accountId,
-        OR: [
-          {
-            firstname: {
-              contains: q,
-              mode: 'insensitive',
-            },
-          },
-          {
-            lastname: {
-              contains: q,
-              mode: 'insensitive',
-            },
-          },
-          {
-            email: {
-              contains: q,
-              mode: 'insensitive',
-            },
-          },
-        ],
-      },
-      select: contactSelect,
-      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
-      take: limit,
+    // Use ContactService to get contacts with roles
+    const result = await ContactService.getContactsWithRoles(accountId, {
+      includeRoles,
+      searchQuery: q,
     });
-    type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
+
+    // Transform contacts for search response format
+    const searchContacts = result.contacts.map((contact) => ({
+      id: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      userId: contact.userId,
+      displayName: `${contact.firstName} ${contact.lastName}`,
+      searchText: `${contact.firstName} ${contact.lastName} (${contact.email})`,
+      ...(includeRoles && { contactroles: contact.contactroles }),
+    }));
+
     res.json({
       success: true,
       data: {
-        contacts: contacts.map((contact: Contact) => ({
-          id: contact.id.toString(),
-          firstName: contact.firstname,
-          lastName: contact.lastname,
-          email: contact.email,
-          userId: contact.userid,
-          displayName: `${contact.firstname} ${contact.lastname}`,
-          searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`,
-        })),
+        contacts: searchContacts,
       },
     });
   }),
