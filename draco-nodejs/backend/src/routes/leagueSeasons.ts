@@ -13,6 +13,7 @@ import {
   extractLeagueSeasonParams,
   extractBigIntParams,
 } from '../utils/paramExtraction';
+import { validateTeamSeasonWithDivision } from '../utils/teamValidation';
 import prisma from '../lib/prisma';
 
 // Type definitions for Prisma query results
@@ -1339,25 +1340,13 @@ router.put(
         return;
       }
 
-      // Verify the team season exists and belongs to this league season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseasonid: leagueSeasonId,
-        },
-        include: {
-          teams: true,
-          divisionseason: {
-            include: {
-              divisiondefs: true,
-            },
-          },
-        },
-      });
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await validateTeamSeasonWithDivision(
+        prisma,
+        teamSeasonId,
+        seasonId,
+        accountId,
+      );
 
       // Check if the team is currently assigned to a division
       if (teamSeason.divisionseasonid) {
@@ -1429,25 +1418,13 @@ router.delete(
         return;
       }
 
-      // Verify the team season exists and belongs to this league season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseasonid: leagueSeasonId,
-        },
-        include: {
-          teams: true,
-          divisionseason: {
-            include: {
-              divisiondefs: true,
-            },
-          },
-        },
-      });
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      // Verify the team season exists and belongs to this account and season
+      const teamSeason = await validateTeamSeasonWithDivision(
+        prisma,
+        teamSeasonId,
+        seasonId,
+        accountId,
+      );
 
       // Check if the team is currently assigned to a division
       if (!teamSeason.divisionseasonid) {
