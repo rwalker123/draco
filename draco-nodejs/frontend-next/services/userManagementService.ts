@@ -16,12 +16,17 @@ export class UserManagementService {
    */
   async fetchUsers(accountId: string, params: UserSearchParams): Promise<UsersResponse> {
     const searchParams = new URLSearchParams();
-    if (params.search) searchParams.append('search', params.search);
+    
+    // Add pagination parameters
     searchParams.append('page', params.page.toString());
     searchParams.append('limit', params.limit.toString());
+    
+    // Add sorting parameters
+    if (params.sortBy) searchParams.append('sortBy', params.sortBy);
+    if (params.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
     const response = await fetch(
-      `/api/accounts/${accountId}/users?${searchParams.toString()}`,
+      `/api/accounts/${accountId}/contacts?${searchParams.toString()}`,
       {
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -40,17 +45,50 @@ export class UserManagementService {
       throw new Error(data.message || 'Failed to load users');
     }
 
-    // TODO: Backend API needs to include roles in response
-    // Currently users don't have roles property, so we set empty arrays
-    const usersWithRoles = (data.data.users || []).map((user: Omit<User, 'roles'>) => ({
-      ...user,
-      roles: [] // Ensure roles property exists
+    // Transform contacts to users format for frontend compatibility
+    // Backend returns contacts array, but frontend expects users
+    const usersWithRoles = (data.data.contacts || []).map((contact: Omit<User, 'roles'>) => ({
+      ...contact,
+      roles: [] // TODO: Backend API needs to include roles in response
     }));
 
     return {
       users: usersWithRoles,
-      total: data.data.total || 0,
+      total: data.pagination.total || 0,
     };
+  }
+
+  /**
+   * Search users by name or email
+   */
+  async searchUsers(accountId: string, query: string): Promise<User[]> {
+    const response = await fetch(
+      `/api/accounts/${accountId}/contacts/search?q=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to search users');
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to search users');
+    }
+
+    // Transform contacts to users format for frontend compatibility
+    const usersWithRoles = (data.data.contacts || []).map((contact: Omit<User, 'roles'>) => ({
+      ...contact,
+      roles: [] // TODO: Backend API needs to include roles in response
+    }));
+
+    return usersWithRoles;
   }
 
   /**
@@ -103,7 +141,7 @@ export class UserManagementService {
    */
   async removeRole(accountId: string, contactId: string, roleId: string): Promise<void> {
     const response = await fetch(
-      `/api/accounts/${accountId}/users/${contactId}/roles/${roleId}`,
+      `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
       {
         method: 'DELETE',
         headers: {

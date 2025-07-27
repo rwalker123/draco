@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { BatchQueryHelper } from './batchQueries';
 
 export interface TeamRecord {
   wins: number;
@@ -60,20 +61,20 @@ export async function getTeamRecord(
   prisma: PrismaClient,
   teamSeasonId: bigint,
 ): Promise<TeamRecord> {
-  // Fetch all games for this team where status is 1, 4, or 5 (Final, Forfeit, Did Not Report)
-  const games = await prisma.leagueschedule.findMany({
-    where: {
-      OR: [{ hteamid: teamSeasonId }, { vteamid: teamSeasonId }],
-      gamestatus: { in: [1, 4, 5] },
-    },
-    select: {
-      hteamid: true,
-      vteamid: true,
-      hscore: true,
-      vscore: true,
-      gamestatus: true,
-    },
-  });
+  // Use batch helper for better performance when called multiple times
+  const records = await BatchQueryHelper.batchTeamRecords(prisma, [teamSeasonId]);
+  return records.get(teamSeasonId.toString()) || { wins: 0, losses: 0, ties: 0 };
+}
 
-  return calculateTeamRecord(games, teamSeasonId);
+/**
+ * Fetch and calculate multiple team records from database (batch operation)
+ * @param prisma - Prisma client instance
+ * @param teamSeasonIds - Array of team season IDs to calculate records for
+ * @returns Promise<Map<string, TeamRecord>> mapping team ID to record
+ */
+export async function getTeamRecords(
+  prisma: PrismaClient,
+  teamSeasonIds: bigint[],
+): Promise<Map<string, TeamRecord>> {
+  return BatchQueryHelper.batchTeamRecords(prisma, teamSeasonIds);
 }

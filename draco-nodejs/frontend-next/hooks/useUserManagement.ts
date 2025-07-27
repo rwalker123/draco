@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { isAccountAdministrator } from '../utils/permissionUtils';
@@ -35,6 +35,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
 
+  // Initialization guard
+  const [initialized, setInitialized] = useState(false);
+  const rowsPerPageRef = useRef(rowsPerPage);
+
   // Dialog states
   const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
   const [removeRoleDialogOpen, setRemoveRoleDialogOpen] = useState(false);
@@ -46,15 +50,16 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // Permission check
   const canManageUsers = isAccountAdministrator(hasRole, accountId);
 
   // Service instance
   const userService = token ? createUserManagementService(token) : null;
 
-  // Load users with search and pagination
+  // Load users with pagination
   const loadUsers = useCallback(
-    async (searchQuery = '', currentPage = 0) => {
+    async (currentPage = 0, limit?: number) => {
       if (!userService || !accountId) return;
 
       try {
@@ -62,9 +67,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         setError(null);
 
         const response = await userService.fetchUsers(accountId, {
-          search: searchQuery,
-          page: currentPage,
-          limit: rowsPerPage,
+          page: currentPage + 1, // Backend uses 1-based pagination
+          limit: limit || rowsPerPageRef.current,
+          sortBy: 'lastname',
+          sortOrder: 'asc',
         });
 
         setUsers(response.users);
@@ -75,7 +81,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         setLoading(false);
       }
     },
-    [userService, accountId, rowsPerPage],
+    [userService, accountId],
   );
 
   // Load roles
@@ -90,34 +96,58 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     }
   }, [userService]);
 
+  // Update ref when rowsPerPage changes
+  useEffect(() => {
+    rowsPerPageRef.current = rowsPerPage;
+  }, [rowsPerPage]);
+
   // Initialize data
   useEffect(() => {
-    if (token && accountId) {
+    if (token && accountId && !initialized) {
       loadUsers();
       loadRoles();
+      setInitialized(true);
     }
-  }, [token, accountId, loadUsers, loadRoles]);
+  }, [token, accountId, initialized, loadUsers, loadRoles]);
 
   // Search handler
   const handleSearch = useCallback(async () => {
-    setSearchLoading(true);
-    setPage(0);
-    await loadUsers(searchTerm, 0);
-    setSearchLoading(false);
-  }, [searchTerm, loadUsers]);
+    if (!userService || !accountId) return;
+
+    try {
+      setSearchLoading(true);
+      setError(null);
+
+      if (!searchTerm.trim()) {
+        // If search is empty, load all users
+        await loadUsers(0);
+        setPage(0);
+      } else {
+        // Use the search endpoint
+        const searchResults = await userService.searchUsers(accountId, searchTerm);
+        setUsers(searchResults);
+        setTotalUsers(searchResults.length);
+        setPage(0);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to search users');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchTerm, userService, accountId, loadUsers]);
 
   // Pagination handlers
   const handlePageChange = useCallback((event: unknown, newPage: number) => {
     setPage(newPage);
-    loadUsers(searchTerm, newPage);
-  }, [searchTerm, loadUsers]);
+    loadUsers(newPage);
+  }, [loadUsers]);
 
   const handleRowsPerPageChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
     setPage(0);
-    loadUsers(searchTerm, 0);
-  }, [searchTerm, loadUsers]);
+    loadUsers(0, newRowsPerPage);
+  }, [loadUsers]);
 
   // Role assignment handler
   const handleAssignRole = useCallback(async () => {
@@ -134,13 +164,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setSelectedUser(null);
       setSelectedRole('');
       setNewUserContactId('');
-      loadUsers(searchTerm, page);
+      loadUsers(page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to assign role');
     } finally {
       setFormLoading(false);
     }
-  }, [selectedUser, selectedRole, newUserContactId, userService, accountId, searchTerm, page, loadUsers]);
+  }, [selectedUser, selectedRole, newUserContactId, userService, accountId, page, loadUsers]);
 
   // Role removal handler
   const handleRemoveRole = useCallback(async () => {
@@ -156,13 +186,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setRemoveRoleDialogOpen(false);
       setSelectedUser(null);
       setSelectedRoleToRemove(null);
-      loadUsers(searchTerm, page);
+      loadUsers(page);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to remove role');
     } finally {
       setFormLoading(false);
     }
-  }, [selectedUser, selectedRoleToRemove, userService, accountId, searchTerm, page, loadUsers]);
+  }, [selectedUser, selectedRoleToRemove, userService, accountId, page, loadUsers]);
 
   // Dialog open handlers
   const openAssignRoleDialog = useCallback((user: User) => {
