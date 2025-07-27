@@ -1,7 +1,15 @@
-"use client";
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+'use client';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react';
 import axios from 'axios';
 import { useAuth } from './AuthContext';
+import { ROLE_NAME_TO_ID } from '../utils/roleUtils';
 
 interface ContactRole {
   id: string;
@@ -39,30 +47,48 @@ interface RoleContext {
 
 // Role hierarchy mapping
 const ROLE_HIERARCHY: Record<string, string[]> = {
-  '93DAC465-4C64-4422-B444-3CE79C549329': ['93DAC465-4C64-4422-B444-3CE79C549329', '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A', '672DDF06-21AC-4D7C-B025-9319CC69281A', '777D771B-1CBA-4126-B8F3-DD7F3478D40E'], // Administrator
-  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': ['5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A', '672DDF06-21AC-4D7C-B025-9319CC69281A', '777D771B-1CBA-4126-B8F3-DD7F3478D40E'], // AccountAdmin
-  '672DDF06-21AC-4D7C-B025-9319CC69281A': ['672DDF06-21AC-4D7C-B025-9319CC69281A', '777D771B-1CBA-4126-B8F3-DD7F3478D40E'], // LeagueAdmin
+  '93DAC465-4C64-4422-B444-3CE79C549329': [
+    '93DAC465-4C64-4422-B444-3CE79C549329',
+    '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
+    '672DDF06-21AC-4D7C-B025-9319CC69281A',
+    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
+  ], // Administrator
+  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': [
+    '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
+    '672DDF06-21AC-4D7C-B025-9319CC69281A',
+    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
+  ], // AccountAdmin
+  '672DDF06-21AC-4D7C-B025-9319CC69281A': [
+    '672DDF06-21AC-4D7C-B025-9319CC69281A',
+    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
+  ], // LeagueAdmin
   '777D771B-1CBA-4126-B8F3-DD7F3478D40E': ['777D771B-1CBA-4126-B8F3-DD7F3478D40E'], // TeamAdmin
-};
-
-// Role name to ID mapping
-const ROLE_NAME_TO_ID: Record<string, string> = {
-  'Administrator': '93DAC465-4C64-4422-B444-3CE79C549329',
-  'AccountAdmin': '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
-  'AccountPhotoAdmin': 'a87ea9a3-47e2-49d1-9e1e-c35358d1a677',
-  'LeagueAdmin': '672DDF06-21AC-4D7C-B025-9319CC69281A',
-  'TeamAdmin': '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-  'TeamPhotoAdmin': '55FD3262-343F-4000-9561-6BB7F658DEB7',
-  'PhotoAdmin': '05BEC889-3499-4DE1-B44F-4EED41412B3D'
 };
 
 // Role permissions mapping
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   '93DAC465-4C64-4422-B444-3CE79C549329': ['*'], // Administrator - all permissions
-  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': ['account.manage', 'account.users.manage', 'account.roles.manage', 'league.manage', 'team.manage', 'player.manage', 'photo.manage'], // AccountAdmin
+  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': [
+    'account.manage',
+    'account.users.manage',
+    'account.roles.manage',
+    'league.manage',
+    'team.manage',
+    'player.manage',
+    'photo.manage',
+  ], // AccountAdmin
   'a87ea9a3-47e2-49d1-9e1e-c35358d1a677': ['account.photos.manage', 'account.photos.view'], // AccountPhotoAdmin
-  '672DDF06-21AC-4D7C-B025-9319CC69281A': ['league.manage', 'league.teams.manage', 'league.players.manage', 'league.schedule.manage'], // LeagueAdmin
-  '777D771B-1CBA-4126-B8F3-DD7F3478D40E': ['team.manage', 'team.players.manage', 'team.stats.manage'], // TeamAdmin
+  '672DDF06-21AC-4D7C-B025-9319CC69281A': [
+    'league.manage',
+    'league.teams.manage',
+    'league.players.manage',
+    'league.schedule.manage',
+  ], // LeagueAdmin
+  '777D771B-1CBA-4126-B8F3-DD7F3478D40E': [
+    'team.manage',
+    'team.players.manage',
+    'team.stats.manage',
+  ], // TeamAdmin
   '55FD3262-343F-4000-9561-6BB7F658DEB7': ['team.photos.manage', 'team.photos.view'], // TeamPhotoAdmin
 };
 
@@ -74,35 +100,38 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserRoles = useCallback(async (accountId?: string) => {
-    if (!token) return;
+  const fetchUserRoles = useCallback(
+    async (accountId?: string) => {
+      if (!token) return;
 
-    setLoading(true);
-    setError(null);
-    try {
-      const url = accountId 
-        ? `/api/roleTest/user-roles?accountId=${accountId}`
-        : `/api/roleTest/user-roles`;
-      
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      setLoading(true);
+      setError(null);
+      try {
+        const url = accountId
+          ? `/api/roleTest/user-roles?accountId=${accountId}`
+          : `/api/roleTest/user-roles`;
 
-      if (response.data.success) {
-        setUserRoles({
-          globalRoles: response.data.data.globalRoles || [],
-          contactRoles: response.data.data.contactRoles || []
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-      } else {
-        setError(response.data.message || 'Failed to fetch user roles');
+
+        if (response.data.success) {
+          setUserRoles({
+            globalRoles: response.data.data.globalRoles || [],
+            contactRoles: response.data.data.contactRoles || [],
+          });
+        } else {
+          setError(response.data.message || 'Failed to fetch user roles');
+        }
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
+        setUserRoles(null);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch user roles');
-      setUserRoles(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
 
   useEffect(() => {
     if (user && token) {
@@ -228,18 +257,20 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <RoleContext.Provider value={{
-      userRoles,
-      loading,
-      error,
-      hasRole,
-      hasPermission,
-      hasRoleInAccount,
-      hasRoleInTeam,
-      hasRoleInLeague,
-      fetchUserRoles,
-      clearRoles
-    }}>
+    <RoleContext.Provider
+      value={{
+        userRoles,
+        loading,
+        error,
+        hasRole,
+        hasPermission,
+        hasRoleInAccount,
+        hasRoleInTeam,
+        hasRoleInLeague,
+        fetchUserRoles,
+        clearRoles,
+      }}
+    >
       {children}
     </RoleContext.Provider>
   );
@@ -251,4 +282,4 @@ export const useRole = () => {
     throw new Error('useRole must be used within a RoleProvider');
   }
   return context;
-}; 
+};

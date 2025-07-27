@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useRole } from '../context/RoleContext';
-import { isAccountAdministrator } from '../utils/permissionUtils';
 import { createUserManagementService } from '../services/userManagementService';
-import { getRoleDisplayName } from '../utils/userUtils';
-import { 
-  User, 
-  Role, 
-  UserRole, 
-  UseUserManagementReturn 
-} from '../types/users';
+import { getRoleDisplayName } from '../utils/roleUtils';
+import { User, Role, UserRole, UseUserManagementReturn } from '../types/users';
 
 /**
  * Custom hook for user management functionality
@@ -17,7 +10,6 @@ import {
  */
 export const useUserManagement = (accountId: string): UseUserManagementReturn => {
   const { token } = useAuth();
-  const { hasRole } = useRole();
 
   // Core state
   const [users, setUsers] = useState<User[]>([]);
@@ -49,8 +41,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // Form states
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [formLoading, setFormLoading] = useState(false);
-
-  const canManageUsers = isAccountAdministrator(hasRole, accountId);
 
   // Service instance
   const userService = token ? createUserManagementService(token) : null;
@@ -134,18 +124,45 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     }
   }, [searchTerm, userService, accountId, loadUsers]);
 
-  // Pagination handlers
-  const handlePageChange = useCallback((event: unknown, newPage: number) => {
-    setPage(newPage);
-    loadUsers(newPage);
-  }, [loadUsers]);
+  // Clear search handler
+  const handleClearSearch = useCallback(async () => {
+    if (!userService || !accountId) return;
 
-  const handleRowsPerPageChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const newRowsPerPage = parseInt(event.target.value, 10);
-    setRowsPerPage(newRowsPerPage);
-    setPage(0);
-    loadUsers(0, newRowsPerPage);
-  }, [loadUsers]);
+    try {
+      setSearchLoading(true);
+      setError(null);
+
+      // Clear search term
+      setSearchTerm('');
+
+      // Reset to first page and load default data
+      setPage(0);
+      await loadUsers(0);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to clear search');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [userService, accountId, loadUsers]);
+
+  // Pagination handlers
+  const handlePageChange = useCallback(
+    (event: unknown, newPage: number) => {
+      setPage(newPage);
+      loadUsers(newPage);
+    },
+    [loadUsers],
+  );
+
+  const handleRowsPerPageChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const newRowsPerPage = parseInt(event.target.value, 10);
+      setRowsPerPage(newRowsPerPage);
+      setPage(0);
+      loadUsers(0, newRowsPerPage);
+    },
+    [loadUsers],
+  );
 
   // Role assignment handler
   const handleAssignRole = useCallback(async () => {
@@ -206,8 +223,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Role display name helper
   const getRoleDisplayNameHelper = useCallback((roleId: string): string => {
-    return getRoleDisplayName(roleId, roles);
-  }, [roles]);
+    return getRoleDisplayName(roleId);
+  }, []);
 
   return {
     // State
@@ -221,7 +238,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     totalUsers,
     searchTerm,
     searchLoading,
-    
+
     // Dialog states
     assignRoleDialogOpen,
     removeRoleDialogOpen,
@@ -230,9 +247,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     selectedRoleToRemove,
     newUserContactId,
     formLoading,
-    
+
     // Actions
     handleSearch,
+    handleClearSearch,
     handlePageChange,
     handleRowsPerPageChange,
     handleAssignRole,
@@ -250,4 +268,4 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSuccess,
     getRoleDisplayName: getRoleDisplayNameHelper,
   };
-}; 
+};
