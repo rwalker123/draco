@@ -50,8 +50,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  // Permission check
   const canManageUsers = isAccountAdministrator(hasRole, accountId);
 
   // Service instance
