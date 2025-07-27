@@ -15,6 +15,8 @@ import {
   ConflictError,
 } from '../utils/customErrors';
 import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction';
+import { BatchQueryHelper } from '../utils/batchQueries';
+import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -347,6 +349,21 @@ router.put(
  *           type: string
  *         description: Filter games by team ID
  *         example: "101"
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination
+ *         example: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *         description: Number of items per page
+ *         example: 50
  *     responses:
  *       200:
  *         description: Games retrieved successfully
@@ -410,6 +427,9 @@ router.get(
     const { seasonId } = req.params;
     const { startDate, endDate, teamId, hasRecap } = req.query;
 
+    // Parse pagination parameters
+    const paginationParams = PaginationHelper.parseParams(req.query);
+
     // Only accept a real seasonId
     let seasonIdToUse: bigint;
     try {
@@ -435,6 +455,9 @@ router.get(
     if (teamId) {
       where.OR = [{ hteamid: BigInt(teamId as string) }, { vteamid: BigInt(teamId as string) }];
     }
+
+    // Get total count for pagination
+    const totalCount = await prisma.leagueschedule.count({ where });
 
     // If hasRecap is true, include recaps and filter games
     type GameWithRecap = Prisma.leaguescheduleGetPayload<{
@@ -469,32 +492,21 @@ router.get(
         }),
       },
       orderBy: {
-        gamedate: 'asc',
+        gamedate: paginationParams.sortOrder,
       },
+      skip: paginationParams.skip,
+      take: paginationParams.limit,
     });
 
-    // Helper function to get team names
-    const getTeamNames = async (homeTeamId: bigint, visitorTeamId: bigint) => {
-      const teams = await prisma.teamsseason.findMany({
-        where: {
-          id: {
-            in: [homeTeamId, visitorTeamId],
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-        },
-      });
+    // Collect all unique team IDs for batch loading
+    const allTeamIds = new Set<bigint>();
+    for (const game of games) {
+      allTeamIds.add(game.hteamid);
+      allTeamIds.add(game.vteamid);
+    }
 
-      const homeTeam = teams.find((t) => t.id === homeTeamId);
-      const visitorTeam = teams.find((t) => t.id === visitorTeamId);
-
-      return {
-        homeTeamName: homeTeam?.name || `Team ${homeTeamId}`,
-        visitorTeamName: visitorTeam?.name || `Team ${visitorTeamId}`,
-      };
-    };
+    // Batch load all team names to avoid N+1 queries
+    const teamNames = await BatchQueryHelper.batchTeamNames(prisma, Array.from(allTeamIds));
 
     // If hasRecap is true, filter games to only those with at least one recap
     if (hasRecap === 'true') {
@@ -506,14 +518,16 @@ router.get(
     // Process games to include team names and recaps if requested
     const processedGames = [];
     for (const game of games) {
-      const teamNames = await getTeamNames(game.hteamid, game.vteamid);
+      const homeTeamName = teamNames.get(game.hteamid.toString()) || `Team ${game.hteamid}`;
+      const visitorTeamName = teamNames.get(game.vteamid.toString()) || `Team ${game.vteamid}`;
+
       const baseGame = {
         id: game.id.toString(),
         gameDate: game.gamedate ? game.gamedate.toISOString() : null,
         homeTeamId: game.hteamid.toString(),
         visitorTeamId: game.vteamid.toString(),
-        homeTeamName: teamNames.homeTeamName,
-        visitorTeamName: teamNames.visitorTeamName,
+        homeTeamName: homeTeamName,
+        visitorTeamName: visitorTeamName,
         homeScore: game.hscore,
         visitorScore: game.vscore,
         comment: game.comment,
@@ -558,10 +572,19 @@ router.get(
       }
     }
 
+    // Format paginated response
+    const response = PaginationHelper.formatResponse(
+      processedGames,
+      paginationParams.page,
+      paginationParams.limit,
+      totalCount,
+    );
+
+    // Wrap in expected format
     res.json({
-      success: true,
+      ...response,
       data: {
-        games: processedGames,
+        games: response.data,
       },
     });
   }),
