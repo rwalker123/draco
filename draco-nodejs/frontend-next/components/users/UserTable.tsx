@@ -32,6 +32,7 @@ const UserTable: React.FC<UserTableProps> = ({
   totalUsers,
   onPageChange,
   onRowsPerPageChange,
+  getRoleDisplayName,
 }) => {
   if (loading) {
     return (
@@ -74,11 +75,7 @@ const UserTable: React.FC<UserTableProps> = ({
                 canManageUsers={canManageUsers}
                 onAssignRole={onAssignRole}
                 onRemoveRole={onRemoveRole}
-                getRoleDisplayName={(roleId) => {
-                  // This will be provided by the parent component
-                  // For now, return the roleId as fallback
-                  return roleId;
-                }}
+                getRoleDisplayName={getRoleDisplayName}
               />
             ))}
           </TableBody>
