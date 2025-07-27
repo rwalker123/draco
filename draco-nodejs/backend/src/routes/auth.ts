@@ -3,6 +3,8 @@ import { AuthService, LoginCredentials, RegisterData } from '../services/authSer
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError, AuthenticationError } from '../utils/customErrors';
 
 const router = Router();
 const authService = new AuthService();
@@ -60,17 +62,14 @@ const roleService = new RoleService(prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/login', async (req: Request, res: Response, _next: NextFunction) => {
-  try {
+router.post(
+  '/login',
+  asyncHandler(async (req: Request, res: Response) => {
     const { username, password }: LoginCredentials = req.body;
 
     // Validate input
     if (!username || !password) {
-      res.status(400).json({
-        success: false,
-        message: 'Username and password are required',
-      });
-      return;
+      throw new ValidationError('Username and password are required');
     }
 
     const result = await authService.login({ username, password });
@@ -78,16 +77,10 @@ router.post('/login', async (req: Request, res: Response, _next: NextFunction) =
     if (result.success) {
       res.status(200).json(result);
     } else {
-      res.status(401).json(result);
+      throw new AuthenticationError(result.message || 'Invalid credentials');
     }
-  } catch (error) {
-    console.error('Login route error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -131,36 +124,25 @@ router.post('/login', async (req: Request, res: Response, _next: NextFunction) =
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/register', async (req: Request, res: Response, _next: NextFunction) => {
-  try {
+router.post(
+  '/register',
+  asyncHandler(async (req: Request, res: Response) => {
     const { username, email, password, firstName, lastName }: RegisterData = req.body;
 
     // Validate input
     if (!username || !email || !password) {
-      res.status(400).json({
-        success: false,
-        message: 'Username, email, and password are required',
-      });
-      return;
+      throw new ValidationError('Username, email, and password are required');
     }
 
     // Validate password strength
     if (password.length < 6) {
-      res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long',
-      });
-      return;
+      throw new ValidationError('Password must be at least 6 characters long');
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid email format',
-      });
-      return;
+      throw new ValidationError('Invalid email format');
     }
 
     const result = await authService.register({
@@ -174,16 +156,10 @@ router.post('/register', async (req: Request, res: Response, _next: NextFunction
     if (result.success) {
       res.status(201).json(result);
     } else {
-      res.status(400).json(result);
+      throw new ValidationError(result.message || 'Registration failed');
     }
-  } catch (error) {
-    console.error('Register route error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -247,14 +223,12 @@ router.post('/logout', (req: Request, res: Response, _next: NextFunction) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/me', authenticateToken, async (req: Request, res: Response, _next: NextFunction) => {
-  try {
+router.get(
+  '/me',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response) => {
     if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: 'User not authenticated',
-      });
-      return;
+      throw new AuthenticationError('User not authenticated');
     }
 
     // Fetch first and last name from contacts table
@@ -283,14 +257,8 @@ router.get('/me', authenticateToken, async (req: Request, res: Response, _next: 
         lastname,
       },
     });
-  } catch (error) {
-    console.error('Get user info error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -347,16 +315,13 @@ router.get('/me', authenticateToken, async (req: Request, res: Response, _next: 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/verify', async (req: Request, res: Response, _next: NextFunction) => {
-  try {
+router.post(
+  '/verify',
+  asyncHandler(async (req: Request, res: Response) => {
     const { token } = req.body;
 
     if (!token) {
-      res.status(400).json({
-        success: false,
-        message: 'Token is required',
-      });
-      return;
+      throw new ValidationError('Token is required');
     }
 
     const result = await authService.verifyToken(token);
@@ -364,16 +329,10 @@ router.post('/verify', async (req: Request, res: Response, _next: NextFunction) 
     if (result.success) {
       res.status(200).json(result);
     } else {
-      res.status(401).json(result);
+      throw new AuthenticationError(result.message || 'Token is invalid');
     }
-  } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -431,51 +390,31 @@ router.post('/verify', async (req: Request, res: Response, _next: NextFunction) 
 router.post(
   '/change-password',
   authenticateToken,
-  async (req: Request, res: Response, _next: NextFunction) => {
-    try {
-      const { currentPassword, newPassword } = req.body;
+  asyncHandler(async (req: Request, res: Response) => {
+    const { currentPassword, newPassword } = req.body;
 
-      // Validate input
-      if (!currentPassword || !newPassword) {
-        res.status(400).json({
-          success: false,
-          message: 'Current password and new password are required',
-        });
-        return;
-      }
-
-      // Validate password strength
-      if (newPassword.length < 6) {
-        res.status(400).json({
-          success: false,
-          message: 'New password must be at least 6 characters long',
-        });
-        return;
-      }
-
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: 'User not authenticated',
-        });
-        return;
-      }
-
-      const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
-
-      if (result.success) {
-        res.status(200).json(result);
-      } else {
-        res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error('Change password error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    // Validate input
+    if (!currentPassword || !newPassword) {
+      throw new ValidationError('Current password and new password are required');
     }
-  },
+
+    // Validate password strength
+    if (newPassword.length < 6) {
+      throw new ValidationError('New password must be at least 6 characters long');
+    }
+
+    if (!req.user) {
+      throw new AuthenticationError('User not authenticated');
+    }
+
+    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      throw new AuthenticationError(result.message || 'Password change failed');
+    }
+  }),
 );
 
 /**
@@ -485,31 +424,19 @@ router.post(
 router.post(
   '/refresh',
   authenticateToken,
-  async (req: Request, res: Response, _next: NextFunction) => {
-    try {
-      if (!req.user) {
-        res.status(401).json({
-          success: false,
-          message: 'User not authenticated',
-        });
-        return;
-      }
-
-      const result = await authService.refreshToken(req.user.id);
-
-      if (result.success) {
-        res.status(200).json(result);
-      } else {
-        res.status(401).json(result);
-      }
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      throw new AuthenticationError('User not authenticated');
     }
-  },
+
+    const result = await authService.refreshToken(req.user.id);
+
+    if (result.success) {
+      res.status(200).json(result);
+    } else {
+      throw new AuthenticationError(result.message || 'Token refresh failed');
+    }
+  }),
 );
 
 /**
@@ -519,41 +446,29 @@ router.post(
 router.get(
   '/check-role/:roleId',
   authenticateToken,
-  async (req: Request, res: Response, _next: NextFunction) => {
-    try {
-      if (!req.user?.id) {
-        res.status(401).json({
-          success: false,
-          message: 'User not authenticated',
-        });
-        return;
-      }
-
-      const { roleId } = req.params;
-      const { accountId, teamId, leagueId } = req.query;
-
-      const context = {
-        accountId: accountId ? BigInt(accountId as string) : undefined,
-        teamId: teamId ? BigInt(teamId as string) : undefined,
-        leagueId: leagueId ? BigInt(leagueId as string) : undefined,
-      };
-
-      const roleCheck = await roleService.hasRole(req.user.id, roleId, context);
-
-      res.status(200).json({
-        success: true,
-        hasRole: roleCheck.hasRole,
-        roleLevel: roleCheck.roleLevel,
-        context: roleCheck.context,
-      });
-    } catch (error) {
-      console.error('Role check error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+  asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user?.id) {
+      throw new AuthenticationError('User not authenticated');
     }
-  },
+
+    const { roleId } = req.params;
+    const { accountId, teamId, leagueId } = req.query;
+
+    const context = {
+      accountId: accountId ? BigInt(accountId as string) : undefined,
+      teamId: teamId ? BigInt(teamId as string) : undefined,
+      leagueId: leagueId ? BigInt(leagueId as string) : undefined,
+    };
+
+    const roleCheck = await roleService.hasRole(req.user.id, roleId, context);
+
+    res.status(200).json({
+      success: true,
+      hasRole: roleCheck.hasRole,
+      roleLevel: roleCheck.roleLevel,
+      context: roleCheck.context,
+    });
+  }),
 );
 
 export default router;

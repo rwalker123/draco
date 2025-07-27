@@ -1,21 +1,22 @@
 import { Router } from 'express';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const testDatabaseRouter = Router();
-testDatabaseRouter.get('/', async (req, res, _next) => {
-  try {
+testDatabaseRouter.get(
+  '/',
+  asyncHandler(async (req, res) => {
     const accounts = await prisma.accounts.findMany({
       take: 5,
     });
 
     res.json({ success: true, data: accounts });
-  } catch (err) {
-    _next(err);
-  }
-});
+  }),
+);
 
-testDatabaseRouter.get('/users', async (req, res, _next) => {
-  try {
+testDatabaseRouter.get(
+  '/users',
+  asyncHandler(async (req, res) => {
     const users = await prisma.aspnetusers.findMany({
       select: {
         id: true,
@@ -27,13 +28,12 @@ testDatabaseRouter.get('/users', async (req, res, _next) => {
     });
 
     res.json({ success: true, data: users });
-  } catch (err) {
-    _next(err);
-  }
-});
+  }),
+);
 
-testDatabaseRouter.get('/leagueschedule', async (req, res, _next) => {
-  try {
+testDatabaseRouter.get(
+  '/leagueschedule',
+  asyncHandler(async (req, res) => {
     const games = await prisma.leagueschedule.findMany({
       select: {
         id: true,
@@ -59,9 +59,7 @@ testDatabaseRouter.get('/leagueschedule', async (req, res, _next) => {
         gamestatus: game.gamestatus,
       })),
     });
-  } catch (err) {
-    _next(err);
-  }
-});
+  }),
+);
 
 export default testDatabaseRouter;

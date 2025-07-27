@@ -70,8 +70,8 @@ export const transformGamesFromAPI = (games: unknown[]): Game[] => {
         date: safeString(game.gameDate), // Note: Game interface uses 'date' while ScheduleGame uses 'gameDate'
         homeTeamId: safeString(game.homeTeamId),
         awayTeamId: safeString(game.visitorTeamId), // Note: Game interface uses 'awayTeamId' while ScheduleGame uses 'visitorTeamId'
-        homeTeamName: 'Unknown Team', // TODO: Need to fetch team names or pass them in
-        awayTeamName: 'Unknown Team', // TODO: Need to fetch team names or pass them in
+        homeTeamName: safeString(game.homeTeamName, 'Unknown Team'),
+        awayTeamName: safeString(game.visitorTeamName, 'Unknown Team'),
         homeScore: safeNumber(game.homeScore),
         awayScore: safeNumber(game.visitorScore), // Note: Game interface uses 'awayScore' while ScheduleGame uses 'visitorScore'
         gameStatus,

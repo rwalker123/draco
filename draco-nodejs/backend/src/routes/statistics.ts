@@ -1,13 +1,16 @@
 import { Router, Request, Response } from 'express';
 import { StatisticsService } from '../services/statisticsService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError } from '../utils/customErrors';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);
 
 // Get configured leader categories for an account (public endpoint)
-router.get('/leader-categories', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/leader-categories',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
 
     const categories = await statisticsService.getLeaderCategories(accountId);
@@ -16,18 +19,13 @@ router.get('/leader-categories', async (req: Request, res: Response): Promise<vo
       success: true,
       data: categories,
     });
-  } catch (error) {
-    console.error('Error fetching leader categories:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch leader categories',
-    });
-  }
-});
+  }),
+);
 
 // Get batting statistics for a league (public endpoint)
-router.get('/batting/:leagueId', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/batting/:leagueId',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const leagueId = BigInt(req.params.leagueId);
 
@@ -51,18 +49,13 @@ router.get('/batting/:leagueId', async (req: Request, res: Response): Promise<vo
         playerId: stat.playerId.toString(),
       })),
     });
-  } catch (error) {
-    console.error('Error fetching batting statistics:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch batting statistics',
-    });
-  }
-});
+  }),
+);
 
 // Get pitching statistics for a league (public endpoint)
-router.get('/pitching/:leagueId', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/pitching/:leagueId',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const leagueId = BigInt(req.params.leagueId);
 
@@ -86,27 +79,18 @@ router.get('/pitching/:leagueId', async (req: Request, res: Response): Promise<v
         playerId: stat.playerId.toString(),
       })),
     });
-  } catch (error) {
-    console.error('Error fetching pitching statistics:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch pitching statistics',
-    });
-  }
-});
+  }),
+);
 
 // Get statistical leaders (public endpoint)
-router.get('/leaders/:leagueId', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/leaders/:leagueId',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const category = req.query.category as string;
 
     if (!category) {
-      res.status(400).json({
-        success: false,
-        message: 'Category parameter is required',
-      });
-      return;
+      throw new ValidationError('Category parameter is required');
     }
 
     const filters = {
@@ -125,13 +109,7 @@ router.get('/leaders/:leagueId', async (req: Request, res: Response): Promise<vo
         playerId: leader.playerId.toString(),
       })),
     });
-  } catch (error) {
-    console.error('Error fetching statistical leaders:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch statistical leaders',
-    });
-  }
-});
+  }),
+);
 
 export default router;
