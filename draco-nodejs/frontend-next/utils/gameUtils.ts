@@ -1,3 +1,5 @@
+import { GameStatus } from '../types/schedule';
+
 /**
  * Converts a game status number to a human-readable string
  * @param status - The game status number
@@ -5,17 +7,17 @@
  */
 export const getGameStatusText = (status: number): string => {
   switch (status) {
-    case 0:
+    case GameStatus.Scheduled:
       return 'Incomplete';
-    case 1:
+    case GameStatus.Completed:
       return 'Final';
-    case 2:
+    case GameStatus.Rainout:
       return 'Rainout';
-    case 3:
+    case GameStatus.Postponed:
       return 'Postponed';
-    case 4:
+    case GameStatus.Forfeit:
       return 'Forfeit';
-    case 5:
+    case GameStatus.DidNotReport:
       return 'Did Not Report';
     default:
       return 'Unknown';
@@ -29,19 +31,37 @@ export const getGameStatusText = (status: number): string => {
  */
 export const getGameStatusShortText = (status: number): string => {
   switch (status) {
-    case 0:
+    case GameStatus.Scheduled:
       return '';
-    case 1:
+    case GameStatus.Completed:
       return 'F';
-    case 2:
+    case GameStatus.Rainout:
       return 'R';
-    case 3:
+    case GameStatus.Postponed:
       return 'PPD';
-    case 4:
+    case GameStatus.Forfeit:
       return 'FFT';
-    case 5:
+    case GameStatus.DidNotReport:
       return 'DNR';
     default:
       return '';
+  }
+};
+
+/**
+ * Converts a game type number to a human-readable string
+ * @param gameType - The game type number or string
+ * @returns A string representation of the game type
+ */
+export const getGameTypeText = (gameType: number | string): string => {
+  switch (Number(gameType)) {
+    case 0:
+      return 'Regular Season';
+    case 1:
+      return 'Playoff';
+    case 2:
+      return 'Championship';
+    default:
+      return 'Unknown';
   }
 };

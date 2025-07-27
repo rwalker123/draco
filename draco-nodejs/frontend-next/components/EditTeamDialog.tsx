@@ -14,17 +14,7 @@ import {
 import { PhotoCamera as PhotoCameraIcon, Save as SaveIcon } from '@mui/icons-material';
 import Image from 'next/image';
 import { getLogoSize, validateLogoFile } from '../config/teams';
-
-interface Team {
-  id: string;
-  teamId: string;
-  name: string;
-  webAddress?: string;
-  youtubeUserId?: string;
-  defaultVideo?: string;
-  autoPlayVideo?: boolean;
-  logoUrl?: string;
-}
+import { Team } from '@/types/schedule';
 
 interface EditTeamDialogProps {
   open: boolean;

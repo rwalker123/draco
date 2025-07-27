@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Trophy } from 'lucide-react';
 import TeamAvatar from './TeamAvatar';
+import { Team } from '@/types/schedule';
 
 interface TeamInfoCardProps {
   accountId?: string;
@@ -15,19 +16,6 @@ interface TeamInfoCardProps {
     logoUrl?: string;
     record?: { wins: number; losses: number; ties: number };
   }) => void;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  logoUrl?: string;
-  webAddress?: string;
-  youtubeUserId?: string;
-  defaultVideo?: string;
-  autoPlayVideo?: boolean;
-  seasonName?: string; // Add this if available from API
-  leagueName?: string; // Add this if available from API
-  // Add other fields as needed
 }
 
 export default function TeamInfoCard({

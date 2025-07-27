@@ -19,17 +19,7 @@ import AccountPageHeader from '../../../../../../components/AccountPageHeader';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import EditTeamDialog from '../../../../../../components/EditTeamDialog';
 import TeamAvatar from '../../../../../../components/TeamAvatar';
-
-interface Team {
-  id: string;
-  teamId: string;
-  name: string;
-  webAddress?: string;
-  youtubeUserId?: string;
-  defaultVideo?: string;
-  autoPlayVideo?: boolean;
-  logoUrl?: string;
-}
+import { Team } from '@/types/schedule';
 
 interface Division {
   id: string;

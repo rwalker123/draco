@@ -23,6 +23,7 @@ import {
   Email as EmailIcon,
   Twitter as TwitterIcon,
 } from '@mui/icons-material';
+import { GameStatus } from '../types/schedule';
 
 interface GameRecap {
   teamId: string;
@@ -85,7 +86,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     gameId: '',
     homeScore: 0,
     awayScore: 0,
-    gameStatus: 0,
+    gameStatus: GameStatus.Scheduled,
     emailPlayers: false,
     postToTwitter: false,
     postToBluesky: false,
@@ -122,7 +123,7 @@ const EnterGameResultsDialog: React.FC<EnterGameResultsDialogProps> = ({
     if (!game) return;
 
     // Validate forfeit scores
-    if (formData.gameStatus === 4) {
+    if (formData.gameStatus === GameStatus.Forfeit) {
       // Forfeit
       if (formData.homeScore === 0 && formData.awayScore === 0) {
         setError(

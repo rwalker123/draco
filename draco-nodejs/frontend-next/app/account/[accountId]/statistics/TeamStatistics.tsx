@@ -22,13 +22,7 @@ import StatisticsTable, {
   formatERA,
   formatIPDecimal,
 } from './StatisticsTable';
-
-interface Team {
-  teamId: string;
-  teamName: string;
-  leagueName: string;
-  divisionName: string;
-}
+import { Team } from '@/types/schedule';
 
 interface BattingStatsRow {
   playerId: string;
