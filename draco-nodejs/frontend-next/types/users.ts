@@ -73,7 +73,6 @@ export interface AssignRoleDialogProps {
   open: boolean;
   onClose: () => void;
   onAssign: () => void;
-  selectedUser: User | null;
   selectedRole: string;
   newUserContactId: string;
   roles: Role[];
@@ -110,7 +109,7 @@ export interface UseUserManagementReturn {
   totalUsers: number;
   searchTerm: string;
   searchLoading: boolean;
-  
+
   // Dialog states
   assignRoleDialogOpen: boolean;
   removeRoleDialogOpen: boolean;
@@ -119,7 +118,7 @@ export interface UseUserManagementReturn {
   selectedRoleToRemove: UserRole | null;
   newUserContactId: string;
   formLoading: boolean;
-  
+
   // Actions
   handleSearch: () => void;
   handlePageChange: (event: unknown, newPage: number) => void;
@@ -138,4 +137,4 @@ export interface UseUserManagementReturn {
   setError: (error: string | null) => void;
   setSuccess: (success: string | null) => void;
   getRoleDisplayName: (roleId: string) => string;
-} 
+}
