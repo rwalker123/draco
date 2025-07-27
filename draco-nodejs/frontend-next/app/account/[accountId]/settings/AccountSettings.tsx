@@ -5,6 +5,7 @@ import { Box, Typography, Paper, Tabs, Tab, Alert, CircularProgress } from '@mui
 import { useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
+import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import UrlManagement from '../../../../components/UrlManagement';
 
 interface TabPanelProps {
@@ -61,7 +62,7 @@ const AccountSettings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canManageAccount = hasRole('AccountAdmin') || hasRole('Administrator');
+  const canManageAccountSettings = isAccountAdministrator(hasRole, accountIdStr);
 
   const loadAccountData = useCallback(async () => {
     try {
@@ -124,7 +125,7 @@ const AccountSettings: React.FC = () => {
     );
   }
 
-  if (!canManageAccount) {
+  if (!canManageAccountSettings) {
     return (
       <main className="min-h-screen bg-background">
         <Box sx={{ mt: 8 }}>

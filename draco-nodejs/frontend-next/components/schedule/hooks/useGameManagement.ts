@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useCurrentSeason } from '../../../hooks/useCurrentSeason';
 import { Game, GameFormState, GameType } from '@/types/schedule';
+import { formatGameDateTime } from '../../../utils/dateUtils';
 
 interface UseGameManagementProps {
   accountId: string;
@@ -172,12 +173,7 @@ export const useGameManagement = ({
       const currentSeasonId = await fetchCurrentSeason();
 
       // Create ISO string without timezone manipulation
-      const gameYear = gameDate.getFullYear();
-      const gameMonth = String(gameDate.getMonth() + 1).padStart(2, '0');
-      const gameDay = String(gameDate.getDate()).padStart(2, '0');
-      const gameHours = String(gameTime.getHours()).padStart(2, '0');
-      const gameMinutes = String(gameTime.getMinutes()).padStart(2, '0');
-      const gameDateString = `${gameYear}-${gameMonth}-${gameDay}T${gameHours}:${gameMinutes}:00`;
+      const gameDateString = formatGameDateTime(gameDate, gameTime);
 
       const requestData = {
         leagueSeasonId: dialogLeagueSeason,
@@ -265,12 +261,7 @@ export const useGameManagement = ({
       }
 
       // Create ISO string without timezone manipulation
-      const gameYear = gameDate.getFullYear();
-      const gameMonth = String(gameDate.getMonth() + 1).padStart(2, '0');
-      const gameDay = String(gameDate.getDate()).padStart(2, '0');
-      const gameHours = String(gameTime.getHours()).padStart(2, '0');
-      const gameMinutes = String(gameTime.getMinutes()).padStart(2, '0');
-      const gameDateString = `${gameYear}-${gameMonth}-${gameDay}T${gameHours}:${gameMinutes}:00`;
+      const gameDateString = formatGameDateTime(gameDate, gameTime);
 
       const response = await fetch(
         `/api/accounts/${accountId}/seasons/${selectedGame.season.id}/games/${selectedGame.id}`,

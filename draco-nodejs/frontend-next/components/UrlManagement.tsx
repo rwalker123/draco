@@ -23,17 +23,18 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Link as LinkIcon,
-  OpenInNew as OpenInNewIcon
+  OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
+import { isAccountAdministrator } from '../utils/permissionUtils';
 import { isValidDomain, getDomainValidationError } from '../utils/validation';
 
 interface AccountUrl {
@@ -47,60 +48,56 @@ interface UrlManagementProps {
   onUrlsChange?: (urls: AccountUrl[]) => void;
 }
 
-const UrlManagement: React.FC<UrlManagementProps> = ({ 
-  accountId, 
-  accountName, 
-  onUrlsChange 
-}) => {
+const UrlManagement: React.FC<UrlManagementProps> = ({ accountId, accountName, onUrlsChange }) => {
   const { token } = useAuth();
   const { hasRole } = useRole();
-  
+
   const [urls, setUrls] = useState<AccountUrl[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  
+
   // Dialog-specific error states
   const [addDialogError, setAddDialogError] = useState<string | null>(null);
   const [editDialogError, setEditDialogError] = useState<string | null>(null);
-  
+
   // Use ref to store the callback to avoid dependency issues
   const onUrlsChangeRef = useRef(onUrlsChange);
   onUrlsChangeRef.current = onUrlsChange;
-  
+
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUrl, setSelectedUrl] = useState<AccountUrl | null>(null);
-  
+
   // Form states
   const [formData, setFormData] = useState({
     protocol: 'https://',
-    domain: ''
+    domain: '',
   });
 
-  const canManageUrls = hasRole('AccountAdmin') || hasRole('Administrator');
+  const canManageUrls = isAccountAdministrator(hasRole, accountId);
 
   const loadUrls = useCallback(async () => {
     if (!token || !accountId) {
       return;
     }
-    
+
     try {
       setLoading(true);
       setError(null);
 
       const response = await fetch(`/api/accounts/${accountId}/urls`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.success) {
           const urlList = data.data.urls || [];
           setUrls(urlList);
@@ -134,7 +131,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
   const handleAddUrl = async () => {
     const fullUrl = formData.protocol + formData.domain;
     const validationError = validateUrl(formData.domain);
-    
+
     if (validationError) {
       setAddDialogError(validationError);
       return;
@@ -142,14 +139,14 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
 
     try {
       setAddDialogError(null); // Clear any previous errors
-      
+
       const response = await fetch(`/api/accounts/${accountId}/urls`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: fullUrl })
+        body: JSON.stringify({ url: fullUrl }),
       });
 
       const data = await response.json();
@@ -174,7 +171,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
 
     const fullUrl = formData.protocol + formData.domain;
     const validationError = validateUrl(formData.domain);
-    
+
     if (validationError) {
       setEditDialogError(validationError);
       return;
@@ -182,14 +179,14 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
 
     try {
       setEditDialogError(null); // Clear any previous errors
-      
+
       const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: fullUrl })
+        body: JSON.stringify({ url: fullUrl }),
       });
 
       const data = await response.json();
@@ -217,9 +214,9 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
       const response = await fetch(`/api/accounts/${accountId}/urls/${selectedUrl.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       const data = await response.json();
@@ -243,7 +240,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
     const urlObj = new URL(url.url);
     setFormData({
       protocol: urlObj.protocol + '//',
-      domain: urlObj.host
+      domain: urlObj.host,
     });
     setEditDialogError(null); // Clear any previous errors
     setEditDialogOpen(true);
@@ -279,11 +276,7 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
           URL Management
         </Typography>
         {canManageUrls && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleAddClick}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} onClick={handleAddClick}>
             Add URL
           </Button>
         )}
@@ -309,17 +302,12 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
               No URLs configured
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {canManageUrls 
+              {canManageUrls
                 ? 'Add URLs to make your organization accessible via custom domains.'
-                : 'No custom URLs have been configured for this organization.'
-              }
+                : 'No custom URLs have been configured for this organization.'}
             </Typography>
             {canManageUrls && (
-              <Button
-                variant="outlined"
-                startIcon={<AddIcon />}
-                onClick={handleAddClick}
-              >
+              <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddClick}>
                 Add First URL
               </Button>
             )}
@@ -347,20 +335,14 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
                     <TableCell>
                       <Stack direction="row" spacing={1}>
                         <Tooltip title="Visit URL">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleVisitUrl(url.url)}
-                          >
+                          <IconButton size="small" onClick={() => handleVisitUrl(url.url)}>
                             <OpenInNewIcon />
                           </IconButton>
                         </Tooltip>
                         {canManageUrls && (
                           <>
                             <Tooltip title="Edit URL">
-                              <IconButton
-                                size="small"
-                                onClick={() => openEditDialog(url)}
-                              >
+                              <IconButton size="small" onClick={() => openEditDialog(url)}>
                                 <EditIcon />
                               </IconButton>
                             </Tooltip>
@@ -386,18 +368,19 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
       </Paper>
 
       {/* Add URL Dialog */}
-      <Dialog open={addDialogOpen} onClose={() => {
-        setAddDialogOpen(false);
-        setAddDialogError(null);
-      }} maxWidth="sm" fullWidth>
+      <Dialog
+        open={addDialogOpen}
+        onClose={() => {
+          setAddDialogOpen(false);
+          setAddDialogError(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Add URL for {accountName}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {addDialogError && (
-              <Alert severity="error">
-                {addDialogError}
-              </Alert>
-            )}
+            {addDialogError && <Alert severity="error">{addDialogError}</Alert>}
             <FormControl fullWidth>
               <InputLabel>Protocol</InputLabel>
               <Select
@@ -419,34 +402,39 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
               helperText="Enter the domain name only (e.g., example.com, www.example.com)"
             />
             {formData.protocol && formData.domain && (
-              <Alert severity="info">
-                Full URL: {formData.protocol + formData.domain}
-              </Alert>
+              <Alert severity="info">Full URL: {formData.protocol + formData.domain}</Alert>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setAddDialogOpen(false);
-            setAddDialogError(null);
-          }}>Cancel</Button>
-          <Button onClick={handleAddUrl} variant="contained">Add URL</Button>
+          <Button
+            onClick={() => {
+              setAddDialogOpen(false);
+              setAddDialogError(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleAddUrl} variant="contained">
+            Add URL
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit URL Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => {
-        setEditDialogOpen(false);
-        setEditDialogError(null);
-      }} maxWidth="sm" fullWidth>
+      <Dialog
+        open={editDialogOpen}
+        onClose={() => {
+          setEditDialogOpen(false);
+          setEditDialogError(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Edit URL</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {editDialogError && (
-              <Alert severity="error">
-                {editDialogError}
-              </Alert>
-            )}
+            {editDialogError && <Alert severity="error">{editDialogError}</Alert>}
             <FormControl fullWidth>
               <InputLabel>Protocol</InputLabel>
               <Select
@@ -468,18 +456,22 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
               helperText="Enter the domain name only (e.g., example.com, www.example.com)"
             />
             {formData.protocol && formData.domain && (
-              <Alert severity="info">
-                Full URL: {formData.protocol + formData.domain}
-              </Alert>
+              <Alert severity="info">Full URL: {formData.protocol + formData.domain}</Alert>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setEditDialogOpen(false);
-            setEditDialogError(null);
-          }}>Cancel</Button>
-          <Button onClick={handleEditUrl} variant="contained">Update URL</Button>
+          <Button
+            onClick={() => {
+              setEditDialogOpen(false);
+              setEditDialogError(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={handleEditUrl} variant="contained">
+            Update URL
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -488,7 +480,8 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
         <DialogTitle>Delete URL</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the URL &quot;{selectedUrl?.url}&quot;? This action cannot be undone.
+            Are you sure you want to delete the URL &quot;{selectedUrl?.url}&quot;? This action
+            cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -506,4 +499,4 @@ const UrlManagement: React.FC<UrlManagementProps> = ({
   );
 };
 
-export default UrlManagement; 
+export default UrlManagement;
