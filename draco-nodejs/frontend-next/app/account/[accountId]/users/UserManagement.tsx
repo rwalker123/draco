@@ -48,7 +48,7 @@ interface User {
   lastName: string;
   email: string;
   userId: string;
-  roles: UserRole[];
+  roles?: UserRole[]; // Optional since backend doesn't include roles yet
 }
 
 interface UserRole {
@@ -125,7 +125,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            setUsers(data.data.users || []);
+            // TODO: Backend API needs to include roles in response
+            // Currently users don't have roles property, so we set empty arrays
+            const usersWithRoles = (data.data.users || []).map((user: Omit<User, 'roles'>) => ({
+              ...user,
+              roles: [] // Ensure roles property exists
+            }));
+            setUsers(usersWithRoles);
             setTotalUsers(data.data.total || 0);
           } else {
             setError(data.message || 'Failed to load users');
@@ -387,7 +393,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                      {user.roles.length > 0 ? (
+                      {user.roles && user.roles.length > 0 ? (
                         user.roles.map((role) => (
                           <Chip
                             key={role.id}
