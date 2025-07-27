@@ -41,6 +41,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
     // Actions
     handleSearch,
+    handleClearSearch,
     handlePageChange,
     handleRowsPerPageChange,
     handleAssignRole,
@@ -54,6 +55,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     setSearchTerm,
     setError,
     setSuccess,
+    getRoleDisplayName,
   } = useUserManagement(accountId);
 
   // Check if user can manage users (this is handled in the hook)
@@ -99,10 +101,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onSearch={handleSearch}
-        onClear={() => {
-          setSearchTerm('');
-          // The hook will handle the search reset
-        }}
+        onClear={handleClearSearch}
         loading={searchLoading}
       />
 
@@ -118,6 +117,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         totalUsers={totalUsers}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
+        getRoleDisplayName={getRoleDisplayName}
       />
 
       {/* Dialog Sections */}
