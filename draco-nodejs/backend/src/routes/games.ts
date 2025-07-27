@@ -14,6 +14,7 @@ import {
   AuthorizationError,
   ConflictError,
 } from '../utils/customErrors';
+import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -188,8 +189,7 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const gameId = BigInt(req.params.gameId);
+    const { accountId, gameId } = extractGameOnlyParams(req.params);
     const {
       homeScore,
       awayScore,
@@ -899,10 +899,7 @@ async function userHasTeamAdminRights(
 router.get(
   '/:gameId/recap/:teamSeasonId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const seasonId = BigInt(req.params.seasonId);
-    const gameId = BigInt(req.params.gameId);
-    const teamSeasonId = BigInt(req.params.teamSeasonId);
+    const { accountId, seasonId, gameId, teamSeasonId } = extractRecapParams(req.params);
 
     // Fetch the game and validate it belongs to the account and season
     const game = await prisma.leagueschedule.findUnique({
@@ -958,10 +955,7 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const seasonId = BigInt(req.params.seasonId);
-    const gameId = BigInt(req.params.gameId);
-    const teamSeasonId = BigInt(req.params.teamSeasonId);
+    const { accountId, seasonId, gameId, teamSeasonId } = extractRecapParams(req.params);
     const userId = req.user?.id;
     if (!userId) {
       throw new AuthenticationError('User not authenticated');
