@@ -157,8 +157,7 @@ const GameCard: React.FC<GameCardProps> = ({
                 <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
                   {game.leagueName}
                 </Typography>
-                {(game.gameType === GameType.Playoff ||
-                  game.gameType === GameType.RegularSeason) && (
+                {game.gameType === GameType.Playoff && (
                   <Tooltip title="Playoff Game">
                     <EmojiEventsIcon
                       sx={{
@@ -276,8 +275,7 @@ const GameCard: React.FC<GameCardProps> = ({
                   <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
                     {game.leagueName}
                   </Typography>
-                  {(game.gameType === GameType.Playoff ||
-                    game.gameType === GameType.RegularSeason) && (
+                  {game.gameType === GameType.Playoff && (
                     <Tooltip title="Playoff Game">
                       <EmojiEventsIcon
                         sx={{
