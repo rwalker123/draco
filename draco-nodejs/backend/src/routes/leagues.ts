@@ -1,11 +1,13 @@
 // League Management Routes for Draco Sports Manager
 // Handles league CRUD operations and provides available leagues for account management
 
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
 
 // Type definitions for Prisma query results
 interface League {
@@ -86,50 +88,43 @@ router.get(
   '/',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
 
-      const leagues = await prisma.league.findMany({
-        where: {
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-        orderBy: {
-          name: 'asc',
-        },
-      });
+    const leagues = await prisma.league.findMany({
+      where: {
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+      orderBy: {
+        name: 'asc',
+      },
+    });
 
-      res.json({
-        success: true,
-        data: {
-          leagues: leagues.map((league: League) => ({
-            id: league.id.toString(),
-            name: league.name,
-            accountId: league.accountid.toString(),
-          })),
-        },
-      });
-    } catch (error) {
-      console.error('Error getting leagues:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
-    }
-  },
+    res.json({
+      success: true,
+      data: {
+        leagues: leagues.map((league: League) => ({
+          id: league.id.toString(),
+          name: league.name,
+          accountId: league.accountid.toString(),
+        })),
+      },
+    });
+  }),
 );
 
 /**
  * GET /api/accounts/:accountId/leagues/all-time
  * Get unique leagues for all-time statistics (public endpoint)
  */
-router.get('/all-time', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-  try {
+router.get(
+  '/all-time',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
 
     // Get unique leagues that have been used in seasons
@@ -156,14 +151,8 @@ router.get('/all-time', async (req: Request, res: Response, _next: NextFunction)
         name: league.name,
       })),
     });
-  } catch (error) {
-    console.error('Error fetching all-time leagues:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch all-time leagues',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -244,49 +233,37 @@ router.get(
   '/:leagueId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const leagueId = BigInt(req.params.leagueId);
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const leagueId = BigInt(req.params.leagueId);
+    const accountId = BigInt(req.params.accountId);
 
-      const league = await prisma.league.findFirst({
-        where: {
-          id: leagueId,
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-      });
+    const league = await prisma.league.findFirst({
+      where: {
+        id: leagueId,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
 
-      if (!league) {
-        res.status(404).json({
-          success: false,
-          message: 'League not found',
-        });
-        return;
-      }
-
-      res.json({
-        success: true,
-        data: {
-          league: {
-            id: league.id.toString(),
-            name: league.name,
-            accountId: league.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error getting league:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    if (!league) {
+      throw new NotFoundError('League not found');
     }
-  },
+
+    res.json({
+      success: true,
+      data: {
+        league: {
+          id: league.id.toString(),
+          name: league.name,
+          accountId: league.accountid.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -380,65 +357,49 @@ router.post(
   '/',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const { name } = req.body;
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { name } = req.body;
+    const accountId = BigInt(req.params.accountId);
 
-      if (!name) {
-        res.status(400).json({
-          success: false,
-          message: 'League name is required',
-        });
-        return;
-      }
-
-      // Check if league with this name already exists for this account
-      const existingLeague = await prisma.league.findFirst({
-        where: {
-          name: name,
-          accountid: accountId,
-        },
-      });
-
-      if (existingLeague) {
-        res.status(409).json({
-          success: false,
-          message: 'A league with this name already exists for this account',
-        });
-        return;
-      }
-
-      const newLeague = await prisma.league.create({
-        data: {
-          name: name,
-          accountid: accountId,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          league: {
-            id: newLeague.id.toString(),
-            name: newLeague.name,
-            accountId: newLeague.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error creating league:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    if (!name) {
+      throw new ValidationError('League name is required');
     }
-  },
+
+    // Check if league with this name already exists for this account
+    const existingLeague = await prisma.league.findFirst({
+      where: {
+        name: name,
+        accountid: accountId,
+      },
+    });
+
+    if (existingLeague) {
+      throw new ConflictError('A league with this name already exists for this account');
+    }
+
+    const newLeague = await prisma.league.create({
+      data: {
+        name: name,
+        accountid: accountId,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        league: {
+          id: newLeague.id.toString(),
+          name: newLeague.name,
+          accountId: newLeague.accountid.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -449,85 +410,65 @@ router.put(
   '/:leagueId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const leagueId = BigInt(req.params.leagueId);
-      const accountId = BigInt(req.params.accountId);
-      const { name } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const leagueId = BigInt(req.params.leagueId);
+    const accountId = BigInt(req.params.accountId);
+    const { name } = req.body;
 
-      if (!name) {
-        res.status(400).json({
-          success: false,
-          message: 'League name is required',
-        });
-        return;
-      }
-
-      // Check if league exists and belongs to this account
-      const existingLeague = await prisma.league.findFirst({
-        where: {
-          id: leagueId,
-          accountid: accountId,
-        },
-      });
-
-      if (!existingLeague) {
-        res.status(404).json({
-          success: false,
-          message: 'League not found',
-        });
-        return;
-      }
-
-      // Check if another league with this name already exists for this account
-      const duplicateLeague = await prisma.league.findFirst({
-        where: {
-          name: name,
-          accountid: accountId,
-          id: { not: leagueId },
-        },
-      });
-
-      if (duplicateLeague) {
-        res.status(409).json({
-          success: false,
-          message: 'A league with this name already exists for this account',
-        });
-        return;
-      }
-
-      const updatedLeague = await prisma.league.update({
-        where: {
-          id: leagueId,
-        },
-        data: {
-          name: name,
-        },
-        select: {
-          id: true,
-          name: true,
-          accountid: true,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          league: {
-            id: updatedLeague.id.toString(),
-            name: updatedLeague.name,
-            accountId: updatedLeague.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      console.error('Error updating league:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    if (!name) {
+      throw new ValidationError('League name is required');
     }
-  },
+
+    // Check if league exists and belongs to this account
+    const existingLeague = await prisma.league.findFirst({
+      where: {
+        id: leagueId,
+        accountid: accountId,
+      },
+    });
+
+    if (!existingLeague) {
+      throw new NotFoundError('League not found');
+    }
+
+    // Check if another league with this name already exists for this account
+    const duplicateLeague = await prisma.league.findFirst({
+      where: {
+        name: name,
+        accountid: accountId,
+        id: { not: leagueId },
+      },
+    });
+
+    if (duplicateLeague) {
+      throw new ConflictError('A league with this name already exists for this account');
+    }
+
+    const updatedLeague = await prisma.league.update({
+      where: {
+        id: leagueId,
+      },
+      data: {
+        name: name,
+      },
+      select: {
+        id: true,
+        name: true,
+        accountid: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        league: {
+          id: updatedLeague.id.toString(),
+          name: updatedLeague.name,
+          accountId: updatedLeague.accountid.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -539,74 +480,49 @@ router.delete(
   '/:leagueId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-    try {
-      const leagueId = BigInt(req.params.leagueId);
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const leagueId = BigInt(req.params.leagueId);
+    const accountId = BigInt(req.params.accountId);
 
-      // Check if league exists and belongs to this account
-      const league = await prisma.league.findFirst({
-        where: {
-          id: leagueId,
-          accountid: accountId,
-        },
-      });
+    // Check if league exists and belongs to this account
+    const league = await prisma.league.findFirst({
+      where: {
+        id: leagueId,
+        accountid: accountId,
+      },
+    });
 
-      if (!league) {
-        res.status(404).json({
-          success: false,
-          message: 'League not found',
-        });
-        return;
-      }
-
-      // Check if there are any related records that would prevent deletion
-      const hasRelatedData = await prisma.leagueseason.findFirst({
-        where: {
-          leagueid: leagueId,
-        },
-      });
-
-      if (hasRelatedData) {
-        res.status(400).json({
-          success: false,
-          message:
-            'Cannot delete league because it is associated with seasons. Remove league from seasons first.',
-        });
-        return;
-      }
-
-      // Delete the league
-      await prisma.league.delete({
-        where: {
-          id: leagueId,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          message: `League "${league.name}" has been deleted`,
-        },
-      });
-    } catch (error: unknown) {
-      console.error('Error deleting league:', error);
-
-      // Check if it's a foreign key constraint error
-      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
-        res.status(400).json({
-          success: false,
-          message: 'Cannot delete league because it has related data. Remove related data first.',
-        });
-        return;
-      }
-
-      res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-      });
+    if (!league) {
+      throw new NotFoundError('League not found');
     }
-  },
+
+    // Check if there are any related records that would prevent deletion
+    const hasRelatedData = await prisma.leagueseason.findFirst({
+      where: {
+        leagueid: leagueId,
+      },
+    });
+
+    if (hasRelatedData) {
+      throw new ValidationError(
+        'Cannot delete league because it is associated with seasons. Remove league from seasons first.',
+      );
+    }
+
+    // Delete the league - if Prisma P2003 error occurs, it will be handled by global error handler
+    await prisma.league.delete({
+      where: {
+        id: leagueId,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: `League "${league.name}" has been deleted`,
+      },
+    });
+  }),
 );
 
 export default router;

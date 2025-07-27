@@ -4,6 +4,8 @@ import * as crypto from 'crypto';
 import { PasswordResetModel } from '../models/PasswordReset';
 import { EmailService, EmailConfig } from '../services/emailService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError, InternalServerError } from '../utils/customErrors';
 
 const router = Router();
 // Email configuration - you'll need to update these with your actual email settings
@@ -27,16 +29,13 @@ const emailService = new EmailService(
  * Request password reset
  * POST /api/password-reset/request
  */
-router.post('/request', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.post(
+  '/request',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { email, testMode = false } = req.body;
 
     if (!email) {
-      res.status(400).json({
-        success: false,
-        message: 'Email is required',
-      });
-      return;
+      throw new ValidationError('Email is required');
     }
 
     // Find user by email
@@ -81,118 +80,62 @@ router.post('/request', async (req: Request, res: Response): Promise<void> => {
     );
 
     if (!emailSent) {
-      res.status(500).json({
-        success: false,
-        message: 'Failed to send password reset email. Please try again later.',
-      });
-      return;
+      throw new InternalServerError('Failed to send password reset email. Please try again later.');
     }
 
     res.status(200).json({
       success: true,
       message: 'If an account with that email exists, a password reset link has been sent.',
     });
-  } catch (error) {
-    console.error('Password reset request error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while processing your request.',
-    });
-  }
-});
+  }),
+);
 
 /**
- * Verify reset token
- * GET /api/password-reset/verify/:token
+ * Verify password reset token
+ * POST /api/password-reset/verify
  */
-router.get('/verify/:token', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { token } = req.params;
+router.post(
+  '/verify',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { token } = req.body;
 
     if (!token) {
-      res.status(400).json({
-        success: false,
-        message: 'Reset token is required',
-      });
-      return;
+      throw new ValidationError('Reset token is required');
     }
 
-    // Find valid token
-    const resetToken = await PasswordResetModel.findValidToken(token);
-
-    if (!resetToken) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid or expired reset token',
-      });
-      return;
-    }
-
-    // Get user info
-    const user = await prisma.aspnetusers.findUnique({
-      where: { id: resetToken.userId },
-      select: { id: true, username: true },
-    });
-
-    if (!user) {
-      res.status(400).json({
-        success: false,
-        message: 'User not found',
-      });
-      return;
-    }
+    const tokenData = await PasswordResetModel.findValidToken(token);
+    const isValid = !!tokenData;
 
     res.status(200).json({
       success: true,
-      message: 'Token is valid',
-      data: {
-        token: token,
-        email: user.username,
-      },
+      valid: isValid,
+      message: isValid ? 'Token is valid' : 'Token is invalid or expired',
     });
-  } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while verifying the token.',
-    });
-  }
-});
+  }),
+);
 
 /**
- * Reset password with token
+ * Reset password using token
  * POST /api/password-reset/reset
  */
-router.post('/reset', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.post(
+  '/reset',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { token, newPassword } = req.body;
 
     if (!token || !newPassword) {
-      res.status(400).json({
-        success: false,
-        message: 'Token and new password are required',
-      });
-      return;
+      throw new ValidationError('Reset token and new password are required');
     }
 
-    // Validate password strength
     if (newPassword.length < 6) {
-      res.status(400).json({
-        success: false,
-        message: 'Password must be at least 6 characters long',
-      });
-      return;
+      throw new ValidationError('Password must be at least 6 characters long');
     }
 
-    // Find valid token
-    const resetToken = await PasswordResetModel.findValidToken(token);
+    // Verify token and get user
+    const tokenData = await PasswordResetModel.findValidToken(token);
 
-    if (!resetToken) {
-      res.status(400).json({
-        success: false,
-        message: 'Invalid or expired reset token',
-      });
-      return;
+    if (!tokenData) {
+      throw new ValidationError('Invalid or expired reset token');
     }
 
     // Hash new password
@@ -200,45 +143,35 @@ router.post('/reset', async (req: Request, res: Response): Promise<void> => {
 
     // Update user password
     await prisma.aspnetusers.update({
-      where: { id: resetToken.userId },
+      where: { id: tokenData.userId },
       data: { passwordhash: hashedPassword },
     });
 
     // Mark token as used
-    await PasswordResetModel.markTokenAsUsed(resetToken.id);
+    await PasswordResetModel.markTokenAsUsed(tokenData.id);
 
     res.status(200).json({
       success: true,
       message: 'Password has been reset successfully',
     });
-  } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while resetting the password.',
-    });
-  }
-});
+  }),
+);
 
 /**
- * Clean up expired tokens (admin endpoint)
- * POST /api/password-reset/cleanup
+ * Cleanup expired tokens (maintenance endpoint)
+ * DELETE /api/password-reset/cleanup
  */
-router.post('/cleanup', async (req: Request, res: Response) => {
-  try {
+router.delete(
+  '/cleanup',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const deletedCount = await PasswordResetModel.cleanupExpiredTokens();
 
     res.status(200).json({
       success: true,
       message: `Cleaned up ${deletedCount} expired tokens`,
+      deletedCount,
     });
-  } catch (error) {
-    console.error('Token cleanup error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'An error occurred while cleaning up tokens.',
-    });
-  }
-});
+  }),
+);
 
 export default router;

@@ -8,8 +8,14 @@ import { RoleService } from '../services/roleService';
 import { Prisma } from '@prisma/client';
 import { isEmail } from 'validator';
 import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
-import { logAndRethrow } from '../utils/logAndRethrow';
 import { ContactRole } from '../types/roles';
+import { asyncHandler } from '../utils/asyncHandler';
+import {
+  ValidationError,
+  NotFoundError,
+  AuthenticationError,
+  ConflictError,
+} from '../utils/customErrors';
 import * as multer from 'multer';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
 import { createStorageService } from '../services/storageService';
@@ -98,16 +104,13 @@ const upload = multer({
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/search', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/search',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { q } = req.query; // search query
 
     if (!q || typeof q !== 'string') {
-      res.status(400).json({
-        success: false,
-        message: 'Search query is required',
-      });
-      return;
+      throw new ValidationError('Search query is required');
     }
 
     const searchTerm = q.trim();
@@ -214,10 +217,8 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
         ),
       },
     });
-  } catch (error) {
-    logAndRethrow('searching accounts', error);
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -291,17 +292,14 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/by-domain',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     // Use X-Forwarded-Host if present (for local dev proxy), else Host
     const host = req.get('x-forwarded-host') || req.get('host');
 
     if (!host) {
-      res.status(400).json({
-        success: false,
-        message: 'Host header is required',
-      });
-      return;
+      throw new ValidationError('Host header is required');
     }
 
     // Compose protocol + host for matching (check both http and https)
@@ -330,11 +328,7 @@ router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
     });
 
     if (!accountUrl) {
-      res.status(404).json({
-        success: false,
-        message: 'No account found for this domain',
-      });
-      return;
+      throw new NotFoundError('No account found for this domain');
     }
 
     const account = accountUrl.accounts;
@@ -358,10 +352,8 @@ router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
         },
       },
     });
-  } catch (error) {
-    logAndRethrow('looking up account by domain', error);
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/my-accounts
@@ -370,158 +362,156 @@ router.get('/by-domain', async (req: Request, res: Response): Promise<void> => {
 router.get(
   '/my-accounts',
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const userId = req.user!.id;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user!.id;
 
-      // Check if user is global administrator
-      const isAdmin = await roleService.hasRole(userId, 'Administrator', {
-        accountId: undefined,
-      });
+    // Check if user is global administrator
+    const isAdmin = await roleService.hasRole(userId, 'Administrator', {
+      accountId: undefined,
+    });
 
-      const accountSelect: Prisma.accountsSelect = {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        owneruserid: true,
-        firstyear: true,
-        affiliationid: true,
-        timezoneid: true,
-        twitteraccountname: true,
-        youtubeuserid: true,
-        facebookfanpage: true,
-        defaultvideo: true,
-        autoplayvideo: true,
-        accounttypes: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      };
-      const accountListArgs = {
-        select: accountSelect,
-        orderBy: {
-          name: Prisma.SortOrder.asc,
-        },
-      } as const;
-      type AccountList = Prisma.accountsGetPayload<typeof accountListArgs>;
-
-      let accounts: AccountList[] = [];
-      if (isAdmin.hasRole) {
-        // Administrator can see all accounts
-        accounts = await prisma.accounts.findMany(accountListArgs);
-      } else {
-        // Account Admin can only see accounts they have access to
-        const userRoles = await roleService.getUserRoles(userId);
-        const accountAdminRoles = userRoles.contactRoles.filter(
-          (role: ContactRole) => role.roleId === 'AccountAdmin' && role.accountId,
-        );
-
-        if (accountAdminRoles.length === 0) {
-          res.json({
-            success: true,
-            data: {
-              accounts: [],
-            },
-          });
-          return;
-        }
-
-        const accountIds = accountAdminRoles.map((role: ContactRole) => role.accountId);
-
-        accounts = await prisma.accounts.findMany({
-          where: {
-            id: { in: accountIds },
-          },
-          select: accountSelect,
-          orderBy: {
-            name: 'asc',
-          },
-        });
-      }
-
-      // Common code for both branches
-      const affiliationIds = [...new Set(accounts.map((acc) => acc.affiliationid))];
-      const affiliations = await prisma.affiliations.findMany({
-        where: {
-          id: { in: affiliationIds },
-        },
+    const accountSelect: Prisma.accountsSelect = {
+      id: true,
+      name: true,
+      accounttypeid: true,
+      owneruserid: true,
+      firstyear: true,
+      affiliationid: true,
+      timezoneid: true,
+      twitteraccountname: true,
+      youtubeuserid: true,
+      facebookfanpage: true,
+      defaultvideo: true,
+      autoplayvideo: true,
+      accounttypes: {
         select: {
           id: true,
           name: true,
-          url: true,
         },
-      });
+      },
+    };
+    const accountListArgs = {
+      select: accountSelect,
+      orderBy: {
+        name: Prisma.SortOrder.asc,
+      },
+    } as const;
+    type AccountList = Prisma.accountsGetPayload<typeof accountListArgs>;
 
-      const affiliationMap = new Map(affiliations.map((aff) => [aff.id.toString(), aff]));
-
-      // Get contact information for owner users
-      const ownerUserIds = [
-        ...new Set(accounts.map((acc) => acc.owneruserid).filter((id) => id !== null)),
-      ];
-      const contacts: AccountListContact[] = (
-        await prisma.contacts.findMany({
-          where: {
-            userid: { in: ownerUserIds },
-          },
-          select: {
-            userid: true,
-            firstname: true,
-            lastname: true,
-            email: true,
-          },
-        })
-      ).map((contact) => ({
-        userid: contact.userid ?? '',
-        firstname: contact.firstname,
-        lastname: contact.lastname,
-        email: contact.email,
-      }));
-
-      const contactMap = new Map<string, AccountListContact>(
-        contacts.map((contact) => [contact.userid, contact]),
+    let accounts: AccountList[] = [];
+    if (isAdmin.hasRole) {
+      // Administrator can see all accounts
+      accounts = await prisma.accounts.findMany(accountListArgs);
+    } else {
+      // Account Admin can only see accounts they have access to
+      const userRoles = await roleService.getUserRoles(userId);
+      const accountAdminRoles = userRoles.contactRoles.filter(
+        (role: ContactRole) => role.roleId === 'AccountAdmin' && role.accountId,
       );
 
-      res.json({
-        success: true,
-        data: {
-          accounts: accounts.map((account: AccountList): AccountListResponse => {
-            const contact = account.owneruserid ? contactMap.get(account.owneruserid) : undefined;
-            return {
-              id: account.id.toString(),
-              name: account.name,
-              accountTypeId: account.accounttypeid.toString(),
-              accountType: account.accounttypes?.name,
-              ownerUserId: account.owneruserid ? account.owneruserid.toString() : null,
-              ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
-              ownerEmail: contact?.email ?? '',
-              firstYear: account.firstyear,
-              affiliationId: account.affiliationid.toString(),
-              affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
-              timezoneId: account.timezoneid ?? '',
-              twitterAccountName: account.twitteraccountname ?? '',
-              youtubeUserId: account.youtubeuserid ?? null,
-              facebookFanPage: account.facebookfanpage ?? null,
-              defaultVideo: account.defaultvideo ?? '',
-              autoPlayVideo: account.autoplayvideo,
-              accountLogoUrl: getAccountLogoUrl(account.id.toString()),
-            };
-          }),
+      if (accountAdminRoles.length === 0) {
+        res.json({
+          success: true,
+          data: {
+            accounts: [],
+          },
+        });
+        return;
+      }
+
+      const accountIds = accountAdminRoles.map((role: ContactRole) => role.accountId);
+
+      accounts = await prisma.accounts.findMany({
+        where: {
+          id: { in: accountIds },
+        },
+        select: accountSelect,
+        orderBy: {
+          name: 'asc',
         },
       });
-    } catch (error) {
-      logAndRethrow('getting my accounts', error);
     }
-  },
+
+    // Common code for both branches
+    const affiliationIds = [...new Set(accounts.map((acc) => acc.affiliationid))];
+    const affiliations = await prisma.affiliations.findMany({
+      where: {
+        id: { in: affiliationIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+      },
+    });
+
+    const affiliationMap = new Map(affiliations.map((aff) => [aff.id.toString(), aff]));
+
+    // Get contact information for owner users
+    const ownerUserIds = [
+      ...new Set(accounts.map((acc) => acc.owneruserid).filter((id) => id !== null)),
+    ];
+    const contacts: AccountListContact[] = (
+      await prisma.contacts.findMany({
+        where: {
+          userid: { in: ownerUserIds },
+        },
+        select: {
+          userid: true,
+          firstname: true,
+          lastname: true,
+          email: true,
+        },
+      })
+    ).map((contact) => ({
+      userid: contact.userid ?? '',
+      firstname: contact.firstname,
+      lastname: contact.lastname,
+      email: contact.email,
+    }));
+
+    const contactMap = new Map<string, AccountListContact>(
+      contacts.map((contact) => [contact.userid, contact]),
+    );
+
+    res.json({
+      success: true,
+      data: {
+        accounts: accounts.map((account: AccountList): AccountListResponse => {
+          const contact = account.owneruserid ? contactMap.get(account.owneruserid) : undefined;
+          return {
+            id: account.id.toString(),
+            name: account.name,
+            accountTypeId: account.accounttypeid.toString(),
+            accountType: account.accounttypes?.name,
+            ownerUserId: account.owneruserid ? account.owneruserid.toString() : null,
+            ownerName: contact ? `${contact.firstname} ${contact.lastname}` : 'Unknown Owner',
+            ownerEmail: contact?.email ?? '',
+            firstYear: account.firstyear,
+            affiliationId: account.affiliationid.toString(),
+            affiliation: affiliationMap.get(account.affiliationid.toString())?.name,
+            timezoneId: account.timezoneid ?? '',
+            twitterAccountName: account.twitteraccountname ?? '',
+            youtubeUserId: account.youtubeuserid ?? null,
+            facebookFanPage: account.facebookfanpage ?? null,
+            defaultVideo: account.defaultvideo ?? '',
+            autoPlayVideo: account.autoplayvideo,
+            accountLogoUrl: getAccountLogoUrl(account.id.toString()),
+          };
+        }),
+      },
+    });
+  }),
 );
 
 /**
  * GET /api/accounts/types
  * Get all account types
  */
-router.get('/types', authenticateToken, async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/types',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountTypeSelect = {
       id: true,
       name: true,
@@ -544,17 +534,16 @@ router.get('/types', authenticateToken, async (req: Request, res: Response): Pro
         })),
       },
     });
-  } catch (error) {
-    logAndRethrow('getting account types', error);
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/public
  * Get public account information (no authentication required)
  */
-router.get('/:accountId', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const { includeCurrentSeason } = req.query;
 
@@ -614,11 +603,7 @@ router.get('/:accountId', async (req: Request, res: Response): Promise<void> => 
     const account: PublicAccount | null = await prisma.accounts.findUnique(accountSelectArgs);
 
     if (!account) {
-      res.status(404).json({
-        success: false,
-        message: 'Account not found',
-      });
-      return;
+      throw new NotFoundError('Account not found');
     }
 
     // Get affiliation separately
@@ -715,10 +700,8 @@ router.get('/:accountId', async (req: Request, res: Response): Promise<void> => 
         seasons: seasonsWithCurrentFlag,
       },
     });
-  } catch (error) {
-    logAndRethrow('getting public account', error);
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/affiliations
@@ -727,34 +710,30 @@ router.get('/:accountId', async (req: Request, res: Response): Promise<void> => 
 router.get(
   '/affiliations',
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const affiliationSelect = {
-        id: true,
-        name: true,
-        url: true,
-      } as const;
-      const affiliations = await prisma.affiliations.findMany({
-        select: affiliationSelect,
-        orderBy: {
-          name: 'asc',
-        },
-      });
-      type Affiliation = Prisma.affiliationsGetPayload<{ select: typeof affiliationSelect }>;
-      res.json({
-        success: true,
-        data: {
-          affiliations: affiliations.map((affiliation: Affiliation) => ({
-            id: affiliation.id.toString(),
-            name: affiliation.name,
-            url: affiliation.url,
-          })),
-        },
-      });
-    } catch (error) {
-      logAndRethrow('getting affiliations', error);
-    }
-  },
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const affiliationSelect = {
+      id: true,
+      name: true,
+      url: true,
+    } as const;
+    const affiliations = await prisma.affiliations.findMany({
+      select: affiliationSelect,
+      orderBy: {
+        name: 'asc',
+      },
+    });
+    type Affiliation = Prisma.affiliationsGetPayload<{ select: typeof affiliationSelect }>;
+    res.json({
+      success: true,
+      data: {
+        affiliations: affiliations.map((affiliation: Affiliation) => ({
+          id: affiliation.id.toString(),
+          name: affiliation.name,
+          url: affiliation.url,
+        })),
+      },
+    });
+  }),
 );
 
 /**
@@ -765,95 +744,87 @@ router.get(
   '/:accountId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountSelect = {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        owneruserid: true,
-        firstyear: true,
-        affiliationid: true,
-        timezoneid: true,
-        twitteraccountname: true,
-        twitteroauthtoken: true,
-        twitteroauthsecretkey: true,
-        youtubeuserid: true,
-        facebookfanpage: true,
-        twitterwidgetscript: true,
-        defaultvideo: true,
-        autoplayvideo: true,
-        accounttypes: {
-          select: {
-            id: true,
-            name: true,
-            filepath: true,
-          },
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountSelect = {
+      id: true,
+      name: true,
+      accounttypeid: true,
+      owneruserid: true,
+      firstyear: true,
+      affiliationid: true,
+      timezoneid: true,
+      twitteraccountname: true,
+      twitteroauthtoken: true,
+      twitteroauthsecretkey: true,
+      youtubeuserid: true,
+      facebookfanpage: true,
+      twitterwidgetscript: true,
+      defaultvideo: true,
+      autoplayvideo: true,
+      accounttypes: {
+        select: {
+          id: true,
+          name: true,
+          filepath: true,
         },
-        accountsurl: {
-          select: {
-            id: true,
-            url: true,
-          },
-          orderBy: {
-            id: 'asc' as const,
-          },
+      },
+      accountsurl: {
+        select: {
+          id: true,
+          url: true,
         },
-      } as const;
-      const account = await prisma.accounts.findUnique({
-        where: { id: BigInt(req.params.accountId) },
-        select: accountSelect,
-      });
-      type Account = Prisma.accountsGetPayload<{ select: typeof accountSelect }>;
-      type AccountUrl = Account['accountsurl'][number];
-      if (!account) {
-        res.status(404).json({
-          success: false,
-          message: 'Account not found',
-        });
-        return;
-      }
-      const affiliationSelect = {
-        id: true,
-        name: true,
-        url: true,
-      } as const;
-      const affiliation = await prisma.affiliations.findUnique({
-        where: { id: account.affiliationid },
-        select: affiliationSelect,
-      });
-      res.json({
-        success: true,
-        data: {
-          account: {
-            id: account.id.toString(),
-            name: account.name,
-            accountTypeId: account.accounttypeid.toString(),
-            accountType: account.accounttypes?.name,
-            ownerUserId: account.owneruserid,
-            firstYear: account.firstyear,
-            affiliationId: account.affiliationid.toString(),
-            affiliation: affiliation?.name,
-            timezoneId: account.timezoneid,
-            twitterAccountName: account.twitteraccountname,
-            twitterOauthToken: account.twitteroauthtoken,
-            twitterOauthSecretKey: account.twitteroauthsecretkey,
-            youtubeUserId: account.youtubeuserid,
-            facebookFanPage: account.facebookfanpage,
-            twitterWidgetScript: account.twitterwidgetscript,
-            defaultVideo: account.defaultvideo,
-            autoPlayVideo: account.autoplayvideo,
-            urls: account.accountsurl.map((url: AccountUrl) => ({
-              id: url.id.toString(),
-              url: url.url,
-            })),
-          },
+        orderBy: {
+          id: 'asc' as const,
         },
-      });
-    } catch (error) {
-      logAndRethrow('getting account', error);
+      },
+    } as const;
+    const account = await prisma.accounts.findUnique({
+      where: { id: BigInt(req.params.accountId) },
+      select: accountSelect,
+    });
+    type Account = Prisma.accountsGetPayload<{ select: typeof accountSelect }>;
+    type AccountUrl = Account['accountsurl'][number];
+    if (!account) {
+      throw new NotFoundError('Account not found');
     }
-  },
+    const affiliationSelect = {
+      id: true,
+      name: true,
+      url: true,
+    } as const;
+    const affiliation = await prisma.affiliations.findUnique({
+      where: { id: account.affiliationid },
+      select: affiliationSelect,
+    });
+    res.json({
+      success: true,
+      data: {
+        account: {
+          id: account.id.toString(),
+          name: account.name,
+          accountTypeId: account.accounttypeid.toString(),
+          accountType: account.accounttypes?.name,
+          ownerUserId: account.owneruserid,
+          firstYear: account.firstyear,
+          affiliationId: account.affiliationid.toString(),
+          affiliation: affiliation?.name,
+          timezoneId: account.timezoneid,
+          twitterAccountName: account.twitteraccountname,
+          twitterOauthToken: account.twitteroauthtoken,
+          twitterOauthSecretKey: account.twitteroauthsecretkey,
+          youtubeUserId: account.youtubeuserid,
+          facebookFanPage: account.facebookfanpage,
+          twitterWidgetScript: account.twitterwidgetscript,
+          defaultVideo: account.defaultvideo,
+          autoPlayVideo: account.autoplayvideo,
+          urls: account.accountsurl.map((url: AccountUrl) => ({
+            id: url.id.toString(),
+            url: url.url,
+          })),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -864,72 +835,64 @@ router.post(
   '/',
   authenticateToken,
   routeProtection.requireAdministrator(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const {
-        name,
-        accountTypeId,
-        ownerUserId,
-        affiliationId = 1,
-        timezoneId = 'UTC',
-        firstYear,
-        urls = [],
-      } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const {
+      name,
+      accountTypeId,
+      ownerUserId,
+      affiliationId = 1,
+      timezoneId = 'UTC',
+      firstYear,
+      urls = [],
+    } = req.body;
 
-      if (!name || !accountTypeId || !ownerUserId) {
-        res.status(400).json({
-          success: false,
-          message: 'Name, account type ID, and owner user ID are required',
-        });
-        return;
-      }
-
-      const account = await prisma.accounts.create({
-        data: {
-          name,
-          accounttypeid: BigInt(accountTypeId),
-          owneruserid: ownerUserId,
-          firstyear: firstYear || new Date().getFullYear(),
-          affiliationid: BigInt(affiliationId),
-          timezoneid: timezoneId,
-          twitteraccountname: '',
-          twitteroauthtoken: '',
-          twitteroauthsecretkey: '',
-          defaultvideo: '',
-          autoplayvideo: false,
-        },
-      });
-
-      // Create URLs if provided
-      if (urls.length > 0) {
-        for (const url of urls) {
-          await prisma.accountsurl.create({
-            data: {
-              accountid: account.id,
-              url,
-            },
-          });
-        }
-      }
-
-      res.status(201).json({
-        success: true,
-        data: {
-          account: {
-            id: account.id.toString(),
-            name: account.name,
-            accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid,
-            firstYear: account.firstyear,
-            affiliationId: account.affiliationid.toString(),
-            timezoneId: account.timezoneid,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('creating account', error);
+    if (!name || !accountTypeId || !ownerUserId) {
+      throw new ValidationError('Name, account type ID, and owner user ID are required');
     }
-  },
+
+    const account = await prisma.accounts.create({
+      data: {
+        name,
+        accounttypeid: BigInt(accountTypeId),
+        owneruserid: ownerUserId,
+        firstyear: firstYear || new Date().getFullYear(),
+        affiliationid: BigInt(affiliationId),
+        timezoneid: timezoneId,
+        twitteraccountname: '',
+        twitteroauthtoken: '',
+        twitteroauthsecretkey: '',
+        defaultvideo: '',
+        autoplayvideo: false,
+      },
+    });
+
+    // Create URLs if provided
+    if (urls.length > 0) {
+      for (const url of urls) {
+        await prisma.accountsurl.create({
+          data: {
+            accountid: account.id,
+            url,
+          },
+        });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      data: {
+        account: {
+          id: account.id.toString(),
+          name: account.name,
+          accountTypeId: account.accounttypeid.toString(),
+          ownerUserId: account.owneruserid,
+          firstYear: account.firstyear,
+          affiliationId: account.affiliationid.toString(),
+          timezoneId: account.timezoneid,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -941,90 +904,82 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const {
-        name,
-        accountTypeId,
-        affiliationId,
-        timezoneId,
-        firstYear,
-        youtubeUserId,
-        facebookFanPage,
-        defaultVideo,
-        autoPlayVideo,
-      } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const {
+      name,
+      accountTypeId,
+      affiliationId,
+      timezoneId,
+      firstYear,
+      youtubeUserId,
+      facebookFanPage,
+      defaultVideo,
+      autoPlayVideo,
+    } = req.body;
 
-      if (
-        !name &&
-        !accountTypeId &&
-        !affiliationId &&
-        !timezoneId &&
-        firstYear === undefined &&
-        !youtubeUserId &&
-        !facebookFanPage &&
-        defaultVideo === undefined &&
-        autoPlayVideo === undefined
-      ) {
-        res.status(400).json({
-          success: false,
-          message: 'At least one field to update is required',
-        });
-        return;
-      }
-
-      const updateData: Partial<Prisma.accountsUpdateInput> = {};
-      if (name) updateData.name = name;
-      if (accountTypeId) updateData.accounttypes = { connect: { id: BigInt(accountTypeId) } };
-      if (affiliationId) updateData.affiliationid = BigInt(affiliationId);
-      if (timezoneId) updateData.timezoneid = timezoneId;
-      if (firstYear !== undefined) updateData.firstyear = firstYear;
-      if (youtubeUserId !== undefined) updateData.youtubeuserid = youtubeUserId;
-      if (facebookFanPage !== undefined) updateData.facebookfanpage = facebookFanPage;
-      if (defaultVideo !== undefined) updateData.defaultvideo = defaultVideo;
-      if (autoPlayVideo !== undefined) updateData.autoplayvideo = autoPlayVideo;
-
-      const accountSelect = {
-        id: true,
-        name: true,
-        accounttypeid: true,
-        owneruserid: true,
-        firstyear: true,
-        affiliationid: true,
-        timezoneid: true,
-        youtubeuserid: true,
-        facebookfanpage: true,
-        defaultvideo: true,
-        autoplayvideo: true,
-      } as const;
-      const account = await prisma.accounts.update({
-        where: { id: accountId },
-        data: updateData,
-        select: accountSelect,
-      });
-      res.json({
-        success: true,
-        data: {
-          account: {
-            id: account.id.toString(),
-            name: account.name,
-            accountTypeId: account.accounttypeid.toString(),
-            ownerUserId: account.owneruserid,
-            firstYear: account.firstyear,
-            affiliationId: account.affiliationid.toString(),
-            timezoneId: account.timezoneid,
-            youtubeUserId: account.youtubeuserid,
-            facebookFanPage: account.facebookfanpage,
-            defaultVideo: account.defaultvideo,
-            autoPlayVideo: account.autoplayvideo,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('updating account', error);
+    if (
+      !name &&
+      !accountTypeId &&
+      !affiliationId &&
+      !timezoneId &&
+      firstYear === undefined &&
+      !youtubeUserId &&
+      !facebookFanPage &&
+      defaultVideo === undefined &&
+      autoPlayVideo === undefined
+    ) {
+      throw new ValidationError('At least one field to update is required');
     }
-  },
+
+    const updateData: Partial<Prisma.accountsUpdateInput> = {};
+    if (name) updateData.name = name;
+    if (accountTypeId) updateData.accounttypes = { connect: { id: BigInt(accountTypeId) } };
+    if (affiliationId) updateData.affiliationid = BigInt(affiliationId);
+    if (timezoneId) updateData.timezoneid = timezoneId;
+    if (firstYear !== undefined) updateData.firstyear = firstYear;
+    if (youtubeUserId !== undefined) updateData.youtubeuserid = youtubeUserId;
+    if (facebookFanPage !== undefined) updateData.facebookfanpage = facebookFanPage;
+    if (defaultVideo !== undefined) updateData.defaultvideo = defaultVideo;
+    if (autoPlayVideo !== undefined) updateData.autoplayvideo = autoPlayVideo;
+
+    const accountSelect = {
+      id: true,
+      name: true,
+      accounttypeid: true,
+      owneruserid: true,
+      firstyear: true,
+      affiliationid: true,
+      timezoneid: true,
+      youtubeuserid: true,
+      facebookfanpage: true,
+      defaultvideo: true,
+      autoplayvideo: true,
+    } as const;
+    const account = await prisma.accounts.update({
+      where: { id: accountId },
+      data: updateData,
+      select: accountSelect,
+    });
+    res.json({
+      success: true,
+      data: {
+        account: {
+          id: account.id.toString(),
+          name: account.name,
+          accountTypeId: account.accounttypeid.toString(),
+          ownerUserId: account.owneruserid,
+          firstYear: account.firstyear,
+          affiliationId: account.affiliationid.toString(),
+          timezoneId: account.timezoneid,
+          youtubeUserId: account.youtubeuserid,
+          facebookFanPage: account.facebookfanpage,
+          defaultVideo: account.defaultvideo,
+          autoPlayVideo: account.autoplayvideo,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1036,62 +991,54 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const { twitterAccountName, twitterOauthToken, twitterOauthSecretKey, twitterWidgetScript } =
-        req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const { twitterAccountName, twitterOauthToken, twitterOauthSecretKey, twitterWidgetScript } =
+      req.body;
 
-      if (
-        !twitterAccountName &&
-        !twitterOauthToken &&
-        !twitterOauthSecretKey &&
-        !twitterWidgetScript
-      ) {
-        res.status(400).json({
-          success: false,
-          message: 'At least one Twitter field to update is required',
-        });
-        return;
-      }
-
-      const updateData: Partial<Prisma.accountsUpdateInput> = {};
-      if (twitterAccountName !== undefined) updateData.twitteraccountname = twitterAccountName;
-      if (twitterOauthToken !== undefined) updateData.twitteroauthtoken = twitterOauthToken;
-      if (twitterOauthSecretKey !== undefined)
-        updateData.twitteroauthsecretkey = twitterOauthSecretKey;
-      if (twitterWidgetScript !== undefined) updateData.twitterwidgetscript = twitterWidgetScript;
-
-      const account = await prisma.accounts.update({
-        where: { id: accountId },
-        data: updateData,
-        select: {
-          id: true,
-          name: true,
-          twitteraccountname: true,
-          twitteroauthtoken: true,
-          twitteroauthsecretkey: true,
-          twitterwidgetscript: true,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          account: {
-            id: account.id.toString(),
-            name: account.name,
-            twitterAccountName: account.twitteraccountname,
-            twitterOauthToken: account.twitteroauthtoken,
-            twitterOauthSecretKey: account.twitteroauthsecretkey,
-            twitterWidgetScript: account.twitterwidgetscript,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('updating Twitter settings', error);
+    if (
+      !twitterAccountName &&
+      !twitterOauthToken &&
+      !twitterOauthSecretKey &&
+      !twitterWidgetScript
+    ) {
+      throw new ValidationError('At least one Twitter field to update is required');
     }
-  },
+
+    const updateData: Partial<Prisma.accountsUpdateInput> = {};
+    if (twitterAccountName !== undefined) updateData.twitteraccountname = twitterAccountName;
+    if (twitterOauthToken !== undefined) updateData.twitteroauthtoken = twitterOauthToken;
+    if (twitterOauthSecretKey !== undefined)
+      updateData.twitteroauthsecretkey = twitterOauthSecretKey;
+    if (twitterWidgetScript !== undefined) updateData.twitterwidgetscript = twitterWidgetScript;
+
+    const account = await prisma.accounts.update({
+      where: { id: accountId },
+      data: updateData,
+      select: {
+        id: true,
+        name: true,
+        twitteraccountname: true,
+        twitteroauthtoken: true,
+        twitteroauthsecretkey: true,
+        twitterwidgetscript: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        account: {
+          id: account.id.toString(),
+          name: account.name,
+          twitterAccountName: account.twitteraccountname,
+          twitterOauthToken: account.twitteroauthtoken,
+          twitterOauthSecretKey: account.twitteroauthsecretkey,
+          twitterWidgetScript: account.twitterwidgetscript,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1103,37 +1050,33 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
 
-      const urlSelect = {
-        id: true,
-        url: true,
-      } as const;
-      const urls = await prisma.accountsurl.findMany({
-        where: {
-          accountid: accountId,
-        },
-        select: urlSelect,
-        orderBy: {
-          id: 'asc',
-        },
-      });
-      type AccountUrl = Prisma.accountsurlGetPayload<{ select: typeof urlSelect }>;
-      res.json({
-        success: true,
-        data: {
-          urls: urls.map((url: AccountUrl) => ({
-            id: url.id.toString(),
-            url: url.url,
-          })),
-        },
-      });
-    } catch (error) {
-      logAndRethrow('getting account URLs', error);
-    }
-  },
+    const urlSelect = {
+      id: true,
+      url: true,
+    } as const;
+    const urls = await prisma.accountsurl.findMany({
+      where: {
+        accountid: accountId,
+      },
+      select: urlSelect,
+      orderBy: {
+        id: 'asc',
+      },
+    });
+    type AccountUrl = Prisma.accountsurlGetPayload<{ select: typeof urlSelect }>;
+    res.json({
+      success: true,
+      data: {
+        urls: urls.map((url: AccountUrl) => ({
+          id: url.id.toString(),
+          url: url.url,
+        })),
+      },
+    });
+  }),
 );
 
 /**
@@ -1145,70 +1088,56 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const { url } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const { url } = req.body;
 
-      if (!url) {
-        res.status(400).json({
-          success: false,
-          message: 'URL is required',
-        });
-        return;
-      }
-
-      // Validate URL format using centralized validation
-      if (!isValidAccountUrl(url)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid URL format. Please use http:// or https:// followed by a valid domain.',
-        });
-        return;
-      }
-
-      const normalizedUrl = normalizeUrl(url);
-
-      // Check if URL already exists for this account
-      const existingUrl = await prisma.accountsurl.findFirst({
-        where: {
-          accountid: accountId,
-          url: normalizedUrl,
-        },
-      });
-
-      if (existingUrl) {
-        res.status(409).json({
-          success: false,
-          message: 'This URL is already associated with this account',
-        });
-        return;
-      }
-
-      const accountUrl = await prisma.accountsurl.create({
-        data: {
-          accountid: accountId,
-          url: normalizedUrl,
-        },
-        select: {
-          id: true,
-          url: true,
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          url: {
-            id: accountUrl.id.toString(),
-            url: accountUrl.url,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('adding URL', error);
+    if (!url) {
+      throw new ValidationError('URL is required');
     }
-  },
+
+    // Validate URL format using centralized validation
+    if (!isValidAccountUrl(url)) {
+      throw new ValidationError(
+        'Invalid URL format. Please use http:// or https:// followed by a valid domain.',
+      );
+    }
+
+    const normalizedUrl = normalizeUrl(url);
+
+    // Check if URL already exists for this account
+    const existingUrl = await prisma.accountsurl.findFirst({
+      where: {
+        accountid: accountId,
+        url: normalizedUrl,
+      },
+    });
+
+    if (existingUrl) {
+      throw new ConflictError('This URL is already associated with this account');
+    }
+
+    const accountUrl = await prisma.accountsurl.create({
+      data: {
+        accountid: accountId,
+        url: normalizedUrl,
+      },
+      select: {
+        id: true,
+        url: true,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        url: {
+          id: accountUrl.id.toString(),
+          url: accountUrl.url,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1220,87 +1149,69 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const urlId = BigInt(req.params.urlId);
-      const { url } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const urlId = BigInt(req.params.urlId);
+    const { url } = req.body;
 
-      if (!url) {
-        res.status(400).json({
-          success: false,
-          message: 'URL is required',
-        });
-        return;
-      }
-
-      // Validate URL format using centralized validation
-      if (!isValidAccountUrl(url)) {
-        res.status(400).json({
-          success: false,
-          message: 'Invalid URL format. Please use http:// or https:// followed by a valid domain.',
-        });
-        return;
-      }
-
-      const normalizedUrl = normalizeUrl(url);
-
-      // Check if URL already exists for this account
-      const existingUrl = await prisma.accountsurl.findFirst({
-        where: {
-          accountid: accountId,
-          url: normalizedUrl,
-          id: { not: urlId },
-        },
-      });
-
-      if (existingUrl) {
-        res.status(409).json({
-          success: false,
-          message: 'This URL is already associated with this account',
-        });
-        return;
-      }
-
-      // Verify the URL belongs to the account
-      const currentUrl = await prisma.accountsurl.findFirst({
-        where: {
-          id: urlId,
-          accountid: accountId,
-        },
-      });
-
-      if (!currentUrl) {
-        res.status(404).json({
-          success: false,
-          message: 'URL not found or does not belong to this account',
-        });
-        return;
-      }
-
-      // Update the URL
-      const updatedUrl = await prisma.accountsurl.update({
-        where: { id: urlId },
-        data: { url: normalizedUrl },
-        select: {
-          id: true,
-          url: true,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          url: {
-            id: updatedUrl.id.toString(),
-            url: updatedUrl.url,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('updating URL', error);
+    if (!url) {
+      throw new ValidationError('URL is required');
     }
-  },
+
+    // Validate URL format using centralized validation
+    if (!isValidAccountUrl(url)) {
+      throw new ValidationError(
+        'Invalid URL format. Please use http:// or https:// followed by a valid domain.',
+      );
+    }
+
+    const normalizedUrl = normalizeUrl(url);
+
+    // Check if URL already exists for this account
+    const existingUrl = await prisma.accountsurl.findFirst({
+      where: {
+        accountid: accountId,
+        url: normalizedUrl,
+        id: { not: urlId },
+      },
+    });
+
+    if (existingUrl) {
+      throw new ConflictError('This URL is already associated with this account');
+    }
+
+    // Verify the URL belongs to the account
+    const currentUrl = await prisma.accountsurl.findFirst({
+      where: {
+        id: urlId,
+        accountid: accountId,
+      },
+    });
+
+    if (!currentUrl) {
+      throw new NotFoundError('URL not found or does not belong to this account');
+    }
+
+    // Update the URL
+    const updatedUrl = await prisma.accountsurl.update({
+      where: { id: urlId },
+      data: { url: normalizedUrl },
+      select: {
+        id: true,
+        url: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        url: {
+          id: updatedUrl.id.toString(),
+          url: updatedUrl.url,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1312,39 +1223,31 @@ router.delete(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const urlId = BigInt(req.params.urlId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const urlId = BigInt(req.params.urlId);
 
-      // Verify the URL belongs to the account
-      const existingUrl = await prisma.accountsurl.findFirst({
-        where: {
-          id: urlId,
-          accountid: accountId,
-        },
-      });
+    // Verify the URL belongs to the account
+    const existingUrl = await prisma.accountsurl.findFirst({
+      where: {
+        id: urlId,
+        accountid: accountId,
+      },
+    });
 
-      if (!existingUrl) {
-        res.status(404).json({
-          success: false,
-          message: 'URL not found or does not belong to this account',
-        });
-        return;
-      }
-
-      await prisma.accountsurl.delete({
-        where: { id: urlId },
-      });
-
-      res.json({
-        success: true,
-        message: 'URL removed successfully',
-      });
-    } catch (error) {
-      logAndRethrow('removing URL', error);
+    if (!existingUrl) {
+      throw new NotFoundError('URL not found or does not belong to this account');
     }
-  },
+
+    await prisma.accountsurl.delete({
+      where: { id: urlId },
+    });
+
+    res.json({
+      success: true,
+      message: 'URL removed successfully',
+    });
+  }),
 );
 
 /**
@@ -1355,36 +1258,28 @@ router.delete(
   '/:accountId',
   authenticateToken,
   routeProtection.requireAdministrator(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
 
-      // Check if account exists
-      const existingAccount = await prisma.accounts.findUnique({
-        where: { id: accountId },
-      });
+    // Check if account exists
+    const existingAccount = await prisma.accounts.findUnique({
+      where: { id: accountId },
+    });
 
-      if (!existingAccount) {
-        res.status(404).json({
-          success: false,
-          message: 'Account not found',
-        });
-        return;
-      }
-
-      // Delete account (this will cascade to related records)
-      await prisma.accounts.delete({
-        where: { id: accountId },
-      });
-
-      res.json({
-        success: true,
-        message: 'Account deleted successfully',
-      });
-    } catch (error) {
-      logAndRethrow('deleting account', error);
+    if (!existingAccount) {
+      throw new NotFoundError('Account not found');
     }
-  },
+
+    // Delete account (this will cascade to related records)
+    await prisma.accounts.delete({
+      where: { id: accountId },
+    });
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully',
+    });
+  }),
 );
 
 /**
@@ -1396,44 +1291,40 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.users.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
 
-      const contactSelect = {
-        id: true,
-        firstname: true,
-        lastname: true,
-        email: true,
-        userid: true,
-      } as const;
-      const contacts = await prisma.contacts.findMany({
-        where: {
-          creatoraccountid: accountId,
-        },
-        select: contactSelect,
-        orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
-      });
-      type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
-      const users = contacts.map((contact: Contact) => ({
-        id: contact.id.toString(),
-        firstName: contact.firstname,
-        lastName: contact.lastname,
-        email: contact.email,
-        userId: contact.userid,
-      }));
+    const contactSelect = {
+      id: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+      userid: true,
+    } as const;
+    const contacts = await prisma.contacts.findMany({
+      where: {
+        creatoraccountid: accountId,
+      },
+      select: contactSelect,
+      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
+    });
+    type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
+    const users = contacts.map((contact: Contact) => ({
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      email: contact.email,
+      userId: contact.userid,
+    }));
 
-      res.json({
-        success: true,
-        data: {
-          accountId: accountId.toString(),
-          users,
-        },
-      });
-    } catch (error) {
-      logAndRethrow('getting account users', error);
-    }
-  },
+    res.json({
+      success: true,
+      data: {
+        accountId: accountId.toString(),
+        users,
+      },
+    });
+  }),
 );
 
 /**
@@ -1445,44 +1336,36 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.roles.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const contactId = BigInt(req.params.contactId);
-      const { roleId, roleData } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const contactId = BigInt(req.params.contactId);
+    const { roleId, roleData } = req.body;
 
-      if (!roleId || !roleData) {
-        res.status(400).json({
-          success: false,
-          message: 'Role ID and role data are required',
-        });
-        return;
-      }
-
-      const assignedRole = await roleService.assignRole(
-        req.user!.id,
-        contactId,
-        roleId,
-        BigInt(roleData),
-        accountId,
-      );
-
-      res.status(201).json({
-        success: true,
-        data: {
-          assignedRole: {
-            id: assignedRole.id.toString(),
-            contactId: assignedRole.contactId.toString(),
-            roleId: assignedRole.roleId,
-            roleData: assignedRole.roleData.toString(),
-            accountId: assignedRole.accountId.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('assigning role', error);
+    if (!roleId || !roleData) {
+      throw new ValidationError('Role ID and role data are required');
     }
-  },
+
+    const assignedRole = await roleService.assignRole(
+      req.user!.id,
+      contactId,
+      roleId,
+      BigInt(roleData),
+      accountId,
+    );
+
+    res.status(201).json({
+      success: true,
+      data: {
+        assignedRole: {
+          id: assignedRole.id.toString(),
+          contactId: assignedRole.contactId.toString(),
+          roleId: assignedRole.roleId,
+          roleData: assignedRole.roleData.toString(),
+          accountId: assignedRole.accountId.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1494,31 +1377,23 @@ router.delete(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.roles.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const contactId = BigInt(req.params.contactId);
-      const roleId = req.params.roleId;
-      const { roleData } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const contactId = BigInt(req.params.contactId);
+    const roleId = req.params.roleId;
+    const { roleData } = req.body;
 
-      if (!roleData) {
-        res.status(400).json({
-          success: false,
-          message: 'Role data is required',
-        });
-        return;
-      }
-
-      await roleService.removeRole(req.user!.id, contactId, roleId, BigInt(roleData), accountId);
-
-      res.json({
-        success: true,
-        message: 'Role removed successfully',
-      });
-    } catch (error) {
-      logAndRethrow('removing role', error);
+    if (!roleData) {
+      throw new ValidationError('Role data is required');
     }
-  },
+
+    await roleService.removeRole(req.user!.id, contactId, roleId, BigInt(roleData), accountId);
+
+    res.json({
+      success: true,
+      message: 'Role removed successfully',
+    });
+  }),
 );
 
 /**
@@ -1528,76 +1403,72 @@ router.delete(
 router.get(
   '/:accountId/contacts/search',
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { q } = req.query; // search query
-      const limit = 10; // maximum results to return
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { q } = req.query; // search query
+    const limit = 10; // maximum results to return
+    const accountId = BigInt(req.params.accountId);
 
-      if (!q || typeof q !== 'string') {
-        res.json({
-          success: true,
-          data: {
-            contacts: [],
-          },
-        });
-        return;
-      }
-
-      const contactSelect = {
-        id: true,
-        firstname: true,
-        lastname: true,
-        email: true,
-        userid: true,
-      } as const;
-      const contacts = await prisma.contacts.findMany({
-        where: {
-          creatoraccountid: accountId,
-          OR: [
-            {
-              firstname: {
-                contains: q,
-                mode: 'insensitive',
-              },
-            },
-            {
-              lastname: {
-                contains: q,
-                mode: 'insensitive',
-              },
-            },
-            {
-              email: {
-                contains: q,
-                mode: 'insensitive',
-              },
-            },
-          ],
-        },
-        select: contactSelect,
-        orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
-        take: limit,
-      });
-      type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
+    if (!q || typeof q !== 'string') {
       res.json({
         success: true,
         data: {
-          contacts: contacts.map((contact: Contact) => ({
-            id: contact.id.toString(),
-            firstName: contact.firstname,
-            lastName: contact.lastname,
-            email: contact.email,
-            userId: contact.userid,
-            displayName: `${contact.firstname} ${contact.lastname}`,
-            searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`,
-          })),
+          contacts: [],
         },
       });
-    } catch (error) {
-      logAndRethrow('searching contacts', error);
+      return;
     }
-  },
+
+    const contactSelect = {
+      id: true,
+      firstname: true,
+      lastname: true,
+      email: true,
+      userid: true,
+    } as const;
+    const contacts = await prisma.contacts.findMany({
+      where: {
+        creatoraccountid: accountId,
+        OR: [
+          {
+            firstname: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+          {
+            lastname: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+          {
+            email: {
+              contains: q,
+              mode: 'insensitive',
+            },
+          },
+        ],
+      },
+      select: contactSelect,
+      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
+      take: limit,
+    });
+    type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
+    res.json({
+      success: true,
+      data: {
+        contacts: contacts.map((contact: Contact) => ({
+          id: contact.id.toString(),
+          firstName: contact.firstname,
+          lastName: contact.lastname,
+          email: contact.email,
+          userId: contact.userid,
+          displayName: `${contact.firstname} ${contact.lastname}`,
+          searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`,
+        })),
+      },
+    });
+  }),
 );
 
 /**
@@ -1607,32 +1478,27 @@ router.get(
 router.get(
   '/contacts/:userId',
   authenticateToken,
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const { userId } = req.params;
-      const contact = await prisma.contacts.findFirst({
-        where: { userid: userId },
-        select: { userid: true, firstname: true, lastname: true, email: true },
-      });
-      if (!contact) {
-        res.status(404).json({ success: false, message: 'Contact not found' });
-        return;
-      }
-      res.json({
-        success: true,
-        data: {
-          contact: {
-            userId: contact.userid,
-            displayName: `${contact.firstname} ${contact.lastname}`.trim(),
-            searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`.trim(),
-            email: contact.email,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('getting contact information', error);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { userId } = req.params;
+    const contact = await prisma.contacts.findFirst({
+      where: { userid: userId },
+      select: { userid: true, firstname: true, lastname: true, email: true },
+    });
+    if (!contact) {
+      throw new NotFoundError('Contact not found');
     }
-  },
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          userId: contact.userid,
+          displayName: `${contact.firstname} ${contact.lastname}`.trim(),
+          searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`.trim(),
+          email: contact.email,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1644,107 +1510,89 @@ router.put(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const contactId = BigInt(req.params.contactId);
-      const {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const contactId = BigInt(req.params.contactId);
+    const {
+      firstname,
+      lastname,
+      middlename,
+      email,
+      phone1,
+      phone2,
+      phone3,
+      streetaddress,
+      city,
+      state,
+      zip,
+      dateofbirth,
+    } = req.body;
+
+    // Validate required fields
+    if (!firstname || !lastname) {
+      throw new ValidationError('First name and last name are required');
+    }
+
+    // Validate email format if provided
+    if (email) {
+      if (!isEmail(email)) {
+        throw new ValidationError('Please enter a valid email address');
+      }
+    }
+
+    // Verify the contact exists and belongs to this account
+    const existingContact = await prisma.contacts.findFirst({
+      where: {
+        id: contactId,
+        creatoraccountid: accountId,
+      },
+    });
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    // Update the contact
+    const updatedContact = await prisma.contacts.update({
+      where: { id: contactId },
+      data: {
         firstname,
         lastname,
-        middlename,
-        email,
-        phone1,
-        phone2,
-        phone3,
-        streetaddress,
-        city,
-        state,
-        zip,
-        dateofbirth,
-      } = req.body;
+        middlename: middlename || '',
+        email: email || null,
+        phone1: phone1 || null,
+        phone2: phone2 || null,
+        phone3: phone3 || null,
+        streetaddress: streetaddress || null,
+        city: city || null,
+        state: state || null,
+        zip: zip || null,
+        ...(dateofbirth ? { dateofbirth: new Date(dateofbirth) } : {}),
+      },
+    });
 
-      // Validate required fields
-      if (!firstname || !lastname) {
-        res.status(400).json({
-          success: false,
-          message: 'First name and last name are required',
-        });
-        return;
-      }
-
-      // Validate email format if provided
-      if (email) {
-        if (!isEmail(email)) {
-          res.status(400).json({
-            success: false,
-            message: 'Please enter a valid email address',
-          });
-          return;
-        }
-      }
-
-      // Verify the contact exists and belongs to this account
-      const existingContact = await prisma.contacts.findFirst({
-        where: {
-          id: contactId,
-          creatoraccountid: accountId,
+    res.json({
+      success: true,
+      data: {
+        message: `Contact "${updatedContact.firstname} ${updatedContact.lastname}" updated successfully`,
+        contact: {
+          id: updatedContact.id.toString(),
+          firstname: updatedContact.firstname,
+          lastname: updatedContact.lastname,
+          middlename: updatedContact.middlename,
+          email: updatedContact.email,
+          phone1: updatedContact.phone1,
+          phone2: updatedContact.phone2,
+          phone3: updatedContact.phone3,
+          streetaddress: updatedContact.streetaddress,
+          city: updatedContact.city,
+          state: updatedContact.state,
+          zip: updatedContact.zip,
+          dateofbirth: updatedContact.dateofbirth ? updatedContact.dateofbirth.toISOString() : null,
         },
-      });
-
-      if (!existingContact) {
-        res.status(404).json({
-          success: false,
-          message: 'Contact not found',
-        });
-        return;
-      }
-
-      // Update the contact
-      const updatedContact = await prisma.contacts.update({
-        where: { id: contactId },
-        data: {
-          firstname,
-          lastname,
-          middlename: middlename || '',
-          email: email || null,
-          phone1: phone1 || null,
-          phone2: phone2 || null,
-          phone3: phone3 || null,
-          streetaddress: streetaddress || null,
-          city: city || null,
-          state: state || null,
-          zip: zip || null,
-          ...(dateofbirth ? { dateofbirth: new Date(dateofbirth) } : {}),
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          message: `Contact "${updatedContact.firstname} ${updatedContact.lastname}" updated successfully`,
-          contact: {
-            id: updatedContact.id.toString(),
-            firstname: updatedContact.firstname,
-            lastname: updatedContact.lastname,
-            middlename: updatedContact.middlename,
-            email: updatedContact.email,
-            phone1: updatedContact.phone1,
-            phone2: updatedContact.phone2,
-            phone3: updatedContact.phone3,
-            streetaddress: updatedContact.streetaddress,
-            city: updatedContact.city,
-            state: updatedContact.state,
-            zip: updatedContact.zip,
-            dateofbirth: updatedContact.dateofbirth
-              ? updatedContact.dateofbirth.toISOString()
-              : null,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('updating contact', error);
-    }
-  },
+      },
+    });
+  }),
 );
 
 /**
@@ -1756,88 +1604,76 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const {
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const {
+      firstname,
+      lastname,
+      middlename,
+      email,
+      phone1,
+      phone2,
+      phone3,
+      streetaddress,
+      city,
+      state,
+      zip,
+      dateofbirth,
+    } = req.body;
+
+    // Validate required fields
+    if (!firstname || !lastname) {
+      throw new ValidationError('First name and last name are required');
+    }
+
+    // Validate email format if provided
+    if (email) {
+      if (!isEmail(email)) {
+        throw new ValidationError('Please enter a valid email address');
+      }
+    }
+
+    // Create the contact
+    const newContact = await prisma.contacts.create({
+      data: {
         firstname,
         lastname,
-        middlename,
-        email,
-        phone1,
-        phone2,
-        phone3,
-        streetaddress,
-        city,
-        state,
-        zip,
-        dateofbirth,
-      } = req.body;
+        middlename: middlename || '',
+        email: email || null,
+        phone1: phone1 || null,
+        phone2: phone2 || null,
+        phone3: phone3 || null,
+        streetaddress: streetaddress || null,
+        city: city || null,
+        state: state || null,
+        zip: zip || null,
+        creatoraccountid: accountId,
+        dateofbirth: dateofbirth ? new Date(dateofbirth) : new Date('1900-01-01'),
+      },
+    });
 
-      // Validate required fields
-      if (!firstname || !lastname) {
-        res.status(400).json({
-          success: false,
-          message: 'First name and last name are required',
-        });
-        return;
-      }
-
-      // Validate email format if provided
-      if (email) {
-        if (!isEmail(email)) {
-          res.status(400).json({
-            success: false,
-            message: 'Please enter a valid email address',
-          });
-          return;
-        }
-      }
-
-      // Create the contact
-      const newContact = await prisma.contacts.create({
-        data: {
-          firstname,
-          lastname,
-          middlename: middlename || '',
-          email: email || null,
-          phone1: phone1 || null,
-          phone2: phone2 || null,
-          phone3: phone3 || null,
-          streetaddress: streetaddress || null,
-          city: city || null,
-          state: state || null,
-          zip: zip || null,
-          creatoraccountid: accountId,
-          dateofbirth: dateofbirth ? new Date(dateofbirth) : new Date('1900-01-01'),
+    res.status(201).json({
+      success: true,
+      data: {
+        message: `Contact "${newContact.firstname} ${newContact.lastname}" created successfully`,
+        contact: {
+          id: newContact.id.toString(),
+          firstname: newContact.firstname,
+          lastname: newContact.lastname,
+          middlename: newContact.middlename,
+          email: newContact.email,
+          phone1: newContact.phone1,
+          phone2: newContact.phone2,
+          phone3: newContact.phone3,
+          streetaddress: newContact.streetaddress,
+          city: newContact.city,
+          state: newContact.state,
+          zip: newContact.zip,
+          dateofbirth: newContact.dateofbirth ? newContact.dateofbirth.toISOString() : null,
         },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          message: `Contact "${newContact.firstname} ${newContact.lastname}" created successfully`,
-          contact: {
-            id: newContact.id.toString(),
-            firstname: newContact.firstname,
-            lastname: newContact.lastname,
-            middlename: newContact.middlename,
-            email: newContact.email,
-            phone1: newContact.phone1,
-            phone2: newContact.phone2,
-            phone3: newContact.phone3,
-            streetaddress: newContact.streetaddress,
-            city: newContact.city,
-            state: newContact.state,
-            zip: newContact.zip,
-            dateofbirth: newContact.dateofbirth ? newContact.dateofbirth.toISOString() : null,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('creating contact', error);
-    }
-  },
+      },
+    });
+  }),
 );
 
 /**
@@ -1849,85 +1685,72 @@ router.post(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const { contactId, submittedDriversLicense, firstYear } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const { contactId, submittedDriversLicense, firstYear } = req.body;
 
-      if (!contactId) {
-        res.status(400).json({
-          success: false,
-          message: 'ContactId is required',
-        });
-        return;
-      }
-
-      // Verify the contact exists and belongs to this account
-      const contact = await prisma.contacts.findFirst({
-        where: {
-          id: BigInt(contactId),
-          creatoraccountid: accountId,
-        },
-        select: {
-          firstname: true,
-          lastname: true,
-        },
-      });
-
-      if (!contact) {
-        res.status(404).json({ success: false, message: 'Contact not found' });
-        return;
-      }
-
-      // Check if a roster entry already exists for this contact
-      const existingRoster = await prisma.roster.findFirst({
-        where: {
-          contactid: BigInt(contactId),
-        },
-      });
-
-      if (existingRoster) {
-        res.status(409).json({
-          success: false,
-          message: 'A roster entry already exists for this contact',
-        });
-        return;
-      }
-
-      // Create the roster entry
-      const newRoster = await prisma.roster.create({
-        data: {
-          contactid: BigInt(contactId),
-          submitteddriverslicense: submittedDriversLicense || false,
-          firstyear: firstYear || 0,
-        },
-        include: {
-          contacts: {
-            select: {
-              firstname: true,
-              lastname: true,
-            },
-          },
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          message: `Roster entry created for "${newRoster.contacts.firstname} ${newRoster.contacts.lastname}"`,
-          player: {
-            id: newRoster.id.toString(),
-            contactId: newRoster.contactid.toString(),
-            submittedDriversLicense: newRoster.submitteddriverslicense,
-            firstYear: newRoster.firstyear,
-            contact: newRoster.contacts,
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('creating roster entry', error);
+    if (!contactId) {
+      throw new ValidationError('ContactId is required');
     }
-  },
+
+    // Verify the contact exists and belongs to this account
+    const contact = await prisma.contacts.findFirst({
+      where: {
+        id: BigInt(contactId),
+        creatoraccountid: accountId,
+      },
+      select: {
+        firstname: true,
+        lastname: true,
+      },
+    });
+
+    if (!contact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    // Check if a roster entry already exists for this contact
+    const existingRoster = await prisma.roster.findFirst({
+      where: {
+        contactid: BigInt(contactId),
+      },
+    });
+
+    if (existingRoster) {
+      throw new ConflictError('A roster entry already exists for this contact');
+    }
+
+    // Create the roster entry
+    const newRoster = await prisma.roster.create({
+      data: {
+        contactid: BigInt(contactId),
+        submitteddriverslicense: submittedDriversLicense || false,
+        firstyear: firstYear || 0,
+      },
+      include: {
+        contacts: {
+          select: {
+            firstname: true,
+            lastname: true,
+          },
+        },
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        message: `Roster entry created for "${newRoster.contacts.firstname} ${newRoster.contacts.lastname}"`,
+        player: {
+          id: newRoster.id.toString(),
+          contactId: newRoster.contactid.toString(),
+          submittedDriversLicense: newRoster.submitteddriverslicense,
+          firstYear: newRoster.firstyear,
+          contact: newRoster.contacts,
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -1938,190 +1761,183 @@ router.get(
   '/:accountId/user-teams',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const userId = req.user?.id;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const userId = req.user?.id;
 
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          message: 'User not authenticated',
-        });
-        return;
-      }
+    if (!userId) {
+      throw new AuthenticationError('User not authenticated');
+    }
 
-      // Get the user's contact record for this account
-      const userContact = await prisma.contacts.findFirst({
-        where: {
-          userid: userId,
-          creatoraccountid: accountId,
-        },
-      });
+    // Get the user's contact record for this account
+    const userContact = await prisma.contacts.findFirst({
+      where: {
+        userid: userId,
+        creatoraccountid: accountId,
+      },
+    });
 
-      if (!userContact) {
-        // User doesn't have a contact record for this account, return empty teams
-        res.json({
-          success: true,
-          data: {
-            teams: [],
-          },
-        });
-        return;
-      }
-
-      // Get current season for this account
-      const currentSeasonRecord = await prisma.currentseason.findUnique({
-        where: {
-          accountid: accountId,
-        },
-      });
-
-      if (!currentSeasonRecord) {
-        res.json({
-          success: true,
-          data: {
-            teams: [],
-          },
-        });
-        return;
-      }
-
-      const currentSeason = await prisma.season.findUnique({
-        where: {
-          id: currentSeasonRecord.seasonid,
-        },
-      });
-
-      if (!currentSeason) {
-        res.json({
-          success: true,
-          data: {
-            teams: [],
-          },
-        });
-        return;
-      }
-
-      // Get teams where the user is a roster member
-      const userTeams = await prisma.rosterseason.findMany({
-        where: {
-          roster: {
-            contactid: userContact.id,
-          },
-          teamsseason: {
-            leagueseason: {
-              seasonid: currentSeason.id,
-            },
-          },
-          inactive: false,
-        },
-        include: {
-          teamsseason: {
-            include: {
-              leagueseason: {
-                include: {
-                  league: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-              teams: {
-                select: {
-                  accountid: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      // Get teams where the user is a manager
-      const managedTeams = await prisma.teamseasonmanager.findMany({
-        where: {
-          contactid: userContact.id,
-          teamsseason: {
-            leagueseason: {
-              seasonid: currentSeason.id,
-            },
-          },
-        },
-        include: {
-          teamsseason: {
-            include: {
-              leagueseason: {
-                include: {
-                  league: {
-                    select: {
-                      name: true,
-                    },
-                  },
-                },
-              },
-              teams: {
-                select: {
-                  accountid: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      // Combine and deduplicate teams
-      const allTeams = [...userTeams, ...managedTeams];
-      const uniqueTeams = new Map();
-
-      for (const team of allTeams) {
-        const teamSeason = team.teamsseason;
-        // Defensive: fetch league.accountid if not already included
-        // We'll need to fetch the team base record to get its accountid
-        let teamAccountId: string | undefined = undefined;
-        if (teamSeason.teams && teamSeason.teams.accountid) {
-          teamAccountId = teamSeason.teams.accountid.toString();
-        } else {
-          // Fallback: fetch from DB (shouldn't happen if include is set up right)
-          const teamBase = await prisma.teams.findUnique({
-            where: { id: teamSeason.teamid },
-            select: { accountid: true },
-          });
-          if (teamBase) teamAccountId = teamBase.accountid.toString();
-        }
-        // Only include if the team's accountId matches the route accountId
-        if (teamAccountId === accountId.toString()) {
-          const teamId = teamSeason.id.toString();
-          if (!uniqueTeams.has(teamId)) {
-            uniqueTeams.set(teamId, {
-              id: teamId,
-              name: teamSeason.name,
-              leagueName: teamSeason.leagueseason.league.name,
-              logoUrl: getLogoUrl(teamAccountId, teamSeason.teamid.toString()),
-              // TODO: Add more team data like record, standing, next game
-            });
-          }
-        }
-      }
-
+    if (!userContact) {
+      // User doesn't have a contact record for this account, return empty teams
       res.json({
         success: true,
         data: {
-          teams: Array.from(uniqueTeams.values()),
+          teams: [],
         },
       });
-    } catch (error) {
-      logAndRethrow('fetching user teams', error);
+      return;
     }
-  },
+
+    // Get current season for this account
+    const currentSeasonRecord = await prisma.currentseason.findUnique({
+      where: {
+        accountid: accountId,
+      },
+    });
+
+    if (!currentSeasonRecord) {
+      res.json({
+        success: true,
+        data: {
+          teams: [],
+        },
+      });
+      return;
+    }
+
+    const currentSeason = await prisma.season.findUnique({
+      where: {
+        id: currentSeasonRecord.seasonid,
+      },
+    });
+
+    if (!currentSeason) {
+      res.json({
+        success: true,
+        data: {
+          teams: [],
+        },
+      });
+      return;
+    }
+
+    // Get teams where the user is a roster member
+    const userTeams = await prisma.rosterseason.findMany({
+      where: {
+        roster: {
+          contactid: userContact.id,
+        },
+        teamsseason: {
+          leagueseason: {
+            seasonid: currentSeason.id,
+          },
+        },
+        inactive: false,
+      },
+      include: {
+        teamsseason: {
+          include: {
+            leagueseason: {
+              include: {
+                league: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            teams: {
+              select: {
+                accountid: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Get teams where the user is a manager
+    const managedTeams = await prisma.teamseasonmanager.findMany({
+      where: {
+        contactid: userContact.id,
+        teamsseason: {
+          leagueseason: {
+            seasonid: currentSeason.id,
+          },
+        },
+      },
+      include: {
+        teamsseason: {
+          include: {
+            leagueseason: {
+              include: {
+                league: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+            teams: {
+              select: {
+                accountid: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Combine and deduplicate teams
+    const allTeams = [...userTeams, ...managedTeams];
+    const uniqueTeams = new Map();
+
+    for (const team of allTeams) {
+      const teamSeason = team.teamsseason;
+      // Defensive: fetch league.accountid if not already included
+      // We'll need to fetch the team base record to get its accountid
+      let teamAccountId: string | undefined = undefined;
+      if (teamSeason.teams && teamSeason.teams.accountid) {
+        teamAccountId = teamSeason.teams.accountid.toString();
+      } else {
+        // Fallback: fetch from DB (shouldn't happen if include is set up right)
+        const teamBase = await prisma.teams.findUnique({
+          where: { id: teamSeason.teamid },
+          select: { accountid: true },
+        });
+        if (teamBase) teamAccountId = teamBase.accountid.toString();
+      }
+      // Only include if the team's accountId matches the route accountId
+      if (teamAccountId === accountId.toString()) {
+        const teamId = teamSeason.id.toString();
+        if (!uniqueTeams.has(teamId)) {
+          uniqueTeams.set(teamId, {
+            id: teamId,
+            name: teamSeason.name,
+            leagueName: teamSeason.leagueseason.league.name,
+            logoUrl: getLogoUrl(teamAccountId, teamSeason.teamid.toString()),
+            // TODO: Add more team data like record, standing, next game
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        teams: Array.from(uniqueTeams.values()),
+      },
+    });
+  }),
 );
 
 /**
  * GET /api/accounts/:accountId/leagues
  * Get all leagues for this account
  */
-router.get('/:accountId/leagues', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId/leagues',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
 
     // Get current season for this account
@@ -2190,17 +2006,16 @@ router.get('/:accountId/leagues', async (req: Request, res: Response): Promise<v
         })),
       },
     });
-  } catch (error) {
-    logAndRethrow('fetching leagues', error);
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/fields
  * Get all fields for an account (public endpoint)
  */
-router.get('/:accountId/fields', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId/fields',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
 
     const fields = await prisma.availablefields.findMany({
@@ -2223,10 +2038,8 @@ router.get('/:accountId/fields', async (req: Request, res: Response): Promise<vo
         })),
       },
     });
-  } catch (error) {
-    logAndRethrow('fetching fields', error);
-  }
-});
+  }),
+);
 
 /**
  * POST /api/accounts/:accountId/fields
@@ -2236,67 +2049,55 @@ router.post(
   '/:accountId/fields',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const { name, address } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const { name, address } = req.body;
 
-      if (!name || typeof name !== 'string') {
-        res.status(400).json({
-          success: false,
-          message: 'Field name is required',
-        });
-        return;
-      }
-
-      // Check if field with same name already exists for this account
-      const existingField = await prisma.availablefields.findFirst({
-        where: {
-          accountid: accountId,
-          name: name.trim(),
-        },
-      });
-
-      if (existingField) {
-        res.status(400).json({
-          success: false,
-          message: 'A field with this name already exists for this account',
-        });
-        return;
-      }
-
-      const newField = await prisma.availablefields.create({
-        data: {
-          name: name.trim(),
-          shortname: name.trim().substring(0, 5), // Use first 5 chars of name
-          comment: '', // Empty string for comment
-          address: address?.trim() || '',
-          city: '', // Empty string for city
-          state: '', // Empty string for state
-          zipcode: '', // Empty string for zipcode
-          directions: '', // Empty string for directions
-          rainoutnumber: '', // Empty string for rainout number
-          latitude: '', // Empty string for latitude
-          longitude: '', // Empty string for longitude
-          accountid: accountId,
-        },
-      });
-
-      res.status(201).json({
-        success: true,
-        data: {
-          field: {
-            id: newField.id.toString(),
-            name: newField.name,
-            address: newField.address,
-            accountId: newField.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('creating field', error);
+    if (!name || typeof name !== 'string') {
+      throw new ValidationError('Field name is required');
     }
-  },
+
+    // Check if field with same name already exists for this account
+    const existingField = await prisma.availablefields.findFirst({
+      where: {
+        accountid: accountId,
+        name: name.trim(),
+      },
+    });
+
+    if (existingField) {
+      throw new ValidationError('A field with this name already exists for this account');
+    }
+
+    const newField = await prisma.availablefields.create({
+      data: {
+        name: name.trim(),
+        shortname: name.trim().substring(0, 5), // Use first 5 chars of name
+        comment: '', // Empty string for comment
+        address: address?.trim() || '',
+        city: '', // Empty string for city
+        state: '', // Empty string for state
+        zipcode: '', // Empty string for zipcode
+        directions: '', // Empty string for directions
+        rainoutnumber: '', // Empty string for rainout number
+        latitude: '', // Empty string for latitude
+        longitude: '', // Empty string for longitude
+        accountid: accountId,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        field: {
+          id: newField.id.toString(),
+          name: newField.name,
+          address: newField.address,
+          accountId: newField.accountid.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -2307,78 +2108,62 @@ router.put(
   '/:accountId/fields/:fieldId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const fieldId = BigInt(req.params.fieldId);
-      const { name, address } = req.body;
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const fieldId = BigInt(req.params.fieldId);
+    const { name, address } = req.body;
 
-      if (!name || typeof name !== 'string') {
-        res.status(400).json({
-          success: false,
-          message: 'Field name is required',
-        });
-        return;
-      }
-
-      // Check if field exists and belongs to this account
-      const existingField = await prisma.availablefields.findFirst({
-        where: {
-          id: fieldId,
-          accountid: accountId,
-        },
-      });
-
-      if (!existingField) {
-        res.status(404).json({
-          success: false,
-          message: 'Field not found',
-        });
-        return;
-      }
-
-      // Check if another field with the same name already exists for this account
-      const duplicateField = await prisma.availablefields.findFirst({
-        where: {
-          accountid: accountId,
-          name: name.trim(),
-          id: { not: fieldId },
-        },
-      });
-
-      if (duplicateField) {
-        res.status(400).json({
-          success: false,
-          message: 'A field with this name already exists for this account',
-        });
-        return;
-      }
-
-      const updatedField = await prisma.availablefields.update({
-        where: {
-          id: fieldId,
-        },
-        data: {
-          name: name.trim(),
-          address: address?.trim() || null,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          field: {
-            id: updatedField.id.toString(),
-            name: updatedField.name,
-            address: updatedField.address,
-            accountId: updatedField.accountid.toString(),
-          },
-        },
-      });
-    } catch (error) {
-      logAndRethrow('updating field', error);
+    if (!name || typeof name !== 'string') {
+      throw new ValidationError('Field name is required');
     }
-  },
+
+    // Check if field exists and belongs to this account
+    const existingField = await prisma.availablefields.findFirst({
+      where: {
+        id: fieldId,
+        accountid: accountId,
+      },
+    });
+
+    if (!existingField) {
+      throw new NotFoundError('Field not found');
+    }
+
+    // Check if another field with the same name already exists for this account
+    const duplicateField = await prisma.availablefields.findFirst({
+      where: {
+        accountid: accountId,
+        name: name.trim(),
+        id: { not: fieldId },
+      },
+    });
+
+    if (duplicateField) {
+      throw new ValidationError('A field with this name already exists for this account');
+    }
+
+    const updatedField = await prisma.availablefields.update({
+      where: {
+        id: fieldId,
+      },
+      data: {
+        name: name.trim(),
+        address: address?.trim() || null,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        field: {
+          id: updatedField.id.toString(),
+          name: updatedField.name,
+          address: updatedField.address,
+          accountId: updatedField.accountid.toString(),
+        },
+      },
+    });
+  }),
 );
 
 /**
@@ -2389,58 +2174,46 @@ router.delete(
   '/:accountId/fields/:fieldId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
-      const fieldId = BigInt(req.params.fieldId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
+    const fieldId = BigInt(req.params.fieldId);
 
-      // Check if field exists and belongs to this account
-      const field = await prisma.availablefields.findFirst({
-        where: {
-          id: fieldId,
-          accountid: accountId,
-        },
-      });
+    // Check if field exists and belongs to this account
+    const field = await prisma.availablefields.findFirst({
+      where: {
+        id: fieldId,
+        accountid: accountId,
+      },
+    });
 
-      if (!field) {
-        res.status(404).json({
-          success: false,
-          message: 'Field not found',
-        });
-        return;
-      }
-
-      // Check if field is being used in any games
-      const gamesUsingField = await prisma.leagueschedule.findFirst({
-        where: {
-          fieldid: fieldId,
-        },
-      });
-
-      if (gamesUsingField) {
-        res.status(400).json({
-          success: false,
-          message: 'Cannot delete field because it is being used in scheduled games',
-        });
-        return;
-      }
-
-      await prisma.availablefields.delete({
-        where: {
-          id: fieldId,
-        },
-      });
-
-      res.json({
-        success: true,
-        data: {
-          message: `Field "${field.name}" has been deleted`,
-        },
-      });
-    } catch (error) {
-      logAndRethrow('deleting field', error);
+    if (!field) {
+      throw new NotFoundError('Field not found');
     }
-  },
+
+    // Check if field is being used in any games
+    const gamesUsingField = await prisma.leagueschedule.findFirst({
+      where: {
+        fieldid: fieldId,
+      },
+    });
+
+    if (gamesUsingField) {
+      throw new ValidationError('Cannot delete field because it is being used in scheduled games');
+    }
+
+    await prisma.availablefields.delete({
+      where: {
+        id: fieldId,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: `Field "${field.name}" has been deleted`,
+      },
+    });
+  }),
 );
 
 // Account logo upload endpoint
@@ -2457,93 +2230,76 @@ router.post(
       next();
     });
   },
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = req.params.accountId;
-      if (!req.file) {
-        res.status(400).json({ success: false, message: 'No file uploaded' });
-        return;
-      }
-      const validationError = validateLogoFile(req.file);
-      if (validationError) {
-        res.status(400).json({ success: false, message: validationError });
-        return;
-      }
-      await storageService.saveAccountLogo(accountId, req.file.buffer);
-      const accountLogoUrl = getAccountLogoUrl(accountId);
-      res.json({ success: true, accountLogoUrl });
-    } catch (error) {
-      console.error('Error uploading account logo:', error);
-      res.status(500).json({ success: false, message: 'Failed to upload account logo' });
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = req.params.accountId;
+    if (!req.file) {
+      throw new ValidationError('No file uploaded');
     }
-  },
+    const validationError = validateLogoFile(req.file);
+    if (validationError) {
+      throw new ValidationError(validationError);
+    }
+    await storageService.saveAccountLogo(accountId, req.file.buffer);
+    const accountLogoUrl = getAccountLogoUrl(accountId);
+    res.json({ success: true, accountLogoUrl });
+  }),
 );
 
 // Account logo get endpoint
-router.get('/:accountId/logo', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId/logo',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = req.params.accountId;
     const logoBuffer = await storageService.getAccountLogo(accountId);
     if (!logoBuffer) {
-      res.status(404).json({ success: false, message: 'Account logo not found' });
-      return;
+      throw new NotFoundError('Account logo not found');
     }
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=3600');
     res.setHeader('Content-Length', logoBuffer.length.toString());
     res.send(logoBuffer);
-  } catch (error) {
-    console.error('Error serving account logo:', error);
-    res.status(500).json({ success: false, message: 'Failed to serve account logo' });
-  }
-});
+  }),
+);
 
 // Account logo delete endpoint
 router.delete(
   '/:accountId/logo',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = req.params.accountId;
-      await storageService.deleteAccountLogo(accountId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Error deleting account logo:', error);
-      res.status(500).json({ success: false, message: 'Failed to delete account logo' });
-    }
-  },
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = req.params.accountId;
+    await storageService.deleteAccountLogo(accountId);
+    res.json({ success: true });
+  }),
 );
 
 // Lightweight endpoint to get only the account name
-router.get('/:accountId/name', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId/name',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
       select: { id: true, name: true },
     });
     if (!account) {
-      res.status(404).json({ success: false, message: 'Account not found' });
-      return;
+      throw new NotFoundError('Account not found');
     }
     res.json({ success: true, data: { id: accountId.toString(), name: account.name } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+  }),
+);
 
 // Lightweight endpoint to get account name and logo URL
-router.get('/:accountId/header', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/:accountId/header',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
       select: { name: true },
     });
     if (!account) {
-      res.status(404).json({ success: false, message: 'Account not found' });
-      return;
+      throw new NotFoundError('Account not found');
     }
     res.json({
       success: true,
@@ -2552,10 +2308,8 @@ router.get('/:accountId/header', async (req: Request, res: Response): Promise<vo
         accountLogoUrl: getAccountLogoUrl(accountId.toString()),
       },
     });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/umpires
@@ -2565,52 +2319,44 @@ router.get(
   '/:accountId/umpires',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  async (req: Request, res: Response): Promise<void> => {
-    try {
-      const accountId = BigInt(req.params.accountId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const accountId = BigInt(req.params.accountId);
 
-      const umpires = await prisma.leagueumpires.findMany({
-        where: {
-          accountid: accountId,
-        },
-        include: {
-          contacts: {
-            select: {
-              id: true,
-              firstname: true,
-              lastname: true,
-              email: true,
-            },
+    const umpires = await prisma.leagueumpires.findMany({
+      where: {
+        accountid: accountId,
+      },
+      include: {
+        contacts: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
           },
         },
-        orderBy: {
-          contacts: {
-            lastname: 'asc',
-          },
+      },
+      orderBy: {
+        contacts: {
+          lastname: 'asc',
         },
-      });
+      },
+    });
 
-      res.json({
-        success: true,
-        data: {
-          umpires: umpires.map((umpire) => ({
-            id: umpire.id.toString(),
-            contactId: umpire.contactid.toString(),
-            firstName: umpire.contacts.firstname,
-            lastName: umpire.contacts.lastname,
-            email: umpire.contacts.email,
-            displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
-          })),
-        },
-      });
-    } catch (error) {
-      console.error('Error fetching umpires:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Failed to fetch umpires',
-      });
-    }
-  },
+    res.json({
+      success: true,
+      data: {
+        umpires: umpires.map((umpire) => ({
+          id: umpire.id.toString(),
+          contactId: umpire.contactid.toString(),
+          firstName: umpire.contacts.firstname,
+          lastName: umpire.contacts.lastname,
+          email: umpire.contacts.email,
+          displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
+        })),
+      },
+    });
+  }),
 );
 
 // Add missing type definitions for contacts and account list response

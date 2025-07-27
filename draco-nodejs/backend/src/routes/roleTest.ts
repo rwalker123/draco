@@ -5,6 +5,8 @@ import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError, AuthenticationError } from '../utils/customErrors';
 
 // Type definitions for Prisma query results
 interface ContactRole {
@@ -40,11 +42,12 @@ const roleService = new RoleService(prisma);
  * GET /api/role-test/user-roles
  * Get current user's roles (for testing)
  */
-router.get('/user-roles', authenticateToken, async (req, res): Promise<void> => {
-  try {
+router.get(
+  '/user-roles',
+  authenticateToken,
+  asyncHandler(async (req, res): Promise<void> => {
     if (!req.user?.id) {
-      res.status(401).json({ error: 'User not found' });
-      return;
+      throw new AuthenticationError('User not found');
     }
 
     const accountId = req.query.accountId ? BigInt(req.query.accountId as string) : undefined;
@@ -66,28 +69,25 @@ router.get('/user-roles', authenticateToken, async (req, res): Promise<void> => 
         })),
       },
     });
-  } catch (error) {
-    console.error('Error getting user roles:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/role-test/check-role
  * Check if current user has a specific role
  */
-router.get('/check-role', authenticateToken, async (req, res): Promise<void> => {
-  try {
+router.get(
+  '/check-role',
+  authenticateToken,
+  asyncHandler(async (req, res): Promise<void> => {
     if (!req.user?.id) {
-      res.status(401).json({ error: 'User not found' });
-      return;
+      throw new AuthenticationError('User not found');
     }
 
     const { roleId, accountId, teamId, leagueId } = req.query;
 
     if (!roleId) {
-      res.status(400).json({ error: 'roleId is required' });
-      return;
+      throw new ValidationError('roleId is required');
     }
 
     const context = {
@@ -108,28 +108,25 @@ router.get('/check-role', authenticateToken, async (req, res): Promise<void> => 
         context: roleCheck.context,
       },
     });
-  } catch (error) {
-    console.error('Error checking role:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/role-test/check-permission
  * Check if current user has a specific permission
  */
-router.get('/check-permission', authenticateToken, async (req, res): Promise<void> => {
-  try {
+router.get(
+  '/check-permission',
+  authenticateToken,
+  asyncHandler(async (req, res): Promise<void> => {
     if (!req.user?.id) {
-      res.status(401).json({ error: 'User not found' });
-      return;
+      throw new AuthenticationError('User not found');
     }
 
     const { permission, accountId, teamId, leagueId } = req.query;
 
     if (!permission) {
-      res.status(400).json({ error: 'permission is required' });
-      return;
+      throw new ValidationError('permission is required');
     }
 
     const context = {
@@ -153,18 +150,16 @@ router.get('/check-permission', authenticateToken, async (req, res): Promise<voi
         context,
       },
     });
-  } catch (error) {
-    console.error('Error checking permission:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/role-test/role-ids
  * Get all role IDs and names (for reference)
  */
-router.get('/role-ids', async (req, res) => {
-  try {
+router.get(
+  '/role-ids',
+  asyncHandler(async (req, res) => {
     const roles = await prisma.aspnetroles.findMany({
       select: {
         id: true,
@@ -184,18 +179,17 @@ router.get('/role-ids', async (req, res) => {
         })),
       },
     });
-  } catch (error) {
-    console.error('Error getting role IDs:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * GET /api/role-test/account-users/:accountId
  * Get all users with roles in a specific account
  */
-router.get('/account-users/:accountId', authenticateToken, async (req, res) => {
-  try {
+router.get(
+  '/account-users/:accountId',
+  authenticateToken,
+  asyncHandler(async (req, res) => {
     const accountId = BigInt(req.params.accountId);
 
     // Get all contacts in this account
@@ -232,25 +226,21 @@ router.get('/account-users/:accountId', authenticateToken, async (req, res) => {
         users: usersWithRoles,
       },
     });
-  } catch (error) {
-    console.error('Error getting account users:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+  }),
+);
 
 /**
  * POST /api/role-test/assign-role
  * Assign a role to a contact (for testing)
  */
-router.post('/assign-role', authenticateToken, async (req, res): Promise<void> => {
-  try {
+router.post(
+  '/assign-role',
+  authenticateToken,
+  asyncHandler(async (req, res): Promise<void> => {
     const { contactId, roleId, roleData, accountId } = req.body;
 
     if (!contactId || !roleId || !roleData || !accountId) {
-      res.status(400).json({
-        error: 'contactId, roleId, roleData, and accountId are required',
-      });
-      return;
+      throw new ValidationError('contactId, roleId, roleData, and accountId are required');
     }
 
     const assignedRole = await roleService.assignRole(
@@ -273,13 +263,7 @@ router.post('/assign-role', authenticateToken, async (req, res): Promise<void> =
         },
       },
     });
-  } catch (error) {
-    console.error('Error assigning role:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
+  }),
+);
 
 export default router;

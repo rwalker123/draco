@@ -272,7 +272,33 @@ export const useScheduleData = ({
       }
 
       const gamesData = await gamesResponse.json();
-      setGames(gamesData.data.games);
+
+      // Transform raw API data to match Game interface
+      const transformedGames = gamesData.data.games.map((rawGame: Record<string, unknown>) => ({
+        id: String(rawGame.id),
+        gameDate: String(rawGame.gameDate),
+        homeTeamId: String(rawGame.homeTeamId),
+        visitorTeamId: String(rawGame.visitorTeamId),
+        homeTeamName: String(rawGame.homeTeamName),
+        visitorTeamName: String(rawGame.visitorTeamName),
+        homeScore: Number(rawGame.homeScore),
+        visitorScore: Number(rawGame.visitorScore),
+        gameStatus: Number(rawGame.gameStatus),
+        gameStatusText: String(rawGame.gameStatusText),
+        gameStatusShortText: String(rawGame.gameStatusShortText),
+        gameType: Number(rawGame.gameType),
+        comment: String(rawGame.comment || ''),
+        fieldId: rawGame.fieldId ? String(rawGame.fieldId) : undefined,
+        field: rawGame.field as Game['field'],
+        umpire1: rawGame.umpire1 ? String(rawGame.umpire1) : undefined,
+        umpire2: rawGame.umpire2 ? String(rawGame.umpire2) : undefined,
+        umpire3: rawGame.umpire3 ? String(rawGame.umpire3) : undefined,
+        umpire4: rawGame.umpire4 ? String(rawGame.umpire4) : undefined,
+        league: rawGame.league as Game['league'],
+        season: rawGame.season as Game['season'],
+      }));
+
+      setGames(transformedGames);
 
       // Mark initial load as complete
       if (isInitialLoad) {
