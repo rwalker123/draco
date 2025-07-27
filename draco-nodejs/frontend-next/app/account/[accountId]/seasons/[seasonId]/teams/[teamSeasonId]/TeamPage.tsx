@@ -4,6 +4,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
+import { GameStatus } from '../../../../../../../types/schedule';
 import React from 'react';
 import EnterGameSummaryDialog from '../../../../../../../components/EnterGameRecapDialog';
 import { getGameSummary, saveGameSummary } from '../../../../../../../lib/utils';
@@ -194,8 +195,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
 
   // Remove the old canEditRecap helper and replace with a new one using RoleContext
   const canEditRecap = (game: Game) => {
-    // Only allow editing for completed games (status 1) and if the user is TeamAdmin for the relevant team
-    return game.gameStatus === 1 && hasRoleInTeam('TeamAdmin', teamSeasonId);
+    // Only allow editing for completed games and if the user is TeamAdmin for the relevant team
+    return game.gameStatus === GameStatus.Completed && hasRoleInTeam('TeamAdmin', teamSeasonId);
   };
 
   return (

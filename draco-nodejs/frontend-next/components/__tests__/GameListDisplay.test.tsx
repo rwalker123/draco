@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import GameListDisplay, { GameListSection, Game } from '../GameListDisplay';
+import { GameStatus } from '../../types/schedule';
 
 // Mock the gameUtils module
 jest.mock('../../utils/gameUtils', () => ({
@@ -26,7 +27,7 @@ const mockGame: Game = {
   awayTeamName: 'Away Team',
   homeScore: 5,
   awayScore: 3,
-  gameStatus: 1,
+  gameStatus: GameStatus.Completed,
   gameStatusText: 'Final',
   leagueName: 'Test League',
   fieldId: null,
@@ -81,7 +82,7 @@ describe('GameListDisplay', () => {
   it('renders scheduled game with time and field', () => {
     const scheduledGame: Game = {
       ...mockGame,
-      gameStatus: 0,
+      gameStatus: GameStatus.Scheduled,
       gameStatusText: 'Scheduled',
       fieldName: 'Test Field',
       fieldShortName: 'TF',
