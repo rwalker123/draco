@@ -4,12 +4,11 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { MessageSquare, Camera, Play, Star, Award, Target } from 'lucide-react';
 import Image from 'next/image';
 import GameListDisplay, { Game } from '../../../../../../../components/GameListDisplay';
-import { GameStatus } from '../../../../../../../types/schedule';
 import React from 'react';
 import EnterGameSummaryDialog from '../../../../../../../components/EnterGameRecapDialog';
 import { getGameSummary, saveGameSummary } from '../../../../../../../lib/utils';
 import { useAuth } from '../../../../../../../context/AuthContext';
-import { useRole } from '../../../../../../../context/RoleContext';
+import { useSchedulePermissions } from '../../../../../../../hooks/useSchedulePermissions';
 import AccountPageHeader from '../../../../../../../components/AccountPageHeader';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -43,7 +42,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     record?: { wins: number; losses: number; ties: number };
   } | null>(null);
   const { token } = useAuth();
-  const { hasRoleInTeam } = useRole();
+  const { canEditRecap } = useSchedulePermissions({
+    accountId,
+    teamSeasonId,
+  });
 
   React.useEffect(() => {
     setLoading(true);
@@ -191,12 +193,6 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
     } finally {
       setSummaryLoading(false);
     }
-  };
-
-  // Remove the old canEditRecap helper and replace with a new one using RoleContext
-  const canEditRecap = (game: Game) => {
-    // Only allow editing for completed games and if the user is TeamAdmin for the relevant team
-    return game.gameStatus === GameStatus.Completed && hasRoleInTeam('TeamAdmin', teamSeasonId);
   };
 
   return (

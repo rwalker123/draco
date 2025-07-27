@@ -20,6 +20,7 @@ import AccountPageHeader from '../../../../components/AccountPageHeader';
 import { useCurrentSeason } from '../../../../hooks/useCurrentSeason';
 import { GameCardData } from '../../../../components/GameCard';
 import { getGameTypeText } from '../../../../utils/gameUtils';
+import { convertGameToGameCardData } from '../../../../utils/gameTransformers';
 
 // Import modular schedule components
 import {
@@ -157,37 +158,10 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
     clearLeagueTeams,
   });
 
-  // Convert Game to GameCardData for display
-  const convertGameToGameCardData = useCallback(
+  // Convert Game to GameCardData for display using the unified transformer
+  const convertGameToGameCardDataWithTeams = useCallback(
     (game: Game): GameCardData => {
-      const homeTeam = teams.find((team) => team.id === game.homeTeamId);
-      const awayTeam = teams.find((team) => team.id === game.visitorTeamId);
-
-      // Use field data from the game object instead of looking it up in fields array
-      // The game object already contains the field data with shortName
-      const field = game.field;
-
-      return {
-        id: game.id,
-        date: game.gameDate,
-        homeTeamId: game.homeTeamId,
-        awayTeamId: game.visitorTeamId,
-        homeTeamName: homeTeam?.name || 'Unknown Team',
-        awayTeamName: awayTeam?.name || 'Unknown Team',
-        homeScore: game.homeScore,
-        awayScore: game.visitorScore,
-        gameStatus: game.gameStatus,
-        gameStatusText: game.gameStatusText,
-        gameStatusShortText: game.gameStatusShortText,
-        leagueName: game.league?.name || 'Unknown League',
-        fieldId: game.fieldId || null,
-        fieldName: field?.name || null,
-        fieldShortName: field?.shortName || null,
-        hasGameRecap: false, // TODO: Implement game recaps
-        gameRecaps: [],
-        comment: game.comment,
-        gameType: game.gameType,
-      };
+      return convertGameToGameCardData(game, teams);
     },
     [teams],
   );
@@ -384,7 +358,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
           canEditSchedule={!!canEditSchedule}
           onEditGame={handleEditGame}
           onGameResults={handleGameResults}
-          convertGameToGameCardData={convertGameToGameCardData}
+          convertGameToGameCardData={convertGameToGameCardDataWithTeams}
           filterDate={filterDate}
           setFilterType={setFilterType}
           setFilterDate={setFilterDate}
@@ -401,7 +375,7 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
         <GameDialog
           open={createDialogOpen}
           mode="create"
-          title="Create New Game"
+          title="Add Game"
           error={createDialogError}
           formState={formState}
           setFormState={setFormState}
@@ -428,15 +402,20 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             getTeamName,
             getFieldName: (fieldId?: string) => fields.find((f) => f.id === fieldId)?.name || '',
             getGameTypeText,
-            getAvailableUmpires: (_currentPosition: string, currentValue: string) => {
-              return umpires.filter(
-                (umpire) =>
-                  umpire.id !== currentValue &&
-                  umpire.id !== formState.umpire1 &&
-                  umpire.id !== formState.umpire2 &&
-                  umpire.id !== formState.umpire3 &&
-                  umpire.id !== formState.umpire4,
-              );
+            getAvailableUmpires: (currentPosition: string, _currentValue: string) => {
+              // Get list of umpire IDs that are selected in OTHER positions
+              const selectedUmpires: string[] = [];
+              if (currentPosition !== 'umpire1' && formState.umpire1)
+                selectedUmpires.push(formState.umpire1);
+              if (currentPosition !== 'umpire2' && formState.umpire2)
+                selectedUmpires.push(formState.umpire2);
+              if (currentPosition !== 'umpire3' && formState.umpire3)
+                selectedUmpires.push(formState.umpire3);
+              if (currentPosition !== 'umpire4' && formState.umpire4)
+                selectedUmpires.push(formState.umpire4);
+
+              // Return umpires that are not selected in other positions
+              return umpires.filter((umpire) => !selectedUmpires.includes(umpire.id));
             },
           }}
           permissions={{
@@ -476,15 +455,20 @@ const ScheduleManagement: React.FC<ScheduleManagementProps> = ({ accountId }) =>
             getTeamName,
             getFieldName: (fieldId?: string) => fields.find((f) => f.id === fieldId)?.name || '',
             getGameTypeText,
-            getAvailableUmpires: (_currentPosition: string, currentValue: string) => {
-              return umpires.filter(
-                (umpire) =>
-                  umpire.id !== currentValue &&
-                  umpire.id !== formState.umpire1 &&
-                  umpire.id !== formState.umpire2 &&
-                  umpire.id !== formState.umpire3 &&
-                  umpire.id !== formState.umpire4,
-              );
+            getAvailableUmpires: (currentPosition: string, _currentValue: string) => {
+              // Get list of umpire IDs that are selected in OTHER positions
+              const selectedUmpires: string[] = [];
+              if (currentPosition !== 'umpire1' && formState.umpire1)
+                selectedUmpires.push(formState.umpire1);
+              if (currentPosition !== 'umpire2' && formState.umpire2)
+                selectedUmpires.push(formState.umpire2);
+              if (currentPosition !== 'umpire3' && formState.umpire3)
+                selectedUmpires.push(formState.umpire3);
+              if (currentPosition !== 'umpire4' && formState.umpire4)
+                selectedUmpires.push(formState.umpire4);
+
+              // Return umpires that are not selected in other positions
+              return umpires.filter((umpire) => !selectedUmpires.includes(umpire.id));
             },
           }}
           permissions={{

@@ -4,6 +4,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { getGameStatusShortText } from '../utils/gameUtils';
 import { format, parseISO } from 'date-fns';
+import { formatGameTime } from '../utils/dateUtils';
 import RecapButton from './RecapButton';
 import { GameStatus, GameType } from '../types/schedule';
 
@@ -28,6 +29,10 @@ export interface GameCardData {
   gameRecaps: Array<{ teamId: string; recap: string }>;
   comment?: string;
   gameType?: number;
+  umpire1?: string;
+  umpire2?: string;
+  umpire3?: string;
+  umpire4?: string;
 }
 
 export interface GameCardProps {
@@ -43,6 +48,12 @@ export interface GameCardProps {
   compact?: boolean;
   calendar?: boolean;
   showDate?: boolean;
+  /**
+   * Controls width behavior for horizontal layout.
+   * - `false` (default): Card fills container width (min: 240px, max: 100%)
+   * - `true`: Card fits content width (min: 280px, max: 500px)
+   */
+  fitContent?: boolean;
 }
 
 const GameCard: React.FC<GameCardProps> = ({
@@ -58,23 +69,9 @@ const GameCard: React.FC<GameCardProps> = ({
   compact = false,
   calendar = false,
   showDate = false,
+  fitContent = false,
 }) => {
-  let localTime = '';
-  try {
-    if (game.date) {
-      const localDateString = game.date.replace('Z', '');
-      const dateObj = new Date(localDateString);
-      localTime = dateObj.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      });
-    } else {
-      localTime = 'TBD';
-    }
-  } catch {
-    localTime = 'TBD';
-  }
+  const localTime = formatGameTime(game.date);
 
   const handleCardClick = () => {
     if (onClick) {
@@ -108,9 +105,21 @@ const GameCard: React.FC<GameCardProps> = ({
         border: '1px solid',
         borderColor: 'divider',
         transition: 'all 0.2s ease',
-        minWidth: calendar ? '100%' : layout === 'horizontal' ? 240 : 'auto',
-        maxWidth: calendar ? '100%' : layout === 'horizontal' ? '100%' : 'auto',
-        width: calendar ? '100%' : layout === 'horizontal' ? '100%' : 'auto',
+        minWidth: calendar ? '100%' : layout === 'horizontal' ? (fitContent ? 280 : 240) : 'auto',
+        maxWidth: calendar
+          ? '100%'
+          : layout === 'horizontal'
+            ? fitContent
+              ? 500
+              : '100%'
+            : 'auto',
+        width: calendar
+          ? '100%'
+          : layout === 'horizontal'
+            ? fitContent
+              ? 'auto'
+              : '100%'
+            : 'auto',
         flexShrink: calendar ? 1 : layout === 'horizontal' ? 0 : 1,
         cursor: onClick ? 'pointer' : 'default',
         '&:hover': {
@@ -182,10 +191,12 @@ const GameCard: React.FC<GameCardProps> = ({
                   )}
                   <RecapButton
                     game={game}
-                    canEditRecap={canEditRecap}
-                    onEditRecap={onEditRecap}
-                    onViewRecap={onViewRecap}
                     onRecapClick={handleRecapClick}
+                    {...(canEditRecap && onEditRecap
+                      ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
+                      : onViewRecap
+                        ? { recapMode: 'view' as const, onViewRecap }
+                        : { recapMode: 'none' as const })}
                   />
                 </Box>
               )}
@@ -300,11 +311,13 @@ const GameCard: React.FC<GameCardProps> = ({
                     )}
                     <RecapButton
                       game={game}
-                      canEditRecap={canEditRecap}
-                      onEditRecap={onEditRecap}
-                      onViewRecap={onViewRecap}
                       onRecapClick={handleRecapClick}
                       sx={{ mt: 1, ml: 1 }}
+                      {...(canEditRecap && onEditRecap
+                        ? { recapMode: 'edit' as const, canEditRecap, onEditRecap }
+                        : onViewRecap
+                          ? { recapMode: 'view' as const, onViewRecap }
+                          : { recapMode: 'none' as const })}
                     />
                   </>
                 )}
