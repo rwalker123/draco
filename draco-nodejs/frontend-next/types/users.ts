@@ -72,6 +72,7 @@ export interface UserTableProps {
   totalUsers: number;
   onPageChange: (event: unknown, newPage: number) => void;
   onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  getRoleDisplayName: (roleId: string) => string;
 }
 
 export interface UserSearchBarProps {
@@ -149,6 +150,7 @@ export interface UseUserManagementReturn {
 
   // Actions
   handleSearch: () => void;
+  handleClearSearch: () => void;
   handlePageChange: (event: unknown, newPage: number) => void;
   handleRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAssignRole: () => void;

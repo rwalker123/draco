@@ -1,4 +1,5 @@
 import { User, Role, UsersResponse, UserSearchParams, Contact, ContactRole } from '../types/users';
+import { getRoleDisplayName } from '../utils/roleUtils';
 
 /**
  * User Management Service
@@ -57,7 +58,7 @@ export class UserManagementService {
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
-          roleName: this.getRoleDisplayName(cr.roleId),
+          roleName: getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
         })) || [],
     }));
@@ -103,7 +104,7 @@ export class UserManagementService {
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
-          roleName: this.getRoleDisplayName(cr.roleId),
+          roleName: getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
         })) || [],
     }));
@@ -178,23 +179,6 @@ export class UserManagementService {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || 'Failed to remove role');
     }
-  }
-
-  /**
-   * Get human-readable display name for a role ID
-   */
-  private getRoleDisplayName(roleId: string): string {
-    const roleMap: Record<string, string> = {
-      Administrator: 'Administrator',
-      AccountAdmin: 'Account Administrator',
-      TeamManager: 'Team Manager',
-      Player: 'Player',
-      Coach: 'Coach',
-      Umpire: 'Umpire',
-      Parent: 'Parent',
-      Fan: 'Fan',
-    };
-    return roleMap[roleId] || roleId;
   }
 }
 
