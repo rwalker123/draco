@@ -8,6 +8,7 @@ import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { NotFoundError } from '../utils/customErrors';
+import { extractAccountParams, extractSeasonParams } from '../utils/paramExtraction';
 
 // Type definitions for Prisma query results
 
@@ -133,7 +134,7 @@ const routeProtection = new RouteProtection(roleService, prisma);
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const includeDivisions = req.query.includeDivisions === 'true';
 
     const seasons = await prisma.season.findMany({
@@ -286,7 +287,7 @@ router.get(
 router.get(
   '/current',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const currentSeason = await prisma.currentseason.findUnique({
       where: {
@@ -443,8 +444,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+      const { accountId, seasonId } = extractSeasonParams(req.params);
 
       const season = await prisma.season.findFirst({
         where: {
@@ -525,7 +525,7 @@ router.post(
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
       const { name } = req.body;
-      const accountId = BigInt(req.params.accountId);
+      const { accountId } = extractAccountParams(req.params);
 
       if (!name) {
         res.status(400).json({
@@ -595,8 +595,7 @@ router.put(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+      const { accountId, seasonId } = extractSeasonParams(req.params);
       const { name } = req.body;
 
       if (!name) {
@@ -684,8 +683,7 @@ router.post(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+      const { accountId, seasonId } = extractSeasonParams(req.params);
 
       // Get the source season
       const sourceSeason = await prisma.season.findFirst({
@@ -802,8 +800,7 @@ router.post(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+      const { accountId, seasonId } = extractSeasonParams(req.params);
 
       // Check if season exists and belongs to this account
       const season = await prisma.season.findFirst({
@@ -864,8 +861,7 @@ router.delete(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
+      const { accountId, seasonId } = extractSeasonParams(req.params);
 
       // Check if season exists and belongs to this account
       const season = await prisma.season.findFirst({

@@ -3,6 +3,7 @@ import { TeamManagerService } from '../services/teamManagerService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, ConflictError } from '../utils/customErrors';
+import { extractBigIntParams } from '../utils/paramExtraction';
 
 /**
  * @swagger
@@ -157,7 +158,7 @@ router.get(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
     console.log('GET /managers req.params:', req.params);
-    const teamSeasonId = BigInt(req.params.teamSeasonId);
+    const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const managers = await teamManagerService.listManagers(teamSeasonId);
     res.json({ success: true, data: managers });
   }),
@@ -167,7 +168,7 @@ router.get(
 router.post(
   '/',
   asyncHandler(async (req: Request, res: Response) => {
-    const teamSeasonId = BigInt(req.params.teamSeasonId);
+    const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
     const { contactId } = req.body;
 
     if (!contactId) {
@@ -189,7 +190,7 @@ router.post(
 router.delete(
   '/:managerId',
   asyncHandler(async (req: Request, res: Response) => {
-    const managerId = BigInt(req.params.managerId);
+    const { managerId } = extractBigIntParams(req.params, 'managerId');
     await teamManagerService.removeManager(managerId);
     res.json({ success: true });
   }),

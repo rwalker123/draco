@@ -16,6 +16,11 @@ import {
   AuthenticationError,
   ConflictError,
 } from '../utils/customErrors';
+import {
+  extractAccountParams,
+  extractContactParams,
+  extractBigIntParams,
+} from '../utils/paramExtraction';
 import * as multer from 'multer';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
 import { createStorageService } from '../services/storageService';
@@ -544,7 +549,7 @@ router.get(
 router.get(
   '/:accountId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const { includeCurrentSeason } = req.query;
 
     const accountSelectArgs = {
@@ -905,7 +910,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const {
       name,
       accountTypeId,
@@ -992,7 +997,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const { twitterAccountName, twitterOauthToken, twitterOauthSecretKey, twitterWidgetScript } =
       req.body;
 
@@ -1051,7 +1056,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const urlSelect = {
       id: true,
@@ -1089,7 +1094,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const { url } = req.body;
 
     if (!url) {
@@ -1150,8 +1155,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const urlId = BigInt(req.params.urlId);
+    const { accountId, urlId } = extractBigIntParams(req.params, 'accountId', 'urlId');
     const { url } = req.body;
 
     if (!url) {
@@ -1224,8 +1228,7 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const urlId = BigInt(req.params.urlId);
+    const { accountId, urlId } = extractBigIntParams(req.params, 'accountId', 'urlId');
 
     // Verify the URL belongs to the account
     const existingUrl = await prisma.accountsurl.findFirst({
@@ -1259,7 +1262,7 @@ router.delete(
   authenticateToken,
   routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     // Check if account exists
     const existingAccount = await prisma.accounts.findUnique({
@@ -1292,7 +1295,7 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.users.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const contactSelect = {
       id: true,
@@ -1337,8 +1340,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.roles.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const contactId = BigInt(req.params.contactId);
+    const { accountId, contactId } = extractContactParams(req.params);
     const { roleId, roleData } = req.body;
 
     if (!roleId || !roleData) {
@@ -1378,8 +1380,7 @@ router.delete(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.roles.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const contactId = BigInt(req.params.contactId);
+    const { accountId, contactId } = extractContactParams(req.params);
     const roleId = req.params.roleId;
     const { roleData } = req.body;
 
@@ -1406,7 +1407,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { q } = req.query; // search query
     const limit = 10; // maximum results to return
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     if (!q || typeof q !== 'string') {
       res.json({
@@ -1511,8 +1512,7 @@ router.put(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const contactId = BigInt(req.params.contactId);
+    const { accountId, contactId } = extractContactParams(req.params);
     const {
       firstname,
       lastname,
@@ -1605,7 +1605,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const {
       firstname,
       lastname,
@@ -1686,7 +1686,7 @@ router.post(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const { contactId, submittedDriversLicense, firstYear } = req.body;
 
     if (!contactId) {
@@ -1762,7 +1762,7 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const userId = req.user?.id;
 
     if (!userId) {
@@ -1938,7 +1938,7 @@ router.get(
 router.get(
   '/:accountId/leagues',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     // Get current season for this account
     const currentSeasonRecord = await prisma.currentseason.findUnique({
@@ -2016,7 +2016,7 @@ router.get(
 router.get(
   '/:accountId/fields',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const fields = await prisma.availablefields.findMany({
       where: {
@@ -2050,7 +2050,7 @@ router.post(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const { name, address } = req.body;
 
     if (!name || typeof name !== 'string') {
@@ -2109,8 +2109,7 @@ router.put(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const fieldId = BigInt(req.params.fieldId);
+    const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
     const { name, address } = req.body;
 
     if (!name || typeof name !== 'string') {
@@ -2175,8 +2174,7 @@ router.delete(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const fieldId = BigInt(req.params.fieldId);
+    const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
 
     // Check if field exists and belongs to this account
     const field = await prisma.availablefields.findFirst({
@@ -2277,7 +2275,7 @@ router.delete(
 router.get(
   '/:accountId/name',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
       select: { id: true, name: true },
@@ -2293,7 +2291,7 @@ router.get(
 router.get(
   '/:accountId/header',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const account = await prisma.accounts.findUnique({
       where: { id: accountId },
       select: { name: true },
@@ -2320,7 +2318,7 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const umpires = await prisma.leagueumpires.findMany({
       where: {

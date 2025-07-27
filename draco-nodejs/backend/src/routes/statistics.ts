@@ -3,6 +3,7 @@ import { StatisticsService } from '../services/statisticsService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError } from '../utils/customErrors';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);
@@ -11,7 +12,7 @@ const statisticsService = new StatisticsService(prisma);
 router.get(
   '/leader-categories',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const categories = await statisticsService.getLeaderCategories(accountId);
 
@@ -26,8 +27,7 @@ router.get(
 router.get(
   '/batting/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const leagueId = BigInt(req.params.leagueId);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
     const filters = {
       leagueId,
@@ -56,8 +56,7 @@ router.get(
 router.get(
   '/pitching/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const leagueId = BigInt(req.params.leagueId);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
     const filters = {
       leagueId,
@@ -86,7 +85,7 @@ router.get(
 router.get(
   '/leaders/:leagueId',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
     const category = req.query.category as string;
 
     if (!category) {

@@ -7,6 +7,7 @@ import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, AuthenticationError } from '../utils/customErrors';
+import { extractAccountParams } from '../utils/paramExtraction';
 
 // Type definitions for Prisma query results
 interface ContactRole {
@@ -190,7 +191,7 @@ router.get(
   '/account-users/:accountId',
   authenticateToken,
   asyncHandler(async (req, res) => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     // Get all contacts in this account
     const contacts = await prisma.contacts.findMany({
