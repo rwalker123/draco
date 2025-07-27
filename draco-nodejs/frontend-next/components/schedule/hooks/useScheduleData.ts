@@ -124,7 +124,6 @@ export const useScheduleData = ({
 
       // Only add umpires request if we have a token
       if (token) {
-        console.log('Making umpires request with token:', token ? 'Present' : 'Missing');
         requests.push(
           fetch(`/api/accounts/${accountId}/umpires`, {
             headers: {
@@ -133,8 +132,6 @@ export const useScheduleData = ({
             },
           }),
         );
-      } else {
-        console.log('Skipping umpires request - no token available');
       }
 
       const responses = await Promise.all(requests);
