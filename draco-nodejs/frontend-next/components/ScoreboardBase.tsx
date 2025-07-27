@@ -4,6 +4,7 @@ import GameListDisplay, { GameListSection, Game } from './GameListDisplay';
 import EnterGameResultsDialog, { GameResultData } from './EnterGameResultsDialog';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
+import { isAccountAdministrator } from '../utils/permissionUtils';
 
 interface ScoreboardBaseProps {
   accountId: string;
@@ -34,8 +35,7 @@ const ScoreboardBase: React.FC<ScoreboardBaseProps> = ({
 
   const { token } = useAuth();
   const { hasRole } = useRole();
-  const canEditGames =
-    hasRole('Administrator') || (accountId ? hasRole('AccountAdmin', { accountId }) : false);
+  const canEditGames = isAccountAdministrator(hasRole, accountId);
 
   const handleEditGame = (game: Game) => {
     setEditGameDialog({ open: true, game });

@@ -42,6 +42,7 @@ import {
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '../../../../context/AuthContext';
 import { useRole } from '../../../../context/RoleContext';
+import { isAccountAdministrator } from '../../../../utils/permissionUtils';
 import axios from 'axios';
 
 interface Season {
@@ -71,7 +72,7 @@ const SeasonManagement: React.FC = () => {
   const accountIdStr = Array.isArray(accountId) ? accountId[0] : accountId;
   const router = useRouter();
   const { token } = useAuth();
-  const { hasRole, hasPermission } = useRole();
+  const { hasRole } = useRole();
 
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [availableLeagues, setAvailableLeagues] = useState<League[]>([]);
@@ -96,17 +97,13 @@ const SeasonManagement: React.FC = () => {
   const [dialogSuccessMessage, setDialogSuccessMessage] = useState<string | null>(null);
   const [dialogErrorMessage, setDialogErrorMessage] = useState<string | null>(null);
 
-  // Check permissions
-  const canCreate =
-    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canEdit =
-    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canDelete =
-    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canSetCurrent =
-    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
-  const canManageLeagues =
-    hasPermission('account.manage') || hasRole('AccountAdmin') || hasRole('Administrator');
+  // Check permissions - all season management actions require the same permissions
+  const hasSeasonManagementPermissions = isAccountAdministrator(hasRole, accountIdStr);
+  const canCreate = hasSeasonManagementPermissions;
+  const canEdit = hasSeasonManagementPermissions;
+  const canDelete = hasSeasonManagementPermissions;
+  const canSetCurrent = hasSeasonManagementPermissions;
+  const canManageLeagues = hasSeasonManagementPermissions;
 
   const fetchSeasons = useCallback(async () => {
     if (!accountId) return;
