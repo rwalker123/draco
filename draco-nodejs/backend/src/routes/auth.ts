@@ -1,14 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials, RegisterData } from '../services/authService';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { RoleService } from '../services/roleService';
-import prisma from '../lib/prisma';
+import { ServiceFactory } from '../lib/serviceFactory';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, AuthenticationError } from '../utils/customErrors';
+import prisma from '../lib/prisma';
 
 const router = Router();
 const authService = new AuthService();
-const roleService = new RoleService(prisma);
+const roleService = ServiceFactory.getRoleVerification();
 
 /**
  * @swagger

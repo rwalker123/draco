@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
+import { ServiceFactory } from '../lib/serviceFactory';
+import { IRoleQuery } from '../interfaces/roleInterfaces';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { GameStatus, GameType } from '../types/gameEnums';
 import { ContactRole } from '../types/roles';
@@ -18,8 +18,8 @@ import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtract
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
-const roleService = new RoleService(prisma);
-const routeProtection = new RouteProtection(roleService, prisma);
+const roleService = ServiceFactory.getRoleQuery();
+const routeProtection = ServiceFactory.getRouteProtection();
 
 // Helper function to parse ISO date string without timezone conversion
 const parseGameDate = (dateString: string): Date => {
@@ -861,7 +861,7 @@ async function userHasTeamAdminRights(
   userId: string,
   accountId: string,
   teamSeasonId: string,
-  roleService: RoleService,
+  roleService: IRoleQuery,
   prisma: PrismaClient,
 ): Promise<boolean> {
   // 1. Check contactrole for TeamAdmin

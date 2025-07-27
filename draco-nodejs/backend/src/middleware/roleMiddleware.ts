@@ -2,9 +2,10 @@
 // Extends the existing authentication middleware with role checking
 
 import { Request, Response, NextFunction } from 'express';
-import { RoleService } from '../services/roleService';
+import { IRoleMiddleware } from '../interfaces/roleInterfaces';
 import { RoleContext, RoleType, UserRoles } from '../types/roles';
 import { ROLE_IDS } from '../config/roles';
+import { PrismaClient } from '@prisma/client';
 
 // Extend the Request interface to include user and role information
 declare global {
@@ -20,10 +21,12 @@ declare global {
 }
 
 export class RoleMiddleware {
-  private roleService: RoleService;
+  private roleService: IRoleMiddleware;
+  private prisma: PrismaClient;
 
-  constructor(roleService: RoleService) {
+  constructor(roleService: IRoleMiddleware, prisma: PrismaClient) {
     this.roleService = roleService;
+    this.prisma = prisma;
   }
 
   /**
@@ -210,7 +213,7 @@ export class RoleMiddleware {
    */
   private async checkAccountOwnership(userId: string, accountId: bigint): Promise<boolean> {
     try {
-      const account = await this.roleService['prisma'].accounts.findUnique({
+      const account = await this.prisma.accounts.findUnique({
         where: { id: accountId },
         select: { owneruserid: true },
       });
