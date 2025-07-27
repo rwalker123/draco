@@ -1,13 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { StatisticsService } from '../services/statisticsService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);
 
 // Get league standings for a season (public endpoint)
-router.get('/', async (req: Request, res: Response): Promise<void> => {
-  try {
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const seasonId = BigInt(req.params.seasonId);
     const grouped = req.query.grouped === 'true';
@@ -47,13 +49,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         })),
       });
     }
-  } catch (error) {
-    console.error('Error fetching standings:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch standings',
-    });
-  }
-});
+  }),
+);
 
 export default router;
