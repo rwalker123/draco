@@ -10,8 +10,9 @@ import {
   ROLE_PERMISSIONS,
 } from '../types/roles';
 import { ROLE_IDS, validateRoleAssignment, hasRoleOrHigher } from '../config/roles';
+import { IRoleService } from '../interfaces/roleInterfaces';
 
-export class RoleService {
+export class RoleService implements IRoleService {
   private prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
