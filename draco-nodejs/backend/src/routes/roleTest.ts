@@ -3,7 +3,7 @@
 
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { RoleService } from '../services/roleService';
+import { ServiceFactory } from '../lib/serviceFactory';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, AuthenticationError } from '../utils/customErrors';
@@ -37,7 +37,7 @@ interface ContactWithRoles {
 }
 
 const router = Router();
-const roleService = new RoleService(prisma);
+const roleService = ServiceFactory.getRoleService();
 
 /**
  * GET /api/role-test/user-roles

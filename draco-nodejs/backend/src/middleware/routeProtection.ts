@@ -2,7 +2,7 @@
 // Implements contact role-based protection, account boundaries, and role hierarchy
 
 import { Request, Response, NextFunction } from 'express';
-import { RoleService } from '../services/roleService';
+import { IRoleMiddleware } from '../interfaces/roleInterfaces';
 import { RoleContext, RoleType, UserRoles } from '../types/roles';
 import { ROLE_IDS } from '../config/roles';
 import { PrismaClient } from '@prisma/client';
@@ -25,10 +25,10 @@ declare global {
 }
 
 export class RouteProtection {
-  private roleService: RoleService;
+  private roleService: IRoleMiddleware;
   private prisma: PrismaClient;
 
-  constructor(roleService: RoleService, prisma: PrismaClient) {
+  constructor(roleService: IRoleMiddleware, prisma: PrismaClient) {
     this.roleService = roleService;
     this.prisma = prisma;
   }
