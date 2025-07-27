@@ -47,7 +47,14 @@ export const authenticateToken = async (
       return;
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      res.status(500).json({
+        success: false,
+        message: 'Server configuration error',
+      });
+      return;
+    }
 
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
@@ -117,7 +124,10 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
       return next(); // Continue without user
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'draco-sports-manager-secret';
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      return next(); // Continue without user if JWT_SECRET not configured
+    }
 
     const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
 
