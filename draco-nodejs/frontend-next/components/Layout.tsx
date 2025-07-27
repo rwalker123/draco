@@ -20,6 +20,8 @@ import {
   Settings as SettingsIcon,
   CalendarMonth as CalendarMonthIcon,
   Home as HomeIcon,
+  Key as KeyIcon,
+  Person as PersonIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -46,6 +48,31 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
   const [currentAccount, setCurrentAccount] = React.useState<Record<string, unknown> | null>(null);
+
+  // Check if user has admin role
+  const isAdmin =
+    user &&
+    (hasRole('Administrator') ||
+      (currentAccount?.id && hasRole('AccountAdmin', { accountId: String(currentAccount.id) })));
+
+  // Custom admin menu icon component
+  const AdminMenuIcon = () => (
+    <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+      <MenuIcon />
+      <KeyIcon
+        sx={{
+          position: 'absolute',
+          top: -2,
+          right: -2,
+          fontSize: '0.7rem',
+          color: 'primary.main',
+          backgroundColor: 'background.paper',
+          borderRadius: '50%',
+          padding: '1px',
+        }}
+      />
+    </Box>
+  );
 
   // Extract accountId from prop, context, or URL (in that order of preference)
   const accountId = propAccountId ?? contextAccount?.id ?? getAccountIdFromPath(pathname);
@@ -140,7 +167,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
               sx={{ mr: 2 }}
               onClick={handleMenuOpen}
             >
-              <MenuIcon />
+              {isAdmin ? <AdminMenuIcon /> : <MenuIcon />}
             </IconButton>
             <Box
               onClick={handleHomeClick}
@@ -216,7 +243,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
           </ListItemIcon>
           <ListItemText>Organizations</ListItemText>
         </MenuItem>
-        {user && hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
+        {user && hasRole('Administrator') && (
           <MenuItem onClick={() => handleNavigation('/admin')}>
             <ListItemIcon>
               <AdminPanelSettingsIcon fontSize="small" />
@@ -224,38 +251,87 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
             <ListItemText>Admin Dashboard</ListItemText>
           </MenuItem>
         )}
-        {user && hasRole('93DAC465-4C64-4422-B444-3CE79C549329') && (
-          <MenuItem onClick={() => handleNavigation('/account-management')}>
-            <ListItemIcon>
-              <BusinessIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Account Management</ListItemText>
-          </MenuItem>
-        )}
-        {user &&
-          (hasRole('93DAC465-4C64-4422-B444-3CE79C549329') ||
-            hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A')) && (
-            <MenuItem
-              onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/seasons`)}
-            >
-              <ListItemIcon>
-                <CalendarMonthIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText>Season Management</ListItemText>
-            </MenuItem>
-          )}
+        {(() => {
+          if (
+            user &&
+            (hasRole('Administrator') ||
+              (currentAccount?.id &&
+                hasRole('AccountAdmin', { accountId: String(currentAccount.id) })))
+          ) {
+            return (
+              <MenuItem onClick={() => handleNavigation('/account-management')}>
+                <ListItemIcon>
+                  <BusinessIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            (hasRole('Administrator') ||
+              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
+          ) {
+            return (
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/seasons`)}
+              >
+                <ListItemIcon>
+                  <CalendarMonthIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Season Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
         {/* Account Admin Only */}
-        {user && hasRole('5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A') && (
-          <MenuItem
-            onClick={() => handleNavigation(`/account/${currentAccount?.id || '1'}/settings`)}
-            key="account-settings"
-          >
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText>Account Settings</ListItemText>
-          </MenuItem>
-        )}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/settings`)}
+                key="account-settings"
+              >
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Account Settings</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {/* User Management - Account Admin Only */}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            (hasRole('Administrator') ||
+              hasRole('AccountAdmin', { accountId: String(currentAccount.id) }))
+          ) {
+            return (
+              <MenuItem
+                onClick={() => handleNavigation(`/account/${String(currentAccount.id)}/users`)}
+                key="user-management"
+              >
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>User Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
         {/* League Admin Only */}
         {/* Team Admin Only */}
       </Menu>
