@@ -6,6 +6,8 @@ import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { NotFoundError } from '../utils/customErrors';
 
 // Type definitions for Prisma query results
 
@@ -128,8 +130,9 @@ const routeProtection = new RouteProtection(roleService, prisma);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-  try {
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
     const includeDivisions = req.query.includeDivisions === 'true';
 
@@ -206,14 +209,8 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
         })),
       },
     });
-  } catch (error) {
-    console.error('Error getting seasons:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger
@@ -286,8 +283,9 @@ router.get('/', async (req: Request, res: Response, _next: NextFunction): Promis
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/current', async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
-  try {
+router.get(
+  '/current',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = BigInt(req.params.accountId);
 
     const currentSeason = await prisma.currentseason.findUnique({
@@ -300,11 +298,7 @@ router.get('/current', async (req: Request, res: Response, _next: NextFunction):
     });
 
     if (!currentSeason) {
-      res.status(404).json({
-        success: false,
-        message: 'No current season set for this account',
-      });
-      return;
+      throw new NotFoundError('No current season set for this account');
     }
 
     // Get the season details
@@ -332,11 +326,7 @@ router.get('/current', async (req: Request, res: Response, _next: NextFunction):
     });
 
     if (!season) {
-      res.status(404).json({
-        success: false,
-        message: 'Current season not found',
-      });
-      return;
+      throw new NotFoundError('Current season not found');
     }
 
     res.json({
@@ -355,14 +345,8 @@ router.get('/current', async (req: Request, res: Response, _next: NextFunction):
         },
       },
     });
-  } catch (error) {
-    console.error('Error getting current season:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-});
+  }),
+);
 
 /**
  * @swagger

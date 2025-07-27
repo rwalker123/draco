@@ -125,8 +125,6 @@ export const initializeRoleIds = async (prisma: {
         ROLE_IDS[role.name] = role.id;
       }
     });
-
-    console.log('✅ Role IDs initialized:', ROLE_IDS);
   } catch (error) {
     console.error('❌ Failed to initialize role IDs:', error);
     throw error;

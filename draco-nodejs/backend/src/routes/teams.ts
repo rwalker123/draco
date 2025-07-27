@@ -9,6 +9,7 @@ import { leagueschedule, availablefields } from '@prisma/client';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { getTeamRecord } from '../utils/teamRecord';
 import { StatisticsService } from '../services/statisticsService';
+import { asyncHandler } from '../utils/asyncHandler';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -29,8 +30,9 @@ const upload = multer({
  * GET /api/accounts/:accountId/seasons/:seasonId/teams
  * Get all teams for a season
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const seasonId = BigInt(req.params.seasonId);
     const accountId = BigInt(req.params.accountId);
 
@@ -106,11 +108,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
         })),
       },
     });
-  } catch (error) {
-    console.error('Teams route error:', error);
-    next(error);
-  }
-});
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster
@@ -120,106 +119,101 @@ router.get(
   '/:teamSeasonId/roster',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
-  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      // Get parameters from the merged params (due to nested routing)
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    // Get parameters from the merged params (due to nested routing)
+    const seasonId = BigInt(req.params.seasonId);
+    const accountId = BigInt(req.params.accountId);
+    const teamSeasonId = BigInt(req.params.teamSeasonId);
 
-      // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
+    // Verify the team season exists and belongs to this account and season
+    const teamSeason = await prisma.teamsseason.findFirst({
+      where: {
+        id: teamSeasonId,
+        leagueseason: {
+          seasonid: seasonId,
+          league: {
+            accountid: accountId,
           },
         },
-      });
+      },
+    });
 
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
-
-      // Get all roster members for this team season
-      const rosterMembers = await prisma.rosterseason.findMany({
-        where: {
-          teamseasonid: teamSeasonId,
-        },
-        include: {
-          roster: {
-            include: {
-              contacts: {
-                select: {
-                  id: true,
-                  firstname: true,
-                  lastname: true,
-                  middlename: true,
-                  email: true,
-                  phone1: true,
-                  phone2: true,
-                  phone3: true,
-                  streetaddress: true,
-                  city: true,
-                  state: true,
-                  zip: true,
-                  dateofbirth: true,
-                },
-              },
-            },
-          },
-        },
-        orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
-      });
-
-      res.json({
-        success: true,
-        data: {
-          teamSeason: {
-            id: teamSeason.id,
-            name: teamSeason.name,
-          },
-          rosterMembers: rosterMembers.map((member) => ({
-            id: member.id,
-            playerNumber: member.playernumber,
-            inactive: member.inactive,
-            submittedWaiver: member.submittedwaiver,
-            dateAdded: member.dateadded ? member.dateadded.toISOString() : null,
-            player: {
-              id: member.roster.id,
-              contactId: member.roster.contactid,
-              submittedDriversLicense: member.roster.submitteddriverslicense,
-              firstYear: member.roster.firstyear,
-              contact: {
-                ...member.roster.contacts,
-                dateofbirth: member.roster.contacts.dateofbirth
-                  ? member.roster.contacts.dateofbirth.toISOString()
-                  : null,
-                phones: [
-                  ...(member.roster.contacts.phone1
-                    ? [{ type: 'home', number: member.roster.contacts.phone1 }]
-                    : []),
-                  ...(member.roster.contacts.phone2
-                    ? [{ type: 'work', number: member.roster.contacts.phone2 }]
-                    : []),
-                  ...(member.roster.contacts.phone3
-                    ? [{ type: 'cell', number: member.roster.contacts.phone3 }]
-                    : []),
-                ],
-              },
-            },
-          })),
-        },
-      });
-    } catch (error) {
-      console.error('Roster route error:', error);
-      next(error);
+    if (!teamSeason) {
+      res.status(404).json({ success: false, message: 'Team season not found' });
+      return;
     }
-  },
+
+    // Get all roster members for this team season
+    const rosterMembers = await prisma.rosterseason.findMany({
+      where: {
+        teamseasonid: teamSeasonId,
+      },
+      include: {
+        roster: {
+          include: {
+            contacts: {
+              select: {
+                id: true,
+                firstname: true,
+                lastname: true,
+                middlename: true,
+                email: true,
+                phone1: true,
+                phone2: true,
+                phone3: true,
+                streetaddress: true,
+                city: true,
+                state: true,
+                zip: true,
+                dateofbirth: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
+    });
+
+    res.json({
+      success: true,
+      data: {
+        teamSeason: {
+          id: teamSeason.id,
+          name: teamSeason.name,
+        },
+        rosterMembers: rosterMembers.map((member) => ({
+          id: member.id,
+          playerNumber: member.playernumber,
+          inactive: member.inactive,
+          submittedWaiver: member.submittedwaiver,
+          dateAdded: member.dateadded ? member.dateadded.toISOString() : null,
+          player: {
+            id: member.roster.id,
+            contactId: member.roster.contactid,
+            submittedDriversLicense: member.roster.submitteddriverslicense,
+            firstYear: member.roster.firstyear,
+            contact: {
+              ...member.roster.contacts,
+              dateofbirth: member.roster.contacts.dateofbirth
+                ? member.roster.contacts.dateofbirth.toISOString()
+                : null,
+              phones: [
+                ...(member.roster.contacts.phone1
+                  ? [{ type: 'home', number: member.roster.contacts.phone1 }]
+                  : []),
+                ...(member.roster.contacts.phone2
+                  ? [{ type: 'work', number: member.roster.contacts.phone2 }]
+                  : []),
+                ...(member.roster.contacts.phone3
+                  ? [{ type: 'cell', number: member.roster.contacts.phone3 }]
+                  : []),
+              ],
+            },
+          },
+        })),
+      },
+    });
+  }),
 );
 
 /**
@@ -1408,6 +1402,7 @@ router.get(
           fieldName: game.availablefields ? game.availablefields.name : null,
           fieldShortName: game.availablefields ? game.availablefields.shortname : null,
           hasGameRecap: recapCount > 0,
+          gameType: game.gametype,
         };
       };
 

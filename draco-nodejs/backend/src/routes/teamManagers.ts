@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { TeamManagerService } from '../services/teamManagerService';
 import prisma from '../lib/prisma';
+import { asyncHandler } from '../utils/asyncHandler';
+import { ValidationError, ConflictError } from '../utils/customErrors';
 
 /**
  * @swagger
@@ -151,62 +153,46 @@ const router = Router({ mergeParams: true });
 const teamManagerService = new TeamManagerService(prisma);
 
 // GET: List all managers for a team season
-router.get('/', async (req: Request, res: Response) => {
-  console.log('GET /managers req.params:', req.params);
-  try {
+router.get(
+  '/',
+  asyncHandler(async (req: Request, res: Response) => {
+    console.log('GET /managers req.params:', req.params);
     const teamSeasonId = BigInt(req.params.teamSeasonId);
     const managers = await teamManagerService.listManagers(teamSeasonId);
     res.json({ success: true, data: managers });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch managers',
-      error: error instanceof Error ? error.message : error,
-    });
-  }
-});
+  }),
+);
 
 // POST: Add a manager to a team season
-router.post('/', async (req: Request, res: Response) => {
-  try {
+router.post(
+  '/',
+  asyncHandler(async (req: Request, res: Response) => {
     const teamSeasonId = BigInt(req.params.teamSeasonId);
     const { contactId } = req.body;
+
     if (!contactId) {
-      res.status(400).json({ success: false, message: 'contactId is required' });
-      return;
+      throw new ValidationError('contactId is required');
     }
+
     // Prevent duplicate
     const existing = await teamManagerService.findManager(teamSeasonId, BigInt(contactId));
     if (existing) {
-      res.status(409).json({ success: false, message: 'Manager already exists for this team' });
-      return;
+      throw new ConflictError('Manager already exists for this team');
     }
+
     const manager = await teamManagerService.addManager(teamSeasonId, BigInt(contactId));
     res.json({ success: true, data: manager });
-    return;
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to add manager',
-      error: error instanceof Error ? error.message : error,
-    });
-    return;
-  }
-});
+  }),
+);
 
 // DELETE: Remove a manager by manager id
-router.delete('/:managerId', async (req: Request, res: Response) => {
-  try {
+router.delete(
+  '/:managerId',
+  asyncHandler(async (req: Request, res: Response) => {
     const managerId = BigInt(req.params.managerId);
     await teamManagerService.removeManager(managerId);
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Failed to remove manager',
-      error: error instanceof Error ? error.message : error,
-    });
-  }
-});
+  }),
+);
 
 export default router;
