@@ -56,8 +56,34 @@ const TeamPage: React.FC<TeamPageProps> = ({ accountId, seasonId, teamSeasonId }
       .then((res) => res.json())
       .then((data) => {
         if (!data.success) throw new Error(data.message || 'Failed to load games');
-        setUpcomingGames(data.data.upcoming || []);
-        setCompletedGames(data.data.recent || []);
+
+        // Transform raw API data to match Game interface
+        const transformGame = (rawGame: Record<string, unknown>) => ({
+          id: rawGame.id as string,
+          date: rawGame.date as string,
+          homeTeamId: rawGame.homeTeamId as string,
+          awayTeamId: rawGame.awayTeamId as string,
+          homeTeamName: rawGame.homeTeamName as string,
+          awayTeamName: rawGame.awayTeamName as string,
+          homeScore: rawGame.homeScore as number,
+          awayScore: rawGame.awayScore as number,
+          gameStatus: rawGame.gameStatus as number,
+          gameStatusText: rawGame.gameStatusText as string,
+          gameStatusShortText: rawGame.gameStatusShortText as string,
+          leagueName: rawGame.leagueName as string,
+          fieldId: rawGame.fieldId as string | null,
+          fieldName: rawGame.fieldName as string | null,
+          fieldShortName: rawGame.fieldShortName as string | null,
+          hasGameRecap: rawGame.hasGameRecap as boolean,
+          gameRecaps: [], // Teams API doesn't return gameRecaps, so initialize as empty
+          gameType: Number(rawGame.gameType),
+        });
+
+        const transformedUpcoming = (data.data.upcoming || []).map(transformGame);
+        const transformedRecent = (data.data.recent || []).map(transformGame);
+
+        setUpcomingGames(transformedUpcoming);
+        setCompletedGames(transformedRecent);
       })
       .catch((err) => setError(err.message || 'Error loading games'))
       .finally(() => setLoading(false));

@@ -2,7 +2,7 @@ import { Game as ScheduleGame } from '../types/schedule';
 import { Game } from '../components/GameListDisplay';
 import { GameCardData } from '../components/GameCard';
 import { getGameStatusText, getGameStatusShortText } from './gameUtils';
-import { GameStatus, GameType } from '../types/schedule';
+import { GameStatus } from '../types/schedule';
 
 // Type for raw API game data
 interface APIGameData {
@@ -84,7 +84,7 @@ export const transformGamesFromAPI = (games: unknown[]): Game[] => {
         hasGameRecap: false, // TODO: Implement game recaps from API
         gameRecaps: [],
         comment: safeString(game.comment),
-        gameType: safeNumber(game.gameType, GameType.RegularSeason),
+        gameType: Number(game.gameType),
         umpire1: safeOptionalString(game.umpire1),
         umpire2: safeOptionalString(game.umpire2),
         umpire3: safeOptionalString(game.umpire3),
