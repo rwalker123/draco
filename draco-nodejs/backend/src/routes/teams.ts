@@ -15,6 +15,11 @@ import {
   extractTeamParams,
   extractBigIntParams,
 } from '../utils/paramExtraction';
+import {
+  validateTeamSeasonBasic,
+  validateTeamSeasonWithTeamDetails,
+  validateTeamSeasonAccess,
+} from '../utils/teamValidation';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -128,22 +133,7 @@ router.get(
     const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     // Verify the team season exists and belongs to this account and season
-    const teamSeason = await prisma.teamsseason.findFirst({
-      where: {
-        id: teamSeasonId,
-        leagueseason: {
-          seasonid: seasonId,
-          league: {
-            accountid: accountId,
-          },
-        },
-      },
-    });
-
-    if (!teamSeason) {
-      res.status(404).json({ success: false, message: 'Team season not found' });
-      return;
-    }
+    const teamSeason = await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
     // Get all roster members for this team season
     const rosterMembers = await prisma.rosterseason.findMany({
@@ -231,34 +221,7 @@ router.get(
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Get the team season with league information
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: {
-                select: {
-                  id: true,
-                  name: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       res.json({
         success: true,
@@ -287,22 +250,7 @@ router.get(
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       // Get the leagueseasonid for this team
       const leagueSeasonId = teamSeason.leagueseasonid;
@@ -436,22 +384,7 @@ router.post(
       }
 
       // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       // Verify the player exists and belongs to this account
       const player = await prisma.roster.findFirst({
@@ -968,17 +901,8 @@ router.get(
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Find the team season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-        include: {
+      const teamSeason = await validateTeamSeasonAccess(prisma, teamSeasonId, seasonId, accountId, {
+        customIncludes: {
           teams: true,
           leagueseason: {
             include: {
@@ -989,11 +913,6 @@ router.get(
         },
       });
 
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
-
       // Calculate team record
       const record = await getTeamRecord(prisma, teamSeasonId);
 
@@ -1003,10 +922,10 @@ router.get(
           teamSeason: {
             id: teamSeason.id.toString(),
             name: teamSeason.name,
-            webAddress: teamSeason.teams.webaddress,
-            youtubeUserId: teamSeason.teams.youtubeuserid,
-            defaultVideo: teamSeason.teams.defaultvideo,
-            autoPlayVideo: teamSeason.teams.autoplayvideo,
+            webAddress: teamSeason.teams?.webaddress || null,
+            youtubeUserId: teamSeason.teams?.youtubeuserid || null,
+            defaultVideo: teamSeason.teams?.defaultvideo || null,
+            autoPlayVideo: teamSeason.teams?.autoplayvideo || false,
             logoUrl: getLogoUrl(accountId.toString(), teamSeason.teamid.toString()),
             leagueName: teamSeason.leagueseason?.league?.name || null,
             // Add more fields as needed
@@ -1060,28 +979,12 @@ router.put(
       }
 
       // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-        include: {
-          teams: true,
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Team season not found',
-        });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonWithTeamDetails(
+        prisma,
+        teamSeasonId,
+        seasonId,
+        accountId,
+      );
 
       // Check if team name already exists in this league season
       const existingTeam = await prisma.teamsseason.findFirst({
@@ -1207,28 +1110,12 @@ router.get(
       const teamSeasonId = req.params.teamSeasonId;
 
       // First, get the team season to find the teamId
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: BigInt(teamSeasonId),
-          leagueseason: {
-            seasonid: BigInt(seasonId),
-            league: {
-              accountid: BigInt(accountId),
-            },
-          },
-        },
-        include: {
-          teams: true,
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Team season not found',
-        });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonWithTeamDetails(
+        prisma,
+        BigInt(teamSeasonId),
+        BigInt(seasonId),
+        BigInt(accountId),
+      );
 
       const teamId = teamSeason.teamid.toString();
 
@@ -1340,28 +1227,7 @@ router.get(
       const includeRecent = recent === 'true' || (!upcoming && !recent);
 
       // Validate team/season/account relationship
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-        include: {
-          leagueseason: {
-            include: {
-              league: true,
-            },
-          },
-        },
-      });
-      if (!teamSeason) {
-        res.status(404).json({ success: false, message: 'Team season not found' });
-        return;
-      }
+      const teamSeason = await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       // Helper to map game to API shape
       const getTeamNames = async (homeTeamId: bigint, awayTeamId: bigint) => {
@@ -1474,25 +1340,7 @@ router.get(
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Team season not found',
-        });
-        return;
-      }
+      await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       // Use the statistics service to get batting stats for this team
       const battingStats = await statisticsService.getBattingStats(accountId, {
@@ -1529,25 +1377,7 @@ router.get(
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
-      const teamSeason = await prisma.teamsseason.findFirst({
-        where: {
-          id: teamSeasonId,
-          leagueseason: {
-            seasonid: seasonId,
-            league: {
-              accountid: accountId,
-            },
-          },
-        },
-      });
-
-      if (!teamSeason) {
-        res.status(404).json({
-          success: false,
-          message: 'Team season not found',
-        });
-        return;
-      }
+      await validateTeamSeasonBasic(prisma, teamSeasonId, seasonId, accountId);
 
       // Use the statistics service to get pitching stats for this team
       const pitchingStats = await statisticsService.getPitchingStats(accountId, {
