@@ -26,6 +26,8 @@ import { globalErrorHandler } from './utils/globalErrorHandler';
 import teamManagersRouter from './routes/teamManagers';
 import statisticsRouter from './routes/statistics';
 import standingsRouter from './routes/standings';
+import monitoringRouter from './routes/monitoring';
+import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger';
 
 // Load environment variables
 dotenv.config();
@@ -64,16 +66,31 @@ app.use(bigIntSerializer);
 // Domain routing middleware - must come before other routes
 app.use(domainRouting);
 
+// Query logging and performance monitoring middleware
+app.use(queryLoggerMiddleware);
+app.use(databaseHealthCheck);
+
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
 
-// Health check endpoint
+// Health check endpoint with enhanced monitoring
 app.get('/health', (req: express.Request, res: express.Response) => {
-  res.status(200).json({
+  const baseResponse = {
     status: 'OK',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
-  });
+    uptime: process.uptime(),
+  };
+
+  // Include database health if available
+  if (req.databaseHealth) {
+    res.status(req.databaseHealth.status === 'connected' ? 200 : 503).json({
+      ...baseResponse,
+      database: req.databaseHealth,
+    });
+  } else {
+    res.status(200).json(baseResponse);
+  }
 });
 
 // Swagger API Documentation
@@ -85,6 +102,7 @@ app.use('/api/testdatabase', testDatabaseRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/passwordReset', passwordResetRouter);
 app.use('/api/roleTest', roleTestRouter);
+app.use('/api/monitoring', monitoringRouter);
 app.use('/api/accounts/:accountId/leagues', leaguesRouter);
 app.use('/api/accounts/:accountId/seasons', seasonsRouter);
 app.use('/api/accounts/:accountId/statistics', statisticsRouter);
