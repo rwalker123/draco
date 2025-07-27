@@ -24,6 +24,7 @@ import * as multer from 'multer';
 import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
 import { createStorageService } from '../services/storageService';
 import { getLogoUrl } from '../config/logo';
+import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -542,7 +543,7 @@ router.get(
 );
 
 /**
- * GET /api/accounts/:accountId/public
+ * GET /api/accounts/:accountId
  * Get public account information (no authentication required)
  */
 router.get(
@@ -735,97 +736,6 @@ router.get(
           name: affiliation.name,
           url: affiliation.url,
         })),
-      },
-    });
-  }),
-);
-
-/**
- * GET /api/accounts/:accountId
- * Get specific account (requires account access)
- */
-router.get(
-  '/:accountId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountSelect = {
-      id: true,
-      name: true,
-      accounttypeid: true,
-      owneruserid: true,
-      firstyear: true,
-      affiliationid: true,
-      timezoneid: true,
-      twitteraccountname: true,
-      twitteroauthtoken: true,
-      twitteroauthsecretkey: true,
-      youtubeuserid: true,
-      facebookfanpage: true,
-      twitterwidgetscript: true,
-      defaultvideo: true,
-      autoplayvideo: true,
-      accounttypes: {
-        select: {
-          id: true,
-          name: true,
-          filepath: true,
-        },
-      },
-      accountsurl: {
-        select: {
-          id: true,
-          url: true,
-        },
-        orderBy: {
-          id: 'asc' as const,
-        },
-      },
-    } as const;
-    const account = await prisma.accounts.findUnique({
-      where: { id: BigInt(req.params.accountId) },
-      select: accountSelect,
-    });
-    type Account = Prisma.accountsGetPayload<{ select: typeof accountSelect }>;
-    type AccountUrl = Account['accountsurl'][number];
-    if (!account) {
-      throw new NotFoundError('Account not found');
-    }
-    const affiliationSelect = {
-      id: true,
-      name: true,
-      url: true,
-    } as const;
-    const affiliation = await prisma.affiliations.findUnique({
-      where: { id: account.affiliationid },
-      select: affiliationSelect,
-    });
-    res.json({
-      success: true,
-      data: {
-        account: {
-          id: account.id.toString(),
-          name: account.name,
-          accountTypeId: account.accounttypeid.toString(),
-          accountType: account.accounttypes?.name,
-          ownerUserId: account.owneruserid,
-          firstYear: account.firstyear,
-          affiliationId: account.affiliationid.toString(),
-          affiliation: affiliation?.name,
-          timezoneId: account.timezoneid,
-          twitterAccountName: account.twitteraccountname,
-          twitterOauthToken: account.twitteroauthtoken,
-          twitterOauthSecretKey: account.twitteroauthsecretkey,
-          youtubeUserId: account.youtubeuserid,
-          facebookFanPage: account.facebookfanpage,
-          twitterWidgetScript: account.twitterwidgetscript,
-          defaultVideo: account.defaultvideo,
-          autoPlayVideo: account.autoplayvideo,
-          urls: account.accountsurl.map((url: AccountUrl) => ({
-            id: url.id.toString(),
-            url: url.url,
-          })),
-        },
       },
     });
   }),
@@ -1259,6 +1169,7 @@ router.delete(
 router.delete(
   '/:accountId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAdministrator(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -1285,16 +1196,29 @@ router.delete(
 );
 
 /**
- * GET /api/accounts/:accountId/users
- * Get users in account (requires account access)
+ * GET /api/accounts/:accountId/contacts
+ * Get users in account (requires account access) - with pagination
  */
 router.get(
-  '/:accountId/users',
+  '/:accountId/contacts',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requirePermission('account.users.manage'),
+  routeProtection.requireAdministrator(),
+  routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+
+    // Parse pagination parameters
+    const paginationParams = PaginationHelper.parseParams(req.query);
+    const allowedSortFields = ['firstname', 'lastname', 'email', 'id'];
+    const sortBy = PaginationHelper.validateSortField(paginationParams.sortBy, allowedSortFields);
+
+    // Get total count
+    const totalCount = await prisma.contacts.count({
+      where: {
+        creatoraccountid: accountId,
+      },
+    });
 
     const contactSelect = {
       id: true,
@@ -1303,13 +1227,19 @@ router.get(
       email: true,
       userid: true,
     } as const;
+
     const contacts = await prisma.contacts.findMany({
       where: {
         creatoraccountid: accountId,
       },
       select: contactSelect,
-      orderBy: [{ lastname: 'asc' }, { firstname: 'asc' }],
+      orderBy: sortBy
+        ? PaginationHelper.getPrismaOrderBy(sortBy, paginationParams.sortOrder)
+        : [{ lastname: 'asc' }, { firstname: 'asc' }],
+      skip: paginationParams.skip,
+      take: paginationParams.limit,
     });
+
     type Contact = Prisma.contactsGetPayload<{ select: typeof contactSelect }>;
     const users = contacts.map((contact: Contact) => ({
       id: contact.id.toString(),
@@ -1319,11 +1249,19 @@ router.get(
       userId: contact.userid,
     }));
 
+    // Format paginated response
+    const response = PaginationHelper.formatResponse(
+      users,
+      paginationParams.page,
+      paginationParams.limit,
+      totalCount,
+    );
+
     res.json({
-      success: true,
+      ...response,
       data: {
         accountId: accountId.toString(),
-        users,
+        contacts: response.data,
       },
     });
   }),
@@ -1374,7 +1312,7 @@ router.post(
  * Remove role from user in account (Account Admin or Administrator)
  */
 router.delete(
-  '/:accountId/users/:contactId/roles/:roleId',
+  '/:accountId/contacts/:contactId/roles/:roleId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.roles.manage'),
@@ -1403,6 +1341,9 @@ router.delete(
 router.get(
   '/:accountId/contacts/search',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAdministrator(),
+  routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { q } = req.query; // search query
     const limit = 10; // maximum results to return
@@ -1478,6 +1419,9 @@ router.get(
 router.get(
   '/contacts/:userId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAdministrator(),
+  routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
     const contact = await prisma.contacts.findFirst({
@@ -2010,31 +1954,55 @@ router.get(
 
 /**
  * GET /api/accounts/:accountId/fields
- * Get all fields for an account (public endpoint)
+ * Get all fields for an account (public endpoint) - with pagination
  */
 router.get(
   '/:accountId/fields',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
+    // Parse pagination parameters
+    const paginationParams = PaginationHelper.parseParams(req.query);
+    const allowedSortFields = ['name', 'address', 'id'];
+    const sortBy = PaginationHelper.validateSortField(paginationParams.sortBy, allowedSortFields);
+
+    // Get total count
+    const totalCount = await prisma.availablefields.count({
+      where: {
+        accountid: accountId,
+      },
+    });
+
     const fields = await prisma.availablefields.findMany({
       where: {
         accountid: accountId,
       },
-      orderBy: {
-        name: 'asc',
-      },
+      orderBy: sortBy
+        ? PaginationHelper.getPrismaOrderBy(sortBy, paginationParams.sortOrder)
+        : { name: 'asc' },
+      skip: paginationParams.skip,
+      take: paginationParams.limit,
     });
 
+    const fieldData = fields.map((field) => ({
+      id: field.id.toString(),
+      name: field.name,
+      address: field.address,
+      accountId: field.accountid.toString(),
+    }));
+
+    // Format paginated response
+    const response = PaginationHelper.formatResponse(
+      fieldData,
+      paginationParams.page,
+      paginationParams.limit,
+      totalCount,
+    );
+
     res.json({
-      success: true,
+      ...response,
       data: {
-        fields: fields.map((field) => ({
-          id: field.id.toString(),
-          name: field.name,
-          address: field.address,
-          accountId: field.accountid.toString(),
-        })),
+        fields: response.data,
       },
     });
   }),
@@ -2047,6 +2015,7 @@ router.get(
 router.post(
   '/:accountId/fields',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -2106,6 +2075,7 @@ router.post(
 router.put(
   '/:accountId/fields/:fieldId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
@@ -2171,6 +2141,7 @@ router.put(
 router.delete(
   '/:accountId/fields/:fieldId',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
@@ -2217,6 +2188,7 @@ router.delete(
 router.post(
   '/:accountId/logo',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   (req: Request, res: Response, next: NextFunction) => {
     upload.single('logo')(req, res, (err: unknown) => {
@@ -2262,6 +2234,7 @@ router.get(
 router.delete(
   '/:accountId/logo',
   authenticateToken,
+  routeProtection.enforceAccountBoundary(),
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = req.params.accountId;
@@ -2310,14 +2283,28 @@ router.get(
 
 /**
  * GET /api/accounts/:accountId/umpires
- * Get all umpires for an account
+ * Get all umpires for an account - with pagination
  */
 router.get(
   '/:accountId/umpires',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
+  routeProtection.requireAdministrator(),
+  routeProtection.requirePermission('account.umpires.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+
+    // Parse pagination parameters
+    const paginationParams = PaginationHelper.parseParams(req.query);
+    const allowedSortFields = ['contacts.firstname', 'contacts.lastname', 'contacts.email', 'id'];
+    const sortBy = PaginationHelper.validateSortField(paginationParams.sortBy, allowedSortFields);
+
+    // Get total count
+    const totalCount = await prisma.leagueumpires.count({
+      where: {
+        accountid: accountId,
+      },
+    });
 
     const umpires = await prisma.leagueumpires.findMany({
       where: {
@@ -2333,24 +2320,38 @@ router.get(
           },
         },
       },
-      orderBy: {
-        contacts: {
-          lastname: 'asc',
-        },
-      },
+      orderBy: sortBy
+        ? PaginationHelper.getPrismaOrderBy(sortBy, paginationParams.sortOrder)
+        : {
+            contacts: {
+              lastname: 'asc',
+            },
+          },
+      skip: paginationParams.skip,
+      take: paginationParams.limit,
     });
 
+    const umpireData = umpires.map((umpire) => ({
+      id: umpire.id.toString(),
+      contactId: umpire.contactid.toString(),
+      firstName: umpire.contacts.firstname,
+      lastName: umpire.contacts.lastname,
+      email: umpire.contacts.email,
+      displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
+    }));
+
+    // Format paginated response
+    const response = PaginationHelper.formatResponse(
+      umpireData,
+      paginationParams.page,
+      paginationParams.limit,
+      totalCount,
+    );
+
     res.json({
-      success: true,
+      ...response,
       data: {
-        umpires: umpires.map((umpire) => ({
-          id: umpire.id.toString(),
-          contactId: umpire.contactid.toString(),
-          firstName: umpire.contacts.firstname,
-          lastName: umpire.contacts.lastname,
-          email: umpire.contacts.email,
-          displayName: `${umpire.contacts.firstname} ${umpire.contacts.lastname}`.trim(),
-        })),
+        umpires: response.data,
       },
     });
   }),

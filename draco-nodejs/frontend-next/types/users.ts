@@ -30,6 +30,8 @@ export interface UserSearchParams {
   search?: string;
   page: number;
   limit: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 // Component prop types
