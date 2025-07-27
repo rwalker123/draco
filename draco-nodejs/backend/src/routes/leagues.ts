@@ -8,6 +8,7 @@ import { RoleService } from '../services/roleService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
 
 // Type definitions for Prisma query results
 interface League {
@@ -89,7 +90,7 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     const leagues = await prisma.league.findMany({
       where: {
@@ -125,7 +126,7 @@ router.get(
 router.get(
   '/all-time',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     // Get unique leagues that have been used in seasons
     const leaguesWithSeasons = await prisma.league.findMany({
@@ -234,8 +235,7 @@ router.get(
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const leagueId = BigInt(req.params.leagueId);
-    const accountId = BigInt(req.params.accountId);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
     const league = await prisma.league.findFirst({
       where: {
@@ -359,7 +359,7 @@ router.post(
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { name } = req.body;
-    const accountId = BigInt(req.params.accountId);
+    const { accountId } = extractAccountParams(req.params);
 
     if (!name) {
       throw new ValidationError('League name is required');
@@ -411,8 +411,7 @@ router.put(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const leagueId = BigInt(req.params.leagueId);
-    const accountId = BigInt(req.params.accountId);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
     const { name } = req.body;
 
     if (!name) {
@@ -481,8 +480,7 @@ router.delete(
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const leagueId = BigInt(req.params.leagueId);
-    const accountId = BigInt(req.params.accountId);
+    const { accountId, leagueId } = extractBigIntParams(req.params, 'accountId', 'leagueId');
 
     // Check if league exists and belongs to this account
     const league = await prisma.league.findFirst({
