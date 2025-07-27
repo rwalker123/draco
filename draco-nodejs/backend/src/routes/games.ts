@@ -4,6 +4,7 @@ import { authenticateToken } from '../middleware/authMiddleware';
 import { RouteProtection } from '../middleware/routeProtection';
 import { RoleService } from '../services/roleService';
 import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
+import { GameStatus, GameType } from '../types/gameEnums';
 import { ContactRole } from '../types/roles';
 import prisma from '../lib/prisma';
 
@@ -214,7 +215,7 @@ router.put(
       }
 
       // Validate forfeit scores
-      if (gameStatus === 4) {
+      if (gameStatus === GameStatus.Forfeit) {
         // Forfeit
         if (homeScore === 0 && awayScore === 0) {
           res.status(400).json({
@@ -234,7 +235,7 @@ router.put(
         }
       }
 
-      if (gameStatus < 0 || gameStatus > 5) {
+      if (gameStatus < GameStatus.Scheduled || gameStatus > GameStatus.DidNotReport) {
         res.status(400).json({
           success: false,
           message: 'Invalid game status',
@@ -601,7 +602,7 @@ router.post(
         visitorTeamId,
         fieldId,
         comment,
-        gameType = 1,
+        gameType = GameType.Playoff,
         umpire1,
         umpire2,
         umpire3,

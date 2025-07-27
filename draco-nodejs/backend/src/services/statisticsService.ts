@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { MinimumCalculator } from './minimumCalculator';
+import { GameType } from '../types/gameEnums';
 
 export interface BattingStatsRow {
   playerId: bigint;
@@ -260,7 +261,7 @@ export class StatisticsService {
       LEFT JOIN leagueschedule lg ON bs.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
       ${teamJoin}
-      WHERE ${includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
+      WHERE ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}
@@ -329,7 +330,7 @@ export class StatisticsService {
       LEFT JOIN leagueseason ls ON ts.leagueseasonid = ls.id
       LEFT JOIN leagueschedule lg ON (bs.gameid = lg.id OR ps.gameid = lg.id)
       WHERE c.id IN (${playerIdStrings})
-        AND ${filters.includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
+        AND ${filters.includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         AND (bs.playerid IS NOT NULL OR ps.playerid IS NOT NULL)
         ${whereClause}
       ORDER BY c.id, t.id, ts.name
@@ -473,7 +474,7 @@ export class StatisticsService {
       LEFT JOIN leagueschedule lg ON ps.gameid = lg.id
       LEFT JOIN leagueseason ls ON lg.leagueid = ls.id
       ${teamJoin}
-      WHERE ${includeAllGameTypes ? 'lg.gametype IN (0, 1)' : 'lg.gametype = 0'}
+      WHERE ${includeAllGameTypes ? `lg.gametype IN (${GameType.RegularSeason}, ${GameType.Playoff})` : `lg.gametype = ${GameType.RegularSeason}`}
         ${whereClause}
       GROUP BY c.id, c.firstname, c.lastname
       ${havingClause}

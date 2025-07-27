@@ -1,17 +1,19 @@
+import { GameStatus } from '../types/gameEnums';
+
 // Utility to map game status code to text
 export function getGameStatusText(status: number): string {
   switch (status) {
-    case 0:
+    case GameStatus.Scheduled:
       return 'Incomplete';
-    case 1:
+    case GameStatus.Completed:
       return 'Final';
-    case 2:
+    case GameStatus.Rainout:
       return 'Rainout';
-    case 3:
+    case GameStatus.Postponed:
       return 'Postponed';
-    case 4:
+    case GameStatus.Forfeit:
       return 'Forfeit';
-    case 5:
+    case GameStatus.DidNotReport:
       return 'Did Not Report';
     default:
       return 'Unknown';
@@ -20,17 +22,17 @@ export function getGameStatusText(status: number): string {
 
 export function getGameStatusShortText(status: number): string {
   switch (status) {
-    case 0:
+    case GameStatus.Scheduled:
       return '';
-    case 1:
+    case GameStatus.Completed:
       return 'F';
-    case 2:
+    case GameStatus.Rainout:
       return 'R';
-    case 3:
+    case GameStatus.Postponed:
       return 'PPD';
-    case 4:
+    case GameStatus.Forfeit:
       return 'FFT';
-    case 5:
+    case GameStatus.DidNotReport:
       return 'DNR';
     default:
       return '';
