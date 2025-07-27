@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { StatisticsService } from '../services/statisticsService';
 import prisma from '../lib/prisma';
 import { asyncHandler } from '../utils/asyncHandler';
+import { extractSeasonParams } from '../utils/paramExtraction';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);
@@ -10,8 +11,7 @@ const statisticsService = new StatisticsService(prisma);
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const accountId = BigInt(req.params.accountId);
-    const seasonId = BigInt(req.params.seasonId);
+    const { accountId, seasonId } = extractSeasonParams(req.params);
     const grouped = req.query.grouped === 'true';
 
     if (grouped) {

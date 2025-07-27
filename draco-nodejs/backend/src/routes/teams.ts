@@ -10,6 +10,11 @@ import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
 import { getTeamRecord } from '../utils/teamRecord';
 import { StatisticsService } from '../services/statisticsService';
 import { asyncHandler } from '../utils/asyncHandler';
+import {
+  extractSeasonParams,
+  extractTeamParams,
+  extractBigIntParams,
+} from '../utils/paramExtraction';
 import prisma from '../lib/prisma';
 
 const router = Router({ mergeParams: true });
@@ -33,8 +38,7 @@ const upload = multer({
 router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const seasonId = BigInt(req.params.seasonId);
-    const accountId = BigInt(req.params.accountId);
+    const { accountId, seasonId } = extractSeasonParams(req.params);
 
     // Get all teams for this season across all leagues
     // Only include teams that have been assigned to a division
@@ -121,9 +125,7 @@ router.get(
   routeProtection.requireAccountAdmin(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     // Get parameters from the merged params (due to nested routing)
-    const seasonId = BigInt(req.params.seasonId);
-    const accountId = BigInt(req.params.accountId);
-    const teamSeasonId = BigInt(req.params.teamSeasonId);
+    const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
     // Verify the team season exists and belongs to this account and season
     const teamSeason = await prisma.teamsseason.findFirst({
@@ -226,9 +228,7 @@ router.get(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Get the team season with league information
       const teamSeason = await prisma.teamsseason.findFirst({
@@ -284,9 +284,7 @@ router.get(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
       const teamSeason = await prisma.teamsseason.findFirst({
@@ -416,9 +414,7 @@ router.post(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
       const { playerId, playerNumber, submittedWaiver, submittedDriversLicense, firstYear } =
         req.body;
 
@@ -573,10 +569,13 @@ router.put(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const rosterMemberId = BigInt(req.params.rosterMemberId);
+      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+        req.params,
+        'accountId',
+        'seasonId',
+        'teamSeasonId',
+        'rosterMemberId',
+      );
 
       const { playerNumber, submittedWaiver, submittedDriversLicense, firstYear } = req.body;
 
@@ -694,10 +693,13 @@ router.put(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const rosterMemberId = BigInt(req.params.rosterMemberId);
+      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+        req.params,
+        'accountId',
+        'seasonId',
+        'teamSeasonId',
+        'rosterMemberId',
+      );
 
       // Verify the roster member exists and belongs to this team season
       const rosterMember = await prisma.rosterseason.findFirst({
@@ -794,10 +796,13 @@ router.put(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const rosterMemberId = BigInt(req.params.rosterMemberId);
+      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+        req.params,
+        'accountId',
+        'seasonId',
+        'teamSeasonId',
+        'rosterMemberId',
+      );
 
       // Verify the roster member exists and belongs to this team season
       const rosterMember = await prisma.rosterseason.findFirst({
@@ -894,10 +899,13 @@ router.delete(
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
-      const rosterMemberId = BigInt(req.params.rosterMemberId);
+      const { accountId, seasonId, teamSeasonId, rosterMemberId } = extractBigIntParams(
+        req.params,
+        'accountId',
+        'seasonId',
+        'teamSeasonId',
+        'rosterMemberId',
+      );
 
       // Verify the roster member exists and belongs to this team season
       const rosterMember = await prisma.rosterseason.findFirst({
@@ -957,9 +965,7 @@ router.get(
   '/:teamSeasonId',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Find the team season
       const teamSeason = await prisma.teamsseason.findFirst({
@@ -1041,9 +1047,7 @@ router.put(
   },
   async (req: Request, res: Response, _next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
       const { name } = req.body;
 
       // Validate team name
@@ -1303,7 +1307,7 @@ router.get(
   '/:teamSeasonId/record',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { teamSeasonId } = extractBigIntParams(req.params, 'teamSeasonId');
 
       // Calculate team record
       const record = await getTeamRecord(prisma, teamSeasonId);
@@ -1329,9 +1333,7 @@ router.get(
   '/:teamSeasonId/games',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
       const { upcoming, recent, limit } = req.query;
       const limitNum = Number(limit) > 0 ? Number(limit) : 5;
       const includeUpcoming = upcoming === 'true' || (!upcoming && !recent);
@@ -1469,9 +1471,7 @@ router.get(
   '/:teamSeasonId/batting-stats',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
       const teamSeason = await prisma.teamsseason.findFirst({
@@ -1526,9 +1526,7 @@ router.get(
   '/:teamSeasonId/pitching-stats',
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const seasonId = BigInt(req.params.seasonId);
-      const accountId = BigInt(req.params.accountId);
-      const teamSeasonId = BigInt(req.params.teamSeasonId);
+      const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
 
       // Verify the team season exists and belongs to this account and season
       const teamSeason = await prisma.teamsseason.findFirst({
