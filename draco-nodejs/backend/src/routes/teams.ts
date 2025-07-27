@@ -1,19 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import { TeamService } from '../services/teamService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction';
 import { TeamRequestValidator } from '../utils/teamValidators';
 import { TeamResponseFormatter } from '../utils/responseFormatters';
 import { upload, handleLogoUpload } from './team-media';
-import prisma from '../lib/prisma';
+import { ServiceFactory } from '../lib/serviceFactory';
 
 const router = Router({ mergeParams: true });
-const roleService = new RoleService(prisma);
-const routeProtection = new RouteProtection(roleService, prisma);
-const teamService = new TeamService(prisma);
 
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams
@@ -23,6 +17,7 @@ router.get(
   '/',
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, seasonId } = extractSeasonParams(req.params);
+    const teamService = ServiceFactory.getTeamService();
 
     const teams = await teamService.getTeamsBySeasonId(seasonId, accountId);
     const response = TeamResponseFormatter.formatTeamsListResponse(teams);
@@ -38,10 +33,11 @@ router.get(
 router.get(
   '/:teamSeasonId/league',
   authenticateToken,
-  routeProtection.requireAccountAdmin(),
+  ServiceFactory.getRouteProtection().requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+      const teamService = ServiceFactory.getTeamService();
 
       const leagueInfo = await teamService.getLeagueInfo(teamSeasonId, seasonId, accountId);
       const response = TeamResponseFormatter.formatLeagueInfoResponse(leagueInfo);
@@ -63,6 +59,7 @@ router.get(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
+      const teamService = ServiceFactory.getTeamService();
 
       const teamSeasonDetails = await teamService.getTeamSeasonDetails(
         teamSeasonId,
@@ -85,7 +82,7 @@ router.get(
 router.put(
   '/:teamSeasonId',
   authenticateToken,
-  routeProtection.requireAccountAdmin(),
+  ServiceFactory.getRouteProtection().requireAccountAdmin(),
   (req: Request, res: Response, next: NextFunction) => {
     upload.single('logo')(req, res, (err: unknown) => {
       if (err) {
@@ -105,6 +102,7 @@ router.put(
       const updateData = TeamRequestValidator.validateTeamUpdateRequest(req);
 
       // Update team season
+      const teamService = ServiceFactory.getTeamService();
       const updatedTeam = await teamService.updateTeamSeason(
         teamSeasonId,
         seasonId,

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import * as dotenv from 'dotenv';
 import { initializeRoleIds } from './config/roles';
 import prisma from './lib/prisma';
+import { Container } from './container';
 import testDatabaseRouter from './routes/testdatabase';
 import authRouter from './routes/auth';
 import passwordResetRouter from './routes/passwordReset';
@@ -34,7 +35,13 @@ initializeRoleIds(prisma).catch((error: unknown) => {
   console.error('Failed to initialize role IDs:', error);
 });
 
+// Initialize dependency injection container
+const container = new Container(prisma);
+
 const app = express();
+
+// Make container available to all routes
+app.locals.container = container;
 
 // Security middleware
 app.use(helmet());
