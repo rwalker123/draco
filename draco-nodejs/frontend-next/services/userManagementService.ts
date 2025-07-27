@@ -1,4 +1,4 @@
-import { User, Role, UsersResponse, UserSearchParams } from '../types/users';
+import { User, Role, UsersResponse, UserSearchParams, Contact, ContactRole } from '../types/users';
 
 /**
  * User Management Service
@@ -16,24 +16,24 @@ export class UserManagementService {
    */
   async fetchUsers(accountId: string, params: UserSearchParams): Promise<UsersResponse> {
     const searchParams = new URLSearchParams();
-    
+
     // Add pagination parameters
     searchParams.append('page', params.page.toString());
     searchParams.append('limit', params.limit.toString());
-    
+
     // Add sorting parameters
     if (params.sortBy) searchParams.append('sortBy', params.sortBy);
     if (params.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
-    const response = await fetch(
-      `/api/accounts/${accountId}/contacts?${searchParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
+    // Add roles parameter to include role data
+    searchParams.append('roles', 'true');
+
+    const response = await fetch(`/api/accounts/${accountId}/contacts?${searchParams.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
       },
-    );
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -46,10 +46,20 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    // Backend returns contacts array, but frontend expects users
-    const usersWithRoles = (data.data.contacts || []).map((contact: Omit<User, 'roles'>) => ({
-      ...contact,
-      roles: [] // TODO: Backend API needs to include roles in response
+    // Backend returns contacts array with contactroles, but frontend expects users with roles
+    const usersWithRoles = (data.data.contacts || []).map((contact: Contact) => ({
+      id: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      userId: contact.userId,
+      roles:
+        contact.contactroles?.map((cr: ContactRole) => ({
+          id: cr.id,
+          roleId: cr.roleId,
+          roleName: this.getRoleDisplayName(cr.roleId),
+          roleData: cr.roleData,
+        })) || [],
     }));
 
     return {
@@ -63,7 +73,7 @@ export class UserManagementService {
    */
   async searchUsers(accountId: string, query: string): Promise<User[]> {
     const response = await fetch(
-      `/api/accounts/${accountId}/contacts/search?q=${encodeURIComponent(query)}`,
+      `/api/accounts/${accountId}/contacts/search?q=${encodeURIComponent(query)}&roles=true`,
       {
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -83,9 +93,19 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data.contacts || []).map((contact: Omit<User, 'roles'>) => ({
-      ...contact,
-      roles: [] // TODO: Backend API needs to include roles in response
+    const usersWithRoles = (data.data.contacts || []).map((contact: Contact) => ({
+      id: contact.id,
+      firstName: contact.firstName,
+      lastName: contact.lastName,
+      email: contact.email,
+      userId: contact.userId,
+      roles:
+        contact.contactroles?.map((cr: ContactRole) => ({
+          id: cr.id,
+          roleId: cr.roleId,
+          roleName: this.getRoleDisplayName(cr.roleId),
+          roleData: cr.roleData,
+        })) || [],
     }));
 
     return usersWithRoles;
@@ -159,6 +179,23 @@ export class UserManagementService {
       throw new Error(errorData.message || 'Failed to remove role');
     }
   }
+
+  /**
+   * Get human-readable display name for a role ID
+   */
+  private getRoleDisplayName(roleId: string): string {
+    const roleMap: Record<string, string> = {
+      Administrator: 'Administrator',
+      AccountAdmin: 'Account Administrator',
+      TeamManager: 'Team Manager',
+      Player: 'Player',
+      Coach: 'Coach',
+      Umpire: 'Umpire',
+      Parent: 'Parent',
+      Fan: 'Fan',
+    };
+    return roleMap[roleId] || roleId;
+  }
 }
 
 /**
@@ -166,4 +203,4 @@ export class UserManagementService {
  */
 export const createUserManagementService = (token: string): UserManagementService => {
   return new UserManagementService(token);
-}; 
+};

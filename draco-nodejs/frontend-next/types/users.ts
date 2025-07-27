@@ -1,3 +1,29 @@
+// Backend API response types
+export interface ContactRole {
+  id: string;
+  roleId: string;
+  roleData: string;
+}
+
+export interface Contact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  userId: string;
+  contactroles?: ContactRole[];
+}
+
+export interface ContactsResponse {
+  success: boolean;
+  data: {
+    contacts: Contact[];
+  };
+  pagination?: {
+    total: number;
+  };
+}
+
 // Core user management types
 export interface User {
   id: string;
