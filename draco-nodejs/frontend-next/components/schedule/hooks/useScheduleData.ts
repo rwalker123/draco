@@ -47,7 +47,7 @@ export const useScheduleData = ({
   filterType,
   filterDate,
 }: UseScheduleDataProps): UseScheduleDataReturn => {
-  const { token } = useAuth();
+  const { token, loading: authLoading } = useAuth();
   const { fetchCurrentSeason } = useCurrentSeason(accountId);
 
   // Data states
@@ -112,7 +112,7 @@ export const useScheduleData = ({
       const currentSeasonId = await fetchCurrentSeason();
 
       // Load static data in parallel
-      const [leaguesResponse, fieldsResponse, umpiresResponse] = await Promise.all([
+      const requests = [
         fetch(`/api/accounts/${accountId}/seasons/${currentSeasonId}/leagues?includeTeams`, {
           headers: { 'Content-Type': 'application/json' },
         }),
@@ -120,14 +120,25 @@ export const useScheduleData = ({
         fetch(`/api/accounts/${accountId}/fields`, {
           headers: { 'Content-Type': 'application/json' },
         }),
+      ];
 
-        fetch(`/api/accounts/${accountId}/umpires`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        }),
-      ]);
+      // Only add umpires request if we have a token
+      if (token) {
+        console.log('Making umpires request with token:', token ? 'Present' : 'Missing');
+        requests.push(
+          fetch(`/api/accounts/${accountId}/umpires`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        );
+      } else {
+        console.log('Skipping umpires request - no token available');
+      }
+
+      const responses = await Promise.all(requests);
+      const [leaguesResponse, fieldsResponse, umpiresResponse] = responses;
 
       // Process leagues for current season (may fail for unauthenticated users)
       if (leaguesResponse.ok) {
@@ -208,10 +219,21 @@ export const useScheduleData = ({
         setFields(fieldsData.data.fields);
       }
 
-      // Process umpires (should work for all users)
-      if (umpiresResponse.ok) {
-        const umpiresData = await umpiresResponse.json();
-        setUmpires(umpiresData.data.umpires);
+      // Process umpires (requires authentication)
+      if (umpiresResponse) {
+        if (umpiresResponse.ok) {
+          const umpiresData = await umpiresResponse.json();
+          setUmpires(umpiresData.data.umpires);
+        } else if (umpiresResponse.status === 401) {
+          // For unauthenticated users, set empty umpires array
+          setUmpires([]);
+        } else {
+          console.warn('Failed to load umpires:', umpiresResponse.status);
+          setUmpires([]);
+        }
+      } else {
+        // No token available, set empty umpires array
+        setUmpires([]);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load static data');
@@ -288,10 +310,12 @@ export const useScheduleData = ({
     setLeagueTeams([]);
   }, []);
 
-  // Load static data on mount
+  // Load static data on mount, but wait for auth to be ready
   useEffect(() => {
-    loadStaticData();
-  }, [loadStaticData]);
+    if (!authLoading) {
+      loadStaticData();
+    }
+  }, [loadStaticData, authLoading]);
 
   // Load games data when filter changes
   useEffect(() => {

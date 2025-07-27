@@ -196,6 +196,7 @@ const GameListDisplay: React.FC<GameListDisplayProps> = ({
                         canEditRecap={canEditRecap}
                         onEditRecap={onEditRecap}
                         onViewRecap={onViewRecap}
+                        fitContent={true}
                       />
                     ))
                   : section.games.map((game, index) => (

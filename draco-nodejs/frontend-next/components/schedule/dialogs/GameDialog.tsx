@@ -89,16 +89,32 @@ const GameDialog: React.FC<GameDialogProps> = ({
       } else {
         setDialogTeams([]);
       }
+    } else {
+      // Clear teams when no league is selected
+      setDialogTeams([]);
     }
   }, [dialogLeagueSeason, leagueTeamsCache]);
 
-  // Clear teams when dialog closes
+  // Handle dialog open/close
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      // When dialog opens, load teams if there's a league selected
+      if (dialogLeagueSeason) {
+        const cachedTeams = leagueTeamsCache.get(dialogLeagueSeason);
+        if (cachedTeams) {
+          setDialogTeams(cachedTeams);
+        } else {
+          setDialogTeams([]);
+        }
+      } else {
+        // Clear teams if no league is selected
+        setDialogTeams([]);
+      }
+    } else {
       // Clear dialog teams when dialog closes
       setDialogTeams([]);
     }
-  }, [open]);
+  }, [open, dialogLeagueSeason, leagueTeamsCache]);
 
   // Try multiple sources for league name
   let leagueName = 'Unknown League';
