@@ -13,6 +13,9 @@ import seasonsRouter from './routes/seasons';
 import leagueSeasonsRouter from './routes/leagueSeasons';
 import leaguesRouter from './routes/leagues';
 import teamsRouter from './routes/teams';
+import teamRosterRouter from './routes/team-roster';
+import teamStatsRouter from './routes/team-stats';
+import teamMediaRouter from './routes/team-media';
 import gamesRouter from './routes/games';
 import { bigIntSerializer } from './middleware/bigint-serializer';
 import { domainRouting } from './middleware/domainRouting';
@@ -81,6 +84,9 @@ app.use('/api/accounts/:accountId/statistics', statisticsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/leagues', leagueSeasonsRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/games', gamesRouter);
 app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamsRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamRosterRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamStatsRouter);
+app.use('/api/accounts/:accountId/seasons/:seasonId/teams', teamMediaRouter);
 app.use(
   '/api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/managers',
   teamManagersRouter,
