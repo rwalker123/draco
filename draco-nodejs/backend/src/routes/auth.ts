@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AuthService, LoginCredentials, RegisterData } from '../services/authService';
 import { authenticateToken } from '../middleware/authMiddleware';
+import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware';
 import { ServiceFactory } from '../lib/serviceFactory';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ValidationError, AuthenticationError } from '../utils/customErrors';
@@ -64,6 +65,7 @@ const roleService = ServiceFactory.getRoleVerification();
  */
 router.post(
   '/login',
+  authRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
     const { username, password }: LoginCredentials = req.body;
 
@@ -126,6 +128,7 @@ router.post(
  */
 router.post(
   '/register',
+  authRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
     const { username, email, password, firstName, lastName }: RegisterData = req.body;
 
@@ -317,6 +320,7 @@ router.get(
  */
 router.post(
   '/verify',
+  authRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
     const { token } = req.body;
 
@@ -389,6 +393,7 @@ router.post(
  */
 router.post(
   '/change-password',
+  passwordRateLimit,
   authenticateToken,
   asyncHandler(async (req: Request, res: Response) => {
     const { currentPassword, newPassword } = req.body;
