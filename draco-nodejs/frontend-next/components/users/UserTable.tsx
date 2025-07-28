@@ -9,11 +9,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination,
   Typography,
   Box,
   CircularProgress,
+  Button,
+  Stack,
 } from '@mui/material';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { UserTableProps } from '../../types/users';
 import UserCard from './UserCard';
 
@@ -28,10 +30,12 @@ const UserTable: React.FC<UserTableProps> = ({
   onRemoveRole,
   canManageUsers,
   page,
-  rowsPerPage,
-  totalUsers,
-  onPageChange,
-  onRowsPerPageChange,
+  rowsPerPage: _rowsPerPage,
+  hasNext,
+  hasPrev,
+  onNextPage,
+  onPrevPage,
+  onRowsPerPageChange: _onRowsPerPageChange,
   getRoleDisplayName,
 }) => {
   if (loading) {
@@ -82,15 +86,30 @@ const UserTable: React.FC<UserTableProps> = ({
         </Table>
       </TableContainer>
 
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        component="div"
-        count={totalUsers}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
-      />
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="body2" color="text.secondary">
+          Page {page} • {users.length} users
+        </Typography>
+
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<ChevronLeft />}
+            onClick={onPrevPage}
+            disabled={!hasPrev}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outlined"
+            endIcon={<ChevronRight />}
+            onClick={onNextPage}
+            disabled={!hasNext}
+          >
+            Next
+          </Button>
+        </Stack>
+      </Box>
     </Paper>
   );
 };
