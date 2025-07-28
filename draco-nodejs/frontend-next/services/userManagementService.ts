@@ -29,6 +29,11 @@ export class UserManagementService {
     // Add roles parameter to include role data
     searchParams.append('roles', 'true');
 
+    // Add seasonId parameter if provided
+    if (params.seasonId) {
+      searchParams.append('seasonId', params.seasonId);
+    }
+
     const response = await fetch(`/api/accounts/${accountId}/contacts?${searchParams.toString()}`, {
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -48,7 +53,7 @@ export class UserManagementService {
 
     // Transform contacts to users format for frontend compatibility
     // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data.contacts || []).map((contact: Contact) => ({
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => ({
       id: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
@@ -65,23 +70,32 @@ export class UserManagementService {
 
     return {
       users: usersWithRoles,
-      total: data.pagination.total || 0,
+      pagination: data.pagination || {
+        page: 1,
+        limit: 10,
+        hasNext: false,
+        hasPrev: false,
+      },
     };
   }
 
   /**
    * Search users by name or email
    */
-  async searchUsers(accountId: string, query: string): Promise<User[]> {
-    const response = await fetch(
-      `/api/accounts/${accountId}/contacts/search?q=${encodeURIComponent(query)}&roles=true`,
-      {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json',
-        },
+  async searchUsers(accountId: string, query: string, seasonId?: string | null): Promise<User[]> {
+    const url = new URL(`/api/accounts/${accountId}/contacts/search`, window.location.origin);
+    url.searchParams.set('q', query);
+    url.searchParams.set('roles', 'true');
+    if (seasonId) {
+      url.searchParams.set('seasonId', seasonId);
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
       },
-    );
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -94,7 +108,7 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data.contacts || []).map((contact: Contact) => ({
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => ({
       id: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,

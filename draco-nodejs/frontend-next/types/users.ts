@@ -20,7 +20,10 @@ export interface ContactsResponse {
     contacts: Contact[];
   };
   pagination?: {
-    total: number;
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
   };
 }
 
@@ -49,7 +52,12 @@ export interface Role {
 // API response types
 export interface UsersResponse {
   users: User[];
-  total: number;
+  pagination: {
+    page: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
 }
 
 export interface UserSearchParams {
@@ -58,6 +66,7 @@ export interface UserSearchParams {
   limit: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  seasonId?: string | null;
 }
 
 // Component prop types
@@ -69,8 +78,10 @@ export interface UserTableProps {
   canManageUsers: boolean;
   page: number;
   rowsPerPage: number;
-  totalUsers: number;
-  onPageChange: (event: unknown, newPage: number) => void;
+  hasNext: boolean;
+  hasPrev: boolean;
+  onNextPage: () => void;
+  onPrevPage: () => void;
   onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   getRoleDisplayName: (roleId: string) => string;
 }
@@ -135,7 +146,8 @@ export interface UseUserManagementReturn {
   success: string | null;
   page: number;
   rowsPerPage: number;
-  totalUsers: number;
+  hasNext: boolean;
+  hasPrev: boolean;
   searchTerm: string;
   searchLoading: boolean;
 
@@ -151,7 +163,8 @@ export interface UseUserManagementReturn {
   // Actions
   handleSearch: () => void;
   handleClearSearch: () => void;
-  handlePageChange: (event: unknown, newPage: number) => void;
+  handleNextPage: () => void;
+  handlePrevPage: () => void;
   handleRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAssignRole: () => void;
   handleRemoveRole: () => void;
