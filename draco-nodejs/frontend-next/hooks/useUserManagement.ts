@@ -338,16 +338,20 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setRemoveRoleDialogOpen(true);
   }, []);
 
-  // Role display name helper - now uses roleName from backend when available
+  // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
-    (roleOrRoleId: string | { roleId: string; roleName?: string }): string => {
+    (
+      roleOrRoleId:
+        | string
+        | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+    ): string => {
       // Handle both string (roleId) and object (role) parameters for backward compatibility
       if (typeof roleOrRoleId === 'string') {
         return getRoleDisplayName(roleOrRoleId);
       }
 
-      // Use roleName from backend if available, otherwise fall back to conversion
-      return roleOrRoleId.roleName || getRoleDisplayName(roleOrRoleId.roleId);
+      // Pass the full role object to getRoleDisplayName to handle contextName
+      return getRoleDisplayName(roleOrRoleId);
     },
     [],
   );
