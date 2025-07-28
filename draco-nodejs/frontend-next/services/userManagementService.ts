@@ -70,6 +70,7 @@ export class UserManagementService {
           roleId: cr.roleId,
           roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
+          contextName: cr.contextName,
         })) || [],
     }));
 
@@ -133,6 +134,7 @@ export class UserManagementService {
           roleId: cr.roleId,
           roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
+          contextName: cr.contextName,
         })) || [],
     }));
 

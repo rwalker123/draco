@@ -4,6 +4,7 @@ export interface ContactRole {
   roleId: string;
   roleName?: string;
   roleData: string;
+  contextName?: string;
 }
 
 export interface Contact {
@@ -43,6 +44,7 @@ export interface UserRole {
   roleId: string;
   roleName: string;
   roleData: string;
+  contextName?: string;
 }
 
 export interface Role {
@@ -85,7 +87,11 @@ export interface UserTableProps {
   onNextPage: () => void;
   onPrevPage: () => void;
   onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  getRoleDisplayName: (roleOrRoleId: string | { roleId: string; roleName?: string }) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
 }
 
 export interface UserSearchBarProps {
@@ -101,14 +107,22 @@ export interface UserCardProps {
   canManageUsers: boolean;
   onAssignRole: (user: User) => void;
   onRemoveRole: (user: User, role: UserRole) => void;
-  getRoleDisplayName: (roleOrRoleId: string | { roleId: string; roleName?: string }) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
 }
 
 export interface UserRoleChipsProps {
   roles: UserRole[];
   canManageUsers: boolean;
   onRemoveRole: (role: UserRole) => void;
-  getRoleDisplayName: (roleOrRoleId: string | { roleId: string; roleName?: string }) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
 }
 
 export interface AssignRoleDialogProps {
@@ -183,5 +197,9 @@ export interface UseUserManagementReturn {
   setSearchTerm: (term: string) => void;
   setError: (error: string | null) => void;
   setSuccess: (success: string | null) => void;
-  getRoleDisplayName: (roleOrRoleId: string | { roleId: string; roleName?: string }) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
 }
