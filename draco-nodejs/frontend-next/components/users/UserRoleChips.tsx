@@ -27,7 +27,7 @@ const UserRoleChips: React.FC<UserRoleChipsProps> = ({
       {roles.map((role) => (
         <Chip
           key={role.id}
-          label={getRoleDisplayName(role.roleId)}
+          label={getRoleDisplayName(role)}
           size="small"
           color="primary"
           variant="outlined"
