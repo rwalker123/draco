@@ -1,5 +1,6 @@
 export interface ContactQueryOptions {
   includeRoles?: boolean;
+  onlyWithRoles?: boolean;
   searchQuery?: string;
   pagination?: {
     page: number;

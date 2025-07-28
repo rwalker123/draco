@@ -67,6 +67,7 @@ export interface UserSearchParams {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   seasonId?: string | null;
+  onlyWithRoles?: boolean;
 }
 
 // Component prop types
@@ -150,6 +151,7 @@ export interface UseUserManagementReturn {
   hasPrev: boolean;
   searchTerm: string;
   searchLoading: boolean;
+  onlyWithRoles: boolean;
 
   // Dialog states
   assignRoleDialogOpen: boolean;
@@ -163,6 +165,7 @@ export interface UseUserManagementReturn {
   // Actions
   handleSearch: () => void;
   handleClearSearch: () => void;
+  handleFilterToggle: (filterValue: boolean) => void;
   handleNextPage: () => void;
   handlePrevPage: () => void;
   handleRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
