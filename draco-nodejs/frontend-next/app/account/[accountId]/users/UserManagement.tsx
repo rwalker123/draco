@@ -26,7 +26,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     success,
     page,
     rowsPerPage,
-    totalUsers,
+    hasNext,
+    hasPrev,
     searchTerm,
     searchLoading,
 
@@ -42,7 +43,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     // Actions
     handleSearch,
     handleClearSearch,
-    handlePageChange,
+    handleNextPage,
+    handlePrevPage,
     handleRowsPerPageChange,
     handleAssignRole,
     handleRemoveRole,
@@ -114,8 +116,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         canManageUsers={canManageUsers}
         page={page}
         rowsPerPage={rowsPerPage}
-        totalUsers={totalUsers}
-        onPageChange={handlePageChange}
+        hasNext={hasNext}
+        hasPrev={hasPrev}
+        onNextPage={handleNextPage}
+        onPrevPage={handlePrevPage}
         onRowsPerPageChange={handleRowsPerPageChange}
         getRoleDisplayName={getRoleDisplayName}
       />
