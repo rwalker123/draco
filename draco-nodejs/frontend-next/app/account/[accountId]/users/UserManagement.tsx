@@ -6,6 +6,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import {
   UserSearchBar,
+  UserFilterBar,
   UserTable,
   AssignRoleDialog,
   RemoveRoleDialog,
@@ -30,6 +31,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     hasPrev,
     searchTerm,
     searchLoading,
+    onlyWithRoles,
 
     // Dialog states
     assignRoleDialogOpen,
@@ -43,6 +45,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     // Actions
     handleSearch,
     handleClearSearch,
+    handleFilterToggle,
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
@@ -97,6 +100,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Manage users and their roles for this organization.
       </Typography>
+
+      {/* Filter Section */}
+      <UserFilterBar
+        onlyWithRoles={onlyWithRoles}
+        onToggle={handleFilterToggle}
+        userCount={users.length}
+        loading={loading}
+      />
 
       {/* Search Section */}
       <UserSearchBar

@@ -34,6 +34,11 @@ export class UserManagementService {
       searchParams.append('seasonId', params.seasonId);
     }
 
+    // Add onlyWithRoles parameter if provided
+    if (params.onlyWithRoles) {
+      searchParams.append('onlyWithRoles', 'true');
+    }
+
     const response = await fetch(`/api/accounts/${accountId}/contacts?${searchParams.toString()}`, {
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -82,12 +87,20 @@ export class UserManagementService {
   /**
    * Search users by name or email
    */
-  async searchUsers(accountId: string, query: string, seasonId?: string | null): Promise<User[]> {
+  async searchUsers(
+    accountId: string,
+    query: string,
+    seasonId?: string | null,
+    onlyWithRoles?: boolean,
+  ): Promise<User[]> {
     const url = new URL(`/api/accounts/${accountId}/contacts/search`, window.location.origin);
     url.searchParams.set('q', query);
     url.searchParams.set('roles', 'true');
     if (seasonId) {
       url.searchParams.set('seasonId', seasonId);
+    }
+    if (onlyWithRoles) {
+      url.searchParams.set('onlyWithRoles', 'true');
     }
 
     const response = await fetch(url.toString(), {
