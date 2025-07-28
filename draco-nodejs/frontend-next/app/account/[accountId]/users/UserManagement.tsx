@@ -10,6 +10,7 @@ import {
   UserTable,
   AssignRoleDialog,
   RemoveRoleDialog,
+  RoleLegend,
 } from '../../../../components/users';
 
 interface UserManagementProps {
@@ -100,6 +101,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
         Manage users and their roles for this organization.
       </Typography>
+
+      {/* Role Legend */}
+      <RoleLegend variant="compact" />
 
       {/* Filter Section */}
       <UserFilterBar
