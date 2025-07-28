@@ -1202,6 +1202,7 @@ router.delete(
  * Optional query parameters:
  *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
  *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
+ *   - onlyWithRoles=true to filter users who have at least one role
  */
 router.get(
   '/:accountId/contacts',
@@ -1211,8 +1212,9 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { roles, seasonId } = req.query;
+    const { roles, seasonId, onlyWithRoles } = req.query;
     const includeRoles = roles === 'true';
+    const filterOnlyWithRoles = onlyWithRoles === 'true';
 
     // Parse season ID if provided
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
@@ -1223,6 +1225,7 @@ router.get(
     // Use ContactService to get contacts with roles
     const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
+      onlyWithRoles: filterOnlyWithRoles,
       pagination: {
         page: paginationParams.page,
         limit: paginationParams.limit,
