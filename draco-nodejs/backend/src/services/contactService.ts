@@ -140,21 +140,22 @@ export class ContactService {
     // Execute the raw query
     const rows = await prisma.$queryRaw<ContactWithRoleRow[]>(query);
 
-    // Get account owner contact ID for role assignment
-    const ownerContact = await prisma.accounts.findUnique({
-      where: { id: accountId },
-      select: {
-        contacts: {
-          where: {
-            creatoraccountid: accountId,
-          },
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
-    const accountOwnerContactId = ownerContact?.contacts[0]?.id?.toString() || null;
+    // Single efficient query to find account owner's contact ID
+    const ownerContactResult = await prisma.$queryRaw<{ id: bigint }[]>`
+      SELECT contacts.id 
+      FROM accounts 
+      JOIN contacts ON accounts.id = contacts.creatoraccountid 
+      WHERE accounts.id = ${accountId} 
+        AND accounts.owneruserid = contacts.userid
+    `;
+
+    const accountOwnerContactId = ownerContactResult[0]?.id?.toString() || null;
+
+    // Debug logging for account owner identification
+    console.log(
+      `ContactService: Account ${accountId} - Owner Contact ID: ${accountOwnerContactId}`,
+    );
+    console.log(`ContactService: Account ${accountId} - Total contacts in query: ${rows.length}`);
 
     // Transform the flat rows into the desired structure
     return ContactService.transformContactRows(rows, accountId, accountOwnerContactId, pagination);
@@ -362,11 +363,17 @@ export class ContactService {
     // Add AccountAdmin role for account owner if not already present
     if (accountOwnerContactId) {
       const contact = contactMap.get(accountOwnerContactId);
+      console.log(
+        `ContactService: Account ${accountId} - Found owner contact in map: ${!!contact}`,
+      );
 
       if (contact) {
         // Check if AccountAdmin role already exists to prevent duplicates
         const hasAccountAdminRole = contact.contactroles.some(
           (role) => role.roleId === ROLE_GUIDS.ACCOUNT_ADMIN,
+        );
+        console.log(
+          `ContactService: Account ${accountId} - Owner already has AccountAdmin role: ${hasAccountAdminRole}`,
         );
 
         if (!hasAccountAdminRole) {
@@ -376,8 +383,17 @@ export class ContactService {
             roleName: 'AccountAdmin',
             roleData: accountId.toString(),
           });
+          console.log(
+            `ContactService: Account ${accountId} - Added AccountAdmin role to owner contact ${accountOwnerContactId}`,
+          );
         }
+      } else {
+        console.log(
+          `ContactService: Account ${accountId} - Owner contact ${accountOwnerContactId} not found in contact map`,
+        );
       }
+    } else {
+      console.log(`ContactService: Account ${accountId} - No owner contact ID found`);
     }
 
     // Convert map to array and sort
