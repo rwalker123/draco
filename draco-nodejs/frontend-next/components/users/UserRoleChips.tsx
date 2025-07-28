@@ -1,33 +1,34 @@
 'use client';
 
 import React from 'react';
-import { Stack, Chip } from '@mui/material';
+import { Stack } from '@mui/material';
 import { UserRoleChipsProps } from '../../types/users';
+import RoleIcon from './RoleIcon';
 
 /**
  * UserRoleChips Component
- * Displays user roles as chips with removal functionality
+ * Displays user roles as icons with removal functionality
  */
 const UserRoleChips: React.FC<UserRoleChipsProps> = ({
   roles,
   canManageUsers,
   onRemoveRole,
-  getRoleDisplayName,
+  getRoleDisplayName: _getRoleDisplayName, // Prefixed with underscore to indicate unused
 }) => {
   if (!roles || roles.length === 0) {
     return null;
   }
 
   return (
-    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+    <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
       {roles.map((role) => (
-        <Chip
+        <RoleIcon
           key={role.id}
-          label={getRoleDisplayName(role)}
+          role={role}
           size="small"
-          color="primary"
-          variant="outlined"
-          onDelete={canManageUsers ? () => onRemoveRole(role) : undefined}
+          showTooltip={true}
+          onClick={canManageUsers ? () => onRemoveRole(role) : undefined}
+          disabled={!canManageUsers}
         />
       ))}
     </Stack>
