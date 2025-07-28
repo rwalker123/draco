@@ -31,7 +31,7 @@ export class ContactService {
     seasonId?: bigint | null,
     options: ContactQueryOptions = {},
   ): Promise<ContactResponse> {
-    const { includeRoles = false, searchQuery, pagination } = options;
+    const { includeRoles = false, onlyWithRoles = false, searchQuery, pagination } = options;
 
     // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
@@ -118,8 +118,16 @@ export class ContactService {
             : Prisma.empty
         }
         AND (
+          ${
+            !onlyWithRoles
+              ? Prisma.sql`
           -- Include contacts with no roles but only for the given account
-          cr.roleid IS NULL
+          cr.roleid IS NULL OR
+          `
+              : Prisma.empty
+          }
+          -- Include valid team roles (must have valid season)
+          (cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN}) AND ls_ts.id IS NOT NULL)
           
           -- Include valid team roles (must have valid season)
           OR (cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN}) AND ls_ts.id IS NOT NULL)
@@ -129,9 +137,6 @@ export class ContactService {
           
           -- Include valid account roles
           OR (cr.roleid IN (${ROLE_GUIDS.ACCOUNT_ADMIN}, ${ROLE_GUIDS.ACCOUNT_PHOTO_ADMIN}) AND cr.roledata = ${accountId})
-          
-          -- Include global roles
-          OR cr.roleid IN (${ROLE_GUIDS.PHOTO_ADMIN}, ${ROLE_GUIDS.ADMINISTRATOR})
         )
       ORDER BY contacts.lastname, contacts.firstname, cr.roleid
       ${pagination ? Prisma.sql`LIMIT ${pagination.limit + 1} OFFSET ${(pagination.page - 1) * pagination.limit}` : Prisma.empty}
@@ -363,17 +368,16 @@ export class ContactService {
     // Add AccountAdmin role for account owner if not already present
     if (accountOwnerContactId) {
       const contact = contactMap.get(accountOwnerContactId);
-      console.log(
-        `ContactService: Account ${accountId} - Found owner contact in map: ${!!contact}`,
-      );
 
+      // todo: if the contact is not found, we need to create it
+      // if we are filtering by onlyWithRoles. This is because the
+      // user doesn't have a record in the contact roles table so won't
+      // be found. Maybe the accountOwner should be in the contact roles table,
+      // it would make things alot easier.
       if (contact) {
         // Check if AccountAdmin role already exists to prevent duplicates
         const hasAccountAdminRole = contact.contactroles.some(
           (role) => role.roleId === ROLE_GUIDS.ACCOUNT_ADMIN,
-        );
-        console.log(
-          `ContactService: Account ${accountId} - Owner already has AccountAdmin role: ${hasAccountAdminRole}`,
         );
 
         if (!hasAccountAdminRole) {
@@ -383,17 +387,8 @@ export class ContactService {
             roleName: 'AccountAdmin',
             roleData: accountId.toString(),
           });
-          console.log(
-            `ContactService: Account ${accountId} - Added AccountAdmin role to owner contact ${accountOwnerContactId}`,
-          );
         }
-      } else {
-        console.log(
-          `ContactService: Account ${accountId} - Owner contact ${accountOwnerContactId} not found in contact map`,
-        );
       }
-    } else {
-      console.log(`ContactService: Account ${accountId} - No owner contact ID found`);
     }
 
     // Convert map to array and sort
