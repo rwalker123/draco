@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { User, Role, UserRole, UseUserManagementReturn } from '../types/users';
@@ -10,6 +11,7 @@ import { User, Role, UserRole, UseUserManagementReturn } from '../types/users';
  */
 export const useUserManagement = (accountId: string): UseUserManagementReturn => {
   const { token } = useAuth();
+  const { currentSeasonId, fetchCurrentSeason } = useCurrentSeason(accountId);
 
   // Core state
   const [users, setUsers] = useState<User[]>([]);
@@ -19,9 +21,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [success, setSuccess] = useState<string | null>(null);
 
   // Pagination state
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalUsers, setTotalUsers] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,14 +58,47 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         setError(null);
 
         const response = await userService.fetchUsers(accountId, {
-          page: currentPage + 1, // Backend uses 1-based pagination
+          page: currentPage, // Backend uses 1-based pagination
           limit: limit || rowsPerPageRef.current,
           sortBy: 'lastname',
           sortOrder: 'asc',
+          seasonId: currentSeasonId,
         });
 
         setUsers(response.users);
-        setTotalUsers(response.total);
+        setHasNext(response.pagination.hasNext);
+        setHasPrev(response.pagination.hasPrev);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userService, accountId, currentSeasonId],
+  );
+
+  // Load users with explicit season ID (for initialization)
+  const loadUsersWithSeason = useCallback(
+    async (seasonId: string | null, currentPage = 0, limit?: number) => {
+      if (!userService || !accountId) return;
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = {
+          page: currentPage + 1, // Backend uses 1-based pagination
+          limit: limit || rowsPerPageRef.current,
+          sortBy: 'lastname',
+          sortOrder: 'asc' as const,
+          seasonId: seasonId,
+        };
+
+        const response = await userService.fetchUsers(accountId, params);
+
+        setUsers(response.users);
+        setHasNext(response.pagination.hasNext);
+        setHasPrev(response.pagination.hasPrev);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load users');
       } finally {
@@ -92,11 +128,23 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // Initialize data
   useEffect(() => {
     if (token && accountId && !initialized) {
-      loadUsers();
-      loadRoles();
-      setInitialized(true);
+      // Fetch current season first, then load users and roles
+      fetchCurrentSeason()
+        .then((seasonId) => {
+          // Load users with the fetched season ID
+          loadUsersWithSeason(seasonId);
+          loadRoles();
+          setInitialized(true);
+        })
+        .catch((err) => {
+          console.error('Failed to fetch current season:', err);
+          // Still load users and roles even if season fetch fails
+          loadUsersWithSeason(null);
+          loadRoles();
+          setInitialized(true);
+        });
     }
-  }, [token, accountId, initialized, loadUsers, loadRoles]);
+  }, [token, accountId, initialized, loadRoles, fetchCurrentSeason, loadUsersWithSeason]);
 
   // Search handler
   const handleSearch = useCallback(async () => {
@@ -112,17 +160,18 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         setPage(0);
       } else {
         // Use the search endpoint
-        const searchResults = await userService.searchUsers(accountId, searchTerm);
+        const searchResults = await userService.searchUsers(accountId, searchTerm, currentSeasonId);
         setUsers(searchResults);
-        setTotalUsers(searchResults.length);
-        setPage(0);
+        setHasNext(false); // Search results don't have pagination
+        setHasPrev(false);
+        setPage(1);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search users');
     } finally {
       setSearchLoading(false);
     }
-  }, [searchTerm, userService, accountId, loadUsers]);
+  }, [searchTerm, userService, accountId, currentSeasonId, loadUsers]);
 
   // Clear search handler
   const handleClearSearch = useCallback(async () => {
@@ -146,20 +195,28 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   }, [userService, accountId, loadUsers]);
 
   // Pagination handlers
-  const handlePageChange = useCallback(
-    (event: unknown, newPage: number) => {
-      setPage(newPage);
-      loadUsers(newPage);
-    },
-    [loadUsers],
-  );
+  const handleNextPage = useCallback(() => {
+    if (hasNext) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      loadUsers(nextPage);
+    }
+  }, [hasNext, page, loadUsers]);
+
+  const handlePrevPage = useCallback(() => {
+    if (hasPrev) {
+      const prevPage = page - 1;
+      setPage(prevPage);
+      loadUsers(prevPage);
+    }
+  }, [hasPrev, page, loadUsers]);
 
   const handleRowsPerPageChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const newRowsPerPage = parseInt(event.target.value, 10);
       setRowsPerPage(newRowsPerPage);
-      setPage(0);
-      loadUsers(0, newRowsPerPage);
+      setPage(1);
+      loadUsers(1, newRowsPerPage);
     },
     [loadUsers],
   );
@@ -235,7 +292,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     success,
     page,
     rowsPerPage,
-    totalUsers,
+    hasNext,
+    hasPrev,
     searchTerm,
     searchLoading,
 
@@ -251,7 +309,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     // Actions
     handleSearch,
     handleClearSearch,
-    handlePageChange,
+    handleNextPage,
+    handlePrevPage,
     handleRowsPerPageChange,
     handleAssignRole,
     handleRemoveRole,
