@@ -68,7 +68,7 @@ export class UserManagementService {
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
-          roleName: getRoleDisplayName(cr.roleId),
+          roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
         })) || [],
     }));
@@ -131,7 +131,7 @@ export class UserManagementService {
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
-          roleName: getRoleDisplayName(cr.roleId),
+          roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
         })) || [],
     }));
