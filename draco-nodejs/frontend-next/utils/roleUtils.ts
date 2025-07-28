@@ -34,12 +34,46 @@ export const ROLE_DISPLAY_NAMES: Record<string, string> = {
   PhotoAdmin: 'Photo Administrator',
 };
 
+// Account-level roles that should not display contextName
+export const ACCOUNT_LEVEL_ROLES = [
+  'Administrator',
+  'AccountAdmin',
+  'AccountPhotoAdmin',
+  'PhotoAdmin',
+];
+
 /**
- * Get human-readable display name for a role ID
- * @param roleId - The role ID (GUID or name)
+ * Get human-readable display name for a role ID or role object
+ * @param roleOrRoleId - The role ID (GUID or name) or role object with contextName
  * @returns The display name for the role
  */
-export function getRoleDisplayName(roleId: string): string {
+export function getRoleDisplayName(
+  roleOrRoleId:
+    | string
+    | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+): string {
+  // Handle role object with contextName
+  if (typeof roleOrRoleId === 'object' && roleOrRoleId.contextName) {
+    const roleId = roleOrRoleId.roleId;
+    const contextName = roleOrRoleId.contextName;
+
+    // Get the role name from the roleId
+    const roleName = ROLE_ID_TO_NAME[roleId];
+
+    // Check if this is an account-level role
+    if (roleName && ACCOUNT_LEVEL_ROLES.includes(roleName)) {
+      // For account-level roles, don't show contextName
+      return ROLE_DISPLAY_NAMES[roleName] || roleName || roleId;
+    }
+
+    // For non-account-level roles, combine contextName with the base display name
+    const baseDisplayName = ROLE_DISPLAY_NAMES[roleName] || roleName || roleId;
+    return `${contextName} ${baseDisplayName}`;
+  }
+
+  // Handle string roleId (backward compatibility)
+  const roleId = roleOrRoleId as string;
+
   // If it's already a display name, return it
   if (ROLE_DISPLAY_NAMES[roleId]) {
     return ROLE_DISPLAY_NAMES[roleId];

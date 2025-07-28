@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Stack, Chip, Typography } from '@mui/material';
+import { Stack, Chip } from '@mui/material';
 import { UserRoleChipsProps } from '../../types/users';
 
 /**
@@ -15,11 +15,7 @@ const UserRoleChips: React.FC<UserRoleChipsProps> = ({
   getRoleDisplayName,
 }) => {
   if (!roles || roles.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary">
-        No roles assigned
-      </Typography>
-    );
+    return null;
   }
 
   return (
