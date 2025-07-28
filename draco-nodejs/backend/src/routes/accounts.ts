@@ -1199,7 +1199,9 @@ router.delete(
 /**
  * GET /api/accounts/:accountId/contacts
  * Get users in account (requires account access) - with pagination
- * Optional query parameter: roles=true to include contactroles data (roleId, roleData) without role names
+ * Optional query parameters:
+ *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
+ *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
  */
 router.get(
   '/:accountId/contacts',
@@ -1209,14 +1211,17 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { roles } = req.query;
+    const { roles, seasonId } = req.query;
     const includeRoles = roles === 'true';
+
+    // Parse season ID if provided
+    const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
 
     // Parse pagination parameters
     const paginationParams = PaginationHelper.parseParams(req.query);
 
     // Use ContactService to get contacts with roles
-    const result = await ContactService.getContactsWithRoles(accountId, {
+    const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       pagination: {
         page: paginationParams.page,
@@ -1305,9 +1310,12 @@ router.delete(
 );
 
 /**
- * GET /api/accounts/contacts/search
+ * GET /api/accounts/:accountId/contacts/search
  * Search contacts by name for autocomplete
- * Optional query parameter: roles=true to include contactroles data
+ * Required query parameter: q=searchTerm
+ * Optional query parameters:
+ *   - roles=true to include contactroles data with role context
+ *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
  */
 router.get(
   '/:accountId/contacts/search',
@@ -1316,7 +1324,7 @@ router.get(
   routeProtection.requireAdministrator(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q, roles } = req.query; // search query and roles flag
+    const { q, roles, seasonId } = req.query; // search query, roles flag, and optional seasonId
     const { accountId } = extractAccountParams(req.params);
     const includeRoles = roles === 'true';
 
@@ -1330,8 +1338,11 @@ router.get(
       return;
     }
 
+    // Parse season ID if provided
+    const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
+
     // Use ContactService to get contacts with roles
-    const result = await ContactService.getContactsWithRoles(accountId, {
+    const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       searchQuery: q,
     });
