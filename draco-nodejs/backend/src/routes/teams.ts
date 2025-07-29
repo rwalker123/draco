@@ -9,6 +9,8 @@ import { ServiceFactory } from '../lib/serviceFactory';
 
 const router = Router({ mergeParams: true });
 
+const routeProtection = ServiceFactory.getRouteProtection();
+
 /**
  * GET /api/accounts/:accountId/seasons/:seasonId/teams
  * Get all teams for a season
@@ -33,7 +35,7 @@ router.get(
 router.get(
   '/:teamSeasonId/league',
   authenticateToken,
-  ServiceFactory.getRouteProtection().requireAccountAdmin(),
+  routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { accountId, seasonId, teamSeasonId } = extractTeamParams(req.params);
@@ -76,13 +78,14 @@ router.get(
 );
 
 /**
+ 
  * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId
  * Update team information (name and logo)
  */
 router.put(
   '/:teamSeasonId',
   authenticateToken,
-  ServiceFactory.getRouteProtection().requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   (req: Request, res: Response, next: NextFunction) => {
     upload.single('logo')(req, res, (err: unknown) => {
       if (err) {

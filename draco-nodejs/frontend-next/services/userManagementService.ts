@@ -29,6 +29,9 @@ export class UserManagementService {
     // Add roles parameter to include role data
     searchParams.append('roles', 'true');
 
+    // Add contact details parameter to include contact information
+    searchParams.append('contactDetails', 'true');
+
     // Add seasonId parameter if provided
     if (params.seasonId) {
       searchParams.append('seasonId', params.seasonId);
@@ -74,6 +77,7 @@ export class UserManagementService {
         lastName: contact.lastName,
         email: contact.email,
         userId: contact.userId,
+        contactDetails: contact.contactDetails,
         roles: transformedRoles,
       };
     });
@@ -101,6 +105,7 @@ export class UserManagementService {
     const url = new URL(`/api/accounts/${accountId}/contacts/search`, window.location.origin);
     url.searchParams.set('q', query);
     url.searchParams.set('roles', 'true');
+    url.searchParams.set('contactDetails', 'true');
     if (seasonId) {
       url.searchParams.set('seasonId', seasonId);
     }
@@ -142,6 +147,7 @@ export class UserManagementService {
         lastName: contact.lastName,
         email: contact.email,
         userId: contact.userId,
+        contactDetails: contact.contactDetails,
         roles: transformedRoles,
       };
     });

@@ -1,6 +1,19 @@
 // Import context data types
 import { League, Team, LeagueSeason } from '../services/contextDataService';
 
+// Contact details interface
+export interface ContactDetails {
+  phone1: string | null;
+  phone2: string | null;
+  phone3: string | null;
+  streetaddress: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  dateofbirth: string | null;
+  middlename: string | null;
+}
+
 // Backend API response types
 export interface ContactRole {
   id: string;
@@ -16,6 +29,7 @@ export interface Contact {
   lastName: string;
   email: string;
   userId: string;
+  contactDetails?: ContactDetails;
   contactroles?: ContactRole[];
 }
 
@@ -39,6 +53,7 @@ export interface User {
   lastName: string;
   email: string;
   userId: string;
+  contactDetails?: ContactDetails;
   roles?: UserRole[];
 }
 
