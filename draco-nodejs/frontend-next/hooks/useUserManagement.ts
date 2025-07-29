@@ -393,7 +393,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setFormLoading(true);
       setError(null);
 
-      await userService.removeRole(accountId, selectedUser.id, selectedRoleToRemove.roleId);
+      await userService.removeRole(
+        accountId,
+        selectedUser.id,
+        selectedRoleToRemove.roleId,
+        selectedRoleToRemove.roleData,
+      );
 
       setSuccess('Role removed successfully');
       setRemoveRoleDialogOpen(false);
@@ -406,18 +411,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setFormLoading(false);
     }
   }, [selectedUser, selectedRoleToRemove, userService, accountId, page, loadUsers]);
-
-  // Dialog open handlers
-  const openAssignRoleDialog = useCallback((user: User) => {
-    setSelectedUser(user);
-    setAssignRoleDialogOpen(true);
-  }, []);
-
-  const openRemoveRoleDialog = useCallback((user: User, role: UserRole) => {
-    setSelectedUser(user);
-    setSelectedRoleToRemove(role);
-    setRemoveRoleDialogOpen(true);
-  }, []);
 
   // Context data loading function
   const loadContextData = useCallback(async () => {
@@ -447,6 +440,32 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setContextDataLoading(false);
     }
   }, [contextDataService, accountId, currentSeasonId]);
+
+  // Dialog open handlers
+  const openAssignRoleDialog = useCallback(
+    async (user: User) => {
+      setSelectedUser(user);
+      setNewUserContactId(user.id); // Pre-populate with the user's contact ID
+      setAssignRoleDialogOpen(true);
+      await loadContextData(); // Load leagues and teams data
+    },
+    [loadContextData],
+  );
+
+  const closeAssignRoleDialog = useCallback(() => {
+    setAssignRoleDialogOpen(false);
+    setSelectedUser(null);
+    setSelectedRole('');
+    setNewUserContactId('');
+    setSelectedLeagueId('');
+    setSelectedTeamId('');
+  }, []);
+
+  const openRemoveRoleDialog = useCallback((user: User, role: UserRole) => {
+    setSelectedUser(user);
+    setSelectedRoleToRemove(role);
+    setRemoveRoleDialogOpen(true);
+  }, []);
 
   // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
@@ -508,6 +527,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     handleAssignRole,
     handleRemoveRole,
     openAssignRoleDialog,
+    closeAssignRoleDialog,
     openRemoveRoleDialog,
     setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,

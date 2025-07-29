@@ -245,7 +245,12 @@ export class UserManagementService {
   /**
    * Remove a role from a user
    */
-  async removeRole(accountId: string, contactId: string, roleId: string): Promise<void> {
+  async removeRole(
+    accountId: string,
+    contactId: string,
+    roleId: string,
+    roleData: string,
+  ): Promise<void> {
     const response = await fetch(
       `/api/accounts/${accountId}/contacts/${contactId}/roles/${roleId}`,
       {
@@ -255,7 +260,7 @@ export class UserManagementService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          roleData: accountId,
+          roleData: roleData,
         }),
       },
     );

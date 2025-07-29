@@ -80,7 +80,7 @@ export interface UserSearchParams {
 export interface UserTableProps {
   users: User[];
   loading: boolean;
-  onAssignRole: (user: User) => void;
+  onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
   canManageUsers: boolean;
   page: number;
@@ -108,7 +108,7 @@ export interface UserSearchBarProps {
 export interface UserCardProps {
   user: User;
   canManageUsers: boolean;
-  onAssignRole: (user: User) => void;
+  onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -139,6 +139,9 @@ export interface AssignRoleDialogProps {
   onRoleChange: (roleId: string) => void;
   loading: boolean;
   accountId: string;
+  // Pre-population props
+  preselectedUser?: User | null;
+  isUserReadonly?: boolean;
   // Context data props
   leagues?: League[];
   teams?: Team[];
@@ -162,7 +165,7 @@ export interface RemoveRoleDialogProps {
 export interface UserActionsProps {
   user: User;
   canManageUsers: boolean;
-  onAssignRole: (user: User) => void;
+  onAssignRole: (user: User) => Promise<void>;
 }
 
 // Hook return types
@@ -207,7 +210,8 @@ export interface UseUserManagementReturn {
   handleRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAssignRole: () => void;
   handleRemoveRole: () => void;
-  openAssignRoleDialog: (user: User) => void;
+  openAssignRoleDialog: (user: User) => Promise<void>;
+  closeAssignRoleDialog: () => void;
   openRemoveRoleDialog: (user: User, role: UserRole) => void;
   setAssignRoleDialogOpen: (open: boolean) => void;
   setRemoveRoleDialogOpen: (open: boolean) => void;

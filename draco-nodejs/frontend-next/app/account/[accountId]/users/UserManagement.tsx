@@ -61,9 +61,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     handleAssignRole,
     handleRemoveRole,
     openAssignRoleDialog,
+    closeAssignRoleDialog,
     openRemoveRoleDialog,
     setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,
+    setSelectedUser,
     setSelectedRole,
     setNewUserContactId,
     setSelectedLeagueId,
@@ -90,6 +92,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={async () => {
+              setSelectedUser(null); // Clear any preselected user
+              setNewUserContactId(''); // Clear contact ID
               setAssignRoleDialogOpen(true);
               await loadContextData();
             }}
@@ -156,7 +160,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
       {/* Dialog Sections */}
       <AssignRoleDialog
         open={assignRoleDialogOpen}
-        onClose={() => setAssignRoleDialogOpen(false)}
+        onClose={closeAssignRoleDialog}
         onAssign={handleAssignRole}
         selectedRole={selectedRole}
         newUserContactId={newUserContactId}
@@ -165,6 +169,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onRoleChange={setSelectedRole}
         loading={formLoading}
         accountId={accountId}
+        // Pre-population props
+        preselectedUser={selectedUser}
+        isUserReadonly={!!selectedUser}
         // Context data props
         leagues={leagues}
         teams={teams}
