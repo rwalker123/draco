@@ -2,15 +2,13 @@
 // Handles all role-related operations including contact roles and global roles
 
 import { PrismaClient } from '@prisma/client';
+import { ContactRole, UserRoles, RoleCheckResult, RoleContext, RoleType } from '../types/roles';
 import {
-  ContactRole,
-  UserRoles,
-  RoleCheckResult,
-  RoleContext,
-  ROLE_PERMISSIONS,
-  RoleType,
-} from '../types/roles';
-import { ROLE_IDS, validateRoleAssignment, hasRoleOrHigher } from '../config/roles';
+  ROLE_IDS,
+  ROLE_PERMISSIONS_BY_ID,
+  validateRoleAssignment,
+  hasRoleOrHigher,
+} from '../config/roles';
 import { IRoleService } from '../interfaces/roleInterfaces';
 
 export class RoleService implements IRoleService {
@@ -48,12 +46,12 @@ export class RoleService implements IRoleService {
     try {
       const userRoles = await this.prisma.aspnetuserroles.findMany({
         where: { userid: userId },
-        include: {
-          aspnetroles: true,
+        select: {
+          roleid: true,
         },
       });
 
-      return userRoles.map((ur: { aspnetroles: { name: string } }) => ur.aspnetroles.name);
+      return userRoles.map((ur) => ur.roleid);
     } catch (error) {
       console.error('Error getting global roles:', error);
       throw error;
@@ -238,7 +236,7 @@ export class RoleService implements IRoleService {
 
       // Check global roles first
       for (const globalRole of userRoles.globalRoles) {
-        const rolePerms = ROLE_PERMISSIONS[globalRole];
+        const rolePerms = ROLE_PERMISSIONS_BY_ID[globalRole];
         if (
           rolePerms &&
           (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
@@ -250,7 +248,7 @@ export class RoleService implements IRoleService {
       // Check contact roles
       for (const contactRole of userRoles.contactRoles) {
         if (this.validateRoleContext(contactRole, context)) {
-          const rolePerms = ROLE_PERMISSIONS[contactRole.roleId];
+          const rolePerms = ROLE_PERMISSIONS_BY_ID[contactRole.roleId];
           if (
             rolePerms &&
             (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
