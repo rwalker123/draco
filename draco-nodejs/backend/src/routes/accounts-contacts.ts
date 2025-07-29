@@ -76,32 +76,59 @@ router.post(
   routeProtection.requirePermission('account.roles.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
-    const { roleId, roleData } = req.body;
+    const { roleId, roleData, seasonId } = req.body;
 
-    if (!roleId || !roleData) {
+    if (!roleId || roleData === undefined || roleData === null) {
       throw new ValidationError('Role ID and role data are required');
     }
 
-    const assignedRole = await roleService.assignRole(
-      req.user!.id,
-      contactId,
-      roleId,
-      BigInt(roleData),
-      accountId,
-    );
+    // Validate roleData is a valid number/bigint
+    let roleDataBigInt: bigint;
+    try {
+      roleDataBigInt = BigInt(roleData);
+    } catch (error) {
+      throw new ValidationError('Role data must be a valid numeric ID');
+    }
 
-    res.status(201).json({
-      success: true,
-      data: {
-        assignedRole: {
-          id: assignedRole.id.toString(),
-          contactId: assignedRole.contactId.toString(),
-          roleId: assignedRole.roleId,
-          roleData: assignedRole.roleData.toString(),
-          accountId: assignedRole.accountId.toString(),
+    // Validate seasonId if provided
+    let seasonIdBigInt: bigint | undefined;
+    if (seasonId !== undefined && seasonId !== null) {
+      try {
+        seasonIdBigInt = BigInt(seasonId);
+      } catch (error) {
+        throw new ValidationError('Season ID must be a valid numeric ID');
+      }
+    }
+
+    try {
+      const assignedRole = await roleService.assignRole(
+        req.user!.id,
+        contactId,
+        roleId,
+        roleDataBigInt,
+        accountId,
+        seasonIdBigInt,
+      );
+
+      res.status(201).json({
+        success: true,
+        data: {
+          assignedRole: {
+            id: assignedRole.id.toString(),
+            contactId: assignedRole.contactId.toString(),
+            roleId: assignedRole.roleId,
+            roleData: assignedRole.roleData.toString(),
+            accountId: assignedRole.accountId.toString(),
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      // Re-throw with more context if it's a validation error from roleService
+      if (error instanceof Error && error.message.includes('roleData must be')) {
+        throw new ValidationError(error.message);
+      }
+      throw error;
+    }
   }),
 );
 
