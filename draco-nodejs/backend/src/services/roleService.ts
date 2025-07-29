@@ -274,6 +274,7 @@ export class RoleService implements IRoleService {
     roleId: string,
     roleData: bigint,
     accountId: bigint,
+    seasonId?: bigint,
   ): Promise<ContactRole> {
     try {
       // Validate that assigner has permission to assign this role
@@ -285,6 +286,69 @@ export class RoleService implements IRoleService {
 
       if (!validateRoleAssignment(assignerRoleNames, roleId, { accountId })) {
         throw new Error('Insufficient permissions to assign this role');
+      }
+
+      // Validate role-specific data requirements
+      if (
+        roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ||
+        roleId === ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]
+      ) {
+        // Account roles: roleData must be the accountId
+        if (roleData !== accountId) {
+          throw new Error(
+            `For ${roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ? 'AccountAdmin' : 'AccountPhotoAdmin'} role, roleData must be the accountId (${accountId}), but received ${roleData}`,
+          );
+        }
+      } else if (roleId === ROLE_IDS[RoleType.LEAGUE_ADMIN]) {
+        // League role: seasonId is required
+        if (!seasonId) {
+          throw new Error('For LeagueAdmin role, seasonId is required');
+        }
+        // roleData must be a valid leagueSeasonId
+        const leagueSeason = await this.prisma.leagueseason.findFirst({
+          where: {
+            id: roleData,
+            seasonid: seasonId,
+            league: {
+              accountid: accountId,
+            },
+          },
+          include: {
+            league: true,
+          },
+        });
+        if (!leagueSeason) {
+          throw new Error(
+            `For LeagueAdmin role, roleData must be a valid leagueSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
+          );
+        }
+      } else if (
+        roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ||
+        roleId === ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]
+      ) {
+        // Team roles: seasonId is required
+        if (!seasonId) {
+          throw new Error(
+            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? 'TeamAdmin' : 'TeamPhotoAdmin'} role, seasonId is required`,
+          );
+        }
+        // roleData must be a valid teamSeasonId
+        const teamSeason = await this.prisma.teamsseason.findFirst({
+          where: {
+            id: roleData,
+            leagueseason: {
+              seasonid: seasonId,
+              league: {
+                accountid: accountId,
+              },
+            },
+          },
+        });
+        if (!teamSeason) {
+          throw new Error(
+            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? 'TeamAdmin' : 'TeamPhotoAdmin'} role, roleData must be a valid teamSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
+          );
+        }
       }
 
       // Check if role already exists

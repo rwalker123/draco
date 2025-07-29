@@ -143,12 +143,6 @@ export class ContactService {
 
     const accountOwnerContactId = ownerContactResult[0]?.id?.toString() || null;
 
-    // Debug logging for account owner identification
-    console.log(
-      `ContactService: Account ${accountId} - Owner Contact ID: ${accountOwnerContactId}`,
-    );
-    console.log(`ContactService: Account ${accountId} - Total contacts in query: ${rows.length}`);
-
     // Transform the flat rows into the desired structure
     return ContactService.transformContactRows(rows, accountId, accountOwnerContactId, pagination);
   }
