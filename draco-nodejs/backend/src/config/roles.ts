@@ -17,6 +17,18 @@ export const ROLE_IDS: Record<string, string> = {
 // These will be populated from the database during initialization
 export const ROLE_NAMES: Record<string, string> = {};
 
+// Role assignment rules by ID (populated during initialization)
+export const ROLE_ASSIGNMENT_RULES_BY_ID: Record<string, string[]> = {};
+
+// Role inheritance rules by ID (populated during initialization)
+export const ROLE_INHERITANCE_BY_ID: Record<string, string[]> = {};
+
+// Role permissions by ID (populated during initialization)
+export const ROLE_PERMISSIONS_BY_ID: Record<
+  string,
+  { roleId: string; permissions: string[]; context: string }
+> = {};
+
 // Role context types
 export enum RoleContextType {
   GLOBAL = 'global',
@@ -83,7 +95,8 @@ export const validateRoleAssignment = (
   targetRole: string,
   _context: RoleDataContext,
 ): boolean => {
-  const allowedAssigners = ROLE_ASSIGNMENT_RULES[targetRole] || [];
+  // Now we receive role IDs, so use the ID-based rules
+  const allowedAssigners = ROLE_ASSIGNMENT_RULES_BY_ID[targetRole] || [];
   console.log('allowedAssigners:', allowedAssigners);
   const isAllowed = allowedAssigners.some((role: string) => assignerRoles.includes(role));
   console.log('validateRoleAssignment:', assignerRoles, targetRole, _context);
@@ -92,7 +105,8 @@ export const validateRoleAssignment = (
 };
 
 export const getInheritedRoles = (role: string): string[] => {
-  return ROLE_INHERITANCE[role] || [];
+  // Now we receive role IDs, so use the ID-based inheritance
+  return ROLE_INHERITANCE_BY_ID[role] || [];
 };
 
 export const hasRoleOrHigher = (userRoles: string[], requiredRole: string): boolean => {
@@ -111,6 +125,9 @@ export const hasRoleOrHigher = (userRoles: string[], requiredRole: string): bool
 
   return false;
 };
+
+// Import ROLE_PERMISSIONS from types to use during initialization
+import { ROLE_PERMISSIONS } from '../types/roles';
 
 // Initialize role IDs from database
 export const initializeRoleIds = async (prisma: {
@@ -134,6 +151,46 @@ export const initializeRoleIds = async (prisma: {
         ROLE_NAMES[role.id] = role.name;
       }
     });
+
+    // Populate ID-based assignment and inheritance rules
+    for (const [roleName, allowedAssigners] of Object.entries(ROLE_ASSIGNMENT_RULES)) {
+      const roleId = ROLE_IDS[roleName];
+      if (roleId) {
+        ROLE_ASSIGNMENT_RULES_BY_ID[roleId] = allowedAssigners
+          .map((name) => ROLE_IDS[name])
+          .filter(Boolean);
+      }
+    }
+
+    for (const [roleName, inheritedRoles] of Object.entries(ROLE_INHERITANCE)) {
+      const roleId = ROLE_IDS[roleName];
+      if (roleId) {
+        ROLE_INHERITANCE_BY_ID[roleId] = inheritedRoles
+          .map((name) => ROLE_IDS[name])
+          .filter(Boolean);
+      }
+    }
+
+    // Populate ID-based permissions
+    for (const [roleName, rolePermission] of Object.entries(ROLE_PERMISSIONS)) {
+      const roleId = ROLE_IDS[roleName];
+      if (roleId) {
+        ROLE_PERMISSIONS_BY_ID[roleId] = rolePermission;
+      }
+    }
+
+    // Validate that all expected roles were loaded
+    const missingRoles = Object.entries(ROLE_IDS).filter(([, id]) => !id);
+    if (missingRoles.length > 0) {
+      const missingRoleNames = missingRoles.map(([name]) => name);
+      console.warn(`⚠️  Some roles were not found in database: ${missingRoleNames.join(', ')}`);
+    }
+
+    console.log(
+      '✅ Role IDs initialized successfully:',
+      Object.keys(ROLE_IDS).length,
+      'roles loaded',
+    );
   } catch (error) {
     console.error('❌ Failed to initialize role IDs:', error);
     throw error;
