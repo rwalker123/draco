@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { useRole } from '../context/RoleContext';
+import { ROLE_NAME_TO_ID } from '@/utils/roleUtils';
 
 interface RoleBasedNavigationProps {
   children: ReactNode;
@@ -19,7 +20,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
   requiredRole,
   requiredPermission,
   context,
-  fallback = null
+  fallback = null,
 }) => {
   const { hasRole, hasPermission } = useRole();
 
@@ -43,25 +44,22 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({
 };
 
 // Convenience components for common navigation patterns
-export const AdminOnly: React.FC<{ children: ReactNode; fallback?: ReactNode }> = ({ 
-  children, 
-  fallback 
+export const AdminOnly: React.FC<{ children: ReactNode; fallback?: ReactNode }> = ({
+  children,
+  fallback,
 }) => (
-  <RoleBasedNavigation 
-    requiredRole="93DAC465-4C64-4422-B444-3CE79C549329"
-    fallback={fallback}
-  >
+  <RoleBasedNavigation requiredRole={ROLE_NAME_TO_ID['Administrator']} fallback={fallback}>
     {children}
   </RoleBasedNavigation>
 );
 
-export const AccountAdminOnly: React.FC<{ 
-  children: ReactNode; 
+export const AccountAdminOnly: React.FC<{
+  children: ReactNode;
   accountId?: string;
   fallback?: ReactNode;
 }> = ({ children, accountId, fallback }) => (
-  <RoleBasedNavigation 
-    requiredRole="5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A"
+  <RoleBasedNavigation
+    requiredRole={ROLE_NAME_TO_ID['AccountAdmin']}
     context={accountId ? { accountId } : undefined}
     fallback={fallback}
   >
@@ -69,13 +67,13 @@ export const AccountAdminOnly: React.FC<{
   </RoleBasedNavigation>
 );
 
-export const LeagueAdminOnly: React.FC<{ 
-  children: ReactNode; 
+export const LeagueAdminOnly: React.FC<{
+  children: ReactNode;
   leagueId?: string;
   fallback?: ReactNode;
 }> = ({ children, leagueId, fallback }) => (
-  <RoleBasedNavigation 
-    requiredRole="672DDF06-21AC-4D7C-B025-9319CC69281A"
+  <RoleBasedNavigation
+    requiredRole={ROLE_NAME_TO_ID['LeagueAdmin']}
     context={leagueId ? { leagueId } : undefined}
     fallback={fallback}
   >
@@ -83,13 +81,13 @@ export const LeagueAdminOnly: React.FC<{
   </RoleBasedNavigation>
 );
 
-export const TeamAdminOnly: React.FC<{ 
-  children: ReactNode; 
+export const TeamAdminOnly: React.FC<{
+  children: ReactNode;
   teamId?: string;
   fallback?: ReactNode;
 }> = ({ children, teamId, fallback }) => (
-  <RoleBasedNavigation 
-    requiredRole="777D771B-1CBA-4126-B8F3-DD7F3478D40E"
+  <RoleBasedNavigation
+    requiredRole={ROLE_NAME_TO_ID['TeamAdmin']}
     context={teamId ? { teamId } : undefined}
     fallback={fallback}
   >
@@ -97,17 +95,13 @@ export const TeamAdminOnly: React.FC<{
   </RoleBasedNavigation>
 );
 
-export const PermissionBasedNavigation: React.FC<{ 
-  children: ReactNode; 
+export const PermissionBasedNavigation: React.FC<{
+  children: ReactNode;
   permission: string;
   context?: RoleBasedNavigationProps['context'];
   fallback?: ReactNode;
 }> = ({ children, permission, context, fallback }) => (
-  <RoleBasedNavigation 
-    requiredPermission={permission}
-    context={context}
-    fallback={fallback}
-  >
+  <RoleBasedNavigation requiredPermission={permission} context={context} fallback={fallback}>
     {children}
   </RoleBasedNavigation>
-); 
+);

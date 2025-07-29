@@ -7,7 +7,7 @@ import { ServiceFactory } from '../lib/serviceFactory';
 import { Prisma } from '@prisma/client';
 import { isEmail } from 'validator';
 import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
-import { ContactRole } from '../types/roles';
+import { ContactRole, RoleType } from '../types/roles';
 import { asyncHandler } from '../utils/asyncHandler';
 import {
   ValidationError,
@@ -27,6 +27,7 @@ import { getLogoUrl } from '../config/logo';
 import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
 import { ContactService } from '../services/contactService';
+import { ROLE_IDS } from '../config/roles';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -372,7 +373,7 @@ router.get(
     const userId = req.user!.id;
 
     // Check if user is global administrator
-    const isAdmin = await roleService.hasRole(userId, 'Administrator', {
+    const isAdmin = await roleService.hasRole(userId, ROLE_IDS[RoleType.ADMINISTRATOR], {
       accountId: undefined,
     });
 

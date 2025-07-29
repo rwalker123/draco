@@ -13,6 +13,10 @@ export const ROLE_IDS: Record<string, string> = {
   [RoleType.TEAM_PHOTO_ADMIN]: '',
 };
 
+// Role name mappings (these should match the actual names in the aspnetroles table)
+// These will be populated from the database during initialization
+export const ROLE_NAMES: Record<string, string> = {};
+
 // Role context types
 export enum RoleContextType {
   GLOBAL = 'global',
@@ -80,7 +84,11 @@ export const validateRoleAssignment = (
   _context: RoleDataContext,
 ): boolean => {
   const allowedAssigners = ROLE_ASSIGNMENT_RULES[targetRole] || [];
-  return allowedAssigners.some((role: string) => assignerRoles.includes(role));
+  console.log('allowedAssigners:', allowedAssigners);
+  const isAllowed = allowedAssigners.some((role: string) => assignerRoles.includes(role));
+  console.log('validateRoleAssignment:', assignerRoles, targetRole, _context);
+  console.log('isAllowed:', isAllowed);
+  return isAllowed;
 };
 
 export const getInheritedRoles = (role: string): string[] => {
@@ -123,6 +131,7 @@ export const initializeRoleIds = async (prisma: {
     roles.forEach((role: { id: string; name: string }) => {
       if (Object.prototype.hasOwnProperty.call(ROLE_IDS, role.name)) {
         ROLE_IDS[role.name] = role.id;
+        ROLE_NAMES[role.id] = role.name;
       }
     });
   } catch (error) {
