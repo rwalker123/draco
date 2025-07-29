@@ -8,6 +8,7 @@ import {
   RoleCheckResult,
   RoleContext,
   ROLE_PERMISSIONS,
+  RoleType,
 } from '../types/roles';
 import { ROLE_IDS, validateRoleAssignment, hasRoleOrHigher } from '../config/roles';
 import { IRoleService } from '../interfaces/roleInterfaces';
@@ -108,7 +109,7 @@ export class RoleService implements IRoleService {
       }
 
       // TeamAdmin roleId constant (should match your config)
-      const TEAM_ADMIN_ROLE_ID = '777D771B-1CBA-4126-B8F3-DD7F3478D40E';
+      const TEAM_ADMIN_ROLE_ID = ROLE_IDS[RoleType.TEAM_ADMIN];
 
       // Build a set of teamSeasonIds where the user already has TeamAdmin via contactRoles
       const existingTeamAdminIds = new Set(
@@ -430,11 +431,15 @@ export class RoleService implements IRoleService {
    * Get role level based on role ID
    */
   private getRoleLevel(roleId: string): 'global' | 'account' | 'team' | 'league' | 'none' {
-    if (roleId === ROLE_IDS['Administrator']) return 'global';
-    if (roleId === ROLE_IDS['AccountAdmin'] || roleId === ROLE_IDS['AccountPhotoAdmin'])
+    if (roleId === ROLE_IDS[RoleType.ADMINISTRATOR]) return 'global';
+    if (
+      roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ||
+      roleId === ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]
+    )
       return 'account';
-    if (roleId === ROLE_IDS['TeamAdmin'] || roleId === ROLE_IDS['TeamPhotoAdmin']) return 'team';
-    if (roleId === ROLE_IDS['LeagueAdmin']) return 'league';
+    if (roleId === ROLE_IDS[RoleType.TEAM_ADMIN] || roleId === ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN])
+      return 'team';
+    if (roleId === ROLE_IDS[RoleType.LEAGUE_ADMIN]) return 'league';
     return 'none';
   }
 
