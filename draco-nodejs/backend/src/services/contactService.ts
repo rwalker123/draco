@@ -6,17 +6,8 @@ import {
   ContactResponse,
   ContactWithRoleRow,
 } from '../interfaces/contactInterfaces';
-
-// Role GUID constants
-const ROLE_GUIDS = {
-  TEAM_ADMIN: '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-  TEAM_PHOTO_ADMIN: '55FD3262-343F-4000-9561-6BB7F658DEB7',
-  LEAGUE_ADMIN: '672DDF06-21AC-4D7C-B025-9319CC69281A',
-  ACCOUNT_ADMIN: '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
-  ACCOUNT_PHOTO_ADMIN: 'a87ea9a3-47e2-49d1-9e1e-c35358d1a677',
-  PHOTO_ADMIN: '05BEC889-3499-4DE1-B44F-4EED41412B3D',
-  ADMINISTRATOR: '93DAC465-4C64-4422-B444-3CE79C549329',
-} as const;
+import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
+import { RoleType } from '../types/roles';
 
 export class ContactService {
   /**
@@ -48,19 +39,18 @@ export class ContactService {
         contacts.userid,
         CASE
           -- Team roles: Join teamsseason to get team name, validate season
-          WHEN cr.roleid = ${ROLE_GUIDS.TEAM_ADMIN} THEN ts.name
-          WHEN cr.roleid = ${ROLE_GUIDS.TEAM_PHOTO_ADMIN} THEN ts.name
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.TEAM_ADMIN]} THEN ts.name
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]} THEN ts.name
 
           -- League role: Join leagueseason to get league name, validate season
-          WHEN cr.roleid = ${ROLE_GUIDS.LEAGUE_ADMIN} THEN l.name
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]} THEN l.name
 
           -- Account roles: No additional name needed (validated by roledata = accountId)
-          WHEN cr.roleid = ${ROLE_GUIDS.ACCOUNT_ADMIN} THEN 'Account Admin'
-          WHEN cr.roleid = ${ROLE_GUIDS.ACCOUNT_PHOTO_ADMIN} THEN 'Account Photo Admin'
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.ACCOUNT_ADMIN]} THEN 'Account Admin'
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]} THEN 'Account Photo Admin'
 
           -- Global roles: No additional restrictions
-          WHEN cr.roleid = ${ROLE_GUIDS.PHOTO_ADMIN} THEN 'Photo Admin'
-          WHEN cr.roleid = ${ROLE_GUIDS.ADMINISTRATOR} THEN 'Administrator'
+          WHEN cr.roleid = ${ROLE_IDS[RoleType.ADMINISTRATOR]} THEN 'Administrator'
 
           ELSE NULL
         END AS role_context_name,
@@ -75,33 +65,33 @@ export class ContactService {
           cr.roleid IS NULL  -- This won't match but keeps structure
           
           -- Account roles: Validate roledata matches accountId
-          OR (cr.roleid IN (${ROLE_GUIDS.ACCOUNT_ADMIN}, ${ROLE_GUIDS.ACCOUNT_PHOTO_ADMIN}) AND cr.roledata = ${accountId})
+          OR (cr.roleid IN (${ROLE_IDS[RoleType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
           
           -- Global roles: No additional restrictions
-          OR cr.roleid IN (${ROLE_GUIDS.PHOTO_ADMIN}, ${ROLE_GUIDS.ADMINISTRATOR})
+          OR cr.roleid = ${ROLE_IDS[RoleType.ADMINISTRATOR]}
           
           -- Team and League roles: Will be validated by subsequent joins
-          OR cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN}, ${ROLE_GUIDS.LEAGUE_ADMIN})
+          OR cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]}, ${ROLE_IDS[RoleType.LEAGUE_ADMIN]})
         )
       )
       -- Team roles: Join to teamsseason and validate season
       LEFT JOIN teamsseason ts ON (
-        cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN})
+        cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]})
         AND cr.roledata = ts.id
       )
       LEFT JOIN leagueseason ls_ts ON (
-        cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN})
+        cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]})
         AND ts.leagueseasonid = ls_ts.id
         AND ls_ts.seasonid = ${seasonId}
       )
       -- League role: Join to leagueseason and validate season
       LEFT JOIN leagueseason ls ON (
-        cr.roleid = ${ROLE_GUIDS.LEAGUE_ADMIN}
+        cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]}
         AND cr.roledata = ls.id
         AND ls.seasonid = ${seasonId}
       )
       LEFT JOIN league l ON (
-        cr.roleid = ${ROLE_GUIDS.LEAGUE_ADMIN}
+        cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]}
         AND ls.leagueid = l.id
       )
       WHERE
@@ -127,16 +117,13 @@ export class ContactService {
               : Prisma.empty
           }
           -- Include valid team roles (must have valid season)
-          (cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN}) AND ls_ts.id IS NOT NULL)
-          
-          -- Include valid team roles (must have valid season)
-          OR (cr.roleid IN (${ROLE_GUIDS.TEAM_ADMIN}, ${ROLE_GUIDS.TEAM_PHOTO_ADMIN}) AND ls_ts.id IS NOT NULL)
+          (cr.roleid IN (${ROLE_IDS[RoleType.TEAM_ADMIN]}, ${ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]}) AND ls_ts.id IS NOT NULL)
           
           -- Include valid league roles (must have valid season)
-          OR (cr.roleid = ${ROLE_GUIDS.LEAGUE_ADMIN} AND ls.id IS NOT NULL)
+          OR (cr.roleid = ${ROLE_IDS[RoleType.LEAGUE_ADMIN]} AND ls.id IS NOT NULL)
           
           -- Include valid account roles
-          OR (cr.roleid IN (${ROLE_GUIDS.ACCOUNT_ADMIN}, ${ROLE_GUIDS.ACCOUNT_PHOTO_ADMIN}) AND cr.roledata = ${accountId})
+          OR (cr.roleid IN (${ROLE_IDS[RoleType.ACCOUNT_ADMIN]}, ${ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]}) AND cr.roledata = ${accountId})
         )
       ORDER BY contacts.lastname, contacts.firstname, cr.roleid
       ${pagination ? Prisma.sql`LIMIT ${pagination.limit + 1} OFFSET ${(pagination.page - 1) * pagination.limit}` : Prisma.empty}
@@ -324,30 +311,7 @@ export class ContactService {
         const contact = contactMap.get(contactId)!;
 
         // Map role ID to role name
-        let roleName = 'Unknown';
-        switch (row.roleid) {
-          case ROLE_GUIDS.ADMINISTRATOR:
-            roleName = 'Administrator';
-            break;
-          case ROLE_GUIDS.ACCOUNT_ADMIN:
-            roleName = 'AccountAdmin';
-            break;
-          case ROLE_GUIDS.ACCOUNT_PHOTO_ADMIN:
-            roleName = 'AccountPhotoAdmin';
-            break;
-          case ROLE_GUIDS.LEAGUE_ADMIN:
-            roleName = 'LeagueAdmin';
-            break;
-          case ROLE_GUIDS.TEAM_ADMIN:
-            roleName = 'TeamAdmin';
-            break;
-          case ROLE_GUIDS.TEAM_PHOTO_ADMIN:
-            roleName = 'TeamPhotoAdmin';
-            break;
-          case ROLE_GUIDS.PHOTO_ADMIN:
-            roleName = 'PhotoAdmin';
-            break;
-        }
+        const roleName = ROLE_NAMES[row.roleid];
 
         const role = {
           id: `${row.roleid}-${row.roledata}`,
@@ -377,13 +341,13 @@ export class ContactService {
       if (contact) {
         // Check if AccountAdmin role already exists to prevent duplicates
         const hasAccountAdminRole = contact.contactroles.some(
-          (role) => role.roleId === ROLE_GUIDS.ACCOUNT_ADMIN,
+          (role) => role.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN],
         );
 
         if (!hasAccountAdminRole) {
           contact.contactroles.push({
             id: `owner-account-admin-${accountOwnerContactId}`,
-            roleId: ROLE_GUIDS.ACCOUNT_ADMIN,
+            roleId: ROLE_IDS[RoleType.ACCOUNT_ADMIN],
             roleName: 'AccountAdmin',
             roleData: accountId.toString(),
           });
