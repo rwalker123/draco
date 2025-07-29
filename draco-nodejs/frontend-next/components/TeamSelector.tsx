@@ -74,7 +74,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
     return teams
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((team) => (
-        <MenuItem key={team.id} value={team.teamId}>
+        <MenuItem key={team.id} value={team.id}>
           <Typography variant="body1">{team.name}</Typography>
         </MenuItem>
       ));
@@ -108,7 +108,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
             .sort((a, b) => a.name.localeCompare(b.name))
             .forEach((team) => {
               menuItems.push(
-                <MenuItem key={team.id} value={team.teamId}>
+                <MenuItem key={team.id} value={team.id}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <Typography variant="body1" fontWeight="medium">
                       {team.name}
@@ -173,7 +173,7 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .forEach((team) => {
                   menuItems.push(
-                    <MenuItem key={team.id} value={team.teamId} sx={{ pl: 4 }}>
+                    <MenuItem key={team.id} value={team.id} sx={{ pl: 4 }}>
                       <Typography variant="body1">{team.name}</Typography>
                     </MenuItem>,
                   );

@@ -58,21 +58,25 @@ export class UserManagementService {
 
     // Transform contacts to users format for frontend compatibility
     // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => ({
-      id: contact.id,
-      firstName: contact.firstName,
-      lastName: contact.lastName,
-      email: contact.email,
-      userId: contact.userId,
-      roles:
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => {
+      const transformedRoles =
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
           roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
           contextName: cr.contextName,
-        })) || [],
-    }));
+        })) || [];
+
+      return {
+        id: contact.id,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        userId: contact.userId,
+        roles: transformedRoles,
+      };
+    });
 
     return {
       users: usersWithRoles,
@@ -122,21 +126,25 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => ({
-      id: contact.id,
-      firstName: contact.firstName,
-      lastName: contact.lastName,
-      email: contact.email,
-      userId: contact.userId,
-      roles:
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => {
+      const transformedRoles =
         contact.contactroles?.map((cr: ContactRole) => ({
           id: cr.id,
           roleId: cr.roleId,
           roleName: cr.roleName || getRoleDisplayName(cr.roleId),
           roleData: cr.roleData,
           contextName: cr.contextName,
-        })) || [],
-    }));
+        })) || [];
+
+      return {
+        id: contact.id,
+        firstName: contact.firstName,
+        lastName: contact.lastName,
+        email: contact.email,
+        userId: contact.userId,
+        roles: transformedRoles,
+      };
+    });
 
     return usersWithRoles;
   }
@@ -202,13 +210,22 @@ export class UserManagementService {
   /**
    * Assign a role to a user
    */
-  async assignRole(accountId: string, contactId: string, roleId: string): Promise<void> {
-    console.log('UserManagementService.assignRole called with:', {
-      accountId,
-      contactId,
+  async assignRole(
+    accountId: string,
+    contactId: string,
+    roleId: string,
+    roleData: string,
+    seasonId?: string | null,
+  ): Promise<void> {
+    const body: { roleId: string; roleData: string; seasonId?: string } = {
       roleId,
-      hasToken: !!this.token,
-    });
+      roleData,
+    };
+
+    // Include seasonId if provided
+    if (seasonId) {
+      body.seasonId = seasonId;
+    }
 
     const response = await fetch(`/api/accounts/${accountId}/users/${contactId}/roles`, {
       method: 'POST',
@@ -216,22 +233,13 @@ export class UserManagementService {
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        roleId,
-        roleData: accountId,
-      }),
+      body: JSON.stringify(body),
     });
-
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Error response:', errorData);
       throw new Error(errorData.message || `Failed to assign role (${response.status})`);
     }
-
-    console.log('Role assigned successfully');
   }
 
   /**

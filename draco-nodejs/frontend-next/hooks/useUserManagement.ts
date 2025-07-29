@@ -304,30 +304,68 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setFormLoading(true);
       setError(null);
 
+      // Determine the correct roleData based on the role type
+      let roleData: string = accountId;
+      let needsSeasonId = false;
+
+      // Use the role IDs from roleUtils
+      const ROLE_IDS = {
+        ACCOUNT_ADMIN: '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
+        ACCOUNT_PHOTO_ADMIN: 'a87ea9a3-47e2-49d1-9e1e-c35358d1a677',
+        LEAGUE_ADMIN: '672DDF06-21AC-4D7C-B025-9319CC69281A',
+        TEAM_ADMIN: '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
+        TEAM_PHOTO_ADMIN: '55FD3262-343F-4000-9561-6BB7F658DEB7',
+      };
+
+      switch (selectedRole) {
+        case ROLE_IDS.LEAGUE_ADMIN:
+          if (!selectedLeagueId) {
+            throw new Error('Please select a league');
+          }
+          roleData = selectedLeagueId;
+          needsSeasonId = true;
+          break;
+        case ROLE_IDS.TEAM_ADMIN:
+        case ROLE_IDS.TEAM_PHOTO_ADMIN:
+          if (!selectedTeamId) {
+            throw new Error('Please select a team');
+          }
+          roleData = selectedTeamId;
+          needsSeasonId = true;
+          break;
+        case ROLE_IDS.ACCOUNT_ADMIN:
+        case ROLE_IDS.ACCOUNT_PHOTO_ADMIN:
+          roleData = accountId;
+          break;
+        default:
+          // For any other roles, use accountId as default
+          roleData = accountId;
+      }
+
       console.log('Attempting to assign role:', {
         accountId,
         contactId: newUserContactId,
         roleId: selectedRole,
+        roleData,
+        seasonId: needsSeasonId ? currentSeasonId : undefined,
         userService: !!userService,
       });
 
-      // Debug: Check current user's roles
-      try {
-        const userRoles = await userService.getCurrentUserRoles(accountId);
-        console.log('Current user roles:', userRoles);
-        console.log('Global roles:', userRoles.globalRoles);
-        console.log('Contact roles:', userRoles.contactRoles);
-      } catch (roleError) {
-        console.error('Failed to get user roles:', roleError);
-      }
-
-      await userService.assignRole(accountId, newUserContactId, selectedRole);
+      await userService.assignRole(
+        accountId,
+        newUserContactId,
+        selectedRole,
+        roleData,
+        needsSeasonId ? currentSeasonId : undefined,
+      );
 
       setSuccess('Role assigned successfully');
       setAssignRoleDialogOpen(false);
       setSelectedUser(null);
       setSelectedRole('');
       setNewUserContactId('');
+      setSelectedLeagueId('');
+      setSelectedTeamId('');
       loadUsers(page);
     } catch (err) {
       console.error('Role assignment error:', err);
@@ -335,7 +373,17 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     } finally {
       setFormLoading(false);
     }
-  }, [selectedRole, newUserContactId, userService, accountId, page, loadUsers]);
+  }, [
+    selectedRole,
+    newUserContactId,
+    userService,
+    accountId,
+    selectedLeagueId,
+    selectedTeamId,
+    currentSeasonId,
+    page,
+    loadUsers,
+  ]);
 
   // Role removal handler
   const handleRemoveRole = useCallback(async () => {
