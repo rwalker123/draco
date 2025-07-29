@@ -45,60 +45,66 @@ interface RoleContext {
   seasonId?: string;
 }
 
-// Role hierarchy mapping
-const ROLE_HIERARCHY: Record<string, string[]> = {
-  '93DAC465-4C64-4422-B444-3CE79C549329': [
-    '93DAC465-4C64-4422-B444-3CE79C549329',
-    '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
-    '672DDF06-21AC-4D7C-B025-9319CC69281A',
-    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-  ], // Administrator
-  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': [
-    '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A',
-    '672DDF06-21AC-4D7C-B025-9319CC69281A',
-    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-  ], // AccountAdmin
-  '672DDF06-21AC-4D7C-B025-9319CC69281A': [
-    '672DDF06-21AC-4D7C-B025-9319CC69281A',
-    '777D771B-1CBA-4126-B8F3-DD7F3478D40E',
-  ], // LeagueAdmin
-  '777D771B-1CBA-4126-B8F3-DD7F3478D40E': ['777D771B-1CBA-4126-B8F3-DD7F3478D40E'], // TeamAdmin
-};
+interface RoleMetadata {
+  version: string;
+  timestamp: string;
+  hierarchy: Record<string, string[]>;
+  permissions: Record<string, { roleId: string; permissions: string[]; context: string }>;
+}
 
-// Role permissions mapping
-const ROLE_PERMISSIONS: Record<string, string[]> = {
-  '93DAC465-4C64-4422-B444-3CE79C549329': ['*'], // Administrator - all permissions
-  '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A': [
-    'account.manage',
-    'account.users.manage',
-    'account.roles.manage',
-    'league.manage',
-    'team.manage',
-    'player.manage',
-    'photo.manage',
-  ], // AccountAdmin
-  'a87ea9a3-47e2-49d1-9e1e-c35358d1a677': ['account.photos.manage', 'account.photos.view'], // AccountPhotoAdmin
-  '672DDF06-21AC-4D7C-B025-9319CC69281A': [
-    'league.manage',
-    'league.teams.manage',
-    'league.players.manage',
-    'league.schedule.manage',
-  ], // LeagueAdmin
-  '777D771B-1CBA-4126-B8F3-DD7F3478D40E': [
-    'team.manage',
-    'team.players.manage',
-    'team.stats.manage',
-  ], // TeamAdmin
-  '55FD3262-343F-4000-9561-6BB7F658DEB7': ['team.photos.manage', 'team.photos.view'], // TeamPhotoAdmin
-};
+// Cache keys for localStorage
+const ROLE_METADATA_CACHE_KEY = 'draco_role_metadata';
+const ROLE_METADATA_VERSION_KEY = 'draco_role_metadata_version';
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const { user, token } = useAuth();
   const [userRoles, setUserRoles] = useState<UserRoles | null>(null);
+  const [roleMetadata, setRoleMetadata] = useState<RoleMetadata | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch role metadata from API and cache in localStorage
+  const fetchRoleMetadata = useCallback(async (): Promise<RoleMetadata | null> => {
+    if (!token) return null;
+
+    try {
+      // Check if we have cached metadata
+      const cachedMetadata = localStorage.getItem(ROLE_METADATA_CACHE_KEY);
+      const cachedVersion = localStorage.getItem(ROLE_METADATA_VERSION_KEY);
+
+      if (cachedMetadata && cachedVersion) {
+        const parsedMetadata: RoleMetadata = JSON.parse(cachedMetadata);
+        // Use cached data if version matches
+        if (parsedMetadata.version === cachedVersion) {
+          return parsedMetadata;
+        }
+      }
+
+      // Fetch fresh metadata from API
+      const response = await axios.get('/api/roleTest/roles/metadata', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        const metadata: RoleMetadata = response.data.data;
+
+        // Cache the metadata
+        localStorage.setItem(ROLE_METADATA_CACHE_KEY, JSON.stringify(metadata));
+        localStorage.setItem(ROLE_METADATA_VERSION_KEY, metadata.version);
+
+        return metadata;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch role metadata');
+      }
+    } catch (err: unknown) {
+      console.error('Error fetching role metadata:', err);
+      // If API fails, show error and disable role checking
+      setError('Failed to load role permissions. Some features may be restricted.');
+      return null;
+    }
+  }, [token]);
 
   const fetchUserRoles = useCallback(
     async (accountId?: string) => {
@@ -106,7 +112,14 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
       setLoading(true);
       setError(null);
+
       try {
+        // Fetch role metadata first
+        const metadata = await fetchRoleMetadata();
+        if (metadata) {
+          setRoleMetadata(metadata);
+        }
+
         const url = accountId
           ? `/api/roleTest/user-roles?accountId=${accountId}`
           : `/api/roleTest/user-roles`;
@@ -130,7 +143,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
       }
     },
-    [token],
+    [token, fetchRoleMetadata],
   );
 
   useEffect(() => {
@@ -143,11 +156,12 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const clearRoles = () => {
     setUserRoles(null);
+    setRoleMetadata(null);
     setError(null);
   };
 
   const hasRole = (roleId: string, context?: RoleContext): boolean => {
-    if (!userRoles) return false;
+    if (!userRoles || !roleMetadata) return false;
 
     // Convert role name to ID if needed
     const actualRoleId = ROLE_NAME_TO_ID[roleId] || roleId;
@@ -183,7 +197,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasRoleOrHigher = (requiredRole: string): boolean => {
-    if (!userRoles) return false;
+    if (!userRoles || !roleMetadata) return false;
 
     // Convert required role to ID if needed
     const requiredRoleId = ROLE_NAME_TO_ID[requiredRole] || requiredRole;
@@ -191,7 +205,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     // Check global roles
     for (const globalRole of userRoles.globalRoles) {
       const globalRoleId = ROLE_NAME_TO_ID[globalRole] || globalRole;
-      const inheritedRoles = ROLE_HIERARCHY[globalRoleId] || [];
+      const inheritedRoles = roleMetadata.hierarchy[globalRoleId] || [];
       if (inheritedRoles.includes(requiredRoleId)) {
         return true;
       }
@@ -200,7 +214,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     // Check contact roles
     for (const contactRole of userRoles.contactRoles) {
       const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
-      const inheritedRoles = ROLE_HIERARCHY[contactRoleId] || [];
+      const inheritedRoles = roleMetadata.hierarchy[contactRoleId] || [];
       if (inheritedRoles.includes(requiredRoleId)) {
         return true;
       }
@@ -210,13 +224,16 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const hasPermission = (permission: string, context?: RoleContext): boolean => {
-    if (!userRoles) return false;
+    if (!userRoles || !roleMetadata) return false;
 
     // Check global roles first
     for (const globalRole of userRoles.globalRoles) {
       const globalRoleId = ROLE_NAME_TO_ID[globalRole] || globalRole;
-      const rolePerms = ROLE_PERMISSIONS[globalRoleId];
-      if (rolePerms && (rolePerms.includes('*') || rolePerms.includes(permission))) {
+      const rolePerms = roleMetadata.permissions[globalRoleId];
+      if (
+        rolePerms &&
+        (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
+      ) {
         return true;
       }
     }
@@ -235,8 +252,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const contactRoleId = ROLE_NAME_TO_ID[contactRole.roleId] || contactRole.roleId;
-      const rolePerms = ROLE_PERMISSIONS[contactRoleId];
-      if (rolePerms && (rolePerms.includes('*') || rolePerms.includes(permission))) {
+      const rolePerms = roleMetadata.permissions[contactRoleId];
+      if (
+        rolePerms &&
+        (rolePerms.permissions.includes('*') || rolePerms.permissions.includes(permission))
+      ) {
         return true;
       }
     }
