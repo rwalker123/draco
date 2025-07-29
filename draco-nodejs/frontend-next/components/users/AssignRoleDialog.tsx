@@ -13,13 +13,14 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Typography,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material';
 import { AssignRoleDialogProps } from '../../types/users';
 import ContactAutocomplete from '../ContactAutocomplete';
 import LeagueSelector from '../LeagueSelector';
 import TeamSelector from '../TeamSelector';
-import { getRoleDisplayName } from '../../utils/roleUtils';
+import { getRoleDisplayName, isTeamBasedRole, isLeagueBasedRole } from '../../utils/roleUtils';
 
 /**
  * AssignRoleDialog Component
@@ -36,6 +37,9 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   onRoleChange,
   loading,
   accountId,
+  // Pre-population props
+  preselectedUser,
+  isUserReadonly = false,
   // Context data props
   leagues = [],
   teams = [],
@@ -47,23 +51,49 @@ const AssignRoleDialog: React.FC<AssignRoleDialogProps> = ({
   contextDataLoading = false,
 }) => {
   // Determine which role is selected to show appropriate context selector
-  const selectedRoleData = roles.find((role) => role.id === selectedRole);
-  const roleDisplayName = selectedRoleData ? getRoleDisplayName(selectedRoleData.id) : '';
-  const isLeagueAdmin = roleDisplayName === 'League Administrator';
-  const isTeamAdmin = roleDisplayName === 'Team Administrator';
+  const isLeagueAdmin = selectedRole ? isLeagueBasedRole(selectedRole) : false;
+  const isTeamAdmin = selectedRole ? isTeamBasedRole(selectedRole) : false;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Assign Role to User</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <ContactAutocomplete
-            label="Select User"
-            value={newUserContactId}
-            onChange={onUserChange}
-            required
-            accountId={accountId}
-          />
+          {preselectedUser && isUserReadonly ? (
+            <Stack spacing={1}>
+              <Typography variant="body2" color="text.secondary">
+                Assigning role to:
+              </Typography>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                sx={{
+                  p: 2,
+                  bgcolor: 'grey.50',
+                  borderRadius: 1,
+                  border: '1px solid',
+                  borderColor: 'grey.300',
+                }}
+              >
+                <PersonIcon color="action" />
+                <Typography variant="subtitle2" fontWeight="bold">
+                  {preselectedUser.firstName} {preselectedUser.lastName}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ({preselectedUser.email})
+                </Typography>
+              </Stack>
+            </Stack>
+          ) : (
+            <ContactAutocomplete
+              label="Select User"
+              value={newUserContactId}
+              onChange={onUserChange}
+              required
+              accountId={accountId}
+            />
+          )}
           <FormControl fullWidth required>
             <InputLabel>Role</InputLabel>
             <Select
