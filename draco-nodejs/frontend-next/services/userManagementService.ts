@@ -165,9 +165,51 @@ export class UserManagementService {
   }
 
   /**
+   * Get current user's roles for debugging
+   */
+  async getCurrentUserRoles(accountId: string): Promise<{
+    userId: string;
+    username: string;
+    accountId: string;
+    globalRoles: string[];
+    contactRoles: Array<{
+      id: string;
+      contactId: string;
+      roleId: string;
+      roleData: string;
+      accountId: string;
+    }>;
+  }> {
+    const response = await fetch(`/api/roleTest/user-roles?accountId=${accountId}`, {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to load user roles');
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error('Failed to load user roles');
+    }
+
+    return data.data;
+  }
+
+  /**
    * Assign a role to a user
    */
   async assignRole(accountId: string, contactId: string, roleId: string): Promise<void> {
+    console.log('UserManagementService.assignRole called with:', {
+      accountId,
+      contactId,
+      roleId,
+      hasToken: !!this.token,
+    });
+
     const response = await fetch(`/api/accounts/${accountId}/users/${contactId}/roles`, {
       method: 'POST',
       headers: {
@@ -180,10 +222,16 @@ export class UserManagementService {
       }),
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || 'Failed to assign role');
+      console.error('Error response:', errorData);
+      throw new Error(errorData.message || `Failed to assign role (${response.status})`);
     }
+
+    console.log('Role assigned successfully');
   }
 
   /**

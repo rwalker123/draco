@@ -1,3 +1,6 @@
+// Import context data types
+import { League, Team, LeagueSeason } from '../services/contextDataService';
+
 // Backend API response types
 export interface ContactRole {
   id: string;
@@ -135,6 +138,16 @@ export interface AssignRoleDialogProps {
   onUserChange: (contactId: string) => void;
   onRoleChange: (roleId: string) => void;
   loading: boolean;
+  accountId: string;
+  // Context data props
+  leagues?: League[];
+  teams?: Team[];
+  leagueSeasons?: LeagueSeason[];
+  selectedLeagueId?: string;
+  selectedTeamId?: string;
+  onLeagueChange?: (leagueId: string) => void;
+  onTeamChange?: (teamId: string) => void;
+  contextDataLoading?: boolean;
 }
 
 export interface RemoveRoleDialogProps {
@@ -177,6 +190,14 @@ export interface UseUserManagementReturn {
   newUserContactId: string;
   formLoading: boolean;
 
+  // Context data states
+  leagues: League[];
+  teams: Team[];
+  leagueSeasons: LeagueSeason[];
+  selectedLeagueId: string;
+  selectedTeamId: string;
+  contextDataLoading: boolean;
+
   // Actions
   handleSearch: () => void;
   handleClearSearch: () => void;
@@ -194,9 +215,12 @@ export interface UseUserManagementReturn {
   setSelectedRole: (role: string) => void;
   setSelectedRoleToRemove: (role: UserRole | null) => void;
   setNewUserContactId: (contactId: string) => void;
+  setSelectedLeagueId: (leagueId: string) => void;
+  setSelectedTeamId: (teamId: string) => void;
   setSearchTerm: (term: string) => void;
   setError: (error: string | null) => void;
   setSuccess: (success: string | null) => void;
+  loadContextData: () => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
