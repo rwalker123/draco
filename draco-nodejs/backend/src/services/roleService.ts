@@ -109,7 +109,7 @@ export class RoleService implements IRoleService {
       }
 
       // TeamAdmin roleId constant (should match your config)
-      const TEAM_ADMIN_ROLE_ID = ROLE_IDS['TeamAdmin'];
+      const TEAM_ADMIN_ROLE_ID = ROLE_IDS[RoleType.TEAM_ADMIN];
 
       // Build a set of teamSeasonIds where the user already has TeamAdmin via contactRoles
       const existingTeamAdminIds = new Set(
