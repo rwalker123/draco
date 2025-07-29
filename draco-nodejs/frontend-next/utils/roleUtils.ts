@@ -136,3 +136,27 @@ export function getAvailableRoleNames(): string[] {
 export function getAvailableRoleIds(): string[] {
   return Object.values(ROLE_NAME_TO_ID);
 }
+
+// Role classification for UI behavior
+export const TEAM_BASED_ROLES = ['TeamAdmin', 'TeamPhotoAdmin'];
+export const LEAGUE_BASED_ROLES = ['LeagueAdmin'];
+
+/**
+ * Check if a role requires team selection
+ * @param roleId - The role ID (GUID) or role name
+ * @returns True if the role requires team selection
+ */
+export function isTeamBasedRole(roleId: string): boolean {
+  const roleName = ROLE_ID_TO_NAME[roleId] || roleId;
+  return TEAM_BASED_ROLES.includes(roleName);
+}
+
+/**
+ * Check if a role requires league selection
+ * @param roleId - The role ID (GUID) or role name
+ * @returns True if the role requires league selection
+ */
+export function isLeagueBasedRole(roleId: string): boolean {
+  const roleName = ROLE_ID_TO_NAME[roleId] || roleId;
+  return LEAGUE_BASED_ROLES.includes(roleName);
+}

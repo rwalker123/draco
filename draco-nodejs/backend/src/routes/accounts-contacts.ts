@@ -150,7 +150,19 @@ router.delete(
       throw new ValidationError('Role data is required');
     }
 
-    await roleService.removeRole(req.user!.id, contactId, roleId, BigInt(roleData), accountId);
+    const wasRemoved = await roleService.removeRole(
+      req.user!.id,
+      contactId,
+      roleId,
+      BigInt(roleData),
+      accountId,
+    );
+
+    if (!wasRemoved) {
+      throw new ValidationError(
+        'Role not found or roleData does not match. Unable to remove role.',
+      );
+    }
 
     res.json({
       success: true,
