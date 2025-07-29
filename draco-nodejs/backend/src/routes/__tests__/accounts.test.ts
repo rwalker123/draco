@@ -3,7 +3,7 @@ import * as express from 'express';
 import * as request from 'supertest';
 import accountsRouter from '../accounts';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
-import * as accountsModule from '../accounts';
+import * as accountsContactsModule from '../accounts-contacts';
 import gamesRouter from '../games';
 
 jest.mock('../../middleware/authMiddleware', () => ({
@@ -599,9 +599,9 @@ describe('GET /accounts/my-accounts', () => {
 
   it('returns 200 with all accounts for admin', async () => {
     jest
-      .spyOn(accountsModule.roleService, 'hasRole')
+      .spyOn(accountsContactsModule.roleService, 'hasRole')
       .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
-    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -639,9 +639,9 @@ describe('GET /accounts/my-accounts', () => {
 
   it('returns 200 with accounts for account admin', async () => {
     jest
-      .spyOn(accountsModule.roleService, 'hasRole')
+      .spyOn(accountsContactsModule.roleService, 'hasRole')
       .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
-    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -679,9 +679,9 @@ describe('GET /accounts/my-accounts', () => {
 
   it('returns 200 with empty accounts if no access', async () => {
     jest
-      .spyOn(accountsModule.roleService, 'hasRole')
+      .spyOn(accountsContactsModule.roleService, 'hasRole')
       .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
-    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });
@@ -696,9 +696,9 @@ describe('GET /accounts/my-accounts', () => {
 
   it('returns 500 on error', async () => {
     jest
-      .spyOn(accountsModule.roleService, 'hasRole')
+      .spyOn(accountsContactsModule.roleService, 'hasRole')
       .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
-    jest.spyOn(accountsModule.roleService, 'getUserRoles').mockResolvedValue({
+    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });
