@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
+import {
+  createContextDataService,
+  League,
+  Team,
+  LeagueSeason,
+} from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
 import { User, Role, UserRole, UseUserManagementReturn } from '../types/users';
 
@@ -48,8 +54,17 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [newUserContactId, setNewUserContactId] = useState<string>('');
   const [formLoading, setFormLoading] = useState(false);
 
-  // Service instance
+  // Context data states
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [leagueSeasons, setLeagueSeasons] = useState<LeagueSeason[]>([]);
+  const [selectedLeagueId, setSelectedLeagueId] = useState<string>('');
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [contextDataLoading, setContextDataLoading] = useState(false);
+
+  // Service instances
   const userService = token ? createUserManagementService(token) : null;
+  const contextDataService = token ? createContextDataService(token) : null;
 
   // Load users with pagination
   const loadUsers = useCallback(
@@ -283,11 +298,28 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Role assignment handler
   const handleAssignRole = useCallback(async () => {
-    if (!selectedUser || !selectedRole || !newUserContactId || !userService) return;
+    if (!selectedRole || !newUserContactId || !userService) return;
 
     try {
       setFormLoading(true);
       setError(null);
+
+      console.log('Attempting to assign role:', {
+        accountId,
+        contactId: newUserContactId,
+        roleId: selectedRole,
+        userService: !!userService,
+      });
+
+      // Debug: Check current user's roles
+      try {
+        const userRoles = await userService.getCurrentUserRoles(accountId);
+        console.log('Current user roles:', userRoles);
+        console.log('Global roles:', userRoles.globalRoles);
+        console.log('Contact roles:', userRoles.contactRoles);
+      } catch (roleError) {
+        console.error('Failed to get user roles:', roleError);
+      }
 
       await userService.assignRole(accountId, newUserContactId, selectedRole);
 
@@ -298,11 +330,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setNewUserContactId('');
       loadUsers(page);
     } catch (err) {
+      console.error('Role assignment error:', err);
       setError(err instanceof Error ? err.message : 'Failed to assign role');
     } finally {
       setFormLoading(false);
     }
-  }, [selectedUser, selectedRole, newUserContactId, userService, accountId, page, loadUsers]);
+  }, [selectedRole, newUserContactId, userService, accountId, page, loadUsers]);
 
   // Role removal handler
   const handleRemoveRole = useCallback(async () => {
@@ -337,6 +370,35 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSelectedRoleToRemove(role);
     setRemoveRoleDialogOpen(true);
   }, []);
+
+  // Context data loading function
+  const loadContextData = useCallback(async () => {
+    if (!contextDataService || !currentSeasonId) return;
+
+    try {
+      setContextDataLoading(true);
+      setError(null);
+
+      const contextData = await contextDataService.fetchLeaguesAndTeams(accountId, currentSeasonId);
+
+      setLeagueSeasons(contextData.leagueSeasons);
+      setLeagues(
+        contextData.leagueSeasons.map((ls) => ({
+          id: ls.id,
+          leagueId: ls.leagueId,
+          leagueName: ls.leagueName,
+          accountId: ls.accountId,
+        })),
+      );
+
+      const teamsData = await contextDataService.fetchTeams(accountId, currentSeasonId);
+      setTeams(teamsData);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load context data');
+    } finally {
+      setContextDataLoading(false);
+    }
+  }, [contextDataService, accountId, currentSeasonId]);
 
   // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
@@ -380,6 +442,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     newUserContactId,
     formLoading,
 
+    // Context data states
+    leagues,
+    teams,
+    leagueSeasons,
+    selectedLeagueId,
+    selectedTeamId,
+    contextDataLoading,
+
     // Actions
     handleSearch,
     handleClearSearch,
@@ -397,9 +467,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSelectedRole,
     setSelectedRoleToRemove,
     setNewUserContactId,
+    setSelectedLeagueId,
+    setSelectedTeamId,
     setSearchTerm,
     setError,
     setSuccess,
+    loadContextData,
     getRoleDisplayName: getRoleDisplayNameHelper,
   };
 };

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Box, Collapse, Typography, IconButton, Paper, Stack, Divider } from '@mui/material';
 import { ExpandMore, ExpandLess, Info as InfoIcon } from '@mui/icons-material';
 import { getRoleIcon, getRoleIconDescription, getRoleColors } from '../../utils/roleIcons';
-import { ROLE_ID_TO_NAME } from '../../utils/roleUtils';
+import { ROLE_ID_TO_NAME, getRoleDisplayName } from '../../utils/roleUtils';
 
 interface RoleLegendProps {
   variant?: 'compact' | 'detailed';
@@ -70,7 +70,7 @@ const RoleLegend: React.FC<RoleLegendProps> = ({
         <Collapse in={expanded}>
           <Paper sx={{ p: 1, mt: 1, backgroundColor: 'background.default' }}>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {filteredRoleEntries.map(([roleId, roleName]) => {
+              {filteredRoleEntries.map(([roleId, _roleName]) => {
                 const IconComponent = getRoleIcon(roleId);
                 const colors = getRoleColors(roleId);
 
@@ -101,7 +101,7 @@ const RoleLegend: React.FC<RoleLegendProps> = ({
                         color: colors?.primary || 'primary.main',
                       }}
                     />
-                    <Typography variant="caption">{roleName}</Typography>
+                    <Typography variant="caption">{getRoleDisplayName(roleId)}</Typography>
                   </Box>
                 );
               })}
@@ -146,7 +146,7 @@ const RoleLegend: React.FC<RoleLegendProps> = ({
                   </Typography>
 
                   <Stack spacing={1}>
-                    {roles.map(([roleId, roleName]) => {
+                    {roles.map(([roleId, _roleName]) => {
                       const IconComponent = getRoleIcon(roleId);
                       const description = getRoleIconDescription(roleId);
                       const colors = getRoleColors(roleId);
@@ -180,7 +180,7 @@ const RoleLegend: React.FC<RoleLegendProps> = ({
                           />
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" fontWeight="medium">
-                              {roleName}
+                              {getRoleDisplayName(roleId)}
                             </Typography>
                             {description && (
                               <Typography variant="caption" color="text.secondary">

@@ -136,7 +136,13 @@ export function getRoleTooltipText(role: {
     return role.roleName || 'Unknown Role';
   }
 
-  if (role.contextName) {
+  // AccountPhotoAdmin and AccountAdmin should not show context data prefix
+  const accountRolesWithoutContext = [
+    '5F00A9E0-F42E-49B4-ABD9-B2DCEDD2BB8A', // AccountAdmin
+    'a87ea9a3-47e2-49d1-9e1e-c35358d1a677', // AccountPhotoAdmin
+  ];
+
+  if (role.contextName && !accountRolesWithoutContext.includes(role.roleId)) {
     return `${role.contextName} - ${baseDescription}`;
   }
 
