@@ -1,18 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   TextField,
-  Box
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Paper,
+  CircularProgress,
+  Typography,
+  Popper,
+  ClickAwayListener,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
+import { createUserManagementService } from '../services/userManagementService';
 
 interface Contact {
   id: string;
   firstName: string;
   lastName: string;
-  email: string;
-  userId: string;
-  displayName: string;
-  searchText: string;
+  email: string | null;
+  userId: string | null;
+  displayName?: string;
+  searchText?: string;
 }
 
 interface ContactAutocompleteProps {
@@ -23,6 +32,7 @@ interface ContactAutocompleteProps {
   error?: boolean;
   helperText?: string;
   disabled?: boolean;
+  accountId?: string;
 }
 
 const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
@@ -32,51 +42,151 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
   required = false,
   error = false,
   helperText,
-  disabled = false
+  disabled = false,
+  accountId,
 }) => {
   const { token } = useAuth();
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [initialContact, setInitialContact] = useState<Contact | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [searchResults, setSearchResults] = useState<Contact[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
-  // Handle selection
+  // Debounced search function
+  const debouncedSearch = useCallback(
+    async (query: string) => {
+      if (!query.trim() || !accountId || !token) {
+        setSearchResults([]);
+        setIsOpen(false);
+        return;
+      }
+
+      setIsSearching(true);
+      setIsOpen(true);
+
+      try {
+        const userService = createUserManagementService(token);
+        const results = await userService.searchUsers(accountId, query, undefined, undefined);
+
+        // Transform users to contacts format for consistency
+        const contacts = results.map((user) => ({
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          userId: user.userId,
+          displayName: `${user.firstName} ${user.lastName}`,
+          searchText: `${user.firstName} ${user.lastName} ${user.email ?? ''}`.trim(),
+        }));
+
+        setSearchResults(contacts);
+      } catch (error) {
+        console.error('Error searching contacts:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [token, accountId],
+  );
+
+  // Handle input change with debouncing
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.value;
     setInputValue(newValue);
-    
+    setHighlightedIndex(-1);
+
     // Clear the selected contact if user is typing
     if (newValue !== selectedContact?.searchText) {
       setSelectedContact(null);
       onChange('');
     }
+
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      debouncedSearch(newValue);
+    }, 300);
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (!isOpen || searchResults.length === 0) return;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        setHighlightedIndex((prev) => (prev < searchResults.length - 1 ? prev + 1 : 0));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : searchResults.length - 1));
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (highlightedIndex >= 0) {
+          handleSelectContact(searchResults[highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsOpen(false);
+        setHighlightedIndex(-1);
+        break;
+    }
+  };
+
+  // Handle contact selection
+  const handleSelectContact = (contact: Contact) => {
+    setSelectedContact(contact);
+    setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
+    onChange(contact.id);
+    setIsOpen(false);
+    setHighlightedIndex(-1);
+    setSearchResults([]);
+  };
+
+  // Handle click away
+  const handleClickAway = () => {
+    setIsOpen(false);
+    setHighlightedIndex(-1);
   };
 
   // Initialize input value when value prop changes
   useEffect(() => {
-    if (value && initialContact && initialContact.userId === value) {
-      setInputValue(initialContact.searchText);
+    if (value && initialContact && initialContact.id === value) {
+      setInputValue(
+        initialContact.displayName || `${initialContact.firstName} ${initialContact.lastName}`,
+      );
     }
   }, [value, initialContact]);
 
   // Fetch initial contact information if value is provided
   useEffect(() => {
-    if (value && !initialContact) {
+    // Only fetch if we have a valid UUID-like contact ID (not empty, not a number like "3")
+    if (value && value.trim() !== '' && value.length > 10 && !initialContact) {
       const fetchInitialContact = async () => {
         try {
-          const response = await fetch(`/api/accounts/contacts/${value}`, {
+          const response = await fetch(`/api/accounts/${accountId}/contacts/${value}`, {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             if (data.success) {
               const contact = data.data.contact;
               setInitialContact(contact);
-              setInputValue(contact.searchText);
+              setInputValue(contact.displayName || `${contact.firstName} ${contact.lastName}`);
               setSelectedContact(contact);
             }
           }
@@ -84,33 +194,92 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
           console.error('Error fetching initial contact:', error);
         }
       };
-      
+
       fetchInitialContact();
     }
-  }, [value, token, initialContact]);
+  }, [value, token, initialContact, accountId]);
 
-  // Update input value when initial contact is loaded
+  // Cleanup timeout on unmount
   useEffect(() => {
-    if (initialContact) {
-      setInputValue(initialContact.searchText);
-    }
-  }, [initialContact]);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <Box sx={{ position: 'relative' }}>
-      <TextField
-        fullWidth
-        label={label}
-        value={inputValue}
-        onChange={handleChange}
-        required={required}
-        error={error}
-        helperText={helperText}
-        disabled={disabled}
-        ref={inputRef}
-      />
-    </Box>
+    <ClickAwayListener onClickAway={handleClickAway}>
+      <Box sx={{ position: 'relative' }}>
+        <TextField
+          fullWidth
+          label={label}
+          value={inputValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={() => {
+            if (inputValue.trim() && searchResults.length > 0) {
+              setIsOpen(true);
+            }
+          }}
+          required={required}
+          error={error}
+          helperText={helperText}
+          disabled={disabled}
+          ref={inputRef}
+          InputProps={{
+            endAdornment: isSearching ? <CircularProgress size={20} /> : null,
+          }}
+        />
+
+        <Popper
+          open={isOpen && (searchResults.length > 0 || isSearching)}
+          anchorEl={inputRef.current}
+          placement="bottom-start"
+          style={{ zIndex: 1300, width: inputRef.current?.offsetWidth }}
+        >
+          <Paper elevation={3} sx={{ maxHeight: 200, overflow: 'auto' }}>
+            {isSearching ? (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Searching...
+                </Typography>
+              </Box>
+            ) : searchResults.length > 0 ? (
+              <List dense>
+                {searchResults.map((contact, index) => (
+                  <ListItem
+                    key={contact.id}
+                    onClick={() => handleSelectContact(contact)}
+                    sx={{
+                      cursor: 'pointer',
+                      backgroundColor:
+                        index === highlightedIndex ? 'action.selected' : 'transparent',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={`${contact.firstName} ${contact.lastName}`}
+                      secondary={contact.email}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            ) : inputValue.trim() && !isSearching ? (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No users found
+                </Typography>
+              </Box>
+            ) : null}
+          </Paper>
+        </Popper>
+      </Box>
+    </ClickAwayListener>
   );
 };
 
-export default ContactAutocomplete; 
+export default ContactAutocomplete;
