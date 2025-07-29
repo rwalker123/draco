@@ -160,7 +160,7 @@ export class RoleMiddleware {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           return next();
         }

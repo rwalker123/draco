@@ -5,6 +5,14 @@ import { IRoleMiddleware } from '../../interfaces/roleInterfaces';
 import { RoleType } from '../../types/roles';
 import { PrismaClient } from '@prisma/client';
 
+// Mock role IDs for testing
+const MOCK_ROLE_IDS = {
+  [RoleType.ADMINISTRATOR]: 'admin-role-id',
+  [RoleType.ACCOUNT_ADMIN]: 'account-admin-role-id',
+  [RoleType.LEAGUE_ADMIN]: 'league-admin-role-id',
+  [RoleType.TEAM_ADMIN]: 'team-admin-role-id',
+};
+
 const mockHasRole = jest.fn();
 const mockHasPermission = jest.fn();
 const mockGetUserRoles = jest.fn();
@@ -203,7 +211,7 @@ describe('RoleMiddleware', () => {
       const res = httpMocks.createResponse();
       const next = jest.fn();
       mockGetUserRoles.mockResolvedValue({
-        globalRoles: [RoleType.ADMINISTRATOR],
+        globalRoles: [MOCK_ROLE_IDS[RoleType.ADMINISTRATOR]],
         contactRoles: [],
       });
       await roleMiddleware.enforceAccountBoundary()(

@@ -1209,7 +1209,6 @@ router.get(
   '/:accountId/contacts',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAdministrator(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
@@ -1325,7 +1324,6 @@ router.get(
   '/:accountId/contacts/search',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAdministrator(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { q, roles, seasonId } = req.query; // search query, roles flag, and optional seasonId
@@ -1367,39 +1365,6 @@ router.get(
       success: true,
       data: {
         contacts: searchContacts,
-      },
-    });
-  }),
-);
-
-/**
- * GET /api/accounts/contacts/:userId
- * Get contact information by user ID
- */
-router.get(
-  '/contacts/:userId',
-  authenticateToken,
-  routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAdministrator(),
-  routeProtection.requirePermission('account.contacts.manage'),
-  asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { userId } = req.params;
-    const contact = await prisma.contacts.findFirst({
-      where: { userid: userId },
-      select: { userid: true, firstname: true, lastname: true, email: true },
-    });
-    if (!contact) {
-      throw new NotFoundError('Contact not found');
-    }
-    res.json({
-      success: true,
-      data: {
-        contact: {
-          userId: contact.userid,
-          displayName: `${contact.firstname} ${contact.lastname}`.trim(),
-          searchText: `${contact.firstname} ${contact.lastname} (${contact.email})`.trim(),
-          email: contact.email,
-        },
       },
     });
   }),
@@ -1840,6 +1805,9 @@ router.get(
  */
 router.get(
   '/:accountId/leagues',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 
@@ -1976,7 +1944,7 @@ router.post(
   '/:accountId/fields',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { name, address } = req.body;
@@ -2036,7 +2004,7 @@ router.put(
   '/:accountId/fields/:fieldId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
     const { name, address } = req.body;
@@ -2102,7 +2070,7 @@ router.delete(
   '/:accountId/fields/:fieldId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, fieldId } = extractBigIntParams(req.params, 'accountId', 'fieldId');
 
@@ -2149,7 +2117,7 @@ router.post(
   '/:accountId/logo',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   (req: Request, res: Response, next: NextFunction) => {
     upload.single('logo')(req, res, (err: unknown) => {
       if (err) {
@@ -2195,7 +2163,7 @@ router.delete(
   '/:accountId/logo',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAccountAdmin(),
+  routeProtection.requirePermission('account.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const accountId = req.params.accountId;
     await storageService.deleteAccountLogo(accountId);
