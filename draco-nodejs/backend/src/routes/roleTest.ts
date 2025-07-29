@@ -267,4 +267,31 @@ router.post(
   }),
 );
 
+/**
+ * GET /api/role-test/roles/metadata
+ * Get role hierarchy and permissions metadata for frontend caching
+ */
+router.get(
+  '/roles/metadata',
+  authenticateToken, // Requires JWT but no permission checks
+  asyncHandler(async (req, res): Promise<void> => {
+    // Import role metadata from config
+    const { ROLE_INHERITANCE_BY_ID, ROLE_PERMISSIONS_BY_ID } = await import('../config/roles');
+
+    // Create a timestamp for cache invalidation
+    const timestamp = new Date().toISOString();
+    const version = '1.0.0'; // Increment this when role metadata changes
+
+    res.json({
+      success: true,
+      data: {
+        version,
+        timestamp,
+        hierarchy: ROLE_INHERITANCE_BY_ID,
+        permissions: ROLE_PERMISSIONS_BY_ID,
+      },
+    });
+  }),
+);
+
 export default router;
