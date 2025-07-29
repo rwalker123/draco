@@ -66,7 +66,7 @@ const UserTable: React.FC<UserTableProps> = ({
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
+              <TableCell>Contact Information</TableCell>
               <TableCell>Roles</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>

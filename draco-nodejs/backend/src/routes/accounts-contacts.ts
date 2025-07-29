@@ -24,6 +24,7 @@ const routeProtection = ServiceFactory.getRouteProtection();
  *   - roles=true to include contactroles data with role context (team/league names for season-specific roles)
  *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
  *   - onlyWithRoles=true to filter users who have at least one role
+ *   - contactDetails=true to include detailed contact information (phone, address, etc.)
  */
 router.get(
   '/:accountId/contacts',
@@ -32,9 +33,10 @@ router.get(
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { roles, seasonId, onlyWithRoles } = req.query;
+    const { roles, seasonId, onlyWithRoles, contactDetails } = req.query;
     const includeRoles = roles === 'true';
     const filterOnlyWithRoles = onlyWithRoles === 'true';
+    const includeContactDetails = contactDetails === 'true';
 
     // Parse season ID if provided
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
@@ -46,6 +48,7 @@ router.get(
     const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       onlyWithRoles: filterOnlyWithRoles,
+      includeContactDetails,
       pagination: {
         page: paginationParams.page,
         limit: paginationParams.limit,
@@ -178,6 +181,7 @@ router.delete(
  * Optional query parameters:
  *   - roles=true to include contactroles data with role context
  *   - seasonId=123 to filter roles by season context (required for proper team/league role resolution)
+ *   - contactDetails=true to include detailed contact information (phone, address, etc.)
  */
 router.get(
   '/:accountId/contacts/search',
@@ -185,9 +189,10 @@ router.get(
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
-    const { q, roles, seasonId } = req.query; // search query, roles flag, and optional seasonId
+    const { q, roles, seasonId, contactDetails } = req.query; // search query, roles flag, and optional seasonId
     const { accountId } = extractAccountParams(req.params);
     const includeRoles = roles === 'true';
+    const includeContactDetails = contactDetails === 'true';
 
     if (!q || typeof q !== 'string') {
       res.json({
@@ -205,6 +210,7 @@ router.get(
     // Use ContactService to get contacts with roles
     const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
+      includeContactDetails,
       searchQuery: q,
     });
 

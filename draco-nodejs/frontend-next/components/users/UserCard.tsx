@@ -6,6 +6,7 @@ import { Person as PersonIcon } from '@mui/icons-material';
 import { UserCardProps } from '../../types/users';
 import UserRoleChips from './UserRoleChips';
 import UserActions from './UserActions';
+import ContactInfoExpanded from './ContactInfoExpanded';
 
 /**
  * UserCard Component
@@ -28,7 +29,14 @@ const UserCard: React.FC<UserCardProps> = ({
           </Typography>
         </Stack>
       </TableCell>
-      <TableCell>{user.email}</TableCell>
+      <TableCell>
+        <ContactInfoExpanded
+          firstName={user.firstName}
+          lastName={user.lastName}
+          email={user.email}
+          contactDetails={user.contactDetails}
+        />
+      </TableCell>
       <TableCell>
         <UserRoleChips
           roles={user.roles || []}

@@ -5,6 +5,9 @@ import {
   ContactQueryOptions,
   ContactResponse,
   ContactWithRoleRow,
+  ContactWithRoleAndDetailsRow,
+  ContactDetails,
+  ContactEntry,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
 import { RoleType } from '../types/roles';
@@ -22,7 +25,13 @@ export class ContactService {
     seasonId?: bigint | null,
     options: ContactQueryOptions = {},
   ): Promise<ContactResponse> {
-    const { includeRoles = false, onlyWithRoles = false, searchQuery, pagination } = options;
+    const {
+      includeRoles = false,
+      onlyWithRoles = false,
+      searchQuery,
+      pagination,
+      includeContactDetails = false,
+    } = options;
 
     // If roles are not requested, use the simple Prisma query
     if (!includeRoles) {
@@ -37,6 +46,21 @@ export class ContactService {
         contacts.lastname,
         contacts.email,
         contacts.userid,
+        ${
+          includeContactDetails
+            ? Prisma.sql`
+        contacts.phone1,
+        contacts.phone2,
+        contacts.phone3,
+        contacts.streetaddress,
+        contacts.city,
+        contacts.state,
+        contacts.zip,
+        contacts.dateofbirth,
+        contacts.middlename,
+        `
+            : Prisma.empty
+        }
         CASE
           -- Team roles: Join teamsseason to get team name, validate season
           WHEN cr.roleid = ${ROLE_IDS[RoleType.TEAM_ADMIN]} THEN ts.name
@@ -144,7 +168,13 @@ export class ContactService {
     const accountOwnerContactId = ownerContactResult[0]?.id?.toString() || null;
 
     // Transform the flat rows into the desired structure
-    return ContactService.transformContactRows(rows, accountId, accountOwnerContactId, pagination);
+    return ContactService.transformContactRows(
+      rows,
+      accountId,
+      accountOwnerContactId,
+      pagination,
+      includeContactDetails,
+    );
   }
 
   /**
@@ -154,7 +184,7 @@ export class ContactService {
     accountId: bigint,
     options: ContactQueryOptions = {},
   ): Promise<ContactResponse> {
-    const { searchQuery, pagination } = options;
+    const { searchQuery, pagination, includeContactDetails = false } = options;
 
     // Build where clause
     const whereClause: Prisma.contactsWhereInput = {
@@ -197,6 +227,17 @@ export class ContactService {
       lastname: true,
       email: true,
       userid: true,
+      ...(includeContactDetails && {
+        phone1: true,
+        phone2: true,
+        phone3: true,
+        streetaddress: true,
+        city: true,
+        state: true,
+        zip: true,
+        dateofbirth: true,
+        middlename: true,
+      }),
     } as const;
 
     // Build query options
@@ -232,6 +273,19 @@ export class ContactService {
       lastName: contact.lastname,
       email: contact.email,
       userId: contact.userid,
+      ...(includeContactDetails && {
+        contactDetails: {
+          phone1: contact.phone1,
+          phone2: contact.phone2,
+          phone3: contact.phone3,
+          streetaddress: contact.streetaddress,
+          city: contact.city,
+          state: contact.state,
+          zip: contact.zip,
+          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          middlename: contact.middlename,
+        },
+      }),
     }));
 
     // Format response
@@ -264,6 +318,7 @@ export class ContactService {
     accountId: bigint,
     accountOwnerContactId: string | null,
     pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+    includeContactDetails?: boolean,
   ): ContactResponse {
     // Group rows by contact ID
     const contactMap = new Map<
@@ -274,6 +329,7 @@ export class ContactService {
         lastName: string;
         email: string | null;
         userId: string | null;
+        contactDetails?: ContactDetails;
         contactroles: Array<{
           id: string;
           roleId: string;
@@ -290,14 +346,32 @@ export class ContactService {
 
       // Get or create contact entry
       if (!contactMap.has(contactId)) {
-        contactMap.set(contactId, {
+        const contactEntry: ContactEntry = {
           id: contactId,
           firstName: row.firstname,
           lastName: row.lastname,
           email: row.email,
           userId: row.userid,
           contactroles: [],
-        });
+        };
+
+        // Add contact details if available and requested
+        if (includeContactDetails && 'phone1' in row) {
+          const contactRow = row as ContactWithRoleAndDetailsRow;
+          contactEntry.contactDetails = {
+            phone1: contactRow.phone1,
+            phone2: contactRow.phone2,
+            phone3: contactRow.phone3,
+            streetaddress: contactRow.streetaddress,
+            city: contactRow.city,
+            state: contactRow.state,
+            zip: contactRow.zip,
+            dateofbirth: contactRow.dateofbirth ? contactRow.dateofbirth.toISOString() : null,
+            middlename: contactRow.middlename,
+          };
+        }
+
+        contactMap.set(contactId, contactEntry);
       }
 
       // Add role if present
