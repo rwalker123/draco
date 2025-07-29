@@ -4,6 +4,14 @@ import { RouteProtection } from '../routeProtection';
 import { RoleService } from '../../services/roleService';
 import { PrismaClient } from '@prisma/client';
 
+// Mock role IDs for testing
+const MOCK_ROLE_IDS = {
+  Administrator: 'admin-role-id',
+  AccountAdmin: 'account-admin-role-id',
+  LeagueAdmin: 'league-admin-role-id',
+  TeamAdmin: 'team-admin-role-id',
+};
+
 const mockHasRole = jest.fn();
 const mockHasPermission = jest.fn();
 const mockGetUserRoles = jest.fn();
@@ -98,7 +106,10 @@ describe('RouteProtection middleware', () => {
       const res = httpMocks.createResponse();
       const next = jest.fn();
       mockHasRole.mockResolvedValue({ hasRole: true });
-      mockGetUserRoles.mockResolvedValue({ globalRoles: ['AccountAdmin'], contactRoles: [] });
+      mockGetUserRoles.mockResolvedValue({
+        globalRoles: [MOCK_ROLE_IDS.AccountAdmin],
+        contactRoles: [],
+      });
       await routeProtection.requireRole('AccountAdmin')(
         req as unknown as Request,
         res as unknown as Response,
@@ -143,7 +154,10 @@ describe('RouteProtection middleware', () => {
       const res = httpMocks.createResponse();
       const next = jest.fn();
       mockHasPermission.mockResolvedValue(true);
-      mockGetUserRoles.mockResolvedValue({ globalRoles: ['AccountAdmin'], contactRoles: [] });
+      mockGetUserRoles.mockResolvedValue({
+        globalRoles: [MOCK_ROLE_IDS.AccountAdmin],
+        contactRoles: [],
+      });
       await routeProtection.requirePermission('account.manage')(
         req as unknown as Request,
         res as unknown as Response,

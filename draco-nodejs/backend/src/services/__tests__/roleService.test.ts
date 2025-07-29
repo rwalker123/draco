@@ -21,16 +21,16 @@ describe('RoleService', () => {
   });
 
   describe('getGlobalRoles', () => {
-    it('returns role names for a user', async () => {
+    it('returns role IDs for a user', async () => {
       mockPrisma.aspnetuserroles.findMany.mockResolvedValue([
-        { aspnetroles: { name: 'Administrator' } },
-        { aspnetroles: { name: 'User' } },
+        { roleid: 'role-id-1' },
+        { roleid: 'role-id-2' },
       ]);
       const roles = await roleService.getGlobalRoles('user123');
-      expect(roles).toEqual(['Administrator', 'User']);
+      expect(roles).toEqual(['role-id-1', 'role-id-2']);
       expect(mockPrisma.aspnetuserroles.findMany).toHaveBeenCalledWith({
         where: { userid: 'user123' },
-        include: { aspnetroles: true },
+        select: { roleid: true },
       });
     });
   });

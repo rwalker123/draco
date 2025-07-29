@@ -174,7 +174,7 @@ export class RouteProtection {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           req.accountBoundary = { accountId, enforced: true };
           return next();
@@ -245,14 +245,14 @@ export class RouteProtection {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Allow if user has account admin role
         if (
-          userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) ||
+          userRoles.globalRoles.includes(ROLE_IDS[RoleType.ACCOUNT_ADMIN]) ||
           userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
         ) {
           req.userRoles = userRoles;
@@ -322,14 +322,14 @@ export class RouteProtection {
         const userRoles = await this.roleService.getUserRoles(req.user.id, accountId);
 
         // Allow if user has global administrator role
-        if (userRoles.globalRoles.includes(RoleType.ADMINISTRATOR)) {
+        if (userRoles.globalRoles.includes(ROLE_IDS[RoleType.ADMINISTRATOR])) {
           req.userRoles = userRoles;
           return next();
         }
 
         // Allow if user has account admin role
         if (
-          userRoles.globalRoles.includes(RoleType.ACCOUNT_ADMIN) ||
+          userRoles.globalRoles.includes(ROLE_IDS[RoleType.ACCOUNT_ADMIN]) ||
           userRoles.contactRoles.some((cr) => cr.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN])
         ) {
           req.userRoles = userRoles;
@@ -366,12 +366,12 @@ export class RouteProtection {
   /**
    * Convenience methods for common role requirements
    */
-  requireAdministrator = () => this.requireRole(RoleType.ADMINISTRATOR);
-  requireAccountAdmin = () => this.requireRole(RoleType.ACCOUNT_ADMIN);
-  requireAccountPhotoAdmin = () => this.requireRole(RoleType.ACCOUNT_PHOTO_ADMIN);
-  requireLeagueAdmin = () => this.requireRole(RoleType.LEAGUE_ADMIN);
-  requireTeamAdmin = () => this.requireRole(RoleType.TEAM_ADMIN);
-  requireTeamPhotoAdmin = () => this.requireRole(RoleType.TEAM_PHOTO_ADMIN);
+  requireAdministrator = () => this.requireRole(ROLE_IDS[RoleType.ADMINISTRATOR]);
+  requireAccountAdmin = () => this.requireRole(ROLE_IDS[RoleType.ACCOUNT_ADMIN]);
+  requireAccountPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]);
+  requireLeagueAdmin = () => this.requireRole(ROLE_IDS[RoleType.LEAGUE_ADMIN]);
+  requireTeamAdmin = () => this.requireRole(ROLE_IDS[RoleType.TEAM_ADMIN]);
+  requireTeamPhotoAdmin = () => this.requireRole(ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]);
 
   /**
    * Middleware to add role information to request (for informational purposes)
