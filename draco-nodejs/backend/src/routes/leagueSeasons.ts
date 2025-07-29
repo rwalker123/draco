@@ -15,80 +15,8 @@ import {
 } from '../utils/paramExtraction';
 import { validateTeamSeasonWithDivision } from '../utils/teamValidation';
 import prisma from '../lib/prisma';
-
-// Type definitions for Prisma query results
-interface TeamSeason {
-  id: bigint;
-  teamid: bigint;
-  name: string;
-  divisionseasonid: bigint | null;
-  teams: {
-    id: bigint;
-    webaddress: string | null;
-    youtubeuserid: string | null;
-    defaultvideo: string | null;
-    autoplayvideo: boolean;
-  };
-}
-
-interface DivisionSeasonWithTeams {
-  id: bigint;
-  divisionid: bigint;
-  priority: number;
-  divisiondefs: {
-    id: bigint;
-    name: string;
-  };
-}
-
-interface LeagueSeasonWithRelations {
-  id: bigint;
-  league: {
-    id: bigint;
-    name: string;
-    accountid: bigint;
-  };
-  divisionseason?: DivisionSeasonWithTeams[];
-  teamsseason?: TeamSeason[];
-}
-
-interface DivisionSeason {
-  id: bigint;
-  divisionid: bigint;
-  priority: number;
-  divisiondefs: {
-    id: bigint;
-    name: string;
-  };
-  teamsseason: Array<{
-    id: bigint;
-    teamid: bigint;
-    name: string;
-    teams: {
-      id: bigint;
-      webaddress: string | null;
-      youtubeuserid: string | null;
-      defaultvideo: string | null;
-      autoplayvideo: boolean;
-    };
-  }>;
-}
-
-interface PrismaWhereClause {
-  leagueid: bigint;
-  gamedate?: {
-    gte: Date;
-    lte: Date;
-  };
-  OR?: Array<
-    | {
-        hteamid: bigint;
-      }
-    | {
-        vteamid: bigint;
-      }
-  >;
-}
+import { DivisionSeason } from '../interfaces/divisionInterfaces';
+import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces';
 
 const router = Router({ mergeParams: true });
 const roleService = new RoleService(prisma);
