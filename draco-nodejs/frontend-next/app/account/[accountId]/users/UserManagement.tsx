@@ -43,6 +43,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     newUserContactId,
     formLoading,
 
+    // Context data states
+    leagues,
+    teams,
+    leagueSeasons,
+    selectedLeagueId,
+    selectedTeamId,
+    contextDataLoading,
+
     // Actions
     handleSearch,
     handleClearSearch,
@@ -58,9 +66,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     setRemoveRoleDialogOpen,
     setSelectedRole,
     setNewUserContactId,
+    setSelectedLeagueId,
+    setSelectedTeamId,
     setSearchTerm,
     setError,
     setSuccess,
+    loadContextData,
     getRoleDisplayName,
   } = useUserManagement(accountId);
 
@@ -78,7 +89,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => setAssignRoleDialogOpen(true)}
+            onClick={async () => {
+              setAssignRoleDialogOpen(true);
+              await loadContextData();
+            }}
           >
             Assign Role
           </Button>
@@ -150,6 +164,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onUserChange={setNewUserContactId}
         onRoleChange={setSelectedRole}
         loading={formLoading}
+        accountId={accountId}
+        // Context data props
+        leagues={leagues}
+        teams={teams}
+        leagueSeasons={leagueSeasons}
+        selectedLeagueId={selectedLeagueId}
+        selectedTeamId={selectedTeamId}
+        onLeagueChange={setSelectedLeagueId}
+        onTeamChange={setSelectedTeamId}
+        contextDataLoading={contextDataLoading}
       />
 
       <RemoveRoleDialog
