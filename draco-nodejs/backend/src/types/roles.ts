@@ -6,7 +6,7 @@ export enum RoleType {
   ACCOUNT_PHOTO_ADMIN = 'AccountPhotoAdmin',
   LEAGUE_ADMIN = 'LeagueAdmin',
   TEAM_ADMIN = 'TeamAdmin',
-  TEAM_PHOTO_ADMIN = 'TeamPhotoAdmin'
+  TEAM_PHOTO_ADMIN = 'TeamPhotoAdmin',
 }
 
 export interface ContactRole {
@@ -48,21 +48,16 @@ export const ROLE_HIERARCHY: Record<string, string[]> = {
     RoleType.ACCOUNT_PHOTO_ADMIN,
     RoleType.LEAGUE_ADMIN,
     RoleType.TEAM_ADMIN,
-    RoleType.TEAM_PHOTO_ADMIN
+    RoleType.TEAM_PHOTO_ADMIN,
   ],
   [RoleType.ACCOUNT_ADMIN]: [
     RoleType.ACCOUNT_PHOTO_ADMIN,
     RoleType.LEAGUE_ADMIN,
     RoleType.TEAM_ADMIN,
-    RoleType.TEAM_PHOTO_ADMIN
+    RoleType.TEAM_PHOTO_ADMIN,
   ],
-  [RoleType.LEAGUE_ADMIN]: [
-    RoleType.TEAM_ADMIN,
-    RoleType.TEAM_PHOTO_ADMIN
-  ],
-  [RoleType.TEAM_ADMIN]: [
-    RoleType.TEAM_PHOTO_ADMIN
-  ]
+  [RoleType.LEAGUE_ADMIN]: [RoleType.TEAM_ADMIN, RoleType.TEAM_PHOTO_ADMIN],
+  [RoleType.TEAM_ADMIN]: [RoleType.TEAM_PHOTO_ADMIN],
 };
 
 // Role permissions mapping
@@ -70,7 +65,7 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
   [RoleType.ADMINISTRATOR]: {
     roleId: RoleType.ADMINISTRATOR,
     permissions: ['*'], // All permissions
-    context: 'global'
+    context: 'global',
   },
   [RoleType.ACCOUNT_ADMIN]: {
     roleId: RoleType.ACCOUNT_ADMIN,
@@ -78,20 +73,19 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'account.manage',
       'account.users.manage',
       'account.roles.manage',
+      'account.umpires.manage',
+      'account.fields.manage',
       'league.manage',
       'team.manage',
       'player.manage',
-      'photo.manage'
+      'photo.manage',
     ],
-    context: 'account'
+    context: 'account',
   },
   [RoleType.ACCOUNT_PHOTO_ADMIN]: {
     roleId: RoleType.ACCOUNT_PHOTO_ADMIN,
-    permissions: [
-      'account.photos.manage',
-      'account.photos.view'
-    ],
-    context: 'account'
+    permissions: ['account.photos.manage', 'account.photos.view'],
+    context: 'account',
   },
   [RoleType.LEAGUE_ADMIN]: {
     roleId: RoleType.LEAGUE_ADMIN,
@@ -99,25 +93,18 @@ export const ROLE_PERMISSIONS: Record<string, RolePermission> = {
       'league.manage',
       'league.teams.manage',
       'league.players.manage',
-      'league.schedule.manage'
+      'league.schedule.manage',
     ],
-    context: 'league'
+    context: 'league',
   },
   [RoleType.TEAM_ADMIN]: {
     roleId: RoleType.TEAM_ADMIN,
-    permissions: [
-      'team.manage',
-      'team.players.manage',
-      'team.stats.manage'
-    ],
-    context: 'team'
+    permissions: ['team.manage', 'team.players.manage', 'team.stats.manage'],
+    context: 'team',
   },
   [RoleType.TEAM_PHOTO_ADMIN]: {
     roleId: RoleType.TEAM_PHOTO_ADMIN,
-    permissions: [
-      'team.photos.manage',
-      'team.photos.view'
-    ],
-    context: 'team'
-  }
-}; 
+    permissions: ['team.photos.manage', 'team.photos.view'],
+    context: 'team',
+  },
+};

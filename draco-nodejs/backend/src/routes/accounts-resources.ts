@@ -520,7 +520,6 @@ router.get(
   '/:accountId/umpires',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
-  routeProtection.requireAdministrator(),
   routeProtection.requirePermission('account.umpires.manage'),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
