@@ -21,16 +21,18 @@ const UserRoleChips: React.FC<UserRoleChipsProps> = ({
 
   return (
     <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-      {roles.map((role) => (
-        <RoleIcon
-          key={role.id}
-          role={role}
-          size="small"
-          showTooltip={true}
-          onClick={canManageUsers ? () => onRemoveRole(role) : undefined}
-          disabled={!canManageUsers}
-        />
-      ))}
+      {roles.map((role) => {
+        return (
+          <RoleIcon
+            key={role.id}
+            role={role}
+            size="small"
+            showTooltip={true}
+            onClick={canManageUsers ? () => onRemoveRole(role) : undefined}
+            disabled={!canManageUsers}
+          />
+        );
+      })}
     </Stack>
   );
 };

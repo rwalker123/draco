@@ -78,7 +78,7 @@ const LeagueSelector: React.FC<LeagueSelectorProps> = ({
           </MenuItem>
         ) : (
           leagues.map((league) => (
-            <MenuItem key={league.id} value={league.leagueId}>
+            <MenuItem key={league.id} value={league.id}>
               <Typography variant="body1">{league.leagueName}</Typography>
             </MenuItem>
           ))

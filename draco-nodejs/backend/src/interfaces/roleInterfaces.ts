@@ -74,6 +74,7 @@ export interface IRoleManagement {
     roleId: string,
     roleData: bigint,
     accountId: bigint,
+    seasonId?: bigint,
   ): Promise<ContactRole>;
 
   /**
