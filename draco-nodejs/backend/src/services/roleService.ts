@@ -467,22 +467,22 @@ export class RoleService implements IRoleService {
   private validateRoleContext(contactRole: ContactRole, context: RoleContext): boolean {
     // For account-level roles, just check accountId
     if (
-      contactRole.roleId === ROLE_IDS['AccountAdmin'] ||
-      contactRole.roleId === ROLE_IDS['AccountPhotoAdmin']
+      contactRole.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ||
+      contactRole.roleId === ROLE_IDS[RoleType.ACCOUNT_PHOTO_ADMIN]
     ) {
       return contactRole.accountId === context.accountId;
     }
 
     // For team-level roles, check if roleData matches teamId
     if (
-      contactRole.roleId === ROLE_IDS['TeamAdmin'] ||
-      contactRole.roleId === ROLE_IDS['TeamPhotoAdmin']
+      contactRole.roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ||
+      contactRole.roleId === ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]
     ) {
       return contactRole.roleData === context.teamId;
     }
 
     // For league-level roles, check if roleData matches leagueId
-    if (contactRole.roleId === ROLE_IDS['LeagueAdmin']) {
+    if (contactRole.roleId === ROLE_IDS[RoleType.LEAGUE_ADMIN]) {
       return contactRole.roleData === context.leagueId;
     }
 
