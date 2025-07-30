@@ -377,7 +377,7 @@ export class RouteProtection {
    * Middleware to add role information to request (for informational purposes)
    */
   addRoleInfo = () => {
-    return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
       try {
         if (req.user?.id) {
           const accountId = this.extractAccountId(req);

@@ -47,7 +47,7 @@ export class ServiceFactory {
   static getRoleMiddlewareClass(): RoleMiddleware {
     if (!this.roleMiddleware) {
       const roleService = this.getRoleMiddleware();
-      this.roleMiddleware = new RoleMiddleware(roleService, prisma);
+      this.roleMiddleware = new RoleMiddleware(roleService);
     }
     return this.roleMiddleware;
   }
