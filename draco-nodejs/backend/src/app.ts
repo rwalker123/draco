@@ -2,7 +2,6 @@ import * as express from 'express';
 import * as cors from 'cors';
 import helmet from 'helmet';
 import * as dotenv from 'dotenv';
-import { initializeRoleIds } from './config/roles';
 import prisma from './lib/prisma';
 import { Container } from './container';
 import testDatabaseRouter from './routes/testdatabase';
@@ -31,11 +30,6 @@ import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLo
 
 // Load environment variables
 dotenv.config();
-
-// Initialize role IDs from database
-initializeRoleIds(prisma).catch((error: unknown) => {
-  console.error('Failed to initialize role IDs:', error);
-});
 
 // Initialize dependency injection container
 const container = new Container(prisma);
@@ -123,7 +117,7 @@ app.use('/api/accounts', accountsRouter);
 app.use(globalErrorHandler as express.ErrorRequestHandler);
 
 // 404 handler
-app.use('/{*splat}', (req: express.Request, res: express.Response) => {
+app.use('/{*splat}', (_req: express.Request, res: express.Response) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
