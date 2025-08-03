@@ -1,6 +1,7 @@
 'use client';
 import { useParams } from 'next/navigation';
 import TeamRosterManagement from './TeamRosterManagement';
+import ProtectedRoute from '../../../../../../../../components/auth/ProtectedRoute';
 
 export default function TeamRosterManagementClientWrapper() {
   const params = useParams();
@@ -13,6 +14,11 @@ export default function TeamRosterManagementClientWrapper() {
     : (params.teamSeasonId ?? '');
 
   return (
-    <TeamRosterManagement accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+    <ProtectedRoute
+      requiredRole={['AccountAdmin', 'ContactAdmin', 'Contact']}
+      checkAccountBoundary={true}
+    >
+      <TeamRosterManagement accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
+    </ProtectedRoute>
   );
 }

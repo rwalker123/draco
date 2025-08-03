@@ -27,6 +27,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
 import { useAccount } from '../context/AccountContext';
 import { useRouter, usePathname } from 'next/navigation';
+import { useLogout } from '../hooks/useLogout';
 import BaseballMenu from './BaseballMenu';
 
 interface LayoutProps {
@@ -40,11 +41,12 @@ const getAccountIdFromPath = (pathname: string): string | null => {
 };
 
 const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) => {
-  const { user, logout, clearAllContexts } = useAuth();
+  const { user, clearAllContexts } = useAuth();
   const { hasRole } = useRole();
   const { currentAccount: contextAccount } = useAccount();
   const router = useRouter();
   const pathname = usePathname();
+  const logout = useLogout();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [accountType, setAccountType] = React.useState<string | null>(null);
   const [currentAccount, setCurrentAccount] = React.useState<Record<string, unknown> | null>(null);
@@ -115,7 +117,7 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
 
   const handleLogout = () => {
     clearAllContexts();
-    logout(true);
+    logout(); // Will automatically handle redirect if on protected page
     handleMenuClose();
   };
 
