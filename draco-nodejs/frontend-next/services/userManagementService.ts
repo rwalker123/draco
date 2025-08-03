@@ -1,4 +1,13 @@
-import { User, Role, UsersResponse, UserSearchParams, Contact, ContactRole } from '../types/users';
+import {
+  User,
+  Role,
+  UsersResponse,
+  UserSearchParams,
+  Contact,
+  ContactRole,
+  ContactUpdateData,
+  DependencyCheckResult,
+} from '../types/users';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
 /**
@@ -275,6 +284,115 @@ export class UserManagementService {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || 'Failed to remove role');
     }
+  }
+
+  /**
+   * Update contact information
+   */
+  async updateContact(
+    accountId: string,
+    contactId: string,
+    contactData: ContactUpdateData,
+  ): Promise<Contact> {
+    // Transform camelCase frontend data to lowercase backend API format
+    const backendData = {
+      firstname: contactData.firstName,
+      lastname: contactData.lastName,
+      middlename: contactData.middlename,
+      email: contactData.email,
+      phone1: contactData.phone1,
+      phone2: contactData.phone2,
+      phone3: contactData.phone3,
+      streetaddress: contactData.streetaddress,
+      city: contactData.city,
+      state: contactData.state,
+      zip: contactData.zip,
+      dateofbirth: contactData.dateofbirth,
+    };
+
+    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(backendData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to update contact (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to update contact');
+    }
+
+    return data.data.contact;
+  }
+
+  /**
+   * Check contact dependencies before deletion
+   */
+  async checkContactDependencies(
+    accountId: string,
+    contactId: string,
+  ): Promise<{ contact: unknown; dependencyCheck: DependencyCheckResult }> {
+    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}?check=true`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to check dependencies (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to check dependencies');
+    }
+
+    return data.data;
+  }
+
+  /**
+   * Delete contact
+   */
+  async deleteContact(
+    accountId: string,
+    contactId: string,
+    force: boolean = false,
+  ): Promise<{
+    message: string;
+    deletedContact: unknown;
+    dependenciesDeleted: number;
+    wasForced: boolean;
+  }> {
+    const queryParams = force ? '?force=true' : '';
+    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}${queryParams}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to delete contact (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to delete contact');
+    }
+
+    return data.data;
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useReducer } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrentSeason } from './useCurrentSeason';
 import { createUserManagementService } from '../services/userManagementService';
@@ -9,7 +9,70 @@ import {
   LeagueSeason,
 } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
-import { User, Role, UserRole, UseUserManagementReturn } from '../types/users';
+import {
+  User,
+  Role,
+  UserRole,
+  UseUserManagementReturn,
+  Contact,
+  ContactUpdateData,
+} from '../types/users';
+
+// Pagination state for atomic updates
+interface PaginationState {
+  users: User[];
+  loading: boolean;
+  isInitialLoad: boolean;
+  page: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+type PaginationAction =
+  | { type: 'START_LOADING' }
+  | { type: 'START_PAGINATION'; page: number }
+  | { type: 'SET_DATA'; users: User[]; hasNext: boolean; hasPrev: boolean; page?: number }
+  | { type: 'RESET_TO_INITIAL' };
+
+// Reducer for atomic pagination state updates
+const paginationReducer = (state: PaginationState, action: PaginationAction): PaginationState => {
+  switch (action.type) {
+    case 'START_LOADING':
+      return {
+        ...state,
+        loading: true,
+        isInitialLoad: state.users.length === 0, // Only true if no users yet
+      };
+    case 'START_PAGINATION':
+      return {
+        ...state,
+        loading: true,
+        isInitialLoad: false, // Never show full loading for pagination
+        page: action.page,
+      };
+    case 'SET_DATA':
+      return {
+        ...state,
+        users: action.users,
+        hasNext: action.hasNext,
+        hasPrev: action.hasPrev,
+        page: action.page !== undefined ? action.page : state.page,
+        loading: false,
+        isInitialLoad: false,
+      };
+    case 'RESET_TO_INITIAL':
+      return {
+        users: [],
+        loading: true,
+        isInitialLoad: true,
+        page: 1,
+        hasNext: false,
+        hasPrev: false,
+      };
+    default:
+      return state;
+  }
+};
 
 /**
  * Custom hook for user management functionality
@@ -19,18 +82,21 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const { token } = useAuth();
   const { currentSeasonId, fetchCurrentSeason } = useCurrentSeason(accountId);
 
-  // Core state
-  const [users, setUsers] = useState<User[]>([]);
+  // Pagination state using reducer for atomic updates
+  const [paginationState, dispatch] = useReducer(paginationReducer, {
+    users: [],
+    loading: true,
+    isInitialLoad: true,
+    page: 1,
+    hasNext: false,
+    hasPrev: false,
+  });
+
+  // Other state
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Pagination state
-  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [hasNext, setHasNext] = useState(false);
-  const [hasPrev, setHasPrev] = useState(false);
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -43,10 +109,17 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [initialized, setInitialized] = useState(false);
   const rowsPerPageRef = useRef(rowsPerPage);
 
+  // Extract values from reducer state
+  const { users, loading, isInitialLoad, page, hasNext, hasPrev } = paginationState;
+
   // Dialog states
   const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
   const [removeRoleDialogOpen, setRemoveRoleDialogOpen] = useState(false);
+  const [editContactDialogOpen, setEditContactDialogOpen] = useState(false);
+  const [deleteContactDialogOpen, setDeleteContactDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedContactForEdit, setSelectedContactForEdit] = useState<Contact | null>(null);
+  const [selectedContactForDelete, setSelectedContactForDelete] = useState<Contact | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedRoleToRemove, setSelectedRoleToRemove] = useState<UserRole | null>(null);
 
@@ -66,13 +139,32 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const userService = token ? createUserManagementService(token) : null;
   const contextDataService = token ? createContextDataService(token) : null;
 
+  // Atomic pagination data update using reducer
+  const updatePaginationData = useCallback(
+    (newUsers: User[], newHasNext: boolean, newHasPrev: boolean, newPage?: number) => {
+      dispatch({
+        type: 'SET_DATA',
+        users: newUsers,
+        hasNext: newHasNext,
+        hasPrev: newHasPrev,
+        page: newPage,
+      });
+    },
+    [],
+  );
+
   // Load users with pagination
   const loadUsers = useCallback(
-    async (currentPage = 0, limit?: number) => {
+    async (currentPage = 0, limit?: number, isPaginating = false) => {
       if (!userService || !accountId) return;
 
       try {
-        setLoading(true);
+        // Use START_PAGINATION for page changes, START_LOADING for initial loads
+        if (isPaginating) {
+          dispatch({ type: 'START_PAGINATION', page: currentPage });
+        } else {
+          dispatch({ type: 'START_LOADING' });
+        }
         setError(null);
 
         const response = await userService.fetchUsers(accountId, {
@@ -84,16 +176,20 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           onlyWithRoles: onlyWithRoles,
         });
 
-        setUsers(response.users);
-        setHasNext(response.pagination.hasNext);
-        setHasPrev(response.pagination.hasPrev);
+        // Atomic state update via reducer
+        // When paginating, the page has already been set by START_PAGINATION
+        updatePaginationData(
+          response.users,
+          response.pagination.hasNext,
+          response.pagination.hasPrev,
+          isPaginating ? undefined : currentPage,
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load users');
-      } finally {
-        setLoading(false);
+        dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
-    [userService, accountId, currentSeasonId, onlyWithRoles],
+    [userService, accountId, currentSeasonId, onlyWithRoles, updatePaginationData],
   );
 
   // Load users with explicit season ID (for initialization)
@@ -102,7 +198,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!userService || !accountId) return;
 
       try {
-        setLoading(true);
+        dispatch({ type: 'START_LOADING' });
         setError(null);
 
         const params = {
@@ -116,13 +212,15 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
         const response = await userService.fetchUsers(accountId, params);
 
-        setUsers(response.users);
-        setHasNext(response.pagination.hasNext);
-        setHasPrev(response.pagination.hasPrev);
+        dispatch({
+          type: 'SET_DATA',
+          users: response.users,
+          hasNext: response.pagination.hasNext,
+          hasPrev: response.pagination.hasPrev,
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load users');
-      } finally {
-        setLoading(false);
+        dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
     [userService, accountId, onlyWithRoles],
@@ -177,7 +275,6 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!searchTerm.trim()) {
         // If search is empty, load all users
         await loadUsers(0);
-        setPage(0);
       } else {
         // Use the search endpoint
         const searchResults = await userService.searchUsers(
@@ -186,10 +283,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           currentSeasonId,
           onlyWithRoles,
         );
-        setUsers(searchResults);
-        setHasNext(false); // Search results don't have pagination
-        setHasPrev(false);
-        setPage(1);
+        dispatch({
+          type: 'SET_DATA',
+          users: searchResults,
+          hasNext: false, // Search results don't have pagination
+          hasPrev: false,
+          page: 1,
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search users');
@@ -210,8 +310,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setSearchTerm('');
 
       // Reset to first page and load default data
-      setPage(0);
-      await loadUsers(0);
+      await loadUsers(0, undefined, true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clear search');
     } finally {
@@ -225,14 +324,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!userService || !accountId) return;
 
       try {
-        setLoading(true);
+        dispatch({ type: 'START_LOADING' });
         setError(null);
 
         // Update filter state
         setOnlyWithRoles(filterValue);
 
         // Reset to first page and reload data with new filter
-        setPage(0);
+        // Page will be set by loadUsers with isPaginating=true
 
         // If we have a search term, re-run the search with the new filter
         if (searchTerm.trim()) {
@@ -242,56 +341,49 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             currentSeasonId,
             filterValue,
           );
-          setUsers(searchResults);
-          setHasNext(false);
-          setHasPrev(false);
-          setPage(1);
+          dispatch({
+            type: 'SET_DATA',
+            users: searchResults,
+            hasNext: false,
+            hasPrev: false,
+            page: 1,
+          });
         } else {
           // Otherwise reload regular user list with filter
-          const response = await userService.fetchUsers(accountId, {
-            page: 1,
-            limit: rowsPerPageRef.current,
-            sortBy: 'lastname',
-            sortOrder: 'asc',
-            seasonId: currentSeasonId,
-            onlyWithRoles: filterValue,
-          });
-          setUsers(response.users);
-          setHasNext(response.pagination.hasNext);
-          setHasPrev(response.pagination.hasPrev);
+          await loadUsers(1, undefined, true);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to apply filter');
       } finally {
-        setLoading(false);
+        dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
       }
     },
     [userService, accountId, searchTerm, currentSeasonId],
   );
 
-  // Pagination handlers
+  // Pagination handlers - atomic state updates
   const handleNextPage = useCallback(() => {
-    if (hasNext) {
+    if (hasNext && !loading) {
       const nextPage = page + 1;
-      setPage(nextPage);
-      loadUsers(nextPage);
+      // Pass isPaginating=true to avoid double dispatch
+      loadUsers(nextPage, undefined, true);
     }
-  }, [hasNext, page, loadUsers]);
+  }, [hasNext, page, loadUsers, loading]);
 
   const handlePrevPage = useCallback(() => {
-    if (hasPrev) {
+    if (hasPrev && !loading) {
       const prevPage = page - 1;
-      setPage(prevPage);
-      loadUsers(prevPage);
+      // Pass isPaginating=true to avoid double dispatch
+      loadUsers(prevPage, undefined, true);
     }
-  }, [hasPrev, page, loadUsers]);
+  }, [hasPrev, page, loadUsers, loading]);
 
   const handleRowsPerPageChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const newRowsPerPage = parseInt(event.target.value, 10);
       setRowsPerPage(newRowsPerPage);
-      setPage(1);
-      loadUsers(1, newRowsPerPage);
+      // Pass isPaginating=true to avoid double dispatch
+      loadUsers(1, newRowsPerPage, true);
     },
     [loadUsers],
   );
@@ -467,6 +559,159 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setRemoveRoleDialogOpen(true);
   }, []);
 
+  const openEditContactDialog = useCallback((contact: Contact) => {
+    setSelectedContactForEdit(contact);
+    setEditContactDialogOpen(true);
+  }, []);
+
+  const closeEditContactDialog = useCallback(() => {
+    setEditContactDialogOpen(false);
+    setSelectedContactForEdit(null);
+  }, []);
+
+  const openDeleteContactDialog = useCallback((contact: Contact) => {
+    setSelectedContactForDelete(contact);
+    setDeleteContactDialogOpen(true);
+  }, []);
+
+  const closeDeleteContactDialog = useCallback(() => {
+    setDeleteContactDialogOpen(false);
+    setSelectedContactForDelete(null);
+  }, []);
+
+  const handleEditContact = useCallback(
+    async (contactData: ContactUpdateData) => {
+      if (!userService || !selectedContactForEdit || !accountId) {
+        setError('Unable to update contact - missing required data');
+        return;
+      }
+
+      try {
+        setFormLoading(true);
+
+        await userService.updateContact(accountId, selectedContactForEdit.id, contactData);
+
+        // Refresh the users list to show updated data
+        const currentPage = paginationState.page;
+        dispatch({ type: 'START_LOADING' });
+
+        const usersResponse = await userService.fetchUsers(accountId, {
+          search: searchTerm,
+          page: currentPage,
+          limit: rowsPerPage,
+          seasonId: currentSeasonId,
+          onlyWithRoles,
+        });
+
+        dispatch({
+          type: 'SET_DATA',
+          users: usersResponse.users,
+          hasNext: usersResponse.pagination.hasNext,
+          hasPrev: usersResponse.pagination.hasPrev,
+          page: currentPage,
+        });
+
+        setSuccess('Contact updated successfully');
+        closeEditContactDialog();
+      } catch (error) {
+        console.error('Error updating contact:', error);
+        setError(error instanceof Error ? error.message : 'Failed to update contact');
+      } finally {
+        setFormLoading(false);
+      }
+    },
+    [
+      userService,
+      selectedContactForEdit,
+      accountId,
+      paginationState.page,
+      searchTerm,
+      rowsPerPage,
+      currentSeasonId,
+      onlyWithRoles,
+      closeEditContactDialog,
+    ],
+  );
+
+  const handleDeleteContact = useCallback(
+    async (contactId: string, force: boolean) => {
+      if (!userService || !accountId) {
+        setError('Unable to delete contact - missing required data');
+        return;
+      }
+
+      try {
+        setFormLoading(true);
+
+        const result = await userService.deleteContact(accountId, contactId, force);
+
+        // Refresh the users list to remove the deleted contact
+        // If we have a search term, use the search functionality to preserve the search state
+        if (searchTerm.trim()) {
+          // Use the search function which maintains the search state properly
+          await handleSearch();
+        } else {
+          // For regular refresh without search, use the current page but handle empty page edge case
+          const currentPage = paginationState.page;
+          dispatch({ type: 'START_LOADING' });
+
+          const usersResponse = await userService.fetchUsers(accountId, {
+            page: currentPage,
+            limit: rowsPerPage,
+            seasonId: currentSeasonId,
+            onlyWithRoles,
+          });
+
+          // If current page is empty and we have previous pages, go back one page
+          if (usersResponse.users.length === 0 && currentPage > 1) {
+            const previousPageResponse = await userService.fetchUsers(accountId, {
+              page: currentPage - 1,
+              limit: rowsPerPage,
+              seasonId: currentSeasonId,
+              onlyWithRoles,
+            });
+
+            dispatch({
+              type: 'SET_DATA',
+              users: previousPageResponse.users,
+              hasNext: previousPageResponse.pagination.hasNext,
+              hasPrev: previousPageResponse.pagination.hasPrev,
+              page: currentPage - 1,
+            });
+          } else {
+            dispatch({
+              type: 'SET_DATA',
+              users: usersResponse.users,
+              hasNext: usersResponse.pagination.hasNext,
+              hasPrev: usersResponse.pagination.hasPrev,
+              page: currentPage,
+            });
+          }
+        }
+
+        setSuccess(
+          `${result.message}${result.dependenciesDeleted > 0 ? ` (${result.dependenciesDeleted} related records deleted)` : ''}`,
+        );
+        closeDeleteContactDialog();
+      } catch (error) {
+        console.error('Error deleting contact:', error);
+        setError(error instanceof Error ? error.message : 'Failed to delete contact');
+      } finally {
+        setFormLoading(false);
+      }
+    },
+    [
+      userService,
+      accountId,
+      paginationState.page,
+      searchTerm,
+      rowsPerPage,
+      currentSeasonId,
+      onlyWithRoles,
+      closeDeleteContactDialog,
+    ],
+  );
+
   // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
     (
@@ -485,11 +730,15 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     [],
   );
 
+  // Memoize stable loading state
+  const isCurrentlyLoading = useMemo(() => loading, [loading]);
+
   return {
     // State
     users,
     roles,
-    loading,
+    loading: isCurrentlyLoading, // Use loading state
+    isInitialLoad, // Expose initial load state
     error,
     success,
     page,
@@ -499,11 +748,16 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     searchTerm,
     searchLoading,
     onlyWithRoles,
+    isPaginating: loading && !isInitialLoad, // Show when paginating
 
     // Dialog states
     assignRoleDialogOpen,
     removeRoleDialogOpen,
+    editContactDialogOpen,
+    deleteContactDialogOpen,
     selectedUser,
+    selectedContactForEdit,
+    selectedContactForDelete,
     selectedRole,
     selectedRoleToRemove,
     newUserContactId,
@@ -529,8 +783,15 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     openAssignRoleDialog,
     closeAssignRoleDialog,
     openRemoveRoleDialog,
+    openEditContactDialog,
+    closeEditContactDialog,
+    handleEditContact,
+    openDeleteContactDialog,
+    closeDeleteContactDialog,
+    handleDeleteContact,
     setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,
+    setEditContactDialogOpen,
     setSelectedUser,
     setSelectedRole,
     setSelectedRoleToRemove,

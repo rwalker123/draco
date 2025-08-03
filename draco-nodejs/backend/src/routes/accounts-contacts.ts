@@ -12,6 +12,7 @@ import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
 import { ContactService } from '../services/contactService';
 import { ContactSearchResult } from '../interfaces/accountInterfaces';
+import { ContactDependencyService } from '../services/contactDependencyService';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -224,6 +225,8 @@ router.get(
       displayName: `${contact.firstName} ${contact.lastName}`,
       searchText: `${contact.firstName} ${contact.lastName} (${contact.email})`,
       ...(includeRoles && { contactroles: contact.contactroles }),
+      ...(includeContactDetails &&
+        contact.contactDetails && { contactDetails: contact.contactDetails }),
     }));
 
     res.json({
@@ -481,6 +484,98 @@ router.post(
           firstYear: newRoster.firstyear,
           contact: newRoster.contacts,
         },
+      },
+    });
+  }),
+);
+
+/**
+ * DELETE /api/accounts/:accountId/contacts/:contactId
+ * Delete a contact from an account
+ * Query parameters:
+ *   - force=true to bypass dependency checks and force deletion
+ *   - check=true to only check dependencies without deleting
+ */
+router.delete(
+  '/:accountId/contacts/:contactId',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId, contactId } = extractContactParams(req.params);
+    const { force, check } = req.query;
+    const forceDelete = force === 'true';
+    const onlyCheck = check === 'true';
+
+    // Verify the contact exists and belongs to this account first
+    const existingContact = await prisma.contacts.findFirst({
+      where: {
+        id: contactId,
+        creatoraccountid: accountId,
+      },
+      select: {
+        id: true,
+        firstname: true,
+        lastname: true,
+        email: true,
+      },
+    });
+
+    if (!existingContact) {
+      throw new NotFoundError('Contact not found');
+    }
+
+    // Check dependencies
+    const dependencyCheck = await ContactDependencyService.checkDependencies(contactId, accountId);
+
+    // If only checking dependencies, return the result
+    if (onlyCheck) {
+      res.json({
+        success: true,
+        data: {
+          contact: {
+            id: existingContact.id.toString(),
+            firstName: existingContact.firstname,
+            lastName: existingContact.lastname,
+            email: existingContact.email,
+          },
+          dependencyCheck,
+        },
+      });
+      return;
+    }
+
+    // Handle deletion
+    if (!dependencyCheck.canDelete && !forceDelete) {
+      throw new ValidationError(
+        `Cannot delete contact "${existingContact.firstname} ${existingContact.lastname}": ${dependencyCheck.message}`,
+      );
+    }
+
+    // Perform deletion
+    if (forceDelete) {
+      await ContactDependencyService.forceDeleteContact(contactId, accountId);
+    } else {
+      await ContactDependencyService.safeDeleteContact(contactId, accountId);
+    }
+
+    // Log the deletion for audit purposes
+    console.log(
+      `Contact deleted: ${existingContact.firstname} ${existingContact.lastname} (ID: ${contactId}) by user ${req.user?.username || 'unknown'} ${forceDelete ? '[FORCED]' : '[SAFE]'}`,
+    );
+
+    res.json({
+      success: true,
+      data: {
+        message: `Contact "${existingContact.firstname} ${existingContact.lastname}" deleted successfully`,
+        deletedContact: {
+          id: existingContact.id.toString(),
+          firstName: existingContact.firstname,
+          lastName: existingContact.lastname,
+          email: existingContact.email,
+        },
+        dependenciesDeleted: dependencyCheck.totalDependencies,
+        wasForced: forceDelete,
       },
     });
   }),

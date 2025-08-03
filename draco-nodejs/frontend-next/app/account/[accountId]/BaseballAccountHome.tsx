@@ -27,9 +27,6 @@ import AccountPageHeader from '../../../components/AccountPageHeader';
 import OrganizationsWidget from '../../../components/OrganizationsWidget';
 import ThemeSwitcher from '../../../components/ThemeSwitcher';
 
-// Import Account type from OrganizationsWidget to avoid type conflicts
-import type { Account as OrganizationAccount } from '../../../components/OrganizationsWidget';
-
 interface Account {
   id: string;
   name: string;
@@ -58,7 +55,7 @@ const BaseballAccountHome: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [scoreboardLayout, setScoreboardLayout] = useState<'vertical' | 'horizontal'>('horizontal');
   const [hasAnyGames, setHasAnyGames] = useState(false);
-  const [hasOtherOrganizations, setHasOtherOrganizations] = useState(false);
+  const [showOrganizationsWidget, setShowOrganizationsWidget] = useState(false);
   const { user, token } = useAuth();
   const router = useRouter();
   const { accountId } = useParams();
@@ -386,19 +383,21 @@ const BaseballAccountHome: React.FC = () => {
         </Paper>
 
         {/* User Organizations Widget */}
-        {user && hasOtherOrganizations && (
-          <OrganizationsWidget
-            title="Your Other Organizations"
-            showSearch={false}
-            maxDisplay={3}
-            sx={{ mb: 0 }}
-            excludeAccountId={accountIdStr}
-            onOrganizationsLoaded={(organizations: OrganizationAccount[]) => {
-              // Only show the widget if there are organizations to display (excluding current account)
-              const otherOrganizations = organizations.filter((org) => org.id !== accountIdStr);
-              setHasOtherOrganizations(otherOrganizations.length > 0);
-            }}
-          />
+        {user && (
+          <Box sx={{ display: showOrganizationsWidget ? 'block' : 'none' }}>
+            <OrganizationsWidget
+              title="Your Other Organizations"
+              showSearch={false}
+              maxDisplay={3}
+              sx={{ mb: 0 }}
+              excludeAccountId={accountIdStr}
+              onOrganizationsLoaded={(organizations) => {
+                // Only show the widget if there are organizations to display (excluding current account)
+                const otherOrganizations = organizations.filter((org) => org.id !== accountIdStr);
+                setShowOrganizationsWidget(otherOrganizations.length > 0);
+              }}
+            />
+          </Box>
         )}
       </Box>
     </main>

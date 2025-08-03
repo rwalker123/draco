@@ -1,17 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Stack, Typography, Alert, Button } from '@mui/material';
+import { Alert, Button } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import {
-  UserSearchBar,
-  UserFilterBar,
-  UserTable,
+  UserTableEnhanced,
   AssignRoleDialog,
   RemoveRoleDialog,
-  RoleLegend,
 } from '../../../../components/users';
+import EditContactDialog from '../../../../components/users/EditContactDialog';
+import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
+import RoleLegend from '../../../../components/users/RoleLegend';
 
 interface UserManagementProps {
   accountId: string;
@@ -24,6 +24,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     users,
     roles,
     loading,
+    isInitialLoad,
     error,
     success,
     page,
@@ -32,12 +33,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     hasPrev,
     searchTerm,
     searchLoading,
-    onlyWithRoles,
 
     // Dialog states
     assignRoleDialogOpen,
     removeRoleDialogOpen,
+    editContactDialogOpen,
+    deleteContactDialogOpen,
     selectedUser,
+    selectedContactForEdit,
+    selectedContactForDelete,
     selectedRole,
     selectedRoleToRemove,
     newUserContactId,
@@ -54,7 +58,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     // Actions
     handleSearch,
     handleClearSearch,
-    handleFilterToggle,
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
@@ -63,6 +66,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     openAssignRoleDialog,
     closeAssignRoleDialog,
     openRemoveRoleDialog,
+    openEditContactDialog,
+    closeEditContactDialog,
+    handleEditContact,
+    openDeleteContactDialog,
+    closeDeleteContactDialog,
+    handleDeleteContact,
     setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,
     setSelectedUser,
@@ -82,27 +91,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header Section */}
-      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4" component="h1">
-          User Management
-        </Typography>
-        {canManageUsers && (
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={async () => {
-              setSelectedUser(null); // Clear any preselected user
-              setNewUserContactId(''); // Clear contact ID
-              setAssignRoleDialogOpen(true);
-              await loadContextData();
-            }}
-          >
-            Assign Role
-          </Button>
-        )}
-      </Stack>
-
       {/* Error and Success Alerts */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -116,36 +104,36 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         </Alert>
       )}
 
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Manage users and their roles for this organization.
-      </Typography>
+      {/* Quick Actions */}
+      {canManageUsers && (
+        <div style={{ marginBottom: '16px', textAlign: 'right' }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={async () => {
+              setSelectedUser(null); // Clear any preselected user
+              setNewUserContactId(''); // Clear contact ID
+              setAssignRoleDialogOpen(true);
+              await loadContextData();
+            }}
+          >
+            Add User Role
+          </Button>
+        </div>
+      )}
 
       {/* Role Legend */}
       <RoleLegend variant="compact" />
 
-      {/* Filter Section */}
-      <UserFilterBar
-        onlyWithRoles={onlyWithRoles}
-        onToggle={handleFilterToggle}
-        userCount={users.length}
-        loading={loading}
-      />
-
-      {/* Search Section */}
-      <UserSearchBar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onSearch={handleSearch}
-        onClear={handleClearSearch}
-        loading={searchLoading}
-      />
-
-      {/* Table Section */}
-      <UserTable
+      {/* Enhanced User Table with Modern Features */}
+      <UserTableEnhanced
         users={users}
         loading={loading}
+        isInitialLoad={isInitialLoad}
         onAssignRole={openAssignRoleDialog}
         onRemoveRole={openRemoveRoleDialog}
+        onEditContact={openEditContactDialog}
+        onDeleteContact={openDeleteContactDialog}
         canManageUsers={canManageUsers}
         page={page}
         rowsPerPage={rowsPerPage}
@@ -155,6 +143,24 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onPrevPage={handlePrevPage}
         onRowsPerPageChange={handleRowsPerPageChange}
         getRoleDisplayName={getRoleDisplayName}
+        // Enhanced features
+        enableBulkOperations={false}
+        enableViewSwitching={true}
+        enableAdvancedFilters={true}
+        enableVirtualization={true} // Auto-disabled when paginated data detected
+        virtualizationThreshold={100}
+        initialViewMode="card"
+        onModernFeaturesChange={(_enabled) => {
+          // Modern features notification
+        }}
+        // Enhanced props
+        accountId={accountId}
+        // Search props
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        onSearch={handleSearch}
+        onClearSearch={handleClearSearch}
+        searchLoading={searchLoading}
       />
 
       {/* Dialog Sections */}
@@ -189,6 +195,22 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onRemove={handleRemoveRole}
         selectedUser={selectedUser}
         selectedRoleToRemove={selectedRoleToRemove}
+        loading={formLoading}
+      />
+
+      <EditContactDialog
+        open={editContactDialogOpen}
+        contact={selectedContactForEdit}
+        onClose={closeEditContactDialog}
+        onSave={handleEditContact}
+        loading={formLoading}
+      />
+
+      <DeleteContactDialog
+        open={deleteContactDialogOpen}
+        contact={selectedContactForDelete}
+        onClose={closeDeleteContactDialog}
+        onDelete={handleDeleteContact}
         loading={formLoading}
       />
     </main>

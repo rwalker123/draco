@@ -46,10 +46,10 @@ export const getPhoneNumbers = (
     phones.push({ type: 'Home', number: formatPhoneNumber(contactDetails.phone1) });
   }
   if (contactDetails.phone2) {
-    phones.push({ type: 'Work', number: formatPhoneNumber(contactDetails.phone2) });
+    phones.push({ type: 'Cell', number: formatPhoneNumber(contactDetails.phone2) });
   }
   if (contactDetails.phone3) {
-    phones.push({ type: 'Cell', number: formatPhoneNumber(contactDetails.phone3) });
+    phones.push({ type: 'Work', number: formatPhoneNumber(contactDetails.phone3) });
   }
 
   return phones;
