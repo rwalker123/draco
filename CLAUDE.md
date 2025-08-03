@@ -176,3 +176,8 @@ Priority tasks remaining:
 - Add umpire support to game management
 - Implement player management
 - Add statistics and analytics
+
+## Debugging Notes
+
+- **Frontend Paging**: 
+  * @agent-frontend-nextjs still not working, paging is still refreshing the whole page. I don't know if this is true but you do have a couple debug overlays, could they be causing it? I don't think we need those anymore, they are just displaying configuration information

@@ -12,12 +12,10 @@ import {
   Typography,
   Box,
   CircularProgress,
-  Button,
-  Stack,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { UserTableProps } from '../../types/users';
 import UserCard from './UserCard';
+import StreamPaginationControl from '../pagination/StreamPaginationControl';
 
 /**
  * UserTable Component
@@ -86,30 +84,25 @@ const UserTable: React.FC<UserTableProps> = ({
         </Table>
       </TableContainer>
 
-      <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Page {page} • {users.length} users
-        </Typography>
-
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="outlined"
-            startIcon={<ChevronLeft />}
-            onClick={onPrevPage}
-            disabled={!hasPrev}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outlined"
-            endIcon={<ChevronRight />}
-            onClick={onNextPage}
-            disabled={!hasNext}
-          >
-            Next
-          </Button>
-        </Stack>
-      </Box>
+      <StreamPaginationControl
+        page={page}
+        rowsPerPage={_rowsPerPage}
+        hasNext={hasNext}
+        hasPrev={hasPrev}
+        onNextPage={onNextPage}
+        onPrevPage={onPrevPage}
+        onRowsPerPageChange={(rowsPerPage: number) => {
+          if (_onRowsPerPageChange) {
+            // Create a mock event to satisfy the existing API
+            const mockEvent = {
+              target: { value: rowsPerPage.toString() },
+            } as React.ChangeEvent<HTMLInputElement>;
+            _onRowsPerPageChange(mockEvent);
+          }
+        }}
+        itemLabel="Users"
+        currentItems={users.length}
+      />
     </Paper>
   );
 };

@@ -108,7 +108,21 @@ export const ROLE_ICON_DESCRIPTIONS: Record<string, string> = {
  * @returns The icon component or undefined if not found
  */
 export function getRoleIcon(roleId: string): SvgIconComponent | undefined {
-  return ROLE_ID_TO_ICON[roleId];
+  // Try exact match first
+  let icon = ROLE_ID_TO_ICON[roleId];
+
+  // If not found, try case-insensitive match
+  if (!icon) {
+    const upperRoleId = roleId.toUpperCase();
+    const matchingKey = Object.keys(ROLE_ID_TO_ICON).find(
+      (key) => key.toUpperCase() === upperRoleId,
+    );
+    if (matchingKey) {
+      icon = ROLE_ID_TO_ICON[matchingKey];
+    }
+  }
+
+  return icon;
 }
 
 /**
@@ -155,7 +169,19 @@ export function getRoleTooltipText(role: {
  * @returns The color scheme object or undefined if not found
  */
 export function getRoleColors(roleId: string) {
-  return ROLE_COLORS[roleId as keyof typeof ROLE_COLORS];
+  // Try exact match first
+  let colors = ROLE_COLORS[roleId as keyof typeof ROLE_COLORS];
+
+  // If not found, try case-insensitive match
+  if (!colors) {
+    const upperRoleId = roleId.toUpperCase();
+    const matchingKey = Object.keys(ROLE_COLORS).find((key) => key.toUpperCase() === upperRoleId);
+    if (matchingKey) {
+      colors = ROLE_COLORS[matchingKey as keyof typeof ROLE_COLORS];
+    }
+  }
+
+  return colors;
 }
 
 /**
