@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // Only run on root or top-level routes
+  // Only run domain-based routing on root
   const { pathname } = request.nextUrl;
   if (pathname !== '/' && pathname !== '') {
     return NextResponse.next();

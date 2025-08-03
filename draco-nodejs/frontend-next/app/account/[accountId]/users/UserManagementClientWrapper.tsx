@@ -2,6 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import UserManagement from './UserManagement';
+import ProtectedRoute from '../../../../components/auth/ProtectedRoute';
 
 export default function UserManagementClientWrapper() {
   const { accountId } = useParams();
@@ -11,5 +12,9 @@ export default function UserManagementClientWrapper() {
     return <div>Account ID not found</div>;
   }
 
-  return <UserManagement accountId={accountIdStr} />;
+  return (
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
+      <UserManagement accountId={accountIdStr} />
+    </ProtectedRoute>
+  );
 }
