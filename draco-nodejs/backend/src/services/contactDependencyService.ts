@@ -168,7 +168,7 @@ export class ContactDependencyService {
     try {
       // Use Prisma's dynamic model access
       const model = (
-        prisma as Record<
+        prisma as unknown as Record<
           string,
           { count: (args: { where: Record<string, unknown> }) => Promise<number> }
         >
