@@ -6,6 +6,7 @@ import {
   Contact,
   ContactRole,
   ContactUpdateData,
+  DependencyCheckResult,
 } from '../types/users';
 import { getRoleDisplayName } from '../utils/roleUtils';
 
@@ -337,7 +338,7 @@ export class UserManagementService {
   async checkContactDependencies(
     accountId: string,
     contactId: string,
-  ): Promise<{ contact: unknown; dependencyCheck: unknown }> {
+  ): Promise<{ contact: unknown; dependencyCheck: DependencyCheckResult }> {
     const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}?check=true`, {
       method: 'DELETE',
       headers: {

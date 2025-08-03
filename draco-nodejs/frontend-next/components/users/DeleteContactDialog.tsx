@@ -20,23 +20,9 @@ import {
   Divider,
 } from '@mui/material';
 import { Warning as WarningIcon, Error as ErrorIcon, Info as InfoIcon } from '@mui/icons-material';
-import { Contact } from '../../types/users';
+import { Contact, DependencyCheckResult } from '../../types/users';
 import { createUserManagementService } from '../../services/userManagementService';
 import { useAuth } from '../../context/AuthContext';
-
-export interface ContactDependency {
-  table: string;
-  count: number;
-  description: string;
-  riskLevel: 'critical' | 'high' | 'medium' | 'low';
-}
-
-export interface DependencyCheckResult {
-  canDelete: boolean;
-  dependencies: ContactDependency[];
-  message: string;
-  totalDependencies: number;
-}
 
 interface DeleteContactDialogProps {
   open: boolean;

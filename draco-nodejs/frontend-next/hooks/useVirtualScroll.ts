@@ -239,8 +239,8 @@ export function useVirtualScroll<T extends VirtualScrollItem>(
   // Debounced scroll handler for performance
   const debouncedScrollHandler = useMemo(
     () =>
-      debounce((scrollTop: number) => {
-        setScrollTop(scrollTop);
+      debounce((scrollTop: unknown) => {
+        setScrollTop(scrollTop as number);
         setIsScrolling(false);
       }, finalConfig.debounceMs || 16),
     [finalConfig.debounceMs],

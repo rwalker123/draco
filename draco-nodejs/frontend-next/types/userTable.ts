@@ -216,7 +216,11 @@ export interface UserTableRowProps {
   onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
   canManageUsers: boolean;
-  getRoleDisplayName: (roleOrRoleId: unknown) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
   showCheckbox: boolean;
   columns: TableColumn[];
 }
@@ -229,7 +233,11 @@ export interface UserDisplayCardProps {
   onEditContact?: (contact: import('./users').Contact) => void;
   onDeleteContact?: (contact: import('./users').Contact) => void;
   canManageUsers: boolean;
-  getRoleDisplayName: (roleOrRoleId: unknown) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
   showActions?: boolean;
 }
 
@@ -240,7 +248,11 @@ export interface UserDisplayListProps {
   onEditContact?: (contact: import('./users').Contact) => void;
   onDeleteContact?: (contact: import('./users').Contact) => void;
   canManageUsers: boolean;
-  getRoleDisplayName: (roleOrRoleId: unknown) => string;
+  getRoleDisplayName: (
+    roleOrRoleId:
+      | string
+      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
+  ) => string;
   density: 'compact' | 'comfortable' | 'spacious';
   showAvatar: boolean;
   showContactInfo: boolean;

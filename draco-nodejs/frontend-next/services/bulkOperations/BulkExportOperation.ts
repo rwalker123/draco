@@ -203,7 +203,7 @@ export class BulkExportOperation implements BulkOperation {
       errors.push('No users selected for export');
     }
 
-    const exportParams = params as BulkExportParams;
+    const exportParams = params as unknown as BulkExportParams;
 
     // Validate export format
     if (!exportParams.format) {
@@ -249,7 +249,7 @@ export class BulkExportOperation implements BulkOperation {
     onProgress: (progress: BulkOperationProgress) => void,
     abortSignal?: AbortSignal,
   ): Promise<BulkOperationProgress> {
-    const exportParams = params as BulkExportParams;
+    const exportParams = params as unknown as BulkExportParams;
     const formatter = this.formatters.get(exportParams.format);
 
     if (!formatter) {

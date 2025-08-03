@@ -1,6 +1,21 @@
 // Import context data types
 import { League, Team, LeagueSeason } from '../services/contextDataService';
 
+// Contact dependency types
+export interface ContactDependency {
+  table: string;
+  count: number;
+  description: string;
+  riskLevel: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export interface DependencyCheckResult {
+  canDelete: boolean;
+  dependencies: ContactDependency[];
+  message: string;
+  totalDependencies: number;
+}
+
 // Contact details interface
 export interface ContactDetails {
   phone1: string | null;
