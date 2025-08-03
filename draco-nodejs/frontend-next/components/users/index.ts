@@ -7,6 +7,7 @@ export { default as UserFilterBar } from './UserFilterBar';
 export { default as AssignRoleDialog } from './AssignRoleDialog';
 export { default as RemoveRoleDialog } from './RemoveRoleDialog';
 export { default as UserTable } from './UserTable';
+export { default as UserTableEnhanced } from './UserTableEnhanced';
 export { default as RoleIcon } from './RoleIcon';
 export { default as RoleIconGrid } from './RoleIconGrid';
 export { default as RoleLegend } from './RoleLegend';

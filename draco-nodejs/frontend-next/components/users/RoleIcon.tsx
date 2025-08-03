@@ -1,13 +1,8 @@
 'use client';
 
-import React from 'react';
-import { Tooltip, IconButton, Box } from '@mui/material';
-import {
-  getRoleIcon,
-  getRoleTooltipText,
-  getRoleColors,
-  getRoleAccessibilityLabel,
-} from '../../utils/roleIcons';
+import React, { useState } from 'react';
+import { Tooltip } from '@mui/material';
+import { getRoleIcon, getRoleColors, getRoleTooltipText } from '../../utils/roleIcons';
 import { UserRole } from '../../types/users';
 
 interface RoleIconProps {
@@ -25,116 +20,100 @@ interface RoleIconProps {
 const RoleIcon: React.FC<RoleIconProps> = ({
   role,
   size = 'small',
-  showTooltip = true,
+  showTooltip: _showTooltip = true,
   onClick,
   disabled = false,
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
   const IconComponent = getRoleIcon(role.roleId);
-  const tooltipText = getRoleTooltipText(role);
   const colors = getRoleColors(role.roleId);
-  const accessibilityLabel = getRoleAccessibilityLabel(role);
+  const baseTooltipText = getRoleTooltipText(role);
+  const tooltipText =
+    onClick && !disabled ? `${baseTooltipText} (click to remove)` : baseTooltipText;
 
-  if (!IconComponent) {
-    // Fallback for unknown roles
-    return (
-      <Tooltip title={tooltipText || 'Unknown Role'} disableHoverListener={!showTooltip}>
-        <Box
-          sx={{
-            width: size === 'small' ? 20 : size === 'medium' ? 24 : 32,
-            height: size === 'small' ? 20 : size === 'medium' ? 24 : 32,
-            borderRadius: '50%',
-            backgroundColor: 'grey.300',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: size === 'small' ? '12px' : size === 'medium' ? '14px' : '16px',
-            color: 'grey.600',
-            cursor: onClick ? 'pointer' : 'default',
-            transition: 'all 0.2s ease-in-out',
-            '&:hover':
-              onClick && !disabled
-                ? {
-                    backgroundColor: 'grey.400',
-                    transform: 'scale(1.1)',
-                  }
-                : {},
-          }}
-          onClick={onClick && !disabled ? () => onClick(role) : undefined}
-          role="button"
-          aria-label={accessibilityLabel}
-          tabIndex={onClick && !disabled ? 0 : -1}
-        >
-          ?
-        </Box>
-      </Tooltip>
-    );
-  }
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClick && !disabled) {
+      onClick(role);
+    }
+  };
 
+  // If colors are not found, provide fallback based on role name
+  const fallbackColors = !colors
+    ? {
+        primary: role.roleName?.toLowerCase().includes('admin') ? '#1976d2' : '#666',
+        background: role.roleName?.toLowerCase().includes('admin') ? '#e3f2fd' : '#f5f5f5',
+        hover: role.roleName?.toLowerCase().includes('admin') ? '#1565c0' : '#999',
+      }
+    : undefined;
+
+  const finalColors = colors || fallbackColors;
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
-  if (onClick) {
-    return (
-      <Tooltip title={tooltipText} disableHoverListener={!showTooltip}>
-        <IconButton
-          size={size}
-          onClick={() => onClick(role)}
-          disabled={disabled}
-          sx={{
-            width: iconSize,
-            height: iconSize,
-            padding: 0,
-            color: colors?.primary || 'primary.main',
-            backgroundColor: colors?.background || 'transparent',
-            transition: 'all 0.2s ease-in-out',
-            '&:hover': {
-              backgroundColor: colors?.hover || 'primary.light',
-              color: colors?.hover ? 'white' : 'primary.contrastText',
-              transform: 'scale(1.1)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-            },
-            '&:focus': {
-              outline: '2px solid',
-              outlineColor: colors?.primary || 'primary.main',
-              outlineOffset: '2px',
-            },
-            '&.Mui-disabled': {
-              color: 'grey.400',
-              backgroundColor: 'transparent',
-              transform: 'none',
-            },
-          }}
-          aria-label={accessibilityLabel}
-        >
-          <IconComponent fontSize={size} />
-        </IconButton>
-      </Tooltip>
-    );
+  if (!IconComponent) {
+    return null;
   }
 
+  // Use the working simple span approach
   return (
-    <Tooltip title={tooltipText} disableHoverListener={!showTooltip}>
-      <Box
-        sx={{
-          width: iconSize,
-          height: iconSize,
-          display: 'flex',
+    <Tooltip title={tooltipText} arrow placement="top" enterDelay={300} leaveDelay={200}>
+      <span
+        onClick={handleClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{
+          display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: colors?.primary || 'primary.main',
-          backgroundColor: colors?.background || 'transparent',
+          width: iconSize,
+          height: iconSize,
+          backgroundColor:
+            isHovered && onClick && !disabled
+              ? finalColors?.hover || 'rgba(255, 0, 0, 0.1)'
+              : finalColors?.background || 'transparent',
           borderRadius: '50%',
+          cursor: onClick && !disabled ? 'pointer' : 'default',
           transition: 'all 0.2s ease-in-out',
-          '&:hover': {
-            backgroundColor: colors?.hover || 'primary.light',
-            color: colors?.hover ? 'white' : 'primary.contrastText',
-            transform: 'scale(1.05)',
-          },
+          opacity: disabled ? 0.5 : 1,
+          transform: isHovered && onClick && !disabled ? 'scale(1.1)' : 'scale(1)',
+          boxShadow: isHovered && onClick && !disabled ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
+          position: 'relative',
         }}
-        role="img"
-        aria-label={accessibilityLabel}
       >
-        <IconComponent fontSize={size} />
-      </Box>
+        <IconComponent
+          fontSize={size}
+          style={{
+            color: finalColors?.primary || '#1976d2',
+            fill: finalColors?.primary || '#1976d2',
+          }}
+        />
+
+        {/* Delete marker on hover */}
+        {isHovered && onClick && !disabled && (
+          <span
+            style={{
+              position: 'absolute',
+              top: -2,
+              right: -2,
+              width: 12,
+              height: 12,
+              backgroundColor: '#d32f2f',
+              color: 'white',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '10px',
+              fontWeight: 'bold',
+              lineHeight: 1,
+              border: '1px solid white',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+          >
+            −
+          </span>
+        )}
+      </span>
     </Tooltip>
   );
 };
