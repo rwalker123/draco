@@ -31,6 +31,7 @@ export interface Contact {
   userId: string;
   contactDetails?: ContactDetails;
   contactroles?: ContactRole[];
+  creatoraccountid?: string;
 }
 
 export interface ContactsResponse {
@@ -95,8 +96,11 @@ export interface UserSearchParams {
 export interface UserTableProps {
   users: User[];
   loading: boolean;
+  isInitialLoad?: boolean;
   onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
+  onEditContact?: (contact: Contact) => void;
+  onDeleteContact?: (contact: Contact) => void;
   canManageUsers: boolean;
   page: number;
   rowsPerPage: number;
@@ -177,6 +181,29 @@ export interface RemoveRoleDialogProps {
   loading: boolean;
 }
 
+export interface EditContactDialogProps {
+  open: boolean;
+  contact: Contact | null;
+  onClose: () => void;
+  onSave: (contactData: ContactUpdateData) => Promise<void>;
+  loading?: boolean;
+}
+
+export interface ContactUpdateData {
+  firstName: string;
+  lastName: string;
+  middlename?: string;
+  email: string;
+  phone1?: string;
+  phone2?: string;
+  phone3?: string;
+  streetaddress?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  dateofbirth?: string;
+}
+
 export interface UserActionsProps {
   user: User;
   canManageUsers: boolean;
@@ -189,6 +216,7 @@ export interface UseUserManagementReturn {
   users: User[];
   roles: Role[];
   loading: boolean;
+  isInitialLoad: boolean;
   error: string | null;
   success: string | null;
   page: number;
@@ -198,11 +226,16 @@ export interface UseUserManagementReturn {
   searchTerm: string;
   searchLoading: boolean;
   onlyWithRoles: boolean;
+  isPaginating: boolean;
 
   // Dialog states
   assignRoleDialogOpen: boolean;
   removeRoleDialogOpen: boolean;
+  editContactDialogOpen: boolean;
+  deleteContactDialogOpen: boolean;
   selectedUser: User | null;
+  selectedContactForEdit: Contact | null;
+  selectedContactForDelete: Contact | null;
   selectedRole: string;
   selectedRoleToRemove: UserRole | null;
   newUserContactId: string;
@@ -228,8 +261,15 @@ export interface UseUserManagementReturn {
   openAssignRoleDialog: (user: User) => Promise<void>;
   closeAssignRoleDialog: () => void;
   openRemoveRoleDialog: (user: User, role: UserRole) => void;
+  openEditContactDialog: (contact: Contact) => void;
+  closeEditContactDialog: () => void;
+  handleEditContact: (contactData: ContactUpdateData) => Promise<void>;
+  openDeleteContactDialog: (contact: Contact) => void;
+  closeDeleteContactDialog: () => void;
+  handleDeleteContact: (contactId: string, force: boolean) => Promise<void>;
   setAssignRoleDialogOpen: (open: boolean) => void;
   setRemoveRoleDialogOpen: (open: boolean) => void;
+  setEditContactDialogOpen: (open: boolean) => void;
   setSelectedUser: (user: User | null) => void;
   setSelectedRole: (role: string) => void;
   setSelectedRoleToRemove: (role: UserRole | null) => void;

@@ -43,7 +43,7 @@ import {
   CheckCircle as CheckCircleIcon,
   SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../../../../../../context/AuthContext';
 import axios from 'axios';
 import { isEmail } from 'validator';
@@ -173,9 +173,16 @@ interface ManagerType {
   contacts: Contact;
 }
 
-const TeamRosterManagement: React.FC = () => {
-  const { accountId, seasonId, teamSeasonId } = useParams();
-
+interface TeamRosterManagementProps {
+  accountId: string;
+  seasonId: string;
+  teamSeasonId: string;
+}
+const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
+  accountId,
+  seasonId,
+  teamSeasonId,
+}) => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
@@ -1077,7 +1084,7 @@ const TeamRosterManagement: React.FC = () => {
               '&:hover': { textDecoration: 'underline' },
             }}
           >
-            work: {contact.phone2}
+            cell: {contact.phone2}
           </Link>,
         );
       if (contact.phone3)
@@ -1090,7 +1097,7 @@ const TeamRosterManagement: React.FC = () => {
               '&:hover': { textDecoration: 'underline' },
             }}
           >
-            cell: {contact.phone3}
+            work: {contact.phone3}
           </Link>,
         );
     }

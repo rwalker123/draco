@@ -56,7 +56,23 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
           <Box>
             {contactDetails?.phone1 && (
               <Chip
-                label={`📞 ${contactDetails.phone1}`}
+                label={`📞 ${contactDetails.phone1} (Home)`}
+                size="small"
+                variant="outlined"
+                sx={{ mr: 0.5, mb: 0.5 }}
+              />
+            )}
+            {contactDetails?.phone2 && (
+              <Chip
+                label={`📱 ${contactDetails.phone2} (Cell)`}
+                size="small"
+                variant="outlined"
+                sx={{ mr: 0.5, mb: 0.5 }}
+              />
+            )}
+            {contactDetails?.phone3 && (
+              <Chip
+                label={`💼 ${contactDetails.phone3} (Work)`}
                 size="small"
                 variant="outlined"
                 sx={{ mr: 0.5, mb: 0.5 }}

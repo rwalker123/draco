@@ -92,6 +92,17 @@ export interface ContactSearchResult {
   displayName: string;
   searchText: string;
   contactroles?: unknown[]; // This will be properly typed when roles are extracted
+  contactDetails?: {
+    phone1: string | null;
+    phone2: string | null;
+    phone3: string | null;
+    streetaddress: string | null;
+    city: string | null;
+    state: string | null;
+    zip: string | null;
+    dateofbirth: string | null;
+    middlename: string | null;
+  };
 }
 
 // Field management types
