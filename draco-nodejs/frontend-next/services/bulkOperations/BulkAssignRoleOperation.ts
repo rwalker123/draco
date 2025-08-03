@@ -46,7 +46,7 @@ export class BulkAssignRoleOperation implements BulkOperation {
     }
 
     // Validate parameters
-    const roleParams = params as BulkAssignRoleParams;
+    const roleParams = params as unknown as BulkAssignRoleParams;
     if (!roleParams.roleId) {
       errors.push('Role ID is required');
     }
@@ -105,7 +105,7 @@ export class BulkAssignRoleOperation implements BulkOperation {
     onProgress: (progress: BulkOperationProgress) => void,
     abortSignal?: AbortSignal,
   ): Promise<BulkOperationProgress> {
-    const roleParams = params as BulkAssignRoleParams;
+    const roleParams = params as unknown as BulkAssignRoleParams;
 
     if (!this.userService) {
       throw new Error('User service not initialized');
