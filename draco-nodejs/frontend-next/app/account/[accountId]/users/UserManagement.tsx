@@ -1,8 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Alert, Button } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import React, { useState, useCallback } from 'react';
+import { Alert } from '@mui/material';
 import { useUserManagement } from '../../../../hooks/useUserManagement';
 import {
   UserTableEnhanced,
@@ -12,12 +11,17 @@ import {
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
 import RoleLegend from '../../../../components/users/RoleLegend';
+import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
 
 interface UserManagementProps {
   accountId: string;
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
+  // Confirmation dialog state for photo deletion
+  const [photoDeleteConfirmOpen, setPhotoDeleteConfirmOpen] = useState(false);
+  const [contactToDeletePhoto, setContactToDeletePhoto] = useState<string | null>(null);
+
   // Use custom hook for all state and logic
   const {
     // State
@@ -39,6 +43,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     removeRoleDialogOpen,
     editContactDialogOpen,
     deleteContactDialogOpen,
+    createContactDialogOpen,
     selectedUser,
     selectedContactForEdit,
     selectedContactForDelete,
@@ -69,12 +74,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     openEditContactDialog,
     closeEditContactDialog,
     handleEditContact,
+    openCreateContactDialog,
+    closeCreateContactDialog,
+    handleCreateContact,
+    handleDeleteContactPhoto,
     openDeleteContactDialog,
     closeDeleteContactDialog,
     handleDeleteContact,
-    setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,
-    setSelectedUser,
     setSelectedRole,
     setNewUserContactId,
     setSelectedLeagueId,
@@ -82,12 +89,30 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     setSearchTerm,
     setError,
     setSuccess,
-    loadContextData,
     getRoleDisplayName,
   } = useUserManagement(accountId);
 
   // Check if user can manage users (this is handled in the hook)
   const canManageUsers = true; // The hook handles permission checking
+
+  // Wrapper function for photo deletion with confirmation
+  const handleDeleteContactPhotoWithConfirm = useCallback(async (contactId: string) => {
+    setContactToDeletePhoto(contactId);
+    setPhotoDeleteConfirmOpen(true);
+  }, []);
+
+  const confirmDeletePhoto = useCallback(async () => {
+    if (contactToDeletePhoto) {
+      await handleDeleteContactPhoto(contactToDeletePhoto);
+      setPhotoDeleteConfirmOpen(false);
+      setContactToDeletePhoto(null);
+    }
+  }, [contactToDeletePhoto, handleDeleteContactPhoto]);
+
+  const cancelDeletePhoto = useCallback(() => {
+    setPhotoDeleteConfirmOpen(false);
+    setContactToDeletePhoto(null);
+  }, []);
 
   return (
     <main className="min-h-screen bg-background">
@@ -104,24 +129,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         </Alert>
       )}
 
-      {/* Quick Actions */}
-      {canManageUsers && (
-        <div style={{ marginBottom: '16px', textAlign: 'right' }}>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={async () => {
-              setSelectedUser(null); // Clear any preselected user
-              setNewUserContactId(''); // Clear contact ID
-              setAssignRoleDialogOpen(true);
-              await loadContextData();
-            }}
-          >
-            Add User Role
-          </Button>
-        </div>
-      )}
-
       {/* Role Legend */}
       <RoleLegend variant="compact" />
 
@@ -134,6 +141,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onRemoveRole={openRemoveRoleDialog}
         onEditContact={openEditContactDialog}
         onDeleteContact={openDeleteContactDialog}
+        onAddUser={openCreateContactDialog}
         canManageUsers={canManageUsers}
         page={page}
         rowsPerPage={rowsPerPage}
@@ -144,12 +152,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onRowsPerPageChange={handleRowsPerPageChange}
         getRoleDisplayName={getRoleDisplayName}
         // Enhanced features
-        enableBulkOperations={false}
         enableViewSwitching={true}
         enableAdvancedFilters={true}
         enableVirtualization={true} // Auto-disabled when paginated data detected
         virtualizationThreshold={100}
-        initialViewMode="card"
+        initialViewMode="table"
         onModernFeaturesChange={(_enabled) => {
           // Modern features notification
         }}
@@ -161,6 +168,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onSearch={handleSearch}
         onClearSearch={handleClearSearch}
         searchLoading={searchLoading}
+        onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
       />
 
       {/* Dialog Sections */}
@@ -206,12 +214,33 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         loading={formLoading}
       />
 
+      <EditContactDialog
+        open={createContactDialogOpen}
+        contact={null}
+        mode="create"
+        onClose={closeCreateContactDialog}
+        onSave={handleCreateContact}
+        loading={formLoading}
+      />
+
       <DeleteContactDialog
         open={deleteContactDialogOpen}
         contact={selectedContactForDelete}
         onClose={closeDeleteContactDialog}
         onDelete={handleDeleteContact}
         loading={formLoading}
+      />
+
+      {/* Photo deletion confirmation dialog */}
+      <ConfirmationDialog
+        open={photoDeleteConfirmOpen}
+        onClose={cancelDeletePhoto}
+        onConfirm={confirmDeletePhoto}
+        title="Delete Photo"
+        message="Are you sure you want to delete this photo? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmButtonColor="error"
       />
     </main>
   );

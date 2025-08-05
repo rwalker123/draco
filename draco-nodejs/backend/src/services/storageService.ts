@@ -1,6 +1,5 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as sharp from 'sharp';
 import {
   S3Client,
   PutObjectCommand,
@@ -10,6 +9,7 @@ import {
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { BaseStorageService, StorageService } from './baseStorageService';
 
 // AWS Error interface for better type safety
 interface AWSError extends Error {
@@ -19,20 +19,14 @@ interface AWSError extends Error {
   };
 }
 
-export interface StorageService {
-  saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void>;
-  getLogo(accountId: string, teamId: string): Promise<Buffer | null>;
-  deleteLogo(accountId: string, teamId: string): Promise<void>;
-  getSignedUrl?(accountId: string, teamId: string, expiresIn?: number): Promise<string>;
-  saveAccountLogo(accountId: string, buffer: Buffer): Promise<void>;
-  getAccountLogo(accountId: string): Promise<Buffer | null>;
-  deleteAccountLogo(accountId: string): Promise<void>;
-}
+// Re-export the StorageService interface from baseStorageService
+export { StorageService } from './baseStorageService';
 
-export class LocalStorageService implements StorageService {
+export class LocalStorageService extends BaseStorageService {
   private uploadsDir: string;
 
   constructor() {
+    super();
     this.uploadsDir = path.join(process.cwd(), 'uploads');
     this.ensureUploadsDir();
   }
@@ -50,20 +44,12 @@ export class LocalStorageService implements StorageService {
         fs.mkdirSync(accountDir, { recursive: true });
       }
 
-      // Resize and optimize the image
-      const resizedBuffer = await sharp(buffer)
-        .resize(60, 60, {
-          fit: 'cover',
-        })
-        .png({ quality: 90 })
-        .toBuffer();
-
+      const resizedBuffer = await this.processTeamLogo(buffer);
       const filePath = path.join(accountDir, `${teamId}-logo.png`);
       fs.writeFileSync(filePath, resizedBuffer);
       console.log(`Logo saved to local storage: ${filePath}`);
     } catch (error) {
-      console.error('Error saving logo to local storage:', error);
-      throw new Error('Failed to save logo to local storage');
+      this.handleStorageError(error, 'save logo to local storage');
     }
   }
 
@@ -91,8 +77,7 @@ export class LocalStorageService implements StorageService {
         console.log(`Logo deleted from local storage: ${filePath}`);
       }
     } catch (error) {
-      console.error('Error deleting logo from local storage:', error);
-      throw new Error('Failed to delete logo from local storage');
+      this.handleStorageError(error, 'delete logo from local storage');
     }
   }
 
@@ -102,16 +87,12 @@ export class LocalStorageService implements StorageService {
       if (!fs.existsSync(accountDir)) {
         fs.mkdirSync(accountDir, { recursive: true });
       }
-      const resizedBuffer = await sharp(buffer)
-        .resize(512, 125, { fit: 'cover' })
-        .png({ quality: 90 })
-        .toBuffer();
+      const resizedBuffer = await this.processAccountLogo(buffer);
       const filePath = path.join(accountDir, `logo.png`);
       fs.writeFileSync(filePath, resizedBuffer);
       console.log(`Account logo saved to local storage: ${filePath}`);
     } catch (error) {
-      console.error('Error saving account logo to local storage:', error);
-      throw new Error('Failed to save account logo to local storage');
+      this.handleStorageError(error, 'save account logo to local storage');
     }
   }
 
@@ -136,17 +117,71 @@ export class LocalStorageService implements StorageService {
         console.log(`Account logo deleted from local storage: ${filePath}`);
       }
     } catch (error) {
-      console.error('Error deleting account logo from local storage:', error);
-      throw new Error('Failed to delete account logo from local storage');
+      this.handleStorageError(error, 'delete account logo from local storage');
+    }
+  }
+
+  async saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void> {
+    try {
+      const contactPhotoDir = path.join(this.uploadsDir, accountId, 'contact-photos');
+      if (!fs.existsSync(contactPhotoDir)) {
+        fs.mkdirSync(contactPhotoDir, { recursive: true });
+      }
+
+      const resizedBuffer = await this.processContactPhoto(buffer);
+      const filePath = path.join(contactPhotoDir, `${contactId}-photo.png`);
+      fs.writeFileSync(filePath, resizedBuffer);
+      console.log(`Contact photo saved to local storage: ${filePath}`);
+    } catch (error) {
+      this.handleStorageError(error, 'save contact photo to local storage');
+    }
+  }
+
+  async getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null> {
+    try {
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        'contact-photos',
+        `${contactId}-photo.png`,
+      );
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      return fs.readFileSync(filePath);
+    } catch (error) {
+      console.error('Error reading contact photo from local storage:', error);
+      return null;
+    }
+  }
+
+  async deleteContactPhoto(accountId: string, contactId: string): Promise<void> {
+    try {
+      const filePath = path.join(
+        this.uploadsDir,
+        accountId,
+        'contact-photos',
+        `${contactId}-photo.png`,
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log(`Contact photo deleted from local storage: ${filePath}`);
+      }
+    } catch (error) {
+      this.handleStorageError(error, 'delete contact photo from local storage');
     }
   }
 }
 
-export class S3StorageService implements StorageService {
+export class S3StorageService extends BaseStorageService {
   private s3Client: S3Client;
   private bucketName: string;
 
   constructor() {
+    super();
     if (!process.env.S3_BUCKET) {
       throw new Error('S3_BUCKET environment variable must be set for S3 storage');
     }
@@ -192,15 +227,8 @@ export class S3StorageService implements StorageService {
 
   async saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void> {
     try {
-      // Resize and optimize the image
-      const resizedBuffer = await sharp(buffer)
-        .resize(60, 60, {
-          fit: 'cover',
-        })
-        .png({ quality: 90 })
-        .toBuffer();
-
-      const key = this.getS3Key(accountId, teamId);
+      const resizedBuffer = await this.processTeamLogo(buffer);
+      const key = this.getTeamLogoKey(accountId, teamId);
 
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
@@ -297,16 +325,13 @@ export class S3StorageService implements StorageService {
   }
 
   private getS3Key(accountId: string, teamId: string): string {
-    return `${accountId}/team-logos/${teamId}-logo.png`;
+    return this.getTeamLogoKey(accountId, teamId);
   }
 
   async saveAccountLogo(accountId: string, buffer: Buffer): Promise<void> {
     try {
-      const resizedBuffer = await sharp(buffer)
-        .resize(512, 125, { fit: 'cover' })
-        .png({ quality: 90 })
-        .toBuffer();
-      const key = `${accountId}/logo.png`;
+      const resizedBuffer = await this.processAccountLogo(buffer);
+      const key = this.getAccountLogoKey(accountId);
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -337,7 +362,7 @@ export class S3StorageService implements StorageService {
 
   async getAccountLogo(accountId: string): Promise<Buffer | null> {
     try {
-      const key = `${accountId}/logo.png`;
+      const key = this.getAccountLogoKey(accountId);
       const command = new GetObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -370,7 +395,7 @@ export class S3StorageService implements StorageService {
 
   async deleteAccountLogo(accountId: string): Promise<void> {
     try {
-      const key = `${accountId}/logo.png`;
+      const key = this.getAccountLogoKey(accountId);
       const command = new DeleteObjectCommand({
         Bucket: this.bucketName,
         Key: key,
@@ -381,6 +406,95 @@ export class S3StorageService implements StorageService {
       console.error('Error deleting account logo from S3:', error);
       throw new Error('Failed to delete account logo from S3');
     }
+  }
+
+  async saveContactPhoto(accountId: string, contactId: string, buffer: Buffer): Promise<void> {
+    try {
+      const resizedBuffer = await this.processContactPhoto(buffer);
+      const key = this.getContactPhotoS3Key(accountId, contactId);
+
+      const command = new PutObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+        Body: resizedBuffer,
+        ContentType: 'image/png',
+        CacheControl: 'public, max-age=3600',
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Contact photo saved to S3: ${key}`);
+    } catch (error: unknown) {
+      console.error('Error saving contact photo to S3:', error);
+
+      // Provide more specific error messages
+      const awsError = error as AWSError;
+      if (awsError.name === 'NoSuchBucket') {
+        throw new Error(
+          `S3 bucket '${this.bucketName}' does not exist. Please ensure the bucket is created or check your S3 configuration.`,
+        );
+      } else if (awsError.name === 'AccessDenied') {
+        throw new Error('Access denied to S3. Please check your AWS credentials and permissions.');
+      } else {
+        throw new Error(
+          `Failed to save contact photo to S3: ${awsError.message || 'Unknown error'}`,
+        );
+      }
+    }
+  }
+
+  async getContactPhoto(accountId: string, contactId: string): Promise<Buffer | null> {
+    try {
+      const key = this.getContactPhotoS3Key(accountId, contactId);
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+      const response = await this.s3Client.send(command);
+      if (!response.Body) {
+        return null;
+      }
+      // Convert the readable stream to buffer
+      const chunks: Buffer[] = [];
+      const stream = response.Body as NodeJS.ReadableStream;
+      for await (const chunk of stream) {
+        chunks.push(Buffer.from(chunk));
+      }
+      return Buffer.concat(chunks);
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        (('name' in error && (error as { name: string }).name === 'NoSuchKey') ||
+          ('$metadata' in error &&
+            (error as { $metadata: { httpStatusCode?: number } }).$metadata?.httpStatusCode ===
+              404))
+      ) {
+        return null;
+      }
+      console.error('Error getting contact photo from S3:', error);
+      throw new Error('Failed to get contact photo from S3');
+    }
+  }
+
+  async deleteContactPhoto(accountId: string, contactId: string): Promise<void> {
+    try {
+      const key = this.getContactPhotoS3Key(accountId, contactId);
+
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      await this.s3Client.send(command);
+      console.log(`Contact photo deleted from S3: ${key}`);
+    } catch (error) {
+      console.error('Error deleting contact photo from S3:', error);
+      throw new Error('Failed to delete contact photo from S3');
+    }
+  }
+
+  private getContactPhotoS3Key(accountId: string, contactId: string): string {
+    return this.getContactPhotoKey(accountId, contactId);
   }
 }
 

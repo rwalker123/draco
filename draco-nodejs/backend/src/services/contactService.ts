@@ -11,6 +11,7 @@ import {
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
 import { RoleType } from '../types/roles';
+import { getContactPhotoUrl } from '../config/logo';
 
 export class ContactService {
   /**
@@ -273,6 +274,7 @@ export class ContactService {
       lastName: contact.lastname,
       email: contact.email,
       userId: contact.userid,
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
       ...(includeContactDetails && {
         contactDetails: {
           phone1: contact.phone1,
@@ -352,6 +354,7 @@ export class ContactService {
           lastName: row.lastname,
           email: row.email,
           userId: row.userid,
+          photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
           contactroles: [],
         };
 

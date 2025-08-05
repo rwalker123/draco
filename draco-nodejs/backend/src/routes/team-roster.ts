@@ -91,7 +91,7 @@ router.post(
         addPlayerData,
       );
 
-      const playerName = `${rosterMember.player.contact.firstname} ${rosterMember.player.contact.lastname}`;
+      const playerName = `${rosterMember.player.contact.firstName} ${rosterMember.player.contact.lastName}`;
       const response = RosterResponseFormatter.formatAddPlayerResponse(rosterMember, playerName);
 
       res.status(201).json(response);
@@ -129,7 +129,7 @@ router.put(
         updateData,
       );
 
-      const playerName = `${updatedRosterMember.player.contact.firstname} ${updatedRosterMember.player.contact.lastname}`;
+      const playerName = `${updatedRosterMember.player.contact.firstName} ${updatedRosterMember.player.contact.lastName}`;
       const response = RosterResponseFormatter.formatUpdateRosterMemberResponse(
         updatedRosterMember,
         playerName,
@@ -167,7 +167,7 @@ router.put(
         accountId,
       );
 
-      const playerName = `${releasedPlayer.player.contact.firstname} ${releasedPlayer.player.contact.lastname}`;
+      const playerName = `${releasedPlayer.player.contact.firstName} ${releasedPlayer.player.contact.lastName}`;
       const response = RosterResponseFormatter.formatReleasePlayerResponse(
         releasedPlayer,
         playerName,
@@ -205,7 +205,7 @@ router.put(
         accountId,
       );
 
-      const playerName = `${activatedPlayer.player.contact.firstname} ${activatedPlayer.player.contact.lastname}`;
+      const playerName = `${activatedPlayer.player.contact.firstName} ${activatedPlayer.player.contact.lastName}`;
       const response = RosterResponseFormatter.formatActivatePlayerResponse(
         activatedPlayer,
         playerName,

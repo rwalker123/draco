@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Box, Typography, Fab, Zoom } from '@mui/material';
+import { Box, Fab, Zoom } from '@mui/material';
 import { KeyboardArrowUp as ScrollTopIcon } from '@mui/icons-material';
 import { EnhancedUser, CardSize, UserViewConfig } from '../../../../types/userTable';
 import { User, UserRole } from '../../../../types/users';
 import UserDisplayCard from './UserDisplayCard';
+import UserEmptyState from '../../UserEmptyState';
 import VirtualScrollContainer, {
   createVirtualScrollConfig,
 } from '../../../common/VirtualScrollContainer';
@@ -19,6 +20,7 @@ interface UserCardGridProps {
   onRemoveRole: (user: User, role: UserRole) => void;
   onEditContact?: (contact: import('../../../../types/users').Contact) => void;
   onDeleteContact?: (contact: import('../../../../types/users').Contact) => void;
+  onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -27,6 +29,8 @@ interface UserCardGridProps {
   ) => string;
   enableVirtualization?: boolean;
   virtualizationThreshold?: number;
+  searchTerm?: string;
+  hasFilters?: boolean;
 }
 
 const UserCardGrid: React.FC<UserCardGridProps> = ({
@@ -37,10 +41,13 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
   onRemoveRole,
   onEditContact,
   onDeleteContact,
+  onDeleteContactPhoto,
   canManageUsers,
   getRoleDisplayName,
   enableVirtualization = false,
   virtualizationThreshold = 100,
+  searchTerm,
+  hasFilters = false,
 }) => {
   // Component initialization
 
@@ -98,27 +105,7 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
     });
   }, [useVirtualScrolling, cardSize, virtualizationThreshold]);
 
-  // Empty state
-  if (users.length === 0) {
-    return (
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: 300,
-          textAlign: 'center',
-          color: 'text.secondary',
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          No users to display
-        </Typography>
-        <Typography variant="body2">Try adjusting your search or filter criteria.</Typography>
-      </Box>
-    );
-  }
+  // Render empty state inline instead of returning early
 
   // Spacing configuration based on card size
   const spacing = {
@@ -132,39 +119,50 @@ const UserCardGrid: React.FC<UserCardGridProps> = ({
       {useVirtualScrolling && virtualRenderer && virtualScrollConfig ? (
         // Virtual Scrolling Mode
         <Box sx={{ p: 2 }}>
-          <VirtualScrollContainer
-            items={users}
-            config={virtualScrollConfig}
-            renderer={virtualRenderer}
-          />
+          {users.length === 0 ? (
+            // Empty state within the virtual scroll structure
+            <UserEmptyState searchTerm={searchTerm} hasFilters={hasFilters} />
+          ) : (
+            <VirtualScrollContainer
+              items={users}
+              config={virtualScrollConfig}
+              renderer={virtualRenderer}
+            />
+          )}
         </Box>
       ) : (
         // Traditional Flexbox Mode
         <Box sx={{ p: 2 }}>
-          <Box
-            sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: spacing,
-              justifyContent: 'flex-start',
-              alignItems: 'flex-start',
-            }}
-          >
-            {users.map((user) => (
-              <UserDisplayCard
-                key={user.id}
-                user={user}
-                cardSize={cardSize}
-                onAssignRole={onAssignRole}
-                onRemoveRole={onRemoveRole}
-                onEditContact={onEditContact}
-                onDeleteContact={onDeleteContact}
-                canManageUsers={canManageUsers}
-                getRoleDisplayName={getRoleDisplayName}
-                showActions={true}
-              />
-            ))}
-          </Box>
+          {users.length === 0 ? (
+            // Empty state within the card structure
+            <UserEmptyState searchTerm={searchTerm} hasFilters={hasFilters} />
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: spacing,
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+              }}
+            >
+              {users.map((user) => (
+                <UserDisplayCard
+                  key={user.id}
+                  user={user}
+                  cardSize={cardSize}
+                  onAssignRole={onAssignRole}
+                  onRemoveRole={onRemoveRole}
+                  onEditContact={onEditContact}
+                  onDeleteContact={onDeleteContact}
+                  onDeleteContactPhoto={onDeleteContactPhoto}
+                  canManageUsers={canManageUsers}
+                  getRoleDisplayName={getRoleDisplayName}
+                  showActions={true}
+                />
+              ))}
+            </Box>
+          )}
         </Box>
       )}
 
