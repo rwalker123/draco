@@ -181,3 +181,7 @@ Priority tasks remaining:
 
 - **Frontend Paging**: 
   * @agent-frontend-nextjs still not working, paging is still refreshing the whole page. I don't know if this is true but you do have a couple debug overlays, could they be causing it? I don't think we need those anymore, they are just displaying configuration information
+
+## Important Best Practices
+
+- Always run npm frontend-next:lint and npm backend:lint from the root project directory

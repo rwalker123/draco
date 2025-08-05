@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { useRole } from './RoleContext';
@@ -28,29 +28,39 @@ export function isAxiosError(error: unknown): error is { response: { data: { mes
     typeof error === 'object' &&
     error !== null &&
     'response' in error &&
-    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message === 'string'
+    typeof (error as { response?: { data?: { message?: unknown } } }).response?.data?.message ===
+      'string'
   );
 }
 
 export const AccountProvider = ({ children }: { children: ReactNode }) => {
-  const { token } = useAuth();
-  const { userRoles } = useRole();
+  const { token, loading: authLoading } = useAuth();
+  const { userRoles, loading: roleLoading } = useRole();
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [userAccounts, setUserAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize with a default account if user has roles
+  // Manage loading state based on dependencies
   useEffect(() => {
-    if (userRoles && userRoles.contactRoles.length > 0) {
-      // Get the first account the user has access to
+    if (authLoading || roleLoading) {
+      setLoading(true);
+    } else if (token && userRoles && !currentAccount && userRoles.contactRoles.length > 0) {
+      setLoading(true);
+      // Initialize with a default account if user has roles
       const firstAccount = userRoles.contactRoles[0];
       setCurrentAccount({
         id: firstAccount.accountId,
-        name: `Account ${firstAccount.accountId}` // You might want to fetch the actual account name
+        name: `Account ${firstAccount.accountId}`, // You might want to fetch the actual account name
       });
+      setLoading(false);
+    } else if (!token || !userRoles) {
+      setLoading(false);
+      setCurrentAccount(null);
+    } else {
+      setLoading(false);
     }
-  }, [userRoles]);
+  }, [authLoading, roleLoading, token, userRoles, currentAccount]);
 
   const fetchUserAccounts = async () => {
     if (!token || !userRoles) return;
@@ -60,13 +70,13 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     try {
       // This would be an API call to get accounts the user has access to
       // For now, we'll use the accounts from userRoles
-      const accounts: Account[] = userRoles.contactRoles.map(role => ({
+      const accounts: Account[] = userRoles.contactRoles.map((role) => ({
         id: role.accountId,
-        name: `Account ${role.accountId}` // In a real app, you'd fetch the actual account names
+        name: `Account ${role.accountId}`, // In a real app, you'd fetch the actual account names
       }));
 
       setUserAccounts(accounts);
-      
+
       // Set current account if none is set
       if (!currentAccount && accounts.length > 0) {
         setCurrentAccount(accounts[0]);
@@ -93,7 +103,7 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
     }
 
     // Check contact roles
-    return userRoles.contactRoles.some(role => role.accountId === accountId);
+    return userRoles.contactRoles.some((role) => role.accountId === accountId);
   };
 
   const clearAccounts = () => {
@@ -103,16 +113,18 @@ export const AccountProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AccountContext.Provider value={{
-      currentAccount,
-      userAccounts,
-      loading,
-      error,
-      setCurrentAccount,
-      fetchUserAccounts,
-      hasAccessToAccount,
-      clearAccounts
-    }}>
+    <AccountContext.Provider
+      value={{
+        currentAccount,
+        userAccounts,
+        loading,
+        error,
+        setCurrentAccount,
+        fetchUserAccounts,
+        hasAccessToAccount,
+        clearAccounts,
+      }}
+    >
       {children}
     </AccountContext.Provider>
   );
@@ -124,4 +136,4 @@ export const useAccount = () => {
     throw new Error('useAccount must be used within an AccountProvider');
   }
   return context;
-}; 
+};

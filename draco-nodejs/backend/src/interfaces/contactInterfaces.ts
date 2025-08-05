@@ -24,6 +24,22 @@ export interface ContactDetails {
   middlename: string | null;
 }
 
+// Interface for contact input data from forms (for create/update operations)
+export interface ContactInputData {
+  firstname?: string;
+  lastname?: string;
+  middlename?: string;
+  email?: string;
+  phone1?: string;
+  phone2?: string;
+  phone3?: string;
+  streetaddress?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  dateofbirth?: string;
+}
+
 export interface ContactResponse {
   contacts: Array<{
     id: string;
@@ -31,6 +47,7 @@ export interface ContactResponse {
     lastName: string;
     email: string | null;
     userId: string | null;
+    photoUrl?: string; // URL to contact photo
     contactDetails?: ContactDetails; // Optional contact details
     contactroles?: Array<{
       id: string;
@@ -74,19 +91,34 @@ export interface ContactWithRoleAndDetailsRow extends ContactWithRoleRow {
   middlename: string | null;
 }
 
-// Interface for contact entry used in internal processing
-export interface ContactEntry {
+// Canonical base Contact interface - single source of truth for Contact structure
+export interface BaseContact {
   id: string;
   firstName: string;
   lastName: string;
   email: string | null;
   userId: string | null;
+  photoUrl?: string; // URL to contact photo
   contactDetails?: ContactDetails;
-  contactroles: Array<{
-    id: string;
-    roleId: string;
-    roleName: string;
-    roleData: string;
-    contextName?: string;
-  }>;
+}
+
+// Contact roles sub-interface for reusability
+export interface ContactRoleEntry {
+  id: string;
+  roleId: string;
+  roleName: string;
+  roleData: string;
+  contextName?: string;
+}
+
+// Interface for contact entry used in internal processing (extends base)
+export interface ContactEntry extends BaseContact {
+  contactroles: ContactRoleEntry[];
+}
+
+// Interface for contact search results (extends base with search-specific fields)
+export interface ContactSearchResult extends BaseContact {
+  displayName: string;
+  searchText: string;
+  contactroles?: ContactRoleEntry[];
 }

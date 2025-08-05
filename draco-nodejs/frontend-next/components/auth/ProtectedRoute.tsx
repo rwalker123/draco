@@ -25,7 +25,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
   const searchParams = useSearchParams();
   const { user, token, loading: authLoading } = useAuth();
   const { hasRole, hasPermission, loading: roleLoading } = useRole();
-  const { currentAccount } = useAccount();
+  const { currentAccount, loading: accountLoading } = useAccount();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -42,8 +42,9 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     setIsChecking(true);
     setIsAuthorized(null);
 
-    // Wait for auth and role data to load
-    if (authLoading || roleLoading) {
+    // Wait for auth, role, and account data to load
+    const shouldWaitForAccount = checkAccountBoundary && accountLoading;
+    if (authLoading || roleLoading || shouldWaitForAccount) {
       return;
     }
 
@@ -100,6 +101,7 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     token,
     authLoading,
     roleLoading,
+    accountLoading,
     requiredPermission,
     checkAccountBoundary,
     hasRole,
@@ -138,8 +140,9 @@ const ProtectedRouteContent: React.FC<ProtectedRouteProps> = ({
     };
   }, [user, authLoading]);
 
-  // Show loading state while checking auth/roles
-  if (authLoading || roleLoading || isChecking || isAuthorized === null) {
+  // Show loading state while checking auth/roles/accounts
+  const shouldWaitForAccount = checkAccountBoundary && accountLoading;
+  if (authLoading || roleLoading || shouldWaitForAccount || isChecking || isAuthorized === null) {
     return (
       <Box
         sx={{

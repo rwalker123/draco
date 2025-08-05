@@ -83,27 +83,8 @@ export interface PublicSeason {
 }
 
 // Contact and user management types
-export interface ContactSearchResult {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string | null;
-  userId: string | null;
-  displayName: string;
-  searchText: string;
-  contactroles?: unknown[]; // This will be properly typed when roles are extracted
-  contactDetails?: {
-    phone1: string | null;
-    phone2: string | null;
-    phone3: string | null;
-    streetaddress: string | null;
-    city: string | null;
-    state: string | null;
-    zip: string | null;
-    dateofbirth: string | null;
-    middlename: string | null;
-  };
-}
+// Re-export ContactSearchResult from contactInterfaces for backward compatibility
+export { ContactSearchResult } from './contactInterfaces';
 
 // Field management types
 export interface AccountField {

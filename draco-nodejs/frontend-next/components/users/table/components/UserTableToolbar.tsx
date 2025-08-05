@@ -33,6 +33,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   onSearchChange,
   onSearchSubmit,
   onSearchClear,
+  onAddUser,
   filters,
   onFiltersChange,
   customActions,
@@ -224,6 +225,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
                     variant="outlined"
                     size="small"
                     startIcon={<PersonAddIcon />}
+                    onClick={onAddUser}
                     disabled={loading}
                   >
                     Add User
@@ -317,7 +319,8 @@ const areToolbarPropsEqual = (
     prevProps.userCount === nextProps.userCount && // Compare user count directly
     prevProps.onSearchChange === nextProps.onSearchChange &&
     prevProps.onSearchSubmit === nextProps.onSearchSubmit &&
-    prevProps.onSearchClear === nextProps.onSearchClear
+    prevProps.onSearchClear === nextProps.onSearchClear &&
+    prevProps.onAddUser === nextProps.onAddUser
   );
 };
 
