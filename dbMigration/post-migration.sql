@@ -173,3 +173,6 @@ UPDATE public.contacts
 
 ALTER TABLE public.contacts
 ALTER COLUMN middlename SET NOT NULL;
+
+ALTER TABLE IF EXISTS public.roster
+    ADD CONSTRAINT roster_contactid UNIQUE (contactid);

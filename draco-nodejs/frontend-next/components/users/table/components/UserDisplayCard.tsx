@@ -4,7 +4,6 @@ import React from 'react';
 import {
   Card,
   CardContent,
-  Avatar,
   Typography,
   Box,
   Stack,
@@ -25,6 +24,7 @@ import {
 import { UserDisplayCardProps } from '../../../../types/userTable';
 import { User, UserRole } from '../../../../types/users';
 import RoleIconGrid from '../../RoleIconGrid';
+import UserAvatar from '../../UserAvatar';
 
 const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   user,
@@ -33,6 +33,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   onRemoveRole,
   onEditContact,
   onDeleteContact,
+  onDeleteContactPhoto,
   canManageUsers,
   getRoleDisplayName: _getRoleDisplayName,
   showActions = true,
@@ -99,9 +100,6 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
       onRemoveRole(baseUser, role);
     }
   };
-
-  // Generate user initials for avatar
-  const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 
   // Convert activeRoleNames to UserRole objects for RoleIconGrid
   const userRoles: UserRole[] = user.roles || [];
@@ -209,6 +207,7 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                   lastName: user.lastName,
                   email: user.email,
                   userId: user.userId,
+                  photoUrl: user.photoUrl,
                   contactDetails: user.contactDetails,
                   contactroles: user.roles?.map((role) => ({
                     id: role.id,
@@ -275,17 +274,38 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
       >
         {/* User Avatar and Basic Info */}
         <Stack direction="column" alignItems="center" spacing={2} mb={2}>
-          <Avatar
-            sx={{
-              width: config.avatarSize,
-              height: config.avatarSize,
-              bgcolor: 'primary.main',
-              fontSize: config.avatarSize * 0.4,
-              fontWeight: 600,
-            }}
-          >
-            {initials}
-          </Avatar>
+          <UserAvatar
+            user={user}
+            size={config.avatarSize}
+            onClick={
+              canManageUsers && onEditContact
+                ? (e) => {
+                    e.stopPropagation();
+                    // Convert EnhancedUser to Contact for the edit dialog
+                    const contact = {
+                      id: user.id,
+                      firstName: user.firstName,
+                      lastName: user.lastName,
+                      email: user.email,
+                      userId: user.userId,
+                      photoUrl: user.photoUrl,
+                      contactDetails: user.contactDetails,
+                      contactroles: user.roles?.map((role) => ({
+                        id: role.id,
+                        roleId: role.roleId,
+                        roleName: role.roleName,
+                        roleData: role.roleData,
+                        contextName: role.contextName,
+                      })),
+                    };
+                    onEditContact(contact);
+                  }
+                : undefined
+            }
+            showHoverEffects={canManageUsers}
+            enablePhotoActions={canManageUsers}
+            onPhotoDelete={onDeleteContactPhoto}
+          />
 
           <Box textAlign="center" sx={{ minWidth: 0, width: '100%' }}>
             <Typography

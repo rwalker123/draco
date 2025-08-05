@@ -1,28 +1,14 @@
 import { PrismaClient } from '@prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors';
-
-export interface ContactInfo {
-  id: bigint;
-  firstname: string;
-  lastname: string;
-  middlename: string | null;
-  email: string | null;
-  phone1: string | null;
-  phone2: string | null;
-  phone3: string | null;
-  streetaddress: string | null;
-  city: string | null;
-  state: string | null;
-  zip: string | null;
-  dateofbirth: Date | null;
-}
+import { ContactEntry } from '../interfaces/contactInterfaces';
+import { getContactPhotoUrl } from '../config/logo';
 
 export interface RosterPlayer {
   id: bigint;
   contactId: bigint;
   submittedDriversLicense: boolean | null;
   firstYear: number | null;
-  contact: ContactInfo;
+  contact: ContactEntry;
 }
 
 export interface RosterMember {
@@ -39,12 +25,7 @@ export interface AvailablePlayer {
   contactId: bigint;
   firstYear: number | null;
   submittedDriversLicense: boolean | null;
-  contact: {
-    id: bigint;
-    firstname: string;
-    lastname: string;
-    middlename: string | null;
-  };
+  contact: ContactEntry;
 }
 
 export interface AddPlayerRequest {
@@ -118,20 +99,46 @@ export class RosterService {
       orderBy: [{ inactive: 'asc' }, { playernumber: 'asc' }],
     });
 
-    return rosterMembers.map((member) => ({
-      id: member.id,
-      playerNumber: member.playernumber,
-      inactive: member.inactive,
-      submittedWaiver: member.submittedwaiver,
-      dateAdded: member.dateadded,
-      player: {
-        id: member.roster.id,
-        contactId: member.roster.contactid,
-        submittedDriversLicense: member.roster.submitteddriverslicense,
-        firstYear: member.roster.firstyear,
-        contact: member.roster.contacts,
-      },
-    }));
+    return rosterMembers.map((member) => {
+      const contact = member.roster.contacts;
+
+      // Transform contact to standard ContactEntry format with photoUrl
+      const contactEntry: ContactEntry = {
+        id: contact.id.toString(),
+        firstName: contact.firstname,
+        lastName: contact.lastname,
+        email: contact.email,
+        userId: null, // Roster contacts don't have userId
+        photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+        contactDetails: {
+          phone1: contact.phone1,
+          phone2: contact.phone2,
+          phone3: contact.phone3,
+          streetaddress: contact.streetaddress,
+          city: contact.city,
+          state: contact.state,
+          zip: contact.zip,
+          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          middlename: contact.middlename,
+        },
+        contactroles: [], // Roster doesn't include roles
+      };
+
+      return {
+        id: member.id,
+        playerNumber: member.playernumber,
+        inactive: member.inactive,
+        submittedWaiver: member.submittedwaiver,
+        dateAdded: member.dateadded,
+        player: {
+          id: member.roster.id,
+          contactId: member.roster.contactid,
+          submittedDriversLicense: member.roster.submitteddriverslicense,
+          firstYear: member.roster.firstyear,
+          contact: contactEntry,
+        },
+      };
+    });
   }
 
   async getAvailablePlayers(
@@ -210,18 +217,39 @@ export class RosterService {
     // Filter out players already assigned to teams in this league season
     const availablePlayers = allRosterPlayers.filter((player) => !assignedPlayerIds.has(player.id));
 
-    return availablePlayers.map((player) => ({
-      id: player.id,
-      contactId: player.contactid,
-      firstYear: player.firstyear,
-      submittedDriversLicense: player.submitteddriverslicense,
-      contact: {
-        id: player.contacts.id,
-        firstname: player.contacts.firstname,
-        lastname: player.contacts.lastname,
-        middlename: player.contacts.middlename,
-      },
-    }));
+    return availablePlayers.map((player) => {
+      const contact = player.contacts;
+
+      // Transform contact to standard ContactEntry format with photoUrl
+      const contactEntry: ContactEntry = {
+        id: contact.id.toString(),
+        firstName: contact.firstname,
+        lastName: contact.lastname,
+        email: contact.email,
+        userId: null, // Roster contacts don't have userId
+        photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+        contactDetails: {
+          phone1: contact.phone1,
+          phone2: contact.phone2,
+          phone3: contact.phone3,
+          streetaddress: contact.streetaddress,
+          city: contact.city,
+          state: contact.state,
+          zip: contact.zip,
+          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          middlename: contact.middlename,
+        },
+        contactroles: [], // Available players don't include roles
+      };
+
+      return {
+        id: player.id,
+        contactId: player.contactid,
+        firstYear: player.firstyear,
+        submittedDriversLicense: player.submitteddriverslicense,
+        contact: contactEntry,
+      };
+    });
   }
 
   async addPlayerToRoster(
@@ -347,6 +375,30 @@ export class RosterService {
       },
     });
 
+    const contact = newRosterMember.roster.contacts;
+
+    // Transform contact to standard ContactEntry format with photoUrl
+    const contactEntry: ContactEntry = {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      email: contact.email,
+      userId: null, // Roster contacts don't have userId
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactDetails: {
+        phone1: contact.phone1,
+        phone2: contact.phone2,
+        phone3: contact.phone3,
+        streetaddress: contact.streetaddress,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        middlename: contact.middlename,
+      },
+      contactroles: [], // Roster doesn't include roles
+    };
+
     return {
       id: newRosterMember.id,
       playerNumber: newRosterMember.playernumber,
@@ -358,7 +410,7 @@ export class RosterService {
         contactId: newRosterMember.roster.contactid,
         submittedDriversLicense: newRosterMember.roster.submitteddriverslicense,
         firstYear: newRosterMember.roster.firstyear,
-        contact: newRosterMember.roster.contacts,
+        contact: contactEntry,
       },
     };
   }
@@ -465,6 +517,30 @@ export class RosterService {
       },
     });
 
+    const contact = updatedRosterMember.roster.contacts;
+
+    // Transform contact to standard ContactEntry format with photoUrl
+    const contactEntry: ContactEntry = {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      email: contact.email,
+      userId: null, // Roster contacts don't have userId
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactDetails: {
+        phone1: contact.phone1,
+        phone2: contact.phone2,
+        phone3: contact.phone3,
+        streetaddress: contact.streetaddress,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        middlename: contact.middlename,
+      },
+      contactroles: [], // Roster doesn't include roles
+    };
+
     return {
       id: updatedRosterMember.id,
       playerNumber: updatedRosterMember.playernumber,
@@ -476,7 +552,7 @@ export class RosterService {
         contactId: updatedRosterMember.roster.contactid,
         submittedDriversLicense: updatedRoster.submitteddriverslicense,
         firstYear: updatedRoster.firstyear,
-        contact: updatedRosterMember.roster.contacts,
+        contact: contactEntry,
       },
     };
   }
@@ -563,6 +639,30 @@ export class RosterService {
       },
     });
 
+    const contact = updatedRosterMember.roster.contacts;
+
+    // Transform contact to standard ContactEntry format with photoUrl
+    const contactEntry: ContactEntry = {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      email: contact.email,
+      userId: null, // Roster contacts don't have userId
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactDetails: {
+        phone1: contact.phone1,
+        phone2: contact.phone2,
+        phone3: contact.phone3,
+        streetaddress: contact.streetaddress,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        middlename: contact.middlename,
+      },
+      contactroles: [], // Roster doesn't include roles
+    };
+
     return {
       id: updatedRosterMember.id,
       playerNumber: updatedRosterMember.playernumber,
@@ -574,7 +674,7 @@ export class RosterService {
         contactId: updatedRosterMember.roster.contactid,
         submittedDriversLicense: updatedRosterMember.roster.submitteddriverslicense,
         firstYear: updatedRosterMember.roster.firstyear,
-        contact: updatedRosterMember.roster.contacts,
+        contact: contactEntry,
       },
     };
   }
@@ -661,6 +761,30 @@ export class RosterService {
       },
     });
 
+    const contact = updatedRosterMember.roster.contacts;
+
+    // Transform contact to standard ContactEntry format with photoUrl
+    const contactEntry: ContactEntry = {
+      id: contact.id.toString(),
+      firstName: contact.firstname,
+      lastName: contact.lastname,
+      email: contact.email,
+      userId: null, // Roster contacts don't have userId
+      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactDetails: {
+        phone1: contact.phone1,
+        phone2: contact.phone2,
+        phone3: contact.phone3,
+        streetaddress: contact.streetaddress,
+        city: contact.city,
+        state: contact.state,
+        zip: contact.zip,
+        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        middlename: contact.middlename,
+      },
+      contactroles: [], // Roster doesn't include roles
+    };
+
     return {
       id: updatedRosterMember.id,
       playerNumber: updatedRosterMember.playernumber,
@@ -672,7 +796,7 @@ export class RosterService {
         contactId: updatedRosterMember.roster.contactid,
         submittedDriversLicense: updatedRosterMember.roster.submitteddriverslicense,
         firstYear: updatedRosterMember.roster.firstyear,
-        contact: updatedRosterMember.roster.contacts,
+        contact: contactEntry,
       },
     };
   }

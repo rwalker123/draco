@@ -10,7 +10,6 @@ import { VirtualItemRenderer } from '../../../../types/virtualScroll';
 import { EnhancedUser, CardSize } from '../../../../types/userTable';
 import { User, UserRole } from '../../../../types/users';
 import UserDisplayCard from '../components/UserDisplayCard';
-import UserDisplayList from '../components/UserDisplayList';
 
 // Base interface for user renderers (Interface Segregation)
 interface BaseUserRendererProps {
@@ -71,55 +70,6 @@ export const createUserCardRenderer = (
   },
 
   getItemKey: (user: EnhancedUser, index: number) => `card-${user.id}-${index}`,
-});
-
-// User List Virtual Renderer
-export const createUserListRenderer = (
-  props: BaseUserRendererProps & {
-    density: 'compact' | 'comfortable' | 'spacious';
-    showAvatar?: boolean;
-    showContactInfo?: boolean;
-    selectedUserIds?: Set<string>;
-    onToggleSelect?: (userId: string) => void;
-    selectionMode?: 'none' | 'single' | 'multiple';
-  },
-): VirtualItemRenderer<EnhancedUser> => ({
-  renderItem: (user: EnhancedUser, _index: number, style: React.CSSProperties) => {
-    return (
-      <div style={style}>
-        <UserDisplayList
-          user={user}
-          onAssignRole={props.onAssignRole}
-          onRemoveRole={props.onRemoveRole || (() => {})}
-          canManageUsers={props.canManageUsers}
-          getRoleDisplayName={props.getRoleDisplayName}
-          density={props.density}
-          showAvatar={props.showAvatar ?? true}
-          showContactInfo={props.showContactInfo ?? true}
-        />
-      </div>
-    );
-  },
-
-  getItemHeight: (user: EnhancedUser, _index: number) => {
-    // Dynamic height based on density and content
-    const baseHeights = {
-      compact: 56,
-      comfortable: 72,
-      spacious: 96,
-    };
-
-    let height = baseHeights[props.density];
-
-    // Add extra height for spacious mode with contact details
-    if (props.density === 'spacious' && props.showContactInfo && user.hasContactInfo) {
-      height += 24;
-    }
-
-    return height;
-  },
-
-  getItemKey: (user: EnhancedUser, index: number) => `list-${user.id}-${index}`,
 });
 
 // Table Row Virtual Renderer (for future table virtualization)
@@ -192,12 +142,11 @@ export const createUserTableRowRenderer = (
 // Factory for creating virtual scroll renderers (Factory pattern)
 export class VirtualUserRendererFactory {
   static createCardRenderer = createUserCardRenderer;
-  static createListRenderer = createUserListRenderer;
   static createTableRowRenderer = createUserTableRowRenderer;
 
   // Convenience method to create renderer based on view mode
   static createRenderer(
-    viewMode: 'card' | 'list' | 'table',
+    viewMode: 'card' | 'table',
     baseProps: BaseUserRendererProps,
     specificProps: Record<string, unknown>,
   ): VirtualItemRenderer<EnhancedUser> {
@@ -205,10 +154,6 @@ export class VirtualUserRendererFactory {
       case 'card':
         return this.createCardRenderer({ ...baseProps, ...specificProps } as Parameters<
           typeof this.createCardRenderer
-        >[0]);
-      case 'list':
-        return this.createListRenderer({ ...baseProps, ...specificProps } as Parameters<
-          typeof this.createListRenderer
         >[0]);
       case 'table':
         return this.createTableRowRenderer({ ...baseProps, ...specificProps } as Parameters<

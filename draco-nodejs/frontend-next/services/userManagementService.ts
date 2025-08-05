@@ -4,11 +4,11 @@ import {
   UsersResponse,
   UserSearchParams,
   Contact,
-  ContactRole,
   ContactUpdateData,
   DependencyCheckResult,
 } from '../types/users';
-import { getRoleDisplayName } from '../utils/roleUtils';
+import { validateContactUpdateResponse, ContactUpdateResponse } from '../types/typeGuards';
+import { ContactTransformationService } from './contactTransformationService';
 
 /**
  * User Management Service
@@ -19,6 +19,22 @@ export class UserManagementService {
 
   constructor(token: string) {
     this.token = token;
+  }
+
+  /**
+   * Transform ContactUpdateResponse (backend format) to Contact (frontend format)
+   * Delegates to shared ContactTransformationService
+   */
+  private transformContactResponseToContact(response: ContactUpdateResponse): Contact {
+    return ContactTransformationService.transformContactUpdateResponse(response);
+  }
+
+  /**
+   * Transform Contact to User format
+   * Delegates to shared ContactTransformationService
+   */
+  private transformContactToUser(contact: Contact): User {
+    return ContactTransformationService.transformContactToUser(contact);
   }
 
   /**
@@ -70,26 +86,9 @@ export class UserManagementService {
 
     // Transform contacts to users format for frontend compatibility
     // Backend returns contacts array with contactroles, but frontend expects users with roles
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => {
-      const transformedRoles =
-        contact.contactroles?.map((cr: ContactRole) => ({
-          id: cr.id,
-          roleId: cr.roleId,
-          roleName: cr.roleName || getRoleDisplayName(cr.roleId),
-          roleData: cr.roleData,
-          contextName: cr.contextName,
-        })) || [];
-
-      return {
-        id: contact.id,
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email,
-        userId: contact.userId,
-        contactDetails: contact.contactDetails,
-        roles: transformedRoles,
-      };
-    });
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
+      this.transformContactToUser(contact),
+    );
 
     return {
       users: usersWithRoles,
@@ -140,26 +139,9 @@ export class UserManagementService {
     }
 
     // Transform contacts to users format for frontend compatibility
-    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) => {
-      const transformedRoles =
-        contact.contactroles?.map((cr: ContactRole) => ({
-          id: cr.id,
-          roleId: cr.roleId,
-          roleName: cr.roleName || getRoleDisplayName(cr.roleId),
-          roleData: cr.roleData,
-          contextName: cr.contextName,
-        })) || [];
-
-      return {
-        id: contact.id,
-        firstName: contact.firstName,
-        lastName: contact.lastName,
-        email: contact.email,
-        userId: contact.userId,
-        contactDetails: contact.contactDetails,
-        roles: transformedRoles,
-      };
-    });
+    const usersWithRoles = (data.data?.contacts || []).map((contact: Contact) =>
+      this.transformContactToUser(contact),
+    );
 
     return usersWithRoles;
   }
@@ -287,40 +269,130 @@ export class UserManagementService {
   }
 
   /**
-   * Update contact information
+   * Update contact information (with optional photo)
    */
   async updateContact(
     accountId: string,
     contactId: string,
     contactData: ContactUpdateData,
+    photoFile?: File | null,
   ): Promise<Contact> {
+    console.log('UserManagementService.updateContact called with:', {
+      contactId,
+      contactData,
+      hasPhotoFile: !!photoFile,
+      photoFileName: photoFile?.name,
+    });
+
     // Transform camelCase frontend data to lowercase backend API format
-    const backendData = {
-      firstname: contactData.firstName,
-      lastname: contactData.lastName,
-      middlename: contactData.middlename,
-      email: contactData.email,
-      phone1: contactData.phone1,
-      phone2: contactData.phone2,
-      phone3: contactData.phone3,
-      streetaddress: contactData.streetaddress,
-      city: contactData.city,
-      state: contactData.state,
-      zip: contactData.zip,
-      dateofbirth: contactData.dateofbirth,
-    };
+    // Only include fields that have actual values (not empty strings)
+    const backendData: Record<string, unknown> = {};
+
+    if (contactData.firstName && contactData.firstName.trim()) {
+      backendData.firstname = contactData.firstName.trim();
+    }
+    if (contactData.lastName && contactData.lastName.trim()) {
+      backendData.lastname = contactData.lastName.trim();
+    }
+    if (contactData.middlename !== undefined) {
+      backendData.middlename = contactData.middlename;
+    }
+    if (contactData.email && contactData.email.trim()) {
+      backendData.email = contactData.email.trim();
+    }
+    if (contactData.phone1 !== undefined) {
+      backendData.phone1 = contactData.phone1;
+    }
+    if (contactData.phone2 !== undefined) {
+      backendData.phone2 = contactData.phone2;
+    }
+    if (contactData.phone3 !== undefined) {
+      backendData.phone3 = contactData.phone3;
+    }
+    if (contactData.streetaddress !== undefined) {
+      backendData.streetaddress = contactData.streetaddress;
+    }
+    if (contactData.city !== undefined) {
+      backendData.city = contactData.city;
+    }
+    if (contactData.state !== undefined) {
+      backendData.state = contactData.state;
+    }
+    if (contactData.zip !== undefined) {
+      backendData.zip = contactData.zip;
+    }
+    if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== '') {
+      // Convert ISO datetime to YYYY-MM-DD format for backend validation
+      try {
+        const date = new Date(contactData.dateofbirth);
+        if (!isNaN(date.getTime())) {
+          backendData.dateofbirth = date.toISOString().split('T')[0];
+        }
+      } catch {
+        console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
+        // Don't include invalid dates
+      }
+    }
+
+    console.log('UserManagementService: Filtered backendData:', backendData);
+
+    // Use FormData if photo is provided, otherwise use JSON
+    let body: FormData | string;
+    let headers: Record<string, string>;
+
+    if (photoFile) {
+      console.log('UserManagementService: Creating FormData with photo', {
+        photoName: photoFile.name,
+        photoSize: photoFile.size,
+        contactData: backendData,
+      });
+
+      const formData = new FormData();
+      // Add all contact data to form data - only include non-empty values
+      Object.entries(backendData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          formData.append(key, String(value));
+        }
+      });
+      // Add photo file
+      formData.append('photo', photoFile);
+
+      console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
+
+      body = formData;
+      headers = {
+        Authorization: `Bearer ${this.token}`,
+        // Don't set Content-Type for FormData - let browser set it with boundary
+      };
+    } else {
+      body = JSON.stringify(backendData);
+      headers = {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    console.log('UserManagementService: Making PUT request to update contact', {
+      url: `/api/accounts/${accountId}/contacts/${contactId}`,
+      hasPhoto: !!photoFile,
+      headers: Object.keys(headers),
+    });
 
     const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}`, {
       method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(backendData),
+      headers,
+      body,
+    });
+
+    console.log('UserManagementService: Response received', {
+      status: response.status,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries()),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('UserManagementService: Update failed', { status: response.status, errorData });
       throw new Error(errorData.message || `Failed to update contact (${response.status})`);
     }
 
@@ -329,7 +401,154 @@ export class UserManagementService {
       throw new Error(data.message || 'Failed to update contact');
     }
 
-    return data.data.contact;
+    const validatedResponse = validateContactUpdateResponse(data.data.contact);
+    return this.transformContactResponseToContact(validatedResponse);
+  }
+
+  /**
+   * Create a new contact
+   */
+  async createContact(
+    accountId: string,
+    contactData: ContactUpdateData,
+    photoFile?: File | null,
+  ): Promise<Contact> {
+    console.log('UserManagementService: Creating contact', { accountId, hasPhoto: !!photoFile });
+
+    // Filter out undefined/empty values and format dates
+    const backendData: Record<string, unknown> = {};
+    if (contactData.firstName !== undefined) {
+      backendData.firstname = contactData.firstName;
+    }
+    if (contactData.lastName !== undefined) {
+      backendData.lastname = contactData.lastName;
+    }
+    if (contactData.middlename !== undefined) {
+      backendData.middlename = contactData.middlename;
+    }
+    if (contactData.email !== undefined) {
+      backendData.email = contactData.email;
+    }
+    if (contactData.phone1 !== undefined) {
+      backendData.phone1 = contactData.phone1;
+    }
+    if (contactData.phone2 !== undefined) {
+      backendData.phone2 = contactData.phone2;
+    }
+    if (contactData.phone3 !== undefined) {
+      backendData.phone3 = contactData.phone3;
+    }
+    if (contactData.streetaddress !== undefined) {
+      backendData.streetaddress = contactData.streetaddress;
+    }
+    if (contactData.city !== undefined) {
+      backendData.city = contactData.city;
+    }
+    if (contactData.state !== undefined) {
+      backendData.state = contactData.state;
+    }
+    if (contactData.zip !== undefined) {
+      backendData.zip = contactData.zip;
+    }
+    if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== '') {
+      // Convert ISO datetime to YYYY-MM-DD format for backend validation
+      try {
+        const date = new Date(contactData.dateofbirth);
+        if (!isNaN(date.getTime())) {
+          backendData.dateofbirth = date.toISOString().split('T')[0];
+        }
+      } catch {
+        console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
+        // Don't include invalid dates
+      }
+    }
+
+    console.log('UserManagementService: Filtered backendData for creation:', backendData);
+
+    // Use FormData if photo is provided, otherwise use JSON
+    let body: FormData | string;
+    let headers: Record<string, string>;
+
+    if (photoFile) {
+      console.log('UserManagementService: Creating FormData with photo', {
+        photoName: photoFile.name,
+        photoSize: photoFile.size,
+        contactData: backendData,
+      });
+
+      const formData = new FormData();
+      // Add all contact data to form data - only include non-empty values
+      Object.entries(backendData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          formData.append(key, String(value));
+        }
+      });
+      // Add photo file
+      formData.append('photo', photoFile);
+
+      console.log('UserManagementService: FormData entries:', Array.from(formData.entries()));
+
+      body = formData;
+      headers = {
+        Authorization: `Bearer ${this.token}`,
+        // Don't set Content-Type for FormData - let browser set it with boundary
+      };
+    } else {
+      body = JSON.stringify(backendData);
+      headers = {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      };
+    }
+
+    console.log('UserManagementService: Making POST request to create contact', {
+      url: `/api/accounts/${accountId}/contacts`,
+      hasPhoto: !!photoFile,
+      headers: Object.keys(headers),
+    });
+
+    const response = await fetch(`/api/accounts/${accountId}/contacts`, {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+    console.log('UserManagementService: Response received', {
+      status: response.status,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries()),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('UserManagementService: Create failed', { status: response.status, errorData });
+      throw new Error(errorData.message || `Failed to create contact (${response.status})`);
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to create contact');
+    }
+
+    const validatedResponse = validateContactUpdateResponse(data.data.contact);
+    return this.transformContactResponseToContact(validatedResponse);
+  }
+
+  /**
+   * Delete contact photo
+   */
+  async deleteContactPhoto(accountId: string, contactId: string): Promise<void> {
+    const response = await fetch(`/api/accounts/${accountId}/contacts/${contactId}/photo`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to delete contact photo (${response.status})`);
+    }
   }
 
   /**

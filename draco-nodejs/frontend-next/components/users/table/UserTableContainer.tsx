@@ -18,10 +18,8 @@ import {
 } from './hooks/useUserSelection';
 import UserTableHeader from './components/UserTableHeader';
 import UserTableToolbar from './components/UserTableToolbar';
-import EnhancedUserTableToolbar from './components/EnhancedUserTableToolbar';
 import UserTableFilters from './components/UserTableFilters';
 import UserCardGrid from './components/UserCardGrid';
-import UserListContainer from './components/UserListContainer';
 import {
   UserTableContainerProps,
   ViewMode,
@@ -36,6 +34,7 @@ import {
 } from '../../../types/userTable';
 import { UserRole } from '../../../types/users';
 import { StreamPaginationControl } from '../../pagination';
+import UserEmptyState from '../UserEmptyState';
 
 // Import existing components for compatibility
 import UserCard from '../UserCard';
@@ -49,6 +48,8 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onRemoveRole,
   onEditContact,
   onDeleteContact,
+  onDeleteContactPhoto,
+  onAddUser,
   canManageUsers,
   page,
   rowsPerPage: _rowsPerPage,
@@ -62,7 +63,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   // Enhanced props
   viewMode = 'table',
   selectionMode = 'none',
-  enableBulkOperations = false,
   enableAdvancedFilters = false,
   enableVirtualization = false,
   virtualizationThreshold = 100,
@@ -81,9 +81,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   showTitle = true,
   headerActions,
   footerContent,
-
-  // Enhanced props
-  accountId,
 
   // Search props
   searchTerm: externalSearchTerm,
@@ -138,7 +135,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   // Setup selection configuration
   const selectionConfig = usePermissionBasedSelection(
     canManageUsers,
-    enableBulkOperations ? selectionMode : 'none',
+    selectionMode,
     undefined,
     onSelectionChange,
   );
@@ -241,11 +238,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     [onBulkAction],
   );
 
-  const handleBulkOperationComplete = useCallback((result: unknown) => {
-    // Could trigger user list refresh here if needed
-    void result; // Suppress unused parameter warning
-  }, []);
-
   const clearFilters = useCallback(() => {
     setFilters({});
     onFiltersChange?.({});
@@ -283,21 +275,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     );
   }
 
-  // Empty state
-  if (enhancedUsers.length === 0) {
-    return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
-          No users found
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {searchTerm || Object.keys(filters).length > 0
-            ? 'Try adjusting your search criteria or filters.'
-            : 'There are no users in this organization yet.'}
-        </Typography>
-      </Paper>
-    );
-  }
+  // Don't handle empty state here - let individual view modes handle it within their structure
 
   // Don't return early for filtered empty state - handle it inline below
 
@@ -326,41 +304,22 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
         )}
 
         {/* Toolbar */}
-        {enableBulkOperations && accountId ? (
-          <EnhancedUserTableToolbar
-            userCount={filteredUsers.length}
-            selectedUsers={[]} // Will be provided by UserSelectionProvider
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onSearchSubmit={handleSearchSubmit}
-            onSearchClear={handleSearchClear}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            customActions={allBulkActions}
-            onBulkAction={handleBulkAction}
-            canManageUsers={canManageUsers}
-            enableAdvancedFilters={enableAdvancedFilters}
-            loading={loading || externalSearchLoading}
-            accountId={accountId}
-            onBulkOperationComplete={handleBulkOperationComplete}
-          />
-        ) : (
-          <UserTableToolbar
-            userCount={filteredUsers.length}
-            selectedUsers={[]} // Will be provided by UserSelectionProvider
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            onSearchSubmit={handleSearchSubmit}
-            onSearchClear={handleSearchClear}
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            customActions={allBulkActions}
-            onBulkAction={handleBulkAction}
-            canManageUsers={canManageUsers}
-            enableAdvancedFilters={enableAdvancedFilters}
-            loading={loading || externalSearchLoading}
-          />
-        )}
+        <UserTableToolbar
+          userCount={filteredUsers.length}
+          selectedUsers={[]} // Will be provided by UserSelectionProvider
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          onSearchSubmit={handleSearchSubmit}
+          onSearchClear={handleSearchClear}
+          onAddUser={onAddUser}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          customActions={allBulkActions}
+          onBulkAction={handleBulkAction}
+          canManageUsers={canManageUsers}
+          enableAdvancedFilters={enableAdvancedFilters}
+          loading={loading || externalSearchLoading}
+        />
 
         {/* Advanced Filters */}
         {enableAdvancedFilters && showFilters && (
@@ -413,27 +372,24 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
                       canManageUsers={canManageUsers}
                       onAssignRole={onAssignRole}
                       onRemoveRole={onRemoveRole}
+                      onEditContact={onEditContact}
+                      onDeleteContactPhoto={onDeleteContactPhoto}
                       getRoleDisplayName={getRoleDisplayName}
                     />
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan={100} style={{ textAlign: 'center', padding: '40px' }}>
-                      <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No users match your search
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {searchTerm
-                          ? `No results for &quot;${searchTerm}&quot;`
-                          : 'Try adjusting your filters'}
-                      </Typography>
-                    </td>
-                  </tr>
+                  <UserEmptyState
+                    searchTerm={searchTerm}
+                    hasFilters={Object.keys(filters).length > 0}
+                    wrapper="table-row"
+                    colSpan={100}
+                    showIcon={false} // Don't show icon in table row for space reasons
+                  />
                 )}
               </TableBody>
             </Table>
           </TableContainer>
-        ) : currentViewMode === 'card' ? (
+        ) : (
           // Card View
           <>
             <UserTableHeader
@@ -471,69 +427,13 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
                 onRemoveRole={onRemoveRole}
                 onEditContact={onEditContact}
                 onDeleteContact={onDeleteContact}
+                onDeleteContactPhoto={onDeleteContactPhoto}
                 canManageUsers={canManageUsers}
                 getRoleDisplayName={getRoleDisplayName}
                 enableVirtualization={shouldEnableVirtualization}
                 virtualizationThreshold={virtualizationThreshold}
-              />
-              {/* Loading overlay for pagination */}
-              {loading && !isInitialLoad && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1,
-                    transition: 'opacity 0.2s ease-in-out',
-                  }}
-                >
-                  <CircularProgress size={32} />
-                </Box>
-              )}
-            </Box>
-          </>
-        ) : (
-          // List View
-          <>
-            <UserTableHeader
-              users={filteredUsers}
-              viewMode={currentViewMode}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              selectionMode={selectionConfig.mode}
-              selectionState={{
-                selectedIds: new Set(),
-                selectAll: false,
-                indeterminate: false,
-                totalSelected: 0,
-              }}
-              selectionActions={{} as UserSelectionActions}
-              canManageUsers={canManageUsers}
-              onSortChange={handleSortChange}
-              onViewModeChange={
-                finalViewConfig.enableViewSwitching ? handleViewModeChange : undefined
-              }
-              columns={DEFAULT_TABLE_COLUMNS}
-            />
-            {/* List view with loading overlay */}
-            <Box sx={{ position: 'relative' }}>
-              <UserListContainer
-                users={filteredUsers}
-                viewConfig={finalViewConfig}
-                onAssignRole={onAssignRole}
-                onRemoveRole={onRemoveRole}
-                onEditContact={onEditContact}
-                onDeleteContact={onDeleteContact}
-                canManageUsers={canManageUsers}
-                getRoleDisplayName={getRoleDisplayName}
-                enableVirtualization={shouldEnableVirtualization}
-                virtualizationThreshold={virtualizationThreshold}
+                searchTerm={searchTerm}
+                hasFilters={Object.keys(filters).length > 0}
               />
               {/* Loading overlay for pagination */}
               {loading && !isInitialLoad && (
@@ -625,13 +525,13 @@ const areEqual = (prevProps: UserTableContainerProps, nextProps: UserTableContai
     'canManageUsers',
     'viewMode',
     'selectionMode',
-    'enableBulkOperations',
     'enableAdvancedFilters',
     'enableVirtualization',
     'title',
     'subtitle',
     'showTitle',
     'accountId',
+    'onAddUser',
   ] as const;
 
   return keysToCompare.every((key) => prevProps[key] === nextProps[key]);

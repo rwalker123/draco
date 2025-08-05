@@ -8,8 +8,6 @@ export { default as UserTableToolbar } from './components/UserTableToolbar';
 export { default as UserTableFilters } from './components/UserTableFilters';
 export { default as UserDisplayCard } from './components/UserDisplayCard';
 export { default as UserCardGrid } from './components/UserCardGrid';
-export { default as UserDisplayList } from './components/UserDisplayList';
-export { default as UserListContainer } from './components/UserListContainer';
 
 // Context and hooks
 export {

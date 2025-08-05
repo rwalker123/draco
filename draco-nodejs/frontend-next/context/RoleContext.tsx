@@ -59,11 +59,26 @@ const ROLE_METADATA_VERSION_KEY = 'draco_role_metadata_version';
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [userRoles, setUserRoles] = useState<UserRoles | null>(null);
   const [roleMetadata, setRoleMetadata] = useState<RoleMetadata | null>(null);
+  // Initialize loading as true if we have auth but need to fetch roles
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update loading state based on auth state
+  useEffect(() => {
+    if (authLoading) {
+      // If auth is still loading, we should wait
+      setLoading(true);
+    } else if (user && token && !userRoles) {
+      // If we have auth but no roles yet, we need to load them
+      setLoading(true);
+    } else if (!user || !token) {
+      // If no auth, we're not loading roles
+      setLoading(false);
+    }
+  }, [authLoading, user, token, userRoles]);
 
   // Fetch role metadata from API and cache in localStorage
   const fetchRoleMetadata = useCallback(async (): Promise<RoleMetadata | null> => {
@@ -158,6 +173,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     setUserRoles(null);
     setRoleMetadata(null);
     setError(null);
+    setLoading(false);
   };
 
   const hasRole = (roleId: string, context?: RoleContext): boolean => {

@@ -23,17 +23,17 @@ export interface FormattedRosterMember {
       id: string;
       firstname: string;
       lastname: string;
-      middlename: string | null;
+      middlename: string;
       email: string | null;
-      phone1: string | null;
-      phone2: string | null;
-      phone3: string | null;
+      phone1: string;
+      phone2: string;
+      phone3: string;
+      photoUrl?: string;
       streetaddress: string | null;
       city: string | null;
       state: string | null;
       zip: string | null;
       dateofbirth: string | null;
-      phones: Array<{ type: string; number: string }>;
     };
   };
 }
@@ -50,9 +50,7 @@ export class TeamResponseFormatter {
     };
   }
 
-  static formatTeamDetailsResponse(
-    teamSeason: TeamSeasonDetails,
-  ): ApiResponse<{
+  static formatTeamDetailsResponse(teamSeason: TeamSeasonDetails): ApiResponse<{
     teamSeason: TeamSeasonDetails;
     season: { id: string; name: string } | null;
     record: { wins: number; losses: number; ties: number };
@@ -137,22 +135,20 @@ export class RosterResponseFormatter {
             submittedDriversLicense: member.player.submittedDriversLicense,
             firstYear: member.player.firstYear,
             contact: {
-              ...member.player.contact,
-              id: member.player.contact.id.toString(),
-              dateofbirth: member.player.contact.dateofbirth
-                ? member.player.contact.dateofbirth.toISOString()
-                : null,
-              phones: [
-                ...(member.player.contact.phone1
-                  ? [{ type: 'home', number: member.player.contact.phone1 }]
-                  : []),
-                ...(member.player.contact.phone2
-                  ? [{ type: 'work', number: member.player.contact.phone2 }]
-                  : []),
-                ...(member.player.contact.phone3
-                  ? [{ type: 'cell', number: member.player.contact.phone3 }]
-                  : []),
-              ],
+              id: member.player.contact.id,
+              firstname: member.player.contact.firstName,
+              lastname: member.player.contact.lastName,
+              middlename: member.player.contact.contactDetails?.middlename ?? '',
+              email: member.player.contact.email,
+              phone1: member.player.contact.contactDetails?.phone1 ?? '',
+              phone2: member.player.contact.contactDetails?.phone2 ?? '',
+              phone3: member.player.contact.contactDetails?.phone3 ?? '',
+              photoUrl: member.player.contact.photoUrl,
+              streetaddress: member.player.contact.contactDetails?.streetaddress ?? null,
+              city: member.player.contact.contactDetails?.city ?? null,
+              state: member.player.contact.contactDetails?.state ?? null,
+              zip: member.player.contact.contactDetails?.zip ?? null,
+              dateofbirth: member.player.contact.contactDetails?.dateofbirth ?? null,
             },
           },
         })),
@@ -160,9 +156,7 @@ export class RosterResponseFormatter {
     };
   }
 
-  static formatAvailablePlayersResponse(
-    availablePlayers: AvailablePlayer[],
-  ): ApiResponse<{
+  static formatAvailablePlayersResponse(availablePlayers: AvailablePlayer[]): ApiResponse<{
     availablePlayers: Array<{
       id: string;
       contactId: string;
@@ -180,10 +174,10 @@ export class RosterResponseFormatter {
           firstYear: player.firstYear,
           submittedDriversLicense: player.submittedDriversLicense,
           contact: {
-            id: player.contact.id.toString(),
-            firstname: player.contact.firstname,
-            lastname: player.contact.lastname,
-            middlename: player.contact.middlename,
+            id: player.contact.id,
+            firstname: player.contact.firstName,
+            lastname: player.contact.lastName,
+            middlename: player.contact.contactDetails?.middlename ?? null,
           },
         })),
       },
@@ -222,9 +216,9 @@ export class RosterResponseFormatter {
             id: rosterMember.player.id.toString(),
             contactId: rosterMember.player.contactId.toString(),
             contact: {
-              id: rosterMember.player.contact.id.toString(),
-              firstname: rosterMember.player.contact.firstname,
-              lastname: rosterMember.player.contact.lastname,
+              id: rosterMember.player.contact.id,
+              firstname: rosterMember.player.contact.firstName,
+              lastname: rosterMember.player.contact.lastName,
             },
           },
         },
@@ -268,8 +262,8 @@ export class RosterResponseFormatter {
             submittedDriversLicense: rosterMember.player.submittedDriversLicense,
             firstYear: rosterMember.player.firstYear,
             contact: {
-              firstname: rosterMember.player.contact.firstname,
-              lastname: rosterMember.player.contact.lastname,
+              firstname: rosterMember.player.contact.firstName,
+              lastname: rosterMember.player.contact.lastName,
             },
           },
         },
@@ -305,8 +299,8 @@ export class RosterResponseFormatter {
             id: rosterMember.player.id.toString(),
             contactId: rosterMember.player.contactId.toString(),
             contact: {
-              firstname: rosterMember.player.contact.firstname,
-              lastname: rosterMember.player.contact.lastname,
+              firstname: rosterMember.player.contact.firstName,
+              lastname: rosterMember.player.contact.lastName,
             },
           },
         },
@@ -342,8 +336,8 @@ export class RosterResponseFormatter {
             id: rosterMember.player.id.toString(),
             contactId: rosterMember.player.contactId.toString(),
             contact: {
-              firstname: rosterMember.player.contact.firstname,
-              lastname: rosterMember.player.contact.lastname,
+              firstname: rosterMember.player.contact.firstName,
+              lastname: rosterMember.player.contact.lastName,
             },
           },
         },

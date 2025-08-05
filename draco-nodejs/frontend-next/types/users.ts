@@ -44,6 +44,7 @@ export interface Contact {
   lastName: string;
   email: string;
   userId: string;
+  photoUrl?: string;
   contactDetails?: ContactDetails;
   contactroles?: ContactRole[];
   creatoraccountid?: string;
@@ -69,6 +70,7 @@ export interface User {
   lastName: string;
   email: string;
   userId: string;
+  photoUrl?: string;
   contactDetails?: ContactDetails;
   roles?: UserRole[];
 }
@@ -116,6 +118,7 @@ export interface UserTableProps {
   onRemoveRole: (user: User, role: UserRole) => void;
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
+  onAddUser?: () => void;
   canManageUsers: boolean;
   page: number;
   rowsPerPage: number;
@@ -129,6 +132,8 @@ export interface UserTableProps {
       | string
       | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
   ) => string;
+  searchTerm?: string;
+  hasFilters?: boolean;
 }
 
 export interface UserSearchBarProps {
@@ -144,6 +149,8 @@ export interface UserCardProps {
   canManageUsers: boolean;
   onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
+  onEditContact?: (contact: Contact) => void;
+  onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -200,15 +207,16 @@ export interface EditContactDialogProps {
   open: boolean;
   contact: Contact | null;
   onClose: () => void;
-  onSave: (contactData: ContactUpdateData) => Promise<void>;
+  onSave: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  onDeletePhoto?: (contactId: string) => Promise<void>;
   loading?: boolean;
 }
 
 export interface ContactUpdateData {
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
   middlename?: string;
-  email: string;
+  email?: string;
   phone1?: string;
   phone2?: string;
   phone3?: string;
@@ -248,6 +256,7 @@ export interface UseUserManagementReturn {
   removeRoleDialogOpen: boolean;
   editContactDialogOpen: boolean;
   deleteContactDialogOpen: boolean;
+  createContactDialogOpen: boolean;
   selectedUser: User | null;
   selectedContactForEdit: Contact | null;
   selectedContactForDelete: Contact | null;
@@ -278,7 +287,11 @@ export interface UseUserManagementReturn {
   openRemoveRoleDialog: (user: User, role: UserRole) => void;
   openEditContactDialog: (contact: Contact) => void;
   closeEditContactDialog: () => void;
-  handleEditContact: (contactData: ContactUpdateData) => Promise<void>;
+  handleEditContact: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  openCreateContactDialog: () => void;
+  closeCreateContactDialog: () => void;
+  handleCreateContact: (contactData: ContactUpdateData, photoFile?: File | null) => Promise<void>;
+  handleDeleteContactPhoto: (contactId: string) => Promise<void>;
   openDeleteContactDialog: (contact: Contact) => void;
   closeDeleteContactDialog: () => void;
   handleDeleteContact: (contactId: string, force: boolean) => Promise<void>;

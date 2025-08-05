@@ -2,11 +2,10 @@
 
 import React, { useMemo, memo } from 'react';
 import UserTableContainer from './table/UserTableContainer';
-import { UserTableEnhancedProps } from '../../types/userTable';
+import { UserTableEnhancedProps, SelectionMode } from '../../types/userTable';
 
 const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   // Feature toggles
-  enableBulkOperations = false,
   enableViewSwitching = false,
   enableAdvancedFilters = false,
   enableVirtualization = false,
@@ -29,8 +28,8 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
 }) => {
   // Memoize modern features detection to prevent unnecessary re-renders
   const hasModernFeatures = useMemo(
-    () => enableBulkOperations || enableViewSwitching || enableAdvancedFilters,
-    [enableBulkOperations, enableViewSwitching, enableAdvancedFilters],
+    () => enableViewSwitching || enableAdvancedFilters,
+    [enableViewSwitching, enableAdvancedFilters],
   );
 
   // Memoize stable view configuration
@@ -41,11 +40,8 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
     [enableViewSwitching],
   );
 
-  // Memoize selection mode to prevent prop changes
-  const stableSelectionMode = useMemo(
-    () => (enableBulkOperations ? 'multiple' : 'none'),
-    [enableBulkOperations],
-  );
+  // Selection mode is always 'none' since bulk operations are removed
+  const stableSelectionMode = useMemo((): SelectionMode => 'none', []);
 
   // Notify parent if modern features are being used
   React.useEffect(() => {
@@ -56,7 +52,6 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
     <UserTableContainer
       {...originalProps}
       // Enhanced features
-      enableBulkOperations={enableBulkOperations}
       enableAdvancedFilters={enableAdvancedFilters}
       enableVirtualization={enableVirtualization}
       virtualizationThreshold={virtualizationThreshold}
@@ -92,6 +87,7 @@ export default memo(UserTableEnhanced, (prevProps, nextProps) => {
     prevProps.searchLoading === nextProps.searchLoading &&
     prevProps.canManageUsers === nextProps.canManageUsers &&
     prevProps.rowsPerPage === nextProps.rowsPerPage &&
-    prevProps.accountId === nextProps.accountId
+    prevProps.accountId === nextProps.accountId &&
+    prevProps.onAddUser === nextProps.onAddUser
   );
 });

@@ -12,11 +12,7 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
-import {
-  ViewList as ViewListIcon,
-  ViewModule as ViewModuleIcon,
-  TableChart as TableChartIcon,
-} from '@mui/icons-material';
+import { ViewModule as ViewModuleIcon, TableChart as TableChartIcon } from '@mui/icons-material';
 import {
   UserTableHeaderProps,
   SortDirection,
@@ -65,7 +61,7 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
   };
 
   // Only show table header for table view mode
-  if (viewMode === 'card' || viewMode === 'list') {
+  if (viewMode === 'card') {
     return (
       <Box
         sx={{
@@ -106,16 +102,6 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
                 aria-label="Switch to card view"
               >
                 <ViewModuleIcon />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="List View">
-              <IconButton
-                size="small"
-                color={viewMode === 'list' ? 'primary' : 'default'}
-                onClick={() => onViewModeChange('list')}
-                aria-label="Switch to list view"
-              >
-                <ViewListIcon />
               </IconButton>
             </Tooltip>
           </Box>
@@ -196,16 +182,6 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({
                   aria-label="Switch to card view"
                 >
                   <ViewModuleIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="List View">
-                <IconButton
-                  size="small"
-                  color={'default'}
-                  onClick={() => onViewModeChange('list')}
-                  aria-label="Switch to list view"
-                >
-                  <ViewListIcon />
                 </IconButton>
               </Tooltip>
             </Box>
