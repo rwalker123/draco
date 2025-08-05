@@ -9,6 +9,7 @@ import {
   LeagueSeason,
 } from '../services/contextDataService';
 import { getRoleDisplayName } from '../utils/roleUtils';
+import { addCacheBuster } from '../config/contacts';
 import {
   User,
   Role,
@@ -17,6 +18,7 @@ import {
   Contact,
   ContactUpdateData,
 } from '../types/users';
+import { extractErrorMessage } from '../types/typeGuards';
 
 // Pagination state for atomic updates
 interface PaginationState {
@@ -117,6 +119,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [removeRoleDialogOpen, setRemoveRoleDialogOpen] = useState(false);
   const [editContactDialogOpen, setEditContactDialogOpen] = useState(false);
   const [deleteContactDialogOpen, setDeleteContactDialogOpen] = useState(false);
+  const [createContactDialogOpen, setCreateContactDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedContactForEdit, setSelectedContactForEdit] = useState<Contact | null>(null);
   const [selectedContactForDelete, setSelectedContactForDelete] = useState<Contact | null>(null);
@@ -569,6 +572,14 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     setSelectedContactForEdit(null);
   }, []);
 
+  const openCreateContactDialog = useCallback(() => {
+    setCreateContactDialogOpen(true);
+  }, []);
+
+  const closeCreateContactDialog = useCallback(() => {
+    setCreateContactDialogOpen(false);
+  }, []);
+
   const openDeleteContactDialog = useCallback((contact: Contact) => {
     setSelectedContactForDelete(contact);
     setDeleteContactDialogOpen(true);
@@ -580,7 +591,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   }, []);
 
   const handleEditContact = useCallback(
-    async (contactData: ContactUpdateData) => {
+    async (contactData: ContactUpdateData, photoFile?: File | null) => {
       if (!userService || !selectedContactForEdit || !accountId) {
         setError('Unable to update contact - missing required data');
         return;
@@ -589,33 +600,57 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       try {
         setFormLoading(true);
 
-        await userService.updateContact(accountId, selectedContactForEdit.id, contactData);
+        const updatedContact = await userService.updateContact(
+          accountId,
+          selectedContactForEdit.id,
+          contactData,
+          photoFile,
+        );
 
-        // Refresh the users list to show updated data
-        const currentPage = paginationState.page;
-        dispatch({ type: 'START_LOADING' });
+        // Update the specific user in state with new data including cache-busted photo URL
+        const updatedUsers = paginationState.users.map((user) => {
+          if (user.id === selectedContactForEdit.id) {
+            // Apply cache busting to photo URL if present
+            const updatedPhotoUrl = updatedContact.photoUrl
+              ? addCacheBuster(updatedContact.photoUrl, Date.now())
+              : undefined;
 
-        const usersResponse = await userService.fetchUsers(accountId, {
-          search: searchTerm,
-          page: currentPage,
-          limit: rowsPerPage,
-          seasonId: currentSeasonId,
-          onlyWithRoles,
+            return {
+              ...user,
+              firstName: updatedContact.firstName,
+              lastName: updatedContact.lastName,
+              email: updatedContact.email || user.email,
+              photoUrl: updatedPhotoUrl,
+              contactDetails: {
+                ...user.contactDetails,
+                middlename: updatedContact.contactDetails?.middlename || null,
+                phone1: updatedContact.contactDetails?.phone1 || null,
+                phone2: updatedContact.contactDetails?.phone2 || null,
+                phone3: updatedContact.contactDetails?.phone3 || null,
+                streetaddress: updatedContact.contactDetails?.streetaddress || null,
+                city: updatedContact.contactDetails?.city || null,
+                state: updatedContact.contactDetails?.state || null,
+                zip: updatedContact.contactDetails?.zip || null,
+                dateofbirth: updatedContact.contactDetails?.dateofbirth || null,
+              },
+            };
+          }
+          return user;
         });
 
         dispatch({
           type: 'SET_DATA',
-          users: usersResponse.users,
-          hasNext: usersResponse.pagination.hasNext,
-          hasPrev: usersResponse.pagination.hasPrev,
-          page: currentPage,
+          users: [...updatedUsers], // Force new array reference to trigger re-render
+          hasNext: paginationState.hasNext,
+          hasPrev: paginationState.hasPrev,
+          page: paginationState.page,
         });
 
         setSuccess('Contact updated successfully');
         closeEditContactDialog();
       } catch (error) {
         console.error('Error updating contact:', error);
-        setError(error instanceof Error ? error.message : 'Failed to update contact');
+        setError(extractErrorMessage(error));
       } finally {
         setFormLoading(false);
       }
@@ -630,6 +665,78 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       currentSeasonId,
       onlyWithRoles,
       closeEditContactDialog,
+    ],
+  );
+
+  const handleCreateContact = useCallback(
+    async (contactData: ContactUpdateData, photoFile?: File | null) => {
+      if (!userService || !accountId) {
+        setError('Unable to create contact - missing required data');
+        return;
+      }
+
+      try {
+        setFormLoading(true);
+
+        await userService.createContact(accountId, contactData, photoFile);
+
+        // Reload the user list to show the new contact
+        await loadUsers(1);
+
+        setSuccess('Contact created successfully');
+        closeCreateContactDialog();
+      } catch (error) {
+        console.error('Error creating contact:', error);
+        setError(extractErrorMessage(error));
+      } finally {
+        setFormLoading(false);
+      }
+    },
+    [userService, accountId, loadUsers, closeCreateContactDialog],
+  );
+
+  const handleDeleteContactPhoto = useCallback(
+    async (contactId: string) => {
+      if (!userService || !accountId) {
+        setError('Unable to delete contact photo - missing required data');
+        return;
+      }
+
+      try {
+        await userService.deleteContactPhoto(accountId, contactId);
+        setSuccess('Contact photo deleted successfully');
+
+        // Update the specific user to remove the photo URL
+        const updatedUsers = paginationState.users.map((user) => {
+          if (user.id === contactId) {
+            return {
+              ...user,
+              photoUrl: undefined,
+            };
+          }
+          return user;
+        });
+
+        dispatch({
+          type: 'SET_DATA',
+          users: [...updatedUsers], // Force new array reference to trigger re-render
+          hasNext: paginationState.hasNext,
+          hasPrev: paginationState.hasPrev,
+          page: paginationState.page,
+        });
+      } catch (error) {
+        console.error('Error deleting contact photo:', error);
+        setError(extractErrorMessage(error));
+      }
+    },
+    [
+      userService,
+      accountId,
+      paginationState.page,
+      searchTerm,
+      rowsPerPage,
+      currentSeasonId,
+      onlyWithRoles,
     ],
   );
 
@@ -755,6 +862,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     removeRoleDialogOpen,
     editContactDialogOpen,
     deleteContactDialogOpen,
+    createContactDialogOpen,
     selectedUser,
     selectedContactForEdit,
     selectedContactForDelete,
@@ -786,6 +894,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     openEditContactDialog,
     closeEditContactDialog,
     handleEditContact,
+    openCreateContactDialog,
+    closeCreateContactDialog,
+    handleCreateContact,
+    handleDeleteContactPhoto,
     openDeleteContactDialog,
     closeDeleteContactDialog,
     handleDeleteContact,

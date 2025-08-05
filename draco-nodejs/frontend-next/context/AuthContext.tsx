@@ -1,4 +1,4 @@
-"use client";
+'use client';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
@@ -26,12 +26,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Initialize loading as true when in browser to wait for localStorage check
+  const [loading, setLoading] = useState(typeof window !== 'undefined');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setToken(localStorage.getItem('jwtToken'));
+      const storedToken = localStorage.getItem('jwtToken');
+      setToken(storedToken);
+      // Only set loading to false after we've checked localStorage
+      if (!storedToken) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -71,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
     setUser(null);
     localStorage.removeItem('jwtToken');
-    
+
     if (refreshPage) {
       // Refresh the current page to update all components and access controls
       window.location.reload();
@@ -89,8 +95,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const authToken = overrideToken || token;
     if (!authToken) {
       setUser(null);
+      setLoading(false);
       return;
     }
+
+    // Set loading true when fetching user data
+    if (!overrideToken) {
+      setLoading(true);
+    }
+
     try {
       const response = await axios.get('/api/auth/me', {
         headers: { Authorization: `Bearer ${authToken}` },
@@ -99,14 +112,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(response.data.user);
       } else {
         setUser(null);
+        // Clear invalid token
+        setToken(null);
+        localStorage.removeItem('jwtToken');
       }
     } catch {
       setUser(null);
+      // Clear invalid token
+      setToken(null);
+      localStorage.removeItem('jwtToken');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, error, login, logout, fetchUser, clearAllContexts }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, error, login, logout, fetchUser, clearAllContexts }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -118,4 +141,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

@@ -9,12 +9,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Typography,
   Box,
   CircularProgress,
 } from '@mui/material';
 import { UserTableProps } from '../../types/users';
 import UserCard from './UserCard';
+import UserEmptyState from './UserEmptyState';
 import StreamPaginationControl from '../pagination/StreamPaginationControl';
 
 /**
@@ -35,25 +35,14 @@ const UserTable: React.FC<UserTableProps> = ({
   onPrevPage,
   onRowsPerPageChange: _onRowsPerPageChange,
   getRoleDisplayName,
+  searchTerm,
+  hasFilters = false,
 }) => {
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
         <CircularProgress />
       </Box>
-    );
-  }
-
-  if (users.length === 0) {
-    return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          No users found
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Try adjusting your search criteria or add new users to the organization.
-        </Typography>
-      </Paper>
     );
   }
 
@@ -70,16 +59,26 @@ const UserTable: React.FC<UserTableProps> = ({
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                canManageUsers={canManageUsers}
-                onAssignRole={onAssignRole}
-                onRemoveRole={onRemoveRole}
-                getRoleDisplayName={getRoleDisplayName}
+            {users.length === 0 ? (
+              <UserEmptyState
+                searchTerm={searchTerm}
+                hasFilters={hasFilters}
+                wrapper="table-row"
+                colSpan={4}
+                showIcon={false} // Don't show icon in table row for space reasons
               />
-            ))}
+            ) : (
+              users.map((user) => (
+                <UserCard
+                  key={user.id}
+                  user={user}
+                  canManageUsers={canManageUsers}
+                  onAssignRole={onAssignRole}
+                  onRemoveRole={onRemoveRole}
+                  getRoleDisplayName={getRoleDisplayName}
+                />
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>

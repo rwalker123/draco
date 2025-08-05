@@ -1,7 +1,7 @@
 // Account Contacts & Users Management Routes for Draco Sports Manager
 // Handles all contact and user management within accounts
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { ServiceFactory } from '../lib/serviceFactory';
 import { isEmail } from 'validator';
@@ -12,7 +12,15 @@ import { PaginationHelper } from '../utils/pagination';
 import prisma from '../lib/prisma';
 import { ContactService } from '../services/contactService';
 import { ContactSearchResult } from '../interfaces/accountInterfaces';
+import { ContactInputData } from '../interfaces/contactInterfaces';
 import { ContactDependencyService } from '../services/contactDependencyService';
+import { upload, handleContactPhotoUpload } from './contact-media';
+import { getContactPhotoUrl } from '../config/logo';
+import {
+  validateContactUpdateDynamic,
+  validatePhotoUpload,
+  sanitizeContactData,
+} from '../middleware/validation/contactValidation';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -224,6 +232,7 @@ router.get(
       userId: contact.userId,
       displayName: `${contact.firstName} ${contact.lastName}`,
       searchText: `${contact.firstName} ${contact.lastName} (${contact.email})`,
+      photoUrl: contact.photoUrl,
       ...(includeRoles && { contactroles: contact.contactroles }),
       ...(includeContactDetails &&
         contact.contactDetails && { contactDetails: contact.contactDetails }),
@@ -240,15 +249,33 @@ router.get(
 
 /**
  * PUT /api/accounts/:accountId/contacts/:contactId
- * Update contact information
+ * Update contact information (includes photo upload)
  */
 router.put(
   '/:accountId/contacts/:contactId',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
+  validatePhotoUpload,
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single('photo')(req, res, (err: unknown) => {
+      if (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        res.status(400).json({
+          success: false,
+          message: message,
+        });
+      } else {
+        next();
+      }
+    });
+  },
+  validateContactUpdateDynamic,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId, contactId } = extractContactParams(req.params);
+
+    // Sanitize the input data
+    const sanitizedData: ContactInputData = sanitizeContactData(req.body);
     const {
       firstname,
       lastname,
@@ -262,19 +289,7 @@ router.put(
       state,
       zip,
       dateofbirth,
-    } = req.body;
-
-    // Validate required fields
-    if (!firstname || !lastname) {
-      throw new ValidationError('First name and last name are required');
-    }
-
-    // Validate email format if provided
-    if (email) {
-      if (!isEmail(email)) {
-        throw new ValidationError('Please enter a valid email address');
-      }
-    }
+    } = sanitizedData;
 
     // Verify the contact exists and belongs to this account
     const existingContact = await prisma.contacts.findFirst({
@@ -288,24 +303,42 @@ router.put(
       throw new NotFoundError('Contact not found');
     }
 
-    // Update the contact
-    const updatedContact = await prisma.contacts.update({
-      where: { id: contactId },
-      data: {
-        firstname,
-        lastname,
-        middlename: middlename || '',
-        email: email || null,
-        phone1: phone1 || null,
-        phone2: phone2 || null,
-        phone3: phone3 || null,
-        streetaddress: streetaddress || null,
-        city: city || null,
-        state: state || null,
-        zip: zip || null,
-        ...(dateofbirth ? { dateofbirth: new Date(dateofbirth) } : {}),
-      },
-    });
+    // Build update data object, only including fields that are provided
+    const updateData: Record<string, string | Date | null> = {};
+
+    if (firstname !== undefined) updateData.firstname = firstname as string;
+    if (lastname !== undefined) updateData.lastname = lastname as string;
+    if (middlename !== undefined) updateData.middlename = middlename || '';
+    if (email !== undefined) updateData.email = email || null;
+    if (phone1 !== undefined) updateData.phone1 = phone1 || null;
+    if (phone2 !== undefined) updateData.phone2 = phone2 || null;
+    if (phone3 !== undefined) updateData.phone3 = phone3 || null;
+    if (streetaddress !== undefined) updateData.streetaddress = streetaddress || null;
+    if (city !== undefined) updateData.city = city || null;
+    if (state !== undefined) updateData.state = state || null;
+    if (zip !== undefined) updateData.zip = zip || null;
+    if (dateofbirth) updateData.dateofbirth = new Date(dateofbirth as string);
+
+    console.log('Backend: Update data being applied:', updateData);
+    console.log('Backend: Has photo file:', !!req.file);
+
+    // Update the contact (only if we have data to update)
+    let updatedContact = existingContact;
+    if (Object.keys(updateData).length > 0) {
+      updatedContact = await prisma.contacts.update({
+        where: { id: contactId },
+        data: updateData,
+      });
+    }
+
+    // Handle photo upload if provided
+    let photoUrl = null;
+    if (req.file) {
+      photoUrl = await handleContactPhotoUpload(req, accountId, contactId);
+    } else {
+      // Generate photo URL for existing photo (if any)
+      photoUrl = getContactPhotoUrl(accountId.toString(), contactId.toString());
+    }
 
     res.json({
       success: true,
@@ -316,15 +349,18 @@ router.put(
           firstname: updatedContact.firstname,
           lastname: updatedContact.lastname,
           middlename: updatedContact.middlename,
-          email: updatedContact.email,
-          phone1: updatedContact.phone1,
-          phone2: updatedContact.phone2,
-          phone3: updatedContact.phone3,
-          streetaddress: updatedContact.streetaddress,
-          city: updatedContact.city,
-          state: updatedContact.state,
-          zip: updatedContact.zip,
-          dateofbirth: updatedContact.dateofbirth ? updatedContact.dateofbirth.toISOString() : null,
+          email: updatedContact.email || undefined,
+          phone1: updatedContact.phone1 || undefined,
+          phone2: updatedContact.phone2 || undefined,
+          phone3: updatedContact.phone3 || undefined,
+          streetaddress: updatedContact.streetaddress || undefined,
+          city: updatedContact.city || undefined,
+          state: updatedContact.state || undefined,
+          zip: updatedContact.zip || undefined,
+          dateofbirth: updatedContact.dateofbirth
+            ? updatedContact.dateofbirth.toISOString()
+            : undefined,
+          photoUrl,
         },
       },
     });
@@ -333,15 +369,32 @@ router.put(
 
 /**
  * POST /api/accounts/:accountId/contacts
- * Create a new contact in an account
+ * Create a new contact in an account (includes photo upload)
  */
 router.post(
   '/:accountId/contacts',
   authenticateToken,
   routeProtection.enforceAccountBoundary(),
   routeProtection.requirePermission('account.contacts.manage'),
+  validatePhotoUpload,
+  (req: Request, res: Response, next: NextFunction) => {
+    upload.single('photo')(req, res, (err: unknown) => {
+      if (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        res.status(400).json({
+          success: false,
+          message: message,
+        });
+      } else {
+        next();
+      }
+    });
+  },
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+
+    // Sanitize the input data
+    const sanitizedData: ContactInputData = sanitizeContactData(req.body);
     const {
       firstname,
       lastname,
@@ -355,7 +408,7 @@ router.post(
       state,
       zip,
       dateofbirth,
-    } = req.body;
+    } = sanitizedData;
 
     // Validate required fields
     if (!firstname || !lastname) {
@@ -368,6 +421,12 @@ router.post(
         throw new ValidationError('Please enter a valid email address');
       }
     }
+
+    console.log('Backend: Creating contact with data:', {
+      firstname,
+      lastname,
+      hasPhotoFile: !!req.file,
+    });
 
     // Create the contact
     const newContact = await prisma.contacts.create({
@@ -388,6 +447,15 @@ router.post(
       },
     });
 
+    // Handle photo upload if provided
+    let photoUrl = null;
+    if (req.file) {
+      photoUrl = await handleContactPhotoUpload(req, accountId, newContact.id);
+    } else {
+      // Generate photo URL for existing photo (if any)
+      photoUrl = getContactPhotoUrl(accountId.toString(), newContact.id.toString());
+    }
+
     res.status(201).json({
       success: true,
       data: {
@@ -406,6 +474,7 @@ router.post(
           state: newContact.state,
           zip: newContact.zip,
           dateofbirth: newContact.dateofbirth ? newContact.dateofbirth.toISOString() : null,
+          photoUrl,
         },
       },
     });

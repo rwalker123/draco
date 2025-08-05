@@ -20,7 +20,7 @@ export interface EnhancedUser extends User {
 }
 
 // View modes for the modern table
-export type ViewMode = 'table' | 'card' | 'list';
+export type ViewMode = 'table' | 'card';
 export type CardSize = 'compact' | 'comfortable' | 'spacious';
 export type SelectionMode = 'none' | 'single' | 'multiple';
 export type SortDirection = 'asc' | 'desc';
@@ -140,7 +140,6 @@ export interface ModernUserTableProps extends UserTableProps {
 
   // Selection and bulk operations
   selectionMode?: SelectionMode;
-  enableBulkOperations?: boolean;
   customActions?: UserTableAction[];
   maxSelection?: number;
 
@@ -184,6 +183,14 @@ export interface UserTableHeaderProps {
   columns: TableColumn[];
 }
 
+export interface UserTableSearchProps {
+  searchTerm?: string;
+  onSearchChange?: (term: string) => void;
+  onSearch?: () => void;
+  onClearSearch?: () => void;
+  searchLoading?: boolean;
+}
+
 export interface UserTableToolbarProps {
   userCount: number; // Changed from users array to just count
   selectedUsers: EnhancedUser[];
@@ -191,6 +198,7 @@ export interface UserTableToolbarProps {
   onSearchChange: (term: string) => void;
   onSearchSubmit: () => void;
   onSearchClear: () => void;
+  onAddUser?: () => void;
   filters: UserAdvancedFilters;
   onFiltersChange: (filters: UserAdvancedFilters) => void;
   customActions: UserTableAction[];
@@ -232,6 +240,7 @@ export interface UserDisplayCardProps {
   onRemoveRole: (user: User, role: UserRole) => void;
   onEditContact?: (contact: import('./users').Contact) => void;
   onDeleteContact?: (contact: import('./users').Contact) => void;
+  onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   canManageUsers: boolean;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -239,23 +248,6 @@ export interface UserDisplayCardProps {
       | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
   ) => string;
   showActions?: boolean;
-}
-
-export interface UserDisplayListProps {
-  user: EnhancedUser;
-  onAssignRole: (user: User) => Promise<void>;
-  onRemoveRole: (user: User, role: UserRole) => void;
-  onEditContact?: (contact: import('./users').Contact) => void;
-  onDeleteContact?: (contact: import('./users').Contact) => void;
-  canManageUsers: boolean;
-  getRoleDisplayName: (
-    roleOrRoleId:
-      | string
-      | { roleId: string; roleName?: string; roleData?: string; contextName?: string },
-  ) => string;
-  density: 'compact' | 'comfortable' | 'spacious';
-  showAvatar: boolean;
-  showContactInfo: boolean;
 }
 
 // Table column configuration
@@ -274,7 +266,7 @@ export interface TableColumn {
 // Default configurations
 export const DEFAULT_VIEW_CONFIG: UserViewConfig = {
   defaultView: 'table',
-  availableViews: ['table', 'card', 'list'],
+  availableViews: ['table', 'card'],
   cardSizes: ['compact', 'comfortable', 'spacious'],
   defaultCardSize: 'comfortable',
   enableViewSwitching: true,
@@ -374,7 +366,6 @@ export interface UserTableContainerProps extends ModernUserTableProps {
 
   // Enhanced bulk operations props
   accountId?: string;
-  enableBulkOperations?: boolean;
 
   // Search props
   searchTerm?: string;
@@ -382,12 +373,17 @@ export interface UserTableContainerProps extends ModernUserTableProps {
   onSearch?: () => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+
+  // User management actions
+  onAddUser?: () => void;
+
+  // Contact photo management
+  onDeleteContactPhoto?: (contactId: string) => Promise<void>;
 }
 
 // Backward compatibility props mapping
 export interface UserTableEnhancedProps extends UserTableProps {
   // Optional modern features that can be enabled
-  enableBulkOperations?: boolean;
   enableViewSwitching?: boolean;
   enableAdvancedFilters?: boolean;
   enableVirtualization?: boolean;
@@ -404,4 +400,10 @@ export interface UserTableEnhancedProps extends UserTableProps {
   onSearch?: () => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+
+  // User management actions
+  onAddUser?: () => void;
+
+  // Contact photo management
+  onDeleteContactPhoto?: (contactId: string) => Promise<void>;
 }

@@ -27,10 +27,6 @@ import {
   FormControlLabel,
   Checkbox,
   IconButton,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material';
 import {
   PersonAdd as PersonAddIcon,
@@ -48,86 +44,11 @@ import { useAuth } from '../../../../../../../../context/AuthContext';
 import axios from 'axios';
 import { isEmail } from 'validator';
 import { format, parseISO } from 'date-fns';
-
-// US States and Territories for dropdown
-const US_STATES = [
-  { value: 'AL', label: 'Alabama' },
-  { value: 'AK', label: 'Alaska' },
-  { value: 'AZ', label: 'Arizona' },
-  { value: 'AR', label: 'Arkansas' },
-  { value: 'CA', label: 'California' },
-  { value: 'CO', label: 'Colorado' },
-  { value: 'CT', label: 'Connecticut' },
-  { value: 'DE', label: 'Delaware' },
-  { value: 'FL', label: 'Florida' },
-  { value: 'GA', label: 'Georgia' },
-  { value: 'HI', label: 'Hawaii' },
-  { value: 'ID', label: 'Idaho' },
-  { value: 'IL', label: 'Illinois' },
-  { value: 'IN', label: 'Indiana' },
-  { value: 'IA', label: 'Iowa' },
-  { value: 'KS', label: 'Kansas' },
-  { value: 'KY', label: 'Kentucky' },
-  { value: 'LA', label: 'Louisiana' },
-  { value: 'ME', label: 'Maine' },
-  { value: 'MD', label: 'Maryland' },
-  { value: 'MA', label: 'Massachusetts' },
-  { value: 'MI', label: 'Michigan' },
-  { value: 'MN', label: 'Minnesota' },
-  { value: 'MS', label: 'Mississippi' },
-  { value: 'MO', label: 'Missouri' },
-  { value: 'MT', label: 'Montana' },
-  { value: 'NE', label: 'Nebraska' },
-  { value: 'NV', label: 'Nevada' },
-  { value: 'NH', label: 'New Hampshire' },
-  { value: 'NJ', label: 'New Jersey' },
-  { value: 'NM', label: 'New Mexico' },
-  { value: 'NY', label: 'New York' },
-  { value: 'NC', label: 'North Carolina' },
-  { value: 'ND', label: 'North Dakota' },
-  { value: 'OH', label: 'Ohio' },
-  { value: 'OK', label: 'Oklahoma' },
-  { value: 'OR', label: 'Oregon' },
-  { value: 'PA', label: 'Pennsylvania' },
-  { value: 'RI', label: 'Rhode Island' },
-  { value: 'SC', label: 'South Carolina' },
-  { value: 'SD', label: 'South Dakota' },
-  { value: 'TN', label: 'Tennessee' },
-  { value: 'TX', label: 'Texas' },
-  { value: 'UT', label: 'Utah' },
-  { value: 'VT', label: 'Vermont' },
-  { value: 'VA', label: 'Virginia' },
-  { value: 'WA', label: 'Washington' },
-  { value: 'WV', label: 'West Virginia' },
-  { value: 'WI', label: 'Wisconsin' },
-  { value: 'WY', label: 'Wyoming' },
-  { value: 'DC', label: 'District of Columbia' },
-  { value: 'AS', label: 'American Samoa' },
-  { value: 'GU', label: 'Guam' },
-  { value: 'MP', label: 'Northern Mariana Islands' },
-  { value: 'PR', label: 'Puerto Rico' },
-  { value: 'VI', label: 'U.S. Virgin Islands' },
-];
-
-interface Contact {
-  id: string;
-  firstname: string;
-  lastname: string;
-  middlename?: string;
-  email?: string;
-  phone1?: string;
-  phone2?: string;
-  phone3?: string;
-  streetaddress?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  dateofbirth: string;
-  phones?: Array<{
-    type: 'home' | 'work' | 'cell';
-    number: string;
-  }>;
-}
+import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
+import UserAvatar from '../../../../../../../../components/users/UserAvatar';
+import { ContactUpdateData, Contact } from '../../../../../../../../types/users';
+import { UserManagementService } from '../../../../../../../../services/userManagementService';
+import { ContactTransformationService } from '../../../../../../../../services/contactTransformationService';
 
 interface RosterPlayer {
   id: string;
@@ -200,30 +121,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
-  const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
-  const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
-  const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
-  const [autoSignToRoster, setAutoSignToRoster] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    firstname: '',
-    lastname: '',
-    middlename: '',
-    email: '',
-    phone1: '',
-    phone2: '',
-    phone3: '',
-    streetaddress: '',
-    city: '',
-    state: '',
-    zip: '',
-    dateofbirth: '',
-  });
-  const [phoneErrors, setPhoneErrors] = useState({
-    phone1: '',
-    phone2: '',
-    phone3: '',
-  });
-  const [emailError, setEmailError] = useState('');
 
   // Unified roster information dialog states
   const [rosterFormData, setRosterFormData] = useState({
@@ -239,7 +136,39 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [addManagerLoading, setAddManagerLoading] = useState(false);
   const [addManagerError, setAddManagerError] = useState<string | null>(null);
 
+  // Enhanced dialog states for EditContactDialog
+  const [editPlayerDialogOpen, setEditPlayerDialogOpen] = useState(false);
+  const [playerToEdit, setPlayerToEdit] = useState<RosterMember | null>(null);
+  const [isCreatingNewPlayer, setIsCreatingNewPlayer] = useState(false);
+  const [autoSignToRoster, setAutoSignToRoster] = useState(false);
+  const [editingContact, setEditingContact] = useState<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [phoneErrors, setPhoneErrors] = useState({
+    phone1: '',
+    phone2: '',
+    phone3: '',
+  });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [emailError, setEmailError] = useState('');
+  const [editFormData, setEditFormData] = useState({
+    firstname: '',
+    lastname: '',
+    middlename: '',
+    email: '',
+    phone1: '',
+    phone2: '',
+    phone3: '',
+    streetaddress: '',
+    city: '',
+    state: '',
+    zip: '',
+    dateofbirth: '',
+  });
+
   const { token } = useAuth();
+
+  // Initialize UserManagementService for consistent contact updates
+  const userService = token ? new UserManagementService(token) : null;
 
   // Fetch roster data
   const fetchRosterData = useCallback(async () => {
@@ -256,7 +185,22 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       );
 
       if (response.data.success) {
-        setRosterData(response.data.data);
+        const data = response.data.data;
+        // Transform contact data to use camelCase fields
+        const transformedData = {
+          ...data,
+          rosterMembers:
+            data.rosterMembers?.map((member: Record<string, unknown>) => ({
+              ...member,
+              player: {
+                ...(member.player as Record<string, unknown>),
+                contact: ContactTransformationService.transformBackendContact(
+                  (member.player as Record<string, unknown>)?.contact as Record<string, unknown>,
+                ),
+              },
+            })) || [],
+        };
+        setRosterData(transformedData);
       }
     } catch (error: unknown) {
       if (
@@ -288,7 +232,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       );
 
       if (response.data.success) {
-        setAvailablePlayers(response.data.data.availablePlayers);
+        const players = response.data.data.availablePlayers || [];
+        // Transform contact data to use camelCase fields
+        const transformedPlayers = players.map((player: Record<string, unknown>) => ({
+          ...player,
+          contact: ContactTransformationService.transformBackendContact(
+            player.contact as Record<string, unknown>,
+          ),
+        }));
+        setAvailablePlayers(transformedPlayers);
       }
     } catch (error: unknown) {
       if (
@@ -375,7 +327,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         { headers: { Authorization: `Bearer ${token}` } },
       );
       if (response.data.success) {
-        setManagers(response.data.data);
+        const managers = response.data.data || [];
+        // Transform contact data to use camelCase fields
+        const transformedManagers = managers.map((manager: Record<string, unknown>) => ({
+          ...manager,
+          contacts: ContactTransformationService.transformBackendContact(
+            manager.contacts as Record<string, unknown>,
+          ),
+        }));
+        setManagers(transformedManagers);
       }
     } catch {
       // Optionally set error
@@ -558,7 +518,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
   };
 
-  // Handler to edit player
+  // Handler to edit player (legacy - replaced by handleEnhancedContactSave)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditPlayer = async () => {
     if (!playerToEdit || !accountId || !token) {
       setError('Missing required data');
@@ -643,20 +604,42 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setIsCreatingNewPlayer(false);
     setAutoSignToRoster(false);
     setPlayerToEdit(rosterMember);
-    setEditFormData({
-      firstname: rosterMember.player.contact.firstname || '',
-      lastname: rosterMember.player.contact.lastname || '',
-      middlename: rosterMember.player.contact.middlename || '',
+
+    // Convert roster member contact to enhanced dialog format
+    const contact = {
+      id: rosterMember.player.contact.id,
+      firstName: rosterMember.player.contact.firstName || '',
+      lastName: rosterMember.player.contact.lastName || '',
       email: rosterMember.player.contact.email || '',
-      phone1: rosterMember.player.contact.phone1 || '',
-      phone2: rosterMember.player.contact.phone2 || '',
-      phone3: rosterMember.player.contact.phone3 || '',
-      streetaddress: rosterMember.player.contact.streetaddress || '',
-      city: rosterMember.player.contact.city || '',
-      state: rosterMember.player.contact.state || '',
-      zip: rosterMember.player.contact.zip || '',
-      dateofbirth: rosterMember.player.contact.dateofbirth
-        ? rosterMember.player.contact.dateofbirth.split('T')[0]
+      contactDetails: {
+        middlename: rosterMember.player.contact.contactDetails?.middlename || '',
+        phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
+        phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
+        phone3: rosterMember.player.contact.contactDetails?.phone3 || '',
+        streetaddress: rosterMember.player.contact.contactDetails?.streetaddress || '',
+        city: rosterMember.player.contact.contactDetails?.city || '',
+        state: rosterMember.player.contact.contactDetails?.state || '',
+        zip: rosterMember.player.contact.contactDetails?.zip || '',
+        dateofbirth: rosterMember.player.contact.contactDetails?.dateofbirth || '',
+      },
+      photoUrl: (rosterMember.player.contact as any).photoUrl || undefined, // eslint-disable-line @typescript-eslint/no-explicit-any
+    };
+
+    setEditingContact(contact);
+    setEditFormData({
+      firstname: rosterMember.player.contact.firstName || '',
+      lastname: rosterMember.player.contact.lastName || '',
+      middlename: rosterMember.player.contact.contactDetails?.middlename || '',
+      email: rosterMember.player.contact.email || '',
+      phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
+      phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
+      phone3: rosterMember.player.contact.contactDetails?.phone3 || '',
+      streetaddress: rosterMember.player.contact.contactDetails?.streetaddress || '',
+      city: rosterMember.player.contact.contactDetails?.city || '',
+      state: rosterMember.player.contact.contactDetails?.state || '',
+      zip: rosterMember.player.contact.contactDetails?.zip || '',
+      dateofbirth: rosterMember.player.contact.contactDetails?.dateofbirth
+        ? rosterMember.player.contact.contactDetails.dateofbirth.split('T')[0]
         : '',
     });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
@@ -667,6 +650,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setIsCreatingNewPlayer(true);
     setAutoSignToRoster(true);
     setPlayerToEdit(null);
+    setEditingContact(null); // No contact when creating new
     setEditFormData({
       firstname: '',
       lastname: '',
@@ -717,6 +701,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setPlayerToEdit(null);
     setIsCreatingNewPlayer(false);
     setAutoSignToRoster(false);
+    setEditingContact(null);
     setEditFormData({
       firstname: '',
       lastname: '',
@@ -817,6 +802,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCreatePlayer = async () => {
     if (!accountId || !token) {
       setError('Missing required data');
@@ -938,7 +924,112 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
   };
 
-  // Helper function to format phone numbers as (111) 222-3333
+  // Enhanced contact save handler for EditContactDialog
+  const handleEnhancedContactSave = async (
+    contactData: ContactUpdateData,
+    photoFile?: File | null,
+  ) => {
+    console.log('RosterManagement: handleEnhancedContactSave called', {
+      contactData,
+      hasPhotoFile: !!photoFile,
+      photoFileName: photoFile?.name,
+      photoFileSize: photoFile?.size,
+      isCreatingNewPlayer,
+    });
+
+    if (!userService) {
+      setError('Authentication required');
+      return;
+    }
+
+    setFormLoading(true);
+    setError(null);
+
+    try {
+      if (isCreatingNewPlayer) {
+        // Create new contact using UserManagementService
+        const newContact = await userService.createContact(accountId, contactData, photoFile);
+
+        // Create the roster entry for the new player
+        const rosterResponse = await axios.post(
+          `/api/accounts/${accountId}/roster`,
+          {
+            contactId: newContact.id,
+            submittedDriversLicense: false,
+            firstYear: 0,
+          },
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        if (rosterResponse.data.success) {
+          const newPlayer = rosterResponse.data.data.player;
+
+          // If auto-sign is enabled, add to team roster
+          if (autoSignToRoster && seasonId && teamSeasonId) {
+            try {
+              const signResponse = await axios.post(
+                `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+                {
+                  playerId: newPlayer.id,
+                  playerNumber: 0,
+                  submittedWaiver: false,
+                  submittedDriversLicense: false,
+                  firstYear: 0,
+                },
+                { headers: { Authorization: `Bearer ${token}` } },
+              );
+
+              if (signResponse.data.success) {
+                setSuccessMessage(
+                  `Player "${contactData.firstName} ${contactData.lastName}" created and signed to roster successfully`,
+                );
+              } else {
+                setSuccessMessage(
+                  `Player "${contactData.firstName} ${contactData.lastName}" created successfully but failed to sign to roster`,
+                );
+              }
+            } catch {
+              setSuccessMessage(
+                `Player "${contactData.firstName} ${contactData.lastName}" created successfully but failed to sign to roster`,
+              );
+            }
+          } else {
+            setSuccessMessage(
+              `Player "${contactData.firstName} ${contactData.lastName}" created successfully`,
+            );
+          }
+
+          fetchRosterData();
+          fetchAvailablePlayers();
+        } else {
+          throw new Error('Failed to create roster entry for new player');
+        }
+      } else if (playerToEdit) {
+        // Update existing contact using UserManagementService
+        await userService.updateContact(
+          accountId,
+          playerToEdit.player.contactId,
+          contactData,
+          photoFile,
+        );
+        setSuccessMessage(
+          `Player "${contactData.firstName} ${contactData.lastName}" updated successfully`,
+        );
+        fetchRosterData();
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setError(error.response?.data?.message || 'Failed to save contact');
+      } else {
+        setError('Failed to save contact');
+      }
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  // Helper function to format phone numbers as (111) 222-3333 (legacy - not used with enhanced dialog)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
     const phoneNumber = value.replace(/\D/g, '');
@@ -954,7 +1045,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     return `(${limitedNumber.slice(0, 3)}) ${limitedNumber.slice(3, 6)}-${limitedNumber.slice(6, 10)}`;
   };
 
-  // Helper function to validate phone numbers
+  // Helper function to validate phone numbers (legacy - not used with enhanced dialog)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const validatePhoneNumber = (phoneNumber: string): boolean => {
     const digits = phoneNumber.replace(/\D/g, '');
     return digits.length === 0 || digits.length === 10;
@@ -998,15 +1090,29 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     const info = [];
 
     // Address first
-    if (contact.streetaddress || contact.city || contact.state || contact.zip) {
-      const addressParts = [contact.streetaddress, contact.city, contact.state, contact.zip].filter(
-        Boolean,
-      );
+    if (
+      contact.contactDetails?.streetaddress ||
+      contact.contactDetails?.city ||
+      contact.contactDetails?.state ||
+      contact.contactDetails?.zip
+    ) {
+      const addressParts = [
+        contact.contactDetails?.streetaddress,
+        contact.contactDetails?.city,
+        contact.contactDetails?.state,
+        contact.contactDetails?.zip,
+      ].filter(Boolean);
 
       if (addressParts.length > 0) {
         const fullAddress = addressParts.join(', ');
-        const streetAddress = contact.streetaddress || '';
-        const cityStateZip = [contact.city, contact.state, contact.zip].filter(Boolean).join(', ');
+        const streetAddress = contact.contactDetails?.streetaddress || '';
+        const cityStateZip = [
+          contact.contactDetails?.city,
+          contact.contactDetails?.state,
+          contact.contactDetails?.zip,
+        ]
+          .filter(Boolean)
+          .join(', ');
 
         info.push(
           <Link
@@ -1043,64 +1149,46 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       );
     }
 
-    // Phone numbers last
-    if (contact.phones && contact.phones.length > 0) {
-      contact.phones.forEach((phone) => {
-        info.push(
-          <Link
-            href={`tel:${phone.number.replace(/\D/g, '')}`}
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            {phone.type}: {phone.number}
-          </Link>,
-        );
-      });
-    } else {
-      // Fallback to individual phone fields
-      if (contact.phone1)
-        info.push(
-          <Link
-            href={`tel:${contact.phone1.replace(/\D/g, '')}`}
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            home: {contact.phone1}
-          </Link>,
-        );
-      if (contact.phone2)
-        info.push(
-          <Link
-            href={`tel:${contact.phone2.replace(/\D/g, '')}`}
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            cell: {contact.phone2}
-          </Link>,
-        );
-      if (contact.phone3)
-        info.push(
-          <Link
-            href={`tel:${contact.phone3.replace(/\D/g, '')}`}
-            sx={{
-              color: 'primary.main',
-              textDecoration: 'none',
-              '&:hover': { textDecoration: 'underline' },
-            }}
-          >
-            work: {contact.phone3}
-          </Link>,
-        );
-    }
+    // Phone numbers last - use individual phone fields from contactDetails
+    if (contact.contactDetails?.phone1)
+      info.push(
+        <Link
+          href={`tel:${contact.contactDetails.phone1.replace(/\D/g, '')}`}
+          sx={{
+            color: 'primary.main',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          home: {contact.contactDetails.phone1}
+        </Link>,
+      );
+    if (contact.contactDetails?.phone2)
+      info.push(
+        <Link
+          href={`tel:${contact.contactDetails.phone2.replace(/\D/g, '')}`}
+          sx={{
+            color: 'primary.main',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          cell: {contact.contactDetails.phone2}
+        </Link>,
+      );
+    if (contact.contactDetails?.phone3)
+      info.push(
+        <Link
+          href={`tel:${contact.contactDetails.phone3.replace(/\D/g, '')}`}
+          sx={{
+            color: 'primary.main',
+            textDecoration: 'none',
+            '&:hover': { textDecoration: 'underline' },
+          }}
+        >
+          work: {contact.contactDetails.phone3}
+        </Link>,
+      );
 
     if (info.length === 0) {
       return '-';
@@ -1125,9 +1213,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Helper function to format names as "Last, First Middle"
   const formatName = (contact: Contact) => {
-    const lastName = contact.lastname || '';
-    const firstName = contact.firstname || '';
-    const middleName = contact.middlename || '';
+    const lastName = contact.lastName || '';
+    const firstName = contact.firstName || '';
+    const middleName = contact.contactDetails?.middlename || '';
 
     let formattedName = lastName;
     if (firstName) {
@@ -1146,11 +1234,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
     // Age and Date of Birth first
     if (
-      member.player.contact.dateofbirth &&
-      typeof member.player.contact.dateofbirth === 'string'
+      member.player.contact.contactDetails?.dateofbirth &&
+      typeof member.player.contact.contactDetails.dateofbirth === 'string'
     ) {
       try {
-        const birthDate = parseISO(member.player.contact.dateofbirth);
+        const birthDate = parseISO(member.player.contact.contactDetails.dateofbirth);
         const today = new Date();
         const age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
@@ -1244,12 +1332,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Sort roster members by last name, then first name, then middle name
   const sortedRosterMembers = [...rosterData.rosterMembers].sort((a, b) => {
-    const aLast = a.player.contact.lastname || '';
-    const bLast = b.player.contact.lastname || '';
-    const aFirst = a.player.contact.firstname || '';
-    const bFirst = b.player.contact.firstname || '';
-    const aMiddle = a.player.contact.middlename || '';
-    const bMiddle = b.player.contact.middlename || '';
+    const aLast = a.player.contact.lastName || '';
+    const bLast = b.player.contact.lastName || '';
+    const aFirst = a.player.contact.firstName || '';
+    const bFirst = b.player.contact.firstName || '';
+    const aMiddle = a.player.contact.contactDetails?.middlename || '';
+    const bMiddle = b.player.contact.contactDetails?.middlename || '';
 
     // Compare last names first
     if (aLast !== bLast) {
@@ -1410,8 +1498,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 <ManagerIcon color="primary" sx={{ mr: 1 }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight="bold">
-                    {manager.contacts.lastname}, {manager.contacts.firstname}{' '}
-                    {manager.contacts.middlename}
+                    {manager.contacts.lastName}, {manager.contacts.firstName}{' '}
+                    {manager.contacts.contactDetails?.middlename}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {manager.contacts.email}
@@ -1467,17 +1555,37 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                   <TableCell>{member.playerNumber || '-'}</TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {formatName(member.player.contact)}
-                      </Typography>
+                      <UserAvatar
+                        user={{
+                          id: member.player.contact.id,
+                          firstName: member.player.contact.firstName,
+                          lastName: member.player.contact.lastName,
+                          photoUrl: member.player.contact.photoUrl,
+                        }}
+                        size={32}
+                        onClick={() => openEditDialog(member)}
+                        showHoverEffects={true}
+                        enablePhotoActions={true}
+                        onPhotoDelete={async (contactId: string) => {
+                          if (userService) {
+                            await userService.deleteContactPhoto(accountId, contactId);
+                            await fetchRosterData(); // Refresh data
+                          }
+                        }}
+                      />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                          {formatName(member.player.contact)}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          First Year: {member.player.firstYear || 'Not set'}
+                        </Typography>
+                      </Box>
                       {/* Manager badge/icon */}
                       {managers.some((m) => m.contactid === member.player.contact.id) && (
                         <ManagerIcon color="primary" fontSize="small" titleAccess="Manager" />
                       )}
                     </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      First Year: {member.player.firstYear || 'Not set'}
-                    </Typography>
                   </TableCell>
                   <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
                   <TableCell>{formatVerificationInfo(member)}</TableCell>
@@ -1577,16 +1685,36 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                   <TableRow key={member.id}>
                     <TableCell>{member.playerNumber || '-'}</TableCell>
                     <TableCell>
-                      <Box>
-                        <Typography
-                          variant="body1"
-                          sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
-                        >
-                          {formatName(member.player.contact)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          First Year: {member.player.firstYear || 'Not set'}
-                        </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <UserAvatar
+                          user={{
+                            id: member.player.contact.id,
+                            firstName: member.player.contact.firstName,
+                            lastName: member.player.contact.lastName,
+                            photoUrl: member.player.contact.photoUrl,
+                          }}
+                          size={32}
+                          onClick={() => openEditDialog(member)}
+                          showHoverEffects={true}
+                          enablePhotoActions={true}
+                          onPhotoDelete={async (contactId: string) => {
+                            if (userService) {
+                              await userService.deleteContactPhoto(accountId, contactId);
+                              await fetchRosterData(); // Refresh data
+                            }
+                          }}
+                        />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography
+                            variant="body1"
+                            sx={{ fontWeight: 'medium', textDecoration: 'line-through' }}
+                          >
+                            {formatName(member.player.contact)}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            First Year: {member.player.firstYear || 'Not set'}
+                          </Typography>
+                        </Box>
                       </Box>
                     </TableCell>
                     <TableCell>{formatContactInfo(member.player.contact)}</TableCell>
@@ -1685,9 +1813,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 getOptionLabel={(option) => {
                   // Always use .contact if present, fallback to option itself
                   const contact = option.contact || option;
-                  const last = contact.lastname || '';
-                  const first = contact.firstname || '';
-                  const middle = contact.middlename || '';
+                  const last = contact.lastName || '';
+                  const first = contact.firstName || '';
+                  const middle = contact.contactDetails?.middlename || '';
                   return `${last}${first ? ', ' + first : ''}${middle ? ' ' + middle : ''}`.trim();
                 }}
                 value={selectedPlayer}
@@ -1869,239 +1997,18 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         </DialogActions>
       </Dialog>
 
-      {/* Edit Player Dialog */}
-      <Dialog open={editPlayerDialogOpen} onClose={closeEditDialog} maxWidth="md" fullWidth>
-        <DialogTitle>
-          {isCreatingNewPlayer ? 'Create New Player' : 'Edit Player Information'}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ pt: 1 }}>
-            {/* Error Alert */}
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }} onClose={clearMessages}>
-                {error}
-              </Alert>
-            )}
-
-            {/* Auto-sign checkbox for new players */}
-            {isCreatingNewPlayer && (
-              <Alert severity="info" sx={{ mb: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={autoSignToRoster}
-                      onChange={(e) => setAutoSignToRoster(e.target.checked)}
-                    />
-                  }
-                  label="Automatically sign this player to the current team roster after creation"
-                />
-              </Alert>
-            )}
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                <TextField
-                  label="First Name"
-                  value={editFormData.firstname}
-                  onChange={(e) => setEditFormData({ ...editFormData, firstname: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                  required
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                <TextField
-                  label="Last Name"
-                  value={editFormData.lastname}
-                  onChange={(e) => setEditFormData({ ...editFormData, lastname: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                  required
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                <TextField
-                  label="Middle Name"
-                  value={editFormData.middlename}
-                  onChange={(e) => setEditFormData({ ...editFormData, middlename: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  value={editFormData.email}
-                  onChange={(e) => {
-                    setEditFormData({ ...editFormData, email: e.target.value });
-                    if (e.target.value && !validateEmail(e.target.value)) {
-                      setEmailError('Please enter a valid email address');
-                    } else {
-                      setEmailError('');
-                    }
-                  }}
-                  fullWidth
-                  variant="outlined"
-                  error={!!emailError}
-                  helperText={emailError}
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="Home Phone"
-                  value={editFormData.phone1}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, phone1: formatPhoneNumber(e.target.value) })
-                  }
-                  onBlur={() => {
-                    if (editFormData.phone1 && !validatePhoneNumber(editFormData.phone1)) {
-                      setPhoneErrors((prev) => ({
-                        ...prev,
-                        phone1: 'Phone number must be exactly 10 digits',
-                      }));
-                    } else {
-                      setPhoneErrors((prev) => ({ ...prev, phone1: '' }));
-                    }
-                  }}
-                  error={!!phoneErrors.phone1}
-                  helperText={phoneErrors.phone1}
-                  fullWidth
-                  variant="outlined"
-                  placeholder="(555) 123-4567"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="Work Phone"
-                  value={editFormData.phone2}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, phone2: formatPhoneNumber(e.target.value) })
-                  }
-                  onBlur={() => {
-                    if (editFormData.phone2 && !validatePhoneNumber(editFormData.phone2)) {
-                      setPhoneErrors((prev) => ({
-                        ...prev,
-                        phone2: 'Phone number must be exactly 10 digits',
-                      }));
-                    } else {
-                      setPhoneErrors((prev) => ({ ...prev, phone2: '' }));
-                    }
-                  }}
-                  error={!!phoneErrors.phone2}
-                  helperText={phoneErrors.phone2}
-                  fullWidth
-                  variant="outlined"
-                  placeholder="(555) 123-4567"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="Cell Phone"
-                  value={editFormData.phone3}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, phone3: formatPhoneNumber(e.target.value) })
-                  }
-                  onBlur={() => {
-                    if (editFormData.phone3 && !validatePhoneNumber(editFormData.phone3)) {
-                      setPhoneErrors((prev) => ({
-                        ...prev,
-                        phone3: 'Phone number must be exactly 10 digits',
-                      }));
-                    } else {
-                      setPhoneErrors((prev) => ({ ...prev, phone3: '' }));
-                    }
-                  }}
-                  error={!!phoneErrors.phone3}
-                  helperText={phoneErrors.phone3}
-                  fullWidth
-                  variant="outlined"
-                  placeholder="(555) 123-4567"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 100%', minWidth: 0 }}>
-                <TextField
-                  label="Street Address"
-                  value={editFormData.streetaddress}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, streetaddress: e.target.value })
-                  }
-                  fullWidth
-                  variant="outlined"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="City"
-                  value={editFormData.city}
-                  onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <FormControl fullWidth>
-                  <InputLabel>State</InputLabel>
-                  <Select
-                    value={editFormData.state}
-                    onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })}
-                  >
-                    <MenuItem value="">Select State</MenuItem>
-                    {US_STATES.map((state) => (
-                      <MenuItem key={state.value} value={state.value}>
-                        {state.label}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-              <Box sx={{ flex: '1 1 250px', minWidth: 0 }}>
-                <TextField
-                  label="ZIP Code"
-                  value={editFormData.zip}
-                  onChange={(e) => setEditFormData({ ...editFormData, zip: e.target.value })}
-                  fullWidth
-                  variant="outlined"
-                />
-              </Box>
-              <Box sx={{ flex: '1 1 300px', minWidth: 0 }}>
-                <TextField
-                  label="Date of Birth"
-                  type="date"
-                  value={editFormData.dateofbirth ? editFormData.dateofbirth.split('T')[0] : ''}
-                  onChange={(e) =>
-                    setEditFormData({ ...editFormData, dateofbirth: e.target.value })
-                  }
-                  fullWidth
-                  variant="outlined"
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Box>
-            </Box>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeEditDialog} disabled={formLoading}>
-            Cancel
-          </Button>
-          <Button
-            onClick={isCreatingNewPlayer ? handleCreatePlayer : handleEditPlayer}
-            variant="contained"
-            disabled={!editFormData.firstname || !editFormData.lastname || formLoading}
-            startIcon={
-              formLoading ? (
-                <CircularProgress size={20} />
-              ) : isCreatingNewPlayer ? (
-                <PersonAddIcon />
-              ) : (
-                <EditIcon />
-              )
-            }
-          >
-            {isCreatingNewPlayer ? 'Create Player' : 'Save Changes'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Enhanced Edit Contact Dialog */}
+      <EditContactDialog
+        open={editPlayerDialogOpen}
+        contact={editingContact}
+        onClose={closeEditDialog}
+        onSave={handleEnhancedContactSave}
+        loading={formLoading}
+        mode={isCreatingNewPlayer ? 'create' : 'edit'}
+        showRosterSignup={isCreatingNewPlayer}
+        onRosterSignup={setAutoSignToRoster}
+        initialRosterSignup={autoSignToRoster}
+      />
 
       {/* Assign Manager Dialog */}
       <Dialog
