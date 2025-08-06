@@ -14,10 +14,7 @@ export default function TeamRosterManagementClientWrapper() {
     : (params.teamSeasonId ?? '');
 
   return (
-    <ProtectedRoute
-      requiredRole={['AccountAdmin', 'ContactAdmin', 'Contact']}
-      checkAccountBoundary={true}
-    >
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
       <TeamRosterManagement accountId={accountId} seasonId={seasonId} teamSeasonId={teamSeasonId} />
     </ProtectedRoute>
   );

@@ -37,6 +37,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     hasPrev,
     searchTerm,
     searchLoading,
+    onlyWithRoles,
 
     // Dialog states
     assignRoleDialogOpen,
@@ -63,6 +64,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     // Actions
     handleSearch,
     handleClearSearch,
+    handleFilterToggle,
     handleNextPage,
     handlePrevPage,
     handleRowsPerPageChange,
@@ -169,6 +171,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onClearSearch={handleClearSearch}
         searchLoading={searchLoading}
         onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
+        // Filter props
+        onlyWithRoles={onlyWithRoles}
+        onOnlyWithRolesChange={handleFilterToggle}
       />
 
       {/* Dialog Sections */}

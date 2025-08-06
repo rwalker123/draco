@@ -79,17 +79,6 @@ export interface UserCardAction extends Omit<UserTableAction, 'handler'> {
   tooltip?: string;
 }
 
-// Advanced filtering options
-export interface UserAdvancedFilters {
-  roles?: string[];
-  roleTypes?: ('global' | 'account' | 'contact')[];
-  dateRange?: { start: Date; end: Date };
-  contactMethods?: ('email' | 'phone' | 'address')[];
-  activityStatus?: 'active' | 'inactive' | 'all';
-  hasContactInfo?: boolean;
-  customFilters?: Record<string, unknown>;
-}
-
 // Sorting configuration
 export interface UserSortOption {
   field: keyof EnhancedUser | string;
@@ -143,8 +132,8 @@ export interface ModernUserTableProps extends UserTableProps {
   customActions?: UserTableAction[];
   maxSelection?: number;
 
-  // Advanced filtering and search
-  advancedFilters?: UserAdvancedFilters;
+  // Filtering and search
+  onlyWithRoles?: boolean;
   sortOptions?: UserSortOption[];
   enableAdvancedFilters?: boolean;
 
@@ -158,7 +147,7 @@ export interface ModernUserTableProps extends UserTableProps {
   onViewModeChange?: (mode: ViewMode) => void;
   onCardSizeChange?: (size: CardSize) => void;
   onBulkAction?: (action: UserTableAction, users: EnhancedUser[]) => Promise<void> | void;
-  onFiltersChange?: (filters: UserAdvancedFilters) => void;
+  onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
   onSortChange?: (field: string, direction: SortDirection) => void;
 
   // Accessibility and customization
@@ -199,21 +188,15 @@ export interface UserTableToolbarProps {
   onSearchSubmit: () => void;
   onSearchClear: () => void;
   onAddUser?: () => void;
-  filters: UserAdvancedFilters;
-  onFiltersChange: (filters: UserAdvancedFilters) => void;
+  onlyWithRoles?: boolean;
+  onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
   customActions: UserTableAction[];
   onBulkAction: (action: UserTableAction, users: EnhancedUser[]) => void;
   canManageUsers: boolean;
   enableAdvancedFilters: boolean;
   loading?: boolean;
-}
-
-export interface UserTableFiltersProps {
-  filters: UserAdvancedFilters;
-  onFiltersChange: (filters: UserAdvancedFilters) => void;
-  availableRoles: UserRole[];
-  onClearFilters: () => void;
-  loading?: boolean;
+  showFilters?: boolean;
+  onToggleFilters?: () => void;
 }
 
 export interface UserTableRowProps {
@@ -400,6 +383,10 @@ export interface UserTableEnhancedProps extends UserTableProps {
   onSearch?: () => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+
+  // Filter props
+  onlyWithRoles?: boolean;
+  onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
 
   // User management actions
   onAddUser?: () => void;
