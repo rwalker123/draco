@@ -4,7 +4,7 @@ import ProtectedRoute from '../../../../components/auth/ProtectedRoute';
 
 export default function Page() {
   return (
-    <ProtectedRoute requiredRole={['AccountAdmin', 'ContactAdmin']} checkAccountBoundary={true}>
+    <ProtectedRoute requiredRole="AccountAdmin" checkAccountBoundary={true}>
       <SeasonManagement />
     </ProtectedRoute>
   );
