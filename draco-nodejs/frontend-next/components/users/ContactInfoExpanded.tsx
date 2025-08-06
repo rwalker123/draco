@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Stack, Typography, IconButton, Collapse, Box, Chip } from '@mui/material';
 import { ExpandMore as ExpandMoreIcon, ExpandLess as ExpandLessIcon } from '@mui/icons-material';
 import { ContactDetails } from '../../types/users';
-import { hasContactDetails } from '../../utils/contactUtils';
+import { hasContactDetails, getFormattedName } from '../../utils/contactUtils';
 import ContactInfoDisplay from './ContactInfoDisplay';
 
 interface ContactInfoExpandedProps {
@@ -37,7 +37,7 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
   if (!hasDetails) {
     return (
       <Typography variant="body2" color="text.secondary">
-        {firstName} {lastName}
+        {getFormattedName(firstName, lastName, contactDetails?.middlename)}
       </Typography>
     );
   }
@@ -47,7 +47,7 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
       {/* Header with toggle */}
       <Stack direction="row" alignItems="center" spacing={1}>
         <Typography variant="body2" fontWeight="bold">
-          {firstName} {lastName}
+          {getFormattedName(firstName, lastName, contactDetails?.middlename)}
         </Typography>
 
         <IconButton size="small" onClick={handleToggle} sx={{ p: 0.5 }}>

@@ -9,17 +9,14 @@ import {
   InputAdornment,
   IconButton,
   Button,
-  Chip,
   Menu,
   MenuItem,
-  Alert,
-  Collapse,
-  Badge,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Clear as ClearIcon,
-  FilterList as FilterListIcon,
   GetApp as ExportIcon,
   PersonAdd as PersonAddIcon,
   MoreVert as MoreVertIcon,
@@ -34,22 +31,14 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   onSearchSubmit,
   onSearchClear,
   onAddUser,
-  filters,
-  onFiltersChange,
   customActions,
   onBulkAction,
   canManageUsers,
-  enableAdvancedFilters,
   loading = false,
+  onlyWithRoles = false,
+  onOnlyWithRolesChange,
 }) => {
-  const [showFilters, setShowFilters] = useState(false);
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<null | HTMLElement>(null);
-
-  const hasActiveFilters = Object.values(filters).some((value) => {
-    if (Array.isArray(value)) return value.length > 0;
-    if (typeof value === 'boolean') return value !== undefined;
-    return value !== undefined && value !== null;
-  });
 
   const handleSearchKeyPress = (event: React.KeyboardEvent) => {
     if (event.key === 'Enter') {
@@ -61,8 +50,8 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
     onSearchClear();
   };
 
-  const handleToggleFilters = () => {
-    setShowFilters(!showFilters);
+  const handleOnlyWithRolesToggle = () => {
+    onOnlyWithRolesChange?.(!onlyWithRoles);
   };
 
   const handleBulkMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -76,20 +65,6 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   const handleBulkActionClick = async (action: UserTableAction) => {
     handleBulkMenuClose();
     await onBulkAction(action, selectedUsers);
-  };
-
-  const clearFilter = (filterKey: string) => {
-    const newFilters = { ...filters };
-    if (Array.isArray(newFilters[filterKey as keyof typeof filters])) {
-      delete newFilters[filterKey as keyof typeof filters];
-    } else {
-      (newFilters as Record<string, unknown>)[filterKey] = undefined;
-    }
-    onFiltersChange(newFilters);
-  };
-
-  const clearAllFilters = () => {
-    onFiltersChange({});
   };
 
   // Available bulk actions for selected users
@@ -200,18 +175,18 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
                 disabled={loading}
               />
 
-              {enableAdvancedFilters && (
-                <IconButton
-                  onClick={handleToggleFilters}
-                  color={hasActiveFilters ? 'primary' : 'default'}
-                  aria-label="Toggle filters"
-                  disabled={loading}
-                >
-                  <Badge color="primary" variant="dot" invisible={!hasActiveFilters}>
-                    <FilterListIcon />
-                  </Badge>
-                </IconButton>
-              )}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={onlyWithRoles}
+                    onChange={handleOnlyWithRolesToggle}
+                    disabled={loading}
+                    size="small"
+                  />
+                }
+                label="With roles only"
+                sx={{ ml: 1 }}
+              />
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -245,61 +220,6 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
           </>
         )}
       </Toolbar>
-
-      {/* Active filters display */}
-      {hasActiveFilters && (
-        <Box sx={{ px: 2, pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography variant="caption" color="text.secondary">
-              Active filters:
-            </Typography>
-
-            {filters.roles && filters.roles.length > 0 && (
-              <Chip
-                size="small"
-                label={`Roles: ${filters.roles.join(', ')}`}
-                onDelete={() => clearFilter('roles')}
-                color="primary"
-                variant="outlined"
-              />
-            )}
-
-            {filters.hasContactInfo !== undefined && (
-              <Chip
-                size="small"
-                label={`Has contact info: ${filters.hasContactInfo ? 'Yes' : 'No'}`}
-                onDelete={() => clearFilter('hasContactInfo')}
-                color="primary"
-                variant="outlined"
-              />
-            )}
-
-            {filters.contactMethods && filters.contactMethods.length > 0 && (
-              <Chip
-                size="small"
-                label={`Contact: ${filters.contactMethods.join(', ')}`}
-                onDelete={() => clearFilter('contactMethods')}
-                color="primary"
-                variant="outlined"
-              />
-            )}
-
-            <Button size="small" variant="text" onClick={clearAllFilters} sx={{ ml: 1 }}>
-              Clear all
-            </Button>
-          </Box>
-        </Box>
-      )}
-
-      {/* Bulk action feedback */}
-      {selectedUsers.length > 0 && availableBulkActions.length === 0 && canManageUsers && (
-        <Collapse in={true}>
-          <Alert severity="info" sx={{ mx: 2, mb: 1 }}>
-            No bulk actions available for the selected users. Individual actions can be accessed
-            from each user row.
-          </Alert>
-        </Collapse>
-      )}
     </>
   );
 };
@@ -314,7 +234,7 @@ const areToolbarPropsEqual = (
     prevProps.searchTerm === nextProps.searchTerm &&
     prevProps.loading === nextProps.loading &&
     prevProps.canManageUsers === nextProps.canManageUsers &&
-    prevProps.enableAdvancedFilters === nextProps.enableAdvancedFilters &&
+    prevProps.onlyWithRoles === nextProps.onlyWithRoles &&
     prevProps.selectedUsers.length === nextProps.selectedUsers.length && // Compare selection count instead of array
     prevProps.userCount === nextProps.userCount && // Compare user count directly
     prevProps.onSearchChange === nextProps.onSearchChange &&

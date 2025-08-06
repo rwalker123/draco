@@ -23,6 +23,10 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   onClearSearch,
   searchLoading,
 
+  // Filter props
+  onlyWithRoles,
+  onOnlyWithRolesChange,
+
   // All original UserTable props
   ...originalProps
 }) => {
@@ -66,6 +70,9 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       onSearch={onSearch}
       onClearSearch={onClearSearch}
       searchLoading={searchLoading}
+      // Filter props
+      onlyWithRoles={onlyWithRoles}
+      onOnlyWithRolesChange={onOnlyWithRolesChange}
       // Title props for enhanced container
       title={hasModernFeatures ? 'User Management' : undefined}
       showTitle={hasModernFeatures}

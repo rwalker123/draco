@@ -86,6 +86,29 @@ export const getFullName = (
 };
 
 /**
+ * Get formatted name as "LastName, FirstName MiddleName"
+ */
+export const getFormattedName = (
+  firstName: string,
+  lastName: string,
+  middleName?: string | null,
+): string => {
+  const lastNamePart = lastName || '';
+  const firstNamePart = firstName || '';
+  const middleNamePart = middleName || '';
+
+  let formattedName = lastNamePart;
+  if (firstNamePart) {
+    formattedName += `, ${firstNamePart}`;
+  }
+  if (middleNamePart) {
+    formattedName += ` ${middleNamePart}`;
+  }
+
+  return formattedName;
+};
+
+/**
  * Check if contact has any contact details
  */
 export const hasContactDetails = (contactDetails?: ContactDetails): boolean => {

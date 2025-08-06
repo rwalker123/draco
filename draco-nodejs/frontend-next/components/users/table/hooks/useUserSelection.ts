@@ -4,13 +4,13 @@ import {
   UserSelectionConfig,
   SelectionMode,
   UserSelectionState,
-  UserAdvancedFilters,
 } from '../../../../types/userTable';
 import { User } from '../../../../types/users';
+import { getFullName } from '../../../../utils/contactUtils';
 
 // Utility functions for user enhancement and selection
 export const enhanceUser = (user: User): EnhancedUser => {
-  const displayName = `${user.firstName} ${user.lastName}`.trim();
+  const displayName = getFullName(user.firstName, user.lastName, user.contactDetails?.middlename);
 
   // Build full address from contact details
   const contact = user.contactDetails;
@@ -156,68 +156,4 @@ export const sortEnhancedUsers = (
     const comparison = aStr.localeCompare(bStr);
     return direction === 'asc' ? comparison : -comparison;
   });
-};
-
-// Hook for managing user filtering and sorting
-export const useUserFiltering = (
-  users: EnhancedUser[],
-  searchTerm: string = '',
-  filters: UserAdvancedFilters = {},
-  sortField?: string,
-  sortDirection: 'asc' | 'desc' = 'asc',
-) => {
-  return useMemo(() => {
-    let filteredUsers = [...users];
-
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filteredUsers = filteredUsers.filter(
-        (user) =>
-          (user.displayName?.toLowerCase() || '').includes(searchLower) ||
-          (user.email?.toLowerCase() || '').includes(searchLower) ||
-          (user.primaryPhone?.toLowerCase() || '').includes(searchLower) ||
-          user.activeRoleNames?.some((role) => role?.toLowerCase()?.includes(searchLower)) ||
-          false,
-      );
-    }
-
-    // Apply advanced filters
-    if (filters.roles && filters.roles.length > 0) {
-      filteredUsers = filteredUsers.filter(
-        (user) => user.activeRoleNames?.some((role) => filters.roles!.includes(role)) || false,
-      );
-    }
-
-    if (filters.hasContactInfo !== undefined) {
-      filteredUsers = filteredUsers.filter(
-        (user) => user.hasContactInfo === filters.hasContactInfo,
-      );
-    }
-
-    if (filters.contactMethods && filters.contactMethods.length > 0) {
-      filteredUsers = filteredUsers.filter((user) => {
-        const methods = filters.contactMethods!;
-        return methods.some((method) => {
-          switch (method) {
-            case 'email':
-              return Boolean(user.email);
-            case 'phone':
-              return Boolean(user.primaryPhone);
-            case 'address':
-              return Boolean(user.fullAddress);
-            default:
-              return false;
-          }
-        });
-      });
-    }
-
-    // Apply sorting
-    if (sortField) {
-      filteredUsers = sortEnhancedUsers(filteredUsers, sortField, sortDirection);
-    }
-
-    return filteredUsers;
-  }, [users, searchTerm, filters, sortField, sortDirection]);
 };
