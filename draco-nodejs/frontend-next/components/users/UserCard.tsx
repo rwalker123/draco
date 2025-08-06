@@ -7,6 +7,7 @@ import UserRoleChips from './UserRoleChips';
 import UserActions from './UserActions';
 import ContactInfoExpanded from './ContactInfoExpanded';
 import UserAvatar from './UserAvatar';
+import { getFormattedName } from '../../utils/contactUtils';
 
 /**
  * UserCard Component
@@ -57,7 +58,7 @@ const UserCard: React.FC<UserCardProps> = ({
             onPhotoDelete={onDeleteContactPhoto}
           />
           <Typography variant="subtitle2" fontWeight="bold">
-            {user.firstName} {user.lastName}
+            {getFormattedName(user.firstName, user.lastName, user.contactDetails?.middlename)}
           </Typography>
         </Stack>
       </TableCell>

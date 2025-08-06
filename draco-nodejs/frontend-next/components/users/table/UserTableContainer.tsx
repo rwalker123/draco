@@ -1,29 +1,15 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, memo } from 'react';
-import {
-  Paper,
-  Table,
-  TableContainer,
-  TableBody,
-  Box,
-  CircularProgress,
-  Typography,
-} from '@mui/material';
+import { Paper, Box, Typography } from '@mui/material';
 import { UserSelectionProvider } from './context/UserSelectionProvider';
-import {
-  useEnhancedUsers,
-  usePermissionBasedSelection,
-  useUserFiltering,
-} from './hooks/useUserSelection';
+import { useEnhancedUsers, usePermissionBasedSelection } from './hooks/useUserSelection';
 import UserTableHeader from './components/UserTableHeader';
 import UserTableToolbar from './components/UserTableToolbar';
-import UserTableFilters from './components/UserTableFilters';
-import UserCardGrid from './components/UserCardGrid';
+import UserTableWrapper from './UserTableWrapper';
 import {
   UserTableContainerProps,
   ViewMode,
-  UserAdvancedFilters,
   SortDirection,
   DEFAULT_VIEW_CONFIG,
   DEFAULT_TABLE_COLUMNS,
@@ -32,12 +18,8 @@ import {
   UserTableAction,
   UserSelectionActions,
 } from '../../../types/userTable';
-import { UserRole } from '../../../types/users';
-import { StreamPaginationControl } from '../../pagination';
-import UserEmptyState from '../UserEmptyState';
 
-// Import existing components for compatibility
-import UserCard from '../UserCard';
+import { StreamPaginationControl } from '../../pagination';
 
 const UserTableContainer: React.FC<UserTableContainerProps> = ({
   // Original props
@@ -47,7 +29,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onAssignRole,
   onRemoveRole,
   onEditContact,
-  onDeleteContact,
   onDeleteContactPhoto,
   onAddUser,
   canManageUsers,
@@ -64,15 +45,13 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   viewMode = 'table',
   selectionMode = 'none',
   enableAdvancedFilters = false,
-  enableVirtualization = false,
-  virtualizationThreshold = 100,
+  enableVirtualization: _enableVirtualization = false,
+  virtualizationThreshold: _virtualizationThreshold = 100,
   customActions = [],
   viewConfig = {},
-  advancedFilters = {},
   onSelectionChange,
   onViewModeChange,
   onBulkAction,
-  onFiltersChange,
   onSortChange,
 
   // Container props
@@ -89,6 +68,10 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onClearSearch: externalOnClearSearch,
   searchLoading: externalSearchLoading,
 
+  // Filter props
+  onlyWithRoles,
+  onOnlyWithRolesChange,
+
   ..._restProps
 }) => {
   // Component initialization
@@ -101,10 +84,8 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
 
   // Local state for enhanced functionality
   const [localSearchTerm, setLocalSearchTerm] = useState('');
-  const [filters, setFilters] = useState<UserAdvancedFilters>(advancedFilters);
-  const [sortField, setSortField] = useState<string>('displayName');
+  const [sortField, setSortField] = useState<string>('lastName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [showFilters] = useState(false);
   const [currentViewMode, setCurrentViewMode] = useState<ViewMode>(viewMode);
 
   // Use the appropriate search term based on mode
@@ -113,24 +94,44 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   // Enhance users with computed properties
   const enhancedUsers = useEnhancedUsers(users);
 
-  // Apply filtering and sorting - always call the hook for consistent render order
-  const locallyFilteredUsers = useUserFiltering(
-    enhancedUsers,
-    searchTerm,
-    filters,
-    sortField,
-    sortDirection,
-  );
+  // Apply search filtering and sorting
+  const locallyFilteredUsers = useMemo(() => {
+    let filtered = enhancedUsers;
+
+    // Apply search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (user) =>
+          user.displayName.toLowerCase().includes(searchLower) ||
+          user.email?.toLowerCase().includes(searchLower) ||
+          user.contactDetails?.phone1?.includes(searchTerm) ||
+          user.contactDetails?.phone2?.includes(searchTerm) ||
+          user.contactDetails?.phone3?.includes(searchTerm),
+      );
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      const aValue = a[sortField as keyof EnhancedUser];
+      const bValue = b[sortField as keyof EnhancedUser];
+
+      if (aValue == null && bValue == null) return 0;
+      if (aValue == null) return sortDirection === 'asc' ? -1 : 1;
+      if (bValue == null) return sortDirection === 'asc' ? 1 : -1;
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [enhancedUsers, searchTerm, sortField, sortDirection]);
 
   // When using external search, don't use local filtering - users are already filtered by backend
   const filteredUsers = isExternalSearch ? enhancedUsers : locallyFilteredUsers;
 
-  // Determine if virtual scrolling should be enabled
-  // Only enable virtualization if we have a complete dataset (not paginated)
-  // We detect pagination by checking if there are next/prev navigation props
-  const isPaginated = _hasNext || _hasPrev || page > 1;
-  const shouldEnableVirtualization =
-    enableVirtualization && !isPaginated && filteredUsers.length >= virtualizationThreshold;
+  // Note: Virtualization is handled by UserTableWrapper now
 
   // Setup selection configuration
   const selectionConfig = usePermissionBasedSelection(
@@ -148,17 +149,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     }),
     [viewConfig],
   );
-
-  // Available roles for filtering
-  const availableRoles = useMemo(() => {
-    const roles: UserRole[] = [];
-    enhancedUsers.forEach((user) => {
-      if (user.roles) {
-        roles.push(...user.roles);
-      }
-    });
-    return Array.from(new Map(roles.map((role) => [role.id, role])).values());
-  }, [enhancedUsers]);
 
   // Bulk actions with defaults
   const allBulkActions = useMemo(() => {
@@ -202,14 +192,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     }
   }, [isExternalSearch, externalOnClearSearch]);
 
-  const handleFiltersChange = useCallback(
-    (newFilters: UserAdvancedFilters) => {
-      setFilters(newFilters);
-      onFiltersChange?.(newFilters);
-    },
-    [onFiltersChange],
-  );
-
   const handleSortChange = useCallback(
     (field: string, direction: SortDirection) => {
       setSortField(field);
@@ -238,11 +220,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
     [onBulkAction],
   );
 
-  const clearFilters = useCallback(() => {
-    setFilters({});
-    onFiltersChange?.({});
-  }, [onFiltersChange]);
-
   // Stable wrapper for pagination control to match expected signature
   const handleRowsPerPageChange = useCallback(
     (newRowsPerPage: number) => {
@@ -257,7 +234,6 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
 
   // Initial loading state only - show full loading screen for very first load
   if (loading && isInitialLoad) {
-    console.log('📱 SHOWING INITIAL LOADING SCREEN');
     return (
       <Box
         display="flex"
@@ -267,17 +243,12 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
         flexDirection="column"
         gap={2}
       >
-        <CircularProgress />
         <Typography variant="body2" color="text.secondary">
           Loading users...
         </Typography>
       </Box>
     );
   }
-
-  // Don't handle empty state here - let individual view modes handle it within their structure
-
-  // Don't return early for filtered empty state - handle it inline below
 
   return (
     <UserSelectionProvider users={filteredUsers} config={selectionConfig}>
@@ -312,154 +283,56 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onSearchSubmit={handleSearchSubmit}
           onSearchClear={handleSearchClear}
           onAddUser={onAddUser}
-          filters={filters}
-          onFiltersChange={handleFiltersChange}
           customActions={allBulkActions}
           onBulkAction={handleBulkAction}
           canManageUsers={canManageUsers}
           enableAdvancedFilters={enableAdvancedFilters}
           loading={loading || externalSearchLoading}
+          onlyWithRoles={onlyWithRoles}
+          onOnlyWithRolesChange={onOnlyWithRolesChange}
         />
 
-        {/* Advanced Filters */}
-        {enableAdvancedFilters && showFilters && (
-          <UserTableFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            availableRoles={availableRoles}
-            onClearFilters={clearFilters}
-            loading={loading || externalSearchLoading}
-          />
-        )}
+        {/* Table Header */}
+        <UserTableHeader
+          users={filteredUsers}
+          viewMode={currentViewMode}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          selectionMode={selectionConfig.mode}
+          selectionState={{
+            selectedIds: new Set(),
+            selectAll: false,
+            indeterminate: false,
+            totalSelected: 0,
+          }}
+          selectionActions={{} as UserSelectionActions} // Will be provided by context
+          canManageUsers={canManageUsers}
+          onSortChange={handleSortChange}
+          onViewModeChange={finalViewConfig.enableViewSwitching ? handleViewModeChange : undefined}
+          columns={DEFAULT_TABLE_COLUMNS}
+        />
 
-        {/* Table/Content Area */}
-        {currentViewMode === 'table' ? (
-          <TableContainer>
-            <Table stickyHeader={finalViewConfig.stickyHeader}>
-              <UserTableHeader
-                users={filteredUsers}
-                viewMode={currentViewMode}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                selectionMode={selectionConfig.mode}
-                selectionState={{
-                  selectedIds: new Set(),
-                  selectAll: false,
-                  indeterminate: false,
-                  totalSelected: 0,
-                }}
-                selectionActions={{} as UserSelectionActions} // Will be provided by context
-                canManageUsers={canManageUsers}
-                onSortChange={handleSortChange}
-                onViewModeChange={
-                  finalViewConfig.enableViewSwitching ? handleViewModeChange : undefined
-                }
-                columns={DEFAULT_TABLE_COLUMNS}
-              />
-              <TableBody>
-                {/* Pagination loading indicator - statistics style */}
-                {loading && !isInitialLoad ? (
-                  <tr>
-                    <td colSpan={100} style={{ textAlign: 'center', padding: '20px' }}>
-                      <CircularProgress size={24} />
-                    </td>
-                  </tr>
-                ) : filteredUsers.length > 0 ? (
-                  filteredUsers.map((user) => (
-                    <UserCard
-                      key={user.id}
-                      user={user}
-                      canManageUsers={canManageUsers}
-                      onAssignRole={onAssignRole}
-                      onRemoveRole={onRemoveRole}
-                      onEditContact={onEditContact}
-                      onDeleteContactPhoto={onDeleteContactPhoto}
-                      getRoleDisplayName={getRoleDisplayName}
-                    />
-                  ))
-                ) : (
-                  <UserEmptyState
-                    searchTerm={searchTerm}
-                    hasFilters={Object.keys(filters).length > 0}
-                    wrapper="table-row"
-                    colSpan={100}
-                    showIcon={false} // Don't show icon in table row for space reasons
-                  />
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          // Card View
-          <>
-            <UserTableHeader
-              users={filteredUsers}
-              viewMode={currentViewMode}
-              sortField={sortField}
-              sortDirection={sortDirection}
-              selectionMode={selectionConfig.mode}
-              selectionState={{
-                selectedIds: new Set(),
-                selectAll: false,
-                indeterminate: false,
-                totalSelected: 0,
-              }}
-              selectionActions={{} as UserSelectionActions}
-              canManageUsers={canManageUsers}
-              onSortChange={handleSortChange}
-              onViewModeChange={
-                finalViewConfig.enableViewSwitching ? handleViewModeChange : undefined
-              }
-              columns={DEFAULT_TABLE_COLUMNS}
-            />
-            {/* Card view with loading overlay */}
-            {(() =>
-              console.log('🎴 RENDERING CARD GRID:', {
-                userCount: filteredUsers.length,
-                viewMode: 'card',
-              }))()}
-            <Box sx={{ position: 'relative' }}>
-              <UserCardGrid
-                users={filteredUsers}
-                cardSize={finalViewConfig.defaultCardSize}
-                viewConfig={finalViewConfig}
-                onAssignRole={onAssignRole}
-                onRemoveRole={onRemoveRole}
-                onEditContact={onEditContact}
-                onDeleteContact={onDeleteContact}
-                onDeleteContactPhoto={onDeleteContactPhoto}
-                canManageUsers={canManageUsers}
-                getRoleDisplayName={getRoleDisplayName}
-                enableVirtualization={shouldEnableVirtualization}
-                virtualizationThreshold={virtualizationThreshold}
-                searchTerm={searchTerm}
-                hasFilters={Object.keys(filters).length > 0}
-              />
-              {/* Loading overlay for pagination */}
-              {loading && !isInitialLoad && (
-                <Box
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1,
-                    transition: 'opacity 0.2s ease-in-out',
-                  }}
-                >
-                  <CircularProgress size={32} />
-                </Box>
-              )}
-            </Box>
-          </>
-        )}
+        {/* Content Area - Now using UserTableWrapper for skeleton handling */}
+        <UserTableWrapper
+          users={filteredUsers}
+          loading={loading}
+          isInitialLoad={isInitialLoad}
+          viewMode={currentViewMode}
+          cardSize={finalViewConfig.defaultCardSize}
+          canManageUsers={canManageUsers}
+          onAssignRole={onAssignRole}
+          onRemoveRole={onRemoveRole}
+          onEditContact={onEditContact}
+          onDeleteContactPhoto={onDeleteContactPhoto}
+          getRoleDisplayName={getRoleDisplayName}
+          searchTerm={searchTerm}
+          hasFilters={false}
+          loadingDelay={500}
+          skeletonRows={5}
+          skeletonCards={6}
+        />
 
-        {/* Creative Pagination Controls */}
+        {/* Pagination Controls */}
         <Box sx={{ p: 2 }}>
           <StreamPaginationControl
             page={page}

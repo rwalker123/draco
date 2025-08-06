@@ -19,18 +19,21 @@ import {
   ContactUpdateData,
 } from '../types/users';
 import { extractErrorMessage } from '../types/typeGuards';
+import { useUserDataManager } from './useUserDataManager';
+import { useUserApiOperations } from './useUserApiOperations';
 
 // Pagination state for atomic updates
 interface PaginationState {
   users: User[];
   loading: boolean;
   isInitialLoad: boolean;
+  isPaginating: boolean;
   page: number;
   hasNext: boolean;
   hasPrev: boolean;
 }
 
-type PaginationAction =
+export type PaginationAction =
   | { type: 'START_LOADING' }
   | { type: 'START_PAGINATION'; page: number }
   | { type: 'SET_DATA'; users: User[]; hasNext: boolean; hasPrev: boolean; page?: number }
@@ -44,12 +47,14 @@ const paginationReducer = (state: PaginationState, action: PaginationAction): Pa
         ...state,
         loading: true,
         isInitialLoad: state.users.length === 0, // Only true if no users yet
+        isPaginating: false,
       };
     case 'START_PAGINATION':
       return {
         ...state,
         loading: true,
         isInitialLoad: false, // Never show full loading for pagination
+        isPaginating: true,
         page: action.page,
       };
     case 'SET_DATA':
@@ -61,12 +66,14 @@ const paginationReducer = (state: PaginationState, action: PaginationAction): Pa
         page: action.page !== undefined ? action.page : state.page,
         loading: false,
         isInitialLoad: false,
+        isPaginating: false,
       };
     case 'RESET_TO_INITIAL':
       return {
         users: [],
         loading: true,
         isInitialLoad: true,
+        isPaginating: false,
         page: 1,
         hasNext: false,
         hasPrev: false,
@@ -89,6 +96,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     users: [],
     loading: true,
     isInitialLoad: true,
+    isPaginating: false,
     page: 1,
     hasNext: false,
     hasPrev: false,
@@ -112,7 +120,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const rowsPerPageRef = useRef(rowsPerPage);
 
   // Extract values from reducer state
-  const { users, loading, isInitialLoad, page, hasNext, hasPrev } = paginationState;
+  const { users, loading, isInitialLoad, isPaginating, page, hasNext, hasPrev } = paginationState;
 
   // Dialog states
   const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
@@ -142,6 +150,10 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const userService = token ? createUserManagementService(token) : null;
   const contextDataService = token ? createContextDataService(token) : null;
 
+  // New architecture hooks
+  const dataManager = useUserDataManager(dispatch);
+  const apiOperations = useUserApiOperations(userService!, accountId);
+
   // Atomic pagination data update using reducer
   const updatePaginationData = useCallback(
     (newUsers: User[], newHasNext: boolean, newHasPrev: boolean, newPage?: number) => {
@@ -158,7 +170,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
   // Load users with pagination
   const loadUsers = useCallback(
-    async (currentPage = 0, limit?: number, isPaginating = false) => {
+    async (
+      currentPage = 0,
+      limit?: number,
+      isPaginating = false,
+      onlyWithRolesOverride?: boolean,
+    ) => {
       if (!userService || !accountId) return;
 
       try {
@@ -176,7 +193,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           sortBy: 'lastname',
           sortOrder: 'asc',
           seasonId: currentSeasonId,
-          onlyWithRoles: onlyWithRoles,
+          onlyWithRoles:
+            onlyWithRolesOverride !== undefined ? onlyWithRolesOverride : onlyWithRoles,
         });
 
         // Atomic state update via reducer
@@ -327,41 +345,43 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       if (!userService || !accountId) return;
 
       try {
-        dispatch({ type: 'START_LOADING' });
+        dataManager.setLoading();
         setError(null);
 
         // Update filter state
         setOnlyWithRoles(filterValue);
 
-        // Reset to first page and reload data with new filter
-        // Page will be set by loadUsers with isPaginating=true
-
         // If we have a search term, re-run the search with the new filter
         if (searchTerm.trim()) {
-          const searchResults = await userService.searchUsers(
-            accountId,
+          const searchResults = await apiOperations.searchUsersWithFilter({
             searchTerm,
-            currentSeasonId,
-            filterValue,
-          );
-          dispatch({
-            type: 'SET_DATA',
-            users: searchResults,
-            hasNext: false,
-            hasPrev: false,
-            page: 1,
+            seasonId: currentSeasonId,
+            onlyWithRoles: filterValue,
           });
+          dataManager.setData(searchResults, false, false, 1);
         } else {
-          // Otherwise reload regular user list with filter
-          await loadUsers(1, undefined, true);
+          // Use the new API operations layer
+          const response = await apiOperations.fetchUsersWithFilter({
+            page: 1,
+            limit: rowsPerPageRef.current,
+            sortBy: 'lastname',
+            sortOrder: 'asc',
+            seasonId: currentSeasonId,
+            onlyWithRoles: filterValue,
+          });
+          dataManager.setData(
+            response.users,
+            response.pagination.hasNext,
+            response.pagination.hasPrev,
+            1,
+          );
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to apply filter');
-      } finally {
-        dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
+        dataManager.clearData();
       }
     },
-    [userService, accountId, searchTerm, currentSeasonId],
+    [dataManager, apiOperations, searchTerm, currentSeasonId, setOnlyWithRoles],
   );
 
   // Pagination handlers - atomic state updates
@@ -855,7 +875,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     searchTerm,
     searchLoading,
     onlyWithRoles,
-    isPaginating: loading && !isInitialLoad, // Show when paginating
+    isPaginating, // Use the state from reducer
 
     // Dialog states
     assignRoleDialogOpen,

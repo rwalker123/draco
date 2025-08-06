@@ -552,21 +552,6 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
                     </Typography>
                   </Stack>
                 )}
-
-                {user.contactDetails?.middlename && (
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    mb={0.5}
-                    sx={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    Middle name: {user.contactDetails.middlename}
-                  </Typography>
-                )}
               </Box>
             </>
           )}

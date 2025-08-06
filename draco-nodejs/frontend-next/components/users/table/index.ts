@@ -5,7 +5,7 @@ export { default as UserTableEnhanced } from '../UserTableEnhanced';
 // Sub-components
 export { default as UserTableHeader } from './components/UserTableHeader';
 export { default as UserTableToolbar } from './components/UserTableToolbar';
-export { default as UserTableFilters } from './components/UserTableFilters';
+
 export { default as UserDisplayCard } from './components/UserDisplayCard';
 export { default as UserCardGrid } from './components/UserCardGrid';
 
@@ -24,7 +24,6 @@ export {
   useSelectionConfig,
   usePermissionBasedSelection,
   sortEnhancedUsers,
-  useUserFiltering,
 } from './hooks/useUserSelection';
 
 // Re-export types for convenience
@@ -36,7 +35,6 @@ export type {
   SelectionMode,
   CardSize,
   SortDirection,
-  UserAdvancedFilters,
   UserSelectionState,
   UserSelectionActions,
   UserSelectionConfig,
