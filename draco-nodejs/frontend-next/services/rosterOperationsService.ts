@@ -68,7 +68,8 @@ interface ContactInputData {
 
 // Request body for creating contact with roster data
 interface CreateContactRequestBody {
-  contactData: ContactInputData;
+  contactId?: string;
+  contactData?: ContactInputData;
   playerNumber?: number;
   submittedWaiver?: boolean;
   submittedDriversLicense?: boolean;
@@ -539,7 +540,7 @@ export class RosterOperationsService {
       if (contactData.city !== undefined) contactInputData.city = contactData.city;
       if (contactData.state !== undefined) contactInputData.state = contactData.state;
       if (contactData.zip !== undefined) contactInputData.zip = contactData.zip;
-      if (contactData.dateofbirth !== undefined)
+      if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== null)
         contactInputData.dateofbirth = contactData.dateofbirth;
 
       // Prepare request body for the enhanced endpoint
