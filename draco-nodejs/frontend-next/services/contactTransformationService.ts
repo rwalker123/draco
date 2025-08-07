@@ -17,6 +17,8 @@ export class ContactTransformationService {
       id: (backendContact.id as string) || '',
       firstName: (backendContact.firstname as string) || (backendContact.firstName as string) || '',
       lastName: (backendContact.lastname as string) || (backendContact.lastName as string) || '',
+      middleName:
+        (backendContact.middleName as string) || (backendContact.middlename as string) || null,
       email: (backendContact.email as string) || '',
       userId: (backendContact.userId as string) || '',
       photoUrl: backendContact.photoUrl as string | undefined,
@@ -34,11 +36,11 @@ export class ContactTransformationService {
       id: response.id,
       firstName: response.firstname,
       lastName: response.lastname,
+      middleName: response.middlename || null, // ✅ Use middlename from response
       email: response.email || '',
       userId: '', // Not provided in ContactUpdateResponse
       photoUrl: response.photoUrl || undefined,
       contactDetails: {
-        middlename: response.middlename || null,
         phone1: response.phone1 || null,
         phone2: response.phone2 || null,
         phone3: response.phone3 || null,
@@ -47,6 +49,7 @@ export class ContactTransformationService {
         state: response.state || null,
         zip: response.zip || null,
         dateofbirth: response.dateofbirth || null,
+        // ❌ Removed: middlename (moved to top-level middleName)
       },
       contactroles: [], // Not provided in ContactUpdateResponse
     };
@@ -70,6 +73,7 @@ export class ContactTransformationService {
       id: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
+      middleName: contact.middleName,
       email: contact.email,
       userId: contact.userId,
       photoUrl: contact.photoUrl,
@@ -88,7 +92,6 @@ export class ContactTransformationService {
 
     if (nestedDetails) {
       return {
-        middlename: (nestedDetails.middlename as string) || null,
         phone1: (nestedDetails.phone1 as string) || null,
         phone2: (nestedDetails.phone2 as string) || null,
         phone3: (nestedDetails.phone3 as string) || null,
@@ -97,12 +100,12 @@ export class ContactTransformationService {
         state: (nestedDetails.state as string) || null,
         zip: (nestedDetails.zip as string) || null,
         dateofbirth: (nestedDetails.dateofbirth as string) || null,
+        // ❌ Removed: middlename (moved to top-level middleName)
       };
     }
 
     // Handle case where contact details are at the top level
     return {
-      middlename: (backendContact.middlename as string) || null,
       phone1: (backendContact.phone1 as string) || null,
       phone2: (backendContact.phone2 as string) || null,
       phone3: (backendContact.phone3 as string) || null,
@@ -111,6 +114,7 @@ export class ContactTransformationService {
       state: (backendContact.state as string) || null,
       zip: (backendContact.zip as string) || null,
       dateofbirth: (backendContact.dateofbirth as string) || null,
+      // ❌ Removed: middlename (moved to top-level middleName)
     };
   }
 }

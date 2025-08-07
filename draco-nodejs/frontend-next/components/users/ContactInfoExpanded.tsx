@@ -10,6 +10,7 @@ import ContactInfoDisplay from './ContactInfoDisplay';
 interface ContactInfoExpandedProps {
   firstName: string;
   lastName: string;
+  middleName?: string | null;
   email: string | null;
   contactDetails?: ContactDetails;
   initiallyExpanded?: boolean;
@@ -22,6 +23,7 @@ interface ContactInfoExpandedProps {
 const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
   firstName,
   lastName,
+  middleName,
   email,
   contactDetails,
   initiallyExpanded = false,
@@ -37,7 +39,7 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
   if (!hasDetails) {
     return (
       <Typography variant="body2" color="text.secondary">
-        {getFormattedName(firstName, lastName, contactDetails?.middlename)}
+        {getFormattedName(firstName, lastName, middleName)}
       </Typography>
     );
   }
@@ -47,7 +49,7 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
       {/* Header with toggle */}
       <Stack direction="row" alignItems="center" spacing={1}>
         <Typography variant="body2" fontWeight="bold">
-          {getFormattedName(firstName, lastName, contactDetails?.middlename)}
+          {getFormattedName(firstName, lastName, middleName)}
         </Typography>
 
         <IconButton size="small" onClick={handleToggle} sx={{ p: 0.5 }}>
@@ -74,6 +76,7 @@ const ContactInfoExpanded: React.FC<ContactInfoExpandedProps> = ({
           <ContactInfoDisplay
             firstName={firstName}
             lastName={lastName}
+            middleName={middleName}
             email={email}
             contactDetails={contactDetails}
             showHeader={false}

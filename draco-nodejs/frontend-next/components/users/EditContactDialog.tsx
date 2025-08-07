@@ -74,7 +74,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
   const [formData, setFormData] = useState<ContactUpdateData>({
     firstName: '',
     lastName: '',
-    middlename: '',
+    middleName: '', // ✅ Updated to use middleName
     email: '',
     phone1: '',
     phone2: '',
@@ -101,7 +101,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         setFormData({
           firstName: contact.firstName || '',
           lastName: contact.lastName || '',
-          middlename: contactDetails?.middlename || '',
+          middleName: contact.middleName || '', // ✅ Use top-level middleName
           email: contact.email || '',
           phone1: contactDetails?.phone1 || '',
           phone2: contactDetails?.phone2 || '',
@@ -117,7 +117,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         setFormData({
           firstName: '',
           lastName: '',
-          middlename: '',
+          middleName: '',
           email: '',
           phone1: '',
           phone2: '',
@@ -151,7 +151,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     const formDataForValidation = {
       firstName: formData.firstName || '',
       lastName: formData.lastName || '',
-      middlename: formData.middlename,
+      middleName: formData.middleName, // ✅ Use middleName
       email: formData.email || '',
       phone1: formData.phone1,
       phone2: formData.phone2,
@@ -247,7 +247,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         contact &&
         (formData.firstName !== (contact.firstName || '') ||
           formData.lastName !== (contact.lastName || '') ||
-          formData.middlename !== (contact.contactDetails?.middlename || '') ||
+          formData.middleName !== (contact.middleName || '') || // ✅ Use top-level middleName
           formData.email !== (contact.email || '') ||
           formData.phone1 !== (contact.contactDetails?.phone1 || '') ||
           formData.phone2 !== (contact.contactDetails?.phone2 || '') ||
@@ -279,7 +279,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
         dataToSave = {
           firstName: '',
           lastName: '',
-          middlename: '',
+          middleName: '',
           email: '',
           phone1: '',
           phone2: '',
@@ -441,8 +441,8 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Middle Name"
-                  value={formData.middlename}
-                  onChange={handleInputChange('middlename')}
+                  value={formData.middleName}
+                  onChange={handleInputChange('middleName')}
                   fullWidth
                   disabled={loading}
                 />

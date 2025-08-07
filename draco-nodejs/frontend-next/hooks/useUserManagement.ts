@@ -660,13 +660,13 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
 
             return {
               ...user,
-              firstName: updatedContact.firstName,
-              lastName: updatedContact.lastName,
+              firstName: updatedContact.firstName || user.firstName,
+              lastName: updatedContact.lastName || user.lastName,
+              middleName: updatedContact.middleName || user.middleName, // ✅ Use top-level middleName
               email: updatedContact.email || user.email,
               photoUrl: updatedPhotoUrl,
               contactDetails: {
                 ...user.contactDetails,
-                middlename: updatedContact.contactDetails?.middlename || null,
                 phone1: updatedContact.contactDetails?.phone1 || null,
                 phone2: updatedContact.contactDetails?.phone2 || null,
                 phone3: updatedContact.contactDetails?.phone3 || null,
@@ -675,6 +675,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
                 state: updatedContact.contactDetails?.state || null,
                 zip: updatedContact.contactDetails?.zip || null,
                 dateofbirth: updatedContact.contactDetails?.dateofbirth || null,
+                // ❌ Removed: middlename (moved to top-level middleName)
               },
             };
           }
