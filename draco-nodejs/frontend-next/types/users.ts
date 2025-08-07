@@ -16,7 +16,7 @@ export interface DependencyCheckResult {
   totalDependencies: number;
 }
 
-// Contact details interface
+// Contact details interface (middleName removed - moved to top-level)
 export interface ContactDetails {
   phone1: string | null;
   phone2: string | null;
@@ -26,7 +26,23 @@ export interface ContactDetails {
   state: string | null;
   zip: string | null;
   dateofbirth: string | null;
-  middlename: string | null;
+  // ❌ Removed: middlename: string | null;
+}
+
+// Named contact interface (matches backend)
+export interface NamedContact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string | null;
+}
+
+// Base contact interface for common fields
+export interface BaseContact extends NamedContact {
+  email: string;
+  userId: string;
+  photoUrl?: string;
+  contactDetails?: ContactDetails;
 }
 
 // Backend API response types
@@ -38,14 +54,8 @@ export interface ContactRole {
   contextName?: string;
 }
 
-export interface Contact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  userId: string;
-  photoUrl?: string;
-  contactDetails?: ContactDetails;
+// Updated Contact interface (extends BaseContact)
+export interface Contact extends BaseContact {
   contactroles?: ContactRole[];
   creatoraccountid?: string;
 }
@@ -63,15 +73,8 @@ export interface ContactsResponse {
   };
 }
 
-// Core user management types
-export interface User {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  userId: string;
-  photoUrl?: string;
-  contactDetails?: ContactDetails;
+// Updated User interface (extends BaseContact)
+export interface User extends BaseContact {
   roles?: UserRole[];
 }
 
@@ -218,7 +221,7 @@ export interface EditContactDialogProps {
 export interface ContactUpdateData {
   firstName?: string;
   lastName?: string;
-  middlename?: string;
+  middleName?: string; // ✅ Updated to use middleName instead of middlename
   email?: string;
   phone1?: string;
   phone2?: string;

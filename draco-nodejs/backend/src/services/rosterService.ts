@@ -105,6 +105,7 @@ export class RosterService {
         id: contact.id.toString(),
         firstName: contact.firstname,
         lastName: contact.lastname,
+        middleName: contact.middlename,
         email: contact.email,
         userId: null, // Roster contacts don't have userId
         photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
@@ -117,7 +118,6 @@ export class RosterService {
           state: contact.state,
           zip: contact.zip,
           dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-          middlename: contact.middlename,
         },
         contactroles: [], // Roster doesn't include roles
       };
@@ -203,6 +203,7 @@ export class RosterService {
         id: contact.id.toString(),
         firstName: contact.firstname,
         lastName: contact.lastname,
+        middleName: contact.middlename,
         email: contact.email,
         userId: null, // Roster contacts don't have userId
         photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
@@ -215,7 +216,6 @@ export class RosterService {
           state: contact.state,
           zip: contact.zip,
           dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-          middlename: contact.middlename,
         },
         contactroles: [], // Available players don't include roles
       };
@@ -439,6 +439,7 @@ export class RosterService {
       id: contactInfo.id.toString(),
       firstName: contactInfo.firstname,
       lastName: contactInfo.lastname,
+      middleName: contactInfo.middlename,
       email: contactInfo.email,
       userId: null, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(accountId.toString(), contactInfo.id.toString()),
@@ -451,7 +452,6 @@ export class RosterService {
         state: contactInfo.state,
         zip: contactInfo.zip,
         dateofbirth: DateUtils.formatDateOfBirthForResponse(contactInfo.dateofbirth),
-        middlename: contactInfo.middlename,
       },
       contactroles: [], // Roster doesn't include roles
     };
@@ -581,6 +581,7 @@ export class RosterService {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
+      middleName: contact.middlename,
       email: contact.email,
       userId: null, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
@@ -593,7 +594,6 @@ export class RosterService {
         state: contact.state,
         zip: contact.zip,
         dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-        middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles
     };
@@ -703,6 +703,7 @@ export class RosterService {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
+      middleName: contact.middlename,
       email: contact.email,
       userId: null, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
@@ -715,7 +716,6 @@ export class RosterService {
         state: contact.state,
         zip: contact.zip,
         dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-        middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles
     };
@@ -825,6 +825,7 @@ export class RosterService {
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
+      middleName: contact.middlename,
       email: contact.email,
       userId: null, // Roster contacts don't have userId
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
@@ -837,7 +838,6 @@ export class RosterService {
         state: contact.state,
         zip: contact.zip,
         dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-        middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles
     };

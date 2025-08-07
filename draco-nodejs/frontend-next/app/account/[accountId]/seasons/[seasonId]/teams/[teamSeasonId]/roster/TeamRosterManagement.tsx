@@ -266,9 +266,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       id: rosterMember.player.contact.id,
       firstName: rosterMember.player.contact.firstName || '',
       lastName: rosterMember.player.contact.lastName || '',
+      middleName: rosterMember.player.contact.middleName || '', // ✅ Use top-level middleName
       email: rosterMember.player.contact.email || '',
       contactDetails: {
-        middlename: rosterMember.player.contact.contactDetails?.middlename || '',
         phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
         phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
         phone3: rosterMember.player.contact.contactDetails?.phone3 || '',
@@ -277,6 +277,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
         state: rosterMember.player.contact.contactDetails?.state || '',
         zip: rosterMember.player.contact.contactDetails?.zip || '',
         dateofbirth: rosterMember.player.contact.contactDetails?.dateofbirth || '',
+        // ❌ Removed: middlename (moved to top-level middleName)
       },
       photoUrl: (rosterMember.player.contact as any).photoUrl || undefined, // eslint-disable-line @typescript-eslint/no-explicit-any
     };
@@ -583,7 +584,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const formatName = (contact: Contact) => {
     const lastName = contact.lastName || '';
     const firstName = contact.firstName || '';
-    const middleName = contact.contactDetails?.middlename || '';
+    const middleName = contact.middleName || ''; // ✅ Use top-level middleName
 
     let formattedName = lastName;
     if (firstName) {
@@ -698,8 +699,8 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     const bLast = b.player.contact.lastName || '';
     const aFirst = a.player.contact.firstName || '';
     const bFirst = b.player.contact.firstName || '';
-    const aMiddle = a.player.contact.contactDetails?.middlename || '';
-    const bMiddle = b.player.contact.contactDetails?.middlename || '';
+    const aMiddle = a.player.contact.middleName || ''; // ✅ Use top-level middleName
+    const bMiddle = b.player.contact.middleName || ''; // ✅ Use top-level middleName
 
     // Compare last names first
     if (aLast !== bLast) {
@@ -861,7 +862,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight="bold">
                     {manager.contacts.lastName}, {manager.contacts.firstName}{' '}
-                    {manager.contacts.contactDetails?.middlename}
+                    {manager.contacts.middleName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {manager.contacts.email}
@@ -1164,7 +1165,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                   // Handle Contact objects directly
                   const last = option.lastName || '';
                   const first = option.firstName || '';
-                  const middle = option.contactDetails?.middlename || '';
+                  const middle = option.middleName || ''; // ✅ Use top-level middleName
                   return `${last}${first ? ', ' + first : ''}${middle ? ' ' + middle : ''}`.trim();
                 }}
                 value={

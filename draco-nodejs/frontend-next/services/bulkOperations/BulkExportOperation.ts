@@ -132,7 +132,7 @@ class JSONFormatter implements ExportFormatter {
       exportUser.name = {
         first: user.firstName,
         last: user.lastName,
-        middle: user.contactDetails?.middlename,
+        middle: user.middleName, // ✅ Use top-level middleName
       };
     }
 

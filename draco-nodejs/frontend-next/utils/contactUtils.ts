@@ -122,7 +122,6 @@ export const hasContactDetails = (contactDetails?: ContactDetails): boolean => {
     contactDetails.city ||
     contactDetails.state ||
     contactDetails.zip ||
-    contactDetails.dateofbirth ||
-    contactDetails.middlename
+    contactDetails.dateofbirth
   );
 };
