@@ -29,6 +29,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onAssignRole,
   onRemoveRole,
   onEditContact,
+  onDeleteContact,
   onDeleteContactPhoto,
   onAddUser,
   canManageUsers,
@@ -67,6 +68,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
   onSearch: externalOnSearch,
   onClearSearch: externalOnClearSearch,
   searchLoading: externalSearchLoading,
+  isShowingSearchResults: externalIsShowingSearchResults,
 
   // Filter props
   onlyWithRoles,
@@ -282,6 +284,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onSearchChange={handleSearchChange}
           onSearchSubmit={handleSearchSubmit}
           onSearchClear={handleSearchClear}
+          isShowingSearchResults={externalIsShowingSearchResults}
           onAddUser={onAddUser}
           customActions={allBulkActions}
           onBulkAction={handleBulkAction}
@@ -323,6 +326,7 @@ const UserTableContainer: React.FC<UserTableContainerProps> = ({
           onAssignRole={onAssignRole}
           onRemoveRole={onRemoveRole}
           onEditContact={onEditContact}
+          onDeleteContact={onDeleteContact}
           onDeleteContactPhoto={onDeleteContactPhoto}
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={searchTerm}

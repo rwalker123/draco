@@ -4,12 +4,11 @@
 # This script provides easy commands for managing LocalStack S3 operations
 
 LOCALSTACK_ENDPOINT="http://localhost:4566"
-BUCKET_NAME="draco-team-logos"
-AWS_CREDS="AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1"
+BUCKET_NAME="${S3_BUCKET:-draco-team-logos}"
 
 # Function to run AWS CLI commands with LocalStack config
 run_aws() {
-    $AWS_CREDS aws --endpoint-url=$LOCALSTACK_ENDPOINT "$@"
+    env AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_DEFAULT_REGION=us-east-1 aws --endpoint-url=$LOCALSTACK_ENDPOINT "$@"
 }
 
 case "$1" in
@@ -81,6 +80,63 @@ case "$1" in
         run_aws s3 ls
         echo "LocalStack setup complete!"
         ;;
+    "list-contact-photos")
+        if [ -z "$2" ]; then
+            echo "Usage: $0 list-contact-photos <accountId>"
+            exit 1
+        fi
+        account_id="$2"
+        echo "Listing contact photos for account $account_id:"
+        run_aws s3 ls s3://$BUCKET_NAME/$account_id/contact-photos/
+        ;;
+    "check-contact-photo")
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Usage: $0 check-contact-photo <accountId> <contactId>"
+            exit 1
+        fi
+        account_id="$2"
+        contact_id="$3"
+        photo_key="$account_id/contact-photos/$contact_id-photo.png"
+        echo "Checking if contact photo exists: s3://$BUCKET_NAME/$photo_key"
+        if run_aws s3 ls s3://$BUCKET_NAME/$photo_key > /dev/null 2>&1; then
+            echo "✅ Contact photo EXISTS"
+            run_aws s3 ls s3://$BUCKET_NAME/$photo_key
+        else
+            echo "❌ Contact photo NOT FOUND"
+        fi
+        ;;
+    "verify-deletion")
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Usage: $0 verify-deletion <accountId> <contactId>"
+            exit 1
+        fi
+        account_id="$2"
+        contact_id="$3"
+        photo_key="$account_id/contact-photos/$contact_id-photo.png"
+        echo "Verifying contact photo deletion: s3://$BUCKET_NAME/$photo_key"
+        if run_aws s3 ls s3://$BUCKET_NAME/$photo_key > /dev/null 2>&1; then
+            echo "❌ DELETION FAILED - Photo still exists:"
+            run_aws s3 ls s3://$BUCKET_NAME/$photo_key
+        else
+            echo "✅ DELETION VERIFIED - Photo successfully deleted"
+        fi
+        ;;
+    "download-contact-photo")
+        if [ -z "$2" ] || [ -z "$3" ]; then
+            echo "Usage: $0 download-contact-photo <accountId> <contactId> [local-file]"
+            exit 1
+        fi
+        account_id="$2"
+        contact_id="$3"
+        photo_key="$account_id/contact-photos/$contact_id-photo.png"
+        local_file="${4:-contact-$account_id-$contact_id-photo.png}"
+        echo "Downloading contact photo: s3://$BUCKET_NAME/$photo_key to $local_file"
+        run_aws s3 cp s3://$BUCKET_NAME/$photo_key "$local_file"
+        ;;
+    "list-all-photos")
+        echo "Listing all contact photos in bucket $BUCKET_NAME:"
+        run_aws s3 ls s3://$BUCKET_NAME --recursive | grep "contact-photos/"
+        ;;
     *)
         echo "LocalStack helper script for Draco"
         echo ""
@@ -98,9 +154,22 @@ case "$1" in
         echo "  download <key> [file] - Download a file from S3"
         echo "  delete <key>  - Delete a file from S3"
         echo ""
+        echo "Contact Photo Commands:"
+        echo "  list-contact-photos <accountId> - List contact photos for account"
+        echo "  check-contact-photo <accountId> <contactId> - Check if contact photo exists"
+        echo "  verify-deletion <accountId> <contactId> - Verify contact photo was deleted"
+        echo "  download-contact-photo <accountId> <contactId> [file] - Download contact photo"
+        echo "  list-all-photos - List all contact photos in bucket"
+        echo ""
         echo "Examples:"
         echo "  $0 setup"
         echo "  $0 upload logo.png team-logos/logo.png"
         echo "  $0 list-objects"
+        echo ""
+        echo "Contact Photo Examples:"
+        echo "  $0 list-contact-photos 123"
+        echo "  $0 check-contact-photo 123 456"
+        echo "  $0 verify-deletion 123 456"
+        echo "  $0 download-contact-photo 123 456 contact-photo.png"
         ;;
 esac 

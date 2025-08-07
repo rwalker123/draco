@@ -26,6 +26,40 @@ export const validateEmail = (email: string): ValidationResult => {
 };
 
 /**
+ * Validates name fields (allows letters, numbers, spaces, hyphens, apostrophes, asterisks)
+ */
+export const validateName = (
+  value: string,
+  fieldName: string,
+  isRequired = true,
+): ValidationResult => {
+  // Check if field is required and empty
+  if (isRequired && (!value || value.trim().length === 0)) {
+    return {
+      isValid: false,
+      message: `${fieldName} is required`,
+    };
+  }
+
+  // If not required and empty, it's valid
+  if (!isRequired && (!value || value.trim().length === 0)) {
+    return { isValid: true };
+  }
+
+  // Check character restrictions: letters, numbers, spaces, hyphens, apostrophes, asterisks
+  const nameRegex = /^[a-zA-Z0-9\s\-'*]+$/;
+  const trimmedValue = value.trim();
+  const isValid = nameRegex.test(trimmedValue) && trimmedValue.length <= 100;
+
+  return {
+    isValid,
+    message: isValid
+      ? undefined
+      : `${fieldName} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks (max 100 characters)`,
+  };
+};
+
+/**
  * Validates required text fields
  */
 export const validateRequired = (value: string, fieldName: string): ValidationResult => {
@@ -78,7 +112,7 @@ export const validateZipCode = (zip: string): ValidationResult => {
 /**
  * Validates date of birth
  */
-export const validateDateOfBirth = (dateString: string): ValidationResult => {
+export const validateDateOfBirth = (dateString: string | null): ValidationResult => {
   if (!dateString || dateString.trim() === '') {
     return { isValid: true }; // DOB is optional
   }
@@ -127,12 +161,13 @@ export interface ContactFormData {
   city?: string;
   state?: string;
   zip?: string;
-  dateofbirth?: string;
+  dateofbirth?: string | null;
 }
 
 export interface ContactValidationErrors {
   firstName?: string;
   lastName?: string;
+  middlename?: string;
   email?: string;
   phone1?: string;
   phone2?: string;
@@ -147,15 +182,20 @@ export interface ContactValidationErrors {
 export const validateContactForm = (data: ContactFormData): ContactValidationErrors => {
   const errors: ContactValidationErrors = {};
 
-  // Required fields
-  const firstNameValidation = validateRequired(data.firstName, 'First name');
+  // Name fields validation (using shared validateName function)
+  const firstNameValidation = validateName(data.firstName, 'First name', true);
   if (!firstNameValidation.isValid) {
     errors.firstName = firstNameValidation.message;
   }
 
-  const lastNameValidation = validateRequired(data.lastName, 'Last name');
+  const lastNameValidation = validateName(data.lastName, 'Last name', true);
   if (!lastNameValidation.isValid) {
     errors.lastName = lastNameValidation.message;
+  }
+
+  const middleNameValidation = validateName(data.middlename || '', 'Middle name', false);
+  if (!middleNameValidation.isValid) {
+    errors.middlename = middleNameValidation.message;
   }
 
   // Email validation
@@ -187,7 +227,7 @@ export const validateContactForm = (data: ContactFormData): ContactValidationErr
   }
 
   // Date of birth validation
-  const dobValidation = validateDateOfBirth(data.dateofbirth || '');
+  const dobValidation = validateDateOfBirth(data.dateofbirth || null);
   if (!dobValidation.isValid) {
     errors.dateofbirth = dobValidation.message;
   }
@@ -218,6 +258,6 @@ export const sanitizeContactFormData = (data: ContactFormData): ContactFormData 
     city: data.city?.trim() || undefined,
     state: data.state?.trim() || undefined,
     zip: data.zip?.trim() || undefined,
-    dateofbirth: data.dateofbirth?.trim() || undefined,
+    dateofbirth: data.dateofbirth?.trim() || null,
   };
 };

@@ -150,6 +150,7 @@ export interface UserCardProps {
   onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
   onEditContact?: (contact: Contact) => void;
+  onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -162,6 +163,8 @@ export interface UserRoleChipsProps {
   roles: UserRole[];
   canManageUsers: boolean;
   onRemoveRole: (role: UserRole) => void;
+  onAssignRole?: (user: User) => Promise<void>;
+  user: User;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -224,13 +227,14 @@ export interface ContactUpdateData {
   city?: string;
   state?: string;
   zip?: string;
-  dateofbirth?: string;
+  dateofbirth?: string | null;
 }
 
 export interface UserActionsProps {
   user: User;
   canManageUsers: boolean;
-  onAssignRole: (user: User) => Promise<void>;
+  onEditContact?: (contact: Contact) => void;
+  onDeleteContact?: (contact: Contact) => void;
 }
 
 // Hook return types
@@ -248,6 +252,7 @@ export interface UseUserManagementReturn {
   hasPrev: boolean;
   searchTerm: string;
   searchLoading: boolean;
+  isShowingSearchResults: boolean;
   onlyWithRoles: boolean;
   isPaginating: boolean;
 

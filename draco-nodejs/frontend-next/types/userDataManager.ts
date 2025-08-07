@@ -35,7 +35,7 @@ export interface UserResponse {
 
 export interface UserApiOperations {
   fetchUsersWithFilter(params: FetchUsersParams): Promise<UserResponse>;
-  searchUsersWithFilter(params: SearchUsersParams): Promise<User[]>;
+  searchUsersWithFilter(params: SearchUsersParams): Promise<UserResponse>;
   assignRole(params: AssignRoleParams): Promise<void>;
   removeRole(params: RemoveRoleParams): Promise<void>;
   createContact(params: CreateContactParams): Promise<void>;

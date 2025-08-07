@@ -111,6 +111,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [isShowingSearchResults, setIsShowingSearchResults] = useState(false);
 
   // Filter state
   const [onlyWithRoles, setOnlyWithRoles] = useState(false);
@@ -294,21 +295,30 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setError(null);
 
       if (!searchTerm.trim()) {
-        // If search is empty, load all users
+        // If search is empty, clear search results and load all users
+        setIsShowingSearchResults(false);
         await loadUsers(0);
       } else {
-        // Use the search endpoint
-        const searchResults = await userService.searchUsers(
+        // Use the search endpoint with pagination
+        const searchResponse = await userService.searchUsers(
           accountId,
           searchTerm,
           currentSeasonId,
           onlyWithRoles,
+          {
+            page: 0, // Frontend uses 0-based pagination
+            limit: rowsPerPageRef.current,
+            sortBy: 'lastname',
+            sortOrder: 'asc',
+          },
         );
+
+        setIsShowingSearchResults(true);
         dispatch({
           type: 'SET_DATA',
-          users: searchResults,
-          hasNext: false, // Search results don't have pagination
-          hasPrev: false,
+          users: searchResponse.users,
+          hasNext: searchResponse.pagination.hasNext,
+          hasPrev: searchResponse.pagination.hasPrev,
           page: 1,
         });
       }
@@ -327,8 +337,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       setSearchLoading(true);
       setError(null);
 
-      // Clear search term
+      // Clear search term and search results state
       setSearchTerm('');
+      setIsShowingSearchResults(false);
 
       // Reset to first page and load default data
       await loadUsers(0, undefined, true);
@@ -358,7 +369,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             seasonId: currentSeasonId,
             onlyWithRoles: filterValue,
           });
-          dataManager.setData(searchResults, false, false, 1);
+          dataManager.setData(
+            searchResults.users,
+            searchResults.pagination.hasNext,
+            searchResults.pagination.hasPrev,
+            1,
+          );
         } else {
           // Use the new API operations layer
           const response = await apiOperations.fetchUsersWithFilter({
@@ -381,7 +397,15 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         dataManager.clearData();
       }
     },
-    [dataManager, apiOperations, searchTerm, currentSeasonId, setOnlyWithRoles],
+    [
+      dataManager,
+      apiOperations,
+      searchTerm,
+      currentSeasonId,
+      setOnlyWithRoles,
+      accountId,
+      userService,
+    ],
   );
 
   // Pagination handlers - atomic state updates
@@ -613,13 +637,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const handleEditContact = useCallback(
     async (contactData: ContactUpdateData, photoFile?: File | null) => {
       if (!userService || !selectedContactForEdit || !accountId) {
-        setError('Unable to update contact - missing required data');
-        return;
+        throw new Error('Unable to update contact - missing required data');
       }
 
-      try {
-        setFormLoading(true);
+      setFormLoading(true);
 
+      try {
         const updatedContact = await userService.updateContact(
           accountId,
           selectedContactForEdit.id,
@@ -670,7 +693,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         closeEditContactDialog();
       } catch (error) {
         console.error('Error updating contact:', error);
-        setError(extractErrorMessage(error));
+        throw error; // Propagate error to dialog
       } finally {
         setFormLoading(false);
       }
@@ -680,10 +703,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       selectedContactForEdit,
       accountId,
       paginationState.page,
-      searchTerm,
-      rowsPerPage,
-      currentSeasonId,
-      onlyWithRoles,
+      paginationState.hasNext,
+      paginationState.hasPrev,
+      paginationState.users,
       closeEditContactDialog,
     ],
   );
@@ -691,13 +713,12 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const handleCreateContact = useCallback(
     async (contactData: ContactUpdateData, photoFile?: File | null) => {
       if (!userService || !accountId) {
-        setError('Unable to create contact - missing required data');
-        return;
+        throw new Error('Unable to create contact - missing required data');
       }
 
-      try {
-        setFormLoading(true);
+      setFormLoading(true);
 
+      try {
         await userService.createContact(accountId, contactData, photoFile);
 
         // Reload the user list to show the new contact
@@ -707,7 +728,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         closeCreateContactDialog();
       } catch (error) {
         console.error('Error creating contact:', error);
-        setError(extractErrorMessage(error));
+        throw error; // Propagate error to dialog
       } finally {
         setFormLoading(false);
       }
@@ -753,10 +774,9 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       userService,
       accountId,
       paginationState.page,
-      searchTerm,
-      rowsPerPage,
-      currentSeasonId,
-      onlyWithRoles,
+      paginationState.hasNext,
+      paginationState.hasPrev,
+      paginationState.users,
     ],
   );
 
@@ -836,6 +856,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       currentSeasonId,
       onlyWithRoles,
       closeDeleteContactDialog,
+      handleSearch,
     ],
   );
 
@@ -874,6 +895,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     hasPrev,
     searchTerm,
     searchLoading,
+    isShowingSearchResults,
     onlyWithRoles,
     isPaginating, // Use the state from reducer
 

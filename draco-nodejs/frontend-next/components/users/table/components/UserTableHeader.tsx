@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import { Box, Tooltip, IconButton } from '@mui/material';
 import { ViewModule as ViewModuleIcon, TableChart as TableChartIcon } from '@mui/icons-material';
 import { UserTableHeaderProps } from '../../../../types/userTable';
+import RoleLegend from '../../../users/RoleLegend';
 
 const UserTableHeader: React.FC<UserTableHeaderProps> = ({ viewMode, onViewModeChange }) => {
   // Only render view switcher, centered, for both card and table views
@@ -15,7 +16,7 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({ viewMode, onViewModeC
     <Box
       sx={{
         display: 'flex',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         alignItems: 'center',
         p: 2,
         borderBottom: 1,
@@ -44,6 +45,8 @@ const UserTableHeader: React.FC<UserTableHeaderProps> = ({ viewMode, onViewModeC
           </IconButton>
         </Tooltip>
       </Box>
+
+      <RoleLegend variant="compact" />
     </Box>
   );
 };
