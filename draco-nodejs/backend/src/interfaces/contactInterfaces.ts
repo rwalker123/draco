@@ -140,3 +140,18 @@ export interface AvailableContactRaw {
   firstyear: number | null;
   submitteddriverslicense: boolean | null;
 }
+
+// Interface for raw Prisma manager result
+export interface RawManager {
+  id: bigint;
+  teamseasonid: bigint;
+  contactid: bigint;
+  contacts: {
+    id: bigint;
+    userid: string | null;
+    lastname: string;
+    firstname: string;
+    middlename: string | null;
+    email: string | null;
+  };
+}

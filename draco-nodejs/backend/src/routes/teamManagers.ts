@@ -181,8 +181,8 @@ router.post(
       throw new ConflictError('Manager already exists for this team');
     }
 
-    const manager = await teamManagerService.addManager(teamSeasonId, BigInt(contactId));
-    res.json({ success: true, data: manager });
+    const response = await teamManagerService.addManager(teamSeasonId, BigInt(contactId));
+    res.json(response);
   }),
 );
 

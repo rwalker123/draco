@@ -1,47 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
 import { ContactUpdateData, Contact } from '../types/users';
+import { RosterFormData, RosterMember, TeamRosterData, ManagerType } from '../types/roster';
 import { UserManagementService } from './userManagementService';
 import { addCacheBuster } from '../config/contacts';
-
-// Types for roster operations
-export interface RosterFormData {
-  playerNumber: number;
-  submittedWaiver: boolean;
-  submittedDriversLicense: boolean;
-  firstYear: number;
-}
-
-export interface RosterPlayer {
-  id: string;
-  contactId: string;
-  submittedDriversLicense: boolean;
-  firstYear: number;
-  contact: Contact; // ✅ Maps to backend RosterPlayer with ContactEntry
-}
-
-export interface RosterMember {
-  id: string;
-  playerNumber: number;
-  inactive: boolean;
-  submittedWaiver: boolean;
-  dateAdded: string;
-  player: RosterPlayer; // ✅ Contains RosterPlayer with full Contact
-}
-
-export interface TeamRosterData {
-  teamSeason: {
-    id: string;
-    name: string;
-  };
-  rosterMembers: RosterMember[];
-}
-
-export interface ManagerType {
-  id: string;
-  teamseasonid: string;
-  contactid: string;
-  contacts: Contact;
-}
 
 // Error detail interface for validation errors
 interface ErrorDetail {
@@ -466,14 +427,8 @@ export class RosterOperationsService {
         };
       }
 
-      // Transform the server response to the expected format
-      const serverManager = response.data.data;
-      const newManager: ManagerType = {
-        id: serverManager.id.toString(),
-        teamseasonid: serverManager.teamseasonid.toString(),
-        contactid: serverManager.contactid.toString(),
-        contacts: serverManager.contacts,
-      };
+      // The backend now returns properly formatted data with camelCase and nested contact
+      const newManager: ManagerType = response.data.data;
 
       // Update managers list with the new manager
       const updatedManagers = [...currentManagers, newManager];
