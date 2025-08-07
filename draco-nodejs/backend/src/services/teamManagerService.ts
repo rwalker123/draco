@@ -1,4 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import {
+  ManagerResponseFormatter,
+  FormattedManager,
+  ApiResponse,
+} from '../utils/responseFormatters';
+import { RawManager } from '../interfaces/contactInterfaces';
 
 export class TeamManagerService {
   private prisma: PrismaClient;
@@ -8,22 +14,29 @@ export class TeamManagerService {
   }
 
   // List all managers for a team season, including contact info
-  async listManagers(teamSeasonId: bigint) {
-    return this.prisma.teamseasonmanager.findMany({
+  async listManagers(teamSeasonId: bigint): Promise<FormattedManager[]> {
+    const rawManagers = (await this.prisma.teamseasonmanager.findMany({
       where: { teamseasonid: teamSeasonId },
       include: { contacts: true },
-    });
+    })) as RawManager[];
+
+    return ManagerResponseFormatter.formatManagersListResponse(rawManagers);
   }
 
   // Add a manager to a team season
-  async addManager(teamSeasonId: bigint, contactId: bigint) {
-    return this.prisma.teamseasonmanager.create({
+  async addManager(
+    teamSeasonId: bigint,
+    contactId: bigint,
+  ): Promise<ApiResponse<FormattedManager>> {
+    const rawManager = (await this.prisma.teamseasonmanager.create({
       data: {
         teamseasonid: teamSeasonId,
         contactid: contactId,
       },
       include: { contacts: true },
-    });
+    })) as RawManager;
+
+    return ManagerResponseFormatter.formatAddManagerResponse(rawManager);
   }
 
   // Remove a manager by manager id
