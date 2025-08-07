@@ -524,6 +524,70 @@ export class RosterOperationsService {
     teamSeasonId?: string,
   ): Promise<OperationResult<{ contact: Contact; rosterMember?: RosterMember }>> {
     try {
+      // If photo is provided, we need to handle it separately since the roster endpoint doesn't support file upload
+      if (photoFile) {
+        // Create contact first with photo
+        const contactResponse = await this.userManagementService.createContact(
+          accountId,
+          contactData,
+          photoFile,
+        );
+
+        // Then use the existing contact ID for roster assignment if requested
+        if (autoSignToRoster && seasonId && teamSeasonId) {
+          const requestBody: CreateContactRequestBody = {
+            contactId: contactResponse.id,
+            playerNumber: 0,
+            submittedWaiver: false,
+            submittedDriversLicense: false,
+            firstYear: 0,
+          };
+
+          const rosterResponse = await this.axiosInstance.post(
+            `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
+            requestBody,
+          );
+
+          if (!rosterResponse.data.success) {
+            return {
+              success: false,
+              error: rosterResponse.data.message || 'Failed to add contact to roster',
+            };
+          }
+
+          const rosterMember = rosterResponse.data.data;
+
+          return {
+            success: true,
+            data: {
+              contact: contactResponse,
+              rosterMember: {
+                id: rosterMember.id?.toString() || '',
+                playerNumber: rosterMember.playerNumber || 0,
+                inactive: rosterMember.inactive || false,
+                submittedWaiver: rosterMember.submittedWaiver || false,
+                dateAdded: rosterMember.dateAdded?.toISOString() || new Date().toISOString(),
+                player: {
+                  id: rosterMember.player?.id?.toString() || '',
+                  contactId: rosterMember.player?.contactId?.toString() || contactResponse.id,
+                  submittedDriversLicense: rosterMember.player?.submittedDriversLicense || false,
+                  firstYear: rosterMember.player?.firstYear || 0,
+                  contact: contactResponse,
+                },
+              },
+            },
+          };
+        } else {
+          // Just return the contact without roster info
+          return {
+            success: true,
+            data: {
+              contact: contactResponse,
+            },
+          };
+        }
+      }
+
       // Transform ContactUpdateData to ContactInputData format for backend
       const contactInputData: ContactInputData = {};
 
@@ -543,7 +607,7 @@ export class RosterOperationsService {
       if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== null)
         contactInputData.dateofbirth = contactData.dateofbirth;
 
-      // Prepare request body for the enhanced endpoint
+      // Prepare request body for the enhanced endpoint (contact creation + roster assignment)
       const requestBody: CreateContactRequestBody = {
         contactData: contactInputData,
         playerNumber: 0,
@@ -552,22 +616,7 @@ export class RosterOperationsService {
         firstYear: 0,
       };
 
-      // If photo is provided, we need to handle it separately since the endpoint doesn't support file upload
-      // For now, we'll create the contact first, then handle photo upload if needed
-      if (photoFile) {
-        // Create contact first without photo
-        const contactResponse = await this.userManagementService.createContact(
-          accountId,
-          contactData,
-          photoFile,
-        );
-
-        // Then use the existing contact ID for roster assignment
-        requestBody.contactId = contactResponse.id;
-        delete requestBody.contactData;
-      }
-
-      // Use the enhanced addPlayerToRoster endpoint
+      // Use the enhanced addPlayerToRoster endpoint that can create contact and add to roster in one call
       const response = await this.axiosInstance.post(
         `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
         requestBody,
