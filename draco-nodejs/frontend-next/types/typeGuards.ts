@@ -4,17 +4,17 @@ export interface ContactUpdateResponse {
   id: string;
   firstname: string;
   lastname: string;
-  middlename?: string;
-  email?: string;
-  phone1?: string;
-  phone2?: string;
-  phone3?: string;
-  streetaddress?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  dateofbirth?: string;
-  photoUrl?: string;
+  middlename?: string | null;
+  email?: string | null;
+  phone1?: string | null;
+  phone2?: string | null;
+  phone3?: string | null;
+  streetaddress?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip?: string | null;
+  dateofbirth?: string | null;
+  photoUrl?: string | null;
 }
 
 export interface UserSearchResponse {
@@ -22,18 +22,18 @@ export interface UserSearchResponse {
     id: string;
     firstName: string;
     lastName: string;
-    email?: string;
-    photoUrl?: string;
+    email?: string | null;
+    photoUrl?: string | null;
     contactDetails?: {
-      middlename?: string;
-      phone1?: string;
-      phone2?: string;
-      phone3?: string;
-      streetaddress?: string;
-      city?: string;
-      state?: string;
-      zip?: string;
-      dateofbirth?: string;
+      middlename?: string | null;
+      phone1?: string | null;
+      phone2?: string | null;
+      phone3?: string | null;
+      streetaddress?: string | null;
+      city?: string | null;
+      state?: string | null;
+      zip?: string | null;
+      dateofbirth?: string | null;
     };
     roles?: Array<{
       roleid: number;
@@ -71,7 +71,7 @@ export function isContactUpdateResponse(data: unknown): data is ContactUpdateRes
     return false;
   }
 
-  // Check optional fields - they should either be undefined or the correct type
+  // Check optional fields - they should either be undefined, null, or the correct type
   const optionalStringFields = [
     'middlename',
     'email',
@@ -87,7 +87,7 @@ export function isContactUpdateResponse(data: unknown): data is ContactUpdateRes
   ];
 
   for (const field of optionalStringFields) {
-    if (obj[field] !== undefined && typeof obj[field] !== 'string') {
+    if (obj[field] !== undefined && obj[field] !== null && typeof obj[field] !== 'string') {
       return false;
     }
   }
@@ -150,11 +150,11 @@ function isValidUser(user: unknown): boolean {
   }
 
   // Check optional email and photoUrl
-  if (obj.email !== undefined && typeof obj.email !== 'string') {
+  if (obj.email !== undefined && obj.email !== null && typeof obj.email !== 'string') {
     return false;
   }
 
-  if (obj.photoUrl !== undefined && typeof obj.photoUrl !== 'string') {
+  if (obj.photoUrl !== undefined && obj.photoUrl !== null && typeof obj.photoUrl !== 'string') {
     return false;
   }
 
@@ -201,7 +201,7 @@ function isValidContactDetails(details: unknown): boolean {
   ];
 
   for (const field of optionalStringFields) {
-    if (obj[field] !== undefined && typeof obj[field] !== 'string') {
+    if (obj[field] !== undefined && obj[field] !== null && typeof obj[field] !== 'string') {
       return false;
     }
   }

@@ -10,6 +10,15 @@ import {
 import { validateContactUpdateResponse, ContactUpdateResponse } from '../types/typeGuards';
 import { ContactTransformationService } from './contactTransformationService';
 
+// Pagination interface for API responses
+interface PaginationInfo {
+  page?: number;
+  limit?: number;
+  hasNext?: boolean;
+  hasPrev?: boolean;
+  total?: number;
+}
+
 /**
  * User Management Service
  * Centralized API service functions for user management operations
@@ -109,7 +118,13 @@ export class UserManagementService {
     query: string,
     seasonId?: string | null,
     onlyWithRoles?: boolean,
-  ): Promise<User[]> {
+    pagination?: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    },
+  ): Promise<{ users: User[]; pagination: PaginationInfo }> {
     const url = new URL(`/api/accounts/${accountId}/contacts/search`, window.location.origin);
     url.searchParams.set('q', query);
     url.searchParams.set('roles', 'true');
@@ -119,6 +134,22 @@ export class UserManagementService {
     }
     if (onlyWithRoles) {
       url.searchParams.set('onlyWithRoles', 'true');
+    }
+
+    // Add pagination parameters if provided
+    if (pagination) {
+      if (pagination.page !== undefined) {
+        url.searchParams.set('page', (pagination.page + 1).toString()); // Backend uses 1-based pagination
+      }
+      if (pagination.limit !== undefined) {
+        url.searchParams.set('limit', pagination.limit.toString());
+      }
+      if (pagination.sortBy) {
+        url.searchParams.set('sortBy', pagination.sortBy);
+      }
+      if (pagination.sortOrder) {
+        url.searchParams.set('sortOrder', pagination.sortOrder);
+      }
     }
 
     const response = await fetch(url.toString(), {
@@ -143,7 +174,14 @@ export class UserManagementService {
       this.transformContactToUser(contact),
     );
 
-    return usersWithRoles;
+    return {
+      users: usersWithRoles,
+      pagination: data.pagination || {
+        hasNext: false,
+        hasPrev: false,
+        total: usersWithRoles.length,
+      },
+    };
   }
 
   /**
@@ -321,7 +359,11 @@ export class UserManagementService {
     if (contactData.zip !== undefined) {
       backendData.zip = contactData.zip;
     }
-    if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== '') {
+    if (
+      contactData.dateofbirth !== undefined &&
+      contactData.dateofbirth !== '' &&
+      contactData.dateofbirth !== null
+    ) {
       // Convert ISO datetime to YYYY-MM-DD format for backend validation
       try {
         const date = new Date(contactData.dateofbirth);
@@ -332,6 +374,9 @@ export class UserManagementService {
         console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
         // Don't include invalid dates
       }
+    } else if (contactData.dateofbirth === null) {
+      // Explicitly set to null when provided as null
+      backendData.dateofbirth = null;
     }
 
     console.log('UserManagementService: Filtered backendData:', backendData);
@@ -450,7 +495,11 @@ export class UserManagementService {
     if (contactData.zip !== undefined) {
       backendData.zip = contactData.zip;
     }
-    if (contactData.dateofbirth !== undefined && contactData.dateofbirth !== '') {
+    if (
+      contactData.dateofbirth !== undefined &&
+      contactData.dateofbirth !== '' &&
+      contactData.dateofbirth !== null
+    ) {
       // Convert ISO datetime to YYYY-MM-DD format for backend validation
       try {
         const date = new Date(contactData.dateofbirth);
@@ -461,6 +510,9 @@ export class UserManagementService {
         console.warn('Invalid dateofbirth format:', contactData.dateofbirth);
         // Don't include invalid dates
       }
+    } else if (contactData.dateofbirth === null) {
+      // Explicitly set to null when provided as null
+      backendData.dateofbirth = null;
     }
 
     console.log('UserManagementService: Filtered backendData for creation:', backendData);

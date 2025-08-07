@@ -5,6 +5,7 @@
 
 import prisma from '../lib/prisma';
 import { ValidationError } from '../utils/customErrors';
+import { ContactPhotoService } from './contactPhotoService';
 
 export interface ContactDependency {
   table: string;
@@ -256,6 +257,9 @@ export class ContactDependencyService {
     }
 
     try {
+      // Delete associated photo before deleting the contact
+      await ContactPhotoService.deleteContactPhoto(contactId, accountId);
+
       // Since all dependencies have CASCADE delete configured in the schema,
       // we can simply delete the contact and let the database handle cascading
       await prisma.contacts.delete({

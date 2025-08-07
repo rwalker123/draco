@@ -1,5 +1,6 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService';
-import { RosterMember, AvailablePlayer } from '../services/rosterService';
+import { RosterMember } from '../services/rosterService';
+import { ContactEntry } from '../interfaces/contactInterfaces';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService';
 
 export interface ApiResponse<T> {
@@ -156,29 +157,36 @@ export class RosterResponseFormatter {
     };
   }
 
-  static formatAvailablePlayersResponse(availablePlayers: AvailablePlayer[]): ApiResponse<{
+  static formatAvailablePlayersResponse(availablePlayers: ContactEntry[]): ApiResponse<{
     availablePlayers: Array<{
       id: string;
-      contactId: string;
-      firstYear: number | null;
-      submittedDriversLicense: boolean | null;
-      contact: { id: string; firstname: string; lastname: string; middlename: string | null };
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      photoUrl?: string;
+      contactDetails?: {
+        phone1: string | null;
+        phone2: string | null;
+        phone3: string | null;
+        streetaddress: string | null;
+        city: string | null;
+        state: string | null;
+        zip: string | null;
+        dateofbirth: string | null;
+        middlename: string | null;
+      };
     }>;
   }> {
     return {
       success: true,
       data: {
-        availablePlayers: availablePlayers.map((player) => ({
-          id: player.id.toString(),
-          contactId: player.contactId.toString(),
-          firstYear: player.firstYear,
-          submittedDriversLicense: player.submittedDriversLicense,
-          contact: {
-            id: player.contact.id,
-            firstname: player.contact.firstName,
-            lastname: player.contact.lastName,
-            middlename: player.contact.contactDetails?.middlename ?? null,
-          },
+        availablePlayers: availablePlayers.map((contact) => ({
+          id: contact.id,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          email: contact.email,
+          photoUrl: contact.photoUrl,
+          contactDetails: contact.contactDetails,
         })),
       },
     };
@@ -198,7 +206,34 @@ export class RosterResponseFormatter {
       player: {
         id: string;
         contactId: string;
-        contact: { id: string; firstname: string; lastname: string };
+        submittedDriversLicense: boolean | null;
+        firstYear: number | null;
+        contact: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          email: string | null;
+          userId: string | null;
+          photoUrl?: string;
+          contactDetails?: {
+            phone1: string | null;
+            phone2: string | null;
+            phone3: string | null;
+            streetaddress: string | null;
+            city: string | null;
+            state: string | null;
+            zip: string | null;
+            dateofbirth: string | null;
+            middlename: string | null;
+          };
+          contactroles: Array<{
+            id: string;
+            roleId: string;
+            roleName: string;
+            roleData: string;
+            contextName?: string;
+          }>;
+        };
       };
     };
   }> {
@@ -215,10 +250,17 @@ export class RosterResponseFormatter {
           player: {
             id: rosterMember.player.id.toString(),
             contactId: rosterMember.player.contactId.toString(),
+            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
+            firstYear: rosterMember.player.firstYear,
             contact: {
               id: rosterMember.player.contact.id,
-              firstname: rosterMember.player.contact.firstName,
-              lastname: rosterMember.player.contact.lastName,
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              email: rosterMember.player.contact.email,
+              userId: rosterMember.player.contact.userId,
+              photoUrl: rosterMember.player.contact.photoUrl,
+              contactDetails: rosterMember.player.contact.contactDetails,
+              contactroles: rosterMember.player.contact.contactroles,
             },
           },
         },

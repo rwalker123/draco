@@ -73,7 +73,7 @@ const ContactAutocomplete: React.FC<ContactAutocompleteProps> = ({
         const results = await userService.searchUsers(accountId, query, undefined, undefined);
 
         // Transform users to contacts format for consistency
-        const contacts = results.map((user) => ({
+        const contacts = results.users.map((user) => ({
           id: user.id,
           firstName: user.firstName,
           lastName: user.lastName,

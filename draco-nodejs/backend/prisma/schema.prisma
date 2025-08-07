@@ -240,7 +240,7 @@ model contacts {
   messagetopic                                              messagetopic[]
   playerprofile                                             playerprofile[]
   playerswantedclassified                                   playerswantedclassified[]
-  roster                                                    roster[]
+  roster                                                    roster?
   teamseasonmanager                                         teamseasonmanager[]
   voteanswers                                               voteanswers[]
 
@@ -982,7 +982,7 @@ model profilequestion {
 
 model roster {
   id                          BigInt                        @id @default(autoincrement())
-  contactid                   BigInt
+  contactid                   BigInt                        @unique(map: "roster_contactid")
   submitteddriverslicense     Boolean
   firstyear                   Int
   playerseasonaffiliationdues playerseasonaffiliationdues[]
@@ -1005,6 +1005,9 @@ model rosterseason {
   playerrecap     playerrecap[]
   roster          roster          @relation(fields: [playerid], references: [id], onDelete: Cascade, map: "fk_rosterseason_roster")
   teamsseason     teamsseason     @relation(fields: [teamseasonid], references: [id], onDelete: Cascade)
+
+  @@index([playerid, teamseasonid], map: "idx_rosterseason_playerid_teamseasonid")
+  @@index([teamseasonid], map: "idx_rosterseason_teamseasonid")
 }
 
 model season {
@@ -1093,6 +1096,8 @@ model teamsseason {
   divisionseason                         divisionseason?     @relation(fields: [divisionseasonid], references: [id], map: "fk_teamsseason_divisionseasonid")
   leagueseason                           leagueseason        @relation(fields: [leagueseasonid], references: [id], onDelete: Cascade, map: "fk_teamsseason_leagueseason")
   teams                                  teams               @relation(fields: [teamid], references: [id], onDelete: Cascade, map: "fk_teamsseason_teams")
+
+  @@index([leagueseasonid], map: "idx_teamsseason_leagueseasonid")
 }
 
 model teamswantedclassified {

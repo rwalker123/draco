@@ -12,6 +12,7 @@ interface UserTableContentProps {
   onAssignRole: (user: User) => Promise<void>;
   onRemoveRole: (user: User, role: UserRole) => void;
   onEditContact: (contact: Contact) => void;
+  onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto: (contactId: string) => Promise<void>;
   getRoleDisplayName: (
     roleOrRoleId:
@@ -28,6 +29,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
   onAssignRole,
   onRemoveRole,
   onEditContact,
+  onDeleteContact,
   onDeleteContactPhoto,
   getRoleDisplayName,
   searchTerm,
@@ -40,7 +42,10 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
           <TableHead>
             <TableRow>
               <TableCell>Name</TableCell>
-              <TableCell>Contact Information</TableCell>
+              <TableCell>Email</TableCell>
+              <TableCell>Phone Numbers</TableCell>
+              <TableCell>Address</TableCell>
+              <TableCell>Date of Birth</TableCell>
               <TableCell>Roles</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -50,7 +55,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
               searchTerm={searchTerm}
               hasFilters={hasFilters}
               wrapper="table-row"
-              colSpan={4}
+              colSpan={7}
               showIcon={false}
             />
           </TableBody>
@@ -65,7 +70,10 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
-            <TableCell>Contact Information</TableCell>
+            <TableCell>Email</TableCell>
+            <TableCell>Phone Numbers</TableCell>
+            <TableCell>Address</TableCell>
+            <TableCell>Date of Birth</TableCell>
             <TableCell>Roles</TableCell>
             <TableCell>Actions</TableCell>
           </TableRow>
@@ -79,6 +87,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
               onAssignRole={onAssignRole}
               onRemoveRole={onRemoveRole}
               onEditContact={onEditContact}
+              onDeleteContact={onDeleteContact}
               onDeleteContactPhoto={onDeleteContactPhoto}
               getRoleDisplayName={getRoleDisplayName}
             />

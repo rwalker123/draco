@@ -15,15 +15,32 @@ export const handleValidationErrors = (req: Request, res: Response, next: NextFu
   next();
 };
 
+// Shared name field validation function (DRY principle)
+const validateNameField = (fieldName: string, isRequired: boolean = false) => {
+  let validation = body(fieldName).trim();
+
+  if (isRequired) {
+    validation = validation
+      .notEmpty()
+      .withMessage(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+  } else {
+    validation = validation.optional();
+  }
+
+  return validation
+    .isLength({ min: 1, max: 100 })
+    .withMessage(
+      `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
+    )
+    .matches(/^[a-zA-Z0-9\s\-'*]+$/)
+    .withMessage(
+      `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+    );
+};
+
 // Define shared optional field validations
 const sharedOptionalValidations = [
-  body('middlename')
-    .optional()
-    .trim()
-    .isLength({ max: 100 })
-    .withMessage('Middle name must not exceed 100 characters')
-    .matches(/^[a-zA-Z\s\-']*$/)
-    .withMessage('Middle name can only contain letters, spaces, hyphens, and apostrophes'),
+  validateNameField('middlename', false),
 
   body('email')
     .optional()
@@ -123,21 +140,8 @@ const sharedOptionalValidations = [
 
 // Contact update validation rules for photo-only updates (optional fields)
 export const validateContactPhotoUpdate = [
-  body('firstname')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('First name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
-
-  body('lastname')
-    .optional()
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Last name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+  validateNameField('firstname', false),
+  validateNameField('lastname', false),
 
   // Include all optional fields
   ...sharedOptionalValidations,
@@ -147,19 +151,8 @@ export const validateContactPhotoUpdate = [
 
 // Contact update validation rules (standard fields required)
 export const validateContactUpdate = [
-  body('firstname')
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('First name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
-
-  body('lastname')
-    .trim()
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Last name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+  validateNameField('firstname', false),
+  validateNameField('lastname', false),
 
   // Include all optional fields
   ...sharedOptionalValidations,
@@ -169,26 +162,11 @@ export const validateContactUpdate = [
 
 // Contact creation validation rules
 export const validateContactCreate = [
-  body('firstname')
-    .trim()
-    .notEmpty()
-    .withMessage('First name is required')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('First name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('First name can only contain letters, spaces, hyphens, and apostrophes'),
-
-  body('lastname')
-    .trim()
-    .notEmpty()
-    .withMessage('Last name is required')
-    .isLength({ min: 1, max: 100 })
-    .withMessage('Last name must be between 1 and 100 characters')
-    .matches(/^[a-zA-Z\s\-']+$/)
-    .withMessage('Last name can only contain letters, spaces, hyphens, and apostrophes'),
+  validateNameField('firstname', true),
+  validateNameField('lastname', true),
 
   // Include all optional fields from update validation
-  ...validateContactUpdate.slice(2, -1), // Skip firstname, lastname, and handleValidationErrors
+  ...sharedOptionalValidations,
 
   handleValidationErrors,
 ];

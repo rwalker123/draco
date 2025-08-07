@@ -122,3 +122,23 @@ export interface ContactSearchResult extends BaseContact {
   searchText: string;
   contactroles?: ContactRoleEntry[];
 }
+
+// Interface for raw SQL query result from getAvailablePlayers query
+export interface AvailableContactRaw {
+  id: bigint;
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone1: string | null;
+  phone2: string | null;
+  phone3: string | null;
+  streetaddress: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  dateofbirth: Date | null;
+  middlename: string | null;
+  roster_id: bigint | null;
+  firstyear: number | null;
+  submitteddriverslicense: boolean | null;
+}
