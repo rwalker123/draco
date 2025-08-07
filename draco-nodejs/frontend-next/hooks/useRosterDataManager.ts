@@ -1,11 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import {
   RosterOperationsService,
   TeamRosterData,
   ManagerType,
   RosterFormData,
-  RosterMember,
 } from '../services/rosterOperationsService';
 import { ContactTransformationService } from '../services/contactTransformationService';
 import { ContactUpdateData, Contact } from '../types/users';
@@ -133,38 +130,58 @@ export const useRosterDataManager = (
   }, []);
 
   // Helper function to transform backend data
-  const transformBackendData = useCallback((data: TeamRosterData) => {
+  const transformBackendData = useCallback((data: unknown) => {
     if (!data) return data;
 
-    if (data.rosterMembers) {
+    // Handle TeamRosterData with roster members
+    if (typeof data === 'object' && data !== null && 'rosterMembers' in data) {
+      const teamData = data as { rosterMembers: unknown[] };
       return {
-        ...data,
-        rosterMembers: data.rosterMembers.map((member: RosterMember) => ({
-          ...member,
-          player: {
-            ...member.player,
-            contact: ContactTransformationService.transformBackendContact(member.player?.contact),
-          },
-        })),
+        ...teamData,
+        rosterMembers: teamData.rosterMembers.map((member) => {
+          const memberObj = member as Record<string, unknown>;
+          const playerObj = memberObj.player as Record<string, unknown>;
+          return {
+            ...memberObj,
+            player: {
+              ...playerObj,
+              // Transform contact if it has backend field names (lowercase)
+              contact: playerObj?.contact
+                ? ContactTransformationService.transformBackendContact(
+                    playerObj.contact as Record<string, unknown>,
+                  )
+                : playerObj?.contact,
+            },
+          };
+        }),
       };
     }
 
+    // Handle array of contacts (available players)
     if (Array.isArray(data)) {
-      // Handle available players (ContactEntry[] from backend)
-      return data.map((item: Contact) => {
-        // If it's a ContactEntry (has firstName, lastName, etc.), transform it
-        if (item.firstName || item.firstname) {
-          return ContactTransformationService.transformBackendContact(item);
+      return data.map((item) => {
+        const itemObj = item as Record<string, unknown>;
+        // If it's a ContactEntry with backend field names, transform it
+        if (itemObj.firstname || itemObj.lastname) {
+          return ContactTransformationService.transformBackendContact(itemObj);
         }
-        // Otherwise, handle as before
+        // If it already has frontend field names, return as is
+        if (itemObj.firstName || itemObj.lastName) {
+          return item;
+        }
+        // Handle nested contact objects
         return {
-          ...item,
-          contact: item.contact
-            ? ContactTransformationService.transformBackendContact(item.contact)
-            : item.contact,
-          contacts: item.contacts
-            ? ContactTransformationService.transformBackendContact(item.contacts)
-            : item.contacts,
+          ...itemObj,
+          contact: itemObj.contact
+            ? ContactTransformationService.transformBackendContact(
+                itemObj.contact as Record<string, unknown>,
+              )
+            : itemObj.contact,
+          contacts: itemObj.contacts
+            ? ContactTransformationService.transformBackendContact(
+                itemObj.contacts as Record<string, unknown>,
+              )
+            : itemObj.contacts,
         };
       });
     }
@@ -185,7 +202,7 @@ export const useRosterDataManager = (
       );
 
       if (response.data.success) {
-        const transformedData = transformBackendData(response.data.data);
+        const transformedData = transformBackendData(response.data.data) as TeamRosterData;
         dataCacheRef.current.rosterData = transformedData;
         updateState({ rosterData: transformedData, loading: false });
       } else {
@@ -220,7 +237,7 @@ export const useRosterDataManager = (
 
       if (response.data.success) {
         const players = response.data.data.availablePlayers || [];
-        const transformedPlayers = transformBackendData(players);
+        const transformedPlayers = transformBackendData(players) as Contact[];
         dataCacheRef.current.availablePlayers = transformedPlayers;
         updateState({ availablePlayers: transformedPlayers });
       }
@@ -250,7 +267,7 @@ export const useRosterDataManager = (
 
       if (response.data.success) {
         const managers = response.data.data || [];
-        const transformedManagers = transformBackendData(managers);
+        const transformedManagers = transformBackendData(managers) as ManagerType[];
         dataCacheRef.current.managers = transformedManagers;
         updateState({ managers: transformedManagers });
       }
