@@ -46,11 +46,7 @@ import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import { ContactUpdateData, Contact } from '../../../../../../../../types/users';
 import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
 import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
-import {
-  RosterFormData,
-  RosterPlayer,
-  RosterMember,
-} from '../../../../../../../../services/rosterOperationsService';
+import { RosterFormData, RosterPlayer, RosterMember } from '../../../../../../../../types/roster';
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -109,6 +105,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
 
+  // Sign player process states
+  const [isSigningPlayer, setIsSigningPlayer] = useState(false);
+  const [signingTimeout, setSigningTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Unified roster information dialog states
   const [rosterFormData, setRosterFormData] = useState<RosterFormData>({
     playerNumber: 0,
@@ -152,6 +152,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
   }, [signPlayerDialogOpen, fetchAvailablePlayers]);
 
+  // Cleanup timeout on unmount or dialog close
+  useEffect(() => {
+    return () => {
+      if (signingTimeout) {
+        clearTimeout(signingTimeout);
+      }
+    };
+  }, [signingTimeout]);
+
   useEffect(() => {
     fetchRosterData();
     fetchSeasonData();
@@ -179,16 +188,45 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       return;
     }
 
+    setIsSigningPlayer(true);
     setFormLoading(true);
     saveScrollPosition();
+    clearMessages();
+
+    // Set up timeout for 15 seconds
+    const timeoutId = setTimeout(() => {
+      setIsSigningPlayer(false);
+      setFormLoading(false);
+      setError('Signing player took too long. Please try again or check your connection.');
+      restoreScrollPosition();
+    }, 15000);
+
+    setSigningTimeout(timeoutId);
 
     try {
       await signPlayer(selectedPlayer.id, rosterFormData);
+
+      // Clear timeout since operation succeeded
+      if (signingTimeout) {
+        clearTimeout(signingTimeout);
+        setSigningTimeout(null);
+      }
+
+      setIsSigningPlayer(false);
+      setFormLoading(false);
       closeSignPlayerDialog();
     } catch {
-      // Error is handled by the data manager
-    } finally {
+      // Clear timeout since operation failed
+      if (signingTimeout) {
+        clearTimeout(signingTimeout);
+        setSigningTimeout(null);
+      }
+
+      setIsSigningPlayer(false);
       setFormLoading(false);
+      // Error is handled by the data manager, but we keep dialog open
+      // Don't call closeSignPlayerDialog() here - let user see the error
+    } finally {
       restoreScrollPosition();
     }
   };
@@ -305,6 +343,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
 
   // Close sign player dialog
   const closeSignPlayerDialog = () => {
+    // Don't allow closing if we're currently signing a player
+    if (isSigningPlayer) {
+      return;
+    }
+
+    // Clear any existing timeout
+    if (signingTimeout) {
+      clearTimeout(signingTimeout);
+      setSigningTimeout(null);
+    }
+
     setSignPlayerDialogOpen(false);
     setSelectedPlayer(null);
     setRosterFormData({
@@ -314,6 +363,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       firstYear: 0,
     });
     setIsSigningNewPlayer(false);
+    setIsSigningPlayer(false);
     clearMessages();
   };
 
@@ -861,11 +911,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 <ManagerIcon color="primary" sx={{ mr: 1 }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="subtitle1" fontWeight="bold">
-                    {manager.contacts.lastName}, {manager.contacts.firstName}{' '}
-                    {manager.contacts.middleName}
+                    {manager.contact.lastName}, {manager.contact.firstName}{' '}
+                    {manager.contact.middleName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {manager.contacts.email}
+                    {manager.contact.email}
                   </Typography>
                 </Box>
                 <IconButton
@@ -936,7 +986,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                         </Typography>
                       </Box>
                       {/* Manager badge/icon */}
-                      {managers.some((m) => m.contactid === member.player.contact.id) && (
+                      {managers.some((m) => m.contact.id === member.player.contact.id) && (
                         <ManagerIcon color="primary" fontSize="small" titleAccess="Manager" />
                       )}
                     </Box>
@@ -1135,7 +1185,12 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       )}
 
       {/* Unified Sign Player / Edit Roster Dialog */}
-      <Dialog open={signPlayerDialogOpen} onClose={closeSignPlayerDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={signPlayerDialogOpen}
+        onClose={isSigningPlayer ? undefined : closeSignPlayerDialog}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           {isSigningNewPlayer ? 'Sign Player to Roster' : 'Edit Roster Information'}
         </DialogTitle>
@@ -1234,19 +1289,15 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 label="First Year"
                 type="number"
                 value={rosterFormData.firstYear}
-                onChange={(e) =>
-                  setRosterFormData({ ...rosterFormData, firstYear: parseInt(e.target.value) || 0 })
-                }
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 0;
+                  setRosterFormData({ ...rosterFormData, firstYear: Math.max(0, value) });
+                }}
+                inputProps={{ min: 0 }}
                 fullWidth
                 variant="outlined"
-                helperText={
-                  isSigningNewPlayer &&
-                  selectedPlayer &&
-                  'firstYear' in selectedPlayer &&
-                  selectedPlayer.firstYear
-                    ? `Pre-filled with existing data: ${selectedPlayer.firstYear}`
-                    : 'Enter the year the player first joined the league'
-                }
+                helperText="Enter the player's first year in the league"
+                error={rosterFormData.firstYear < 0}
               />
 
               <FormControlLabel
@@ -1273,33 +1324,21 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     }
                   />
                 }
-                label={
-                  <Box>
-                    <Typography>{"Submitted Driver's License"}</Typography>
-                    {isSigningNewPlayer &&
-                      selectedPlayer &&
-                      'submittedDriversLicense' in selectedPlayer &&
-                      selectedPlayer.submittedDriversLicense && (
-                        <Typography variant="caption" color="text.secondary">
-                          Pre-filled with existing data
-                        </Typography>
-                      )}
-                  </Box>
-                }
+                label="Submitted Driver's License"
               />
             </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeSignPlayerDialog} disabled={formLoading}>
+          <Button onClick={closeSignPlayerDialog} disabled={isSigningPlayer}>
             Cancel
           </Button>
           <Button
             onClick={isSigningNewPlayer ? handleSignPlayer : handleSaveRosterInfo}
             variant="contained"
-            disabled={isSigningNewPlayer ? !selectedPlayer || formLoading : formLoading}
+            disabled={isSigningNewPlayer ? !selectedPlayer || isSigningPlayer : formLoading}
             startIcon={
-              formLoading ? (
+              isSigningPlayer ? (
                 <CircularProgress size={20} />
               ) : isSigningNewPlayer ? (
                 <PersonAddIcon />
@@ -1308,7 +1347,11 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
               )
             }
           >
-            {isSigningNewPlayer ? 'Sign Player' : 'Save Roster Info'}
+            {isSigningPlayer
+              ? 'Signing...'
+              : isSigningNewPlayer
+                ? 'Sign Player'
+                : 'Save Roster Info'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1377,7 +1420,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
           )}
           <Autocomplete
             options={activePlayers.filter(
-              (member) => !managers.some((m) => m.contactid === member.player.contact.id),
+              (member) => !managers.some((m) => m.contact.id === member.player.contact.id),
             )}
             getOptionLabel={(option) => formatName(option.player.contact)}
             value={

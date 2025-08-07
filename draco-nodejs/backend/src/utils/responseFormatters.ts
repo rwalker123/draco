@@ -1,6 +1,6 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService';
 import { RosterMember } from '../services/rosterService';
-import { ContactEntry, NamedContact } from '../interfaces/contactInterfaces';
+import { ContactEntry, NamedContact, RawManager } from '../interfaces/contactInterfaces';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService';
 
 export interface ApiResponse<T> {
@@ -34,6 +34,12 @@ export interface FormattedRosterPlayer extends FormattedRosterMember {
     firstYear: number | null;
     contact: NamedContact;
   };
+}
+
+export interface FormattedManager {
+  id: string;
+  teamSeasonId: string;
+  contact: ContactEntry;
 }
 
 export class TeamResponseFormatter {
@@ -337,6 +343,43 @@ export class StatsResponseFormatter {
     return {
       success: true,
       data: pitchingStats,
+    };
+  }
+}
+
+export class ManagerResponseFormatter {
+  static formatManagersListResponse(rawManagers: RawManager[]): FormattedManager[] {
+    return rawManagers.map((manager) => ({
+      id: manager.id.toString(),
+      teamSeasonId: manager.teamseasonid.toString(),
+      contact: {
+        id: manager.contacts.id.toString(),
+        userId: manager.contacts.userid,
+        firstName: manager.contacts.firstname,
+        lastName: manager.contacts.lastname,
+        middleName: manager.contacts.middlename,
+        email: manager.contacts.email,
+        contactroles: [],
+      },
+    }));
+  }
+
+  static formatAddManagerResponse(rawManager: RawManager): ApiResponse<FormattedManager> {
+    return {
+      success: true,
+      data: {
+        id: rawManager.id.toString(),
+        teamSeasonId: rawManager.teamseasonid.toString(),
+        contact: {
+          id: rawManager.contacts.id.toString(),
+          userId: rawManager.contacts.userid,
+          firstName: rawManager.contacts.firstname,
+          lastName: rawManager.contacts.lastname,
+          middleName: rawManager.contacts.middlename,
+          email: rawManager.contacts.email,
+          contactroles: [],
+        },
+      },
     };
   }
 }

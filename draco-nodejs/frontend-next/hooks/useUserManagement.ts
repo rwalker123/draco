@@ -409,30 +409,159 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   );
 
   // Pagination handlers - atomic state updates
-  const handleNextPage = useCallback(() => {
+  const handleNextPage = useCallback(async () => {
     if (hasNext && !loading) {
       const nextPage = page + 1;
-      // Pass isPaginating=true to avoid double dispatch
-      loadUsers(nextPage, undefined, true);
-    }
-  }, [hasNext, page, loadUsers, loading]);
 
-  const handlePrevPage = useCallback(() => {
+      // If showing search results, maintain search context
+      if (isShowingSearchResults && searchTerm.trim() && userService) {
+        try {
+          dispatch({ type: 'START_PAGINATION', page: nextPage });
+          setError(null);
+
+          const searchResponse = await userService.searchUsers(
+            accountId,
+            searchTerm,
+            currentSeasonId,
+            onlyWithRoles,
+            {
+              page: nextPage - 1, // Backend uses 0-based pagination
+              limit: rowsPerPageRef.current,
+              sortBy: 'lastname',
+              sortOrder: 'asc',
+            },
+          );
+
+          dispatch({
+            type: 'SET_DATA',
+            users: searchResponse.users,
+            hasNext: searchResponse.pagination.hasNext ?? false,
+            hasPrev: searchResponse.pagination.hasPrev ?? false,
+            page: nextPage,
+          });
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load next page');
+          dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
+        }
+      } else {
+        // Regular pagination for all users
+        loadUsers(nextPage, undefined, true);
+      }
+    }
+  }, [
+    hasNext,
+    page,
+    loadUsers,
+    loading,
+    isShowingSearchResults,
+    searchTerm,
+    userService,
+    accountId,
+    currentSeasonId,
+    onlyWithRoles,
+  ]);
+
+  const handlePrevPage = useCallback(async () => {
     if (hasPrev && !loading) {
       const prevPage = page - 1;
-      // Pass isPaginating=true to avoid double dispatch
-      loadUsers(prevPage, undefined, true);
+
+      // If showing search results, maintain search context
+      if (isShowingSearchResults && searchTerm.trim() && userService) {
+        try {
+          dispatch({ type: 'START_PAGINATION', page: prevPage });
+          setError(null);
+
+          const searchResponse = await userService.searchUsers(
+            accountId,
+            searchTerm,
+            currentSeasonId,
+            onlyWithRoles,
+            {
+              page: prevPage - 1, // Backend uses 0-based pagination
+              limit: rowsPerPageRef.current,
+              sortBy: 'lastname',
+              sortOrder: 'asc',
+            },
+          );
+
+          dispatch({
+            type: 'SET_DATA',
+            users: searchResponse.users,
+            hasNext: searchResponse.pagination.hasNext ?? false,
+            hasPrev: searchResponse.pagination.hasPrev ?? false,
+            page: prevPage,
+          });
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load previous page');
+          dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
+        }
+      } else {
+        // Regular pagination for all users
+        loadUsers(prevPage, undefined, true);
+      }
     }
-  }, [hasPrev, page, loadUsers, loading]);
+  }, [
+    hasPrev,
+    page,
+    loadUsers,
+    loading,
+    isShowingSearchResults,
+    searchTerm,
+    userService,
+    accountId,
+    currentSeasonId,
+    onlyWithRoles,
+  ]);
 
   const handleRowsPerPageChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       const newRowsPerPage = parseInt(event.target.value, 10);
       setRowsPerPage(newRowsPerPage);
-      // Pass isPaginating=true to avoid double dispatch
-      loadUsers(1, newRowsPerPage, true);
+
+      // If showing search results, maintain search context
+      if (isShowingSearchResults && searchTerm.trim() && userService) {
+        try {
+          dispatch({ type: 'START_PAGINATION', page: 1 });
+          setError(null);
+
+          const searchResponse = await userService.searchUsers(
+            accountId,
+            searchTerm,
+            currentSeasonId,
+            onlyWithRoles,
+            {
+              page: 0, // Backend uses 0-based pagination
+              limit: newRowsPerPage,
+              sortBy: 'lastname',
+              sortOrder: 'asc',
+            },
+          );
+
+          dispatch({
+            type: 'SET_DATA',
+            users: searchResponse.users,
+            hasNext: searchResponse.pagination.hasNext ?? false,
+            hasPrev: searchResponse.pagination.hasPrev ?? false,
+            page: 1,
+          });
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to update rows per page');
+          dispatch({ type: 'SET_DATA', users: [], hasNext: false, hasPrev: false });
+        }
+      } else {
+        // Regular pagination for all users
+        loadUsers(1, newRowsPerPage, true);
+      }
     },
-    [loadUsers],
+    [
+      loadUsers,
+      isShowingSearchResults,
+      searchTerm,
+      userService,
+      accountId,
+      currentSeasonId,
+      onlyWithRoles,
+    ],
   );
 
   // Role assignment handler
