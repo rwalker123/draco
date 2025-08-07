@@ -4,7 +4,7 @@ import { PaginationHelper } from '../utils/pagination';
 import {
   ContactQueryOptions,
   ContactResponse,
-  ContactWithRoleRow,
+  ContactWithRoleAndDetailsRaw,
   ContactEntry,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
@@ -154,7 +154,7 @@ export class ContactService {
     `;
 
     // Execute the raw query
-    const rows = await prisma.$queryRaw<ContactWithRoleRow[]>(query);
+    const rows = await prisma.$queryRaw<ContactWithRoleAndDetailsRaw[]>(query);
 
     // Single efficient query to find account owner's contact ID
     const ownerContactResult = await prisma.$queryRaw<{ id: bigint }[]>`
@@ -316,7 +316,7 @@ export class ContactService {
    * Transform raw SQL rows into structured contact response
    */
   private static transformContactRows(
-    rows: ContactWithRoleRow[],
+    rows: ContactWithRoleAndDetailsRaw[],
     accountId: bigint,
     accountOwnerContactId: string | null,
     pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
@@ -333,27 +333,27 @@ export class ContactService {
       if (!contactMap.has(contactId)) {
         const contactEntry: ContactEntry = {
           id: contactId,
-          firstName: row.firstName,
-          lastName: row.lastName,
-          middleName: row.middleName,
+          firstName: row.firstname,
+          lastName: row.lastname,
+          middleName: row.middlename,
           email: row.email,
-          userId: row.userId,
+          userId: row.userid,
           photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
           contactroles: [],
         };
 
         // Add contact details if available and requested
         if (includeContactDetails && 'phone1' in row) {
-          const contactRow = row as ContactWithRoleRow;
+          const contactRow = row as ContactWithRoleAndDetailsRaw;
           contactEntry.contactDetails = {
-            phone1: contactRow.contactDetails?.phone1 || null,
-            phone2: contactRow.contactDetails?.phone2 || null,
-            phone3: contactRow.contactDetails?.phone3 || null,
-            streetaddress: contactRow.contactDetails?.streetaddress || null,
-            city: contactRow.contactDetails?.city || null,
-            state: contactRow.contactDetails?.state || null,
-            zip: contactRow.contactDetails?.zip || null,
-            dateofbirth: contactRow.contactDetails ? contactRow.contactDetails.dateofbirth : null,
+            phone1: contactRow.phone1,
+            phone2: contactRow.phone2,
+            phone3: contactRow.phone3,
+            streetaddress: contactRow.streetaddress,
+            city: contactRow.city,
+            state: contactRow.state,
+            zip: contactRow.zip,
+            dateofbirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
           };
         }
 
