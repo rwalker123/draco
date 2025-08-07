@@ -185,3 +185,7 @@ Priority tasks remaining:
 ## Important Best Practices
 
 - Always run npm frontend-next:lint and npm backend:lint from the root project directory
+
+## Tool Preferences
+
+- **Always use Serena tools when available**
