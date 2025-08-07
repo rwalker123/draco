@@ -88,12 +88,29 @@ export interface ContactResponse {
 }
 
 // Type for raw SQL query result from getContactsWithRoles
-export interface ContactWithRoleRow extends BaseContact {
+export interface ContactWithRoleRaw {
+  id: bigint;
+  firstname: string;
+  lastname: string;
+  email: string | null;
+  userid: string | null;
   role_context_name: string | null;
   roleid: string | null;
   roledata: bigint | null;
 }
 
+// Extended type for raw SQL query result with contact details
+export interface ContactWithRoleAndDetailsRaw extends ContactWithRoleRaw {
+  phone1: string | null;
+  phone2: string | null;
+  phone3: string | null;
+  streetaddress: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  dateofbirth: Date | null;
+  middlename: string | null;
+}
 // Interface for contact search results (extends base with search-specific fields)
 export interface ContactSearchResult extends BaseContact {
   displayName: string;
