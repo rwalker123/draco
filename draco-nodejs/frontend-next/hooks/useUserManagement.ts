@@ -202,8 +202,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         // When paginating, the page has already been set by START_PAGINATION
         updatePaginationData(
           response.users,
-          response.pagination.hasNext,
-          response.pagination.hasPrev,
+          response.pagination.hasNext ?? false,
+          response.pagination.hasPrev ?? false,
           isPaginating ? undefined : currentPage,
         );
       } catch (err) {
@@ -237,8 +237,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         dispatch({
           type: 'SET_DATA',
           users: response.users,
-          hasNext: response.pagination.hasNext,
-          hasPrev: response.pagination.hasPrev,
+          hasNext: response.pagination.hasNext ?? false,
+          hasPrev: response.pagination.hasPrev ?? false,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load users');
@@ -317,8 +317,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
         dispatch({
           type: 'SET_DATA',
           users: searchResponse.users,
-          hasNext: searchResponse.pagination.hasNext,
-          hasPrev: searchResponse.pagination.hasPrev,
+          hasNext: searchResponse.pagination.hasNext ?? false,
+          hasPrev: searchResponse.pagination.hasPrev ?? false,
           page: 1,
         });
       }
@@ -371,8 +371,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           });
           dataManager.setData(
             searchResults.users,
-            searchResults.pagination.hasNext,
-            searchResults.pagination.hasPrev,
+            searchResults.pagination.hasNext ?? false,
+            searchResults.pagination.hasPrev ?? false,
             1,
           );
         } else {
@@ -387,8 +387,8 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           });
           dataManager.setData(
             response.users,
-            response.pagination.hasNext,
-            response.pagination.hasPrev,
+            response.pagination.hasNext ?? false,
+            response.pagination.hasPrev ?? false,
             1,
           );
         }
@@ -821,16 +821,16 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
             dispatch({
               type: 'SET_DATA',
               users: previousPageResponse.users,
-              hasNext: previousPageResponse.pagination.hasNext,
-              hasPrev: previousPageResponse.pagination.hasPrev,
+              hasNext: previousPageResponse.pagination.hasNext ?? false,
+              hasPrev: previousPageResponse.pagination.hasPrev ?? false,
               page: currentPage - 1,
             });
           } else {
             dispatch({
               type: 'SET_DATA',
               users: usersResponse.users,
-              hasNext: usersResponse.pagination.hasNext,
-              hasPrev: usersResponse.pagination.hasPrev,
+              hasNext: usersResponse.pagination.hasNext ?? false,
+              hasPrev: usersResponse.pagination.hasPrev ?? false,
               page: currentPage,
             });
           }
