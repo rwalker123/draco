@@ -5,7 +5,9 @@ import { TableCell, TableRow, Stack, Typography } from '@mui/material';
 import { UserCardProps } from '../../types/users';
 import UserRoleChips from './UserRoleChips';
 import UserActions from './UserActions';
-import ContactInfoExpanded from './ContactInfoExpanded';
+import PhoneNumbersCell from './table/PhoneNumbersCell';
+import AddressCell from './table/AddressCell';
+import DateOfBirthCell from './table/DateOfBirthCell';
 import UserAvatar from './UserAvatar';
 import { getFormattedName } from '../../utils/contactUtils';
 
@@ -19,6 +21,7 @@ const UserCard: React.FC<UserCardProps> = ({
   onAssignRole,
   onRemoveRole,
   onEditContact,
+  onDeleteContact,
   onDeleteContactPhoto,
   getRoleDisplayName,
 }) => {
@@ -63,23 +66,40 @@ const UserCard: React.FC<UserCardProps> = ({
         </Stack>
       </TableCell>
       <TableCell>
-        <ContactInfoExpanded
-          firstName={user.firstName}
-          lastName={user.lastName}
-          email={user.email}
-          contactDetails={user.contactDetails}
-        />
+        <Typography variant="body2">
+          {user.email || (
+            <Typography component="span" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              —
+            </Typography>
+          )}
+        </Typography>
+      </TableCell>
+      <TableCell>
+        <PhoneNumbersCell contactDetails={user.contactDetails} />
+      </TableCell>
+      <TableCell>
+        <AddressCell contactDetails={user.contactDetails} />
+      </TableCell>
+      <TableCell>
+        <DateOfBirthCell contactDetails={user.contactDetails} />
       </TableCell>
       <TableCell>
         <UserRoleChips
           roles={user.roles || []}
           canManageUsers={canManageUsers}
           onRemoveRole={(role) => onRemoveRole(user, role)}
+          onAssignRole={onAssignRole}
+          user={user}
           getRoleDisplayName={getRoleDisplayName}
         />
       </TableCell>
       <TableCell>
-        <UserActions user={user} canManageUsers={canManageUsers} onAssignRole={onAssignRole} />
+        <UserActions
+          user={user}
+          canManageUsers={canManageUsers}
+          onEditContact={onEditContact}
+          onDeleteContact={onDeleteContact}
+        />
       </TableCell>
     </TableRow>
   );

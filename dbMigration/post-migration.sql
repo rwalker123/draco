@@ -176,3 +176,9 @@ ALTER COLUMN middlename SET NOT NULL;
 
 ALTER TABLE IF EXISTS public.roster
     ADD CONSTRAINT roster_contactid UNIQUE (contactid);
+
+-- Index for rosterseason player lookups and team season filtering
+CREATE INDEX IF NOT EXISTS idx_rosterseason_playerid_teamseasonid ON rosterseason(playerid, teamseasonid);
+CREATE INDEX IF NOT EXISTS idx_rosterseason_teamseasonid ON rosterseason(teamseasonid);
+-- Index for teamsseason league season filtering
+CREATE INDEX IF NOT EXISTS idx_teamsseason_leagueseasonid ON teamsseason(leagueseasonid);

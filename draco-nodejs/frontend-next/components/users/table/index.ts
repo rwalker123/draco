@@ -9,6 +9,11 @@ export { default as UserTableToolbar } from './components/UserTableToolbar';
 export { default as UserDisplayCard } from './components/UserDisplayCard';
 export { default as UserCardGrid } from './components/UserCardGrid';
 
+// Table cell components
+export { default as PhoneNumbersCell } from './PhoneNumbersCell';
+export { default as AddressCell } from './AddressCell';
+export { default as DateOfBirthCell } from './DateOfBirthCell';
+
 // Context and hooks
 export {
   UserSelectionProvider,

@@ -22,6 +22,7 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
   onSearch,
   onClearSearch,
   searchLoading,
+  isShowingSearchResults,
 
   // Filter props
   onlyWithRoles,
@@ -70,6 +71,7 @@ const UserTableEnhanced: React.FC<UserTableEnhancedProps> = ({
       onSearch={onSearch}
       onClearSearch={onClearSearch}
       searchLoading={searchLoading}
+      isShowingSearchResults={isShowingSearchResults}
       // Filter props
       onlyWithRoles={onlyWithRoles}
       onOnlyWithRolesChange={onOnlyWithRolesChange}

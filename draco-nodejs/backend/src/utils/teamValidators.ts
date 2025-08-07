@@ -1,12 +1,14 @@
 import { Request } from 'express';
 import { ValidationError } from './customErrors';
+import { ContactInputData } from '../interfaces/contactInterfaces';
 
 export interface TeamUpdateRequest {
   name: string;
 }
 
 export interface AddPlayerToRosterRequest {
-  playerId: string;
+  contactId?: string;
+  contactData?: ContactInputData;
   playerNumber?: number;
   submittedWaiver?: boolean;
   submittedDriversLicense?: boolean;
@@ -34,11 +36,23 @@ export class TeamRequestValidator {
   }
 
   static validateAddPlayerRequest(req: Request): AddPlayerToRosterRequest {
-    const { playerId, playerNumber, submittedWaiver, submittedDriversLicense, firstYear } =
-      req.body;
+    const {
+      contactId,
+      contactData,
+      playerNumber,
+      submittedWaiver,
+      submittedDriversLicense,
+      firstYear,
+    } = req.body;
 
-    if (!playerId) {
-      throw new ValidationError('PlayerId is required');
+    // Validate that either contactId or contactData is provided
+    if (!contactId && !contactData) {
+      throw new ValidationError('Either contactId or contactData is required');
+    }
+
+    // If contactData is provided, validate required fields
+    if (contactData && (!contactData.firstname || !contactData.lastname)) {
+      throw new ValidationError('First name and last name are required for contact creation');
     }
 
     // Validate player number
@@ -47,7 +61,8 @@ export class TeamRequestValidator {
     }
 
     return {
-      playerId,
+      contactId,
+      contactData,
       playerNumber,
       submittedWaiver,
       submittedDriversLicense,

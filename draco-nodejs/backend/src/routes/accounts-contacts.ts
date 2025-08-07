@@ -21,6 +21,7 @@ import {
   validatePhotoUpload,
   sanitizeContactData,
 } from '../middleware/validation/contactValidation';
+import { DateUtils } from '../utils/dateUtils';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -216,11 +217,20 @@ router.get(
     // Parse season ID if provided
     const parsedSeasonId = seasonId && typeof seasonId === 'string' ? BigInt(seasonId) : null;
 
+    // Parse pagination parameters for search results
+    const paginationParams = PaginationHelper.parseParams(req.query);
+
     // Use ContactService to get contacts with roles
     const result = await ContactService.getContactsWithRoles(accountId, parsedSeasonId, {
       includeRoles,
       includeContactDetails,
       searchQuery: q,
+      pagination: {
+        page: paginationParams.page,
+        limit: paginationParams.limit,
+        sortBy: paginationParams.sortBy,
+        sortOrder: paginationParams.sortOrder,
+      },
     });
 
     // Transform contacts for search response format
@@ -243,6 +253,7 @@ router.get(
       data: {
         contacts: searchContacts,
       },
+      pagination: result.pagination,
     });
   }),
 );
@@ -317,7 +328,8 @@ router.put(
     if (city !== undefined) updateData.city = city || null;
     if (state !== undefined) updateData.state = state || null;
     if (zip !== undefined) updateData.zip = zip || null;
-    if (dateofbirth) updateData.dateofbirth = new Date(dateofbirth as string);
+    if (dateofbirth !== undefined)
+      updateData.dateofbirth = DateUtils.parseDateOfBirthForDatabase(dateofbirth as string | null);
 
     console.log('Backend: Update data being applied:', updateData);
     console.log('Backend: Has photo file:', !!req.file);
@@ -357,9 +369,7 @@ router.put(
           city: updatedContact.city || undefined,
           state: updatedContact.state || undefined,
           zip: updatedContact.zip || undefined,
-          dateofbirth: updatedContact.dateofbirth
-            ? updatedContact.dateofbirth.toISOString()
-            : undefined,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(updatedContact.dateofbirth),
           photoUrl,
         },
       },
@@ -443,7 +453,7 @@ router.post(
         state: state || null,
         zip: zip || null,
         creatoraccountid: accountId,
-        dateofbirth: dateofbirth ? new Date(dateofbirth) : new Date('1900-01-01'),
+        dateofbirth: DateUtils.parseDateOfBirthForDatabase(dateofbirth),
       },
     });
 
@@ -473,7 +483,7 @@ router.post(
           city: newContact.city,
           state: newContact.state,
           zip: newContact.zip,
-          dateofbirth: newContact.dateofbirth ? newContact.dateofbirth.toISOString() : null,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(newContact.dateofbirth),
           photoUrl,
         },
       },

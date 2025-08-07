@@ -30,6 +30,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
   onSearchChange,
   onSearchSubmit,
   onSearchClear,
+  isShowingSearchResults = false,
   onAddUser,
   customActions,
   onBulkAction,
@@ -160,7 +161,7 @@ const UserTableToolbar: React.FC<UserTableToolbarProps> = ({
                       <SearchIcon />
                     </InputAdornment>
                   ),
-                  endAdornment: searchTerm && (
+                  endAdornment: (searchTerm || isShowingSearchResults) && (
                     <InputAdornment position="end">
                       <IconButton
                         size="small"
