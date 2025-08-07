@@ -22,20 +22,37 @@ const validateNameField = (fieldName: string, isRequired: boolean = false) => {
   if (isRequired) {
     validation = validation
       .notEmpty()
-      .withMessage(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`);
+      .withMessage(`${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`)
+      .isLength({ min: 1, max: 100 })
+      .withMessage(
+        `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
+      )
+      .matches(/^[a-zA-Z0-9\s\-'*]+$/)
+      .withMessage(
+        `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+      );
   } else {
-    validation = validation.optional();
+    validation = validation.optional().custom((value: string) => {
+      // Allow empty strings for optional fields
+      if (!value || value === '') {
+        return true;
+      }
+      // Only validate length and format if value is provided
+      if (value.length < 1 || value.length > 100) {
+        throw new Error(
+          `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
+        );
+      }
+      if (!/^[a-zA-Z0-9\s\-'*]+$/.test(value)) {
+        throw new Error(
+          `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
+        );
+      }
+      return true;
+    });
   }
 
-  return validation
-    .isLength({ min: 1, max: 100 })
-    .withMessage(
-      `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} must be between 1 and 100 characters`,
-    )
-    .matches(/^[a-zA-Z0-9\s\-'*]+$/)
-    .withMessage(
-      `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} can only contain letters, numbers, spaces, hyphens, apostrophes, and asterisks`,
-    );
+  return validation;
 };
 
 // Define shared optional field validations
@@ -123,10 +140,19 @@ const sharedOptionalValidations = [
   body('dateofbirth')
     .optional()
     .trim()
-    .isDate()
-    .withMessage('Invalid date format')
     .custom((value: string) => {
+      // Allow empty strings - they will be converted to 1900-01-01 sentinel date by DateUtils
+      if (!value || value === '') {
+        return true;
+      }
+
+      // Validate date format if a value is provided
       const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        throw new Error('Invalid date format');
+      }
+
+      // Validate date range if a valid date is provided
       const now = new Date();
       const minDate = new Date(now.getFullYear() - 120, now.getMonth(), now.getDate());
       const maxDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
