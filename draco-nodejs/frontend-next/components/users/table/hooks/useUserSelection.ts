@@ -10,7 +10,7 @@ import { getFullName } from '../../../../utils/contactUtils';
 
 // Utility functions for user enhancement and selection
 export const enhanceUser = (user: User): EnhancedUser => {
-  const displayName = getFullName(user.firstName, user.lastName, user.contactDetails?.middlename);
+  const displayName = getFullName(user.firstName, user.lastName, user.middleName);
 
   // Build full address from contact details
   const contact = user.contactDetails;
