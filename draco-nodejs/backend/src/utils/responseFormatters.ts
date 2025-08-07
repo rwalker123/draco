@@ -1,6 +1,6 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService';
 import { RosterMember } from '../services/rosterService';
-import { ContactEntry } from '../interfaces/contactInterfaces';
+import { ContactEntry, NamedContact } from '../interfaces/contactInterfaces';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService';
 
 export interface ApiResponse<T> {
@@ -30,12 +30,9 @@ export interface FormattedRosterContact extends FormattedRosterMember {
 export interface FormattedRosterPlayer extends FormattedRosterMember {
   player: {
     id: string;
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    middleName: string;
     submittedDriversLicense: boolean | null;
     firstYear: number | null;
+    contact: NamedContact;
   };
 }
 
@@ -228,12 +225,14 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
+            contact: {
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
+            },
             submittedDriversLicense: rosterMember.player.submittedDriversLicense,
             firstYear: rosterMember.player.firstYear,
-            firstName: rosterMember.player.contact.firstName,
-            lastName: rosterMember.player.contact.lastName,
-            middleName: rosterMember.player.contact.middleName ?? '',
           },
         },
       },
@@ -259,10 +258,12 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
-            firstName: rosterMember.player.contact.firstName,
-            lastName: rosterMember.player.contact.lastName,
-            middleName: rosterMember.player.contact.middleName ?? '',
+            contact: {
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
+            },
             submittedDriversLicense: rosterMember.player.submittedDriversLicense,
             firstYear: rosterMember.player.firstYear,
           },
@@ -290,10 +291,12 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
-            firstName: rosterMember.player.contact.firstName,
-            lastName: rosterMember.player.contact.lastName,
-            middleName: rosterMember.player.contact.middleName ?? '',
+            contact: {
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
+            },
             submittedDriversLicense: rosterMember.player.submittedDriversLicense,
             firstYear: rosterMember.player.firstYear,
           },
