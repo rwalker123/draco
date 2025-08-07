@@ -61,7 +61,7 @@ const UserCard: React.FC<UserCardProps> = ({
             onPhotoDelete={onDeleteContactPhoto}
           />
           <Typography variant="subtitle2" fontWeight="bold">
-            {getFormattedName(user.firstName, user.lastName, user.contactDetails?.middlename)}
+            {getFormattedName(user.firstName, user.lastName, user.middleName)}
           </Typography>
         </Stack>
       </TableCell>

@@ -332,8 +332,8 @@ export class UserManagementService {
     if (contactData.lastName && contactData.lastName.trim()) {
       backendData.lastname = contactData.lastName.trim();
     }
-    if (contactData.middlename !== undefined) {
-      backendData.middlename = contactData.middlename;
+    if (contactData.middleName !== undefined) {
+      backendData.middleName = contactData.middleName;
     }
     if (contactData.email && contactData.email.trim()) {
       backendData.email = contactData.email.trim();
@@ -468,8 +468,8 @@ export class UserManagementService {
     if (contactData.lastName !== undefined) {
       backendData.lastname = contactData.lastName;
     }
-    if (contactData.middlename !== undefined) {
-      backendData.middlename = contactData.middlename;
+    if (contactData.middleName !== undefined) {
+      backendData.middleName = contactData.middleName;
     }
     if (contactData.email !== undefined) {
       backendData.email = contactData.email;

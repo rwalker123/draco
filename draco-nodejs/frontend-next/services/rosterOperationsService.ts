@@ -16,7 +16,7 @@ export interface RosterPlayer {
   contactId: string;
   submittedDriversLicense: boolean;
   firstYear: number;
-  contact: Contact;
+  contact: Contact; // ✅ Maps to backend RosterPlayer with ContactEntry
 }
 
 export interface RosterMember {
@@ -25,7 +25,7 @@ export interface RosterMember {
   inactive: boolean;
   submittedWaiver: boolean;
   dateAdded: string;
-  player: RosterPlayer;
+  player: RosterPlayer; // ✅ Contains RosterPlayer with full Contact
 }
 
 export interface TeamRosterData {
@@ -50,11 +50,11 @@ interface ErrorDetail {
   location?: string;
 }
 
-// Backend contact input format
+// Backend contact input format (updated to use middleName)
 interface ContactInputData {
   firstname?: string;
   lastname?: string;
-  middlename?: string;
+  middleName?: string; // ✅ Updated to use middleName instead of middlename
   email?: string;
   phone1?: string;
   phone2?: string;
@@ -235,10 +235,6 @@ export class RosterOperationsService {
                       : undefined,
                     contactDetails: {
                       ...member.player.contact.contactDetails,
-                      middlename:
-                        updatedContactData.contactDetails?.middlename ??
-                        member.player.contact.contactDetails?.middlename ??
-                        null,
                       phone1:
                         updatedContactData.contactDetails?.phone1 ??
                         member.player.contact.contactDetails?.phone1 ??
@@ -593,8 +589,8 @@ export class RosterOperationsService {
 
       if (contactData.firstName) contactInputData.firstname = contactData.firstName;
       if (contactData.lastName) contactInputData.lastname = contactData.lastName;
-      if (contactData.middlename !== undefined)
-        contactInputData.middlename = contactData.middlename;
+      if (contactData.middleName !== undefined)
+        contactInputData.middleName = contactData.middleName;
       if (contactData.email !== undefined) contactInputData.email = contactData.email;
       if (contactData.phone1 !== undefined) contactInputData.phone1 = contactData.phone1;
       if (contactData.phone2 !== undefined) contactInputData.phone2 = contactData.phone2;
@@ -650,6 +646,8 @@ export class RosterOperationsService {
           rosterMember.player.contact.firstName || rosterMember.player.contact.firstname || '',
         lastName:
           rosterMember.player.contact.lastName || rosterMember.player.contact.lastname || '',
+        middleName:
+          rosterMember.player.contact.middleName || rosterMember.player.contact.middlename || null,
         email: rosterMember.player.contact.email || '',
         userId: rosterMember.player.contact.userId || '',
         photoUrl: rosterMember.player.contact.photoUrl,
@@ -662,7 +660,7 @@ export class RosterOperationsService {
           state: null,
           zip: null,
           dateofbirth: null,
-          middlename: null,
+          // ❌ Removed: middlename: null (moved to top-level middleName)
         },
         contactroles: rosterMember.player.contact.contactroles || [],
       };

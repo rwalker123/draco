@@ -4,9 +4,7 @@ import { PaginationHelper } from '../utils/pagination';
 import {
   ContactQueryOptions,
   ContactResponse,
-  ContactWithRoleRow,
-  ContactWithRoleAndDetailsRow,
-  ContactDetails,
+  ContactWithRoleAndDetailsRaw,
   ContactEntry,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
@@ -156,7 +154,7 @@ export class ContactService {
     `;
 
     // Execute the raw query
-    const rows = await prisma.$queryRaw<ContactWithRoleRow[]>(query);
+    const rows = await prisma.$queryRaw<ContactWithRoleAndDetailsRaw[]>(query);
 
     // Single efficient query to find account owner's contact ID
     const ownerContactResult = await prisma.$queryRaw<{ id: bigint }[]>`
@@ -269,13 +267,15 @@ export class ContactService {
     const contacts = await prisma.contacts.findMany(queryOptions);
 
     // Transform response (simple contacts without roles)
-    const transformedContacts = contacts.map((contact) => ({
+    const transformedContacts: ContactEntry[] = contacts.map((contact) => ({
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
+      middleName: contact.middlename,
       email: contact.email,
       userId: contact.userid,
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactroles: [],
       ...(includeContactDetails && {
         contactDetails: {
           phone1: contact.phone1,
@@ -286,7 +286,6 @@ export class ContactService {
           state: contact.state,
           zip: contact.zip,
           dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-          middlename: contact.middlename,
         },
       }),
     }));
@@ -317,31 +316,14 @@ export class ContactService {
    * Transform raw SQL rows into structured contact response
    */
   private static transformContactRows(
-    rows: ContactWithRoleRow[],
+    rows: ContactWithRoleAndDetailsRaw[],
     accountId: bigint,
     accountOwnerContactId: string | null,
     pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
     includeContactDetails?: boolean,
   ): ContactResponse {
     // Group rows by contact ID
-    const contactMap = new Map<
-      string,
-      {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string | null;
-        userId: string | null;
-        contactDetails?: ContactDetails;
-        contactroles: Array<{
-          id: string;
-          roleId: string;
-          roleName: string;
-          roleData: string;
-          contextName?: string;
-        }>;
-      }
-    >();
+    const contactMap = new Map<string, ContactEntry>();
 
     // Process each row
     for (const row of rows) {
@@ -353,6 +335,7 @@ export class ContactService {
           id: contactId,
           firstName: row.firstname,
           lastName: row.lastname,
+          middleName: row.middlename,
           email: row.email,
           userId: row.userid,
           photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
@@ -361,7 +344,7 @@ export class ContactService {
 
         // Add contact details if available and requested
         if (includeContactDetails && 'phone1' in row) {
-          const contactRow = row as ContactWithRoleAndDetailsRow;
+          const contactRow = row as ContactWithRoleAndDetailsRaw;
           contactEntry.contactDetails = {
             phone1: contactRow.phone1,
             phone2: contactRow.phone2,
@@ -371,7 +354,6 @@ export class ContactService {
             state: contactRow.state,
             zip: contactRow.zip,
             dateofbirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
-            middlename: contactRow.middlename,
           };
         }
 

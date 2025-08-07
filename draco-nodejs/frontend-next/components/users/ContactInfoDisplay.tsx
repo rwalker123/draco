@@ -4,13 +4,14 @@ import React from 'react';
 import { Stack, Typography, Card, CardContent, Divider, Chip, Box } from '@mui/material';
 import { Person as PersonIcon, Email as EmailIcon, Cake as CakeIcon } from '@mui/icons-material';
 import { ContactDetails } from '../../types/users';
-import { formatDateOfBirth, getFullName, hasContactDetails } from '../../utils/contactUtils';
+import { formatDateOfBirth, getFullName } from '../../utils/contactUtils';
 import PhoneDisplay from './PhoneDisplay';
 import AddressDisplay from './AddressDisplay';
 
 interface ContactInfoDisplayProps {
   firstName: string;
   lastName: string;
+  middleName?: string | null;
   email: string | null;
   contactDetails?: ContactDetails;
   compact?: boolean;
@@ -24,12 +25,13 @@ interface ContactInfoDisplayProps {
 const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
   firstName,
   lastName,
+  middleName,
   email,
   contactDetails,
   compact = false,
   showHeader = true,
 }) => {
-  const hasDetails = hasContactDetails(contactDetails);
+  const hasDetails = contactDetails && Object.values(contactDetails).some((value) => value);
 
   if (compact) {
     return (
@@ -38,7 +40,7 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
         <Stack direction="row" alignItems="center" spacing={1}>
           <PersonIcon color="action" fontSize="small" />
           <Typography variant="body2" fontWeight="bold">
-            {getFullName(firstName, lastName, contactDetails?.middlename)}
+            {getFullName(firstName, lastName, middleName)}
           </Typography>
         </Stack>
 
@@ -117,7 +119,7 @@ const ContactInfoDisplay: React.FC<ContactInfoDisplayProps> = ({
             <Stack direction="row" alignItems="center" spacing={1}>
               <PersonIcon color="action" />
               <Typography variant="subtitle1" fontWeight="bold">
-                {getFullName(firstName, lastName, contactDetails?.middlename)}
+                {getFullName(firstName, lastName, middleName)}
               </Typography>
             </Stack>
 

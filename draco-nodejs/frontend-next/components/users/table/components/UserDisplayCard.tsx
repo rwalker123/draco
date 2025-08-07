@@ -524,37 +524,36 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
         )}
 
         {/* Additional Contact Details */}
-        {config.showDetails &&
-          (user.contactDetails?.dateofbirth || user.contactDetails?.middlename) && (
-            <>
-              <Divider sx={{ my: 1 }} />
-              <Box sx={{ minWidth: 0 }}>
-                {user.contactDetails?.dateofbirth && (
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1}
-                    mb={0.5}
-                    sx={{ minWidth: 0 }}
+        {config.showDetails && (user.contactDetails?.dateofbirth || user.middleName) && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <Box sx={{ minWidth: 0 }}>
+              {user.contactDetails?.dateofbirth && (
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                  mb={0.5}
+                  sx={{ minWidth: 0 }}
+                >
+                  <CalendarIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      flex: 1,
+                    }}
                   >
-                    <CalendarIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        minWidth: 0,
-                        flex: 1,
-                      }}
-                    >
-                      Born: {new Date(user.contactDetails.dateofbirth).toLocaleDateString()}
-                    </Typography>
-                  </Stack>
-                )}
-              </Box>
-            </>
-          )}
+                    Born: {new Date(user.contactDetails.dateofbirth).toLocaleDateString()}
+                  </Typography>
+                </Stack>
+              )}
+            </Box>
+          </>
+        )}
       </CardContent>
     </Card>
   );

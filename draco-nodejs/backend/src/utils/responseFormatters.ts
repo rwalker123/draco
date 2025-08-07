@@ -1,6 +1,6 @@
 import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService';
 import { RosterMember } from '../services/rosterService';
-import { ContactEntry } from '../interfaces/contactInterfaces';
+import { ContactEntry, NamedContact } from '../interfaces/contactInterfaces';
 import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService';
 
 export interface ApiResponse<T> {
@@ -15,27 +15,24 @@ export interface FormattedRosterMember {
   inactive: boolean;
   submittedWaiver: boolean;
   dateAdded: string | null;
+}
+
+export interface FormattedRosterContact extends FormattedRosterMember {
   player: {
     id: string;
     contactId: string;
     submittedDriversLicense: boolean | null;
     firstYear: number | null;
-    contact: {
-      id: string;
-      firstname: string;
-      lastname: string;
-      middlename: string;
-      email: string | null;
-      phone1: string;
-      phone2: string;
-      phone3: string;
-      photoUrl?: string;
-      streetaddress: string | null;
-      city: string | null;
-      state: string | null;
-      zip: string | null;
-      dateofbirth: string | null;
-    };
+    contact: ContactEntry;
+  };
+}
+
+export interface FormattedRosterPlayer extends FormattedRosterMember {
+  player: {
+    id: string;
+    submittedDriversLicense: boolean | null;
+    firstYear: number | null;
+    contact: NamedContact;
   };
 }
 
@@ -115,7 +112,7 @@ export class RosterResponseFormatter {
     rosterMembers: RosterMember[],
   ): ApiResponse<{
     teamSeason: { id: string; name: string };
-    rosterMembers: FormattedRosterMember[];
+    rosterMembers: FormattedRosterContact[];
   }> {
     return {
       success: true,
@@ -137,9 +134,11 @@ export class RosterResponseFormatter {
             firstYear: member.player.firstYear,
             contact: {
               id: member.player.contact.id,
-              firstname: member.player.contact.firstName,
-              lastname: member.player.contact.lastName,
-              middlename: member.player.contact.contactDetails?.middlename ?? '',
+              userId: member.player.contact.userId,
+              contactroles: member.player.contact.contactroles,
+              firstName: member.player.contact.firstName,
+              lastName: member.player.contact.lastName,
+              middleName: member.player.contact.middleName ?? '',
               email: member.player.contact.email,
               phone1: member.player.contact.contactDetails?.phone1 ?? '',
               phone2: member.player.contact.contactDetails?.phone2 ?? '',
@@ -158,36 +157,12 @@ export class RosterResponseFormatter {
   }
 
   static formatAvailablePlayersResponse(availablePlayers: ContactEntry[]): ApiResponse<{
-    availablePlayers: Array<{
-      id: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-      contactDetails?: {
-        phone1: string | null;
-        phone2: string | null;
-        phone3: string | null;
-        streetaddress: string | null;
-        city: string | null;
-        state: string | null;
-        zip: string | null;
-        dateofbirth: string | null;
-        middlename: string | null;
-      };
-    }>;
+    availablePlayers: Array<ContactEntry>;
   }> {
     return {
       success: true,
       data: {
-        availablePlayers: availablePlayers.map((contact) => ({
-          id: contact.id,
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.email,
-          photoUrl: contact.photoUrl,
-          contactDetails: contact.contactDetails,
-        })),
+        availablePlayers: availablePlayers,
       },
     };
   }
@@ -197,45 +172,7 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: {
-      id: string;
-      playerNumber: number;
-      inactive: boolean;
-      submittedWaiver: boolean;
-      dateAdded: string | null;
-      player: {
-        id: string;
-        contactId: string;
-        submittedDriversLicense: boolean | null;
-        firstYear: number | null;
-        contact: {
-          id: string;
-          firstName: string;
-          lastName: string;
-          email: string | null;
-          userId: string | null;
-          photoUrl?: string;
-          contactDetails?: {
-            phone1: string | null;
-            phone2: string | null;
-            phone3: string | null;
-            streetaddress: string | null;
-            city: string | null;
-            state: string | null;
-            zip: string | null;
-            dateofbirth: string | null;
-            middlename: string | null;
-          };
-          contactroles: Array<{
-            id: string;
-            roleId: string;
-            roleName: string;
-            roleData: string;
-            contextName?: string;
-          }>;
-        };
-      };
-    };
+    rosterMember: FormattedRosterContact;
   }> {
     return {
       success: true,
@@ -256,6 +193,7 @@ export class RosterResponseFormatter {
               id: rosterMember.player.contact.id,
               firstName: rosterMember.player.contact.firstName,
               lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
               email: rosterMember.player.contact.email,
               userId: rosterMember.player.contact.userId,
               photoUrl: rosterMember.player.contact.photoUrl,
@@ -273,20 +211,7 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: {
-      id: string;
-      playerNumber: number;
-      inactive: boolean;
-      submittedWaiver: boolean;
-      dateAdded: string | null;
-      player: {
-        id: string;
-        contactId: string;
-        submittedDriversLicense: boolean | null;
-        firstYear: number | null;
-        contact: { firstname: string; lastname: string };
-      };
-    };
+    rosterMember: FormattedRosterPlayer;
   }> {
     return {
       success: true,
@@ -300,13 +225,14 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
+            contact: {
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
+            },
             submittedDriversLicense: rosterMember.player.submittedDriversLicense,
             firstYear: rosterMember.player.firstYear,
-            contact: {
-              firstname: rosterMember.player.contact.firstName,
-              lastname: rosterMember.player.contact.lastName,
-            },
           },
         },
       },
@@ -318,14 +244,7 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: {
-      id: string;
-      playerNumber: number;
-      inactive: boolean;
-      submittedWaiver: boolean;
-      dateAdded: string | null;
-      player: { id: string; contactId: string; contact: { firstname: string; lastname: string } };
-    };
+    rosterMember: FormattedRosterPlayer;
   }> {
     return {
       success: true,
@@ -339,11 +258,14 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
             contact: {
-              firstname: rosterMember.player.contact.firstName,
-              lastname: rosterMember.player.contact.lastName,
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
             },
+            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
+            firstYear: rosterMember.player.firstYear,
           },
         },
       },
@@ -355,14 +277,7 @@ export class RosterResponseFormatter {
     playerName: string,
   ): ApiResponse<{
     message: string;
-    rosterMember: {
-      id: string;
-      playerNumber: number;
-      inactive: boolean;
-      submittedWaiver: boolean;
-      dateAdded: string | null;
-      player: { id: string; contactId: string; contact: { firstname: string; lastname: string } };
-    };
+    rosterMember: FormattedRosterPlayer;
   }> {
     return {
       success: true,
@@ -376,11 +291,14 @@ export class RosterResponseFormatter {
           dateAdded: rosterMember.dateAdded ? rosterMember.dateAdded.toISOString() : null,
           player: {
             id: rosterMember.player.id.toString(),
-            contactId: rosterMember.player.contactId.toString(),
             contact: {
-              firstname: rosterMember.player.contact.firstName,
-              lastname: rosterMember.player.contact.lastName,
+              id: rosterMember.player.contactId.toString(),
+              firstName: rosterMember.player.contact.firstName,
+              lastName: rosterMember.player.contact.lastName,
+              middleName: rosterMember.player.contact.middleName ?? '',
             },
+            submittedDriversLicense: rosterMember.player.submittedDriversLicense,
+            firstYear: rosterMember.player.firstYear,
           },
         },
       },
