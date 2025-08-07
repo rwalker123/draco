@@ -5,8 +5,6 @@ import {
   ContactQueryOptions,
   ContactResponse,
   ContactWithRoleRow,
-  ContactWithRoleAndDetailsRow,
-  ContactDetails,
   ContactEntry,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
@@ -269,13 +267,15 @@ export class ContactService {
     const contacts = await prisma.contacts.findMany(queryOptions);
 
     // Transform response (simple contacts without roles)
-    const transformedContacts = contacts.map((contact) => ({
+    const transformedContacts: ContactEntry[] = contacts.map((contact) => ({
       id: contact.id.toString(),
       firstName: contact.firstname,
       lastName: contact.lastname,
+      middleName: contact.middlename,
       email: contact.email,
       userId: contact.userid,
       photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      contactroles: [],
       ...(includeContactDetails && {
         contactDetails: {
           phone1: contact.phone1,
@@ -286,7 +286,6 @@ export class ContactService {
           state: contact.state,
           zip: contact.zip,
           dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
-          middlename: contact.middlename,
         },
       }),
     }));
@@ -324,24 +323,7 @@ export class ContactService {
     includeContactDetails?: boolean,
   ): ContactResponse {
     // Group rows by contact ID
-    const contactMap = new Map<
-      string,
-      {
-        id: string;
-        firstName: string;
-        lastName: string;
-        email: string | null;
-        userId: string | null;
-        contactDetails?: ContactDetails;
-        contactroles: Array<{
-          id: string;
-          roleId: string;
-          roleName: string;
-          roleData: string;
-          contextName?: string;
-        }>;
-      }
-    >();
+    const contactMap = new Map<string, ContactEntry>();
 
     // Process each row
     for (const row of rows) {
@@ -351,27 +333,27 @@ export class ContactService {
       if (!contactMap.has(contactId)) {
         const contactEntry: ContactEntry = {
           id: contactId,
-          firstName: row.firstname,
-          lastName: row.lastname,
+          firstName: row.firstName,
+          lastName: row.lastName,
+          middleName: row.middleName,
           email: row.email,
-          userId: row.userid,
+          userId: row.userId,
           photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
           contactroles: [],
         };
 
         // Add contact details if available and requested
         if (includeContactDetails && 'phone1' in row) {
-          const contactRow = row as ContactWithRoleAndDetailsRow;
+          const contactRow = row as ContactWithRoleRow;
           contactEntry.contactDetails = {
-            phone1: contactRow.phone1,
-            phone2: contactRow.phone2,
-            phone3: contactRow.phone3,
-            streetaddress: contactRow.streetaddress,
-            city: contactRow.city,
-            state: contactRow.state,
-            zip: contactRow.zip,
-            dateofbirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
-            middlename: contactRow.middlename,
+            phone1: contactRow.contactDetails?.phone1 || null,
+            phone2: contactRow.contactDetails?.phone2 || null,
+            phone3: contactRow.contactDetails?.phone3 || null,
+            streetaddress: contactRow.contactDetails?.streetaddress || null,
+            city: contactRow.contactDetails?.city || null,
+            state: contactRow.contactDetails?.state || null,
+            zip: contactRow.contactDetails?.zip || null,
+            dateofbirth: contactRow.contactDetails ? contactRow.contactDetails.dateofbirth : null,
           };
         }
 

@@ -238,6 +238,7 @@ router.get(
       id: contact.id,
       firstName: contact.firstName,
       lastName: contact.lastName,
+      middleName: contact.middleName,
       email: contact.email,
       userId: contact.userId,
       displayName: `${contact.firstName} ${contact.lastName}`,
