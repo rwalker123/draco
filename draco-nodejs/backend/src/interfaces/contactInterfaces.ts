@@ -23,12 +23,15 @@ export interface ContactDetails {
   dateofbirth: string | null;
 }
 
-// Canonical base Contact interface - single source of truth for Contact structure
-export interface BaseContact {
+export interface NamedContact {
   id: string;
   firstName: string;
   lastName: string;
   middleName: string | null;
+}
+
+// Canonical base Contact interface - single source of truth for Contact structure
+export interface BaseContact extends NamedContact {
   email: string | null;
   userId: string | null;
   photoUrl?: string; // URL to contact photo
