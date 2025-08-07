@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import {
-  RosterOperationsService,
-  TeamRosterData,
-  ManagerType,
-  RosterFormData,
-} from '../services/rosterOperationsService';
+import { RosterOperationsService } from '../services/rosterOperationsService';
+import { TeamRosterData, ManagerType, RosterFormData } from '../types/roster';
 import { ContactTransformationService } from '../services/contactTransformationService';
 import { ContactUpdateData, Contact } from '../types/users';
 import axios from 'axios';
@@ -375,7 +371,7 @@ export const useRosterDataManager = (
     [accountId, state.rosterData, updateState],
   );
 
-  // Sign player with optimistic updates
+  // Sign player with server response updates
   const signPlayer = useCallback(
     async (contactId: string, rosterData: RosterFormData) => {
       if (!serviceRef.current || !state.rosterData) return;
