@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -40,59 +40,17 @@ import {
   SupervisorAccount as ManagerIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../../../../../context/AuthContext';
-import axios from 'axios';
-import { isEmail } from 'validator';
 import { format, parseISO } from 'date-fns';
 import EditContactDialog from '../../../../../../../../components/users/EditContactDialog';
 import UserAvatar from '../../../../../../../../components/users/UserAvatar';
 import { ContactUpdateData, Contact } from '../../../../../../../../types/users';
-import { UserManagementService } from '../../../../../../../../services/userManagementService';
-import { ContactTransformationService } from '../../../../../../../../services/contactTransformationService';
-
-interface RosterPlayer {
-  id: string;
-  contactId: string;
-  submittedDriversLicense: boolean;
-  firstYear: number;
-  contact: Contact;
-}
-
-interface RosterMember {
-  id: string;
-  playerNumber: number;
-  inactive: boolean;
-  submittedWaiver: boolean;
-  dateAdded: string;
-  player: RosterPlayer;
-}
-
-interface TeamSeason {
-  id: string;
-  name: string;
-}
-
-interface Season {
-  id: string;
-  name: string;
-}
-
-interface League {
-  id: string;
-  name: string;
-}
-
-interface TeamRosterData {
-  teamSeason: TeamSeason;
-  rosterMembers: RosterMember[];
-}
-
-interface ManagerType {
-  id: string;
-  teamseasonid: string;
-  contactid: string;
-  contacts: Contact;
-}
+import { useRosterDataManager } from '../../../../../../../../hooks/useRosterDataManager';
+import { useScrollPosition } from '../../../../../../../../hooks/useScrollPosition';
+import {
+  RosterFormData,
+  RosterPlayer,
+  RosterMember,
+} from '../../../../../../../../services/rosterOperationsService';
 
 interface TeamRosterManagementProps {
   accountId: string;
@@ -105,25 +63,54 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   teamSeasonId,
 }) => {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [rosterData, setRosterData] = useState<TeamRosterData | null>(null);
-  const [availablePlayers, setAvailablePlayers] = useState<RosterPlayer[]>([]);
-  const [season, setSeason] = useState<Season | null>(null);
-  const [league, setLeague] = useState<League | null>(null);
-  const [managers, setManagers] = useState<ManagerType[]>([]);
+
+  // Use the new data manager hook
+  const {
+    rosterData,
+    availablePlayers,
+    season,
+    league,
+    managers,
+    loading,
+    error,
+    successMessage,
+    fetchRosterData,
+    fetchAvailablePlayers,
+    fetchManagers,
+    fetchSeasonData,
+    fetchLeagueData,
+    updateRosterMember,
+    updateContact,
+    signPlayer,
+    releasePlayer,
+    activatePlayer,
+    deletePlayer,
+    addManager,
+    removeManager,
+    createContact,
+    deleteContactPhoto,
+    clearError,
+    clearSuccessMessage,
+    setError,
+  } = useRosterDataManager({
+    accountId,
+    seasonId,
+    teamSeasonId,
+  });
+
+  // Use scroll position hook
+  const { saveScrollPosition, restoreScrollPosition } = useScrollPosition();
 
   // Dialog states
   const [signPlayerDialogOpen, setSignPlayerDialogOpen] = useState(false);
-  const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
+  const [selectedPlayer, setSelectedPlayer] = useState<Contact | RosterPlayer | null>(null);
   const [isSigningNewPlayer, setIsSigningNewPlayer] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [playerToDelete, setPlayerToDelete] = useState<RosterMember | null>(null);
 
   // Unified roster information dialog states
-  const [rosterFormData, setRosterFormData] = useState({
+  const [rosterFormData, setRosterFormData] = useState<RosterFormData>({
     playerNumber: 0,
     submittedWaiver: false,
     submittedDriversLicense: false,
@@ -150,197 +137,20 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [emailError, setEmailError] = useState('');
-  const [editFormData, setEditFormData] = useState({
-    firstname: '',
-    lastname: '',
-    middlename: '',
-    email: '',
-    phone1: '',
-    phone2: '',
-    phone3: '',
-    streetaddress: '',
-    city: '',
-    state: '',
-    zip: '',
-    dateofbirth: '',
-  });
 
-  const { token } = useAuth();
+  // Initialize data on mount
+  useEffect(() => {
+    fetchRosterData();
+    fetchSeasonData();
+    fetchLeagueData();
+    fetchManagers();
+  }, [fetchRosterData, fetchSeasonData, fetchLeagueData, fetchManagers]);
 
-  // Initialize UserManagementService for consistent contact updates
-  const userService = token ? new UserManagementService(token) : null;
-
-  // Fetch roster data
-  const fetchRosterData = useCallback(async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) {
-      return;
+  useEffect(() => {
+    if (signPlayerDialogOpen) {
+      fetchAvailablePlayers();
     }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        const data = response.data.data;
-        // Transform contact data to use camelCase fields
-        const transformedData = {
-          ...data,
-          rosterMembers:
-            data.rosterMembers?.map((member: Record<string, unknown>) => ({
-              ...member,
-              player: {
-                ...(member.player as Record<string, unknown>),
-                contact: ContactTransformationService.transformBackendContact(
-                  (member.player as Record<string, unknown>)?.contact as Record<string, unknown>,
-                ),
-              },
-            })) || [],
-        };
-        setRosterData(transformedData);
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch roster data');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [accountId, seasonId, teamSeasonId, token]);
-
-  // Fetch available players
-  const fetchAvailablePlayers = useCallback(async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
-
-    try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/available-players`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        const players = response.data.data.availablePlayers || [];
-        // Transform contact data to use camelCase fields
-        const transformedPlayers = players.map((player: Record<string, unknown>) => ({
-          ...player,
-          contact: ContactTransformationService.transformBackendContact(
-            player.contact as Record<string, unknown>,
-          ),
-        }));
-        setAvailablePlayers(transformedPlayers);
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch available players');
-      }
-    }
-  }, [accountId, seasonId, teamSeasonId, token]);
-
-  // Fetch season data
-  const fetchSeasonData = useCallback(async () => {
-    if (!accountId || !seasonId || !token) return;
-
-    try {
-      const response = await axios.get(`/api/accounts/${accountId}/seasons/${seasonId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.success) {
-        setSeason(response.data.data.season);
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch season data');
-      }
-    }
-  }, [accountId, seasonId, token]);
-
-  // Fetch league data
-  const fetchLeagueData = useCallback(async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
-
-    try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/league`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        setLeague(response.data.data);
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to fetch league data');
-      }
-    }
-  }, [accountId, seasonId, teamSeasonId, token]);
-
-  // Fetch managers
-  const fetchManagers = useCallback(async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
-    try {
-      const response = await axios.get(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      if (response.data.success) {
-        const managers = response.data.data || [];
-        // Transform contact data to use camelCase fields
-        const transformedManagers = managers.map((manager: Record<string, unknown>) => ({
-          ...manager,
-          contacts: ContactTransformationService.transformBackendContact(
-            manager.contacts as Record<string, unknown>,
-          ),
-        }));
-        setManagers(transformedManagers);
-      }
-    } catch {
-      // Optionally set error
-    }
-  }, [accountId, seasonId, teamSeasonId, token]);
+  }, [signPlayerDialogOpen, fetchAvailablePlayers]);
 
   useEffect(() => {
     fetchRosterData();
@@ -355,7 +165,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     accountId,
     seasonId,
     teamSeasonId,
-    token,
   ]);
 
   useEffect(() => {
@@ -365,232 +174,79 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   }, [signPlayerDialogOpen, fetchAvailablePlayers]);
 
   const handleSignPlayer = async () => {
-    if (!selectedPlayer || !accountId || !seasonId || !teamSeasonId || !token) {
+    if (!selectedPlayer) {
       setError('Missing required data');
       return;
     }
 
     setFormLoading(true);
-    setError(null);
-    try {
-      const response = await axios.post(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-        {
-          playerId: selectedPlayer.id,
-          playerNumber: rosterFormData.playerNumber,
-          submittedWaiver: rosterFormData.submittedWaiver,
-          submittedDriversLicense: rosterFormData.submittedDriversLicense,
-          firstYear: rosterFormData.firstYear,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+    saveScrollPosition();
 
-      if (response.data.success) {
-        setSuccessMessage('Player signed successfully');
-        closeSignPlayerDialog();
-        fetchRosterData();
-        fetchAvailablePlayers();
-      } else {
-        setError(response.data.message || 'Failed to sign player');
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to sign player');
-      }
+    try {
+      await signPlayer(selectedPlayer.id, rosterFormData);
+      closeSignPlayerDialog();
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setFormLoading(false);
+      restoreScrollPosition();
     }
   };
 
   // Handler to release player
   const handleReleasePlayer = async (rosterMember: RosterMember) => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
-
     setFormLoading(true);
-    try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/release`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+    saveScrollPosition();
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        fetchRosterData();
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to release player');
-      }
+    try {
+      await releasePlayer(rosterMember.id);
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setFormLoading(false);
+      restoreScrollPosition();
     }
   };
 
   // Handler to activate player
   const handleActivatePlayer = async (rosterMember: RosterMember) => {
-    if (!accountId || !seasonId || !teamSeasonId || !token) return;
-
     setFormLoading(true);
-    try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/activate`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+    saveScrollPosition();
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        fetchRosterData();
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to activate player');
-      }
+    try {
+      await activatePlayer(rosterMember.id);
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setFormLoading(false);
+      restoreScrollPosition();
     }
   };
 
   // Handler to delete player
   const handleDeletePlayer = async () => {
-    if (!accountId || !seasonId || !teamSeasonId || !token || !playerToDelete) return;
+    if (!playerToDelete) return;
 
     setFormLoading(true);
-    try {
-      const response = await axios.delete(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${playerToDelete.id}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+    saveScrollPosition();
 
-      if (response.data.success) {
-        setSuccessMessage(response.data.data.message);
-        setDeleteDialogOpen(false);
-        setPlayerToDelete(null);
-        fetchRosterData();
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to delete player');
-      }
+    try {
+      await deletePlayer(playerToDelete.id);
+      setDeleteDialogOpen(false);
+      setPlayerToDelete(null);
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setFormLoading(false);
+      restoreScrollPosition();
     }
   };
 
   // Handler to edit player (legacy - replaced by handleEnhancedContactSave)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleEditPlayer = async () => {
-    if (!playerToEdit || !accountId || !token) {
-      setError('Missing required data');
-      return;
-    }
-
-    // Validate required fields
-    if (!editFormData.firstname || !editFormData.lastname) {
-      setError('First name and last name are required');
-      return;
-    }
-
-    // Validate email
-    if (!validateEmail(editFormData.email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    // Validate phone numbers
-    if (!validateAllPhoneNumbers()) {
-      setError('Please fix phone number errors before saving');
-      return;
-    }
-
-    setFormLoading(true);
-    setError(null);
-    try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/contacts/${playerToEdit.player.contactId}`,
-        {
-          firstname: editFormData.firstname,
-          lastname: editFormData.lastname,
-          middlename: editFormData.middlename,
-          email: editFormData.email,
-          phone1: editFormData.phone1,
-          phone2: editFormData.phone2,
-          phone3: editFormData.phone3,
-          streetaddress: editFormData.streetaddress,
-          city: editFormData.city,
-          state: editFormData.state,
-          zip: editFormData.zip,
-          dateofbirth: editFormData.dateofbirth,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        setSuccessMessage('Player information updated successfully');
-        closeEditDialog();
-        fetchRosterData();
-        fetchAvailablePlayers();
-      } else {
-        setError(response.data.message || 'Failed to update player information');
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to update player information');
-      }
-    } finally {
-      setFormLoading(false);
-    }
+    // This function is kept for compatibility but is no longer used
+    // The enhanced contact save handler is used instead
   };
 
   // Open delete dialog
@@ -626,22 +282,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     };
 
     setEditingContact(contact);
-    setEditFormData({
-      firstname: rosterMember.player.contact.firstName || '',
-      lastname: rosterMember.player.contact.lastName || '',
-      middlename: rosterMember.player.contact.contactDetails?.middlename || '',
-      email: rosterMember.player.contact.email || '',
-      phone1: rosterMember.player.contact.contactDetails?.phone1 || '',
-      phone2: rosterMember.player.contact.contactDetails?.phone2 || '',
-      phone3: rosterMember.player.contact.contactDetails?.phone3 || '',
-      streetaddress: rosterMember.player.contact.contactDetails?.streetaddress || '',
-      city: rosterMember.player.contact.contactDetails?.city || '',
-      state: rosterMember.player.contact.contactDetails?.state || '',
-      zip: rosterMember.player.contact.contactDetails?.zip || '',
-      dateofbirth: rosterMember.player.contact.contactDetails?.dateofbirth
-        ? rosterMember.player.contact.contactDetails.dateofbirth.split('T')[0]
-        : '',
-    });
+
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
@@ -651,28 +292,14 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setAutoSignToRoster(true);
     setPlayerToEdit(null);
     setEditingContact(null); // No contact when creating new
-    setEditFormData({
-      firstname: '',
-      lastname: '',
-      middlename: '',
-      email: '',
-      phone1: '',
-      phone2: '',
-      phone3: '',
-      streetaddress: '',
-      city: '',
-      state: '',
-      zip: '',
-      dateofbirth: '',
-    });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEditPlayerDialogOpen(true);
   };
 
   // Clear messages
   const clearMessages = () => {
-    setError(null);
-    setSuccessMessage(null);
+    clearError();
+    clearSuccessMessage();
   };
 
   // Close sign player dialog
@@ -702,20 +329,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     setIsCreatingNewPlayer(false);
     setAutoSignToRoster(false);
     setEditingContact(null);
-    setEditFormData({
-      firstname: '',
-      lastname: '',
-      middlename: '',
-      email: '',
-      phone1: '',
-      phone2: '',
-      phone3: '',
-      streetaddress: '',
-      city: '',
-      state: '',
-      zip: '',
-      dateofbirth: '',
-    });
     setPhoneErrors({ phone1: '', phone2: '', phone3: '' });
     setEmailError('');
     clearMessages();
@@ -748,13 +361,13 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   };
 
   const handleSaveRosterInfo = async () => {
-    if (!selectedPlayer || !accountId || !seasonId || !teamSeasonId || !token) {
+    if (!selectedPlayer || !rosterData) {
       setError('Missing required data');
       return;
     }
 
     // Find the roster member to update
-    const rosterMember = rosterData?.rosterMembers.find(
+    const rosterMember = rosterData.rosterMembers.find(
       (member) => member.player.id === selectedPlayer.id,
     );
     if (!rosterMember) {
@@ -763,165 +376,23 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     }
 
     setFormLoading(true);
-    setError(null);
-    try {
-      const response = await axios.put(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMember.id}/update`,
-        {
-          playerNumber: rosterFormData.playerNumber,
-          submittedWaiver: rosterFormData.submittedWaiver,
-          submittedDriversLicense: rosterFormData.submittedDriversLicense,
-          firstYear: rosterFormData.firstYear,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+    saveScrollPosition();
 
-      if (response.data.success) {
-        setSuccessMessage('Roster information updated successfully');
-        closeSignPlayerDialog();
-        fetchRosterData();
-      } else {
-        setError(response.data.message || 'Failed to update roster information');
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to update roster information');
-      }
+    try {
+      await updateRosterMember(rosterMember.id, rosterFormData);
+      closeSignPlayerDialog();
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setFormLoading(false);
+      restoreScrollPosition();
     }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCreatePlayer = async () => {
-    if (!accountId || !token) {
-      setError('Missing required data');
-      return;
-    }
-
-    // Validate required fields
-    if (!editFormData.firstname || !editFormData.lastname) {
-      setError('First name and last name are required');
-      return;
-    }
-
-    // Validate email
-    if (!validateEmail(editFormData.email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    // Validate phone numbers
-    if (!validateAllPhoneNumbers()) {
-      setError('Please fix phone number errors before saving');
-      return;
-    }
-
-    setFormLoading(true);
-    setError(null);
-    try {
-      // Create the new player
-      const createResponse = await axios.post(
-        `/api/accounts/${accountId}/contacts`,
-        {
-          firstname: editFormData.firstname,
-          lastname: editFormData.lastname,
-          middlename: editFormData.middlename,
-          email: editFormData.email,
-          phone1: editFormData.phone1,
-          phone2: editFormData.phone2,
-          phone3: editFormData.phone3,
-          streetaddress: editFormData.streetaddress,
-          city: editFormData.city,
-          state: editFormData.state,
-          zip: editFormData.zip,
-          dateofbirth: editFormData.dateofbirth,
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (createResponse.data.success) {
-        const newContact = createResponse.data.data.contact;
-
-        // Create the roster entry for the new player
-        const rosterResponse = await axios.post(
-          `/api/accounts/${accountId}/roster`,
-          {
-            contactId: newContact.id,
-            submittedDriversLicense: false,
-            firstYear: 0,
-          },
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-
-        if (rosterResponse.data.success) {
-          const newPlayer = rosterResponse.data.data.player;
-
-          // If auto-sign is enabled, add to team roster
-          if (autoSignToRoster && seasonId && teamSeasonId) {
-            const signResponse = await axios.post(
-              `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-              {
-                playerId: newPlayer.id,
-                playerNumber: 0,
-                submittedWaiver: false,
-                submittedDriversLicense: false,
-                firstYear: 0,
-              },
-              { headers: { Authorization: `Bearer ${token}` } },
-            );
-
-            if (signResponse.data.success) {
-              setSuccessMessage(
-                `Player "${editFormData.firstname} ${editFormData.lastname}" created and signed to roster successfully`,
-              );
-            } else {
-              setSuccessMessage(
-                `Player "${editFormData.firstname} ${editFormData.lastname}" created successfully but failed to sign to roster`,
-              );
-            }
-          } else {
-            setSuccessMessage(
-              `Player "${editFormData.firstname} ${editFormData.lastname}" created successfully`,
-            );
-          }
-
-          closeEditDialog();
-          fetchRosterData();
-          fetchAvailablePlayers();
-        } else {
-          setError('Failed to create roster entry for new player');
-        }
-      } else {
-        setError(createResponse.data.message || 'Failed to create player');
-      }
-    } catch (error: unknown) {
-      if (
-        error &&
-        typeof error === 'object' &&
-        'response' in error &&
-        typeof (error as { response?: { data?: { message?: unknown } } }).response?.data
-          ?.message === 'string'
-      ) {
-        setError((error as { response: { data: { message: string } } }).response.data.message);
-      } else if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('Failed to create player');
-      }
-    } finally {
-      setFormLoading(false);
-    }
+    // This function is kept for compatibility but is no longer used
+    // The enhanced contact save handler is used instead
   };
 
   // Enhanced contact save handler for EditContactDialog
@@ -937,95 +408,25 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
       isCreatingNewPlayer,
     });
 
-    if (!userService) {
-      setError('Authentication required');
-      return;
-    }
-
     setFormLoading(true);
-    setError(null);
+    saveScrollPosition();
 
     try {
       if (isCreatingNewPlayer) {
-        // Create new contact using UserManagementService
-        const newContact = await userService.createContact(accountId, contactData, photoFile);
-
-        // Create the roster entry for the new player
-        const rosterResponse = await axios.post(
-          `/api/accounts/${accountId}/roster`,
-          {
-            contactId: newContact.id,
-            submittedDriversLicense: false,
-            firstYear: 0,
-          },
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-
-        if (rosterResponse.data.success) {
-          const newPlayer = rosterResponse.data.data.player;
-
-          // If auto-sign is enabled, add to team roster
-          if (autoSignToRoster && seasonId && teamSeasonId) {
-            try {
-              const signResponse = await axios.post(
-                `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster`,
-                {
-                  playerId: newPlayer.id,
-                  playerNumber: 0,
-                  submittedWaiver: false,
-                  submittedDriversLicense: false,
-                  firstYear: 0,
-                },
-                { headers: { Authorization: `Bearer ${token}` } },
-              );
-
-              if (signResponse.data.success) {
-                setSuccessMessage(
-                  `Player "${contactData.firstName} ${contactData.lastName}" created and signed to roster successfully`,
-                );
-              } else {
-                setSuccessMessage(
-                  `Player "${contactData.firstName} ${contactData.lastName}" created successfully but failed to sign to roster`,
-                );
-              }
-            } catch {
-              setSuccessMessage(
-                `Player "${contactData.firstName} ${contactData.lastName}" created successfully but failed to sign to roster`,
-              );
-            }
-          } else {
-            setSuccessMessage(
-              `Player "${contactData.firstName} ${contactData.lastName}" created successfully`,
-            );
-          }
-
-          fetchRosterData();
-          fetchAvailablePlayers();
-        } else {
-          throw new Error('Failed to create roster entry for new player');
-        }
+        await createContact(contactData, photoFile, autoSignToRoster);
       } else if (playerToEdit) {
-        // Update existing contact using UserManagementService
-        await userService.updateContact(
-          accountId,
-          playerToEdit.player.contactId,
-          contactData,
-          photoFile,
-        );
-        setSuccessMessage(
-          `Player "${contactData.firstName} ${contactData.lastName}" updated successfully`,
-        );
-        fetchRosterData();
+        await updateContact(playerToEdit.player.contactId, contactData, photoFile);
       }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setError(error.response?.data?.message || 'Failed to save contact');
-      } else {
-        setError('Failed to save contact');
-      }
-    } finally {
+    } catch (error) {
+      // Reset loading and scroll state, then propagate error to dialog
       setFormLoading(false);
+      restoreScrollPosition();
+      throw error;
     }
+
+    // Success case - cleanup and close dialog will be handled by the data manager operations
+    setFormLoading(false);
+    restoreScrollPosition();
   };
 
   // Helper function to format phone numbers as (111) 222-3333 (legacy - not used with enhanced dialog)
@@ -1050,39 +451,6 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
   const validatePhoneNumber = (phoneNumber: string): boolean => {
     const digits = phoneNumber.replace(/\D/g, '');
     return digits.length === 0 || digits.length === 10;
-  };
-
-  // Email validation function
-  const validateEmail = (email: string): boolean => {
-    if (!email) return true; // Empty email is allowed
-    return isEmail(email);
-  };
-
-  // Validate all phone numbers
-  const validateAllPhoneNumbers = (): boolean => {
-    const phoneRegex = /^\(\d{3}\) \d{3}-\d{4}$/;
-    const errors = {
-      phone1: '',
-      phone2: '',
-      phone3: '',
-    };
-    let hasErrors = false;
-
-    if (editFormData.phone1 && !phoneRegex.test(editFormData.phone1)) {
-      errors.phone1 = 'Phone number must be in format (123) 456-7890';
-      hasErrors = true;
-    }
-    if (editFormData.phone2 && !phoneRegex.test(editFormData.phone2)) {
-      errors.phone2 = 'Phone number must be in format (123) 456-7890';
-      hasErrors = true;
-    }
-    if (editFormData.phone3 && !phoneRegex.test(editFormData.phone3)) {
-      errors.phone3 = 'Phone number must be in format (123) 456-7890';
-      hasErrors = true;
-    }
-
-    setPhoneErrors(errors);
-    return !hasErrors;
   };
 
   // Helper function to format all contact information
@@ -1292,23 +660,17 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
     if (!selectedManagerContactId) return;
     setAddManagerLoading(true);
     setAddManagerError(null);
+    saveScrollPosition();
+
     try {
-      await axios.post(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers`,
-        { contactId: selectedManagerContactId },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await addManager(selectedManagerContactId);
       setAddManagerDialogOpen(false);
       setSelectedManagerContactId(null);
-      fetchManagers();
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setAddManagerError(error.response?.data?.message || 'Failed to add manager');
-      } else {
-        setAddManagerError('Failed to add manager');
-      }
+    } catch {
+      // Error is handled by the data manager
     } finally {
       setAddManagerLoading(false);
+      restoreScrollPosition();
     }
   };
 
@@ -1510,15 +872,9 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                   onClick={async (e) => {
                     e.stopPropagation();
                     try {
-                      await axios.delete(
-                        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/managers/${manager.id}`,
-                        {
-                          headers: { Authorization: `Bearer ${token}` },
-                        },
-                      );
-                      fetchManagers();
+                      await removeManager(manager.id);
                     } catch {
-                      // Optionally set error
+                      // Error is handled by the data manager
                     }
                   }}
                   aria-label="Remove Manager"
@@ -1567,10 +923,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                         showHoverEffects={true}
                         enablePhotoActions={true}
                         onPhotoDelete={async (contactId: string) => {
-                          if (userService) {
-                            await userService.deleteContactPhoto(accountId, contactId);
-                            await fetchRosterData(); // Refresh data
-                          }
+                          await deleteContactPhoto(contactId);
                         }}
                       />
                       <Box sx={{ flex: 1 }}>
@@ -1698,10 +1051,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                           showHoverEffects={true}
                           enablePhotoActions={true}
                           onPhotoDelete={async (contactId: string) => {
-                            if (userService) {
-                              await userService.deleteContactPhoto(accountId, contactId);
-                              await fetchRosterData(); // Refresh data
-                            }
+                            await deleteContactPhoto(contactId);
                           }}
                         />
                         <Box sx={{ flex: 1 }}>
@@ -1811,30 +1161,26 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
               <Autocomplete
                 options={availablePlayers}
                 getOptionLabel={(option) => {
-                  // Always use .contact if present, fallback to option itself
-                  const contact = option.contact || option;
-                  const last = contact.lastName || '';
-                  const first = contact.firstName || '';
-                  const middle = contact.contactDetails?.middlename || '';
+                  // Handle Contact objects directly
+                  const last = option.lastName || '';
+                  const first = option.firstName || '';
+                  const middle = option.contactDetails?.middlename || '';
                   return `${last}${first ? ', ' + first : ''}${middle ? ' ' + middle : ''}`.trim();
                 }}
-                value={selectedPlayer}
+                value={
+                  isSigningNewPlayer && selectedPlayer && 'firstName' in selectedPlayer
+                    ? selectedPlayer
+                    : null
+                }
                 onChange={(_, newValue) => {
                   if (newValue) {
-                    // Extract firstYear and submittedDriversLicense from the top-level newValue only
-                    const firstYear = newValue.firstYear ?? 0;
-                    const submittedDriversLicense = newValue.submittedDriversLicense ?? false;
-                    setSelectedPlayer({
-                      id: newValue.id,
-                      contactId: newValue.contactId,
-                      submittedDriversLicense,
-                      firstYear,
-                      contact: newValue.contact || newValue,
-                    });
+                    // For Contact objects, we don't have firstYear or submittedDriversLicense
+                    // These will be set to defaults when the player is signed
+                    setSelectedPlayer(newValue);
                     setRosterFormData({
                       ...rosterFormData,
-                      firstYear,
-                      submittedDriversLicense,
+                      firstYear: 0,
+                      submittedDriversLicense: false,
                     });
                   } else {
                     setSelectedPlayer(null);
@@ -1861,7 +1207,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
             )}
 
             {/* Player Name Display (only for editing existing players) */}
-            {!isSigningNewPlayer && selectedPlayer && (
+            {!isSigningNewPlayer && selectedPlayer && 'contact' in selectedPlayer && (
               <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
                 {formatName(selectedPlayer.contact)}
               </Typography>
@@ -1893,7 +1239,10 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                 fullWidth
                 variant="outlined"
                 helperText={
-                  isSigningNewPlayer && selectedPlayer && selectedPlayer.firstYear
+                  isSigningNewPlayer &&
+                  selectedPlayer &&
+                  'firstYear' in selectedPlayer &&
+                  selectedPlayer.firstYear
                     ? `Pre-filled with existing data: ${selectedPlayer.firstYear}`
                     : 'Enter the year the player first joined the league'
                 }
@@ -1928,6 +1277,7 @@ const TeamRosterManagement: React.FC<TeamRosterManagementProps> = ({
                     <Typography>{"Submitted Driver's License"}</Typography>
                     {isSigningNewPlayer &&
                       selectedPlayer &&
+                      'submittedDriversLicense' in selectedPlayer &&
                       selectedPlayer.submittedDriversLicense && (
                         <Typography variant="caption" color="text.secondary">
                           Pre-filled with existing data

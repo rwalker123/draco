@@ -1,7 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors';
-import { ContactEntry } from '../interfaces/contactInterfaces';
+import {
+  ContactEntry,
+  ContactInputData,
+  AvailableContactRaw,
+} from '../interfaces/contactInterfaces';
 import { getContactPhotoUrl } from '../config/logo';
+import { DateUtils } from '../utils/dateUtils';
 
 export interface RosterPlayer {
   id: bigint;
@@ -20,16 +25,9 @@ export interface RosterMember {
   player: RosterPlayer;
 }
 
-export interface AvailablePlayer {
-  id: bigint;
-  contactId: bigint;
-  firstYear: number | null;
-  submittedDriversLicense: boolean | null;
-  contact: ContactEntry;
-}
-
 export interface AddPlayerRequest {
-  playerId: string;
+  contactId?: string; // Optional - if not provided, contactData must be provided
+  contactData?: ContactInputData; // Optional - for creating new contacts
   playerNumber?: number;
   submittedWaiver?: boolean;
   submittedDriversLicense?: boolean;
@@ -118,7 +116,7 @@ export class RosterService {
           city: contact.city,
           state: contact.state,
           zip: contact.zip,
-          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
           middlename: contact.middlename,
         },
         contactroles: [], // Roster doesn't include roles
@@ -146,7 +144,7 @@ export class RosterService {
     seasonId: bigint,
     accountId: bigint,
     _includeFull: boolean = false,
-  ): Promise<AvailablePlayer[]> {
+  ): Promise<ContactEntry[]> {
     // Verify the team season exists and belongs to this account and season
     const teamSeason = await this.prisma.teamsseason.findFirst({
       where: {
@@ -158,69 +156,49 @@ export class RosterService {
           },
         },
       },
+      select: {
+        leagueseasonid: true,
+      },
     });
 
     if (!teamSeason) {
       throw new NotFoundError('Team season not found');
     }
 
-    // Get the leagueseasonid for this team
     const leagueSeasonId = teamSeason.leagueseasonid;
 
-    // Get all roster players for this account
-    const allRosterPlayers = await this.prisma.roster.findMany({
-      where: {
-        contacts: {
-          creatoraccountid: accountId,
-        },
-      },
-      include: {
-        contacts: {
-          select: {
-            id: true,
-            firstname: true,
-            lastname: true,
-            middlename: true,
-            email: true,
-            phone1: true,
-            phone2: true,
-            phone3: true,
-            streetaddress: true,
-            city: true,
-            state: true,
-            zip: true,
-            dateofbirth: true,
-          },
-        },
-      },
-      orderBy: [
-        { contacts: { lastname: 'asc' } },
-        { contacts: { firstname: 'asc' } },
-        { contacts: { middlename: 'asc' } },
-      ],
-    });
+    // Single optimized query using LEFT JOIN to find contacts NOT assigned to this league season
+    // This replaces the previous dual-query approach that loaded all contacts and filtered in memory
+    const availableContacts = await this.prisma.$queryRaw<AvailableContactRaw[]>`
+      SELECT DISTINCT 
+        c.id,
+        c.firstname,
+        c.lastname,
+        c.email,
+        c.phone1,
+        c.phone2,
+        c.phone3,
+        c.streetaddress,
+        c.city,
+        c.state,
+        c.zip,
+        c.dateofbirth,
+        c.middlename,
+        r.id as roster_id,
+        r.firstyear,
+        r.submitteddriverslicense
+      FROM contacts c
+      LEFT JOIN roster r ON c.id = r.contactid
+      LEFT JOIN rosterseason rs ON r.id = rs.playerid
+      LEFT JOIN teamsseason ts ON rs.teamseasonid = ts.id 
+        AND ts.leagueseasonid = ${leagueSeasonId}
+      WHERE c.creatoraccountid = ${accountId}
+        AND rs.id IS NULL
+      ORDER BY c.lastname, c.firstname, c.middlename;
+    `;
 
-    // Get all players already on teams in this league season
-    const assignedPlayers = await this.prisma.rosterseason.findMany({
-      where: {
-        teamsseason: {
-          leagueseasonid: leagueSeasonId,
-        },
-      },
-      select: {
-        playerid: true,
-      },
-    });
-
-    const assignedPlayerIds = new Set(assignedPlayers.map((p) => p.playerid));
-
-    // Filter out players already assigned to teams in this league season
-    const availablePlayers = allRosterPlayers.filter((player) => !assignedPlayerIds.has(player.id));
-
-    return availablePlayers.map((player) => {
-      const contact = player.contacts;
-
-      // Transform contact to standard ContactEntry format with photoUrl
+    // Transform raw query results to ContactEntry format
+    return availableContacts.map((contact) => {
       const contactEntry: ContactEntry = {
         id: contact.id.toString(),
         firstName: contact.firstname,
@@ -236,19 +214,13 @@ export class RosterService {
           city: contact.city,
           state: contact.state,
           zip: contact.zip,
-          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
           middlename: contact.middlename,
         },
         contactroles: [], // Available players don't include roles
       };
 
-      return {
-        id: player.id,
-        contactId: player.contactid,
-        firstYear: player.firstyear,
-        submittedDriversLicense: player.submitteddriverslicense,
-        contact: contactEntry,
-      };
+      return contactEntry;
     });
   }
 
@@ -258,11 +230,18 @@ export class RosterService {
     accountId: bigint,
     addPlayerData: AddPlayerRequest,
   ): Promise<RosterMember> {
-    const { playerId, playerNumber, submittedWaiver, submittedDriversLicense, firstYear } =
-      addPlayerData;
+    const {
+      contactId,
+      contactData,
+      playerNumber,
+      submittedWaiver,
+      submittedDriversLicense,
+      firstYear,
+    } = addPlayerData;
 
-    if (!playerId) {
-      throw new ValidationError('PlayerId is required');
+    // Validate that either contactId or contactData is provided
+    if (!contactId && !contactData) {
+      throw new ValidationError('Either contactId or contactData is required');
     }
 
     // Validate player number
@@ -287,13 +266,76 @@ export class RosterService {
       throw new NotFoundError('Team season not found');
     }
 
-    // Verify the player exists and belongs to this account
-    const player = await this.prisma.roster.findFirst({
-      where: {
-        id: BigInt(playerId),
-        contacts: {
+    let existingContact: { firstname: string; lastname: string } | null = null;
+    let actualContactId: bigint;
+
+    // If contactId is provided, check if the contact exists
+    if (contactId) {
+      existingContact = await this.prisma.contacts.findFirst({
+        where: {
+          id: BigInt(contactId),
           creatoraccountid: accountId,
         },
+        select: {
+          firstname: true,
+          lastname: true,
+        },
+      });
+
+      if (!existingContact) {
+        throw new NotFoundError('Contact not found');
+      }
+
+      actualContactId = BigInt(contactId);
+    } else {
+      // Create new contact if contactData is provided
+      if (!contactData) {
+        throw new ValidationError('ContactData is required when contactId is not provided');
+      }
+
+      // Validate required fields for contact creation
+      if (!contactData.firstname || !contactData.lastname) {
+        throw new ValidationError('First name and last name are required for contact creation');
+      }
+
+      // Create the contact
+      const newContact = await this.prisma.contacts.create({
+        data: {
+          firstname: contactData.firstname,
+          lastname: contactData.lastname,
+          middlename: contactData.middlename || '',
+          email: contactData.email || null,
+          phone1: contactData.phone1 || null,
+          phone2: contactData.phone2 || null,
+          phone3: contactData.phone3 || null,
+          streetaddress: contactData.streetaddress || null,
+          city: contactData.city || null,
+          state: contactData.state || null,
+          zip: contactData.zip || null,
+          creatoraccountid: accountId,
+          dateofbirth: contactData.dateofbirth
+            ? DateUtils.parseDateOfBirthForDatabase(contactData.dateofbirth)
+            : new Date('1900-01-01'),
+        },
+        select: {
+          id: true,
+          firstname: true,
+          lastname: true,
+        },
+      });
+
+      existingContact = {
+        firstname: newContact.firstname,
+        lastname: newContact.lastname,
+      };
+
+      actualContactId = newContact.id;
+    }
+
+    // Check if contact already has a roster entry
+    let player = await this.prisma.roster.findFirst({
+      where: {
+        contactid: actualContactId,
       },
       include: {
         contacts: {
@@ -305,8 +347,23 @@ export class RosterService {
       },
     });
 
+    // If no roster entry exists, create one
     if (!player) {
-      throw new NotFoundError('Player not found');
+      player = await this.prisma.roster.create({
+        data: {
+          contactid: actualContactId,
+          submitteddriverslicense: submittedDriversLicense || false,
+          firstyear: firstYear || 0,
+        },
+        include: {
+          contacts: {
+            select: {
+              firstname: true,
+              lastname: true,
+            },
+          },
+        },
+      });
     }
 
     // Get the leagueseasonid for this team
@@ -315,7 +372,7 @@ export class RosterService {
     // Check if player is already on a team in this league season
     const existingRosterMember = await this.prisma.rosterseason.findFirst({
       where: {
-        playerid: BigInt(playerId),
+        playerid: player.id,
         teamsseason: {
           leagueseasonid: leagueSeasonId,
         },
@@ -329,7 +386,7 @@ export class RosterService {
     // Update player's roster information if provided
     if (submittedDriversLicense !== undefined || firstYear !== undefined) {
       await this.prisma.roster.update({
-        where: { id: BigInt(playerId) },
+        where: { id: player.id },
         data: {
           submitteddriverslicense:
             submittedDriversLicense !== undefined
@@ -343,7 +400,7 @@ export class RosterService {
     // Add player to roster
     const newRosterMember = await this.prisma.rosterseason.create({
       data: {
-        playerid: BigInt(playerId),
+        playerid: player.id,
         teamseasonid: teamSeasonId,
         playernumber: playerNumber || 0,
         inactive: false,
@@ -375,26 +432,26 @@ export class RosterService {
       },
     });
 
-    const contact = newRosterMember.roster.contacts;
+    const contactInfo = newRosterMember.roster.contacts;
 
     // Transform contact to standard ContactEntry format with photoUrl
     const contactEntry: ContactEntry = {
-      id: contact.id.toString(),
-      firstName: contact.firstname,
-      lastName: contact.lastname,
-      email: contact.email,
+      id: contactInfo.id.toString(),
+      firstName: contactInfo.firstname,
+      lastName: contactInfo.lastname,
+      email: contactInfo.email,
       userId: null, // Roster contacts don't have userId
-      photoUrl: getContactPhotoUrl(accountId.toString(), contact.id.toString()),
+      photoUrl: getContactPhotoUrl(accountId.toString(), contactInfo.id.toString()),
       contactDetails: {
-        phone1: contact.phone1,
-        phone2: contact.phone2,
-        phone3: contact.phone3,
-        streetaddress: contact.streetaddress,
-        city: contact.city,
-        state: contact.state,
-        zip: contact.zip,
-        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
-        middlename: contact.middlename,
+        phone1: contactInfo.phone1,
+        phone2: contactInfo.phone2,
+        phone3: contactInfo.phone3,
+        streetaddress: contactInfo.streetaddress,
+        city: contactInfo.city,
+        state: contactInfo.state,
+        zip: contactInfo.zip,
+        dateofbirth: DateUtils.formatDateOfBirthForResponse(contactInfo.dateofbirth),
+        middlename: contactInfo.middlename,
       },
       contactroles: [], // Roster doesn't include roles
     };
@@ -535,7 +592,7 @@ export class RosterService {
         city: contact.city,
         state: contact.state,
         zip: contact.zip,
-        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
         middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles
@@ -657,7 +714,7 @@ export class RosterService {
         city: contact.city,
         state: contact.state,
         zip: contact.zip,
-        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
         middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles
@@ -779,7 +836,7 @@ export class RosterService {
         city: contact.city,
         state: contact.state,
         zip: contact.zip,
-        dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+        dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
         middlename: contact.middlename,
       },
       contactroles: [], // Roster doesn't include roles

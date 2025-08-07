@@ -36,7 +36,7 @@ export class ContactTransformationService {
       lastName: response.lastname,
       email: response.email || '',
       userId: '', // Not provided in ContactUpdateResponse
-      photoUrl: response.photoUrl,
+      photoUrl: response.photoUrl || undefined,
       contactDetails: {
         middlename: response.middlename || null,
         phone1: response.phone1 || null,

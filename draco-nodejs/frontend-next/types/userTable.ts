@@ -187,6 +187,7 @@ export interface UserTableToolbarProps {
   onSearchChange: (term: string) => void;
   onSearchSubmit: () => void;
   onSearchClear: () => void;
+  isShowingSearchResults?: boolean;
   onAddUser?: () => void;
   onlyWithRoles?: boolean;
   onOnlyWithRolesChange?: (onlyWithRoles: boolean) => void;
@@ -356,6 +357,7 @@ export interface UserTableContainerProps extends ModernUserTableProps {
   onSearch?: () => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+  isShowingSearchResults?: boolean;
 
   // User management actions
   onAddUser?: () => void;
@@ -383,6 +385,7 @@ export interface UserTableEnhancedProps extends UserTableProps {
   onSearch?: () => void;
   onClearSearch?: () => void;
   searchLoading?: boolean;
+  isShowingSearchResults?: boolean;
 
   // Filter props
   onlyWithRoles?: boolean;

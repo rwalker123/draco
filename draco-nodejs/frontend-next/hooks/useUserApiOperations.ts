@@ -32,12 +32,19 @@ export const useUserApiOperations = (
 
   const searchUsersWithFilter = useCallback(
     async (params: SearchUsersParams) => {
-      return await userService.searchUsers(
+      const result = await userService.searchUsers(
         accountId,
         params.searchTerm,
         params.seasonId,
         params.onlyWithRoles,
       );
+      return {
+        users: result.users,
+        pagination: {
+          hasNext: result.pagination.hasNext || false,
+          hasPrev: result.pagination.hasPrev || false,
+        },
+      };
     },
     [userService, accountId],
   );
@@ -83,7 +90,7 @@ export const useUserApiOperations = (
 
   const deleteContact = useCallback(
     async (params: DeleteContactParams) => {
-      return await userService.deleteContact(accountId, params.contactId, params.force);
+      await userService.deleteContact(accountId, params.contactId, params.force);
     },
     [userService, accountId],
   );

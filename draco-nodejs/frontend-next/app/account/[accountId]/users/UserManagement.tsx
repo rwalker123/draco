@@ -10,7 +10,6 @@ import {
 } from '../../../../components/users';
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
-import RoleLegend from '../../../../components/users/RoleLegend';
 import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
 
 interface UserManagementProps {
@@ -37,6 +36,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     hasPrev,
     searchTerm,
     searchLoading,
+    isShowingSearchResults,
     onlyWithRoles,
 
     // Dialog states
@@ -131,9 +131,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         </Alert>
       )}
 
-      {/* Role Legend */}
-      <RoleLegend variant="compact" />
-
       {/* Enhanced User Table with Modern Features */}
       <UserTableEnhanced
         users={users}
@@ -169,6 +166,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
         onSearchChange={setSearchTerm}
         onSearch={handleSearch}
         onClearSearch={handleClearSearch}
+        isShowingSearchResults={isShowingSearchResults}
         searchLoading={searchLoading}
         onDeleteContactPhoto={handleDeleteContactPhotoWithConfirm}
         // Filter props

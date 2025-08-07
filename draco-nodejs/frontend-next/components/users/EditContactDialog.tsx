@@ -83,7 +83,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     city: '',
     state: '',
     zip: '',
-    dateofbirth: '',
+    dateofbirth: null,
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -110,7 +110,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
           city: contactDetails?.city || '',
           state: contactDetails?.state || '',
           zip: contactDetails?.zip || '',
-          dateofbirth: contactDetails?.dateofbirth || '',
+          dateofbirth: contactDetails?.dateofbirth || null,
         });
       } else {
         // Create mode: start with empty form
@@ -126,7 +126,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
           city: '',
           state: '',
           zip: '',
-          dateofbirth: '',
+          dateofbirth: null,
         });
       }
       setErrors({});
@@ -204,7 +204,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
     };
 
   const handleDateChange = (date: Date | null) => {
-    const dateString = date ? date.toISOString().split('T')[0] : '';
+    const dateString = date ? date.toISOString().split('T')[0] : null;
     setFormData((prev) => ({ ...prev, dateofbirth: dateString }));
 
     // Clear field error when user selects date
@@ -256,7 +256,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
           formData.city !== (contact.contactDetails?.city || '') ||
           formData.state !== (contact.contactDetails?.state || '') ||
           formData.zip !== (contact.contactDetails?.zip || '') ||
-          formData.dateofbirth !== (contact.contactDetails?.dateofbirth || ''));
+          formData.dateofbirth !== (contact.contactDetails?.dateofbirth || null));
 
       const isPhotoOnlyUpdate = !hasDataChanges && !!photoFile;
       console.log('Save operation:', {
@@ -288,7 +288,7 @@ const EditContactDialog: React.FC<EditContactDialogProps> = ({
           city: '',
           state: '',
           zip: '',
-          dateofbirth: '',
+          dateofbirth: null,
         };
       }
 

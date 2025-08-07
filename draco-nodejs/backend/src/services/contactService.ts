@@ -12,6 +12,7 @@ import {
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
 import { RoleType } from '../types/roles';
 import { getContactPhotoUrl } from '../config/logo';
+import { DateUtils } from '../utils/dateUtils';
 
 export class ContactService {
   /**
@@ -284,7 +285,7 @@ export class ContactService {
           city: contact.city,
           state: contact.state,
           zip: contact.zip,
-          dateofbirth: contact.dateofbirth ? contact.dateofbirth.toISOString() : null,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(contact.dateofbirth),
           middlename: contact.middlename,
         },
       }),
@@ -369,7 +370,7 @@ export class ContactService {
             city: contactRow.city,
             state: contactRow.state,
             zip: contactRow.zip,
-            dateofbirth: contactRow.dateofbirth ? contactRow.dateofbirth.toISOString() : null,
+            dateofbirth: DateUtils.formatDateOfBirthForResponse(contactRow.dateofbirth),
             middlename: contactRow.middlename,
           };
         }
