@@ -102,11 +102,11 @@ router.post(
 );
 
 /**
- * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/:rosterMemberId/update
+ * PUT /api/accounts/:accountId/seasons/:seasonId/teams/:teamSeasonId/roster/:rosterMemberId
  * Update roster member information (player number, waiver status, driver's license, first year)
  */
 router.put(
-  '/:teamSeasonId/roster/:rosterMemberId/update',
+  '/:teamSeasonId/roster/:rosterMemberId',
   authenticateToken,
   routeProtection.requireAccountAdmin(),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
