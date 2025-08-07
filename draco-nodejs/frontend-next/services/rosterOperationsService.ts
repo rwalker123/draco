@@ -192,7 +192,7 @@ export class RosterOperationsService {
 
     return this.executeOptimisticOperation(currentRosterData, optimisticUpdate, () =>
       this.axiosInstance.put(
-        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}/update`,
+        `/api/accounts/${accountId}/seasons/${seasonId}/teams/${teamSeasonId}/roster/${rosterMemberId}`,
         updates,
       ),
     );
