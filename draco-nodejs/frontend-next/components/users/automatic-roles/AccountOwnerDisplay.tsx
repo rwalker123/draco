@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Typography, Avatar, Card, CardContent } from '@mui/material';
+import { Box, Typography, Card, CardContent } from '@mui/material';
 import { AccountCircle as CrownIcon } from '@mui/icons-material';
+import UserAvatar from '../UserAvatar';
 
 interface AccountOwnerDisplayProps {
   accountOwner: {
@@ -27,14 +28,15 @@ const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({ accountOwner 
     >
       <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         <CrownIcon sx={{ color: '#FFD700', fontSize: 32 }} />
-        <Avatar
-          src={accountOwner.photoUrl}
-          alt={`${accountOwner.firstName} ${accountOwner.lastName}`}
-          sx={{ width: 40, height: 40 }}
-        >
-          {accountOwner.firstName[0]}
-          {accountOwner.lastName[0]}
-        </Avatar>
+        <UserAvatar
+          user={{
+            id: accountOwner.contactId,
+            firstName: accountOwner.firstName,
+            lastName: accountOwner.lastName,
+            photoUrl: accountOwner.photoUrl,
+          }}
+          size={40}
+        />
         <Box>
           <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#E65100' }}>
             Account Owner

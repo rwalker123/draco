@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Typography,
-  Avatar,
-  Card,
-  CardContent,
-  Chip,
-  Collapse,
-  IconButton,
-} from '@mui/material';
+import { Box, Typography, Card, CardContent, Chip, Collapse, IconButton } from '@mui/material';
+import UserAvatar from '../UserAvatar';
 import { Groups as ManagerIcon, ExpandMore, ExpandLess } from '@mui/icons-material';
 
 interface TeamManagersListProps {
@@ -82,14 +74,15 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                   backgroundColor: 'rgba(255, 255, 255, 0.7)',
                 }}
               >
-                <Avatar
-                  src={manager.photoUrl}
-                  alt={`${manager.firstName} ${manager.lastName}`}
-                  sx={{ width: 32, height: 32 }}
-                >
-                  {manager.firstName[0]}
-                  {manager.lastName[0]}
-                </Avatar>
+                <UserAvatar
+                  user={{
+                    id: manager.contactId,
+                    firstName: manager.firstName,
+                    lastName: manager.lastName,
+                    photoUrl: manager.photoUrl,
+                  }}
+                  size={32}
+                />
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
