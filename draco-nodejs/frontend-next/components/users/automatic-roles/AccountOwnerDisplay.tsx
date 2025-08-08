@@ -9,7 +9,7 @@ interface AccountOwnerDisplayProps {
     lastName: string;
     email: string | null;
     photoUrl?: string;
-  } | null;
+  } | null; // Keep nullable for component safety, but expect it to always have value
 }
 
 const AccountOwnerDisplay: React.FC<AccountOwnerDisplayProps> = ({ accountOwner }) => {

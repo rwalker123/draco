@@ -288,7 +288,7 @@ export interface UseUserManagementReturn {
     lastName: string;
     email: string | null;
     photoUrl?: string;
-  } | null;
+  } | null; // Nullable during initialization, but API guarantees account owner exists
   teamManagers: Array<{
     contactId: string;
     firstName: string;

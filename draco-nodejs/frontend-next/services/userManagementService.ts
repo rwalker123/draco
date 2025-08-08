@@ -215,14 +215,14 @@ export class UserManagementService {
       contactId: string;
       firstName: string;
       lastName: string;
-      email: string;
+      email: string | null;
       photoUrl?: string;
-    } | null;
+    }; // NOT nullable - every account must have owner
     teamManagers: Array<{
       contactId: string;
       firstName: string;
       lastName: string;
-      email: string;
+      email: string | null;
       photoUrl?: string;
       teams: Array<{
         teamSeasonId: string;

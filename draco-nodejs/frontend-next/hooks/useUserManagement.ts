@@ -154,7 +154,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     lastName: string;
     email: string | null;
     photoUrl?: string;
-  } | null>(null);
+  } | null>(null); // Initialize as null, but will be set once loaded
   const [teamManagers, setTeamManagers] = useState<
     Array<{
       contactId: string;

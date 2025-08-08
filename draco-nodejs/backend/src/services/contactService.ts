@@ -7,6 +7,10 @@ import {
   ContactWithRoleAndDetailsRaw,
   ContactEntry,
   TeamManagerRaw,
+  AccountOwnerRaw,
+  TeamManagerWithTeams,
+  AutomaticRoleHoldersResponse,
+  BaseContact,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
 import { RoleType } from '../types/roles';
@@ -403,26 +407,7 @@ export class ContactService {
   /**
    * Get automatic role holders (Account Owner and Team Managers) for the current season
    */
-  static async getAutomaticRoleHolders(accountId: bigint): Promise<{
-    accountOwner: {
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-    } | null;
-    teamManagers: Array<{
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string | null;
-      photoUrl?: string;
-      teams: Array<{
-        teamSeasonId: string;
-        teamName: string;
-      }>;
-    }>;
-  }> {
+  static async getAutomaticRoleHolders(accountId: bigint): Promise<AutomaticRoleHoldersResponse> {
     try {
       // Get current season for this account
       const currentSeasonRecord = await prisma.currentseason.findUnique({
@@ -431,24 +416,37 @@ export class ContactService {
       });
 
       if (!currentSeasonRecord) {
+        // No current season, but we still need to return account owner
+        const accountOwnerResult = await prisma.$queryRaw<AccountOwnerRaw[]>`
+          SELECT contacts.id, contacts.firstname, contacts.lastname, contacts.email, contacts.userid
+          FROM accounts 
+          JOIN contacts ON accounts.id = contacts.creatoraccountid 
+          WHERE accounts.id = ${accountId} 
+            AND accounts.owneruserid = contacts.userid
+        `;
+
+        if (!accountOwnerResult[0]) {
+          throw new Error(`Account owner not found for account ${accountId.toString()}`);
+        }
+
         return {
-          accountOwner: null,
-          teamManagers: [],
+          accountOwner: {
+            id: accountOwnerResult[0].id.toString(),
+            firstName: accountOwnerResult[0].firstname,
+            lastName: accountOwnerResult[0].lastname,
+            middleName: null,
+            email: accountOwnerResult[0].email,
+            userId: accountOwnerResult[0].userid,
+            photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
+          },
+          teamManagers: [], // No team managers without a current season
         };
       }
 
       const currentSeasonId = currentSeasonRecord.seasonid;
 
       // Query account owner
-      const accountOwnerResult = await prisma.$queryRaw<
-        Array<{
-          id: bigint;
-          firstname: string;
-          lastname: string;
-          email: string;
-          userid: string;
-        }>
-      >`
+      const accountOwnerResult = await prisma.$queryRaw<AccountOwnerRaw[]>`
         SELECT contacts.id, contacts.firstname, contacts.lastname, contacts.email, contacts.userid
         FROM accounts 
         JOIN contacts ON accounts.id = contacts.creatoraccountid 
@@ -456,15 +454,19 @@ export class ContactService {
           AND accounts.owneruserid = contacts.userid
       `;
 
-      const accountOwner = accountOwnerResult[0]
-        ? {
-            contactId: accountOwnerResult[0].id.toString(),
-            firstName: accountOwnerResult[0].firstname,
-            lastName: accountOwnerResult[0].lastname,
-            email: accountOwnerResult[0].email,
-            photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
-          }
-        : null;
+      if (!accountOwnerResult[0]) {
+        throw new Error(`Account owner not found for account ${accountId.toString()}`);
+      }
+
+      const accountOwner: BaseContact = {
+        id: accountOwnerResult[0].id.toString(),
+        firstName: accountOwnerResult[0].firstname,
+        lastName: accountOwnerResult[0].lastname,
+        middleName: null, // Account owner queries don't include middle name
+        email: accountOwnerResult[0].email,
+        userId: accountOwnerResult[0].userid,
+        photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
+      };
 
       // Query team managers for the current season
       const teamManagersResult = await prisma.$queryRaw<TeamManagerRaw[]>`
@@ -485,30 +487,19 @@ export class ContactService {
       `;
 
       // Group team managers by contact
-      const teamManagersMap = new Map<
-        string,
-        {
-          contactId: string;
-          firstName: string;
-          lastName: string;
-          email: string | null;
-          photoUrl?: string;
-          teams: Array<{
-            teamSeasonId: string;
-            teamName: string;
-          }>;
-        }
-      >();
+      const teamManagersMap = new Map<string, TeamManagerWithTeams>();
 
       for (const row of teamManagersResult) {
         const contactId = row.contactid.toString();
 
         if (!teamManagersMap.has(contactId)) {
           teamManagersMap.set(contactId, {
-            contactId,
+            id: contactId,
             firstName: row.firstname,
             lastName: row.lastname,
+            middleName: null, // Team manager queries don't include middle name
             email: row.email,
+            userId: null, // Team manager queries don't include userId
             photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
             teams: [],
           });
