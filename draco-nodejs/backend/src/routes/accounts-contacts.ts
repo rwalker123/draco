@@ -260,6 +260,27 @@ router.get(
 );
 
 /**
+ * GET /api/accounts/:accountId/automatic-role-holders
+ * Get automatic role holders (Account Owner and Team Managers) for the current season
+ */
+router.get(
+  '/:accountId/automatic-role-holders',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  routeProtection.requirePermission('account.contacts.manage'),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    const result = await ContactService.getAutomaticRoleHolders(accountId);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  }),
+);
+
+/**
  * PUT /api/accounts/:accountId/contacts/:contactId
  * Update contact information (includes photo upload)
  */

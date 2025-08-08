@@ -84,59 +84,13 @@ export class RoleService implements IRoleService {
         },
       });
 
-      // Get current season for the account
-      const currentSeasonRecord = await this.prisma.currentseason.findUnique({
-        where: { accountid: accountId },
-      });
-      const currentSeasonId = currentSeasonRecord?.seasonid;
-
-      // After fetching contactRoles, also fetch teamseasonmanager for this contact, filtered to current season
-      let teamManagerEntries: { teamseasonid: bigint }[] = [];
-      if (currentSeasonId) {
-        teamManagerEntries = await this.prisma.teamseasonmanager.findMany({
-          where: {
-            contactid: contact.id,
-            teamsseason: {
-              leagueseason: {
-                seasonid: currentSeasonId,
-              },
-            },
-          },
-          select: { teamseasonid: true },
-        });
-      }
-
-      // TeamAdmin roleId constant (should match your config)
-      const TEAM_ADMIN_ROLE_ID = ROLE_IDS[RoleType.TEAM_ADMIN];
-
-      // Build a set of teamSeasonIds where the user already has TeamAdmin via contactRoles
-      const existingTeamAdminIds = new Set(
-        contactRoles
-          .filter((cr) => cr.roleid === TEAM_ADMIN_ROLE_ID)
-          .map((cr) => String(cr.roledata)),
-      );
-
-      // Add synthetic TeamAdmin roles for managed teams not already present
-      const syntheticManagerRoles: ContactRole[] = teamManagerEntries
-        .filter((entry) => !existingTeamAdminIds.has(String(entry.teamseasonid)))
-        .map((entry) => ({
-          id: BigInt(-1), // Use -1 or another convention for synthetic IDs
-          contactId: contact.id,
-          roleId: TEAM_ADMIN_ROLE_ID,
-          roleData: entry.teamseasonid,
-          accountId: accountId,
-        }));
-
-      return [
-        ...contactRoles.map((cr) => ({
-          id: cr.id,
-          contactId: cr.contactid,
-          roleId: cr.roleid,
-          roleData: cr.roledata,
-          accountId: cr.accountid,
-        })),
-        ...syntheticManagerRoles,
-      ];
+      return contactRoles.map((cr) => ({
+        id: cr.id,
+        contactId: cr.contactid,
+        roleId: cr.roleid,
+        roleData: cr.roledata,
+        accountId: cr.accountid,
+      }));
     } catch (error) {
       console.error('Error getting contact roles:', error);
       throw error;
@@ -288,6 +242,65 @@ export class RoleService implements IRoleService {
         throw new Error('Insufficient permissions to assign this role');
       }
 
+      // Check if this is the account owner - prevent role assignments
+      const contact = await this.prisma.contacts.findFirst({
+        where: {
+          id: contactId,
+          creatoraccountid: accountId,
+        },
+        select: {
+          userid: true,
+          accounts: {
+            select: {
+              owneruserid: true,
+            },
+          },
+        },
+      });
+
+      const isAccountOwner = contact?.userid && contact.userid === contact.accounts?.owneruserid;
+
+      if (isAccountOwner) {
+        throw new Error('Cannot assign roles to account owner - they already have all permissions');
+      }
+
+      // For team roles, check if user is already a team manager for this team
+      if (
+        roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ||
+        roleId === ROLE_IDS[RoleType.TEAM_PHOTO_ADMIN]
+      ) {
+        // Get current season for validation
+        const currentSeasonRecord = await this.prisma.currentseason.findUnique({
+          where: { accountid: accountId },
+          select: { seasonid: true },
+        });
+
+        if (currentSeasonRecord && seasonId === currentSeasonRecord.seasonid) {
+          // Check if user is a team manager for this team in the current season
+          const isTeamManager = await this.prisma.teamseasonmanager.findFirst({
+            where: {
+              contactid: contactId,
+              teamseasonid: roleData,
+              teamsseason: {
+                leagueseason: {
+                  seasonid: currentSeasonRecord.seasonid,
+                },
+              },
+            },
+          });
+
+          if (isTeamManager) {
+            const roleName =
+              roleId === ROLE_IDS[RoleType.TEAM_ADMIN]
+                ? RoleType.TEAM_ADMIN
+                : RoleType.TEAM_PHOTO_ADMIN;
+            throw new Error(
+              `Cannot assign ${roleName} role - user is already a team manager and has this role automatically`,
+            );
+          }
+        }
+      }
+
       // Validate role-specific data requirements
       if (
         roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ||
@@ -296,13 +309,13 @@ export class RoleService implements IRoleService {
         // Account roles: roleData must be the accountId
         if (roleData !== accountId) {
           throw new Error(
-            `For ${roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ? 'AccountAdmin' : 'AccountPhotoAdmin'} role, roleData must be the accountId (${accountId}), but received ${roleData}`,
+            `For ${roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN] ? RoleType.ACCOUNT_ADMIN : RoleType.ACCOUNT_PHOTO_ADMIN} role, roleData must be the accountId (${accountId}), but received ${roleData}`,
           );
         }
       } else if (roleId === ROLE_IDS[RoleType.LEAGUE_ADMIN]) {
         // League role: seasonId is required
         if (!seasonId) {
-          throw new Error('For LeagueAdmin role, seasonId is required');
+          throw new Error(`For ${RoleType.LEAGUE_ADMIN} role, seasonId is required`);
         }
         // roleData must be a valid leagueSeasonId
         const leagueSeason = await this.prisma.leagueseason.findFirst({
@@ -319,7 +332,7 @@ export class RoleService implements IRoleService {
         });
         if (!leagueSeason) {
           throw new Error(
-            `For LeagueAdmin role, roleData must be a valid leagueSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
+            `For ${RoleType.LEAGUE_ADMIN} role, roleData must be a valid leagueSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
           );
         }
       } else if (
@@ -329,7 +342,7 @@ export class RoleService implements IRoleService {
         // Team roles: seasonId is required
         if (!seasonId) {
           throw new Error(
-            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? 'TeamAdmin' : 'TeamPhotoAdmin'} role, seasonId is required`,
+            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? RoleType.TEAM_ADMIN : RoleType.TEAM_PHOTO_ADMIN} role, seasonId is required`,
           );
         }
         // roleData must be a valid teamSeasonId
@@ -346,7 +359,7 @@ export class RoleService implements IRoleService {
         });
         if (!teamSeason) {
           throw new Error(
-            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? 'TeamAdmin' : 'TeamPhotoAdmin'} role, roleData must be a valid teamSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
+            `For ${roleId === ROLE_IDS[RoleType.TEAM_ADMIN] ? RoleType.TEAM_ADMIN : RoleType.TEAM_PHOTO_ADMIN} role, roleData must be a valid teamSeasonId for account ${accountId} and season ${seasonId}, but ${roleData} is not valid`,
           );
         }
       }

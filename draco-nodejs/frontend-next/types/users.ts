@@ -281,6 +281,27 @@ export interface UseUserManagementReturn {
   selectedTeamId: string;
   contextDataLoading: boolean;
 
+  // Automatic role holders states
+  accountOwner: {
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    photoUrl?: string;
+  } | null; // Nullable during initialization, but API guarantees account owner exists
+  teamManagers: Array<{
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    photoUrl?: string;
+    teams: Array<{
+      teamSeasonId: string;
+      teamName: string;
+    }>;
+  }>;
+  automaticRolesLoading: boolean;
+
   // Actions
   handleSearch: () => void;
   handleClearSearch: () => void;
