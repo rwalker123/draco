@@ -1,7 +1,19 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const nodemailer = require('nodemailer');
-import type { Transporter } from 'nodemailer';
+// Enhanced Email Service for Draco Sports Manager
+// Follows SRP/DIP - depends on IEmailProvider interface
 
+import {
+  IEmailProvider,
+  EmailOptions,
+  EmailComposeRequest,
+  ResolvedRecipient,
+  EmailSettings,
+  EmailRecipientSelection,
+} from '../interfaces/emailInterfaces';
+import { EmailProviderFactory } from './email/EmailProviderFactory';
+import { EmailConfigFactory } from '../config/email';
+import prisma from '../lib/prisma';
+
+// Legacy interface maintained for backward compatibility
 export interface EmailConfig {
   host: string;
   port: number;
@@ -13,18 +25,26 @@ export interface EmailConfig {
 }
 
 export class EmailService {
-  private transporter: Transporter;
-  private fromEmail: string;
+  private provider: IEmailProvider | null = null;
   private baseUrl: string;
 
-  constructor(config: EmailConfig, fromEmail: string, baseUrl: string) {
-    this.transporter = nodemailer.createTransport(config);
-    this.fromEmail = fromEmail;
-    this.baseUrl = baseUrl;
+  constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
+    // Legacy constructor for backward compatibility
+    this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
   }
 
   /**
-   * Send password reset email
+   * Initialize email provider (lazy loading)
+   */
+  private async getProvider(): Promise<IEmailProvider> {
+    if (!this.provider) {
+      this.provider = await EmailProviderFactory.getProvider();
+    }
+    return this.provider;
+  }
+
+  /**
+   * Send password reset email (legacy method - maintains backward compatibility)
    */
   async sendPasswordResetEmail(
     toEmail: string,
@@ -33,21 +53,225 @@ export class EmailService {
   ): Promise<boolean> {
     try {
       const resetUrl = `${this.baseUrl}/reset-password?token=${resetToken}`;
+      const settings = EmailConfigFactory.getEmailSettings();
 
-      const mailOptions = {
-        from: this.fromEmail,
+      const emailOptions: EmailOptions = {
         to: toEmail,
         subject: 'Draco Sports Manager - Password Reset Request',
         html: this.generatePasswordResetEmailHtml(username, resetUrl),
         text: this.generatePasswordResetEmailText(username, resetUrl),
+        from: settings.fromEmail,
+        fromName: settings.fromName,
+        replyTo: settings.replyTo,
       };
 
-      await this.transporter.sendMail(mailOptions);
-      return true;
+      const provider = await this.getProvider();
+      const result = await provider.sendEmail(emailOptions);
+
+      return result.success;
     } catch (error) {
       console.error('Error sending password reset email:', error);
       return false;
     }
+  }
+
+  /**
+   * Compose and send bulk email to multiple recipients
+   */
+  async composeAndSendEmail(
+    accountId: bigint,
+    createdByUserId: string,
+    request: EmailComposeRequest,
+  ): Promise<bigint> {
+    // Create email record in database
+    const email = await prisma.emails.create({
+      data: {
+        account_id: accountId,
+        created_by_user_id: createdByUserId,
+        subject: request.subject,
+        body_html: request.body,
+        body_text: this.stripHtml(request.body),
+        template_id: request.templateId,
+        status: request.scheduledSend ? 'scheduled' : 'sending',
+        scheduled_send_at: request.scheduledSend,
+        created_at: new Date(),
+      },
+    });
+
+    // If scheduled for future, return email ID (will be sent later by scheduler)
+    if (request.scheduledSend && request.scheduledSend > new Date()) {
+      return email.id;
+    }
+
+    // Send immediately
+    await this.sendBulkEmail(email.id, request);
+
+    return email.id;
+  }
+
+  /**
+   * Send bulk email to resolved recipients
+   */
+  async sendBulkEmail(emailId: bigint, request: EmailComposeRequest): Promise<void> {
+    try {
+      // Get email record
+      const email = await prisma.emails.findUnique({
+        where: { id: emailId },
+        include: { accounts: true },
+      });
+
+      if (!email) {
+        throw new Error(`Email record not found: ${emailId}`);
+      }
+
+      // Resolve recipients (this will be implemented in RecipientResolver service)
+      const recipients = await this.resolveRecipients(email.account_id, request.recipients);
+
+      // Create recipient records
+      await prisma.email_recipients.createMany({
+        data: recipients.map((recipient) => ({
+          email_id: emailId,
+          contact_id: recipient.contactId,
+          email_address: recipient.emailAddress,
+          contact_name: recipient.contactName,
+          recipient_type: recipient.recipientType,
+          status: 'pending',
+        })),
+      });
+
+      // Send emails in batches
+      const batchSize = 100;
+      const settings = EmailConfigFactory.getEmailSettings();
+
+      for (let i = 0; i < recipients.length; i += batchSize) {
+        const batch = recipients.slice(i, i + batchSize);
+        await this.sendBatch(emailId, batch, email.subject, email.body_html, settings);
+      }
+
+      // Update email status
+      await prisma.emails.update({
+        where: { id: emailId },
+        data: {
+          status: 'sent',
+          sent_at: new Date(),
+          total_recipients: recipients.length,
+        },
+      });
+    } catch (error) {
+      console.error(`Error sending bulk email ${emailId}:`, error);
+
+      // Update email status to failed
+      await prisma.emails.update({
+        where: { id: emailId },
+        data: {
+          status: 'failed',
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Send a batch of emails
+   */
+  private async sendBatch(
+    emailId: bigint,
+    recipients: ResolvedRecipient[],
+    subject: string,
+    bodyHtml: string,
+    settings: EmailSettings,
+  ): Promise<void> {
+    const provider = await this.getProvider();
+
+    for (const recipient of recipients) {
+      try {
+        const emailOptions: EmailOptions = {
+          to: recipient.emailAddress,
+          subject,
+          html: bodyHtml,
+          text: this.stripHtml(bodyHtml),
+          from: settings.fromEmail,
+          fromName: settings.fromName,
+          replyTo: settings.replyTo,
+        };
+
+        const result = await provider.sendEmail(emailOptions);
+
+        // Update recipient status
+        await prisma.email_recipients.updateMany({
+          where: {
+            email_id: emailId,
+            contact_id: recipient.contactId,
+          },
+          data: {
+            status: result.success ? 'sent' : 'failed',
+            sent_at: result.success ? new Date() : null,
+            error_message: result.error || null,
+          },
+        });
+
+        // Log preview URL for development
+        if (result.previewUrl) {
+          console.log(`Email preview for ${recipient.emailAddress}: ${result.previewUrl}`);
+        }
+      } catch (error) {
+        console.error(`Error sending email to ${recipient.emailAddress}:`, error);
+
+        // Update recipient status to failed
+        await prisma.email_recipients.updateMany({
+          where: {
+            email_id: emailId,
+            contact_id: recipient.contactId,
+          },
+          data: {
+            status: 'failed',
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+          },
+        });
+      }
+    }
+  }
+
+  /**
+   * Resolve recipients from selection criteria
+   * TODO: This will be moved to a separate RecipientResolver service
+   */
+  private async resolveRecipients(
+    accountId: bigint,
+    selection: EmailRecipientSelection,
+  ): Promise<ResolvedRecipient[]> {
+    // Placeholder implementation - will be enhanced
+    const recipients: ResolvedRecipient[] = [];
+
+    // Add individual contacts
+    if (selection.contactIds?.length > 0) {
+      const contacts = await prisma.contacts.findMany({
+        where: {
+          id: { in: selection.contactIds.map((id: string) => BigInt(id)) },
+          creatoraccountid: accountId,
+          email: { not: null },
+        },
+      });
+
+      recipients.push(
+        ...contacts.map((contact) => ({
+          contactId: contact.id,
+          emailAddress: contact.email!,
+          contactName: `${contact.firstname} ${contact.lastname}`.trim(),
+          recipientType: 'individual',
+        })),
+      );
+    }
+
+    return recipients;
+  }
+
+  /**
+   * Strip HTML tags for plain text version
+   */
+  private stripHtml(html: string): string {
+    return html.replace(/<[^>]*>/g, '').trim();
   }
 
   /**
@@ -121,8 +345,8 @@ This is an automated message from Draco Sports Manager. Please do not reply to t
    */
   async testConnection(): Promise<boolean> {
     try {
-      await this.transporter.verify();
-      return true;
+      const provider = await this.getProvider();
+      return await provider.testConnection();
     } catch (error) {
       console.error('Email configuration test failed:', error);
       return false;
