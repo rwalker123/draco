@@ -6,7 +6,7 @@
 # PostgreSQL connection details
 PGHOST="localhost"
 PGPORT="5432"
-PGDATABASE="ezrecsports2"
+PGDATABASE="ezrecsports"
 PGUSER="postgres"
 PGPASSWORD=""
 
