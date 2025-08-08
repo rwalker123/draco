@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import OrganizationsWidget from '../OrganizationsWidget';
 
 // Mock the useAuth hook
-jest.mock('../../context/AuthContext', () => ({
+vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: '1', firstname: 'Test', lastname: 'User' },
     token: 'test-token',
@@ -11,18 +11,18 @@ jest.mock('../../context/AuthContext', () => ({
 }));
 
 // Mock the useRouter hook
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: vi.fn(),
   }),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('OrganizationsWidget', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders with default title', () => {
@@ -51,7 +51,7 @@ describe('OrganizationsWidget', () => {
 
   it('does not render when user is not authenticated', () => {
     // Mock useAuth to return no user
-    jest.doMock('../../context/AuthContext', () => ({
+    vi.doMock('../../context/AuthContext', () => ({
       useAuth: () => ({
         user: null,
         token: null,

@@ -1,30 +1,31 @@
 import { LocalStorageService } from '../storageService';
 import * as fs from 'fs';
 import * as sharp from 'sharp';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-jest.mock('sharp', () => jest.fn());
+vi.mock('sharp', () => vi.fn());
 
 describe('LocalStorageService', () => {
   let service: LocalStorageService;
-  let existsSyncSpy: jest.SpyInstance;
-  let mkdirSyncSpy: jest.SpyInstance;
-  let writeFileSyncSpy: jest.SpyInstance;
-  let readFileSyncSpy: jest.SpyInstance;
-  let unlinkSyncSpy: jest.SpyInstance;
-  let mockSharp: jest.MockedFunction<typeof sharp>;
+  let existsSyncSpy: any;
+  let mkdirSyncSpy: any;
+  let writeFileSyncSpy: any;
+  let readFileSyncSpy: any;
+  let unlinkSyncSpy: any;
+  let mockSharp: any;
 
   beforeEach(() => {
-    existsSyncSpy = jest.spyOn(fs, 'existsSync');
-    mkdirSyncSpy = jest.spyOn(fs, 'mkdirSync');
-    writeFileSyncSpy = jest.spyOn(fs, 'writeFileSync');
-    readFileSyncSpy = jest.spyOn(fs, 'readFileSync');
-    unlinkSyncSpy = jest.spyOn(fs, 'unlinkSync');
+    existsSyncSpy = vi.spyOn(fs, 'existsSync');
+    mkdirSyncSpy = vi.spyOn(fs, 'mkdirSync');
+    writeFileSyncSpy = vi.spyOn(fs, 'writeFileSync');
+    readFileSyncSpy = vi.spyOn(fs, 'readFileSync');
+    unlinkSyncSpy = vi.spyOn(fs, 'unlinkSync');
 
-    mockSharp = sharp as jest.MockedFunction<typeof sharp>;
+    mockSharp = sharp as any;
     mockSharp.mockReturnValue({
       resize: () => ({
         png: () => ({
-          toBuffer: jest.fn().mockResolvedValue(Buffer.from('resized')),
+          toBuffer: vi.fn().mockResolvedValue(Buffer.from('resized')),
         }),
       }),
     } as unknown as sharp.Sharp);
@@ -33,7 +34,7 @@ describe('LocalStorageService', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should save a logo', async () => {
