@@ -48,35 +48,15 @@
   "info": {
     "title": "Draco Sports Manager API",
     "version": "1.0.0",
-    "description": "API documentation for Draco Sports Manager - A comprehensive sports league management system",
-    "contact": {
-      "name": "Draco Sports Manager",
-      "email": "support@dracosports.com"
-    },
-    "license": {
-      "name": "ISC",
-      "url": "https://opensource.org/licenses/ISC"
-    }
+    "description": "API documentation for Draco Sports Manager"
   },
   "servers": [
     {
       "url": "http://localhost:5000",
       "description": "Development server"
-    },
-    {
-      "url": "https://api.dracosports.com",
-      "description": "Production server"
     }
   ],
   "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "JWT token for authentication"
-      }
-    },
     "schemas": {
       "Error": {
         "type": "object",
@@ -87,7 +67,7 @@
           },
           "message": {
             "type": "string",
-            "example": "Error message"
+            "example": "An error occurred"
           }
         }
       },
@@ -100,7 +80,37 @@
           },
           "message": {
             "type": "string",
-            "example": "Operation successful"
+            "example": "Operation completed successfully"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "123"
+          },
+          "username": {
+            "type": "string",
+            "example": "john_doe"
+          },
+          "email": {
+            "type": "string",
+            "example": "john@example.com"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2024-01-01T00:00:00Z"
           }
         }
       },
@@ -113,12 +123,12 @@
         "properties": {
           "username": {
             "type": "string",
-            "description": "User username",
+            "description": "Username for login",
             "example": "john_doe"
           },
           "password": {
             "type": "string",
-            "description": "User password",
+            "description": "Password for login",
             "example": "password123"
           }
         }
@@ -133,101 +143,475 @@
         "properties": {
           "username": {
             "type": "string",
-            "description": "User username",
+            "description": "Username for registration",
             "example": "john_doe"
           },
           "email": {
             "type": "string",
             "format": "email",
-            "description": "User email address",
+            "description": "Email address",
             "example": "john@example.com"
           },
           "password": {
             "type": "string",
-            "description": "User password (minimum 6 characters)",
+            "description": "Password (minimum 6 characters)",
             "example": "password123"
           },
           "firstName": {
             "type": "string",
-            "description": "User first name",
+            "description": "First name",
             "example": "John"
           },
           "lastName": {
             "type": "string",
-            "description": "User last name",
+            "description": "Last name",
             "example": "Doe"
-          }
-        }
-      },
-      "User": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "123e4567-e89b-12d3-a456-426614174000"
-          },
-          "username": {
-            "type": "string",
-            "example": "john_doe"
-          },
-          "email": {
-            "type": "string",
-            "format": "email",
-            "example": "john@example.com"
-          },
-          "firstName": {
-            "type": "string",
-            "example": "John"
-          },
-          "lastName": {
-            "type": "string",
-            "example": "Doe"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2024-01-01T00:00:00.000Z"
           }
         }
       }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token for authentication"
+      }
     }
   },
-  "tags": [
-    {
-      "name": "Authentication",
-      "description": "User authentication and authorization endpoints"
-    },
-    {
-      "name": "Accounts",
-      "description": "User account management endpoints"
-    },
-    {
-      "name": "Leagues",
-      "description": "League management endpoints"
-    },
-    {
-      "name": "Seasons",
-      "description": "Season management endpoints"
-    },
-    {
-      "name": "Teams",
-      "description": "Team management endpoints"
-    },
-    {
-      "name": "Games",
-      "description": "Game management endpoints"
-    },
-    {
-      "name": "Rosters",
-      "description": "Player roster management endpoints"
-    },
-    {
-      "name": "Divisions",
-      "description": "Division management endpoints"
-    }
-  ],
   "paths": {
+    "/api/accounts/{accountId}/contacts/me": {
+      "get": {
+        "summary": "Get current user's contact for an account",
+        "description": "Returns the authenticated user's contact within the specified account, or 404 if not registered",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Contact found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "contact": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not registered with this account"
+          }
+        }
+      },
+      "post": {
+        "summary": "Self-register current user to an account",
+        "description": "Creates a contact for the authenticated user within the specified account",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "middleName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact created"
+          },
+          "409": {
+            "description": "Already registered"
+          }
+        }
+      }
+    },
+    "/api/accounts/search": {
+      "get": {
+        "summary": "Search for accounts",
+        "description": "Public search for accounts by name, type, or affiliation (no authentication required)",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search query for account name, type, or affiliation",
+            "example": "baseball"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accounts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "123"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Local Baseball League"
+                              },
+                              "accountType": {
+                                "type": "string",
+                                "example": "Baseball League"
+                              },
+                              "firstYear": {
+                                "type": "integer",
+                                "example": 2020
+                              },
+                              "affiliation": {
+                                "type": "string",
+                                "example": "National Baseball Association"
+                              },
+                              "urls": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "example": "456"
+                                    },
+                                    "url": {
+                                      "type": "string",
+                                      "example": "www.localbaseball.com"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing search query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/by-domain": {
+      "get": {
+        "summary": "Get account by domain",
+        "description": "Get account information by domain (no authentication required, used by domain routing middleware)",
+        "tags": [
+          "Accounts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Account found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "account": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "123"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Local Baseball League"
+                            },
+                            "accountType": {
+                              "type": "string",
+                              "example": "Baseball League"
+                            },
+                            "accountTypeId": {
+                              "type": "string",
+                              "example": "1"
+                            },
+                            "firstYear": {
+                              "type": "integer",
+                              "example": 2020
+                            },
+                            "timezoneId": {
+                              "type": "integer",
+                              "example": 1
+                            },
+                            "urls": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "example": "456"
+                                  },
+                                  "url": {
+                                    "type": "string",
+                                    "example": "www.localbaseball.com"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing host header",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No account found for this domain",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/registration": {
+      "post": {
+        "summary": "Combined login + account registration",
+        "description": "For users not logged in. Supports creating a new user or logging in an existing user and registering them to the account.",
+        "tags": [
+          "Accounts"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "oneOf": [
+                  {
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "newUser"
+                        ]
+                      },
+                      "email": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "firstName": {
+                        "type": "string"
+                      },
+                      "middleName": {
+                        "type": "string"
+                      },
+                      "lastName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "mode",
+                      "email",
+                      "password",
+                      "firstName",
+                      "lastName"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "mode": {
+                        "type": "string",
+                        "enum": [
+                          "existingUser"
+                        ]
+                      },
+                      "usernameOrEmail": {
+                        "type": "string"
+                      },
+                      "password": {
+                        "type": "string"
+                      },
+                      "firstName": {
+                        "type": "string"
+                      },
+                      "middleName": {
+                        "type": "string"
+                      },
+                      "lastName": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "mode",
+                      "usernameOrEmail",
+                      "password",
+                      "firstName"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Registered to account and token issued"
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "409": {
+            "description": "Already registered"
+          }
+        }
+      }
+    },
     "/api/auth/login": {
       "post": {
         "summary": "Login with username and password",
@@ -616,8 +1000,1436 @@
           }
         }
       }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/games/{gameId}/results": {
+      "put": {
+        "summary": "Update game results",
+        "description": "Update game results including scores, status, and notifications",
+        "tags": [
+          "Games"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Season ID",
+            "example": "456"
+          },
+          {
+            "in": "path",
+            "name": "gameId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Game ID",
+            "example": "789"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "homeScore",
+                  "awayScore",
+                  "gameStatus"
+                ],
+                "properties": {
+                  "homeScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Home team score",
+                    "example": 5
+                  },
+                  "awayScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Away team score",
+                    "example": 3
+                  },
+                  "gameStatus": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 5,
+                    "description": "Game status (0=Incomplete, 1=Final, 2=In Progress, 3=Postponed, 4=Forfeit, 5=Did Not Report)",
+                    "example": 1
+                  },
+                  "emailPlayers": {
+                    "type": "boolean",
+                    "description": "Send email notification to players",
+                    "example": false
+                  },
+                  "postToTwitter": {
+                    "type": "boolean",
+                    "description": "Post results to Twitter",
+                    "example": false
+                  },
+                  "postToBluesky": {
+                    "type": "boolean",
+                    "description": "Post results to Bluesky",
+                    "example": false
+                  },
+                  "postToFacebook": {
+                    "type": "boolean",
+                    "description": "Post results to Facebook",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Game results updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Game results updated successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "gameId": {
+                          "type": "string",
+                          "example": "789"
+                        },
+                        "homeScore": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "awayScore": {
+                          "type": "integer",
+                          "example": 3
+                        },
+                        "gameStatus": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "notifications": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": []
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no access to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Game not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/games": {
+      "get": {
+        "summary": "Get all games for a season",
+        "description": "Retrieve all games for a season across all leagues with optional filtering",
+        "tags": [
+          "Games"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Season ID",
+            "example": "456"
+          },
+          {
+            "in": "query",
+            "name": "startDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Start date for filtering games (YYYY-MM-DD)",
+            "example": "2024-01-01"
+          },
+          {
+            "in": "query",
+            "name": "endDate",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "End date for filtering games (YYYY-MM-DD)",
+            "example": "2024-12-31"
+          },
+          {
+            "in": "query",
+            "name": "teamId",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter games by team ID",
+            "example": "101"
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "Page number for pagination",
+            "example": 1
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Number of items per page",
+            "example": 50
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Games retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "games": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "789"
+                              },
+                              "gameDate": {
+                                "type": "string",
+                                "format": "date-time",
+                                "example": "2024-06-15T18:00:00Z"
+                              },
+                              "homeTeam": {
+                                "type": "string",
+                                "example": "Red Sox"
+                              },
+                              "awayTeam": {
+                                "type": "string",
+                                "example": "Yankees"
+                              },
+                              "homeScore": {
+                                "type": "integer",
+                                "example": 5
+                              },
+                              "awayScore": {
+                                "type": "integer",
+                                "example": 3
+                              },
+                              "gameStatus": {
+                                "type": "integer",
+                                "example": 1
+                              },
+                              "gameStatusText": {
+                                "type": "string",
+                                "example": "Final"
+                              },
+                              "field": {
+                                "type": "string",
+                                "example": "Fenway Park"
+                              },
+                              "league": {
+                                "type": "string",
+                                "example": "Major League"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/leagues": {
+      "get": {
+        "summary": "Get all leagues for an account",
+        "description": "Retrieve all leagues for a specific account (requires account access)",
+        "tags": [
+          "Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Leagues retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "leagues": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "101"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Major League"
+                              },
+                              "accountId": {
+                                "type": "string",
+                                "example": "123"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no access to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new league",
+        "description": "Create a new league for an account (requires AccountAdmin or Administrator)",
+        "tags": [
+          "Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "League name",
+                    "example": "Minor League"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "League created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "league": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "102"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Minor League"
+                            },
+                            "accountId": {
+                              "type": "string",
+                              "example": "123"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing league name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - requires AccountAdmin or Administrator",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "League with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/leagues/{leagueId}": {
+      "get": {
+        "summary": "Get specific league details",
+        "description": "Retrieve details for a specific league (requires account access)",
+        "tags": [
+          "Leagues"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "leagueId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "League ID",
+            "example": "101"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "League details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "league": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "101"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "Major League"
+                            },
+                            "accountId": {
+                              "type": "string",
+                              "example": "123"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no access to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "League not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/monitoring/health": {
+      "get": {
+        "summary": "Get comprehensive system health status",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "System health information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "healthy",
+                        "warning",
+                        "critical"
+                      ]
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "database": {
+                      "type": "object"
+                    },
+                    "performance": {
+                      "type": "object"
+                    },
+                    "uptime": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/monitoring/performance": {
+      "get": {
+        "summary": "Get detailed performance metrics",
+        "tags": [
+          "Monitoring"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "window",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Time window in minutes (default 5)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Performance metrics"
+          }
+        }
+      }
+    },
+    "/api/monitoring/slow-queries": {
+      "get": {
+        "summary": "Get recent slow queries",
+        "tags": [
+          "Monitoring"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Number of queries to return (default 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of slow queries"
+          }
+        }
+      }
+    },
+    "/api/monitoring/connection-pool": {
+      "get": {
+        "summary": "Get connection pool status",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "Connection pool metrics"
+          }
+        }
+      }
+    },
+    "/api/monitoring/reset": {
+      "post": {
+        "summary": "Reset performance monitoring data",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "Monitoring data reset successfully"
+          }
+        }
+      }
+    },
+    "/api/monitoring/config": {
+      "get": {
+        "summary": "Get current monitoring configuration",
+        "tags": [
+          "Monitoring"
+        ],
+        "responses": {
+          "200": {
+            "description": "Current monitoring configuration"
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons": {
+      "get": {
+        "summary": "Get all seasons for an account",
+        "description": "Retrieve all seasons for a specific account (requires account access)",
+        "tags": [
+          "Seasons"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seasons retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "seasons": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "example": "456"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "2024 Season"
+                              },
+                              "accountId": {
+                                "type": "string",
+                                "example": "123"
+                              },
+                              "isCurrent": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "leagues": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string",
+                                      "example": "789"
+                                    },
+                                    "leagueId": {
+                                      "type": "string",
+                                      "example": "101"
+                                    },
+                                    "leagueName": {
+                                      "type": "string",
+                                      "example": "Major League"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no access to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/current": {
+      "get": {
+        "summary": "Get current season for an account",
+        "description": "Retrieve the current season for a specific account",
+        "tags": [
+          "Seasons"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current season retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "season": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "456"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "2024 Season"
+                            },
+                            "accountId": {
+                              "type": "string",
+                              "example": "123"
+                            },
+                            "isCurrent": {
+                              "type": "boolean",
+                              "example": true
+                            },
+                            "leagues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "example": "789"
+                                  },
+                                  "leagueId": {
+                                    "type": "string",
+                                    "example": "101"
+                                  },
+                                  "leagueName": {
+                                    "type": "string",
+                                    "example": "Major League"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No current season found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}": {
+      "get": {
+        "summary": "Get specific season details",
+        "description": "Retrieve details for a specific season (requires account access)",
+        "tags": [
+          "Seasons"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID",
+            "example": "123"
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Season ID",
+            "example": "456"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Season details retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "season": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "456"
+                            },
+                            "name": {
+                              "type": "string",
+                              "example": "2024 Season"
+                            },
+                            "accountId": {
+                              "type": "string",
+                              "example": "123"
+                            },
+                            "leagues": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "example": "789"
+                                  },
+                                  "leagueId": {
+                                    "type": "string",
+                                    "example": "101"
+                                  },
+                                  "leagueName": {
+                                    "type": "string",
+                                    "example": "Major League"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no access to account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Season not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers": {
+      "get": {
+        "summary": "List all managers for a team season",
+        "tags": [
+          "TeamManagers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "teamSeasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of managers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "teamseasonid": {
+                            "type": "string"
+                          },
+                          "contactid": {
+                            "type": "string"
+                          },
+                          "contacts": {
+                            "type": "object",
+                            "description": "Contact info"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      },
+      "post": {
+        "summary": "Add a manager to a team season",
+        "tags": [
+          "TeamManagers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "teamSeasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "contactId"
+                ],
+                "properties": {
+                  "contactId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Manager added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/accounts/{accountId}/seasons/{seasonId}/teams/{teamSeasonId}/managers/{managerId}": {
+      "delete": {
+        "summary": "Remove a manager from a team season",
+        "tags": [
+          "TeamManagers"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "seasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "teamSeasonId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "managerId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Manager removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "TeamManagers",
+      "description": "Team manager assignment endpoints"
+    }
+  ]
 },
                 dom_id: '#swagger-ui',
                 deepLinking: true,

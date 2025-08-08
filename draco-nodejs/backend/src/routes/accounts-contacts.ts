@@ -28,6 +28,187 @@ export const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
 
 /**
+ * @swagger
+ * /api/accounts/{accountId}/contacts/me:
+ *   get:
+ *     summary: Get current user's contact for an account
+ *     description: Returns the authenticated user's contact within the specified account, or 404 if not registered
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     responses:
+ *       200:
+ *         description: Contact found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     contact:
+ *                       type: object
+ *       404:
+ *         description: Not registered with this account
+ */
+router.get(
+  '/:accountId/contacts/me',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    const existing = await prisma.contacts.findFirst({
+      where: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+      },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'Not registered with this account' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          id: existing.id.toString(),
+          firstname: existing.firstname,
+          lastname: existing.lastname,
+          middlename: existing.middlename,
+          email: existing.email || undefined,
+          phone1: existing.phone1 || undefined,
+          phone2: existing.phone2 || undefined,
+          phone3: existing.phone3 || undefined,
+          streetaddress: existing.streetaddress || undefined,
+          city: existing.city || undefined,
+          state: existing.state || undefined,
+          zip: existing.zip || undefined,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(existing.dateofbirth),
+        },
+      },
+    });
+  }),
+);
+
+/**
+ * @swagger
+ * /api/accounts/{accountId}/contacts/me:
+ *   post:
+ *     summary: Self-register current user to an account
+ *     description: Creates a contact for the authenticated user within the specified account
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               middleName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Contact created
+ *       409:
+ *         description: Already registered
+ */
+router.post(
+  '/:accountId/contacts/me',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    // Guard: existing membership
+    const existing = await prisma.contacts.findFirst({
+      where: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+      },
+    });
+    if (existing) {
+      res.status(409).json({ success: false, message: 'Already registered with this account' });
+      return;
+    }
+
+    // Normalize input: accept camelCase from FE, convert to backend lowercase for processing
+    const body = req.body || {};
+    const normalizedInput: Record<string, unknown> = {
+      firstname: body.firstname ?? body.firstName,
+      middlename: body.middlename ?? body.middleName,
+      lastname: body.lastname ?? body.lastName,
+      email: body.email,
+    };
+
+    const { firstname, middlename, lastname, email } = sanitizeContactData(normalizedInput);
+
+    // Validate required fields and email format
+    if (!firstname || !lastname) {
+      res.status(400).json({ success: false, message: 'First name and last name are required' });
+      return;
+    }
+    if (email && !isEmail(email)) {
+      res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+      return;
+    }
+
+    const created = await prisma.contacts.create({
+      data: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+        firstname,
+        lastname,
+        middlename: middlename || '',
+        email: email || null,
+        dateofbirth: DateUtils.parseDateOfBirthForDatabase(null),
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        contact: {
+          id: created.id.toString(),
+          firstname: created.firstname,
+          lastname: created.lastname,
+          middlename: created.middlename,
+          email: created.email || undefined,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(created.dateofbirth),
+        },
+      },
+    });
+  }),
+);
+
+/**
  * GET /api/accounts/:accountId/contacts
  * Get users in account (requires account access) - with pagination
  * Optional query parameters:
