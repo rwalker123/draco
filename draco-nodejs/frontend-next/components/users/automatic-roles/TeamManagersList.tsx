@@ -49,7 +49,7 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ManagerIcon sx={{ color: '#1976D2', fontSize: 24 }} />
             <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#0D47A1' }}>
-              Team Managers (Current Season) ({teamManagers.length})
+              Team Managers ({teamManagers.length})
             </Typography>
           </Box>
           <IconButton onClick={handleToggle} size="small" sx={{ color: '#1976D2' }}>
