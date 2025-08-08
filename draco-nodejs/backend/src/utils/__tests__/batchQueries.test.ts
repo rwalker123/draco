@@ -1,13 +1,14 @@
 import { BatchQueryHelper } from '../batchQueries';
 import { PrismaClient } from '@prisma/client';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 
 // Mock Prisma client type for testing
 type MockPrismaClient = {
   teamsseason: {
-    findMany: jest.Mock;
+    findMany: any;
   };
   leagueschedule: {
-    findMany: jest.Mock;
+    findMany: any;
   };
 };
 
@@ -21,10 +22,10 @@ describe('BatchQueryHelper', () => {
     it('should handle empty array', async () => {
       const mockPrisma: MockPrismaClient = {
         teamsseason: {
-          findMany: jest.fn().mockResolvedValue([]),
+          findMany: vi.fn().mockResolvedValue([]),
         },
         leagueschedule: {
-          findMany: jest.fn(),
+          findMany: vi.fn(),
         },
       };
 
@@ -39,13 +40,13 @@ describe('BatchQueryHelper', () => {
     it('should batch multiple team IDs into single query', async () => {
       const mockPrisma: MockPrismaClient = {
         teamsseason: {
-          findMany: jest.fn().mockResolvedValue([
+          findMany: vi.fn().mockResolvedValue([
             { id: 1n, name: 'Team A' },
             { id: 2n, name: 'Team B' },
           ]),
         },
         leagueschedule: {
-          findMany: jest.fn(),
+          findMany: vi.fn(),
         },
       };
 
@@ -67,10 +68,10 @@ describe('BatchQueryHelper', () => {
     it('should use cache for repeated requests', async () => {
       const mockPrisma: MockPrismaClient = {
         teamsseason: {
-          findMany: jest.fn().mockResolvedValue([{ id: 1n, name: 'Team A' }]),
+          findMany: vi.fn().mockResolvedValue([{ id: 1n, name: 'Team A' }]),
         },
         leagueschedule: {
-          findMany: jest.fn(),
+          findMany: vi.fn(),
         },
       };
 
@@ -91,10 +92,10 @@ describe('BatchQueryHelper', () => {
     it('should handle empty array', async () => {
       const mockPrisma: MockPrismaClient = {
         teamsseason: {
-          findMany: jest.fn(),
+          findMany: vi.fn(),
         },
         leagueschedule: {
-          findMany: jest.fn().mockResolvedValue([]),
+          findMany: vi.fn().mockResolvedValue([]),
         },
       };
 
@@ -109,10 +110,10 @@ describe('BatchQueryHelper', () => {
     it('should calculate records correctly', async () => {
       const mockPrisma: MockPrismaClient = {
         teamsseason: {
-          findMany: jest.fn(),
+          findMany: vi.fn(),
         },
         leagueschedule: {
-          findMany: jest.fn().mockResolvedValue([
+          findMany: vi.fn().mockResolvedValue([
             {
               hteamid: 1n,
               vteamid: 2n,

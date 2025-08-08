@@ -4,8 +4,8 @@ import GameListDisplay, { GameListSection, Game } from '../GameListDisplay';
 import { GameStatus } from '../../types/schedule';
 
 // Mock the gameUtils module
-jest.mock('../../utils/gameUtils', () => ({
-  getGameStatusShortText: jest.fn((status: number) => {
+vi.mock('../../utils/gameUtils', () => ({
+  getGameStatusShortText: vi.fn((status: number) => {
     const statusMap: Record<number, string> = {
       0: 'Scheduled',
       1: 'Final',

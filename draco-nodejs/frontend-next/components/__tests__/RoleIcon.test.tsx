@@ -6,9 +6,10 @@ import RoleIcon from '../users/RoleIcon';
 import * as roleIcons from '../../utils/roleIcons';
 
 // Mock the role utilities
-jest.mock('../../utils/roleIcons', () => ({
-  getRoleIcon: jest.fn(),
-  getRoleTooltipText: jest.fn(),
+vi.mock('../../utils/roleIcons', () => ({
+  getRoleIcon: vi.fn(),
+  getRoleTooltipText: vi.fn(),
+  getRoleColors: vi.fn(),
 }));
 
 const mockRole = {
@@ -25,16 +26,20 @@ const renderWithTheme = (component: React.ReactElement) => {
 
 describe('RoleIcon', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders without crashing', () => {
-    (roleIcons.getRoleIcon as jest.Mock).mockReturnValue(() => (
+    (roleIcons.getRoleIcon as vi.MockedFunction).mockReturnValue(() => (
       <div data-testid="mock-icon">🏢</div>
     ));
-    (roleIcons.getRoleTooltipText as jest.Mock).mockReturnValue(
+    (roleIcons.getRoleTooltipText as vi.MockedFunction).mockReturnValue(
       'Administrator - Full system access',
     );
+    (roleIcons.getRoleColors as vi.MockedFunction).mockReturnValue({
+      backgroundColor: '#ff0000',
+      textColor: '#ffffff',
+    });
 
     renderWithTheme(<RoleIcon role={mockRole} />);
 
@@ -42,8 +47,12 @@ describe('RoleIcon', () => {
   });
 
   it('handles unknown roles gracefully', () => {
-    (roleIcons.getRoleIcon as jest.Mock).mockReturnValue(undefined);
-    (roleIcons.getRoleTooltipText as jest.Mock).mockReturnValue('Unknown Role');
+    (roleIcons.getRoleIcon as vi.MockedFunction).mockReturnValue(undefined);
+    (roleIcons.getRoleTooltipText as vi.MockedFunction).mockReturnValue('Unknown Role');
+    (roleIcons.getRoleColors as vi.MockedFunction).mockReturnValue({
+      backgroundColor: '#cccccc',
+      textColor: '#000000',
+    });
 
     renderWithTheme(<RoleIcon role={mockRole} />);
 

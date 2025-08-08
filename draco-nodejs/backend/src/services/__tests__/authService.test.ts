@@ -1,6 +1,7 @@
 import { AuthService } from '../authService';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
+import { describe, it, expect } from 'vitest';
 
 interface TestJwtPayload {
   userId: string;

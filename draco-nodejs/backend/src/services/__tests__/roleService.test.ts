@@ -1,15 +1,16 @@
 import { RoleService } from '../roleService';
 import { PrismaClient } from '@prisma/client';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 const mockPrisma = {
   aspnetuserroles: {
-    findMany: jest.fn(),
+    findMany: vi.fn(),
   },
   contacts: {
-    findFirst: jest.fn(),
+    findFirst: vi.fn(),
   },
   contactroles: {
-    findMany: jest.fn(),
+    findMany: vi.fn(),
   },
 };
 
@@ -17,7 +18,7 @@ describe('RoleService', () => {
   const roleService = new RoleService(mockPrisma as unknown as PrismaClient);
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('getGlobalRoles', () => {
