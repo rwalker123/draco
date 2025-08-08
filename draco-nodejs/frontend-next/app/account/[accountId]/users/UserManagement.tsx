@@ -11,6 +11,7 @@ import {
 import EditContactDialog from '../../../../components/users/EditContactDialog';
 import DeleteContactDialog from '../../../../components/users/DeleteContactDialog';
 import ConfirmationDialog from '../../../../components/common/ConfirmationDialog';
+import { AutomaticRolesSection } from '../../../../components/users/automatic-roles';
 
 interface UserManagementProps {
   accountId: string;
@@ -60,6 +61,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
     selectedLeagueId,
     selectedTeamId,
     contextDataLoading,
+
+    // Automatic role holders states
+    accountOwner,
+    teamManagers,
 
     // Actions
     handleSearch,
@@ -130,6 +135,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ accountId }) => {
           {success}
         </Alert>
       )}
+
+      {/* Automatic Role Holders Section */}
+      <AutomaticRolesSection accountOwner={accountOwner} teamManagers={teamManagers} />
 
       {/* Enhanced User Table with Modern Features */}
       <UserTableEnhanced

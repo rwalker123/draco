@@ -147,6 +147,29 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
   const [contextDataLoading, setContextDataLoading] = useState(false);
 
+  // Automatic role holders state
+  const [accountOwner, setAccountOwner] = useState<{
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    photoUrl?: string;
+  } | null>(null); // Initialize as null, but will be set once loaded
+  const [teamManagers, setTeamManagers] = useState<
+    Array<{
+      contactId: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      photoUrl?: string;
+      teams: Array<{
+        teamSeasonId: string;
+        teamName: string;
+      }>;
+    }>
+  >([]);
+  const [automaticRolesLoading, setAutomaticRolesLoading] = useState(false);
+
   // Service instances
   const userService = token ? createUserManagementService(token) : null;
   const contextDataService = token ? createContextDataService(token) : null;
@@ -259,6 +282,24 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
       console.error('Failed to load roles:', err);
     }
   }, [userService]);
+  // Load automatic role holders
+  const loadAutomaticRoleHolders = useCallback(async () => {
+    if (!userService) return;
+
+    try {
+      setAutomaticRolesLoading(true);
+      setError(null);
+
+      const automaticRoleHolders = await userService.fetchAutomaticRoleHolders(accountId);
+      setAccountOwner(automaticRoleHolders.accountOwner);
+      setTeamManagers(automaticRoleHolders.teamManagers);
+    } catch (err) {
+      console.error('Failed to load automatic role holders:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load automatic role holders');
+    } finally {
+      setAutomaticRolesLoading(false);
+    }
+  }, [userService, accountId]);
 
   // Update ref when rowsPerPage changes
   useEffect(() => {
@@ -274,6 +315,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           // Load users with the fetched season ID
           loadUsersWithSeason(seasonId);
           loadRoles();
+          loadAutomaticRoleHolders();
           setInitialized(true);
         })
         .catch((err) => {
@@ -281,10 +323,19 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
           // Still load users and roles even if season fetch fails
           loadUsersWithSeason(null);
           loadRoles();
+          loadAutomaticRoleHolders();
           setInitialized(true);
         });
     }
-  }, [token, accountId, initialized, loadRoles, fetchCurrentSeason, loadUsersWithSeason]);
+  }, [
+    token,
+    accountId,
+    initialized,
+    loadRoles,
+    fetchCurrentSeason,
+    loadUsersWithSeason,
+    loadAutomaticRoleHolders,
+  ]);
 
   // Search handler
   const handleSearch = useCallback(async () => {
@@ -1050,6 +1101,11 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     selectedLeagueId,
     selectedTeamId,
     contextDataLoading,
+
+    // Automatic role holders states
+    accountOwner,
+    teamManagers,
+    automaticRolesLoading,
 
     // Actions
     handleSearch,
