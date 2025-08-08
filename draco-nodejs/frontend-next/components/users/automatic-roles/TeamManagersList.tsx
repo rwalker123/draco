@@ -6,7 +6,6 @@ import {
   Card,
   CardContent,
   Chip,
-  Stack,
   Collapse,
   IconButton,
 } from '@mui/material';
@@ -59,7 +58,18 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
         </Box>
 
         <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-          <Stack spacing={2} sx={{ mt: 2 }}>
+          <Box
+            sx={{
+              mt: 2,
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)',
+              },
+              gap: 2,
+            }}
+          >
             {teamManagers.map((manager) => (
               <Box
                 key={manager.contactId}
@@ -81,34 +91,42 @@ const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => 
                   {manager.lastName[0]}
                 </Avatar>
 
-                <Box sx={{ flex: 1 }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
                     {manager.firstName} {manager.lastName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85em' }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      fontSize: '0.85em',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     {manager.email}
                   </Typography>
-                </Box>
-
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                  {manager.teams.map((team) => (
-                    <Chip
-                      key={team.teamSeasonId}
-                      label={team.teamName}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        fontSize: '0.75rem',
-                        height: '24px',
-                        borderColor: '#1976D2',
-                        color: '#1976D2',
-                      }}
-                    />
-                  ))}
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
+                    {manager.teams.map((team) => (
+                      <Chip
+                        key={team.teamSeasonId}
+                        label={team.teamName}
+                        size="small"
+                        variant="outlined"
+                        sx={{
+                          fontSize: '0.75rem',
+                          height: '20px',
+                          borderColor: '#1976D2',
+                          color: '#1976D2',
+                        }}
+                      />
+                    ))}
+                  </Box>
                 </Box>
               </Box>
             ))}
-          </Stack>
+          </Box>
         </Collapse>
       </CardContent>
     </Card>
