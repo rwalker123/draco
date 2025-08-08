@@ -5,13 +5,14 @@ import accountsRouter from '../accounts';
 import { globalErrorHandler } from '../../utils/globalErrorHandler';
 import * as accountsContactsModule from '../accounts-contacts';
 import gamesRouter from '../games';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-jest.mock('../../middleware/authMiddleware', () => ({
+vi.mock('../../middleware/authMiddleware', () => ({
   authenticateToken: (req: Request, res: Response, next: NextFunction) => next(),
 }));
-jest.mock('../../middleware/routeProtection', () => {
+vi.mock('../../middleware/routeProtection', () => {
   return {
-    RouteProtection: jest.fn().mockImplementation(() => ({
+    RouteProtection: vi.fn().mockImplementation(() => ({
       requireAdministrator: () => (req: Request, res: Response, next: NextFunction) => next(),
       requirePermission: () => (req: Request, res: Response, next: NextFunction) => next(),
       enforceAccountBoundary: () => (req: Request, res: Response, next: NextFunction) => next(),
@@ -24,62 +25,56 @@ jest.mock('../../middleware/routeProtection', () => {
 // Mock the centralized prisma module
 const mockPrisma = {
   accounts: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
   affiliations: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
   },
   accountsurl: {
-    findFirst: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+    findFirst: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
   },
   currentseason: {
-    findUnique: jest.fn(),
+    findUnique: vi.fn(),
   },
   season: {
-    findUnique: jest.fn(),
-    findMany: jest.fn(),
+    findUnique: vi.fn(),
+    findMany: vi.fn(),
   },
   contacts: {
-    findFirst: jest.fn(),
-    update: jest.fn(),
-    findMany: jest.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
+    findMany: vi.fn(),
   },
   availablefields: {
-    findFirst: jest.fn(),
-    update: jest.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
   },
   teams: {
-    findFirst: jest.fn(),
-    delete: jest.fn(),
+    findFirst: vi.fn(),
+    delete: vi.fn(),
   },
   teamsseason: {
-    findFirst: jest.fn(),
+    findFirst: vi.fn(),
   },
   leagueschedule: {
-    findFirst: jest.fn(),
-    update: jest.fn(),
+    findFirst: vi.fn(),
+    update: vi.fn(),
   },
   // Add more as needed for other routes
 };
 
-jest.mock('../../lib/prisma', () => mockPrisma);
-const mockFindManyAccounts = mockPrisma.accounts.findMany as jest.MockedFunction<
-  typeof mockPrisma.accounts.findMany
->;
-const mockFindManyAffiliations = mockPrisma.affiliations.findMany as jest.MockedFunction<
-  typeof mockPrisma.affiliations.findMany
->;
-const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst as jest.MockedFunction<
-  typeof mockPrisma.accountsurl.findFirst
->;
+vi.mock('../../lib/prisma', () => mockPrisma);
+const mockFindManyAccounts = mockPrisma.accounts.findMany as any;
+const mockFindManyAffiliations = mockPrisma.affiliations.findMany as any;
+const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst as any;
 
 function createTestApp() {
   const app = express();
@@ -124,7 +119,7 @@ describe('/accounts/search route', () => {
   let app: express.Express;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -180,13 +175,13 @@ describe('/accounts/by-domain route', () => {
   let app: express.Express;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
   it('returns 400 if host header is missing', async () => {
     // Reset mocks to ensure clean state
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Supertest automatically adds a host header, so we test with empty host
     const res = await request(app).get('/api/accounts/by-domain').set('host', ''); // Empty host header
@@ -239,7 +234,7 @@ describe('/accounts/by-domain route', () => {
 describe('/accounts/:accountId/public route', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -288,7 +283,7 @@ describe('/accounts/:accountId/public route', () => {
 describe('/accounts/:accountId route', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -343,7 +338,7 @@ describe('/accounts/:accountId route', () => {
 describe('POST /accounts', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -392,7 +387,7 @@ describe('POST /accounts', () => {
 describe('PUT /accounts/:accountId', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -444,7 +439,7 @@ describe('PUT /accounts/:accountId', () => {
 describe('DELETE /accounts/:accountId', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -478,7 +473,7 @@ describe('DELETE /accounts/:accountId', () => {
 describe('DELETE /accounts/:accountId/urls/:urlId', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -536,7 +531,7 @@ describe('PUT /accounts/:accountId/fields/:fieldId', () => {
 describe('GET /accounts (admin only)', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestApp();
   });
 
@@ -593,15 +588,16 @@ describe('GET /accounts (admin only)', () => {
 describe('GET /accounts/my-accounts', () => {
   let app: express.Express;
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createTestAppWithUser();
   });
 
   it('returns 200 with all accounts for admin', async () => {
-    jest
-      .spyOn(accountsContactsModule.roleService, 'hasRole')
-      .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
-    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+      hasRole: true,
+      roleLevel: 'account',
+    });
+    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -638,10 +634,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 200 with accounts for account admin', async () => {
-    jest
-      .spyOn(accountsContactsModule.roleService, 'hasRole')
-      .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
-    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+      hasRole: false,
+      roleLevel: 'none',
+    });
+    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -678,10 +675,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 200 with empty accounts if no access', async () => {
-    jest
-      .spyOn(accountsContactsModule.roleService, 'hasRole')
-      .mockResolvedValue({ hasRole: false, roleLevel: 'none' });
-    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+      hasRole: false,
+      roleLevel: 'none',
+    });
+    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });
@@ -695,10 +693,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 500 on error', async () => {
-    jest
-      .spyOn(accountsContactsModule.roleService, 'hasRole')
-      .mockResolvedValue({ hasRole: true, roleLevel: 'account' });
-    jest.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+      hasRole: true,
+      roleLevel: 'account',
+    });
+    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });
@@ -718,7 +717,7 @@ describe('Game Recap Endpoints', () => {
   let app: express.Express;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     app = createGamesTestAppWithUser(teamAdminUser);
   });
 

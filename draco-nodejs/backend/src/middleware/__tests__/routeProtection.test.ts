@@ -3,6 +3,7 @@ import * as httpMocks from 'node-mocks-http';
 import { RouteProtection } from '../routeProtection';
 import { RoleService } from '../../services/roleService';
 import { PrismaClient } from '@prisma/client';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock role IDs for testing
 const MOCK_ROLE_IDS = {
@@ -12,10 +13,10 @@ const MOCK_ROLE_IDS = {
   TeamAdmin: 'team-admin-role-id',
 };
 
-const mockHasRole = jest.fn();
-const mockHasPermission = jest.fn();
-const mockGetUserRoles = jest.fn();
-const mockCheckAccountOwnership = jest.fn();
+const mockHasRole = vi.fn();
+const mockHasPermission = vi.fn();
+const mockGetUserRoles = vi.fn();
+const mockCheckAccountOwnership = vi.fn();
 
 const mockRoleService = {
   hasRole: mockHasRole,
@@ -32,22 +33,20 @@ const routeProtection = new RouteProtection(
 
 describe('RouteProtection middleware', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest
-      .spyOn(
-        routeProtection as unknown as {
-          checkAccountOwnership: (userId: string, accountId: bigint) => Promise<boolean>;
-        },
-        'checkAccountOwnership',
-      )
-      .mockImplementation(mockCheckAccountOwnership);
+    vi.clearAllMocks();
+    vi.spyOn(
+      routeProtection as unknown as {
+        checkAccountOwnership: (userId: string, accountId: bigint) => Promise<boolean>;
+      },
+      'checkAccountOwnership',
+    ).mockImplementation(mockCheckAccountOwnership);
   });
 
   describe('requireAuth', () => {
     it('returns 401 if user is not authenticated', async () => {
       const req = httpMocks.createRequest();
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await routeProtection.requireAuth()(
         req as unknown as Request,
         res as unknown as Response,
@@ -61,7 +60,7 @@ describe('RouteProtection middleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await routeProtection.requireAuth()(
         req as unknown as Request,
         res as unknown as Response,
@@ -75,7 +74,7 @@ describe('RouteProtection middleware', () => {
     it('returns 401 if user is not authenticated', async () => {
       const req = httpMocks.createRequest();
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await routeProtection.requireRole('AccountAdmin')(
         req as unknown as Request,
         res as unknown as Response,
@@ -89,7 +88,7 @@ describe('RouteProtection middleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasRole.mockResolvedValue({ hasRole: false });
       await routeProtection.requireRole('AccountAdmin')(
         req as unknown as Request,
@@ -104,7 +103,7 @@ describe('RouteProtection middleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasRole.mockResolvedValue({ hasRole: true });
       mockGetUserRoles.mockResolvedValue({
         globalRoles: [MOCK_ROLE_IDS.AccountAdmin],
@@ -123,7 +122,7 @@ describe('RouteProtection middleware', () => {
     it('returns 401 if user is not authenticated', async () => {
       const req = httpMocks.createRequest();
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await routeProtection.requirePermission('account.manage')(
         req as unknown as Request,
         res as unknown as Response,
@@ -137,7 +136,7 @@ describe('RouteProtection middleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasPermission.mockResolvedValue(false);
       await routeProtection.requirePermission('account.manage')(
         req as unknown as Request,
@@ -152,7 +151,7 @@ describe('RouteProtection middleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasPermission.mockResolvedValue(true);
       mockGetUserRoles.mockResolvedValue({
         globalRoles: [MOCK_ROLE_IDS.AccountAdmin],

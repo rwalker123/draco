@@ -1,16 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import * as httpMocks from 'node-mocks-http';
 import { bigIntSerializer } from '../bigint-serializer';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('bigIntSerializer middleware', () => {
   let req: httpMocks.MockRequest<Request>;
   let res: httpMocks.MockResponse<Response>;
-  let next: jest.Mock;
+  let next: any;
 
   beforeEach(() => {
     req = httpMocks.createRequest();
     res = httpMocks.createResponse();
-    next = jest.fn();
+    next = vi.fn();
   });
 
   it('should call next()', () => {

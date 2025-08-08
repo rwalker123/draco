@@ -2,13 +2,14 @@ import { authenticateToken } from '../authMiddleware';
 import * as httpMocks from 'node-mocks-http';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-jest.mock('jsonwebtoken');
+vi.mock('jsonwebtoken');
 
-jest.mock('@prisma/client', () => {
-  const mockFindUnique = jest.fn();
+vi.mock('@prisma/client', () => {
+  const mockFindUnique = vi.fn();
   return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
+    PrismaClient: vi.fn().mockImplementation(() => ({
       aspnetusers: { findUnique: mockFindUnique },
     })),
     mockFindUnique,
@@ -16,7 +17,7 @@ jest.mock('@prisma/client', () => {
 });
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { mockFindUnique: mockPrismaFindUnique } = require('@prisma/client') as {
-  mockFindUnique: jest.Mock;
+  mockFindUnique: any;
 };
 
 describe('authenticateToken middleware', () => {
@@ -26,14 +27,14 @@ describe('authenticateToken middleware', () => {
   // const expiredToken = 'expired.jwt.token'; // removed unused variable
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     process.env.JWT_SECRET = JWT_SECRET;
   });
 
   it('returns 401 if no token is provided', async () => {
     const req = httpMocks.createRequest();
     const res = httpMocks.createResponse();
-    const next = jest.fn();
+    const next = vi.fn();
     await authenticateToken(
       req as unknown as Request,
       res as unknown as Response,
@@ -45,14 +46,14 @@ describe('authenticateToken middleware', () => {
   });
 
   it('returns 401 if token is invalid', async () => {
-    (jwt.verify as jest.Mock).mockImplementation(() => {
+    (jwt.verify as any).mockImplementation(() => {
       throw new jwt.JsonWebTokenError('invalid');
     });
     const req = httpMocks.createRequest({
       headers: { authorization: `Bearer invalid.token` },
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
+    const next = vi.fn();
     await authenticateToken(
       req as unknown as Request,
       res as unknown as Response,
@@ -64,13 +65,13 @@ describe('authenticateToken middleware', () => {
   });
 
   it('returns 401 if user not found', async () => {
-    (jwt.verify as jest.Mock).mockReturnValue({ userId, username });
+    (jwt.verify as any).mockReturnValue({ userId, username });
     mockPrismaFindUnique.mockResolvedValue(null);
     const req = httpMocks.createRequest({
       headers: { authorization: `Bearer valid.jwt.token` },
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
+    const next = vi.fn();
     await authenticateToken(
       req as unknown as Request,
       res as unknown as Response,
@@ -82,7 +83,7 @@ describe('authenticateToken middleware', () => {
   });
 
   it('returns 401 if user is locked out', async () => {
-    (jwt.verify as jest.Mock).mockReturnValue({ userId, username });
+    (jwt.verify as any).mockReturnValue({ userId, username });
     mockPrismaFindUnique.mockResolvedValue({
       id: userId,
       username,
@@ -93,7 +94,7 @@ describe('authenticateToken middleware', () => {
       headers: { authorization: `Bearer valid.jwt.token` },
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
+    const next = vi.fn();
     await authenticateToken(
       req as unknown as Request,
       res as unknown as Response,
@@ -105,7 +106,7 @@ describe('authenticateToken middleware', () => {
   });
 
   it('calls next and attaches user if token and user are valid', async () => {
-    (jwt.verify as jest.Mock).mockReturnValue({ userId, username });
+    (jwt.verify as any).mockReturnValue({ userId, username });
     mockPrismaFindUnique.mockResolvedValue({
       id: userId,
       username,
@@ -116,7 +117,7 @@ describe('authenticateToken middleware', () => {
       headers: { authorization: `Bearer valid.jwt.token` },
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
+    const next = vi.fn();
     await authenticateToken(
       req as unknown as Request,
       res as unknown as Response,
