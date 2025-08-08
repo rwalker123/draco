@@ -62,6 +62,8 @@ model accounts {
   teamswantedclassified   teamswantedclassified[]
   votequestion            votequestion[]
   workoutannouncement     workoutannouncement[]
+  emails                  emails[]
+  email_templates         email_templates[]
 }
 
 model accountsettings {
@@ -138,6 +140,8 @@ model aspnetusers {
   username             String?           @unique(map: "uq_aspnetusers_username") @db.VarChar(256)
   accounts             accounts[]
   aspnetuserroles      aspnetuserroles[]
+  created_emails       emails[]          @relation("EmailCreatedBy")
+  created_templates    email_templates[] @relation("EmailTemplateCreatedBy")
 }
 
 model availablefields {
@@ -243,6 +247,7 @@ model contacts {
   roster                                                    roster?
   teamseasonmanager                                         teamseasonmanager[]
   voteanswers                                               voteanswers[]
+  email_recipients                                          email_recipients[]
 
   @@unique([lastname, firstname, middlename, creatoraccountid])
 }
@@ -1181,4 +1186,111 @@ model passwordresettokens {
   expiresat DateTime @db.Timestamptz(6)
   used      Boolean  @default(false)
   createdat DateTime @default(now()) @db.Timestamptz(6)
+}
+
+// Email system models
+model emails {
+  id                    BigInt               @id @default(autoincrement())
+  account_id            BigInt
+  created_by_user_id    String?              @db.VarChar(128)
+  subject               String               @db.VarChar(500)
+  body_html             String               @db.Text
+  body_text             String?              @db.Text
+  template_id           BigInt?
+  status                String               @default("draft") @db.VarChar(20)
+  scheduled_send_at     DateTime?
+  created_at            DateTime             @default(now())
+  sent_at               DateTime?
+  total_recipients      Int                  @default(0)
+  successful_deliveries Int                  @default(0)
+  failed_deliveries     Int                  @default(0)
+  bounce_count          Int                  @default(0)
+  open_count            Int                  @default(0)
+  click_count           Int                  @default(0)
+  
+  // Relations
+  accounts              accounts             @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  created_by            aspnetusers?         @relation(fields: [created_by_user_id], references: [id], name: "EmailCreatedBy")
+  template              email_templates?     @relation(fields: [template_id], references: [id])
+  recipients            email_recipients[]
+  attachments           email_attachments[]
+  
+  @@index([account_id, status])
+  @@index([scheduled_send_at])
+}
+
+model email_templates {
+  id                    BigInt               @id @default(autoincrement())
+  account_id            BigInt
+  name                  String               @db.VarChar(255)
+  description           String?              @db.Text
+  subject_template      String?              @db.VarChar(500)
+  body_template         String               @db.Text
+  created_by_user_id    String?              @db.VarChar(128)
+  created_at            DateTime             @default(now())
+  updated_at            DateTime             @default(now()) @updatedAt
+  is_active             Boolean              @default(true)
+  
+  // Relations
+  accounts              accounts             @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  created_by            aspnetusers?         @relation(fields: [created_by_user_id], references: [id], name: "EmailTemplateCreatedBy")
+  emails                emails[]
+  
+  @@index([account_id, is_active])
+}
+
+model email_recipients {
+  id                    BigInt               @id @default(autoincrement())
+  email_id              BigInt
+  contact_id            BigInt
+  email_address         String               @db.VarChar(255)
+  contact_name          String?              @db.VarChar(255)
+  recipient_type        String?              @db.VarChar(50)
+  status                String               @default("pending") @db.VarChar(20)
+  sent_at               DateTime?
+  delivered_at          DateTime?
+  opened_at             DateTime?
+  clicked_at            DateTime?
+  bounce_reason         String?              @db.Text
+  error_message         String?              @db.Text
+  
+  // Relations
+  email                 emails               @relation(fields: [email_id], references: [id], onDelete: Cascade)
+  contact               contacts             @relation(fields: [contact_id], references: [id])
+  events                email_events[]
+  
+  @@index([email_id, status])
+  @@index([contact_id])
+}
+
+model email_attachments {
+  id                    BigInt               @id @default(autoincrement())
+  email_id              BigInt
+  filename              String               @db.VarChar(255)
+  original_name         String               @db.VarChar(255)
+  file_size             BigInt
+  mime_type             String?              @db.VarChar(100)
+  storage_path          String               @db.VarChar(500)
+  uploaded_at           DateTime             @default(now())
+  
+  // Relations
+  email                 emails               @relation(fields: [email_id], references: [id], onDelete: Cascade)
+  
+  @@index([email_id])
+}
+
+model email_events {
+  id                    BigInt               @id @default(autoincrement())
+  email_recipient_id    BigInt
+  event_type            String               @db.VarChar(20)
+  event_data            Json?
+  occurred_at           DateTime             @default(now())
+  user_agent            String?              @db.Text
+  ip_address            String?              @db.Inet
+  
+  // Relations
+  recipient             email_recipients     @relation(fields: [email_recipient_id], references: [id], onDelete: Cascade)
+  
+  @@index([email_recipient_id, event_type])
+  @@index([occurred_at])
 }
