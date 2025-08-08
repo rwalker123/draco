@@ -165,3 +165,26 @@ export interface TeamManagerRaw {
   teamseasonid: bigint;
   teamname: string;
 }
+
+// Interface for raw account owner query result from getAutomaticRoleHolders
+export interface AccountOwnerRaw {
+  id: bigint;
+  firstname: string;
+  lastname: string;
+  email: string | null;
+  userid: string | null;
+}
+
+// Team manager with associated teams (extends BaseContact)
+export interface TeamManagerWithTeams extends BaseContact {
+  teams: Array<{
+    teamSeasonId: string;
+    teamName: string;
+  }>;
+}
+
+// Clean return type for getAutomaticRoleHolders
+export interface AutomaticRoleHoldersResponse {
+  accountOwner: BaseContact; // NOT nullable - every account must have owner
+  teamManagers: TeamManagerWithTeams[];
+}

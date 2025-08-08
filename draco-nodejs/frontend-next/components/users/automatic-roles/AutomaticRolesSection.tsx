@@ -10,7 +10,7 @@ interface AutomaticRolesSectionProps {
     lastName: string;
     email: string | null;
     photoUrl?: string;
-  } | null;
+  } | null; // Keep nullable for component safety, but expect it to always have value
   teamManagers: Array<{
     contactId: string;
     firstName: string;
