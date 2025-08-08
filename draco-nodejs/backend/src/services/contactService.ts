@@ -6,7 +6,6 @@ import {
   ContactResponse,
   ContactWithRoleAndDetailsRaw,
   ContactEntry,
-  TeamManagerRaw,
   AccountOwnerRaw,
   TeamManagerWithTeams,
   AutomaticRoleHoldersResponse,
@@ -468,37 +467,54 @@ export class ContactService {
         photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
       };
 
-      // Query team managers for the current season
-      const teamManagersResult = await prisma.$queryRaw<TeamManagerRaw[]>`
-        SELECT DISTINCT
-          c.id as contactid,
-          c.firstname,
-          c.lastname,
-          c.email,
-          ts.id as teamseasonid,
-          ts.name as teamname
-        FROM teamseasonmanager tsm
-        JOIN contacts c ON tsm.contactid = c.id
-        JOIN teamsseason ts ON tsm.teamseasonid = ts.id
-        JOIN leagueseason ls ON ts.leagueseasonid = ls.id
-        WHERE ls.seasonid = ${currentSeasonId}
-          AND c.creatoraccountid = ${accountId}
-        ORDER BY c.lastname, c.firstname, ts.name
-      `;
+      // Query team managers for the current season using Prisma relations
+      const teamManagersResult = await prisma.teamseasonmanager.findMany({
+        where: {
+          teamsseason: {
+            leagueseason: {
+              seasonid: currentSeasonId,
+            },
+          },
+          contacts: {
+            creatoraccountid: accountId,
+          },
+        },
+        include: {
+          contacts: {
+            select: {
+              id: true,
+              firstname: true,
+              lastname: true,
+              email: true,
+            },
+          },
+          teamsseason: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+        orderBy: [
+          { contacts: { lastname: 'asc' } },
+          { contacts: { firstname: 'asc' } },
+          { teamsseason: { name: 'asc' } },
+        ],
+      });
 
       // Group team managers by contact
       const teamManagersMap = new Map<string, TeamManagerWithTeams>();
 
       for (const row of teamManagersResult) {
-        const contactId = row.contactid.toString();
+        const contactId = row.contacts.id.toString();
 
         if (!teamManagersMap.has(contactId)) {
           teamManagersMap.set(contactId, {
             id: contactId,
-            firstName: row.firstname,
-            lastName: row.lastname,
+            firstName: row.contacts.firstname,
+            lastName: row.contacts.lastname,
             middleName: null, // Team manager queries don't include middle name
-            email: row.email,
+            email: row.contacts.email,
             userId: null, // Team manager queries don't include userId
             photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
             teams: [],
@@ -507,8 +523,8 @@ export class ContactService {
 
         const manager = teamManagersMap.get(contactId)!;
         manager.teams.push({
-          teamSeasonId: row.teamseasonid.toString(),
-          teamName: row.teamname,
+          teamSeasonId: row.teamsseason.id.toString(),
+          teamName: row.teamsseason.name,
         });
       }
 

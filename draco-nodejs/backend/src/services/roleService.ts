@@ -243,16 +243,24 @@ export class RoleService implements IRoleService {
       }
 
       // Check if this is the account owner - prevent role assignments
-      const accountOwner = await this.prisma.$queryRaw<Array<{ id: bigint }>>`
-        SELECT contacts.id 
-        FROM accounts 
-        JOIN contacts ON accounts.id = contacts.creatoraccountid 
-        WHERE accounts.id = ${accountId} 
-          AND accounts.owneruserid = contacts.userid
-          AND contacts.id = ${contactId}
-      `;
+      const contact = await this.prisma.contacts.findFirst({
+        where: {
+          id: contactId,
+          creatoraccountid: accountId,
+        },
+        select: {
+          userid: true,
+          accounts: {
+            select: {
+              owneruserid: true,
+            },
+          },
+        },
+      });
 
-      if (accountOwner.length > 0) {
+      const isAccountOwner = contact?.userid && contact.userid === contact.accounts?.owneruserid;
+
+      if (isAccountOwner) {
         throw new Error('Cannot assign roles to account owner - they already have all permissions');
       }
 

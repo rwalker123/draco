@@ -156,16 +156,6 @@ export interface RawManager {
   };
 }
 
-// Interface for raw team manager query result from getAutomaticRoleHolders
-export interface TeamManagerRaw {
-  contactid: bigint;
-  firstname: string;
-  lastname: string;
-  email: string | null;
-  teamseasonid: bigint;
-  teamname: string;
-}
-
 // Interface for raw account owner query result from getAutomaticRoleHolders
 export interface AccountOwnerRaw {
   id: bigint;
