@@ -6,6 +6,7 @@ import {
   ContactResponse,
   ContactWithRoleAndDetailsRaw,
   ContactEntry,
+  TeamManagerRaw,
 } from '../interfaces/contactInterfaces';
 import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
 import { RoleType } from '../types/roles';
@@ -156,25 +157,8 @@ export class ContactService {
     // Execute the raw query
     const rows = await prisma.$queryRaw<ContactWithRoleAndDetailsRaw[]>(query);
 
-    // Single efficient query to find account owner's contact ID
-    const ownerContactResult = await prisma.$queryRaw<{ id: bigint }[]>`
-      SELECT contacts.id 
-      FROM accounts 
-      JOIN contacts ON accounts.id = contacts.creatoraccountid 
-      WHERE accounts.id = ${accountId} 
-        AND accounts.owneruserid = contacts.userid
-    `;
-
-    const accountOwnerContactId = ownerContactResult[0]?.id?.toString() || null;
-
     // Transform the flat rows into the desired structure
-    return ContactService.transformContactRows(
-      rows,
-      accountId,
-      accountOwnerContactId,
-      pagination,
-      includeContactDetails,
-    );
+    return ContactService.transformContactRows(rows, accountId, pagination, includeContactDetails);
   }
 
   /**
@@ -318,7 +302,6 @@ export class ContactService {
   private static transformContactRows(
     rows: ContactWithRoleAndDetailsRaw[],
     accountId: bigint,
-    accountOwnerContactId: string | null,
     pagination?: { page: number; limit: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
     includeContactDetails?: boolean,
   ): ContactResponse {
@@ -383,32 +366,6 @@ export class ContactService {
       }
     }
 
-    // Add AccountAdmin role for account owner if not already present
-    if (accountOwnerContactId) {
-      const contact = contactMap.get(accountOwnerContactId);
-
-      // todo: if the contact is not found, we need to create it
-      // if we are filtering by onlyWithRoles. This is because the
-      // user doesn't have a record in the contact roles table so won't
-      // be found. Maybe the accountOwner should be in the contact roles table,
-      // it would make things alot easier.
-      if (contact) {
-        // Check if AccountAdmin role already exists to prevent duplicates
-        const hasAccountAdminRole = contact.contactroles.some(
-          (role) => role.roleId === ROLE_IDS[RoleType.ACCOUNT_ADMIN],
-        );
-
-        if (!hasAccountAdminRole) {
-          contact.contactroles.push({
-            id: `owner-account-admin-${accountOwnerContactId}`,
-            roleId: ROLE_IDS[RoleType.ACCOUNT_ADMIN],
-            roleName: 'AccountAdmin',
-            roleData: accountId.toString(),
-          });
-        }
-      }
-    }
-
     // Convert map to array and sort
     const allContacts = Array.from(contactMap.values()).sort((a, b) => {
       const lastNameCompare = a.lastName.localeCompare(b.lastName);
@@ -441,5 +398,138 @@ export class ContactService {
       contacts: allContacts,
       total: allContacts.length,
     };
+  }
+
+  /**
+   * Get automatic role holders (Account Owner and Team Managers) for the current season
+   */
+  static async getAutomaticRoleHolders(accountId: bigint): Promise<{
+    accountOwner: {
+      contactId: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      photoUrl?: string;
+    } | null;
+    teamManagers: Array<{
+      contactId: string;
+      firstName: string;
+      lastName: string;
+      email: string | null;
+      photoUrl?: string;
+      teams: Array<{
+        teamSeasonId: string;
+        teamName: string;
+      }>;
+    }>;
+  }> {
+    try {
+      // Get current season for this account
+      const currentSeasonRecord = await prisma.currentseason.findUnique({
+        where: { accountid: accountId },
+        select: { seasonid: true },
+      });
+
+      if (!currentSeasonRecord) {
+        return {
+          accountOwner: null,
+          teamManagers: [],
+        };
+      }
+
+      const currentSeasonId = currentSeasonRecord.seasonid;
+
+      // Query account owner
+      const accountOwnerResult = await prisma.$queryRaw<
+        Array<{
+          id: bigint;
+          firstname: string;
+          lastname: string;
+          email: string;
+          userid: string;
+        }>
+      >`
+        SELECT contacts.id, contacts.firstname, contacts.lastname, contacts.email, contacts.userid
+        FROM accounts 
+        JOIN contacts ON accounts.id = contacts.creatoraccountid 
+        WHERE accounts.id = ${accountId} 
+          AND accounts.owneruserid = contacts.userid
+      `;
+
+      const accountOwner = accountOwnerResult[0]
+        ? {
+            contactId: accountOwnerResult[0].id.toString(),
+            firstName: accountOwnerResult[0].firstname,
+            lastName: accountOwnerResult[0].lastname,
+            email: accountOwnerResult[0].email,
+            photoUrl: getContactPhotoUrl(accountId.toString(), accountOwnerResult[0].id.toString()),
+          }
+        : null;
+
+      // Query team managers for the current season
+      const teamManagersResult = await prisma.$queryRaw<TeamManagerRaw[]>`
+        SELECT DISTINCT
+          c.id as contactid,
+          c.firstname,
+          c.lastname,
+          c.email,
+          ts.id as teamseasonid,
+          ts.name as teamname
+        FROM teamseasonmanager tsm
+        JOIN contacts c ON tsm.contactid = c.id
+        JOIN teamsseason ts ON tsm.teamseasonid = ts.id
+        JOIN leagueseason ls ON ts.leagueseasonid = ls.id
+        WHERE ls.seasonid = ${currentSeasonId}
+          AND c.creatoraccountid = ${accountId}
+        ORDER BY c.lastname, c.firstname, ts.name
+      `;
+
+      // Group team managers by contact
+      const teamManagersMap = new Map<
+        string,
+        {
+          contactId: string;
+          firstName: string;
+          lastName: string;
+          email: string | null;
+          photoUrl?: string;
+          teams: Array<{
+            teamSeasonId: string;
+            teamName: string;
+          }>;
+        }
+      >();
+
+      for (const row of teamManagersResult) {
+        const contactId = row.contactid.toString();
+
+        if (!teamManagersMap.has(contactId)) {
+          teamManagersMap.set(contactId, {
+            contactId,
+            firstName: row.firstname,
+            lastName: row.lastname,
+            email: row.email,
+            photoUrl: getContactPhotoUrl(accountId.toString(), contactId),
+            teams: [],
+          });
+        }
+
+        const manager = teamManagersMap.get(contactId)!;
+        manager.teams.push({
+          teamSeasonId: row.teamseasonid.toString(),
+          teamName: row.teamname,
+        });
+      }
+
+      const teamManagers = Array.from(teamManagersMap.values());
+
+      return {
+        accountOwner,
+        teamManagers,
+      };
+    } catch (error) {
+      console.error('Error getting automatic role holders:', error);
+      throw error;
+    }
   }
 }

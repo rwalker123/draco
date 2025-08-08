@@ -1,0 +1,118 @@
+import React, { useState } from 'react';
+import {
+  Box,
+  Typography,
+  Avatar,
+  Card,
+  CardContent,
+  Chip,
+  Stack,
+  Collapse,
+  IconButton,
+} from '@mui/material';
+import { Groups as ManagerIcon, ExpandMore, ExpandLess } from '@mui/icons-material';
+
+interface TeamManagersListProps {
+  teamManagers: Array<{
+    contactId: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    photoUrl?: string;
+    teams: Array<{
+      teamSeasonId: string;
+      teamName: string;
+    }>;
+  }>;
+}
+
+const TeamManagersList: React.FC<TeamManagersListProps> = ({ teamManagers }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (teamManagers.length === 0) {
+    return null;
+  }
+
+  const handleToggle = () => {
+    setIsExpanded(!isExpanded);
+  };
+
+  return (
+    <Card
+      sx={{
+        backgroundColor: '#E3F2FD', // Light blue background
+        borderLeft: '4px solid #1976D2', // Blue left border
+        mb: 2,
+      }}
+    >
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ManagerIcon sx={{ color: '#1976D2', fontSize: 24 }} />
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#0D47A1' }}>
+              Team Managers (Current Season) ({teamManagers.length})
+            </Typography>
+          </Box>
+          <IconButton onClick={handleToggle} size="small" sx={{ color: '#1976D2' }}>
+            {isExpanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        </Box>
+
+        <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <Stack spacing={2} sx={{ mt: 2 }}>
+            {teamManagers.map((manager) => (
+              <Box
+                key={manager.contactId}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  p: 1,
+                  borderRadius: 1,
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                }}
+              >
+                <Avatar
+                  src={manager.photoUrl}
+                  alt={`${manager.firstName} ${manager.lastName}`}
+                  sx={{ width: 32, height: 32 }}
+                >
+                  {manager.firstName[0]}
+                  {manager.lastName[0]}
+                </Avatar>
+
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                    {manager.firstName} {manager.lastName}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85em' }}>
+                    {manager.email}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  {manager.teams.map((team) => (
+                    <Chip
+                      key={team.teamSeasonId}
+                      label={team.teamName}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        fontSize: '0.75rem',
+                        height: '24px',
+                        borderColor: '#1976D2',
+                        color: '#1976D2',
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            ))}
+          </Stack>
+        </Collapse>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default TeamManagersList;

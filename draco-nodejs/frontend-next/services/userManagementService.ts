@@ -208,6 +208,49 @@ export class UserManagementService {
   }
 
   /**
+   * Fetch automatic role holders (Account Owner and Team Managers)
+   */
+  async fetchAutomaticRoleHolders(accountId: string): Promise<{
+    accountOwner: {
+      contactId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      photoUrl?: string;
+    } | null;
+    teamManagers: Array<{
+      contactId: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      photoUrl?: string;
+      teams: Array<{
+        teamSeasonId: string;
+        teamName: string;
+      }>;
+    }>;
+  }> {
+    const response = await fetch(`/api/accounts/${accountId}/automatic-role-holders`, {
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || 'Failed to load automatic role holders');
+    }
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to load automatic role holders');
+    }
+
+    return data.data;
+  }
+
+  /**
    * Get current user's roles for debugging
    */
   async getCurrentUserRoles(accountId: string): Promise<{
