@@ -2,24 +2,25 @@ import { Request, Response, NextFunction } from 'express';
 import * as httpMocks from 'node-mocks-http';
 import { RoleMiddleware } from '../roleMiddleware';
 import { IRoleMiddleware } from '../../interfaces/roleInterfaces';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Note: MOCK_ROLE_IDS removed as they're no longer needed after removing enforceAccountBoundary tests
 
-const mockHasRole = jest.fn();
-const mockHasPermission = jest.fn();
-const mockGetUserRoles = jest.fn();
+const mockHasRole = vi.fn();
+const mockHasPermission = vi.fn();
+const mockGetUserRoles = vi.fn();
 // Note: mockCheckAccountOwnership removed as enforceAccountBoundary is now in RouteProtection
 
 const mockRoleService = {
   hasRole: mockHasRole,
   hasPermission: mockHasPermission,
   getUserRoles: mockGetUserRoles,
-  getGlobalRoles: jest.fn(),
-  getContactRoles: jest.fn(),
-  getUsersWithRole: jest.fn(),
-  getRoleName: jest.fn(),
-  getRoleId: jest.fn(),
-  hasRoleOrHigher: jest.fn(),
+  getGlobalRoles: vi.fn(),
+  getContactRoles: vi.fn(),
+  getUsersWithRole: vi.fn(),
+  getRoleName: vi.fn(),
+  getRoleId: vi.fn(),
+  hasRoleOrHigher: vi.fn(),
 } as unknown as IRoleMiddleware;
 
 // Note: mockPrisma removed as it's no longer needed after removing enforceAccountBoundary tests
@@ -31,14 +32,14 @@ const roleMiddleware = new RoleMiddleware(mockRoleService);
 
 describe('RoleMiddleware', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('requireRole', () => {
     it('returns 401 if user is not authenticated', async () => {
       const req = httpMocks.createRequest();
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await roleMiddleware.requireRole('SomeRole')(
         req as unknown as Request,
         res as unknown as Response,
@@ -53,7 +54,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasRole.mockResolvedValue({ hasRole: false });
       await roleMiddleware.requireRole('SomeRole')(
         req as unknown as Request,
@@ -69,7 +70,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasRole.mockResolvedValue({ hasRole: true });
       mockGetUserRoles.mockResolvedValue({ globalRoles: ['SomeRole'], contactRoles: [] });
       await roleMiddleware.requireRole('SomeRole')(
@@ -84,7 +85,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasRole.mockRejectedValue(new Error('fail'));
       await roleMiddleware.requireRole('SomeRole')(
         req as unknown as Request,
@@ -101,7 +102,7 @@ describe('RoleMiddleware', () => {
     it('returns 401 if user is not authenticated', async () => {
       const req = httpMocks.createRequest();
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       await roleMiddleware.requirePermission('perm')(
         req as unknown as Request,
         res as unknown as Response,
@@ -116,7 +117,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasPermission.mockResolvedValue(false);
       await roleMiddleware.requirePermission('perm')(
         req as unknown as Request,
@@ -132,7 +133,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasPermission.mockResolvedValue(true);
       mockGetUserRoles.mockResolvedValue({ globalRoles: ['SomeRole'], contactRoles: [] });
       await roleMiddleware.requirePermission('perm')(
@@ -147,7 +148,7 @@ describe('RoleMiddleware', () => {
       const req = httpMocks.createRequest();
       req.user = { id: 'user1', username: 'test' };
       const res = httpMocks.createResponse();
-      const next = jest.fn();
+      const next = vi.fn();
       mockHasPermission.mockRejectedValue(new Error('fail'));
       await roleMiddleware.requirePermission('perm')(
         req as unknown as Request,

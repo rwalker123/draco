@@ -1,5 +1,6 @@
 import { performanceMonitor } from '../performanceMonitor';
 import { QueryMetrics } from '../../config/database';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('PerformanceMonitor', () => {
   beforeEach(() => {

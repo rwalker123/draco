@@ -1,12 +1,13 @@
 import { EmailService, EmailConfig } from '../emailService';
 import * as nodemailer from 'nodemailer';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-jest.mock('nodemailer');
+vi.mock('nodemailer');
 
-const mockSendMail = jest.fn();
-const mockVerify = jest.fn();
+const mockSendMail = vi.fn();
+const mockVerify = vi.fn();
 
-(nodemailer.createTransport as jest.Mock).mockReturnValue({
+(nodemailer.createTransport as vi.MockedFunction).mockReturnValue({
   sendMail: mockSendMail,
   verify: mockVerify,
 });
@@ -23,8 +24,8 @@ describe('EmailService', () => {
   const emailService = new EmailService(config, fromEmail, baseUrl);
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (nodemailer.createTransport as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    (nodemailer.createTransport as vi.MockedFunction).mockReturnValue({
       sendMail: mockSendMail,
     });
   });

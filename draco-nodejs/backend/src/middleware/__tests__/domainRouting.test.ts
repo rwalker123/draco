@@ -3,29 +3,30 @@ import * as httpMocks from 'node-mocks-http';
 import { domainRouting } from '../domainRouting';
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter } from 'events';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-jest.mock('@prisma/client', () => {
+vi.mock('@prisma/client', () => {
   const mPrisma = {
     accountsurl: {
-      findFirst: jest.fn(),
+      findFirst: vi.fn(),
     },
   };
-  return { PrismaClient: jest.fn(() => mPrisma) };
+  return { PrismaClient: vi.fn(() => mPrisma) };
 });
 
-const mockPrisma = (PrismaClient as jest.Mock).mock.results[0].value;
+const mockPrisma = (PrismaClient as any).mock.results[0].value;
 const mockFindFirst = mockPrisma.accountsurl.findFirst;
 
 describe('domainRouting middleware', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('calls next if no host header', async () => {
     const req = httpMocks.createRequest();
     const res = httpMocks.createResponse();
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue(undefined);
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue(undefined);
     await domainRouting(
       req as unknown as Request,
       res as unknown as Response,
@@ -37,8 +38,8 @@ describe('domainRouting middleware', () => {
   it('calls next if no matching accountUrl', async () => {
     const req = httpMocks.createRequest({ headers: { host: 'example.com' } });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue('example.com');
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue('example.com');
     mockFindFirst.mockResolvedValue(null);
     await domainRouting(
       req as unknown as Request,
@@ -56,8 +57,8 @@ describe('domainRouting middleware', () => {
       path: '/api/auth/login',
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue('example.com');
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue('example.com');
     mockFindFirst.mockResolvedValue({
       accounts: { id: 123, name: 'Test', accounttypes: [] },
     });
@@ -77,8 +78,8 @@ describe('domainRouting middleware', () => {
       path: '/api/something',
     });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue('example.com');
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue('example.com');
     mockFindFirst.mockResolvedValue({
       accounts: { id: 123, name: 'Test', accounttypes: [] },
     });
@@ -100,8 +101,8 @@ describe('domainRouting middleware', () => {
       path: '/somepage',
     });
     const res = httpMocks.createResponse({ eventEmitter: EventEmitter });
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue('example.com');
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue('example.com');
     mockFindFirst.mockResolvedValue({
       accounts: { id: 123, name: 'Test', accounttypes: [] },
     });
@@ -116,8 +117,8 @@ describe('domainRouting middleware', () => {
   it('calls next on error', async () => {
     const req = httpMocks.createRequest({ headers: { host: 'example.com' } });
     const res = httpMocks.createResponse();
-    const next = jest.fn();
-    req.get = jest.fn().mockReturnValue('example.com');
+    const next = vi.fn();
+    req.get = vi.fn().mockReturnValue('example.com');
     mockFindFirst.mockRejectedValue(new Error('fail'));
     await domainRouting(
       req as unknown as Request,
