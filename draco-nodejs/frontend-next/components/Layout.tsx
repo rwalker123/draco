@@ -22,6 +22,7 @@ import {
   Home as HomeIcon,
   Key as KeyIcon,
   Person as PersonIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useRole } from '../context/RoleContext';
@@ -346,6 +347,29 @@ const Layout: React.FC<LayoutProps> = ({ children, accountId: propAccountId }) =
                   <PersonIcon fontSize="small" />
                 </ListItemIcon>
                 <ListItemText>User Management</ListItemText>
+              </MenuItem>
+            );
+          }
+          return null;
+        })()}
+        {/* Communications - AccountAdmin Role and above */}
+        {(() => {
+          if (
+            user &&
+            currentAccount?.id &&
+            hasRole('AccountAdmin', { accountId: String(currentAccount.id) })
+          ) {
+            return (
+              <MenuItem
+                onClick={() =>
+                  handleNavigation(`/account/${String(currentAccount.id)}/communications`)
+                }
+                key="communications"
+              >
+                <ListItemIcon>
+                  <EmailIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Communications</ListItemText>
               </MenuItem>
             );
           }

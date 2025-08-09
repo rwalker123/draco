@@ -1,3 +1,4 @@
 echo "🔍 Running pre-commit checks for backend..."
+cd "$(git rev-parse --show-toplevel)/draco-nodejs/backend"
 npx lint-staged
 echo "✅ Backend pre-commit checks completed"

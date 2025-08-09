@@ -19,6 +19,22 @@ Draco Sports Manager is a comprehensive sports management application being migr
 
 All commands must be run from the root directory (`/Users/raywalker/source/Draco`):
 
+## Git Worktree Setup
+
+For development using git worktrees (recommended for feature work):
+
+1. **Create worktree** (from main repo):
+   ```bash
+   git worktree add ../draco-feature-name feature-branch
+   ```
+
+2. **Initialize worktree** (from new worktree directory):
+   ```bash
+   ./worktree-init.sh
+   ```
+
+**See [WORKTREE_SETUP.md](./WORKTREE_SETUP.md) for detailed instructions.**
+
 ### Development
 ```bash
 npm run dev                  # Start both backend and frontend
