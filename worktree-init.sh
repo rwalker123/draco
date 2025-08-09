@@ -10,13 +10,8 @@
 set -e  # Exit on any error
 
 # Parse command line arguments
-COPY_NODE_MODULES=true
 for arg in "$@"; do
     case $arg in
-        --no-copy)
-            COPY_NODE_MODULES=false
-            shift
-            ;;
         --help|-h)
             echo "Usage: $0 [--no-copy] [--help]"
             echo "  --no-copy   Skip copying node_modules from main repo"
@@ -97,33 +92,6 @@ if [ -d "$MAIN_REPO_PATH/draco-nodejs/backend/certs" ]; then
     print_success "Copied backend certs directory (SSL certificates)"
 else
     print_warning "Backend certs directory not found in main repo"
-fi
-
-# Step 2: Copy node_modules if they exist (optional - can save time)
-if [ "$COPY_NODE_MODULES" = true ]; then
-    print_status "Checking for existing node_modules..."
-
-    if [ -d "$MAIN_REPO_PATH/node_modules" ] && [ ! -d "node_modules" ]; then
-        print_status "Copying root node_modules (this may take a moment)..."
-        cp -r "$MAIN_REPO_PATH/node_modules" .
-        print_success "Copied root node_modules"
-    fi
-
-    if [ -d "$MAIN_REPO_PATH/draco-nodejs/backend/node_modules" ] && [ ! -d "draco-nodejs/backend/node_modules" ]; then
-        print_status "Copying backend node_modules..."
-        mkdir -p "draco-nodejs/backend"
-        cp -r "$MAIN_REPO_PATH/draco-nodejs/backend/node_modules" "draco-nodejs/backend/"
-        print_success "Copied backend node_modules"
-    fi
-
-    if [ -d "$MAIN_REPO_PATH/draco-nodejs/frontend-next/node_modules" ] && [ ! -d "draco-nodejs/frontend-next/node_modules" ]; then
-        print_status "Copying frontend node_modules..."
-        mkdir -p "draco-nodejs/frontend-next"
-        cp -r "$MAIN_REPO_PATH/draco-nodejs/frontend-next/node_modules" "draco-nodejs/frontend-next/"
-        print_success "Copied frontend node_modules"
-    fi
-else
-    print_status "Skipping node_modules copy (--no-copy flag specified)"
 fi
 
 # Step 3: Install/update dependencies
