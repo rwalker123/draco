@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import * as crypto from 'crypto';
+import { createHash, pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
 
 const prisma = new PrismaClient();
 
@@ -24,7 +24,7 @@ class AspNetPasswordHasher {
       const hash = decodedHash.slice(this.saltSize);
       
       // Derive key using PBKDF2
-      const derivedKey = crypto.pbkdf2Sync(
+      const derivedKey = pbkdf2Sync(
         password,
         salt,
         this.iterationCount,
@@ -33,7 +33,7 @@ class AspNetPasswordHasher {
       );
       
       // Compare the derived key with the stored hash
-      return crypto.timingSafeEqual(hash, derivedKey);
+      return timingSafeEqual(hash, derivedKey);
     } catch (error) {
       console.error('Error verifying ASP.NET password:', error);
       return false;
@@ -44,8 +44,8 @@ class AspNetPasswordHasher {
    * Hash password using ASP.NET format (for testing)
    */
   hashPassword(password: string): string {
-    const salt = crypto.randomBytes(this.saltSize);
-    const hash = crypto.pbkdf2Sync(
+    const salt = randomBytes(this.saltSize);
+    const hash = pbkdf2Sync(
       password,
       salt,
       this.iterationCount,
@@ -103,10 +103,10 @@ class LegacySqlPasswordHasher {
       const toHash = Buffer.concat([salt, passwordBytes]);
       
       // Compute SHA1 hash
-      const computedHash = crypto.createHash('sha1').update(toHash).digest();
+      const computedHash = createHash('sha1').update(toHash).digest();
       
       // Compare computed hash with stored hash
-      return crypto.timingSafeEqual(computedHash, storedHashBytes);
+      return timingSafeEqual(computedHash, storedHashBytes);
       
     } catch (error) {
       console.error('Error verifying legacy password:', error);
@@ -119,7 +119,7 @@ class LegacySqlPasswordHasher {
    */
   hashPassword(password: string): string {
     // Generate random salt
-    const salt = crypto.randomBytes(16);
+    const salt = randomBytes(16);
     
     // Convert password to UTF-16LE bytes
     const passwordBytes = Buffer.from(password, 'utf16le');
@@ -128,7 +128,7 @@ class LegacySqlPasswordHasher {
     const toHash = Buffer.concat([salt, passwordBytes]);
     
     // Compute SHA1 hash
-    const hash = crypto.createHash('sha1').update(toHash).digest();
+    const hash = createHash('sha1').update(toHash).digest();
     
     // Add version byte (0x00 for legacy format)
     const hashWithVersion = Buffer.concat([Buffer.from([0x00]), hash]);
@@ -168,27 +168,27 @@ class AspNetCorePasswordHasher {
     for (const iter of iterationsToTry) {
       try {
         // Try with 20-byte hash (ASP.NET Identity default)
-        const derivedKey20 = crypto.pbkdf2Sync(
+          const derivedKey20 = pbkdf2Sync(
           password,
           salt,
           iter,
           20, // 20 bytes
           this.keyDerivationPrf
         );
-        const match20 = crypto.timingSafeEqual(hash.slice(0, 20), derivedKey20);
+          const match20 = timingSafeEqual(hash.slice(0, 20), derivedKey20);
         console.log(`  Iterations: ${iter}, 20-byte hash => ${match20 ? '✅ MATCH' : '❌ no match'}`);
         if (match20) anySuccess = true;
         
         // Also try with 32-byte hash (in case it's a newer format)
         if (hash.length >= 32) {
-          const derivedKey32 = crypto.pbkdf2Sync(
+          const derivedKey32 = pbkdf2Sync(
             password,
             salt,
             iter,
             32, // 32 bytes
             this.keyDerivationPrf
           );
-          const match32 = crypto.timingSafeEqual(hash.slice(0, 32), derivedKey32);
+          const match32 = timingSafeEqual(hash.slice(0, 32), derivedKey32);
           console.log(`  Iterations: ${iter}, 32-byte hash => ${match32 ? '✅ MATCH' : '❌ no match'}`);
           if (match32) anySuccess = true;
         }
@@ -281,7 +281,7 @@ async function testPasswordVerification() {
           const salt = Buffer.from(saltB64, 'base64');
           const passwordBytes = Buffer.from(knownPassword, 'utf16le');
           const toHash = Buffer.concat([salt, passwordBytes]);
-          const computedHash = Buffer.from(crypto.createHash('sha1').update(toHash).digest());
+          const computedHash = Buffer.from(createHash('sha1').update(toHash).digest());
           console.log(`- Hash bytes (base64): ${passwordHash}`);
           console.log(`- Hash bytes (hex): ${hashBytes.toString('hex')}`);
           console.log(`- Hash bytes length: ${hashBytes.length}`);

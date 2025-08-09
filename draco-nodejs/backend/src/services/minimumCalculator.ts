@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { GameStatus, GameType } from '../types/gameEnums';
+import { GameStatus, GameType } from '../types/gameEnums.js';
 
 export class MinimumCalculator {
   private prisma: PrismaClient;

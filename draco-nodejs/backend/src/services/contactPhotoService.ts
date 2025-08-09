@@ -1,4 +1,4 @@
-import { createStorageService } from './storageService';
+import { createStorageService } from './storageService.js';
 
 /**
  * Service for managing contact photos

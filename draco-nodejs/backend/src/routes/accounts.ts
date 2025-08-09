@@ -2,13 +2,13 @@
 // Combines all account-related sub-routers for organized routing
 
 import { Router } from 'express';
-import accountsCoreRouter from './accounts-core';
-import accountsContactsRouter from './accounts-contacts';
-import accountsRegistrationRouter from './accounts-registration';
-import contactMediaRouter from './contact-media';
-import accountsResourcesRouter from './accounts-resources';
-import accountsSettingsRouter from './accounts-settings';
-import accountsAssetsRouter from './accounts-assets';
+import accountsCoreRouter from './accounts-core.js';
+import accountsContactsRouter from './accounts-contacts.js';
+import accountsRegistrationRouter from './accounts-registration.js';
+import contactMediaRouter from './contact-media.js';
+import accountsResourcesRouter from './accounts-resources.js';
+import accountsSettingsRouter from './accounts-settings.js';
+import accountsAssetsRouter from './accounts-assets.js';
 
 const router = Router({ mergeParams: true });
 

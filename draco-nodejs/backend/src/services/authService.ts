@@ -1,6 +1,6 @@
-import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
-import prisma from '../lib/prisma';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import prisma from '../lib/prisma.js';
 
 export interface LoginCredentials {
   username: string;

@@ -1,5 +1,5 @@
 import { PrismaClient, teamsseason, teams, leagueseason, divisionseason } from '@prisma/client';
-import { ITeamRepository } from '../interfaces/ITeamRepository';
+import { ITeamRepository } from '../interfaces/ITeamRepository.js';
 
 export class PrismaTeamRepository implements ITeamRepository {
   constructor(private prisma: PrismaClient) {}

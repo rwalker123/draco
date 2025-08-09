@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { StatisticsService } from '../services/statisticsService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { extractSeasonParams } from '../utils/paramExtraction';
+import { StatisticsService } from '../services/statisticsService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { extractSeasonParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);

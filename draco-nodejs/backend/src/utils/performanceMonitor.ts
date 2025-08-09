@@ -1,4 +1,4 @@
-import { QueryMetrics, ConnectionPoolMetrics, databaseConfig } from '../config/database';
+import { QueryMetrics, ConnectionPoolMetrics, databaseConfig } from '../config/database.js';
 
 interface PerformanceStats {
   totalQueries: number;

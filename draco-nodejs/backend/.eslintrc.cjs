@@ -1,4 +1,4 @@
-export default {
+module.exports = {
   root: true,
   env: {
     node: true,
@@ -19,6 +19,14 @@ export default {
     '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
     '@typescript-eslint/no-namespace': ['error', { 'allowDeclarations': true }],
   },
+  overrides: [
+    {
+      files: ['**/*.test.ts', '**/*.test.js', '**/__tests__/**/*'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+      },
+    },
+  ],
   ignorePatterns: [
     'node_modules/',
     'dist/',

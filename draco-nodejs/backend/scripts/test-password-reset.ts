@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import * as crypto from 'crypto';
-import { PasswordResetModel } from '../src/models/PasswordReset';
+import crypto from 'crypto';
+import { PasswordResetModel } from '../src/models/PasswordReset.js';
 
 const prisma = new PrismaClient();
 

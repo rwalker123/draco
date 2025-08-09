@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { StatisticsService } from '../services/statisticsService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError } from '../utils/customErrors';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
+import { StatisticsService } from '../services/statisticsService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError } from '../utils/customErrors.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 
 const router = Router({ mergeParams: true });
 const statisticsService = new StatisticsService(prisma);

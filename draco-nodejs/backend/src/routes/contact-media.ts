@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createStorageService } from '../services/storageService';
-import { validateContactPhotoFile, getContactPhotoUrl } from '../config/logo';
-import * as multer from 'multer';
-import prisma from '../lib/prisma';
+import { createStorageService } from '../services/storageService.js';
+import { validateContactPhotoFile, getContactPhotoUrl } from '../config/logo.js';
+import multer from 'multer';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();

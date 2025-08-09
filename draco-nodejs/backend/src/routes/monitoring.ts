@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { performanceMonitor, getConnectionPoolMetrics } from '../utils/performanceMonitor';
-import { databaseConfig } from '../config/database';
-import prisma from '../lib/prisma';
+import { performanceMonitor, getConnectionPoolMetrics } from '../utils/performanceMonitor.js';
+import { databaseConfig } from '../config/database.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 

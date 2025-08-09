@@ -1,6 +1,6 @@
 import { body, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
-import { ContactInputData } from '../../interfaces/contactInterfaces';
+import { ContactInputData } from '../../interfaces/contactInterfaces.js';
 
 // Validation error handler middleware
 export const handleValidationErrors = (req: Request, res: Response, next: NextFunction): void => {

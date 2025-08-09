@@ -1,7 +1,7 @@
 // League-related Type Definitions for Draco Sports Manager
 
-import { DivisionSeasonWithTeams } from './divisionInterfaces';
-import { TeamSeason } from './teamInterfaces';
+import { DivisionSeasonWithTeams } from './divisionInterfaces.js';
+import { TeamSeason } from './teamInterfaces.js';
 
 export interface LeagueSeasonWithRelations {
   id: bigint;

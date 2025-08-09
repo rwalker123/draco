@@ -1,5 +1,5 @@
 import { Request, Application } from 'express';
-import { Container } from '../container';
+import { Container } from '../container/index.js';
 
 export interface AppWithContainer extends Application {
   locals: {

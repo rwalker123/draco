@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
-import { PasswordResetModel } from '../models/PasswordReset';
-import { EmailService, EmailConfig } from '../services/emailService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, InternalServerError } from '../utils/customErrors';
+import bcrypt from 'bcrypt';
+import { randomBytes } from 'node:crypto';
+import { PasswordResetModel } from '../models/PasswordReset.js';
+import { EmailService, EmailConfig } from '../services/emailService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, InternalServerError } from '../utils/customErrors.js';
 
 const router = Router();
 // Email configuration - you'll need to update these with your actual email settings
@@ -53,7 +53,7 @@ router.post(
     }
 
     // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetToken = randomBytes(32).toString('hex');
 
     // Save token to database
     await PasswordResetModel.createToken(user.id, resetToken, 24); // 24 hours expiry

@@ -1,7 +1,7 @@
 // Segregated Role Service Interfaces
 // Follows Interface Segregation Principle to avoid fat interfaces
 
-import { ContactRole, UserRoles, RoleCheckResult, RoleContext } from '../types/roles';
+import { ContactRole, UserRoles, RoleCheckResult, RoleContext } from '../types/roles.js';
 
 /**
  * Interface for role query operations

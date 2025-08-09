@@ -1,5 +1,5 @@
 import { PrismaClient, accounts } from '@prisma/client';
-import { IAccountRepository } from '../interfaces/IAccountRepository';
+import { IAccountRepository } from '../interfaces/IAccountRepository.js';
 
 export class PrismaAccountRepository implements IAccountRepository {
   constructor(private prisma: PrismaClient) {}

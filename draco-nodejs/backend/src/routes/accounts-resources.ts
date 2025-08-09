@@ -2,15 +2,15 @@
 // Handles teams, leagues, fields, and umpires for accounts
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError, AuthenticationError } from '../utils/customErrors';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
-import { PaginationHelper } from '../utils/pagination';
-import prisma from '../lib/prisma';
-import { getLogoUrl } from '../config/logo';
-import { AccountLeague, AccountField, AccountUmpire } from '../interfaces/accountInterfaces';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError, AuthenticationError } from '../utils/customErrors.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import prisma from '../lib/prisma.js';
+import { getLogoUrl } from '../config/logo.js';
+import { AccountLeague, AccountField, AccountUmpire } from '../interfaces/accountInterfaces.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();

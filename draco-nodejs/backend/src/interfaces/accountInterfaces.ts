@@ -84,7 +84,7 @@ export interface PublicSeason {
 
 // Contact and user management types
 // Re-export ContactSearchResult from contactInterfaces for backward compatibility
-export { ContactSearchResult } from './contactInterfaces';
+export { ContactSearchResult } from './contactInterfaces.js';
 
 // Field management types
 export interface AccountField {

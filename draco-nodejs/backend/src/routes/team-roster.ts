@@ -1,13 +1,13 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import { RosterService } from '../services/rosterService';
-import { asyncHandler } from '../utils/asyncHandler';
-import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction';
-import { TeamRequestValidator } from '../utils/teamValidators';
-import { RosterResponseFormatter } from '../utils/responseFormatters';
-import prisma from '../lib/prisma';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { RouteProtection } from '../middleware/routeProtection.js';
+import { RoleService } from '../services/roleService.js';
+import { RosterService } from '../services/rosterService.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { TeamRequestValidator } from '../utils/teamValidators.js';
+import { RosterResponseFormatter } from '../utils/responseFormatters.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const roleService = new RoleService(prisma);
