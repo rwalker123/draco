@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import OrganizationsWidget from '../OrganizationsWidget';
 
-// Mock the useAuth hook
+// Default mock: authenticated user
 vi.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { id: '1', firstname: 'Test', lastname: 'User' },
@@ -49,16 +49,14 @@ describe('OrganizationsWidget', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('does not render when user is not authenticated', () => {
-    // Mock useAuth to return no user
+  it('does not render when user is not authenticated', async () => {
+    // Remock module to return no user
+    vi.resetModules();
     vi.doMock('../../context/AuthContext', () => ({
-      useAuth: () => ({
-        user: null,
-        token: null,
-      }),
+      useAuth: () => ({ user: null, token: null }),
     }));
-
-    const { container } = render(<OrganizationsWidget />);
+    const { default: UnauthedWidget } = await import('../OrganizationsWidget');
+    const { container } = render(<UnauthedWidget />);
     expect(container.firstChild).toBeNull();
   });
 
