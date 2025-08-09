@@ -25,6 +25,7 @@ import { User, UserRole } from '../../../../types/users';
 import RoleIconGrid from '../../RoleIconGrid';
 import UserAvatar from '../../UserAvatar';
 import { EmailButton } from '../../../emails/common/EmailButton';
+import RegistrationStatusChip from '../../RegistrationStatusChip';
 
 const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   user,
@@ -321,6 +322,12 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
             >
               {user.displayName}
             </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
+              <RegistrationStatusChip
+                userId={user.userId}
+                size={cardSize === 'compact' ? 'small' : 'medium'}
+              />
+            </Box>
             {user.email && (
               <Box
                 sx={{
