@@ -1,12 +1,12 @@
 // Email Routes for Draco Sports Manager
 // Follows SRP - handles HTTP routing for email endpoints only
 
-import express from 'express';
+import { Router } from 'express';
 import { EmailController } from '../controllers/emailController';
 import { authenticateToken } from '../middleware/authMiddleware';
 import { ServiceFactory } from '../lib/serviceFactory';
 
-const router = express.Router();
+const router = Router();
 const emailController = new EmailController();
 const routeProtection = ServiceFactory.getRouteProtection();
 
