@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
-import { AppError } from './customErrors';
+import jwt from 'jsonwebtoken';
+import { AppError } from './customErrors.js';
 
 export function hasCodeProperty(err: unknown): err is { code: string } {
   return (

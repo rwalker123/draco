@@ -1,4 +1,4 @@
-import { GameStatus } from '../types/gameEnums';
+import { GameStatus } from '../types/gameEnums.js';
 
 // Utility to map game status code to text
 export function getGameStatusText(status: number): string {

@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { TeamManagerService } from '../services/teamManagerService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, ConflictError } from '../utils/customErrors';
-import { extractBigIntParams } from '../utils/paramExtraction';
+import { TeamManagerService } from '../services/teamManagerService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, ConflictError } from '../utils/customErrors.js';
+import { extractBigIntParams } from '../utils/paramExtraction.js';
 
 /**
  * @swagger

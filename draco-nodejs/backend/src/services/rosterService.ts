@@ -1,12 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors';
+import { ConflictError, NotFoundError, ValidationError } from '../utils/customErrors.js';
 import {
   ContactEntry,
   ContactInputData,
   AvailableContactRaw,
-} from '../interfaces/contactInterfaces';
-import { getContactPhotoUrl } from '../config/logo';
-import { DateUtils } from '../utils/dateUtils';
+} from '../interfaces/contactInterfaces.js';
+import { getContactPhotoUrl } from '../config/logo.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 export interface RosterPlayer {
   id: bigint;

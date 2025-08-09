@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import os from 'node:os';
 
 export interface DatabaseConfig {
   connectionLimit: number;
@@ -29,8 +30,6 @@ const getDatabaseConfig = (): DatabaseConfig => {
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Calculate optimal connection limit based on CPU cores
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const os = require('os');
   const defaultConnectionLimit = Math.max(
     parseInt(process.env.CONNECTION_POOL_SIZE || '0') || os.cpus().length * 2 + 1,
     5,

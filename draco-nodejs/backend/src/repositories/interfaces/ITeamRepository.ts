@@ -1,5 +1,5 @@
 import { teamsseason, teams, leagueseason, divisionseason } from '@prisma/client';
-import { IBaseRepository } from './IBaseRepository';
+import { IBaseRepository } from './IBaseRepository.js';
 
 export interface ITeamRepository extends IBaseRepository<teamsseason> {
   findBySeasonId(seasonId: bigint, accountId: bigint): Promise<teamsseason[]>;

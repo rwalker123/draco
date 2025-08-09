@@ -6,7 +6,7 @@ import {
   PrismaUserRepository,
   PrismaTeamRepository,
   PrismaAccountRepository,
-} from '../repositories';
+} from '../repositories/index.js';
 
 /**
  * Dependency injection container for managing repositories and services

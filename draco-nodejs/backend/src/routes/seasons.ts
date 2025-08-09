@@ -2,13 +2,13 @@
 // Handles season creation, copying, and current season management
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { NotFoundError } from '../utils/customErrors';
-import { extractAccountParams, extractSeasonParams } from '../utils/paramExtraction';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { RouteProtection } from '../middleware/routeProtection.js';
+import { RoleService } from '../services/roleService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { NotFoundError } from '../utils/customErrors.js';
+import { extractAccountParams, extractSeasonParams } from '../utils/paramExtraction.js';
 
 // Type definitions for Prisma query results
 

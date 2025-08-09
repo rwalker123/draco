@@ -1,23 +1,23 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import { IRoleQuery } from '../interfaces/roleInterfaces';
-import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
-import { GameStatus, GameType } from '../types/gameEnums';
-import { ContactRole } from '../types/roles';
-import { asyncHandler } from '../utils/asyncHandler';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import { IRoleQuery } from '../interfaces/roleInterfaces.js';
+import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
+import { GameStatus, GameType } from '../types/gameEnums.js';
+import { ContactRole } from '../types/roles.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
 import {
   ValidationError,
   NotFoundError,
   AuthenticationError,
   AuthorizationError,
   ConflictError,
-} from '../utils/customErrors';
-import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction';
-import { BatchQueryHelper } from '../utils/batchQueries';
-import { PaginationHelper } from '../utils/pagination';
-import prisma from '../lib/prisma';
+} from '../utils/customErrors.js';
+import { extractGameOnlyParams, extractRecapParams } from '../utils/paramExtraction.js';
+import { BatchQueryHelper } from '../utils/batchQueries.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const roleService = ServiceFactory.getRoleQuery();

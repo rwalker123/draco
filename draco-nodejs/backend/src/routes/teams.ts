@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { asyncHandler } from '../utils/asyncHandler';
-import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction';
-import { TeamRequestValidator } from '../utils/teamValidators';
-import { TeamResponseFormatter } from '../utils/responseFormatters';
-import { upload, handleLogoUpload } from './team-media';
-import { ServiceFactory } from '../lib/serviceFactory';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { extractSeasonParams, extractTeamParams } from '../utils/paramExtraction.js';
+import { TeamRequestValidator } from '../utils/teamValidators.js';
+import { TeamResponseFormatter } from '../utils/responseFormatters.js';
+import { upload, handleLogoUpload } from './team-media.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 
 const router = Router({ mergeParams: true });
 

@@ -1,6 +1,6 @@
-import prisma from '../lib/prisma';
-import { AuthService } from './authService';
-import { isEmail } from 'validator';
+import prisma from '../lib/prisma.js';
+import { AuthService } from './authService.js';
+import validator from 'validator';
 
 interface ServiceResult<T> {
   success: boolean;
@@ -33,7 +33,11 @@ export class RegistrationService {
   async registerAndCreateContactNewUser(
     data: NewUserPayload,
   ): Promise<
-    ServiceResult<{ token: string; user: { id: string; username: string; email: string }; contact: unknown }>
+    ServiceResult<{
+      token: string;
+      user: { id: string; username: string; email: string };
+      contact: unknown;
+    }>
   > {
     const { email, password, firstName, middleName, lastName, accountId } = data;
 
@@ -41,7 +45,7 @@ export class RegistrationService {
     if (!email || !password || !firstName || !lastName) {
       return { success: false, statusCode: 400, message: 'Missing required fields' };
     }
-    if (!isEmail(email)) {
+    if (!validator.isEmail(email)) {
       return { success: false, statusCode: 400, message: 'Invalid email format' };
     }
     if (password.length < 6) {
@@ -91,14 +95,22 @@ export class RegistrationService {
             email: created.email || undefined,
           },
         },
-      } as ServiceResult<{ token: string; user: { id: string; username: string; email: string }; contact: unknown }>;
+      } as ServiceResult<{
+        token: string;
+        user: { id: string; username: string; email: string };
+        contact: unknown;
+      }>;
     });
   }
 
   async loginAndCreateContactExistingUser(
     data: ExistingUserPayload,
   ): Promise<
-    ServiceResult<{ token: string; user: { id: string; username: string; email: string }; contact: unknown }>
+    ServiceResult<{
+      token: string;
+      user: { id: string; username: string; email: string };
+      contact: unknown;
+    }>
   > {
     const { usernameOrEmail, password, firstName, middleName, lastName, accountId } = data;
 
@@ -122,9 +134,11 @@ export class RegistrationService {
         where: { userid: loginResult.user.id, creatoraccountid: accountId },
       });
       if (existing) {
-        return { success: false, statusCode: 409, message: 'Already registered' } as ServiceResult<
-          never
-        >;
+        return {
+          success: false,
+          statusCode: 409,
+          message: 'Already registered',
+        } as ServiceResult<never>;
       }
 
       const created = await tx.contacts.create({
@@ -152,9 +166,11 @@ export class RegistrationService {
             email: created.email || undefined,
           },
         },
-      } as ServiceResult<{ token: string; user: { id: string; username: string; email: string }; contact: unknown }>;
+      } as ServiceResult<{
+        token: string;
+        user: { id: string; username: string; email: string };
+        contact: unknown;
+      }>;
     });
   }
 }
-
-

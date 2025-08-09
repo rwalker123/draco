@@ -2,13 +2,13 @@
 // Handles league CRUD operations and provides available leagues for account management
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { RouteProtection } from '../middleware/routeProtection.js';
+import { RoleService } from '../services/roleService.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
 
 // Type definitions for Prisma query results
 interface League {

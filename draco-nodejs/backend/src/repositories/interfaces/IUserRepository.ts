@@ -1,5 +1,5 @@
 import { aspnetusers, aspnetuserroles, aspnetroles } from '@prisma/client';
-import { IBaseRepository } from './IBaseRepository';
+import { IBaseRepository } from './IBaseRepository.js';
 
 export interface IUserRepository extends IBaseRepository<aspnetusers> {
   findByEmail(email: string): Promise<aspnetusers | null>;

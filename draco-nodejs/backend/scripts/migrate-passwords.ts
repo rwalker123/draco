@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
-import * as crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import { createHash, pbkdf2Sync, timingSafeEqual } from 'node:crypto';
 
 const prisma = new PrismaClient();
 
@@ -51,10 +51,10 @@ class LegacySqlPasswordHasher {
       const toHash = Buffer.concat([salt, passwordBytes]);
       
       // Compute SHA1 hash
-      const computedHash = crypto.createHash('sha1').update(toHash).digest();
+      const computedHash = createHash('sha1').update(toHash).digest();
       
       // Compare computed hash with stored hash
-      return crypto.timingSafeEqual(computedHash, storedHashBytes);
+      return timingSafeEqual(computedHash, storedHashBytes);
       
     } catch (error) {
       return false;
@@ -84,7 +84,7 @@ class AspNetPasswordHasher {
       const hash = decodedHash.slice(this.saltSize);
       
       // Derive key using PBKDF2
-      const derivedKey = crypto.pbkdf2Sync(
+      const derivedKey = pbkdf2Sync(
         password,
         salt,
         this.iterationCount,
@@ -93,7 +93,7 @@ class AspNetPasswordHasher {
       );
       
       // Compare the derived key with the stored hash
-      return crypto.timingSafeEqual(hash, derivedKey);
+      return timingSafeEqual(hash, derivedKey);
     } catch (error) {
       console.error('Error verifying ASP.NET password:', error);
       return false;
@@ -129,7 +129,7 @@ class AspNetIdentityPasswordHasher {
       const hash = decodedHash.slice(1 + this.saltSize); // 32 bytes
       
       // Derive key using PBKDF2 with SHA1, 1000 iterations, 20-byte output
-      const derivedKey = crypto.pbkdf2Sync(
+      const derivedKey = pbkdf2Sync(
         password,
         salt,
         this.iterationCount,
@@ -138,7 +138,7 @@ class AspNetIdentityPasswordHasher {
       );
       
       // Compare the derived key with the first 20 bytes of the stored hash
-      return crypto.timingSafeEqual(hash.slice(0, 20), derivedKey);
+      return timingSafeEqual(hash.slice(0, 20), derivedKey);
     } catch (error) {
       return false;
     }

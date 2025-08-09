@@ -3,8 +3,8 @@ import {
   ManagerResponseFormatter,
   FormattedManager,
   ApiResponse,
-} from '../utils/responseFormatters';
-import { RawManager } from '../interfaces/contactInterfaces';
+} from '../utils/responseFormatters.js';
+import { RawManager } from '../interfaces/contactInterfaces.js';
 
 export class TeamManagerService {
   private prisma: PrismaClient;

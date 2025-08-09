@@ -1,4 +1,4 @@
-import { RoleService } from '../roleService';
+import { RoleService } from '../roleService.js';
 import { PrismaClient } from '@prisma/client';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import * as httpMocks from 'node-mocks-http';
-import { RoleMiddleware } from '../roleMiddleware';
-import { IRoleMiddleware } from '../../interfaces/roleInterfaces';
+import httpMocks from 'node-mocks-http';
+import { RoleMiddleware } from '../roleMiddleware.js';
+import { IRoleMiddleware } from '../../interfaces/roleInterfaces.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Note: MOCK_ROLE_IDS removed as they're no longer needed after removing enforceAccountBoundary tests

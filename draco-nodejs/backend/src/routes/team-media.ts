@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { createStorageService } from '../services/storageService';
-import { validateLogoFile, getLogoUrl } from '../config/logo';
-import * as multer from 'multer';
-import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation';
-import prisma from '../lib/prisma';
+import { createStorageService } from '../services/storageService.js';
+import { validateLogoFile, getLogoUrl } from '../config/logo.js';
+import multer from 'multer';
+import { validateTeamSeasonWithTeamDetails } from '../utils/teamValidation.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const storageService = createStorageService();

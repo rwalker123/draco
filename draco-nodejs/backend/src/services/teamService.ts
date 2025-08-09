@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
-import { ConflictError, NotFoundError } from '../utils/customErrors';
-import { getLogoUrl } from '../config/logo';
-import { getTeamRecord } from '../utils/teamRecord';
+import { ConflictError, NotFoundError } from '../utils/customErrors.js';
+import { getLogoUrl } from '../config/logo.js';
+import { getTeamRecord } from '../utils/teamRecord.js';
 
 export interface TeamSeasonSummary {
   id: string;

@@ -43,6 +43,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
             <TableRow>
               <TableCell>Name</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Registration Status</TableCell>
               <TableCell>Phone Numbers</TableCell>
               <TableCell>Address</TableCell>
               <TableCell>Date of Birth</TableCell>
@@ -55,7 +56,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
               searchTerm={searchTerm}
               hasFilters={hasFilters}
               wrapper="table-row"
-              colSpan={7}
+              colSpan={8}
               showIcon={false}
             />
           </TableBody>
@@ -71,6 +72,7 @@ const UserTableContent: React.FC<UserTableContentProps> = ({
           <TableRow>
             <TableCell>Name</TableCell>
             <TableCell>Email</TableCell>
+            <TableCell>Registration Status</TableCell>
             <TableCell>Phone Numbers</TableCell>
             <TableCell>Address</TableCell>
             <TableCell>Date of Birth</TableCell>

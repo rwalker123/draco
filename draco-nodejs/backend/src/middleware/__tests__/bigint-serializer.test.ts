@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as httpMocks from 'node-mocks-http';
-import { bigIntSerializer } from '../bigint-serializer';
+import httpMocks from 'node-mocks-http';
+import { bigIntSerializer } from '../bigint-serializer.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 describe('bigIntSerializer middleware', () => {
