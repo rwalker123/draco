@@ -15,19 +15,25 @@ vi.mock('next/image', () => ({
   }) {
     return <img src={src} alt={alt} {...props} />;
     {
-       
     }
   },
 }));
 
-describe('AccountLogoHeader', () => {
-  it('renders without crashing', () => {
-    const mockProps = {
-      accountId: 'test-account',
-      accountName: 'Test Account',
-    };
+// Mock fetch to resolve account header
+const mockFetch = vi.fn();
+global.fetch = mockFetch as unknown as typeof global.fetch;
 
-    render(<AccountLogoHeader {...mockProps} />);
-    expect(screen.getByText('Test Account')).toBeInTheDocument();
+describe('AccountLogoHeader', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { name: 'Test Account', accountLogoUrl: null } }),
+    });
+  });
+
+  it('renders account name after loading', async () => {
+    render(<AccountLogoHeader accountId="test-account" />);
+    expect(await screen.findByText('Test Account')).toBeInTheDocument();
   });
 });

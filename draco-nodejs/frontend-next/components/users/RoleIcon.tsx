@@ -51,7 +51,22 @@ const RoleIcon: React.FC<RoleIconProps> = ({
   const iconSize = size === 'small' ? 20 : size === 'medium' ? 24 : 32;
 
   if (!IconComponent) {
-    return null;
+    return (
+      <Tooltip title={tooltipText} arrow placement="top" enterDelay={300} leaveDelay={200}>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 20,
+            height: 20,
+            borderRadius: '50%',
+          }}
+        >
+          ?
+        </span>
+      </Tooltip>
+    );
   }
 
   // Use the working simple span approach
