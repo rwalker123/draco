@@ -94,6 +94,14 @@ else
     print_warning "Backend certs directory not found in main repo"
 fi
 
+# Claude settings file
+if [ -f "$MAIN_REPO_PATH/.claude/settings.local.json" ]; then
+    mkdir -p ".claude"
+    cp "$MAIN_REPO_PATH/.claude/settings.local.json" ".claude/settings.local.json"
+    print_success "Copied Claude settings file"
+else
+    print_warning "Claude settings file not found in main repo"
+fi
 # Step 3: Install/update dependencies
 print_status "Installing dependencies..."
 
@@ -163,6 +171,7 @@ echo ""
 print_status "Summary of actions:"
 echo "  ✓ Copied environment files from main repo"
 echo "  ✓ Copied SSL certificates from main repo"
+echo "  ✓ Copied Claude settings from main repo"
 echo "  ✓ Installed all dependencies"
 echo "  ✓ Generated Prisma client"
 echo "  ✓ Verified build setup"
