@@ -22,6 +22,7 @@ import {
   sanitizeContactData,
 } from '../middleware/validation/contactValidation';
 import { DateUtils } from '../utils/dateUtils';
+import { logRegistrationEvent } from '../utils/auditLogger';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -147,6 +148,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { firstName, middleName, lastName } = req.body || {};
+    const start = Date.now();
 
     if (!firstName || !lastName) {
       res.status(400).json({ success: false, message: 'First and last name are required' });
@@ -154,7 +156,13 @@ router.post(
     }
 
     // Build case-insensitive filters
-    const whereClause: any = {
+    const whereClause: {
+      creatoraccountid: bigint;
+      userid: null;
+      firstname: { equals: string; mode: 'insensitive' };
+      lastname: { equals: string; mode: 'insensitive' };
+      middlename?: { equals: string; mode: 'insensitive' };
+    } = {
       creatoraccountid: accountId,
       userid: null,
       // Prisma: case-insensitive match
@@ -168,10 +176,18 @@ router.post(
     const candidates = await prisma.contacts.findMany({ where: whereClause });
 
     if (candidates.length === 0) {
+      logRegistrationEvent(req, 'registration_linkByName', 'not_found', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
       res.status(404).json({ success: false, message: 'No matching contact found' });
       return;
     }
     if (candidates.length > 1) {
+      logRegistrationEvent(req, 'registration_linkByName', 'duplicate_matches', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
       res
         .status(404)
         .json({ success: false, message: 'Multiple matching contacts found. Please contact admin.' });
@@ -180,6 +196,10 @@ router.post(
 
     const contact = candidates[0];
     if (contact.userid) {
+      logRegistrationEvent(req, 'registration_linkByName', 'already_linked', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
       res.status(409).json({ success: false, message: 'Contact is already linked to a user' });
       return;
     }
@@ -189,6 +209,11 @@ router.post(
       data: { userid: req.user!.id },
     });
 
+    logRegistrationEvent(req, 'registration_linkByName', 'success', {
+      accountId,
+      userId: req.user!.id,
+      timingMs: Date.now() - start,
+    });
     res.json({
       success: true,
       data: {
@@ -246,6 +271,7 @@ router.post(
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
+    const start = Date.now();
 
     // Guard: existing membership
     const existing = await prisma.contacts.findFirst({
@@ -255,6 +281,11 @@ router.post(
       },
     });
     if (existing) {
+      logRegistrationEvent(req, 'registration_selfRegister', 'already_linked', {
+        accountId,
+        userId: req.user!.id,
+        timingMs: Date.now() - start,
+      });
       res.status(409).json({ success: false, message: 'Already registered with this account' });
       return;
     }
@@ -292,6 +323,11 @@ router.post(
       },
     });
 
+    logRegistrationEvent(req, 'registration_selfRegister', 'success', {
+      accountId,
+      userId: req.user!.id,
+      timingMs: Date.now() - start,
+    });
     res.status(201).json({
       success: true,
       data: {
