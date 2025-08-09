@@ -205,3 +205,27 @@ Priority tasks remaining:
 ## Tool Preferences
 
 - **Always use Serena tools when available**
+
+## MCP Server Configuration
+
+This project uses **project-specific MCP server configuration** via `.mcp.json` to ensure consistent tooling across all team members and git worktrees.
+
+### Available MCP Servers
+
+- **serena**: Advanced code analysis and semantic search tools
+- **context7**: Up-to-date library documentation and code examples
+
+### Configuration Details
+
+The `.mcp.json` file in the project root automatically configures:
+- **serena** with proper project path resolution for all worktrees
+- **context7** for accessing latest library documentation
+
+### Benefits
+
+- ✅ **Worktree Compatibility**: MCP servers work in main repo and all git worktrees
+- ✅ **Team Consistency**: All team members get identical MCP server setup
+- ✅ **Version Control**: MCP configuration is tracked and versioned
+- ✅ **Zero Setup**: New team members get MCP servers automatically
+
+**Note**: If you're not seeing MCP servers in a worktree, ensure `.mcp.json` exists in the project root and restart Claude Code.
