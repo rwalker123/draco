@@ -1,16 +1,15 @@
 // Ethereal Email Provider for Draco Sports Manager
 // Follows LSP - implements IEmailProvider interface
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 import {
   IEmailProvider,
   EmailOptions,
   EmailResult,
   EtherealTestAccount,
-} from '../../../interfaces/emailInterfaces';
-import { EmailConfig } from '../../../config/email';
+} from '../../../interfaces/emailInterfaces.js';
+import { EmailConfig } from '../../../config/email.js';
 
 export class EtherealProvider implements IEmailProvider {
   private transporter: Transporter | null = null;
@@ -46,7 +45,7 @@ export class EtherealProvider implements IEmailProvider {
       const result = await this.transporter!.sendMail(mailOptions);
 
       // Generate preview URL for Ethereal Email
-      const previewUrl = nodemailer.getTestMessageUrl(result);
+      const previewUrl = nodemailer.getTestMessageUrl(result) || undefined;
 
       return {
         success: true,
@@ -80,7 +79,7 @@ export class EtherealProvider implements IEmailProvider {
     try {
       // Use existing credentials if provided, otherwise create test account
       if (this.config.auth.user && this.config.auth.pass) {
-        this.transporter = nodemailer.createTransporter(this.config);
+        this.transporter = nodemailer.createTransport(this.config);
       } else {
         // Create dynamic test account for development
         this.testAccount = await nodemailer.createTestAccount();
@@ -95,7 +94,7 @@ export class EtherealProvider implements IEmailProvider {
           },
         };
 
-        this.transporter = nodemailer.createTransporter(testConfig);
+        this.transporter = nodemailer.createTransport(testConfig);
 
         console.log('Ethereal Email test account created:');
         console.log(`  User: ${this.testAccount?.user}`);

@@ -20,8 +20,7 @@ vi.mock('@prisma/client', () => {
     mockFindUnique,
   };
 });
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { mockFindUnique: mockPrismaFindUnique } = require('@prisma/client') as {
+const { mockFindUnique: mockPrismaFindUnique } = (await import('@prisma/client')) as unknown as {
   mockFindUnique: any;
 };
 

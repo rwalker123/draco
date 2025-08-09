@@ -1,10 +1,10 @@
 // Email Provider Factory for Draco Sports Manager
 // Follows OCP - extensible for new email providers
 
-import { IEmailProvider } from '../../interfaces/emailInterfaces';
-import { EmailConfig, EmailSettings, EmailConfigFactory } from '../../config/email';
-import { SendGridProvider } from './providers/SendGridProvider';
-import { EtherealProvider } from './providers/EtherealProvider';
+import { IEmailProvider } from '../../interfaces/emailInterfaces.js';
+import { EmailConfig, EmailSettings, EmailConfigFactory } from '../../config/email.js';
+import { SendGridProvider } from './providers/SendGridProvider.js';
+import { EtherealProvider } from './providers/EtherealProvider.js';
 
 export class EmailProviderFactory {
   private static instance: IEmailProvider | null = null;
