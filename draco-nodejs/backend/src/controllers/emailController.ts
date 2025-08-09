@@ -4,6 +4,7 @@
 import { Request, Response } from 'express';
 import { EmailService } from '../services/emailService.js';
 import { EmailTemplateService } from '../services/emailTemplateService.js';
+import { EmailAttachmentService } from '../services/emailAttachmentService.js';
 import {
   EmailComposeRequest,
   EmailTemplateCreateRequest,
@@ -18,10 +19,12 @@ import prisma from '../lib/prisma.js';
 export class EmailController {
   private emailService: EmailService;
   private templateService: EmailTemplateService;
+  private attachmentService: EmailAttachmentService;
 
   constructor() {
     this.emailService = new EmailService();
     this.templateService = new EmailTemplateService();
+    this.attachmentService = new EmailAttachmentService();
   }
 
   /**
@@ -461,6 +464,162 @@ export class EmailController {
         res.status(500).json({
           success: false,
           error: 'Failed to preview template',
+        });
+      }
+    }
+  };
+
+  /**
+   * POST /api/accounts/:accountId/emails/:emailId/attachments
+   * Upload attachments for an email
+   */
+  uploadAttachments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { accountId } = extractAccountParams(req.params);
+      const { emailId } = req.params;
+
+      if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
+        throw new ValidationError('No files uploaded');
+      }
+
+      const files = req.files as Express.Multer.File[];
+      const results = await this.attachmentService.uploadMultipleAttachments(
+        accountId.toString(),
+        emailId,
+        files,
+      );
+
+      res.status(201).json({
+        success: true,
+        data: results,
+      });
+    } catch (error) {
+      console.error('Error uploading attachments:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      } else if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to upload attachments',
+        });
+      }
+    }
+  };
+
+  /**
+   * GET /api/accounts/:accountId/emails/:emailId/attachments
+   * List attachments for an email
+   */
+  listAttachments = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { accountId } = extractAccountParams(req.params);
+      const { emailId } = req.params;
+
+      const attachments = await this.attachmentService.getEmailAttachments(
+        accountId.toString(),
+        emailId,
+      );
+
+      res.json({
+        success: true,
+        data: attachments,
+      });
+    } catch (error) {
+      console.error('Error listing attachments:', error);
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to list attachments',
+        });
+      }
+    }
+  };
+
+  /**
+   * GET /api/accounts/:accountId/emails/:emailId/attachments/:attachmentId
+   * Download an attachment
+   */
+  downloadAttachment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { accountId } = extractAccountParams(req.params);
+      const { emailId, attachmentId } = req.params;
+
+      const { attachment, buffer } = await this.attachmentService.getAttachment(
+        accountId.toString(),
+        emailId,
+        attachmentId,
+      );
+
+      // Set appropriate headers for file download
+      res.setHeader('Content-Type', attachment.mimeType || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${attachment.originalName}"`);
+      res.setHeader('Content-Length', buffer.length.toString());
+
+      res.send(buffer);
+    } catch (error) {
+      console.error('Error downloading attachment:', error);
+
+      if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to download attachment',
+        });
+      }
+    }
+  };
+
+  /**
+   * DELETE /api/accounts/:accountId/emails/:emailId/attachments/:attachmentId
+   * Delete an attachment
+   */
+  deleteAttachment = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { accountId } = extractAccountParams(req.params);
+      const { emailId, attachmentId } = req.params;
+
+      await this.attachmentService.deleteAttachment(accountId.toString(), emailId, attachmentId);
+
+      res.json({
+        success: true,
+        message: 'Attachment deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+
+      if (error instanceof ValidationError) {
+        res.status(400).json({
+          success: false,
+          error: error.message,
+        });
+      } else if (error instanceof NotFoundError) {
+        res.status(404).json({
+          success: false,
+          error: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to delete attachment',
         });
       }
     }

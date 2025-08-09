@@ -35,6 +35,32 @@ export interface EmailAttachment {
   contentType?: string;
 }
 
+// Email attachment upload result
+export interface AttachmentUploadResult {
+  id: string;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+}
+
+// Email attachment details
+export interface AttachmentDetails {
+  id: string;
+  filename: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string | null;
+  uploadedAt: Date;
+}
+
+// Email attachment with buffer
+export interface AttachmentWithBuffer {
+  attachment: AttachmentDetails;
+  buffer: Buffer;
+}
+
 // Template processing interface
 export interface IEmailTemplateEngine {
   processTemplate(template: string, variables: Record<string, unknown>): string;
