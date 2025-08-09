@@ -13,7 +13,6 @@ import {
   Tooltip,
 } from '@mui/material';
 import {
-  Email as EmailIcon,
   Phone as PhoneIcon,
   LocationOn as LocationIcon,
   CalendarToday as CalendarIcon,
@@ -25,6 +24,7 @@ import { UserDisplayCardProps } from '../../../../types/userTable';
 import { User, UserRole } from '../../../../types/users';
 import RoleIconGrid from '../../RoleIconGrid';
 import UserAvatar from '../../UserAvatar';
+import { EmailButton } from '../../../emails/common/EmailButton';
 
 const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
   user,
@@ -322,42 +322,36 @@ const UserDisplayCard: React.FC<UserDisplayCardProps> = ({
               {user.displayName}
             </Typography>
             {user.email && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.5 }}>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={0.5}
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  mt: 0.5,
+                  gap: 1,
+                }}
+              >
+                <Typography
+                  variant={config.subtitleVariant}
+                  color="text.secondary"
                   sx={{
-                    minWidth: 0,
-                    cursor: 'pointer',
-                    '&:hover': {
-                      '& .MuiSvgIcon-root': {
-                        color: 'primary.main',
-                      },
-                      '& .MuiTypography-root': {
-                        color: 'primary.main',
-                        textDecoration: 'underline',
-                      },
-                    },
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(`mailto:${user.email}`, '_blank');
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  <EmailIcon fontSize="small" color="action" sx={{ flexShrink: 0 }} />
-                  <Typography
-                    variant={config.subtitleVariant}
-                    color="text.secondary"
-                    sx={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {user.email}
-                  </Typography>
-                </Stack>
+                  {user.email}
+                </Typography>
+                <EmailButton
+                  contact={{
+                    id: user.id,
+                    firstname: user.firstName,
+                    lastname: user.lastName,
+                    email: user.email,
+                  }}
+                  variant="icon"
+                  size={cardSize === 'compact' ? 'small' : 'medium'}
+                />
               </Box>
             )}
           </Box>
