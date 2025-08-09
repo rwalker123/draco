@@ -1,6 +1,6 @@
 // Role configuration and constants for Draco Sports Manager
 
-import { RoleType } from '../types/roles';
+import { RoleType } from '../types/roles.js';
 
 // Role ID mappings (these should match the actual IDs in the aspnetroles table)
 // These will be populated from the database during initialization
@@ -127,7 +127,7 @@ export const hasRoleOrHigher = (userRoles: string[], requiredRole: string): bool
 };
 
 // Import ROLE_PERMISSIONS from types to use during initialization
-import { ROLE_PERMISSIONS } from '../types/roles';
+import { ROLE_PERMISSIONS } from '../types/roles.js';
 
 // Initialize role IDs from database
 export const initializeRoleIds = async (prisma: {

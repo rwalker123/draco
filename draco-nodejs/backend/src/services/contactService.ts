@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
-import prisma from '../lib/prisma';
-import { PaginationHelper } from '../utils/pagination';
+import prisma from '../lib/prisma.js';
+import { PaginationHelper } from '../utils/pagination.js';
 import {
   ContactQueryOptions,
   ContactResponse,
@@ -10,11 +10,11 @@ import {
   TeamManagerWithTeams,
   AutomaticRoleHoldersResponse,
   BaseContact,
-} from '../interfaces/contactInterfaces';
-import { ROLE_IDS, ROLE_NAMES } from '../config/roles';
-import { RoleType } from '../types/roles';
-import { getContactPhotoUrl } from '../config/logo';
-import { DateUtils } from '../utils/dateUtils';
+} from '../interfaces/contactInterfaces.js';
+import { ROLE_IDS, ROLE_NAMES } from '../config/roles.js';
+import { RoleType } from '../types/roles.js';
+import { getContactPhotoUrl } from '../config/logo.js';
+import { DateUtils } from '../utils/dateUtils.js';
 
 export class ContactService {
   /**

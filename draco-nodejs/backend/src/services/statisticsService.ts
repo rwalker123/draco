@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { MinimumCalculator } from './minimumCalculator';
-import { GameType } from '../types/gameEnums';
+import { MinimumCalculator } from './minimumCalculator.js';
+import { GameType } from '../types/gameEnums.js';
 
 export interface BattingStatsRow {
   playerId: bigint;

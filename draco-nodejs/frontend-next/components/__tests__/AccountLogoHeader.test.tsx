@@ -13,7 +13,10 @@ vi.mock('next/image', () => ({
     alt: string;
     [key: string]: unknown;
   }) {
-    return <img src={src} alt={alt} {...props}/>;
+    return <img src={src} alt={alt} {...props} />;
+    {
+       
+    }
   },
 }));
 
@@ -23,7 +26,7 @@ describe('AccountLogoHeader', () => {
       accountId: 'test-account',
       accountName: 'Test Account',
     };
-    
+
     render(<AccountLogoHeader {...mockProps} />);
     expect(screen.getByText('Test Account')).toBeInTheDocument();
   });

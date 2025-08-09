@@ -1,6 +1,6 @@
-import { AuthService } from '../authService';
-import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
+import { AuthService } from '../authService.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { describe, it, expect } from 'vitest';
 
 interface TestJwtPayload {

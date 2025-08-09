@@ -1,12 +1,8 @@
-import { initializeRoleIds } from './config/roles';
+import { initializeRoleIds } from './config/roles.js';
 import prisma from './lib/prisma.js';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const dotenv = require('dotenv');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const fs = require('fs');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const https = require('https');
+import dotenv from 'dotenv';
+import fs from 'node:fs';
+import https from 'node:https';
 
 async function bootstrap() {
   // Initialize role IDs synchronously - this ensures they're loaded when we need them

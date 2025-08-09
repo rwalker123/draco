@@ -1,10 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { TeamStatsService } from '../services/teamStatsService';
-import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction';
-import { TeamRequestValidator } from '../utils/teamValidators';
-import { StatsResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters';
-import { validateTeamSeasonBasic } from '../utils/teamValidation';
-import prisma from '../lib/prisma';
+import { TeamStatsService } from '../services/teamStatsService.js';
+import { extractTeamParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import { TeamRequestValidator } from '../utils/teamValidators.js';
+import { StatsResponseFormatter, TeamResponseFormatter } from '../utils/responseFormatters.js';
+import { validateTeamSeasonBasic } from '../utils/teamValidation.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router({ mergeParams: true });
 const teamStatsService = new TeamStatsService(prisma);

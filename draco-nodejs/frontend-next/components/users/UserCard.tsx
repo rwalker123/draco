@@ -10,6 +10,7 @@ import AddressCell from './table/AddressCell';
 import DateOfBirthCell from './table/DateOfBirthCell';
 import UserAvatar from './UserAvatar';
 import { getFormattedName } from '../../utils/contactUtils';
+import RegistrationStatusChip from './RegistrationStatusChip';
 
 /**
  * UserCard Component
@@ -73,6 +74,9 @@ const UserCard: React.FC<UserCardProps> = ({
             </Typography>
           )}
         </Typography>
+      </TableCell>
+      <TableCell>
+        <RegistrationStatusChip userId={user.userId} />
       </TableCell>
       <TableCell>
         <PhoneNumbersCell contactDetails={user.contactDetails} />

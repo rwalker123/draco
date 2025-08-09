@@ -2,8 +2,8 @@
 // Extends the existing authentication middleware with role checking
 
 import { Request, Response, NextFunction } from 'express';
-import { IRoleMiddleware } from '../interfaces/roleInterfaces';
-import { RoleContext, UserRoles } from '../types/roles';
+import { IRoleMiddleware } from '../interfaces/roleInterfaces.js';
+import { RoleContext, UserRoles } from '../types/roles.js';
 
 // Extend the Request interface to include user and role information
 declare global {

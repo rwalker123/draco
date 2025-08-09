@@ -2,13 +2,13 @@
 // Handles logo upload, retrieval, and deletion
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError } from '../utils/customErrors';
-import * as multer from 'multer';
-import { validateLogoFile, getAccountLogoUrl } from '../config/logo';
-import { createStorageService } from '../services/storageService';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import multer from 'multer';
+import { validateLogoFile, getAccountLogoUrl } from '../config/logo.js';
+import { createStorageService } from '../services/storageService.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();

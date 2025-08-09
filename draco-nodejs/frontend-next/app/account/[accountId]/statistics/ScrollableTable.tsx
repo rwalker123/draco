@@ -44,7 +44,7 @@ export default function ScrollableTable({
         scrollPositionStore.set(storeKey, currentScroll);
       }
     }
-  }, [dataVersion, preserveScrollOnUpdate, storeKey]);
+  }, [preserveScrollOnUpdate, storeKey]);
 
   const checkScrollButtons = useCallback(() => {
     if (!scrollRef.current) return;

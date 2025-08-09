@@ -1,3 +1,3 @@
-export * from './PrismaUserRepository';
-export * from './PrismaTeamRepository';
-export * from './PrismaAccountRepository';
+export * from './PrismaUserRepository.js';
+export * from './PrismaTeamRepository.js';
+export * from './PrismaAccountRepository.js';

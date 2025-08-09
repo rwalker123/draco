@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { performanceMonitor } from '../utils/performanceMonitor';
-import { databaseConfig } from '../config/database';
+import { performanceMonitor } from '../utils/performanceMonitor.js';
+import { databaseConfig } from '../config/database.js';
 
 // Extend Express Request to include timing and query tracking
 declare global {
@@ -112,7 +112,7 @@ export const databaseHealthCheck = async (
     const startTime = Date.now();
 
     // Import prisma here to avoid circular dependencies
-    const { default: prisma } = await import('../lib/prisma');
+    const { default: prisma } = await import('../lib/prisma.js');
 
     // Simple connectivity test
     await prisma.$queryRaw`SELECT 1 as health_check`;

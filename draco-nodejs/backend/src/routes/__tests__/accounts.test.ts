@@ -1,10 +1,9 @@
-import { Request, Response, NextFunction } from 'express';
-import * as express from 'express';
-import * as request from 'supertest';
-import accountsRouter from '../accounts';
-import { globalErrorHandler } from '../../utils/globalErrorHandler';
-import * as accountsContactsModule from '../accounts-contacts';
-import gamesRouter from '../games';
+import express, { Request, Response, NextFunction } from 'express';
+import request from 'supertest';
+import accountsRouter from '../accounts.js';
+import { globalErrorHandler } from '../../utils/globalErrorHandler.js';
+import { roleService } from '../accounts-contacts.js';
+import gamesRouter from '../games.js';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('../../middleware/authMiddleware', () => ({
@@ -71,10 +70,31 @@ const mockPrisma = {
   // Add more as needed for other routes
 };
 
-vi.mock('../../lib/prisma', () => mockPrisma);
-const mockFindManyAccounts = mockPrisma.accounts.findMany as any;
-const mockFindManyAffiliations = mockPrisma.affiliations.findMany as any;
-const mockFindFirstAccountUrl = mockPrisma.accountsurl.findFirst as any;
+const hoisted = vi.hoisted(() => ({
+  mockPrisma: {
+    accounts: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    affiliations: { findMany: vi.fn(), findUnique: vi.fn() },
+    accountsurl: { findFirst: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    currentseason: { findUnique: vi.fn() },
+    season: { findUnique: vi.fn(), findMany: vi.fn() },
+    contacts: { findFirst: vi.fn(), update: vi.fn(), findMany: vi.fn() },
+    availablefields: { findFirst: vi.fn(), update: vi.fn() },
+    teams: { findFirst: vi.fn(), delete: vi.fn() },
+    teamsseason: { findFirst: vi.fn() },
+    leagueschedule: { findFirst: vi.fn(), update: vi.fn() },
+  },
+}));
+
+vi.mock('../../lib/prisma', () => ({ default: hoisted.mockPrisma }));
+const mockFindManyAccounts = hoisted.mockPrisma.accounts.findMany as any;
+const mockFindManyAffiliations = hoisted.mockPrisma.affiliations.findMany as any;
+const mockFindFirstAccountUrl = hoisted.mockPrisma.accountsurl.findFirst as any;
 
 function createTestApp() {
   const app = express();
@@ -593,11 +613,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 200 with all accounts for admin', async () => {
-    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+    vi.spyOn(roleService, 'hasRole').mockResolvedValue({
       hasRole: true,
       roleLevel: 'account',
     });
-    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -634,11 +654,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 200 with accounts for account admin', async () => {
-    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+    vi.spyOn(roleService, 'hasRole').mockResolvedValue({
       hasRole: false,
       roleLevel: 'none',
     });
-    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [
         { id: 1n, contactId: 1n, roleId: 'AccountAdmin', roleData: 0n, accountId: 1n },
@@ -675,11 +695,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 200 with empty accounts if no access', async () => {
-    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+    vi.spyOn(roleService, 'hasRole').mockResolvedValue({
       hasRole: false,
       roleLevel: 'none',
     });
-    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });
@@ -693,11 +713,11 @@ describe('GET /accounts/my-accounts', () => {
   });
 
   it('returns 500 on error', async () => {
-    vi.spyOn(accountsContactsModule.roleService, 'hasRole').mockResolvedValue({
+    vi.spyOn(roleService, 'hasRole').mockResolvedValue({
       hasRole: true,
       roleLevel: 'account',
     });
-    vi.spyOn(accountsContactsModule.roleService, 'getUserRoles').mockResolvedValue({
+    vi.spyOn(roleService, 'getUserRoles').mockResolvedValue({
       globalRoles: [],
       contactRoles: [],
     });

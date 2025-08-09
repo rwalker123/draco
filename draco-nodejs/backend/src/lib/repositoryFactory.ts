@@ -5,8 +5,8 @@ import {
   PrismaUserRepository,
   PrismaTeamRepository,
   PrismaAccountRepository,
-} from '../repositories';
-import prisma from './prisma';
+} from '../repositories/index.js';
+import prisma from './prisma.js';
 
 /**
  * Factory functions to create repository instances

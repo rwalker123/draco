@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as httpMocks from 'node-mocks-http';
-import { domainRouting } from '../domainRouting';
+import httpMocks from 'node-mocks-http';
+import { domainRouting } from '../domainRouting.js';
 import { PrismaClient } from '@prisma/client';
 import { EventEmitter } from 'events';
 import { vi, describe, it, expect, beforeEach } from 'vitest';

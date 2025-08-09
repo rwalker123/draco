@@ -243,6 +243,67 @@
         }
       }
     },
+    "/api/accounts/{accountId}/contacts/me/link-by-name": {
+      "post": {
+        "summary": "Link existing contact in account to current user by matching name",
+        "description": "Finds a unique contact in the specified account by first/middle/last name and links it to the authenticated user's userid. Fails if none or multiple matches found, or if already linked.",
+        "tags": [
+          "Accounts"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Account ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "firstName",
+                  "lastName"
+                ],
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "middleName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Contact linked successfully"
+          },
+          "404": {
+            "description": "No unique match found"
+          },
+          "409": {
+            "description": "Contact already linked to a user"
+          }
+        }
+      }
+    },
     "/api/accounts/search": {
       "get": {
         "summary": "Search for accounts",

@@ -2,17 +2,17 @@
 // Handles basic account operations: search, retrieval, creation, updates, deletion
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 import { Prisma } from '@prisma/client';
 // Import removed - these utilities not used in core operations
-import { RoleType } from '../types/roles';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError } from '../utils/customErrors';
-import { extractAccountParams } from '../utils/paramExtraction';
-import { getAccountLogoUrl } from '../config/logo';
-import { ROLE_IDS } from '../config/roles';
-import prisma from '../lib/prisma';
+import { RoleType } from '../types/roles.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import { extractAccountParams } from '../utils/paramExtraction.js';
+import { getAccountLogoUrl } from '../config/logo.js';
+import { ROLE_IDS } from '../config/roles.js';
+import prisma from '../lib/prisma.js';
 import {
   AccountSearchResult,
   PublicAccountResponse,
@@ -21,7 +21,7 @@ import {
   AccountListContact,
   AccountAffiliation,
   PublicSeason,
-} from '../interfaces/accountInterfaces';
+} from '../interfaces/accountInterfaces.js';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
