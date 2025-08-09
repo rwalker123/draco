@@ -130,7 +130,7 @@ export class AuthService {
    */
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      const { username, email, password, firstName, lastName } = data;
+      const { username, email, password } = data;
 
       // Check if username already exists
       const existingUser = await prisma.aspnetusers.findUnique({
@@ -180,25 +180,7 @@ export class AuthService {
         },
       });
 
-      // Create contact record if name provided
-      if (firstName || lastName) {
-        // Find a default account to associate with
-        const defaultAccount = await prisma.accounts.findFirst();
-        if (defaultAccount) {
-          await prisma.contacts.create({
-            data: {
-              id: BigInt(Date.now()), // Generate a unique BigInt ID
-              userid: userId,
-              firstname: firstName || '',
-              lastname: lastName || '',
-              middlename: '', // Required field, use empty string as default
-              email,
-              creatoraccountid: defaultAccount.id,
-              dateofbirth: new Date('1900-01-01'), // Default date
-            },
-          });
-        }
-      }
+      // Note: Contact creation moved to explicit registration flows. This endpoint is login-only.
 
       // Generate JWT token
       const token = this.generateToken(newUser.id, newUser.username || '');

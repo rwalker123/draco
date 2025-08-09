@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import accountsCoreRouter from './accounts-core';
 import accountsContactsRouter from './accounts-contacts';
+import accountsRegistrationRouter from './accounts-registration';
 import contactMediaRouter from './contact-media';
 import accountsResourcesRouter from './accounts-resources';
 import accountsSettingsRouter from './accounts-settings';
@@ -17,6 +18,9 @@ router.use('/', accountsCoreRouter);
 
 // Contact and user management endpoints
 router.use('/', accountsContactsRouter);
+
+// Combined account registration endpoints
+router.use('/', accountsRegistrationRouter);
 
 // Contact media endpoints (photos)
 router.use('/:accountId/contacts', contactMediaRouter);

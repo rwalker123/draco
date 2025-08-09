@@ -647,6 +647,20 @@
 - [ ] **Database Optimization** - Optimize database queries and indexes
 - [ ] **Frontend Optimization** - Optimize frontend performance and bundle size 
 
+#### Account Membership Caching (Frontend)
+- [ ] Implement lightweight caching for account membership checks used by the top toolbar and account layout
+  - Scope: Cache GET `/api/accounts/:accountId/contacts/me` result (Contact or null)
+  - Options:
+    - In-memory TTL cache keyed by `${userId}:${accountId}` (5–15 min)
+    - sessionStorage with TTL to persist across reloads; clear on logout
+    - Consider SWR/react-query for key-based caching and background revalidation
+  - Invalidation rules:
+    - On successful POST `/api/accounts/:accountId/contacts/me` set cache to the new contact
+    - On logout, clear membership cache for all accounts
+  - Behavior:
+    - Layout-scoped fetch runs once per `accountId` mount; cached value prevents repeat calls on page changes
+    - Persist across reloads/tabs when using sessionStorage/SWR; fall back to live fetch on cache miss
+
 ### URL Management Testing
 - [ ] **Test Domain Routing with /etc/hosts**
   - [ ] Add test domain entry to /etc/hosts (e.g., `127.0.0.1 test.example.com`)

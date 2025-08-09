@@ -568,3 +568,28 @@ git commit -m "Add test secret to baseline"
 3. **Review baseline updates** before committing
 4. **Keep baseline file in git** for team consistency
 5. **Run manual scans** periodically: `npm run secrets:update-baseline`
+
+## 🧾 Structured Registration & Linking Logs
+
+The backend emits structured JSON logs for registration and account-linking events to support auditing and analysis.
+
+- Where: `draco-nodejs/backend/src/utils/auditLogger.ts` via `logRegistrationEvent(req, event, status, details)`
+- Events:
+  - `registration_newUser`, `registration_existingUser`
+  - `registration_selfRegister`, `registration_linkByName`
+- Status values:
+  - `attempt`, `success`, `already_linked`, `duplicate_matches`, `not_found`, `validation_error`, `auth_error`, `server_error`
+- Context fields (never sensitive):
+  - `ts`, `requestId`, `ip`, `event`, `status`, `accountId`, `userId`, `mode`, `timingMs`
+
+Environment control:
+
+```env
+# Enable/disable structured registration logs (default: enabled)
+LOG_REGISTRATION=true
+```
+
+Notes:
+- Passwords, tokens, and email contents are never logged.
+- Requests include a `requestId` from the query logger middleware to correlate traces.
+- Logs are single-line JSON for easy ingestion.

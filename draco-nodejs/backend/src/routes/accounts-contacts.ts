@@ -22,10 +22,327 @@ import {
   sanitizeContactData,
 } from '../middleware/validation/contactValidation';
 import { DateUtils } from '../utils/dateUtils';
+import { logRegistrationEvent } from '../utils/auditLogger';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
 const routeProtection = ServiceFactory.getRouteProtection();
+
+/**
+ * @swagger
+ * /api/accounts/{accountId}/contacts/me:
+ *   get:
+ *     summary: Get current user's contact for an account
+ *     description: Returns the authenticated user's contact within the specified account, or 404 if not registered
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     responses:
+ *       200:
+ *         description: Contact found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     contact:
+ *                       type: object
+ *       404:
+ *         description: Not registered with this account
+ */
+router.get(
+  '/:accountId/contacts/me',
+  authenticateToken,
+  routeProtection.enforceAccountBoundary(),
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+
+    const existing = await prisma.contacts.findFirst({
+      where: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+      },
+    });
+
+    if (!existing) {
+      res.status(404).json({ success: false, message: 'Not registered with this account' });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          id: existing.id.toString(),
+          firstname: existing.firstname,
+          lastname: existing.lastname,
+          middlename: existing.middlename,
+          email: existing.email || undefined,
+          phone1: existing.phone1 || undefined,
+          phone2: existing.phone2 || undefined,
+          phone3: existing.phone3 || undefined,
+          streetaddress: existing.streetaddress || undefined,
+          city: existing.city || undefined,
+          state: existing.state || undefined,
+          zip: existing.zip || undefined,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(existing.dateofbirth),
+        },
+      },
+    });
+  }),
+);
+
+/**
+ * @swagger
+ * /api/accounts/{accountId}/contacts/me/link-by-name:
+ *   post:
+ *     summary: Link existing contact in account to current user by matching name
+ *     description: Finds a unique contact in the specified account by first/middle/last name and links it to the authenticated user's userid. Fails if none or multiple matches found, or if already linked.
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [firstName, lastName]
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               middleName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Contact linked successfully
+ *       404:
+ *         description: No unique match found
+ *       409:
+ *         description: Contact already linked to a user
+ */
+router.post(
+  '/:accountId/contacts/me/link-by-name',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { firstName, middleName, lastName } = req.body || {};
+    const start = Date.now();
+
+    if (!firstName || !lastName) {
+      res.status(400).json({ success: false, message: 'First and last name are required' });
+      return;
+    }
+
+    // Build case-insensitive filters
+    const whereClause: {
+      creatoraccountid: bigint;
+      userid: null;
+      firstname: { equals: string; mode: 'insensitive' };
+      lastname: { equals: string; mode: 'insensitive' };
+      middlename?: { equals: string; mode: 'insensitive' };
+    } = {
+      creatoraccountid: accountId,
+      userid: null,
+      // Prisma: case-insensitive match
+      firstname: { equals: String(firstName), mode: 'insensitive' },
+      lastname: { equals: String(lastName), mode: 'insensitive' },
+    };
+    if (typeof middleName === 'string' && middleName.trim().length > 0) {
+      whereClause.middlename = { equals: String(middleName), mode: 'insensitive' };
+    }
+
+    const candidates = await prisma.contacts.findMany({ where: whereClause });
+
+    if (candidates.length === 0) {
+      logRegistrationEvent(req, 'registration_linkByName', 'not_found', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
+      res.status(404).json({ success: false, message: 'No matching contact found' });
+      return;
+    }
+    if (candidates.length > 1) {
+      logRegistrationEvent(req, 'registration_linkByName', 'duplicate_matches', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
+      res
+        .status(404)
+        .json({ success: false, message: 'Multiple matching contacts found. Please contact admin.' });
+      return;
+    }
+
+    const contact = candidates[0];
+    if (contact.userid) {
+      logRegistrationEvent(req, 'registration_linkByName', 'already_linked', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
+      res.status(409).json({ success: false, message: 'Contact is already linked to a user' });
+      return;
+    }
+
+    const updated = await prisma.contacts.update({
+      where: { id: contact.id },
+      data: { userid: req.user!.id },
+    });
+
+    logRegistrationEvent(req, 'registration_linkByName', 'success', {
+      accountId,
+      userId: req.user!.id,
+      timingMs: Date.now() - start,
+    });
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          id: updated.id.toString(),
+          firstname: updated.firstname,
+          lastname: updated.lastname,
+          middlename: updated.middlename,
+          email: updated.email || undefined,
+        },
+      },
+    });
+  }),
+);
+
+/**
+ * @swagger
+ * /api/accounts/{accountId}/contacts/me:
+ *   post:
+ *     summary: Self-register current user to an account
+ *     description: Creates a contact for the authenticated user within the specified account
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               middleName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Contact created
+ *       409:
+ *         description: Already registered
+ */
+router.post(
+  '/:accountId/contacts/me',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const start = Date.now();
+
+    // Guard: existing membership
+    const existing = await prisma.contacts.findFirst({
+      where: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+      },
+    });
+    if (existing) {
+      logRegistrationEvent(req, 'registration_selfRegister', 'already_linked', {
+        accountId,
+        userId: req.user!.id,
+        timingMs: Date.now() - start,
+      });
+      res.status(409).json({ success: false, message: 'Already registered with this account' });
+      return;
+    }
+
+    // Normalize input: accept camelCase from FE, convert to backend lowercase for processing
+    const body = req.body || {};
+    const normalizedInput: Record<string, unknown> = {
+      firstname: body.firstname ?? body.firstName,
+      middlename: body.middlename ?? body.middleName,
+      lastname: body.lastname ?? body.lastName,
+      email: body.email,
+    };
+
+    const { firstname, middlename, lastname, email } = sanitizeContactData(normalizedInput);
+
+    // Validate required fields and email format
+    if (!firstname || !lastname) {
+      res.status(400).json({ success: false, message: 'First name and last name are required' });
+      return;
+    }
+    if (email && !isEmail(email)) {
+      res.status(400).json({ success: false, message: 'Please enter a valid email address' });
+      return;
+    }
+
+    const created = await prisma.contacts.create({
+      data: {
+        userid: req.user!.id,
+        creatoraccountid: accountId,
+        firstname,
+        lastname,
+        middlename: middlename || '',
+        email: email || null,
+        dateofbirth: DateUtils.parseDateOfBirthForDatabase(null),
+      },
+    });
+
+    logRegistrationEvent(req, 'registration_selfRegister', 'success', {
+      accountId,
+      userId: req.user!.id,
+      timingMs: Date.now() - start,
+    });
+    res.status(201).json({
+      success: true,
+      data: {
+        contact: {
+          id: created.id.toString(),
+          firstname: created.firstname,
+          lastname: created.lastname,
+          middlename: created.middlename,
+          email: created.email || undefined,
+          dateofbirth: DateUtils.formatDateOfBirthForResponse(created.dateofbirth),
+        },
+      },
+    });
+  }),
+);
 
 /**
  * GET /api/accounts/:accountId/contacts
