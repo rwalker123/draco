@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TableCell, TableRow, Stack, Typography } from '@mui/material';
+import { TableCell, TableRow, Stack, Typography, Box } from '@mui/material';
 import { UserCardProps } from '../../types/users';
 import UserRoleChips from './UserRoleChips';
 import UserActions from './UserActions';
@@ -11,6 +11,7 @@ import DateOfBirthCell from './table/DateOfBirthCell';
 import UserAvatar from './UserAvatar';
 import { getFormattedName } from '../../utils/contactUtils';
 import RegistrationStatusChip from './RegistrationStatusChip';
+import { EmailButton } from '../emails/common/EmailButton';
 
 /**
  * UserCard Component
@@ -67,13 +68,27 @@ const UserCard: React.FC<UserCardProps> = ({
         </Stack>
       </TableCell>
       <TableCell>
-        <Typography variant="body2">
-          {user.email || (
-            <Typography component="span" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-              —
+        {user.email ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {user.email}
             </Typography>
-          )}
-        </Typography>
+            <EmailButton
+              contact={{
+                id: user.id,
+                firstname: user.firstName,
+                lastname: user.lastName,
+                email: user.email,
+              }}
+              variant="icon"
+              size="small"
+            />
+          </Box>
+        ) : (
+          <Typography component="span" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+            —
+          </Typography>
+        )}
       </TableCell>
       <TableCell>
         <RegistrationStatusChip userId={user.userId} />
