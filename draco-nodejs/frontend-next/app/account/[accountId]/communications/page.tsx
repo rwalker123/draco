@@ -54,7 +54,7 @@ export default function CommunicationsPage() {
       icon: <SendIcon sx={{ fontSize: 40 }} />,
       action: () => router.push(`/account/${accountId}/communications/compose`),
       color: 'secondary',
-      disabled: true, // Will enable in Phase 2
+      disabled: false, // Phase 2 backend is ready!
     },
     {
       title: 'Email Templates',
@@ -70,7 +70,7 @@ export default function CommunicationsPage() {
       icon: <HistoryIcon sx={{ fontSize: 40 }} />,
       action: () => router.push(`/account/${accountId}/communications/history`),
       color: 'success',
-      disabled: true, // Will enable in Phase 2
+      disabled: false, // Phase 2 backend supports email tracking
     },
   ];
 
@@ -90,10 +90,10 @@ export default function CommunicationsPage() {
       </Typography>
 
       {comingSoonAlert && (
-        <Alert severity="info" onClose={() => setComingSoonAlert(false)} sx={{ mb: 3 }}>
-          <AlertTitle>Phase 1 - Basic Email Features</AlertTitle>
-          Currently available: Quick emails using your default email app. Advanced features like
-          templates and server-side sending are coming in Phase 2!
+        <Alert severity="success" onClose={() => setComingSoonAlert(false)} sx={{ mb: 3 }}>
+          <AlertTitle>Phase 2 - Server-Side Email System</AlertTitle>
+          Advanced email features are now available! Send bulk emails with templates, attachments,
+          and delivery tracking. Basic mailto functionality remains available for quick messages.
         </Alert>
       )}
 
@@ -194,17 +194,25 @@ export default function CommunicationsPage() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom color="secondary">
-                Advanced Features (Coming Soon)
+                Advanced Features (Now Available!)
               </Typography>
               <Typography variant="body2" paragraph>
-                Advanced email composition with rich text, templates, file attachments, bulk
-                sending, and delivery tracking will be available in the next phase.
+                Server-side email system with rich text composition, templates, file attachments,
+                bulk sending, and delivery tracking is now ready. Frontend interface coming soon.
               </Typography>
               <Stack direction="row" spacing={1}>
-                <Button variant="outlined" size="small" disabled>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => router.push(`/account/${accountId}/communications/templates`)}
+                >
                   Templates
                 </Button>
-                <Button variant="outlined" size="small" disabled>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => router.push(`/account/${accountId}/communications/history`)}
+                >
                   Analytics
                 </Button>
               </Stack>

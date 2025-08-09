@@ -119,7 +119,7 @@ export interface EmailRecord {
   clickCount: number;
 }
 
-export type EmailStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'scheduled';
+export type EmailStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'scheduled' | 'partial';
 
 export interface EmailRecipient {
   id: bigint;
