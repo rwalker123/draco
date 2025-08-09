@@ -1,11 +1,10 @@
 // SendGrid Email Provider for Draco Sports Manager
 // Follows LSP - implements IEmailProvider interface
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import { IEmailProvider, EmailOptions, EmailResult } from '../../../interfaces/emailInterfaces';
-import { EmailConfig } from '../../../config/email';
+import { IEmailProvider, EmailOptions, EmailResult } from '../../../interfaces/emailInterfaces.js';
+import { EmailConfig } from '../../../config/email.js';
 
 export class SendGridProvider implements IEmailProvider {
   private transporter: Transporter;
@@ -13,7 +12,7 @@ export class SendGridProvider implements IEmailProvider {
 
   constructor(config: EmailConfig) {
     this.config = config;
-    this.transporter = nodemailer.createTransporter(config);
+    this.transporter = nodemailer.createTransport(config);
   }
 
   async sendEmail(options: EmailOptions): Promise<EmailResult> {

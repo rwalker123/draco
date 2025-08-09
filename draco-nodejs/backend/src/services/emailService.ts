@@ -1,6 +1,3 @@
-import nodemailer from 'nodemailer';
-import type { Transporter } from 'nodemailer';
-
 // Enhanced Email Service for Draco Sports Manager
 // Follows SRP/DIP - depends on IEmailProvider interface
 
@@ -11,10 +8,10 @@ import {
   ResolvedRecipient,
   EmailSettings,
   EmailRecipientSelection,
-} from '../interfaces/emailInterfaces';
-import { EmailProviderFactory } from './email/EmailProviderFactory';
-import { EmailConfigFactory } from '../config/email';
-import prisma from '../lib/prisma';
+} from '../interfaces/emailInterfaces.js';
+import { EmailProviderFactory } from './email/EmailProviderFactory.js';
+import { EmailConfigFactory } from '../config/email.js';
+import prisma from '../lib/prisma.js';
 
 // Email queue management interfaces
 interface EmailQueueJob {

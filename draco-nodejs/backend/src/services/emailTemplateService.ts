@@ -8,8 +8,8 @@ import {
   EmailTemplateCreateRequest,
   EmailTemplateUpdateRequest,
   EmailTemplateDbRecord,
-} from '../interfaces/emailInterfaces';
-import prisma from '../lib/prisma';
+} from '../interfaces/emailInterfaces.js';
+import prisma from '../lib/prisma.js';
 
 export class EmailTemplateService implements IEmailTemplateEngine {
   /**

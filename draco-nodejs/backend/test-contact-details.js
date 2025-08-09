@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 // Test the new contact details functionality
 async function testContactDetails() {
