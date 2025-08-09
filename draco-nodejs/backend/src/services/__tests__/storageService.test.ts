@@ -1,25 +1,31 @@
 import { LocalStorageService } from '../storageService.js';
-import fs from 'node:fs';
 import sharp from 'sharp';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-vi.mock('sharp', () => ({ default: vi.fn() }));
-vi.mock('node:fs', () => {
+const hoisted = vi.hoisted(() => {
   const existsSync = vi.fn();
   const mkdirSync = vi.fn();
   const writeFileSync = vi.fn();
   const readFileSync = vi.fn();
   const unlinkSync = vi.fn();
-  return {
-    ...fs,
-    default: { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync },
-    existsSync,
-    mkdirSync,
-    writeFileSync,
-    readFileSync,
-    unlinkSync,
-  };
+  return { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync };
 });
+
+vi.mock('sharp', () => ({ default: vi.fn() }));
+vi.mock('node:fs', () => ({
+  existsSync: hoisted.existsSync,
+  mkdirSync: hoisted.mkdirSync,
+  writeFileSync: hoisted.writeFileSync,
+  readFileSync: hoisted.readFileSync,
+  unlinkSync: hoisted.unlinkSync,
+  default: {
+    existsSync: hoisted.existsSync,
+    mkdirSync: hoisted.mkdirSync,
+    writeFileSync: hoisted.writeFileSync,
+    readFileSync: hoisted.readFileSync,
+    unlinkSync: hoisted.unlinkSync,
+  },
+}));
 
 describe('LocalStorageService', () => {
   let service: LocalStorageService;
@@ -31,11 +37,11 @@ describe('LocalStorageService', () => {
   let mockSharp: any;
 
   beforeEach(() => {
-    existsSyncSpy = (fs as any).existsSync as any;
-    mkdirSyncSpy = (fs as any).mkdirSync as any;
-    writeFileSyncSpy = (fs as any).writeFileSync as any;
-    readFileSyncSpy = (fs as any).readFileSync as any;
-    unlinkSyncSpy = (fs as any).unlinkSync as any;
+    existsSyncSpy = hoisted.existsSync;
+    mkdirSyncSpy = hoisted.mkdirSync;
+    writeFileSyncSpy = hoisted.writeFileSync;
+    readFileSyncSpy = hoisted.readFileSync;
+    unlinkSyncSpy = hoisted.unlinkSync;
 
     mockSharp = sharp as any;
     mockSharp.mockReturnValue({
