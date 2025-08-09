@@ -8,9 +8,11 @@ import {
   ResolvedRecipient,
   EmailSettings,
   EmailRecipientSelection,
+  EmailAttachment,
 } from '../interfaces/emailInterfaces.js';
 import { EmailProviderFactory } from './email/EmailProviderFactory.js';
 import { EmailConfigFactory } from '../config/email.js';
+import { EmailAttachmentService } from './emailAttachmentService.js';
 import prisma from '../lib/prisma.js';
 
 // Email queue management interfaces
@@ -25,6 +27,7 @@ interface EmailQueueJob {
   retryCount: number;
   scheduledAt: Date;
   createdAt: Date;
+  attachments?: EmailAttachment[];
 }
 
 interface QueueMetrics {
@@ -63,6 +66,7 @@ export class EmailService {
     startTime: new Date(),
     count: 0,
   };
+  private attachmentService: EmailAttachmentService;
 
   // Provider-specific queue configuration
   private readonly PROVIDER_CONFIGS = {
@@ -90,6 +94,7 @@ export class EmailService {
   constructor(config?: EmailConfig, fromEmail?: string, baseUrl?: string) {
     // Legacy constructor for backward compatibility
     this.baseUrl = baseUrl || EmailConfigFactory.getBaseUrl();
+    this.attachmentService = new EmailAttachmentService();
 
     // Start queue processor
     this.startQueueProcessor();
@@ -256,8 +261,17 @@ export class EmailService {
         },
       });
 
+      // Load attachments for the email
+      const attachments = await this.attachmentService.getAttachmentsForSending(emailId.toString());
+
       // Queue email batches for processing
-      await this.queueEmailBatches(emailId, recipients, email.subject, email.body_html);
+      await this.queueEmailBatches(
+        emailId,
+        recipients,
+        email.subject,
+        email.body_html,
+        attachments,
+      );
 
       console.log(
         `Queued ${recipients.length} recipients in ${Math.ceil(recipients.length / this.BATCH_SIZE)} batches for email ${emailId}`,
@@ -285,6 +299,7 @@ export class EmailService {
     recipients: ResolvedRecipient[],
     subject: string,
     bodyHtml: string,
+    attachments?: EmailAttachment[],
   ): Promise<void> {
     const settings = EmailConfigFactory.getEmailSettings();
     const now = new Date();
@@ -305,6 +320,7 @@ export class EmailService {
         retryCount: 0,
         scheduledAt: now,
         createdAt: now,
+        attachments,
       };
 
       this.jobQueue.set(job.id, job);
@@ -466,6 +482,7 @@ export class EmailService {
           from: job.settings.fromEmail,
           fromName: job.settings.fromName,
           replyTo: job.settings.replyTo,
+          attachments: job.attachments,
         };
 
         const result = await provider.sendEmail(emailOptions);
