@@ -3,6 +3,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { authRateLimit } from '../middleware/rateLimitMiddleware';
 import { extractAccountParams } from '../utils/paramExtraction';
 import { RegistrationService } from '../services/registrationService';
+import { logRegistrationEvent } from '../utils/auditLogger';
 
 const router = Router({ mergeParams: true });
 const registrationService = new RegistrationService();
@@ -74,8 +75,14 @@ router.post(
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
     const { mode } = req.body || {};
+    const start = Date.now();
 
     if (mode !== 'newUser' && mode !== 'existingUser') {
+      logRegistrationEvent(req, 'registration_newUser', 'validation_error', {
+        accountId,
+        mode,
+        timingMs: Date.now() - start,
+      });
       res.status(400).json({ success: false, message: 'Invalid mode' });
       return;
     }
@@ -91,9 +98,17 @@ router.post(
         accountId,
       });
       if (!result.success) {
+        logRegistrationEvent(req, 'registration_newUser', 'validation_error', {
+          accountId,
+          timingMs: Date.now() - start,
+        });
         res.status(result.statusCode || 400).json({ success: false, message: result.message });
         return;
       }
+      logRegistrationEvent(req, 'registration_newUser', 'success', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
       res.status(201).json({ success: true, ...result.payload });
       return;
     }
@@ -109,9 +124,17 @@ router.post(
       accountId,
     });
     if (!result.success) {
+      logRegistrationEvent(req, 'registration_existingUser', 'auth_error', {
+        accountId,
+        timingMs: Date.now() - start,
+      });
       res.status(result.statusCode || 400).json({ success: false, message: result.message });
       return;
     }
+    logRegistrationEvent(req, 'registration_existingUser', 'success', {
+      accountId,
+      timingMs: Date.now() - start,
+    });
     res.status(201).json({ success: true, ...result.payload });
   }),
 );
