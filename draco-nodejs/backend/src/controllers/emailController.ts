@@ -2,18 +2,18 @@
 // Follows SRP - handles HTTP requests only
 
 import { Request, Response } from 'express';
-import { EmailService } from '../services/emailService';
-import { EmailTemplateService } from '../services/emailTemplateService';
+import { EmailService } from '../services/emailService.js';
+import { EmailTemplateService } from '../services/emailTemplateService.js';
 import {
   EmailComposeRequest,
   EmailTemplateCreateRequest,
   EmailTemplateUpdateRequest,
-} from '../interfaces/emailInterfaces';
-import { EmailQueryFilter } from '../interfaces/emailInterfaces';
-import { ValidationError, NotFoundError } from '../utils/customErrors';
-import { extractAccountParams } from '../utils/paramExtraction';
-import { PaginationHelper } from '../utils/pagination';
-import prisma from '../lib/prisma';
+} from '../interfaces/emailInterfaces.js';
+import { EmailQueryFilter } from '../interfaces/emailInterfaces.js';
+import { ValidationError, NotFoundError } from '../utils/customErrors.js';
+import { extractAccountParams } from '../utils/paramExtraction.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import prisma from '../lib/prisma.js';
 
 export class EmailController {
   private emailService: EmailService;

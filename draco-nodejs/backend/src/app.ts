@@ -27,7 +27,7 @@ import statisticsRouter from './routes/statistics.js';
 import standingsRouter from './routes/standings.js';
 import monitoringRouter from './routes/monitoring.js';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger.js';
-import emailsRouter from './routes/emails';
+import emailsRouter from './routes/emails.js';
 
 // Load environment variables
 dotenv.config();

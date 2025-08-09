@@ -2,9 +2,9 @@
 // Follows SRP - handles HTTP routing for email endpoints only
 
 import { Router } from 'express';
-import { EmailController } from '../controllers/emailController';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
+import { EmailController } from '../controllers/emailController.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 
 const router = Router();
 const emailController = new EmailController();
