@@ -90,6 +90,15 @@ else
     print_warning "Frontend .env.local file not found in main repo"
 fi
 
+# Backend certs directory (SSL certificates for HTTPS development)
+if [ -d "$MAIN_REPO_PATH/draco-nodejs/backend/certs" ]; then
+    mkdir -p "draco-nodejs/backend"
+    cp -r "$MAIN_REPO_PATH/draco-nodejs/backend/certs" "draco-nodejs/backend/"
+    print_success "Copied backend certs directory (SSL certificates)"
+else
+    print_warning "Backend certs directory not found in main repo"
+fi
+
 # Step 2: Copy node_modules if they exist (optional - can save time)
 if [ "$COPY_NODE_MODULES" = true ]; then
     print_status "Checking for existing node_modules..."
@@ -185,6 +194,7 @@ print_success "Worktree initialization complete!"
 echo ""
 print_status "Summary of actions:"
 echo "  ✓ Copied environment files from main repo"
+echo "  ✓ Copied SSL certificates from main repo"
 echo "  ✓ Installed all dependencies"
 echo "  ✓ Generated Prisma client"
 echo "  ✓ Verified build setup"
