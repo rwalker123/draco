@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Chip } from '@mui/material';
+import { Tooltip } from '@mui/material';
 import { CheckCircle, PersonOutline } from '@mui/icons-material';
 
 interface RegistrationStatusChipProps {
@@ -20,17 +20,13 @@ const RegistrationStatusChip: React.FC<RegistrationStatusChipProps> = ({
   const isRegistered = !!userId;
 
   return (
-    <Chip
-      icon={isRegistered ? <CheckCircle /> : <PersonOutline />}
-      label={isRegistered ? 'Registered' : 'Not Registered'}
-      color={isRegistered ? 'success' : 'default'}
-      variant={isRegistered ? 'filled' : 'outlined'}
-      size={size}
-      sx={{
-        fontWeight: isRegistered ? 'medium' : 'normal',
-        minWidth: 120,
-      }}
-    />
+    <Tooltip title={isRegistered ? 'Registered' : 'Not registered'} placement="top" arrow>
+      {isRegistered ? (
+        <CheckCircle color="success" fontSize={size === 'small' ? 'small' : 'medium'} />
+      ) : (
+        <PersonOutline color="action" fontSize={size === 'small' ? 'small' : 'medium'} />
+      )}
+    </Tooltip>
   );
 };
 
