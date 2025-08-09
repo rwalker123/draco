@@ -26,6 +26,7 @@ import teamManagersRouter from './routes/teamManagers';
 import statisticsRouter from './routes/statistics';
 import standingsRouter from './routes/standings';
 import monitoringRouter from './routes/monitoring';
+import emailsRouter from './routes/emails';
 import { queryLoggerMiddleware, databaseHealthCheck } from './middleware/queryLogger';
 
 // Load environment variables
@@ -111,6 +112,7 @@ app.use(
   teamManagersRouter,
 );
 app.use('/api/accounts/:accountId/seasons/:seasonId/standings', standingsRouter);
+app.use('/api', emailsRouter);
 app.use('/api/accounts', accountsRouter);
 
 // Global error handler

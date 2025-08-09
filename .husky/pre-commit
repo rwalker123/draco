@@ -34,18 +34,13 @@ fi
 
 # Run backend checks
 echo "📦 Checking backend..."
-cd draco-nodejs/backend
-npx lint-staged
+npx lint-staged --cwd "$(git rev-parse --show-toplevel)/draco-nodejs/backend"
 BACKEND_EXIT_CODE=$?
 
 # Run frontend-next checks
 echo "🎨 Checking frontend-next..."
-cd ../frontend-next
-npx lint-staged
+npx lint-staged --cwd "$(git rev-parse --show-toplevel)/draco-nodejs/frontend-next"
 FRONTEND_NEXT_EXIT_CODE=$?
-
-# Return to root directory
-cd ../..
 
 # Check if either failed
 if [ $BACKEND_EXIT_CODE -ne 0 ] || [ $FRONTEND_NEXT_EXIT_CODE -ne 0 ]; then
