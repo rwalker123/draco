@@ -34,32 +34,42 @@ export default function ComposePage() {
 
       <Card>
         <CardContent>
-          <Alert severity="info">
-            <AlertTitle>Feature Coming Soon</AlertTitle>
+          <Alert severity="warning">
+            <AlertTitle>Frontend UI In Development</AlertTitle>
             {mode === 'quick' ? (
               <>
-                Quick email composition is coming in Phase 1. For now, you can use the email buttons
-                throughout the application to open your default email client.
+                Quick email composition frontend is being built. For now, you can use the email
+                buttons throughout the application to open your default email client.
               </>
             ) : (
               <>
-                Advanced email composition with templates, attachments, and bulk sending will be
-                available in Phase 2 of the email system implementation.
+                Advanced email composition backend is ready! The rich text editor and attachment UI
+                are being developed. APIs support bulk sending, templates, and delivery tracking.
               </>
             )}
           </Alert>
 
           <Box sx={{ mt: 3 }}>
             <Typography variant="h6" gutterBottom>
-              What&apos;s Coming:
+              Backend Features Ready:
             </Typography>
             <ul>
-              <li>Rich text email editor</li>
-              <li>Recipient group selection (teams, roles, custom lists)</li>
-              <li>Email templates with variable substitution</li>
-              <li>File attachments</li>
-              <li>Email scheduling</li>
-              <li>Delivery tracking and analytics</li>
+              <li>✅ Bulk email sending with queue processing</li>
+              <li>✅ Email templates with variable substitution</li>
+              <li>✅ Provider-aware rate limiting (SendGrid + Ethereal)</li>
+              <li>✅ Email status tracking and analytics</li>
+              <li>⏳ File attachments (in development)</li>
+              <li>⏳ Email scheduling (in development)</li>
+            </ul>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+              Frontend UI Coming Next:
+            </Typography>
+            <ul>
+              <li>🔨 Rich text email editor (Quill.js)</li>
+              <li>🔨 Advanced recipient selection interface</li>
+              <li>🔨 Template management UI</li>
+              <li>🔨 File attachment upload component</li>
+              <li>🔨 Email history and analytics dashboard</li>
             </ul>
           </Box>
         </CardContent>
