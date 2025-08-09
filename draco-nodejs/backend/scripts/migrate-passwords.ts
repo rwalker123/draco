@@ -386,7 +386,7 @@ class PasswordMigration {
       
       for (const user of usersNeedingMigration) {
         try {
-          const tempPassword = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+          const tempPassword = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`; // pragma: allowlist secret
           const bcryptHash = await bcrypt.hash(tempPassword, 12);
           
           await prisma.aspnetusers.update({
@@ -394,7 +394,7 @@ class PasswordMigration {
             data: { passwordhash: bcryptHash }
           });
           
-          console.log(`✅ User ${user.username} migrated with temporary password: ${tempPassword}`);
+          console.log(`✅ User ${user.username} migrated with temporary password: ${tempPassword}`); // pragma: allowlist secret
           this.successCount++;
         } catch (error) {
           console.error(`❌ Failed to migrate user ${user.username}:`, error);
