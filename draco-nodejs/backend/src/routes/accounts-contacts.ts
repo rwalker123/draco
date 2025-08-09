@@ -105,6 +105,107 @@ router.get(
 
 /**
  * @swagger
+ * /api/accounts/{accountId}/contacts/me/link-by-name:
+ *   post:
+ *     summary: Link existing contact in account to current user by matching name
+ *     description: Finds a unique contact in the specified account by first/middle/last name and links it to the authenticated user's userid. Fails if none or multiple matches found, or if already linked.
+ *     tags: [Accounts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: accountId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Account ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [firstName, lastName]
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               middleName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Contact linked successfully
+ *       404:
+ *         description: No unique match found
+ *       409:
+ *         description: Contact already linked to a user
+ */
+router.post(
+  '/:accountId/contacts/me/link-by-name',
+  authenticateToken,
+  asyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const { accountId } = extractAccountParams(req.params);
+    const { firstName, middleName, lastName } = req.body || {};
+
+    if (!firstName || !lastName) {
+      res.status(400).json({ success: false, message: 'First and last name are required' });
+      return;
+    }
+
+    // Build case-insensitive filters
+    const whereClause: any = {
+      creatoraccountid: accountId,
+      userid: null,
+      // Prisma: case-insensitive match
+      firstname: { equals: String(firstName), mode: 'insensitive' },
+      lastname: { equals: String(lastName), mode: 'insensitive' },
+    };
+    if (typeof middleName === 'string' && middleName.trim().length > 0) {
+      whereClause.middlename = { equals: String(middleName), mode: 'insensitive' };
+    }
+
+    const candidates = await prisma.contacts.findMany({ where: whereClause });
+
+    if (candidates.length === 0) {
+      res.status(404).json({ success: false, message: 'No matching contact found' });
+      return;
+    }
+    if (candidates.length > 1) {
+      res
+        .status(404)
+        .json({ success: false, message: 'Multiple matching contacts found. Please contact admin.' });
+      return;
+    }
+
+    const contact = candidates[0];
+    if (contact.userid) {
+      res.status(409).json({ success: false, message: 'Contact is already linked to a user' });
+      return;
+    }
+
+    const updated = await prisma.contacts.update({
+      where: { id: contact.id },
+      data: { userid: req.user!.id },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        contact: {
+          id: updated.id.toString(),
+          firstname: updated.firstname,
+          lastname: updated.lastname,
+          middlename: updated.middlename,
+          email: updated.email || undefined,
+        },
+      },
+    });
+  }),
+);
+
+/**
+ * @swagger
  * /api/accounts/{accountId}/contacts/me:
  *   post:
  *     summary: Self-register current user to an account
@@ -143,7 +244,6 @@ router.get(
 router.post(
   '/:accountId/contacts/me',
   authenticateToken,
-  routeProtection.enforceAccountBoundary(),
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
 

@@ -39,7 +39,10 @@ export const AccountRegistrationService = {
       if (!backendContact) return null;
       return ContactTransformationService.transformBackendContact(backendContact);
     } catch (err: unknown) {
-      if (axios.isAxiosError(err) && err.response?.status === 404) {
+      if (
+        axios.isAxiosError(err) &&
+        (err.response?.status === 404 || err.response?.status === 401 || err.response?.status === 403)
+      ) {
         return null;
       }
       throw err;
