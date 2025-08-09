@@ -1,7 +1,7 @@
-import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService';
-import { RosterMember } from '../services/rosterService';
-import { ContactEntry, NamedContact, RawManager } from '../interfaces/contactInterfaces';
-import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService';
+import { TeamSeasonSummary, TeamSeasonDetails } from '../services/teamService.js';
+import { RosterMember } from '../services/rosterService.js';
+import { ContactEntry, NamedContact, RawManager } from '../interfaces/contactInterfaces.js';
+import { BattingStat, PitchingStat, GameInfo } from '../services/teamStatsService.js';
 
 export interface ApiResponse<T> {
   success: boolean;

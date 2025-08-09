@@ -1,11 +1,11 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { AuthService, LoginCredentials, RegisterData } from '../services/authService';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, AuthenticationError } from '../utils/customErrors';
-import prisma from '../lib/prisma';
+import { AuthService, LoginCredentials, RegisterData } from '../services/authService.js';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { authRateLimit, passwordRateLimit } from '../middleware/rateLimitMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
+import prisma from '../lib/prisma.js';
 
 const router = Router();
 const authService = new AuthService();

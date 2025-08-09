@@ -2,21 +2,21 @@
 // Handles league-season relationships, divisions, and teams within leagues
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleService } from '../services/roleService';
-import { getLogoUrl } from '../config/logo';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { RouteProtection } from '../middleware/routeProtection.js';
+import { RoleService } from '../services/roleService.js';
+import { getLogoUrl } from '../config/logo.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
 import {
   extractSeasonParams,
   extractLeagueSeasonParams,
   extractBigIntParams,
-} from '../utils/paramExtraction';
-import { validateTeamSeasonWithDivision } from '../utils/teamValidation';
-import prisma from '../lib/prisma';
-import { DivisionSeason } from '../interfaces/divisionInterfaces';
-import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces';
+} from '../utils/paramExtraction.js';
+import { validateTeamSeasonWithDivision } from '../utils/teamValidation.js';
+import prisma from '../lib/prisma.js';
+import { DivisionSeason } from '../interfaces/divisionInterfaces.js';
+import { LeagueSeasonWithRelations, PrismaWhereClause } from '../interfaces/leagueInterfaces.js';
 
 const router = Router({ mergeParams: true });
 const roleService = new RoleService(prisma);

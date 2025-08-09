@@ -1,6 +1,6 @@
 import { Request } from 'express';
-import { ValidationError } from './customErrors';
-import { ContactInputData } from '../interfaces/contactInterfaces';
+import { ValidationError } from './customErrors.js';
+import { ContactInputData } from '../interfaces/contactInterfaces.js';
 
 export interface TeamUpdateRequest {
   name: string;

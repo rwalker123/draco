@@ -1,4 +1,4 @@
-import { ImageProcessor } from '../utils/imageProcessor';
+import { ImageProcessor } from '../utils/imageProcessor.js';
 
 export interface StorageService {
   saveLogo(accountId: string, teamId: string, buffer: Buffer): Promise<void>;

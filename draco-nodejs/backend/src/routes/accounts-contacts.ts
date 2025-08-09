@@ -2,27 +2,27 @@
 // Handles all contact and user management within accounts
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import { isEmail } from 'validator';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
-import { extractAccountParams, extractContactParams } from '../utils/paramExtraction';
-import { PaginationHelper } from '../utils/pagination';
-import prisma from '../lib/prisma';
-import { ContactService } from '../services/contactService';
-import { ContactSearchResult } from '../interfaces/accountInterfaces';
-import { ContactInputData } from '../interfaces/contactInterfaces';
-import { ContactDependencyService } from '../services/contactDependencyService';
-import { upload, handleContactPhotoUpload } from './contact-media';
-import { getContactPhotoUrl } from '../config/logo';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import validator from 'validator';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
+import { extractAccountParams, extractContactParams } from '../utils/paramExtraction.js';
+import { PaginationHelper } from '../utils/pagination.js';
+import prisma from '../lib/prisma.js';
+import { ContactService } from '../services/contactService.js';
+import { ContactSearchResult } from '../interfaces/accountInterfaces.js';
+import { ContactInputData } from '../interfaces/contactInterfaces.js';
+import { ContactDependencyService } from '../services/contactDependencyService.js';
+import { upload, handleContactPhotoUpload } from './contact-media.js';
+import { getContactPhotoUrl } from '../config/logo.js';
 import {
   validateContactUpdateDynamic,
   validatePhotoUpload,
   sanitizeContactData,
-} from '../middleware/validation/contactValidation';
-import { DateUtils } from '../utils/dateUtils';
-import { logRegistrationEvent } from '../utils/auditLogger';
+} from '../middleware/validation/contactValidation.js';
+import { DateUtils } from '../utils/dateUtils.js';
+import { logRegistrationEvent } from '../utils/auditLogger.js';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -190,7 +190,10 @@ router.post(
       });
       res
         .status(404)
-        .json({ success: false, message: 'Multiple matching contacts found. Please contact admin.' });
+        .json({
+          success: false,
+          message: 'Multiple matching contacts found. Please contact admin.',
+        });
       return;
     }
 
@@ -306,7 +309,7 @@ router.post(
       res.status(400).json({ success: false, message: 'First name and last name are required' });
       return;
     }
-    if (email && !isEmail(email)) {
+    if (email && !validator.isEmail(email)) {
       res.status(400).json({ success: false, message: 'Please enter a valid email address' });
       return;
     }
@@ -766,7 +769,7 @@ router.post(
 
     // Validate email format if provided
     if (email) {
-      if (!isEmail(email)) {
+      if (!validator.isEmail(email)) {
         throw new ValidationError('Please enter a valid email address');
       }
     }

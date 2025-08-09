@@ -1,4 +1,4 @@
-import { BatchQueryHelper } from '../batchQueries';
+import { BatchQueryHelper } from '../batchQueries.js';
 import { PrismaClient } from '@prisma/client';
 import { vi, describe, it, expect, afterEach } from 'vitest';
 

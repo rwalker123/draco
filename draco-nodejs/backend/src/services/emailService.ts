@@ -1,3 +1,6 @@
+import nodemailer from 'nodemailer';
+import type { Transporter } from 'nodemailer';
+
 // Enhanced Email Service for Draco Sports Manager
 // Follows SRP/DIP - depends on IEmailProvider interface
 

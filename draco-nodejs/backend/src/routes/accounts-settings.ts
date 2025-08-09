@@ -2,15 +2,15 @@
 // Handles URLs, Twitter settings, account types, and affiliations
 
 import { Router, Request, Response } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
 import { Prisma } from '@prisma/client';
-import { isValidAccountUrl, normalizeUrl } from '../utils/validation';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors';
-import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction';
-import prisma from '../lib/prisma';
-import { AccountType, AccountAffiliation, AccountUrl } from '../interfaces/accountInterfaces';
+import { isValidAccountUrl, normalizeUrl } from '../utils/validation.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/customErrors.js';
+import { extractAccountParams, extractBigIntParams } from '../utils/paramExtraction.js';
+import prisma from '../lib/prisma.js';
+import { AccountType, AccountAffiliation, AccountUrl } from '../interfaces/accountInterfaces.js';
 
 const router = Router({ mergeParams: true });
 const routeProtection = ServiceFactory.getRouteProtection();

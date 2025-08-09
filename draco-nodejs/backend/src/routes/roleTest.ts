@@ -2,12 +2,12 @@
 // These routes help verify that the role system is working correctly
 
 import { Router } from 'express';
-import { authenticateToken } from '../middleware/authMiddleware';
-import { ServiceFactory } from '../lib/serviceFactory';
-import prisma from '../lib/prisma';
-import { asyncHandler } from '../utils/asyncHandler';
-import { ValidationError, AuthenticationError } from '../utils/customErrors';
-import { extractAccountParams } from '../utils/paramExtraction';
+import { authenticateToken } from '../middleware/authMiddleware.js';
+import { ServiceFactory } from '../lib/serviceFactory.js';
+import prisma from '../lib/prisma.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ValidationError, AuthenticationError } from '../utils/customErrors.js';
+import { extractAccountParams } from '../utils/paramExtraction.js';
 
 // Type definitions for Prisma query results
 interface ContactRole {
@@ -276,7 +276,7 @@ router.get(
   authenticateToken, // Requires JWT but no permission checks
   asyncHandler(async (req, res): Promise<void> => {
     // Import role metadata from config
-    const { ROLE_INHERITANCE_BY_ID, ROLE_PERMISSIONS_BY_ID } = await import('../config/roles');
+    const { ROLE_INHERITANCE_BY_ID, ROLE_PERMISSIONS_BY_ID } = await import('../config/roles.js');
 
     // Create a timestamp for cache invalidation
     const timestamp = new Date().toISOString();

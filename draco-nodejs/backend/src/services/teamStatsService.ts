@@ -1,8 +1,8 @@
 import { PrismaClient, leagueschedule, availablefields } from '@prisma/client';
-import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus';
-import { getTeamRecord } from '../utils/teamRecord';
-import { StatisticsService } from './statisticsService';
-import { NotFoundError } from '../utils/customErrors';
+import { getGameStatusText, getGameStatusShortText } from '../utils/gameStatus.js';
+import { getTeamRecord } from '../utils/teamRecord.js';
+import { StatisticsService } from './statisticsService.js';
+import { NotFoundError } from '../utils/customErrors.js';
 
 export interface TeamRecord {
   wins: number;

@@ -1,13 +1,18 @@
-import { EmailService, EmailConfig } from '../emailService';
-import * as nodemailer from 'nodemailer';
+import { EmailService, EmailConfig } from '../emailService.js';
+import nodemailer from 'nodemailer';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-vi.mock('nodemailer');
+vi.mock('nodemailer', () => ({
+  default: {
+    createTransport: vi.fn(),
+  },
+}));
 
 const mockSendMail = vi.fn();
 const mockVerify = vi.fn();
 
-(nodemailer.createTransport as vi.MockedFunction).mockReturnValue({
+// @ts-expect-error - mocked in vi.mock
+nodemailer.createTransport.mockReturnValue({
   sendMail: mockSendMail,
   verify: mockVerify,
 });
@@ -25,7 +30,8 @@ describe('EmailService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (nodemailer.createTransport as vi.MockedFunction).mockReturnValue({
+    // @ts-expect-error - mocked in vi.mock
+    nodemailer.createTransport.mockReturnValue({
       sendMail: mockSendMail,
     });
   });

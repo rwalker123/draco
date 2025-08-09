@@ -3,9 +3,9 @@
  * Checks for foreign key dependencies before allowing contact deletion
  */
 
-import prisma from '../lib/prisma';
-import { ValidationError } from '../utils/customErrors';
-import { ContactPhotoService } from './contactPhotoService';
+import prisma from '../lib/prisma.js';
+import { ValidationError } from '../utils/customErrors.js';
+import { ContactPhotoService } from './contactPhotoService.js';
 
 export interface ContactDependency {
   table: string;

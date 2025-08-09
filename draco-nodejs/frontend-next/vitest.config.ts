@@ -1,5 +1,5 @@
-import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
 
 export default defineConfig({
   test: {
@@ -17,7 +17,4 @@ export default defineConfig({
       '@': resolve(__dirname, './'),
     },
   },
-  css: {
-    postcss: false, // Disable PostCSS processing completely
-  },
-})
+});

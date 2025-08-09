@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { databaseConfig, buildConnectionUrl } from '../config/database';
-import { performanceMonitor } from '../utils/performanceMonitor';
+import { databaseConfig, buildConnectionUrl } from '../config/database.js';
+import { performanceMonitor } from '../utils/performanceMonitor.js';
 
 // Declare global variable for PrismaClient instance
 declare global {
@@ -26,8 +26,8 @@ const prisma =
 
 // Note: We're using Prisma middleware instead of event handlers for better TypeScript support
 
-// Add Prisma middleware for performance tracking
-prisma.$use(async (params, next) => {
+// Add Prisma middleware for performance tracking (safe for test mocks)
+prisma.$use?.(async (params, next) => {
   const startTime = Date.now();
 
   try {
@@ -67,19 +67,19 @@ if (process.env.NODE_ENV === 'development') {
   globalThis.__prisma = prisma;
 }
 
-// Graceful shutdown handling
+// Graceful shutdown handling (safe for test mocks)
 process.on('beforeExit', async () => {
-  await prisma.$disconnect();
+  await prisma.$disconnect?.();
 });
 
 // Handle SIGINT and SIGTERM for graceful shutdown
 process.on('SIGINT', async () => {
-  await prisma.$disconnect();
+  await prisma.$disconnect?.();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  await prisma.$disconnect();
+  await prisma.$disconnect?.();
   process.exit(0);
 });
 

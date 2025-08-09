@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   S3Client,
   PutObjectCommand,
@@ -9,7 +9,7 @@ import {
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { BaseStorageService, StorageService } from './baseStorageService';
+import { BaseStorageService, StorageService } from './baseStorageService.js';
 
 // AWS Error interface for better type safety
 interface AWSError extends Error {
@@ -20,7 +20,7 @@ interface AWSError extends Error {
 }
 
 // Re-export the StorageService interface from baseStorageService
-export { StorageService } from './baseStorageService';
+export { StorageService } from './baseStorageService.js';
 
 export class LocalStorageService extends BaseStorageService {
   private uploadsDir: string;

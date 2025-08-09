@@ -2,14 +2,14 @@
 // Handles all role-related operations including contact roles and global roles
 
 import { PrismaClient } from '@prisma/client';
-import { ContactRole, UserRoles, RoleCheckResult, RoleContext, RoleType } from '../types/roles';
+import { ContactRole, UserRoles, RoleCheckResult, RoleContext, RoleType } from '../types/roles.js';
 import {
   ROLE_IDS,
   ROLE_PERMISSIONS_BY_ID,
   validateRoleAssignment,
   hasRoleOrHigher,
-} from '../config/roles';
-import { IRoleService } from '../interfaces/roleInterfaces';
+} from '../config/roles.js';
+import { IRoleService } from '../interfaces/roleInterfaces.js';
 
 export class RoleService implements IRoleService {
   private prisma: PrismaClient;

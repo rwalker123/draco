@@ -1,15 +1,15 @@
-import { RoleService } from '../services/roleService';
-import { TeamService } from '../services/teamService';
-import { RouteProtection } from '../middleware/routeProtection';
-import { RoleMiddleware } from '../middleware/roleMiddleware';
+import { RoleService } from '../services/roleService.js';
+import { TeamService } from '../services/teamService.js';
+import { RouteProtection } from '../middleware/routeProtection.js';
+import { RoleMiddleware } from '../middleware/roleMiddleware.js';
 import {
   IRoleService,
   IRoleQuery,
   IRoleVerification,
   IRoleManagement,
   IRoleMiddleware,
-} from '../interfaces/roleInterfaces';
-import prisma from './prisma';
+} from '../interfaces/roleInterfaces.js';
+import prisma from './prisma.js';
 
 /**
  * Service factory to provide service instances without direct Prisma dependencies

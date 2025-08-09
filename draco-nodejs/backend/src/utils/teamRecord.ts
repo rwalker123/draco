@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { BatchQueryHelper } from './batchQueries';
+import { BatchQueryHelper } from './batchQueries.js';
 
 export interface TeamRecord {
   wins: number;

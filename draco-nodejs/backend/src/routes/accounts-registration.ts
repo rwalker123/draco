@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { asyncHandler } from '../utils/asyncHandler';
-import { authRateLimit } from '../middleware/rateLimitMiddleware';
-import { extractAccountParams } from '../utils/paramExtraction';
-import { RegistrationService } from '../services/registrationService';
-import { logRegistrationEvent } from '../utils/auditLogger';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { authRateLimit } from '../middleware/rateLimitMiddleware.js';
+import { extractAccountParams } from '../utils/paramExtraction.js';
+import { RegistrationService } from '../services/registrationService.js';
+import { logRegistrationEvent } from '../utils/auditLogger.js';
 
 const router = Router({ mergeParams: true });
 const registrationService = new RegistrationService();
@@ -140,5 +140,3 @@ router.post(
 );
 
 export default router;
-
-

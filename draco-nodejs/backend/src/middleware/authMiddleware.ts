@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
-import prisma from '../lib/prisma';
+import jwt from 'jsonwebtoken';
+import prisma from '../lib/prisma.js';
 
 // Type definitions for Prisma query results
 interface UserRole {

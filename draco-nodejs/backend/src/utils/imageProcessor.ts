@@ -1,9 +1,9 @@
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 export interface ImageConfig {
   width: number;
   height: number;
-  fit?: keyof sharp.FitEnum;
+  fit?: 'cover' | 'contain' | 'fill' | 'inside' | 'outside';
   quality?: number;
   format?: 'png' | 'jpeg' | 'webp';
 }

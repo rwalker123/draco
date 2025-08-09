@@ -1,10 +1,15 @@
-import { authenticateToken } from '../authMiddleware';
-import * as httpMocks from 'node-mocks-http';
-import * as jwt from 'jsonwebtoken';
+import { authenticateToken } from '../authMiddleware.js';
+import httpMocks from 'node-mocks-http';
+import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-vi.mock('jsonwebtoken');
+vi.mock('jsonwebtoken', () => ({
+  default: {
+    verify: vi.fn(),
+    JsonWebTokenError: class JsonWebTokenError extends Error {},
+  },
+}));
 
 vi.mock('@prisma/client', () => {
   const mockFindUnique = vi.fn();

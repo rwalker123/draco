@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import * as httpMocks from 'node-mocks-http';
-import { RouteProtection } from '../routeProtection';
-import { RoleService } from '../../services/roleService';
+import httpMocks from 'node-mocks-http';
+import { RouteProtection } from '../routeProtection.js';
+import { RoleService } from '../../services/roleService.js';
 import { PrismaClient } from '@prisma/client';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
