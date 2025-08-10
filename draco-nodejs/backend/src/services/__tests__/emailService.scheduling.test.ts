@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EmailService } from '../emailService.js';
-import prisma from '../../lib/prisma.js';
 
-// Mock dependencies
-vi.mock('../../lib/prisma.js', () => ({
-  default: {
+// Mock the centralized prisma module (hoisted)
+const hoisted = vi.hoisted(() => ({
+  mockPrisma: {
     emails: {
       findMany: vi.fn(),
       update: vi.fn(),
@@ -15,15 +14,16 @@ vi.mock('../../lib/prisma.js', () => ({
   },
 }));
 
+vi.mock('../../lib/prisma.js', () => ({ default: hoisted.mockPrisma }));
 vi.mock('../emailAttachmentService.js');
+
+const mockPrisma = hoisted.mockPrisma as any;
 
 describe('EmailService - Scheduling Functionality', () => {
   let emailService: EmailService;
-  let mockPrisma: typeof prisma;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma = prisma as any;
     emailService = new EmailService();
   });
 

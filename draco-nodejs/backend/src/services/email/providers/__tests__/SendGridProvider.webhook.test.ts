@@ -1,11 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SendGridProvider } from '../SendGridProvider.js';
 import { SendGridWebhookEvent } from '../../../../interfaces/emailInterfaces.js';
-import prisma from '../../../../lib/prisma.js';
 
-// Mock dependencies
-vi.mock('../../../../lib/prisma.js', () => ({
-  default: {
+// Mock the centralized prisma module (hoisted)
+const hoisted = vi.hoisted(() => ({
+  mockPrisma: {
     email_recipients: {
       findFirst: vi.fn(),
       update: vi.fn(),
@@ -20,6 +19,7 @@ vi.mock('../../../../lib/prisma.js', () => ({
   },
 }));
 
+vi.mock('../../../../lib/prisma.js', () => ({ default: hoisted.mockPrisma }));
 vi.mock('nodemailer', () => ({
   default: {
     createTransport: vi.fn(() => ({
@@ -29,13 +29,13 @@ vi.mock('nodemailer', () => ({
   },
 }));
 
+const mockPrisma = hoisted.mockPrisma as any;
+
 describe('SendGridProvider - Webhook Processing', () => {
   let provider: SendGridProvider;
-  let mockPrisma: typeof prisma;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma = prisma as any;
 
     const mockConfig = {
       host: 'smtp.sendgrid.net',
@@ -73,16 +73,16 @@ describe('SendGridProvider - Webhook Processing', () => {
         contact_id: BigInt(200),
       };
 
-      mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
-      mockPrisma.email_recipients.update.mockResolvedValue({});
-      mockPrisma.email_events.create.mockResolvedValue({});
-      mockPrisma.emails.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
 
       const result = await provider.processWebhookEvents(events);
 
       expect(result.processed).toBe(2);
       expect(result.errors).toHaveLength(0);
-      expect(mockPrisma.email_recipients.findFirst).toHaveBeenCalledTimes(2);
+      expect(hoisted.mockPrisma.email_recipients.findFirst).toHaveBeenCalledTimes(2);
     });
 
     it('should handle events with no matching recipient', async () => {
@@ -96,13 +96,13 @@ describe('SendGridProvider - Webhook Processing', () => {
         },
       ];
 
-      mockPrisma.email_recipients.findFirst.mockResolvedValue(null);
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(null);
 
       const result = await provider.processWebhookEvents(events);
 
       expect(result.processed).toBe(1); // Still counts as processed (no error)
       expect(result.errors).toHaveLength(0);
-      expect(mockPrisma.email_recipients.update).not.toHaveBeenCalled();
+      expect(hoisted.mockPrisma.email_recipients.update).not.toHaveBeenCalled();
     });
 
     it('should collect errors for failed event processing', async () => {
@@ -123,8 +123,8 @@ describe('SendGridProvider - Webhook Processing', () => {
         contact_id: BigInt(200),
       };
 
-      mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
-      mockPrisma.email_recipients.update.mockRejectedValue(new Error('Database error'));
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockRejectedValue(new Error('Database error'));
 
       const result = await provider.processWebhookEvents(events);
 
@@ -145,10 +145,10 @@ describe('SendGridProvider - Webhook Processing', () => {
         contact_id: BigInt(200),
       };
 
-      mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
-      mockPrisma.email_recipients.update.mockResolvedValue({});
-      mockPrisma.email_events.create.mockResolvedValue({});
-      mockPrisma.emails.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_recipients.findFirst.mockResolvedValue(mockRecipient);
+      hoisted.mockPrisma.email_recipients.update.mockResolvedValue({});
+      hoisted.mockPrisma.email_events.create.mockResolvedValue({});
+      hoisted.mockPrisma.emails.update.mockResolvedValue({});
     });
 
     it('should process delivered event correctly', async () => {
