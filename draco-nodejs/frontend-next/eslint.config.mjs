@@ -17,6 +17,12 @@ const eslintConfig = [
     },
   },
   {
+    files: ["**/__tests__/**/*"],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
+  {
     ignores: [
       "app/social-hub-test/**/*",
     ],
