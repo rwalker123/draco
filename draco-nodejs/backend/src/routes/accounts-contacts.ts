@@ -23,6 +23,7 @@ import {
 } from '../middleware/validation/contactValidation.js';
 import { DateUtils } from '../utils/dateUtils.js';
 import { logRegistrationEvent } from '../utils/auditLogger.js';
+import { ContactValidationService, ValidationType } from '../utils/contactValidation.js';
 
 const router = Router({ mergeParams: true });
 export const roleService = ServiceFactory.getRoleService();
@@ -147,15 +148,81 @@ router.post(
   authenticateToken,
   asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const { accountId } = extractAccountParams(req.params);
-    const { firstName, middleName, lastName } = req.body || {};
+    const { firstName, middleName, lastName, validationType, streetAddress, dateOfBirth } =
+      req.body || {};
     const start = Date.now();
 
+    // Validate required validation type and corresponding field
+    if (validationType && validationType !== 'streetAddress' && validationType !== 'dateOfBirth') {
+      res
+        .status(400)
+        .json({
+          success: false,
+          message: 'Invalid validation type. Must be "streetAddress" or "dateOfBirth"',
+        });
+      return;
+    }
+
+    // Use enhanced validation if validation type is provided, otherwise fall back to name-only matching
+    if (validationType) {
+      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
+        firstName,
+        middleName,
+        lastName,
+        validationType: validationType as ValidationType,
+        streetAddress,
+        dateOfBirth,
+      });
+
+      if (!validationResult.success) {
+        logRegistrationEvent(req, 'registration_linkByName', 'validation_error', {
+          accountId,
+          timingMs: Date.now() - start,
+        });
+        res.status(validationResult.statusCode || 400).json({
+          success: false,
+          message: validationResult.error,
+        });
+        return;
+      }
+
+      const contact = validationResult.contact!;
+
+      // Link the contact to the authenticated user
+      const updated = await prisma.contacts.update({
+        where: { id: contact.id },
+        data: { userid: req.user!.id },
+      });
+
+      logRegistrationEvent(req, 'registration_linkByName', 'success', {
+        accountId,
+        userId: req.user!.id,
+        validationType,
+        timingMs: Date.now() - start,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          contact: {
+            id: updated.id.toString(),
+            firstname: updated.firstname,
+            lastname: updated.lastname,
+            middlename: updated.middlename,
+            email: updated.email || undefined,
+          },
+        },
+      });
+      return;
+    }
+
+    // Legacy name-only matching for backward compatibility
     if (!firstName || !lastName) {
       res.status(400).json({ success: false, message: 'First and last name are required' });
       return;
     }
 
-    // Build case-insensitive filters
+    // Build case-insensitive filters for name-only matching
     const whereClause: {
       creatoraccountid: bigint;
       userid: null;
@@ -165,7 +232,6 @@ router.post(
     } = {
       creatoraccountid: accountId,
       userid: null,
-      // Prisma: case-insensitive match
       firstname: { equals: String(firstName), mode: 'insensitive' },
       lastname: { equals: String(lastName), mode: 'insensitive' },
     };
@@ -188,12 +254,10 @@ router.post(
         accountId,
         timingMs: Date.now() - start,
       });
-      res
-        .status(404)
-        .json({
-          success: false,
-          message: 'Multiple matching contacts found. Please contact admin.',
-        });
+      res.status(404).json({
+        success: false,
+        message: 'Multiple matching contacts found. Please contact admin.',
+      });
       return;
     }
 
@@ -300,9 +364,70 @@ router.post(
       middlename: body.middlename ?? body.middleName,
       lastname: body.lastname ?? body.lastName,
       email: body.email,
+      validationType: body.validationType,
+      streetAddress: body.streetAddress,
+      dateOfBirth: body.dateOfBirth,
     };
 
-    const { firstname, middlename, lastname, email } = sanitizeContactData(normalizedInput);
+    const { firstname, middlename, lastname } = sanitizeContactData(normalizedInput);
+    const { validationType, streetAddress, dateOfBirth } = normalizedInput;
+
+    // Use enhanced validation if validation type is provided
+    if (validationType) {
+      const validationResult = await ContactValidationService.findAndValidateContact(accountId, {
+        firstName: firstname || '',
+        middleName: middlename,
+        lastName: lastname || '',
+        validationType: validationType as ValidationType,
+        streetAddress: streetAddress as string | undefined,
+        dateOfBirth: dateOfBirth as string | undefined,
+      });
+
+      if (!validationResult.success) {
+        logRegistrationEvent(req, 'registration_selfRegister', 'validation_error', {
+          accountId,
+          timingMs: Date.now() - start,
+        });
+        res.status(validationResult.statusCode || 400).json({
+          success: false,
+          message: validationResult.error,
+        });
+        return;
+      }
+
+      const contact = validationResult.contact!;
+
+      // Link the contact to the authenticated user
+      const updated = await prisma.contacts.update({
+        where: { id: contact.id },
+        data: { userid: req.user!.id },
+      });
+
+      logRegistrationEvent(req, 'registration_selfRegister', 'success', {
+        accountId,
+        userId: req.user!.id,
+        validationType,
+        timingMs: Date.now() - start,
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          contact: {
+            id: updated.id.toString(),
+            firstname: updated.firstname,
+            lastname: updated.lastname,
+            middlename: updated.middlename,
+            email: updated.email || undefined,
+            dateofbirth: DateUtils.formatDateOfBirthForResponse(updated.dateofbirth),
+          },
+        },
+      });
+      return;
+    }
+
+    // Legacy: Create new contact (for backward compatibility when no validation type provided)
+    const email = normalizedInput.email as string;
 
     // Validate required fields and email format
     if (!firstname || !lastname) {

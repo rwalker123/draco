@@ -88,7 +88,16 @@ router.post(
     }
 
     if (mode === 'newUser') {
-      const { email, password, firstName, middleName, lastName } = req.body;
+      const {
+        email,
+        password,
+        firstName,
+        middleName,
+        lastName,
+        validationType,
+        streetAddress,
+        dateOfBirth,
+      } = req.body;
       const result = await registrationService.registerAndCreateContactNewUser({
         email,
         password,
@@ -96,6 +105,9 @@ router.post(
         middleName,
         lastName,
         accountId,
+        validationType,
+        streetAddress,
+        dateOfBirth,
       });
       if (!result.success) {
         logRegistrationEvent(req, 'registration_newUser', 'validation_error', {
@@ -114,7 +126,16 @@ router.post(
     }
 
     // existingUser
-    const { usernameOrEmail, password, firstName, middleName, lastName } = req.body;
+    const {
+      usernameOrEmail,
+      password,
+      firstName,
+      middleName,
+      lastName,
+      validationType,
+      streetAddress,
+      dateOfBirth,
+    } = req.body;
     const result = await registrationService.loginAndCreateContactExistingUser({
       usernameOrEmail,
       password,
@@ -122,6 +143,9 @@ router.post(
       middleName,
       lastName,
       accountId,
+      validationType,
+      streetAddress,
+      dateOfBirth,
     });
     if (!result.success) {
       logRegistrationEvent(req, 'registration_existingUser', 'auth_error', {
