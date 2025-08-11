@@ -28,6 +28,7 @@ interface UserTableWrapperProps {
   onEditContact?: (contact: Contact) => void;
   onDeleteContact?: (contact: Contact) => void;
   onDeleteContactPhoto?: (contactId: string) => Promise<void>;
+  onRevokeRegistration?: (contactId: string) => void;
   getRoleDisplayName: (
     roleOrRoleId:
       | string
@@ -56,6 +57,7 @@ const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
   onEditContact,
   onDeleteContact,
   onDeleteContactPhoto,
+  onRevokeRegistration,
   getRoleDisplayName,
   searchTerm,
   hasFilters = false,
@@ -97,6 +99,7 @@ const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
           onEditContact={onEditContact || (() => {})}
           onDeleteContact={onDeleteContact}
           onDeleteContactPhoto={onDeleteContactPhoto || (() => Promise.resolve())}
+          onRevokeRegistration={onRevokeRegistration}
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={searchTerm}
           hasFilters={hasFilters}
@@ -111,6 +114,7 @@ const UserTableWrapper: React.FC<UserTableWrapperProps> = ({
           onEditContact={onEditContact || (() => {})}
           onDeleteContact={onDeleteContact}
           onDeleteContactPhoto={onDeleteContactPhoto || (() => Promise.resolve())}
+          onRevokeRegistration={onRevokeRegistration}
           canManageUsers={canManageUsers}
           getRoleDisplayName={getRoleDisplayName}
           searchTerm={searchTerm}

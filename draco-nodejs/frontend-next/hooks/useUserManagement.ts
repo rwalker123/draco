@@ -1041,6 +1041,44 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     ],
   );
 
+  const handleRevokeRegistration = useCallback(
+    async (contactId: string) => {
+      if (!userService || !accountId) {
+        setError('Unable to revoke registration - missing required data');
+        return;
+      }
+
+      try {
+        await userService.revokeRegistration(accountId, contactId);
+        setSuccess('Registration removed successfully');
+
+        // Update users in-place to clear userId
+        const updatedUsers = paginationState.users.map((u) =>
+          u.id === contactId ? { ...u, userId: '' } : u,
+        );
+
+        dispatch({
+          type: 'SET_DATA',
+          users: [...updatedUsers],
+          hasNext: paginationState.hasNext,
+          hasPrev: paginationState.hasPrev,
+          page: paginationState.page,
+        });
+      } catch (error) {
+        console.error('Error revoking registration:', error);
+        setError(extractErrorMessage(error));
+      }
+    },
+    [
+      userService,
+      accountId,
+      paginationState.users,
+      paginationState.hasNext,
+      paginationState.hasPrev,
+      paginationState.page,
+    ],
+  );
+
   // Role display name helper - now uses contextName from backend for role display
   const getRoleDisplayNameHelper = useCallback(
     (
@@ -1129,6 +1167,7 @@ export const useUserManagement = (accountId: string): UseUserManagementReturn =>
     openDeleteContactDialog,
     closeDeleteContactDialog,
     handleDeleteContact,
+    handleRevokeRegistration,
     setAssignRoleDialogOpen,
     setRemoveRoleDialogOpen,
     setEditContactDialogOpen,
