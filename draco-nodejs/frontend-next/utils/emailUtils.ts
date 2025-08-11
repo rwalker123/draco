@@ -271,3 +271,51 @@ export const generateMailtoUrl = (to: string[], subject?: string, body?: string)
 
   return `mailto:${toList}${queryString ? '?' + queryString : ''}`;
 };
+
+/**
+ * Upload email attachment to server
+ */
+export const uploadEmailAttachment = async (
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<{ url: string; previewUrl?: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const xhr = new XMLHttpRequest();
+
+  return new Promise((resolve, reject) => {
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        const progress = (event.loaded / event.total) * 100;
+        onProgress(progress);
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const response = JSON.parse(xhr.responseText);
+          resolve(response);
+        } catch {
+          reject(new Error('Invalid response from server'));
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.statusText}`));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error('Network error during upload'));
+    xhr.onabort = () => reject(new Error('Upload aborted'));
+
+    xhr.open('POST', '/api/emails/attachments/upload');
+
+    // Add authorization header if available
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    xhr.send(formData);
+  });
+};
