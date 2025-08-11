@@ -1,79 +1,212 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Box, Typography, Alert, AlertTitle, Card, CardContent, Button } from '@mui/material';
+import { useState, useEffect, useCallback } from 'react';
+import { Box, Button, CircularProgress, Alert, Typography } from '@mui/material';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+
+import { EmailComposePage } from '../../../../components/emails/compose';
+import { useAuth } from '../../../../context/AuthContext';
+import { RecipientContact, TeamGroup, RoleGroup } from '../../../../types/emails/recipients';
+import { EmailComposeRequest } from '../../../../types/emails/email';
 
 export default function ComposePage() {
   const { accountId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<'quick' | 'advanced'>('advanced');
+  const { token } = useAuth();
+  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [contacts, setContacts] = useState<RecipientContact[]>([]);
+  const [teamGroups, setTeamGroups] = useState<TeamGroup[]>([]);
+  const [roleGroups, setRoleGroups] = useState<RoleGroup[]>([]);
+  const [initialData, setInitialData] = useState<Partial<EmailComposeRequest> | undefined>();
 
+  // Load data on mount
   useEffect(() => {
-    const modeParam = searchParams.get('mode');
-    if (modeParam === 'quick') {
-      setMode('quick');
+    if (token && accountId) {
+      loadComposeData();
     }
-  }, [searchParams]);
+  }, [token, accountId, loadComposeData]);
 
-  const handleBack = () => {
+  const loadComposeData = useCallback(async () => {
+    if (!token || !accountId) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // For now, we'll use mock data. In a real implementation, you would:
+      // 1. Load contacts from the contacts API
+      // 2. Load team groups from the teams API  
+      // 3. Load role groups from the roles API
+      // 4. Handle any initial data from URL params (reply, forward, template, etc.)
+
+      // Mock contacts data - replace with actual API calls
+      const mockContacts: RecipientContact[] = [
+        {
+          id: '1',
+          firstname: 'John',
+          lastname: 'Doe',
+          email: 'john.doe@example.com',
+          phone: '555-0123',
+          displayName: 'John Doe',
+          hasValidEmail: true,
+          roles: [{ roleId: '1', roleName: 'Manager' }],
+        },
+        {
+          id: '2',
+          firstname: 'Jane',
+          lastname: 'Smith',
+          email: 'jane.smith@example.com',
+          phone: '555-0124',
+          displayName: 'Jane Smith',
+          hasValidEmail: true,
+          roles: [{ roleId: '2', roleName: 'Player' }],
+        },
+        // Add more mock contacts as needed
+      ];
+
+      // Mock team groups
+      const mockTeamGroups: TeamGroup[] = [
+        {
+          id: 'team-1',
+          name: 'Baseball Team A',
+          description: 'Main baseball team',
+          contactIds: ['1', '2'],
+          estimatedCount: 2,
+        },
+      ];
+
+      // Mock role groups
+      const mockRoleGroups: RoleGroup[] = [
+        {
+          roleId: 'role-1',
+          roleName: 'Managers',
+          contactIds: ['1'],
+          estimatedCount: 1,
+        },
+        {
+          roleId: 'role-2', 
+          roleName: 'Players',
+          contactIds: ['2'],
+          estimatedCount: 1,
+        },
+      ];
+
+      // Check for initial data from URL params
+      const templateId = searchParams.get('template');
+      const subject = searchParams.get('subject');
+      const body = searchParams.get('body');
+
+      let composeInitialData: Partial<EmailComposeRequest> | undefined;
+      if (subject || body || templateId) {
+        composeInitialData = {
+          subject: subject || '',
+          body: body || '',
+          templateId: templateId || undefined,
+        };
+      }
+
+      setContacts(mockContacts);
+      setTeamGroups(mockTeamGroups);
+      setRoleGroups(mockRoleGroups);
+      setInitialData(composeInitialData);
+
+    } catch (err) {
+      console.error('Failed to load compose data:', err);
+      setError('Failed to load email composition data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token, accountId, searchParams]);
+
+  // Handle back navigation
+  const handleBack = useCallback(() => {
     router.push(`/account/${accountId}/communications`);
-  };
+  }, [router, accountId]);
 
+  // Handle send completion
+  const handleSendComplete = useCallback((emailId: string) => {
+    // Navigate back to communications page or show success message
+    router.push(`/account/${accountId}/communications?sent=${emailId}`);
+  }, [router, accountId]);
+
+  // Handle cancel
+  const handleCancel = useCallback(() => {
+    router.push(`/account/${accountId}/communications`);
+  }, [router, accountId]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column',
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '50vh',
+        gap: 2 
+      }}>
+        <CircularProgress size={48} />
+        <Typography variant="body1" color="text.secondary">
+          Loading email composer...
+        </Typography>
+      </Box>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
+          Back to Communications
+        </Button>
+        
+        <Alert 
+          severity="error" 
+          action={
+            <Button size="small" onClick={loadComposeData}>
+              Retry
+            </Button>
+          }
+        >
+          <Typography variant="h6">Failed to Load</Typography>
+          {error}
+        </Alert>
+      </Box>
+    );
+  }
+
+  // Render the complete email compose interface
   return (
-    <Box sx={{ p: 3 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={handleBack} sx={{ mb: 2 }}>
-        Back to Communications
-      </Button>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Navigation Header */}
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+        <Button 
+          startIcon={<ArrowBackIcon />} 
+          onClick={handleBack}
+          size="small"
+          color="inherit"
+        >
+          Back to Communications
+        </Button>
+      </Box>
 
-      <Typography variant="h4" component="h1" gutterBottom>
-        {mode === 'quick' ? 'Quick Email' : 'Compose Email'}
-      </Typography>
-
-      <Card>
-        <CardContent>
-          <Alert severity="warning">
-            <AlertTitle>Frontend UI In Development</AlertTitle>
-            {mode === 'quick' ? (
-              <>
-                Quick email composition frontend is being built. For now, you can use the email
-                buttons throughout the application to open your default email client.
-              </>
-            ) : (
-              <>
-                Advanced email composition backend is ready! The rich text editor and attachment UI
-                are being developed. APIs support bulk sending, templates, and delivery tracking.
-              </>
-            )}
-          </Alert>
-
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Backend Features Ready:
-            </Typography>
-            <ul>
-              <li>✅ Bulk email sending with queue processing</li>
-              <li>✅ Email templates with variable substitution</li>
-              <li>✅ Provider-aware rate limiting (SendGrid + Ethereal)</li>
-              <li>✅ Email status tracking and analytics</li>
-              <li>⏳ File attachments (in development)</li>
-              <li>⏳ Email scheduling (in development)</li>
-            </ul>
-            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-              Frontend UI Coming Next:
-            </Typography>
-            <ul>
-              <li>🔨 Rich text email editor (Quill.js)</li>
-              <li>🔨 Advanced recipient selection interface</li>
-              <li>🔨 Template management UI</li>
-              <li>🔨 File attachment upload component</li>
-              <li>🔨 Email history and analytics dashboard</li>
-            </ul>
-          </Box>
-        </CardContent>
-      </Card>
+      {/* Main Compose Interface */}
+      <Box sx={{ flex: 1 }}>
+        <EmailComposePage
+          accountId={accountId as string}
+          initialData={initialData}
+          contacts={contacts}
+          teamGroups={teamGroups}
+          roleGroups={roleGroups}
+          onSendComplete={handleSendComplete}
+          onCancel={handleCancel}
+        />
+      </Box>
     </Box>
   );
 }
